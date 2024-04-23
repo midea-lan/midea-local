@@ -1,0 +1,5 @@
+pytest
+ruff
+aiohttp
+ifaddr
+pycryptodome
