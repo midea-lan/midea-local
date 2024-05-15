@@ -1,0 +1,22 @@
+./midealocal/device.py:193:5: C901 'MideaDevice.refresh_status' is too complex (13)
+./midealocal/device.py:240:5: C901 'MideaDevice.parse_message' is too complex (13)
+./midealocal/device.py:352:5: C901 'MideaDevice.run' is too complex (17)
+./midealocal/devices/ac/device.py:162:5: C901 'MideaACDevice.process_message' is too complex (15)
+./midealocal/devices/ac/device.py:255:5: C901 'MideaACDevice.set_attribute' is too complex (16)
+./midealocal/devices/b6/message.py:61:5: C901 'MessageSet._body' is too complex (15)
+./midealocal/devices/b6/message.py:156:32: E203 whitespace before ':'
+./midealocal/devices/b6/message.py:186:5: C901 'MessageB6Response.__init__' is too complex (14)
+./midealocal/devices/c3/device.py:134:5: C901 'MideaC3Device.process_message' is too complex (12)
+./midealocal/devices/da/device.py:82:5: C901 'MideaDADevice.process_message' is too complex (12)
+./midealocal/devices/fa/device.py:115:5: C901 'MideaFADevice.process_message' is too complex (14)
+./midealocal/devices/fa/device.py:160:5: C901 'MideaFADevice.set_oscillation' is too complex (22)
+./midealocal/devices/fa/message.py:58:5: C901 'MessageSet._body' is too complex (14)
+./midealocal/devices/fc/device.py:109:5: C901 'MideaFCDevice.process_message' is too complex (11)
+./midealocal/devices/fc/device.py:188:5: C901 'MideaFCDevice.set_attribute' is too complex (12)
+./midealocal/discover.py:151:1: C901 'discover' is too complex (19)
+./midealocal/discover.py:194:32: E203 whitespace before ':'
+./midealocal/message.py:230:46: E203 whitespace before ':'
+./midealocal/message.py:248:42: E203 whitespace before ':'
+./midealocal/packet_builder.py:92:24: E203 whitespace before ':'
+15    C901 'MideaDevice.refresh_status' is too complex (13)
+5     E203 whitespace before ':'
