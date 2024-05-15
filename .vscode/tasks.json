@@ -14,6 +14,12 @@
             "type": "shell",
             "command": "python3 -m build && pip3 install dist/midea_local*.whl",
             "problemMatcher": []
+        },
+        {
+            "label": "Generede code coverage report",
+            "type": "shell",
+            "command": "python3 -m pytest --rootdir . --cov=midealocal --cov-report term-missing ./tests/",
+            "problemMatcher": []
         }
     ]
 }
