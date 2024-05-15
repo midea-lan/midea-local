@@ -26,7 +26,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Build midea-local
         run: |
-          python build
+          python -m build
           pip install dist/midea_local*.whl
       - name: Lint with flake8
         run: |
@@ -36,7 +36,7 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --output-file ./reports/flake8/flake8stats.txt
       - name: Test with pytest
         run: |
-          pytest --cov=sunweg --cov-report html --cov-report xml --junitxml=reports/junit/junit.xml
+          pytest --cov=midealocal --cov-report html --cov-report xml --junitxml=reports/junit/junit.xml
           mv htmlcov reports/coverage
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
