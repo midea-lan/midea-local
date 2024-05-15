@@ -39,4 +39,6 @@ jobs:
           pytest --cov=midealocal --cov-report html --cov-report xml --junitxml=reports/junit/junit.xml
           mv htmlcov reports/coverage
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
