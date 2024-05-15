@@ -27,7 +27,6 @@ jobs:
       - name: Build midea-local
         run: |
           python -m build
-          pip install dist/midea_local*.whl
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
@@ -36,7 +35,7 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --output-file ./reports/flake8/flake8stats.txt
       - name: Test with pytest
         run: |
-          pytest --cov=midealocal --cov-report html --cov-report xml --junitxml=reports/junit/junit.xml
+          python -m pytest --rootdir . --cov=midealocal --cov-report html --cov-report xml --junitxml=reports/junit/junit.xml ./tests/
           mv htmlcov reports/coverage
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
