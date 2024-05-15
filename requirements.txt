@@ -3,3 +3,4 @@ ruff
 aiohttp
 ifaddr
 pycryptodome
+build
