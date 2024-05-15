@@ -1,4 +1,6 @@
-crc8_854_table = [
+"""CRC8 calculator."""
+
+crc8_854_table: list[int] = [
     0x00,
     0x5E,
     0xBC,
@@ -258,13 +260,12 @@ crc8_854_table = [
 ]
 
 
-def calculate(data):
-    crc_value = 0
+def calculate(data: bytearray) -> int:
+    """
+    Calculate CRC8 value of a bytearray.
+
+    """
+    crc_value: int = 0
     for m in data:
-        k = crc_value ^ m
-        if k > 256:
-            k -= 256
-        if k < 0:
-            k += 256
-        crc_value = crc8_854_table[k]
+        crc_value = crc8_854_table[crc_value ^ m]
     return crc_value
