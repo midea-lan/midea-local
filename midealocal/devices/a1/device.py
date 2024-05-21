@@ -5,7 +5,7 @@ try:
     from enum import StrEnum
 except ImportError:
     from ...backports.enum import StrEnum
-from sdevice import MideaDevice
+from ...device import MideaDevice
 
 _LOGGER = logging.getLogger(__name__)
 
