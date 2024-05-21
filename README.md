@@ -20,5 +20,42 @@ discover()
 # If you know the ip address
 discover(ip_address="203.0.113.11")
 # The device type is in hexadecimal and in midealocal/devices/TYPE
-type_code = hex(list(d.values())[0]['type'])[2:]
+type_code = hex(list(discover().values())[0]['type'])[2:]
+```
+
+### Getting data from device
+```python
+from midealocal.discover import discover
+from midealocal.devices import device_selector
+
+token = '...'
+key = '...'
+
+# Get the first device
+d = list(discover().values())[0]
+# Select the device
+ac = device_selector(
+  name="AC",
+  device_id=d['device_id'],
+  device_type=d['type'],
+  ip_address=d['ip_address'],
+  port=d['port'],
+  token=token,
+  key=key,
+  protocol=d['protocol'],
+  model=d['model'],
+  subtype=0,
+  customize="",
+)
+
+# Connect and authenticate
+ac.connect()
+ac.authenticate()
+
+# Getting the attributes
+print(ac.attributes)
+# Setting the temperature
+ac.set_target_temperature(23.0, None)
+# Setting the swing
+ac.set_swing(False, False)
 ```
