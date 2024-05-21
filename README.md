@@ -19,4 +19,6 @@ from midealocal.discover import discover
 discover()
 # If you know the ip address
 discover(ip_address="203.0.113.11")
+# The device type is in hexadecimal and in midealocal/devices/TYPE
+type_code = hex(list(d.values())[0]['type'])[2:]
 ```
