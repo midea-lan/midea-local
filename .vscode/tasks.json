@@ -16,7 +16,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Generede code coverage report",
+            "label": "Generate code coverage report",
             "type": "shell",
             "command": "python3 -m pytest --rootdir . --cov=midealocal --cov-report term-missing ./tests/",
             "problemMatcher": []
