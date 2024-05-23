@@ -20,14 +20,10 @@
         "editor.formatOnSave": true,
         "editor.formatOnType": true,
         "python.formatting.provider": "black",
-        "python.testing.pytestArgs": [
-          "tests"
-        ],
+        "python.testing.pytestArgs": ["tests"],
         "python.testing.pytestEnabled": true,
         "python.testing.unittestEnabled": false,
-        "pylint.args": [
-
-        ],
+        "pylint.args": [],
         "files.trimTrailingWhitespace": true
       },
       // Add the IDs of extensions you want installed when the container is created.
@@ -42,7 +38,6 @@
       ]
     }
   },
-  "remoteUser": "root",
-  "containerUser": "vscode",
-  "postAttachCommand": ["pip3 install --user -r requirements.txt"]
+  "remoteUser": "vscode",
+  "postAttachCommand": "pip3 install -r requirements.txt"
 }
