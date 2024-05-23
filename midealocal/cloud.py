@@ -271,7 +271,7 @@ class MeijuCloud(MideaCloud):
                     for appliance in room.get("applianceList"):
                         try:
                             model_number = int(appliance.get("modelNumber", 0))
-                        except ValueError:
+                        except (ValueError, TypeError):
                             model_number = 0
                         device_info = {
                             "name": appliance.get("name"),
