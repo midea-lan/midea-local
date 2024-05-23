@@ -19,15 +19,11 @@
         "editor.formatOnPaste": false,
         "editor.formatOnSave": true,
         "editor.formatOnType": true,
-        "python.formatting.provider": "black",
-        "python.testing.pytestArgs": [
-          "tests"
-        ],
+        "python.formatting.provider": "charliermarsh.ruff",
+        "python.testing.pytestArgs": ["tests"],
         "python.testing.pytestEnabled": true,
         "python.testing.unittestEnabled": false,
-        "pylint.args": [
-
-        ],
+        "pylint.args": [],
         "files.trimTrailingWhitespace": true
       },
       // Add the IDs of extensions you want installed when the container is created.
