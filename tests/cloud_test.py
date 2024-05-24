@@ -71,3 +71,19 @@ class CloudTest(IsolatedAsyncioTestCase):
         keys: dict = await cloud.get_keys(100)
         assert keys.get(1).get("token") == "returnedappliancetoken"
         assert keys.get(1).get("key") == "returnedappliancekey"
+
+    async def test_meijucloud_list_home(self) -> None:
+        """Test MeijuCloud list_home"""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            return_value=self.responses["meijucloud_list_home.json"]
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "美的美居", session=session, account="account", password="password"
+        )
+        homes = await cloud.list_home()
+        assert len(homes.keys()) == 2
+        assert homes.get(1) == "Home 1"
+        assert homes.get(2) == "Home 2"
