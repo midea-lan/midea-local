@@ -4,33 +4,24 @@
     "dockerfile": "Dockerfile",
     "context": "..",
     "args": {
-      // Update 'VARIANT' to pick a Python version: 3, 3.10, 3.9, 3.8, 3.7, 3.6
-      // Append -bullseye or -buster to pin to an OS version.
-      // Use -bullseye variants on local on arm64/Apple Silicon.
       "VARIANT": "3.10-bullseye",
-      // Options
+      "INSTALL_NODE": "false",
       "NODE_VERSION": "lts/*"
     }
   },
   "customizations": {
     "vscode": {
-      // Set *default* container specific settings.json values on container create.
       "settings": {
         "editor.formatOnPaste": false,
         "editor.formatOnSave": true,
         "editor.formatOnType": true,
         "python.formatting.provider": "black",
-        "python.testing.pytestArgs": [
-          "tests"
-        ],
+        "python.testing.pytestArgs": ["tests"],
         "python.testing.pytestEnabled": true,
         "python.testing.unittestEnabled": false,
-        "pylint.args": [
-
-        ],
+        "pylint.args": [],
         "files.trimTrailingWhitespace": true
       },
-      // Add the IDs of extensions you want installed when the container is created.
       "extensions": [
         "charliermarsh.ruff",
         "ms-python.pylint",
@@ -42,7 +33,6 @@
       ]
     }
   },
-  "remoteUser": "root",
-  "containerUser": "vscode",
+  "remoteUser": "vscode",
   "postAttachCommand": ["pip3 install --user -r requirements.txt"]
 }
