@@ -9,7 +9,7 @@ from pathlib import Path
 
 import aiohttp
 
-from midealocal.cloud import get_midea_cloud
+from midealocal.cloud import get_midea_cloud, clouds
 from midealocal.devices import device_selector
 from midealocal.discover import discover
 
@@ -24,7 +24,12 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
         help="Set Cloud username",
     )
     parser.add_argument("--password", "-p", type=str, help="Set Cloud password")
-    parser.add_argument("--cloud_name", "-cn", type=str, help="Set Cloud name")
+    parser.add_argument(  
+        "--cloud_name",  
+        "-cn",  
+        type=str,  
+        help="Set Cloud name, options are: " + ", ".join(clouds.keys()),  
+    ) 
     parser.add_argument(
         "--configfile",
         "-cf",
@@ -32,12 +37,13 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
         help="Load options from JSON config file. \
         Command line options override those in the file.",
     )
+    parser.add_argument("--ip", "-i", type=str, help="Device or broadcast IP Address.")
 
     arguments = parser.parse_args()
     # Re-parse the command line
     # taking the options in the optional JSON file as a basis
     if arguments.configfile and Path(arguments.configfile).exists():
-        with Path.open(arguments.configfile, encoding="utf-8") as f:
+        with Path(arguments.configfile).open(encoding="utf-8") as f:
             arguments = parser.parse_args(namespace=Namespace(**json.load(f)))
 
     return parser, arguments
@@ -54,7 +60,7 @@ async def main() -> None:
 
     print("-" * 20)
     print("Starting network discovery...")
-    devices = discover()
+    devices = discover(ip_address=args.ip)
     print("-" * 20)
     print("Devices: ", devices)
     first_device = list(devices.values())[0]
@@ -103,14 +109,13 @@ async def main() -> None:
 
     # Connect and authenticate
     ac.connect()
-    ac.authenticate()
 
     # Getting the attributes
     print("-" * 20)
     print("First device attributes: ", ac.attributes)
 
     # Close session
-    session.close()
+    await session.close()
 
 
 if __name__ == "__main__":
