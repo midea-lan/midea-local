@@ -131,3 +131,6 @@ reports/
 
 # IDE
 .idea/
+
+# Optional config file for library_test.py script
+library_test.json
