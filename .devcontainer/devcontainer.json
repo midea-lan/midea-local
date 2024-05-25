@@ -4,9 +4,7 @@
     "dockerfile": "Dockerfile",
     "context": "..",
     "args": {
-      "VARIANT": "3.10-bullseye",
-      "INSTALL_NODE": "false",
-      "NODE_VERSION": "lts/*"
+      "VARIANT": "3.10-bullseye"
     }
   },
   "customizations": {
@@ -15,7 +13,7 @@
         "editor.formatOnPaste": false,
         "editor.formatOnSave": true,
         "editor.formatOnType": true,
-        "python.formatting.provider": "black",
+        "python.formatting.provider": "charliermarsh.ruff",
         "python.testing.pytestArgs": ["tests"],
         "python.testing.pytestEnabled": true,
         "python.testing.unittestEnabled": false,

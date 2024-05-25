@@ -10,7 +10,7 @@
     {
       "label": "Build and install midealocal lib",
       "type": "shell",
-      "command": "python3 -m build && pip3 install dist/midea_local*.whl",
+      "command": "rm -rf dist/ && python3 -m build && pip3 install dist/midea_local*.whl",
       "problemMatcher": []
     },
     {
