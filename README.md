@@ -53,7 +53,6 @@ ac = device_selector(
 
 # Connect and authenticate
 ac.connect()
-ac.authenticate()
 
 # Getting the attributes
 print(ac.attributes)
