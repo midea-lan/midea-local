@@ -115,7 +115,7 @@ class MideaDADevice(MideaDevice):
         softener = [
             "No",
             "Intelligent",
-            "Programed",
+            "Programed",  # codespell:ignore
             "3",
             "4",
             "5",

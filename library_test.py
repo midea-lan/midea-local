@@ -24,12 +24,12 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
         help="Set Cloud username",
     )
     parser.add_argument("--password", "-p", type=str, help="Set Cloud password")
-    parser.add_argument(  
-        "--cloud_name",  
-        "-cn",  
-        type=str,  
-        help="Set Cloud name, options are: " + ", ".join(clouds.keys()),  
-    ) 
+    parser.add_argument(
+        "--cloud_name",
+        "-cn",
+        type=str,
+        help="Set Cloud name, options are: " + ", ".join(clouds.keys()),
+    )
     parser.add_argument(
         "--configfile",
         "-cf",

@@ -140,7 +140,7 @@ class MideaDevice(threading.Thread):
             return True
         except socket.timeout:
             _LOGGER.debug(f"[{self._device_id}] Connection timed out")
-        except socket.error:
+        except OSError:
             _LOGGER.debug(f"[{self._device_id}] Connection error")
         except AuthException:
             _LOGGER.debug(f"[{self._device_id}] Authentication failed")
@@ -203,7 +203,7 @@ class MideaDevice(threading.Thread):
                         while True:
                             msg = self._socket.recv(512)
                             if len(msg) == 0:
-                                raise socket.error
+                                raise OSError
                             result = self.parse_message(msg)
                             if result == ParseMessageResult.SUCCESS:
                                 break
@@ -300,7 +300,7 @@ class MideaDevice(threading.Thread):
         )
         try:
             self.build_send(cmd)
-        except socket.error as e:
+        except OSError as e:
             _LOGGER.debug(
                 f"[{self._device_id}] Interface send_command failure, {repr(e)}, "
                 f"cmd_type: {cmd_type}, cmd_body: {cmd_body.hex()}"
@@ -374,7 +374,7 @@ class MideaDevice(threading.Thread):
                     msg = self._socket.recv(512)
                     msg_len = len(msg)
                     if msg_len == 0:
-                        raise socket.error("Connection closed by peer")
+                        raise OSError("Connection closed by peer")
                     result = self.parse_message(msg)
                     if result == ParseMessageResult.ERROR:
                         _LOGGER.debug(f"[{self._device_id}] Message 'ERROR' received")
@@ -388,7 +388,7 @@ class MideaDevice(threading.Thread):
                         _LOGGER.debug(f"[{self._device_id}] Heartbeat timed out")
                         self.close_socket()
                         break
-                except socket.error as e:
+                except OSError as e:
                     if self._is_run:
                         _LOGGER.debug(f"[{self._device_id}] Socket error {repr(e)}")
                         self.close_socket()
