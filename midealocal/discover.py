@@ -232,7 +232,7 @@ def discover(discover_type=None, ip_address=None):
                 _LOGGER.debug(f"Found a unsupported device: {device}")
         except socket.timeout:
             break
-        except socket.error as e:
+        except OSError as e:
             _LOGGER.error(f"Socket error: {repr(e)}")
     return found_devices
 
@@ -279,7 +279,7 @@ def get_device_info(device_ip, device_port: int):
             f"Connect the device {device_ip}:{device_port} timed out for 8s. "
             f"Don't care about a small amount of this. if many maybe not support."
         )
-    except socket.error:
+    except OSError:
         _LOGGER.warning(f"Can't connect to Device {device_ip}:{device_port}")
     return response
 

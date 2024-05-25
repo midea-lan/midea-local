@@ -1,25 +1,23 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Install requirements.txt",
-            "type": "shell",
-            "command": "pip3 install --user -r requirements.txt",
-            "problemMatcher": []
-        },
-        {
-            "label": "Build and install midealocal lib",
-            "type": "shell",
-            "command": "rm -rf dist/ && python3 -m build && pip3 install dist/midea_local*.whl",
-            "problemMatcher": []
-        },
-        {
-            "label": "Generate code coverage report",
-            "type": "shell",
-            "command": "python3 -m pytest --rootdir . --cov=midealocal --cov-report term-missing ./tests/",
-            "problemMatcher": []
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Install requirements.txt",
+      "type": "shell",
+      "command": "pip3 install --user -r requirements.txt",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build and install midealocal lib",
+      "type": "shell",
+      "command": "rm -rf dist/ && python3 -m build && pip3 install dist/midea_local*.whl",
+      "problemMatcher": []
+    },
+    {
+      "label": "Generate code coverage report",
+      "type": "shell",
+      "command": "python3 -m pytest --rootdir . --cov=midealocal --cov-report term-missing ./tests/",
+      "problemMatcher": []
+    }
+  ]
 }

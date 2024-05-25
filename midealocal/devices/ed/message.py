@@ -164,12 +164,10 @@ class EDMessageBodyFF(MessageBody):
             elif attr == 0x011:
                 self.water_consumption = (
                     float(
-                        (
-                            body[data_offset + 3]
-                            + (body[data_offset + 4] << 8)
-                            + (body[data_offset + 5] << 16)
-                            + (body[data_offset + 6] << 24)
-                        )
+                        body[data_offset + 3]
+                        + (body[data_offset + 4] << 8)
+                        + (body[data_offset + 5] << 16)
+                        + (body[data_offset + 6] << 24)
                     )
                     / 1000
                 )
