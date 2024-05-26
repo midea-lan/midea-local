@@ -1,9 +1,9 @@
 {
-    "code":0,
-    "data":{
-        "mdata":{
-            "accessToken": "returnedAccessToken"
-        },
-        "key": "9d52c159dcdd32bac5109cf54080fca7"
-    }
+  "code": 0,
+  "data": {
+    "mdata": {
+      "accessToken": "returnedAccessToken"
+    },
+    "key": "EEFBF6B8B6E84CBBEF3A800BB3DC146D187C944F79041A1B4B632650E1B4AED9"
+  }
 }

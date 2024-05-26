@@ -1,0 +1,42 @@
+{
+  "code": 0,
+  "data": {
+    "homeList": [
+      {
+        "homegroupId": "1",
+        "name": "Home 1",
+        "roomList": [
+          {
+            "applianceList": [
+              {
+                "modelNumber": 10,
+                "name": "Appliance Name",
+                "type": "0xAC",
+                "sn": "9d52c159dcdd32bac5109cf54080fca7",
+                "sn8": "9d52c159",
+                "enterpriseCode": "1234",
+                "productModel": "Product Model",
+                "onlineStatus": "1",
+                "applianceCode": "1"
+              },
+              {
+                "modelNumber": 10,
+                "name": "Appliance Name 2",
+                "type": "0xAC",
+                "sn": "",
+                "sn8": "",
+                "enterpriseCode": "1234",
+                "onlineStatus": "0",
+                "applianceCode": "2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "homegroupId": "2",
+        "name": "Home 2"
+      }
+    ]
+  }
+}
