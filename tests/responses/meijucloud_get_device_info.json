@@ -1,0 +1,14 @@
+{
+  "code": 0,
+  "data": {
+    "modelNumber": 10,
+    "name": "Appliance Name",
+    "type": "0xAC",
+    "sn": "9d52c159dcdd32bac5109cf54080fca7",
+    "sn8": "9d52c159",
+    "enterpriseCode": "1234",
+    "productModel": "Product Model",
+    "onlineStatus": "1",
+    "applianceCode": "1"
+  }
+}

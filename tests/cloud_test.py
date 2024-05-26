@@ -130,3 +130,42 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert appliances[2]["manufacturer_code"] == "1234"
         assert appliances[2]["model"] == "00000000"
         assert not appliances[2]["online"]
+
+    async def test_meijucloud_get_device_info(self) -> None:
+        """Test MeijuCloud get_device_info"""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["meijucloud_login_id.json"],
+                self.responses["meijucloud_login.json"],
+                self.responses["meijucloud_get_device_info.json"],
+                self.responses["meijucloud_get_device_info_alt.json"],
+            ]
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "美的美居", session=session, account="account", password="password"
+        )
+        assert cloud is not None
+        assert await cloud.login()
+
+        device = await cloud.get_device_info(1)
+        assert device["name"] == "Appliance Name"
+        assert device["type"] == 0xAC
+        assert device["sn"] == "mySecretKey"
+        assert device["sn8"] == "9d52c159"
+        assert device["model_number"] == 10
+        assert device["manufacturer_code"] == "1234"
+        assert device["model"] == "Product Model"
+        assert device["online"]
+
+        device = await cloud.get_device_info(2)
+        assert device["name"] == "Appliance Name 2"
+        assert device["type"] == 0xAC
+        assert device["sn"] == ""
+        assert device["sn8"] == "00000000"
+        assert device["model_number"] == 10
+        assert device["manufacturer_code"] == "1234"
+        assert device["model"] == "00000000"
+        assert not device["online"]
