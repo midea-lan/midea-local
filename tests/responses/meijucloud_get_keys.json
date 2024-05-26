@@ -1,0 +1,10 @@
+{
+    "code":0,
+    "data":{
+        "tokenlist":[{
+            "udpId": "dec4da86e0aeefadde14a4e553680b9b",
+            "token": "returnedappliancetoken",
+            "key": "returnedappliancekey"
+        }]
+    }
+}

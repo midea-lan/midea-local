@@ -1,0 +1,12 @@
+{
+    "code":0,
+    "data":{
+        "homeList":[{
+            "homegroupId": "1",
+            "name": "Home 1"
+        },{
+            "homegroupId": "2",
+            "name": "Home 2"
+        }]
+    }
+}
