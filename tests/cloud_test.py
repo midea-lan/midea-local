@@ -170,7 +170,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert device["model"] == "00000000"
         assert not device["online"]
 
-    async def test_meijucloud_download_lus(self) -> None:
+    async def test_meijucloud_download_lua(self) -> None:
         """Test MeijuCloud download_lua"""
         session = Mock()
         response = Mock()
