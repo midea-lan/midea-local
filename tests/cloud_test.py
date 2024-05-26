@@ -87,3 +87,40 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert len(homes.keys()) == 2
         assert homes.get(1) == "Home 1"
         assert homes.get(2) == "Home 2"
+
+    async def test_meijucloud_download_lus(self) -> None:
+        """Test MeijuCloud download_lua"""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["meijucloud_login_id.json"],
+                self.responses["meijucloud_login.json"],
+                self.responses["meijucloud_download_lua.json"],
+                self.responses["meijucloud_download_lua.json"],
+            ]
+        )
+        session.request = AsyncMock(return_value=response)
+        res = Mock()
+        res.status = 200
+        res.text = AsyncMock(return_value="9d52c159dcdd32bac5109cf54080fca7")
+        session.get = AsyncMock(return_value=res)
+        cloud = get_midea_cloud(
+            "美的美居", session=session, account="account", password="password"
+        )
+        assert cloud is not None
+        assert await cloud.login()
+
+        if not os.path.exists("/tmp/download"):
+            os.mkdir("/tmp/download")
+        file = await cloud.download_lua("/tmp/download", 10, "00000000", "0xAC", "0010")
+        assert file is not None
+        assert os.path.exists(file)
+        os.remove(file)
+        os.removedirs("/tmp/download")
+
+        res.status = 404
+        assert (
+            await cloud.download_lua("/tmp/download", 10, "00000000", "0xAC", "0010")
+            is None
+        )
