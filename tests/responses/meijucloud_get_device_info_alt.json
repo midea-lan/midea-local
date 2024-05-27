@@ -1,0 +1,13 @@
+{
+  "code": 0,
+  "data": {
+    "modelNumber": 10,
+    "name": "Appliance Name 2",
+    "type": "0xAC",
+    "sn": "",
+    "sn8": "",
+    "enterpriseCode": "1234",
+    "onlineStatus": "0",
+    "applianceCode": "2"
+  }
+}

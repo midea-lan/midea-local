@@ -44,6 +44,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         cloud = get_midea_cloud(
             "美的美居", session=session, account="account", password="password"
         )
+        assert cloud is not None
         assert await cloud.login()
 
     async def test_meijucloud_login_invalid_user(self) -> None:
@@ -55,6 +56,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         cloud = get_midea_cloud(
             "美的美居", session=session, account="account", password="password"
         )
+        assert cloud is not None
         assert not await cloud.login()
 
     async def test_meijucloud_get_keys(self) -> None:
@@ -68,9 +70,10 @@ class CloudTest(IsolatedAsyncioTestCase):
         cloud = get_midea_cloud(
             "美的美居", session=session, account="account", password="password"
         )
+        assert cloud is not None
         keys: dict = await cloud.get_keys(100)
-        assert keys.get(1).get("token") == "returnedappliancetoken"
-        assert keys.get(1).get("key") == "returnedappliancekey"
+        assert keys[1]["token"] == "returnedappliancetoken"
+        assert keys[1]["key"] == "returnedappliancekey"
 
     async def test_meijucloud_list_home(self) -> None:
         """Test MeijuCloud list_home"""
@@ -83,12 +86,91 @@ class CloudTest(IsolatedAsyncioTestCase):
         cloud = get_midea_cloud(
             "美的美居", session=session, account="account", password="password"
         )
+        assert cloud is not None
         homes = await cloud.list_home()
+        assert homes is not None
         assert len(homes.keys()) == 2
-        assert homes.get(1) == "Home 1"
-        assert homes.get(2) == "Home 2"
+        assert homes[1] == "Home 1"
+        assert homes[2] == "Home 2"
 
-    async def test_meijucloud_download_lus(self) -> None:
+    async def test_meijucloud_list_appliances(self) -> None:
+        """Test MeijuCloud list_appliances"""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["meijucloud_login_id.json"],
+                self.responses["meijucloud_login.json"],
+                self.responses["meijucloud_list_appliances.json"],
+            ]
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "美的美居", session=session, account="account", password="password"
+        )
+        assert cloud is not None
+        assert await cloud.login()
+        appliances = await cloud.list_appliances(1)
+        assert appliances is not None
+        assert len(appliances.keys()) == 2
+        assert appliances[1]["name"] == "Appliance Name"
+        assert appliances[1]["type"] == 0xAC
+        assert appliances[1]["sn"] == "mySecretKey"
+        assert appliances[1]["sn8"] == "9d52c159"
+        assert appliances[1]["model_number"] == 10
+        assert appliances[1]["manufacturer_code"] == "1234"
+        assert appliances[1]["model"] == "Product Model"
+        assert appliances[1]["online"]
+
+        assert appliances[2]["name"] == "Appliance Name 2"
+        assert appliances[2]["type"] == 0xAC
+        assert appliances[2]["sn"] == ""
+        assert appliances[2]["sn8"] == "00000000"
+        assert appliances[2]["model_number"] == 10
+        assert appliances[2]["manufacturer_code"] == "1234"
+        assert appliances[2]["model"] == "00000000"
+        assert not appliances[2]["online"]
+
+    async def test_meijucloud_get_device_info(self) -> None:
+        """Test MeijuCloud get_device_info"""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["meijucloud_login_id.json"],
+                self.responses["meijucloud_login.json"],
+                self.responses["meijucloud_get_device_info.json"],
+                self.responses["meijucloud_get_device_info_alt.json"],
+            ]
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "美的美居", session=session, account="account", password="password"
+        )
+        assert cloud is not None
+        assert await cloud.login()
+
+        device = await cloud.get_device_info(1)
+        assert device["name"] == "Appliance Name"
+        assert device["type"] == 0xAC
+        assert device["sn"] == "mySecretKey"
+        assert device["sn8"] == "9d52c159"
+        assert device["model_number"] == 10
+        assert device["manufacturer_code"] == "1234"
+        assert device["model"] == "Product Model"
+        assert device["online"]
+
+        device = await cloud.get_device_info(2)
+        assert device["name"] == "Appliance Name 2"
+        assert device["type"] == 0xAC
+        assert device["sn"] == ""
+        assert device["sn8"] == "00000000"
+        assert device["model_number"] == 10
+        assert device["manufacturer_code"] == "1234"
+        assert device["model"] == "00000000"
+        assert not device["online"]
+
+    async def test_meijucloud_download_lua(self) -> None:
         """Test MeijuCloud download_lua"""
         session = Mock()
         response = Mock()
