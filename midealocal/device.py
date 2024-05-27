@@ -231,7 +231,7 @@ class MideaDevice(threading.Thread):
 
     def pre_process_message(self, msg: bytes) -> bool:
         if msg[9] == MessageType.query_appliance:
-            message = MessageApplianceResponse(msg)
+            message = MessageApplianceResponse(bytearray(msg))
             self._appliance_query = False
             _LOGGER.debug(f"[{self.device_id}] Received: {message}")
             self._protocol_version = message.protocol_version
