@@ -1,6 +1,7 @@
 import logging
 from abc import ABC
 from enum import IntEnum
+from typing import SupportsIndex, cast
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,57 +28,60 @@ class MessageType(IntEnum):
     query_appliance = 0xA0
 
 
+NONE_VALUE = 0x00
+
+
 class MessageBase(ABC):
     HEADER_LENGTH = 10
 
-    def __init__(self):
-        self._device_type = 0x00
-        self._message_type = 0x00
-        self._body_type = 0x00
-        self._protocol_version = 0x00
+    def __init__(self) -> None:
+        self._device_type = NONE_VALUE
+        self._message_type = NONE_VALUE
+        self._body_type = NONE_VALUE
+        self._protocol_version = NONE_VALUE
 
     @staticmethod
-    def checksum(data):
-        return (~sum(data) + 1) & 0xFF
+    def checksum(data: bytes) -> SupportsIndex:
+        return cast(SupportsIndex, (~sum(data) + 1) & 0xFF)
 
     @property
-    def header(self):
+    def header(self) -> bytearray:
         raise NotImplementedError
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         raise NotImplementedError
 
     @property
-    def message_type(self):
+    def message_type(self) -> int:
         return self._message_type
 
     @message_type.setter
-    def message_type(self, value):
+    def message_type(self, value: int) -> None:
         self._message_type = value
 
     @property
-    def device_type(self):
+    def device_type(self) -> int:
         return self._device_type
 
     @device_type.setter
-    def device_type(self, value):
+    def device_type(self, value: int) -> None:
         self._device_type = value
 
     @property
-    def body_type(self):
+    def body_type(self) -> int:
         return self._body_type
 
     @body_type.setter
-    def body_type(self, value):
+    def body_type(self, value: int) -> None:
         self._body_type = value
 
     @property
-    def protocol_version(self):
+    def protocol_version(self) -> int:
         return self._protocol_version
 
     @protocol_version.setter
-    def protocol_version(self, protocol_version):
+    def protocol_version(self, protocol_version: int) -> None:
         self._protocol_version = protocol_version
 
     def __str__(self) -> str:
@@ -93,7 +97,13 @@ class MessageBase(ABC):
 
 
 class MessageRequest(MessageBase):
-    def __init__(self, device_type, protocol_version, message_type, body_type):
+    def __init__(
+        self,
+        device_type: int,
+        protocol_version: int,
+        message_type: int,
+        body_type: int,
+    ) -> None:
         super().__init__()
         self.device_type = device_type
         self.protocol_version = protocol_version
@@ -101,7 +111,7 @@ class MessageRequest(MessageBase):
         self.body_type = body_type
 
     @property
-    def header(self):
+    def header(self) -> bytearray:
         length = self.HEADER_LENGTH + len(self.body)
         return bytearray(
             [
@@ -128,11 +138,11 @@ class MessageRequest(MessageBase):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         body = bytearray([])
         if self.body_type is not None:
             body.append(self.body_type)
@@ -140,68 +150,74 @@ class MessageRequest(MessageBase):
             body.extend(self._body)
         return body
 
-    def serialize(self):
+    def serialize(self) -> bytearray:
         stream = self.header + self.body
         stream.append(MessageBase.checksum(stream[1:]))
         return stream
 
 
 class MessageQuestCustom(MessageRequest):
-    def __init__(self, device_type, protocol_version, cmd_type, cmd_body):
+    def __init__(
+        self,
+        device_type: int,
+        protocol_version: int,
+        cmd_type: int,
+        cmd_body: bytearray,
+    ) -> None:
         super().__init__(
             device_type=device_type,
             protocol_version=protocol_version,
             message_type=cmd_type,
-            body_type=None,
+            body_type=NONE_VALUE,
         )
         self._cmd_body = cmd_body
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         return self._cmd_body
 
 
 class MessageQueryAppliance(MessageRequest):
-    def __init__(self, device_type):
+    def __init__(self, device_type: int) -> None:
         super().__init__(
             device_type=device_type,
             protocol_version=0,
             message_type=MessageType.query_appliance,
-            body_type=None,
+            body_type=NONE_VALUE,
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         return bytearray([0x00] * 19)
 
 
 class MessageBody:
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         self._data = body
 
     @property
-    def data(self):
+    def data(self) -> bytearray:
         return self._data
 
     @property
-    def body_type(self):
+    def body_type(self) -> int:
         return self._data[0]
 
     @staticmethod
-    def read_byte(body, byte, default_value=0):
+    def read_byte(body: bytearray, byte: int, default_value: int = 0) -> int:
         return body[byte] if len(body) > byte else default_value
 
 
 class NewProtocolMessageBody(MessageBody):
-    def __init__(self, body, bt):
+    def __init__(self, body: bytearray, bt: int) -> None:
         super().__init__(body)
         if bt == 0xB5:
             self._pack_len = 4
@@ -209,7 +225,7 @@ class NewProtocolMessageBody(MessageBody):
             self._pack_len = 5
 
     @staticmethod
-    def pack(param, value: bytearray, pack_len=4):
+    def pack(param: int, value: bytearray, pack_len: int = 4) -> bytearray:
         length = len(value)
         if pack_len == 4:
             stream = bytearray([param & 0xFF, param >> 8, length]) + value
@@ -217,7 +233,7 @@ class NewProtocolMessageBody(MessageBody):
             stream = bytearray([param & 0xFF, param >> 8, 0x00, length]) + value
         return stream
 
-    def parse(self):
+    def parse(self) -> dict[int, bytearray]:
         result = {}
         try:
             pos = 2
@@ -237,7 +253,7 @@ class NewProtocolMessageBody(MessageBody):
 
 
 class MessageResponse(MessageBase):
-    def __init__(self, message):
+    def __init__(self, message: bytearray) -> None:
         super().__init__()
         if message is None or len(message) < self.HEADER_LENGTH + 1:
             raise MessageLenError
@@ -250,17 +266,17 @@ class MessageResponse(MessageBase):
         self.body_type = self._body.body_type
 
     @property
-    def header(self):
+    def header(self) -> bytearray:
         return self._header
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         return self._body.data
 
-    def set_body(self, body: MessageBody):
+    def set_body(self, body: MessageBody) -> None:
         self._body = body
 
-    def set_attr(self):
+    def set_attr(self) -> None:
         for key in vars(self._body).keys():
             if key != "data":
                 value = getattr(self._body, key, None)
@@ -268,5 +284,5 @@ class MessageResponse(MessageBase):
 
 
 class MessageApplianceResponse(MessageResponse):
-    def __init__(self, message):
+    def __init__(self, message: bytearray) -> None:
         super().__init__(message)
