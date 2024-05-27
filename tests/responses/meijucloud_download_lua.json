@@ -1,7 +1,7 @@
 {
-    "code":0,
-    "data":{
-        "url": "returnedURL",
-        "fileName": "fileName.lua"
-    }
+  "code": 0,
+  "data": {
+    "url": "returnedURL",
+    "fileName": "fileName.lua"
+  }
 }

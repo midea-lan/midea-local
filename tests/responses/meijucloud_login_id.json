@@ -1,6 +1,6 @@
 {
-    "code":0,
-    "data":{
-        "loginId": "returnedLoginId"
-    }
+  "code": 0,
+  "data": {
+    "loginId": "returnedLoginId"
+  }
 }
