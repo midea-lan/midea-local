@@ -78,7 +78,9 @@ async def main() -> None:
         account=args.username,
         password=args.password,
     )
-    cloud_keys = await cloud.get_keys(first_device["device_id"])
+    cloud_keys = {}
+    if cloud:
+        cloud_keys = await cloud.get_keys(first_device["device_id"])
     print("-" * 20)
     print("Fist device Cloud info: ", cloud_keys)
 

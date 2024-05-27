@@ -1,12 +1,15 @@
 import logging
+import sys
 import math
+from typing import Any
 from .message import MessageQuery, MessageSet, Message26Response
 
-try:
-    from enum import StrEnum
-except ImportError:
-    from ...backports.enum import StrEnum
 from ...device import MideaDevice
+
+if sys.version_info < (3, 12):
+    from ...backports.enum import StrEnum
+else:
+    from enum import StrEnum
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,7 +62,7 @@ class Midea26Device(MideaDevice):
                 DeviceAttributes.current_temperature: None,
             },
         )
-        self._fields = {}
+        self._fields = dict[Any, Any]
 
     @staticmethod
     def _convert_to_midea_direction(direction):

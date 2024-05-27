@@ -1,11 +1,16 @@
 import logging
 import json
+from typing import Any
 from .message import MessageQuery, MessageSet, MessageCDResponse
 
-try:
-    from enum import StrEnum
-except ImportError:
+import sys
+
+if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
+else:
+    from enum import StrEnum
+
+
 from ...device import MideaDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -64,7 +69,7 @@ class MideaCDDevice(MideaDevice):
                 DeviceAttributes.compressor_status: None,
             },
         )
-        self._fields = {}
+        self._fields = dict[Any, Any]
         self._temperature_step = None
         self._default_temperature_step = 1
         self.set_customize(customize)
