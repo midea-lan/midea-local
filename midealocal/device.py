@@ -229,7 +229,7 @@ class MideaDevice(threading.Thread):
         if error_count == len(cmds):
             raise RefreshFailed
 
-    def pre_process_message(self, msg: bytes) -> bool:
+    def pre_process_message(self, msg: bytearray) -> bool:
         if msg[9] == MessageType.query_appliance:
             message = MessageApplianceResponse(msg)
             self._appliance_query = False

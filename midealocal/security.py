@@ -33,9 +33,9 @@ class CloudSecurity:
         self._fixed_key = format(fixed_key, "x").encode("ascii") if fixed_key else None
         self._fixed_iv = format(fixed_iv, "x").encode("ascii") if fixed_iv else None
 
-    def sign(self, url: str, data: str, random: str) -> str | None:
+    def sign(self, url: str, data: dict[str, Any] | str, random: str) -> str | None:
         msg: str = self._iot_key or ""
-        msg += data
+        msg += str(data)
         msg += random
         if not self._hmac_key:
             return None
@@ -80,7 +80,7 @@ class CloudSecurity:
         self._aes_key = key
         self._aes_iv = iv
 
-    def aes_encrypt_with_fixed_key(self, data: str) -> bytes:
+    def aes_encrypt_with_fixed_key(self, data: bytes) -> bytes:
         return self.aes_encrypt(data, self._fixed_key, self._fixed_iv)
 
     def aes_decrypt_with_fixed_key(self, data: str) -> str:
@@ -205,10 +205,10 @@ class LocalSecurity:
         self._request_count = 0
         self._response_count = 0
 
-    def aes_decrypt(self, raw: bytes) -> bytes:
+    def aes_decrypt(self, raw: bytes) -> bytearray:
         try:
             return cast(
-                bytes,
+                bytearray,
                 unpad(AES.new(self.aes_key, AES.MODE_ECB).decrypt(bytearray(raw)), 16),
             )
         except ValueError:

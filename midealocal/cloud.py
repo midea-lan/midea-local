@@ -97,7 +97,7 @@ class MideaCloud:
         return {}
 
     async def _api_request(
-        self, endpoint: str, data: dict, header: dict[Any, Any] | None = None
+        self, endpoint: str, data: dict[str, Any], header: dict[str, Any] | None = None
     ) -> dict | None:
         header = header or {}
         if not data.get("reqId"):
@@ -249,7 +249,7 @@ class MeijuCloud(MideaCloud):
             ):
                 self._access_token = response["mdata"]["accessToken"]
                 self._security.set_aes_keys(
-                    self._security.aes_decrypt_with_fixed_key(response["key"]), None
+                    self._security.aes_decrypt_with_fixed_key(response["key"]), b"0"
                 )
 
                 return True
@@ -319,11 +319,7 @@ class MeijuCloud(MideaCloud):
             device_info = {
                 "name": response.get("name"),
                 "type": int(model_type, 16) if model_type else 0,
-                "sn": (
-                    self._security.aes_decrypt(response.get("sn"))
-                    if response.get("sn")
-                    else ""
-                ),
+                "sn": (self._security.aes_decrypt(response.get("sn") or "")),
                 "sn8": response.get("sn8", "00000000"),
                 "model_number": model_number,
                 "manufacturer_code": response.get("enterpriseCode", "0000"),
@@ -413,7 +409,7 @@ class MSmartHomeCloud(MideaCloud):
         }
 
     async def _api_request(
-        self, endpoint: str, data: dict, header: dict | None = None
+        self, endpoint: str, data: dict[str, Any], header: dict[str, Any] | None = None
     ) -> dict[str, Any] | None:
         header = header or {}
         header.update(
@@ -582,7 +578,7 @@ class MideaAirCloud(MideaCloud):
         return data
 
     async def _api_request(
-        self, endpoint: str, data: dict, header: dict[str, Any] | None = None
+        self, endpoint: str, data: dict[str, Any], header: dict[str, Any] | None = None
     ) -> dict[str, Any] | None:
         header = header or {}
         if not data.get("reqId"):
