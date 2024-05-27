@@ -18,6 +18,8 @@ from .security import (
     LocalSecurity,
 )
 
+from typing import Any
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -59,13 +61,13 @@ class MideaDevice(threading.Thread):
         attributes: dict,
     ):
         threading.Thread.__init__(self)
-        self._attributes = attributes if attributes else {}
-        self._socket = None
+        self._attributes = attributes or {}
+        self._socket: socket.socket | None = None
         self._ip_address = ip_address
         self._port = port
         self._security = LocalSecurity()
-        self._token = bytes.fromhex(token) if token else None
-        self._key = bytes.fromhex(key) if key else None
+        self._token = bytes.fromhex(token)
+        self._key = bytes.fromhex(key)
         self._buffer = b""
         self._device_name = name
         self._device_id = device_id
@@ -82,33 +84,30 @@ class MideaDevice(threading.Thread):
         self._refresh_interval = 30
         self._heartbeat_interval = 10
         self._default_refresh_interval = 30
+        self.name = self._device_name
 
     @property
-    def name(self):
-        return self._device_name
-
-    @property
-    def available(self):
+    def available(self) -> bool:
         return self._available
 
     @property
-    def device_id(self):
+    def device_id(self) -> int:
         return self._device_id
 
     @property
-    def device_type(self):
+    def device_type(self) -> int:
         return self._device_type
 
     @property
-    def model(self):
+    def model(self) -> str:
         return self._model
 
     @property
-    def subtype(self):
+    def subtype(self) -> int:
         return self._subtype
 
     @staticmethod
-    def fetch_v2_message(msg):
+    def fetch_v2_message(msg: bytes) -> tuple[list, bytes]:
         result = []
         while len(msg) > 0:
             factual_msg_len = len(msg)
@@ -122,7 +121,7 @@ class MideaDevice(threading.Thread):
                 break
         return result, msg
 
-    def connect(self, refresh_status=True):
+    def connect(self, refresh_status: bool = True) -> bool:
         try:
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._socket.settimeout(10)
@@ -149,6 +148,7 @@ class MideaDevice(threading.Thread):
         except RefreshFailed:
             _LOGGER.debug(f"[{self._device_id}] Refresh status is timed out")
         except Exception as e:
+            assert e.__traceback__
             _LOGGER.error(
                 f"[{self._device_id}] Unknown error: {e.__traceback__.tb_frame.f_globals['__file__']}, "
                 f"{e.__traceback__.tb_lineno}, {repr(e)}"
@@ -156,9 +156,10 @@ class MideaDevice(threading.Thread):
         self.enable_device(False)
         return False
 
-    def authenticate(self):
+    def authenticate(self) -> None:
         request = self._security.encode_8370(self._token, MSGTYPE_HANDSHAKE_REQUEST)
         _LOGGER.debug(f"[{self._device_id}] Handshaking")
+        assert self._socket
         self._socket.send(request)
         response = self._socket.recv(512)
         if len(response) < 20:
@@ -166,13 +167,13 @@ class MideaDevice(threading.Thread):
         response = response[8:72]
         self._security.tcp_key(response, self._key)
 
-    def send_message(self, data):
+    def send_message(self, data: bytes) -> None:
         if self._protocol == 3:
             self.send_message_v3(data, msg_type=MSGTYPE_ENCRYPTED_REQUEST)
         else:
             self.send_message_v2(data)
 
-    def send_message_v2(self, data):
+    def send_message_v2(self, data: bytes) -> None:
         if self._socket is not None:
             self._socket.send(data)
         else:
@@ -180,17 +181,19 @@ class MideaDevice(threading.Thread):
                 f"[{self._device_id}] Send failure, device disconnected, data: {data.hex()}"
             )
 
-    def send_message_v3(self, data, msg_type=MSGTYPE_ENCRYPTED_REQUEST):
+    def send_message_v3(
+        self, data: bytes, msg_type: int = MSGTYPE_ENCRYPTED_REQUEST
+    ) -> None:
         data = self._security.encode_8370(data, msg_type)
         self.send_message_v2(data)
 
-    def build_send(self, cmd):
+    def build_send(self, cmd: MessageQuestCustom) -> None:
         data = cmd.serialize()
         _LOGGER.debug(f"[{self._device_id}] Sending: {cmd}")
         msg = PacketBuilder(self._device_id, data).finalize()
         self.send_message(msg)
 
-    def refresh_status(self, wait_response=False):
+    def refresh_status(self, wait_response: bool = False) -> None:
         cmds: list = self.build_query()
         if self._appliance_query:
             cmds = [MessageQueryAppliance(self.device_type)] + cmds
@@ -201,6 +204,7 @@ class MideaDevice(threading.Thread):
                 if wait_response:
                     try:
                         while True:
+                            assert self._socket
                             msg = self._socket.recv(512)
                             if len(msg) == 0:
                                 raise OSError
@@ -225,7 +229,7 @@ class MideaDevice(threading.Thread):
         if error_count == len(cmds):
             raise RefreshFailed
 
-    def pre_process_message(self, msg):
+    def pre_process_message(self, msg: bytes) -> bool:
         if msg[9] == MessageType.query_appliance:
             message = MessageApplianceResponse(msg)
             self._appliance_query = False
@@ -237,7 +241,7 @@ class MideaDevice(threading.Thread):
             return False
         return True
 
-    def parse_message(self, msg):
+    def parse_message(self, msg: bytes) -> ParseMessageResult:
         if self._protocol == 3:
             messages, self._buffer = self._security.decode_8370(self._buffer + msg)
         else:
@@ -288,13 +292,13 @@ class MideaDevice(threading.Thread):
                 )
         return ParseMessageResult.SUCCESS
 
-    def build_query(self):
+    def build_query(self) -> list:
         raise NotImplementedError
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         raise NotImplementedError
 
-    def send_command(self, cmd_type, cmd_body: bytearray):
+    def send_command(self, cmd_type: int, cmd_body: bytearray) -> None:
         cmd = MessageQuestCustom(
             self._device_type, self._protocol_version, cmd_type, cmd_body
         )
@@ -306,55 +310,53 @@ class MideaDevice(threading.Thread):
                 f"cmd_type: {cmd_type}, cmd_body: {cmd_body.hex()}"
             )
 
-    def send_heartbeat(self):
+    def send_heartbeat(self) -> None:
         msg = PacketBuilder(self._device_id, bytearray([0x00])).finalize(msg_type=0)
         self.send_message(msg)
 
-    def register_update(self, update):
+    def register_update(self, update: Any) -> None:
         self._updates.append(update)
 
-    def update_all(self, status):
+    def update_all(self, status: dict[str, Any]) -> None:
         _LOGGER.debug(f"[{self._device_id}] Status update: {status}")
         for update in self._updates:
             update(status)
 
-    def enable_device(self, available=True):
+    def enable_device(self, available: bool = True) -> None:
         self._available = available
         status = {"available": available}
         self.update_all(status)
 
-    def open(self):
+    def open(self) -> None:
         if not self._is_run:
             self._is_run = True
             threading.Thread.start(self)
 
-    def close(self):
+    def close(self) -> None:
         if self._is_run:
             self._is_run = False
             self.close_socket()
 
-    def close_socket(self):
+    def close_socket(self) -> None:
         self._unsupported_protocol = []
         self._buffer = b""
         if self._socket:
             self._socket.close()
             self._socket = None
 
-    def set_ip_address(self, ip_address):
+    def set_ip_address(self, ip_address: str) -> None:
         if self._ip_address != ip_address:
             _LOGGER.debug(f"[{self._device_id}] Update IP address to {ip_address}")
             self._ip_address = ip_address
             self.close_socket()
 
-    def set_refresh_interval(self, refresh_interval):
+    def set_refresh_interval(self, refresh_interval: int) -> None:
         self._refresh_interval = refresh_interval
 
-    def run(self):
+    def run(self) -> None:
         while self._is_run:
             while self._socket is None:
                 if self.connect(refresh_status=True) is False:
-                    if not self._is_run:
-                        return
                     self.close_socket()
                     time.sleep(5)
             timeout_counter = 0
@@ -394,6 +396,7 @@ class MideaDevice(threading.Thread):
                         self.close_socket()
                     break
                 except Exception as e:
+                    assert e.__traceback__
                     _LOGGER.error(
                         f"[{self._device_id}] Unknown error :{e.__traceback__.tb_frame.f_globals['__file__']}, "
                         f"{e.__traceback__.tb_lineno}, {repr(e)}"
@@ -401,17 +404,17 @@ class MideaDevice(threading.Thread):
                     self.close_socket()
                     break
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         raise NotImplementedError
 
-    def get_attribute(self, attr):
+    def get_attribute(self, attr: str) -> Any:
         return self._attributes.get(attr)
 
-    def set_customize(self, customize):
+    def set_customize(self, customize: str) -> None:
         pass
 
     @property
-    def attributes(self):
+    def attributes(self) -> dict[str, Any]:
         ret = {}
         for status in self._attributes.keys():
             ret[str(status)] = self._attributes[status]
