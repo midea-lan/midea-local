@@ -212,14 +212,16 @@ class LocalSecurity:
         except ValueError:
             return bytearray(0)
 
-    def aes_encrypt(self, raw: bytes) -> AES.EcbMode:
-        return AES.new(self.aes_key, AES.MODE_ECB).encrypt(bytearray(pad(raw, 16)))
+    def aes_encrypt(self, raw: bytes) -> bytes:
+        return cast(
+            bytes, AES.new(self.aes_key, AES.MODE_ECB).encrypt(bytearray(pad(raw, 16)))
+        )
 
-    def aes_cbc_decrypt(self, raw: bytes, key: AES.Buffer) -> AES.EcbMode:
-        return AES.new(key=key, mode=AES.MODE_CBC, iv=self.iv).decrypt(raw)
+    def aes_cbc_decrypt(self, raw: bytes, key: AES.Buffer) -> bytes:
+        return cast(bytes, AES.new(key=key, mode=AES.MODE_CBC, iv=self.iv).decrypt(raw))
 
-    def aes_cbc_encrypt(self, raw: bytes, key: AES.Buffer) -> AES.EcbMode:
-        return AES.new(key=key, mode=AES.MODE_CBC, iv=self.iv).encrypt(raw)
+    def aes_cbc_encrypt(self, raw: bytes, key: AES.Buffer) -> bytes:
+        return cast(bytes, AES.new(key=key, mode=AES.MODE_CBC, iv=self.iv).encrypt(raw))
 
     def encode32_data(self, raw: bytes) -> bytes:
         return md5(raw + self.salt).digest()
