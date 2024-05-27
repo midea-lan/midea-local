@@ -7,11 +7,15 @@ from .message import (
     Message34Response,
 )
 
-try:
-    from enum import StrEnum
-except ImportError:
-    from ...backports.enum import StrEnum
+
 from ...device import MideaDevice
+
+import sys
+
+if sys.version_info < (3, 12):
+    from ...backports.enum import StrEnum
+else:
+    from enum import StrEnum
 
 _LOGGER = logging.getLogger(__name__)
 

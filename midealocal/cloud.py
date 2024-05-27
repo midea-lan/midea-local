@@ -90,7 +90,7 @@ class MideaCloud:
         self._api_url = api_url
         self._access_token = None
         self._uid = None
-        self._login_id = None
+        self._login_id = ""
 
     def _make_general_data(self):
         return {}
@@ -289,15 +289,11 @@ class MeijuCloud(MideaCloud):
                             "model": appliance.get("productModel"),
                             "online": appliance.get("onlineStatus") == "1",
                         }
-                        if (
-                            device_info.get("sn8") is None
-                            or len(device_info.get("sn8")) == 0
-                        ):
+                        sn8 = device_info.get("sn8")
+                        if not sn8 or len(sn8) == 0:
                             device_info["sn8"] = "00000000"
-                        if (
-                            device_info.get("model") is None
-                            or len(device_info.get("model")) == 0
-                        ):
+                        model = device_info.get("model")
+                        if not model or len(model) == 0:
                             device_info["model"] = device_info["sn8"]
                         appliances[int(appliance["applianceCode"])] = device_info
             return appliances
@@ -312,9 +308,10 @@ class MeijuCloud(MideaCloud):
                 model_number = int(response.get("modelNumber", 0))
             except ValueError:
                 model_number = 0
+            model_type = response.get("type")
             device_info = {
                 "name": response.get("name"),
-                "type": int(response.get("type"), 16),
+                "type": int(model_type, 16) if model_type else 0,
                 "sn": (
                     self._security.aes_decrypt(response.get("sn"))
                     if response.get("sn")
@@ -326,9 +323,11 @@ class MeijuCloud(MideaCloud):
                 "model": response.get("productModel"),
                 "online": response.get("onlineStatus") == "1",
             }
-            if device_info.get("sn8") is None or len(device_info.get("sn8")) == 0:
+            sn8 = device_info.get("sn8")
+            if sn8 is None or len(sn8) == 0:
                 device_info["sn8"] = "00000000"
-            if device_info.get("model") is None or len(device_info.get("model")) == 0:
+            model = device_info.get("model")
+            if model is None or len(model) == 0:
                 device_info["model"] = device_info["sn8"]
             return device_info
         return None
@@ -487,8 +486,9 @@ class MSmartHomeCloud(MideaCloud):
                     "model": "",
                     "online": appliance.get("onlineStatus") == "1",
                 }
+                serial_num = device_info.get("sn")
                 device_info["sn8"] = (
-                    device_info.get("sn")[9:17] if len(device_info["sn"]) > 17 else ""
+                    serial_num[9:17] if (serial_num and len(serial_num) > 17) else ""
                 )
                 device_info["model"] = device_info.get("sn8")
                 appliances[int(appliance["id"])] = device_info
@@ -645,8 +645,9 @@ class MideaAirCloud(MideaCloud):
                     "model": "",
                     "online": appliance.get("onlineStatus") == "1",
                 }
+                serial_num = device_info.get("sn")
                 device_info["sn8"] = (
-                    device_info.get("sn")[9:17] if len(device_info["sn"]) > 17 else ""
+                    serial_num[9:17] if (serial_num and len(serial_num) > 17) else ""
                 )
                 device_info["model"] = device_info.get("sn8")
                 appliances[int(appliance["id"])] = device_info

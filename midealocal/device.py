@@ -74,8 +74,8 @@ class MideaDevice(threading.Thread):
         self._model = model
         self._subtype = subtype
         self._protocol_version = 0
-        self._updates = []
-        self._unsupported_protocol = []
+        self._updates = [dict]
+        self._unsupported_protocol = [dict]
         self._is_run = False
         self._available = True
         self._appliance_query = True

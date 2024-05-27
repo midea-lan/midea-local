@@ -273,7 +273,7 @@ def get_device_info(device_ip, device_port: int):
                 f"Sending to {device_ip}:{device_port} {DEVICE_INFO_MSG.hex()}"
             )
             sock.sendall(DEVICE_INFO_MSG)
-            response = sock.recv(512)
+            response = bytearray(sock.recv(512))
     except socket.timeout:
         _LOGGER.warning(
             f"Connect the device {device_ip}:{device_port} timed out for 8s. "

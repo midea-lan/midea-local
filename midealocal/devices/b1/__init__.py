@@ -1,10 +1,13 @@
 import logging
 from .message import MessageQuery, MessageB1Response
 
-try:
-    from enum import StrEnum
-except ImportError:
+import sys
+
+if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
+else:
+    from enum import StrEnum
+
 from ...device import MideaDevice
 
 _LOGGER = logging.getLogger(__name__)
