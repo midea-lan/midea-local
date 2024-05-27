@@ -224,3 +224,15 @@ class CloudTest(IsolatedAsyncioTestCase):
         )
         assert cloud is not None
         assert await cloud.login()
+
+    async def test_msmartcloud_login_invalid_user(self) -> None:
+        """Test MSmartCloud login invalid user"""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(return_value=self.responses["invalid_response.json"])
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "MSmartHome", session=session, account="account", password="password"
+        )
+        assert cloud is not None
+        assert not await cloud.login()
