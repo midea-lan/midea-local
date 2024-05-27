@@ -1,5 +1,6 @@
 import logging
 import socket
+from typing import Any
 import xml.etree.ElementTree as ET
 from ipaddress import IPv4Network
 
@@ -148,7 +149,9 @@ DEVICE_INFO_MSG = bytearray(
 )
 
 
-def discover(discover_type=None, ip_address=None):
+def discover(
+    discover_type: list | None = None, ip_address: list | None = None
+) -> dict[int, dict[str, Any]]:
     if discover_type is None:
         discover_type = []
     security = LocalSecurity()
@@ -200,6 +203,7 @@ def discover(discover_type=None, ip_address=None):
                 protocol = 1
                 root = ET.fromstring(data.decode(encoding="utf-8", errors="replace"))
                 child = root.find("body/device")
+                assert child
                 m = child.attrib
                 port, sn, device_type = (
                     int(m["port"]),
@@ -237,18 +241,19 @@ def discover(discover_type=None, ip_address=None):
     return found_devices
 
 
-def get_id_from_response(response):
+def get_id_from_response(response: bytearray) -> int:
     if response[64:-16][:6].hex() == "3c3f786d6c20":
         xml = response[64:-16]
         root = ET.fromstring(xml.decode(encoding="utf-8", errors="replace"))
         child = root.find("smartDevice")
+        assert child
         m = child.attrib
         return int.from_bytes(bytearray.fromhex(m["devId"]), "little")
     else:
         return 0
 
 
-def bytes2port(paramArrayOfbyte):
+def bytes2port(paramArrayOfbyte: bytes | None) -> int:
     if paramArrayOfbyte is None:
         return 0
     b, i = 0, 0
@@ -262,7 +267,7 @@ def bytes2port(paramArrayOfbyte):
     return i
 
 
-def get_device_info(device_ip, device_port: int):
+def get_device_info(device_ip: str, device_port: int) -> bytearray:
     response = bytearray(0)
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -284,7 +289,7 @@ def get_device_info(device_ip, device_port: int):
     return response
 
 
-def enum_all_broadcast():
+def enum_all_broadcast() -> list:
     nets = []
     adapters = ifaddr.get_adapters()
     for adapter in adapters:
