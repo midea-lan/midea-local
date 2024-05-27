@@ -98,11 +98,7 @@ class MessageBase(ABC):
 
 class MessageRequest(MessageBase):
     def __init__(
-        self,
-        device_type: int,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        self, device_type: int, protocol_version: int, message_type: int, body_type: int
     ) -> None:
         super().__init__()
         self.device_type = device_type
