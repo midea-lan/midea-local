@@ -3,10 +3,12 @@ from hashlib import md5, sha256
 from typing import Any, cast
 from urllib.parse import unquote_plus, urlencode, urlparse
 
-from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad, unpad
 from Crypto.Util.strxor import strxor
+from Crypto.Cipher import AES
+
+Buffer = bytes | bytearray | memoryview  # alias from Crypto.Cipher.AES
 
 MSGTYPE_HANDSHAKE_REQUEST = 0x0
 MSGTYPE_HANDSHAKE_RESPONSE = 0x1
@@ -217,16 +219,16 @@ class LocalSecurity:
             bytes, AES.new(self.aes_key, AES.MODE_ECB).encrypt(bytearray(pad(raw, 16)))
         )
 
-    def aes_cbc_decrypt(self, raw: bytes, key: AES.Buffer) -> bytes:
+    def aes_cbc_decrypt(self, raw: bytes, key: Buffer) -> bytes:
         return cast(bytes, AES.new(key=key, mode=AES.MODE_CBC, iv=self.iv).decrypt(raw))
 
-    def aes_cbc_encrypt(self, raw: bytes, key: AES.Buffer) -> bytes:
+    def aes_cbc_encrypt(self, raw: bytes, key: Buffer) -> bytes:
         return cast(bytes, AES.new(key=key, mode=AES.MODE_CBC, iv=self.iv).encrypt(raw))
 
     def encode32_data(self, raw: bytes) -> bytes:
         return md5(raw + self.salt).digest()
 
-    def tcp_key(self, response: bytes, key: AES.Buffer) -> bytes:
+    def tcp_key(self, response: bytes, key: Buffer) -> bytes:
         if response == b"ERROR":
             raise Exception("authentication failed")
         if len(response) != 64:
