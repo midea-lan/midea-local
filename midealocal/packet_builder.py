@@ -5,8 +5,8 @@ from .security import LocalSecurity
 
 
 class PacketBuilder:
-    def __init__(self, device_id: int, command: str) -> None:
-        self.command: str | None = None
+    def __init__(self, device_id: int, command: bytes) -> None:
+        self.command: bytes
         self.security = LocalSecurity()
         # aa20ac00000000000003418100ff03ff000200000000000000000000000006f274
         # Init the packet with the header data.
