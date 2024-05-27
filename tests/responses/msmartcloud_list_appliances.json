@@ -1,0 +1,27 @@
+{
+  "code": 0,
+  "data": {
+    "list": [
+      {
+        "modelNumber": 10,
+        "name": "Appliance Name",
+        "type": "0xAC",
+        "sn": "172460591C3E26543DB67E6B3C2B09C5E5DD9900141F6E73C84EA1DA62C5985A39EF2D45E4A15CE6D608F481434479D1",
+        "enterpriseCode": "1234",
+        "productModel": "Product Model",
+        "onlineStatus": "1",
+        "id": "1"
+      },
+      {
+        "modelNumber": "ge",
+        "name": "Appliance Name 2",
+        "type": "0xAC",
+        "sn": "",
+        "sn8": "",
+        "enterpriseCode": "1234",
+        "onlineStatus": "0",
+        "id": "2"
+      }
+    ]
+  }
+}
