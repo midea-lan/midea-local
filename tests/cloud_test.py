@@ -206,3 +206,21 @@ class CloudTest(IsolatedAsyncioTestCase):
             await cloud.download_lua("/tmp/download", 10, "00000000", "0xAC", "0010")
             is None
         )
+
+    async def test_msmartcloud_login_success(self) -> None:
+        """Test MSmartCloud login"""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["msmartcloud_reroute.json"],
+                self.responses["msmartcloud_login_id.json"],
+                self.responses["msmartcloud_login.json"],
+            ]
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "MSmartHome", session=session, account="account", password="password"
+        )
+        assert cloud is not None
+        assert await cloud.login()
