@@ -1,11 +1,12 @@
 import datetime
+from typing import cast
 
 from .security import LocalSecurity
 
 
 class PacketBuilder:
-    def __init__(self, device_id: int, command):
-        self.command = None
+    def __init__(self, device_id: int, command: bytes) -> None:
+        self.command: bytes
         self.security = LocalSecurity()
         # aa20ac00000000000003418100ff03ff000200000000000000000000000006f274
         # Init the packet with the header data.
@@ -65,7 +66,7 @@ class PacketBuilder:
         self.packet[20:28] = device_id.to_bytes(8, "little")
         self.command = command
 
-    def finalize(self, msg_type=1):
+    def finalize(self, msg_type: int = 1) -> bytearray:
         if msg_type != 1:
             self.packet[3] = 0x10
             self.packet[6] = 0x7B
@@ -77,15 +78,15 @@ class PacketBuilder:
         self.packet.extend(self.encode32(self.packet))
         return self.packet
 
-    def encode32(self, data: bytearray):
+    def encode32(self, data: bytearray) -> bytes:
         return self.security.encode32_data(data)
 
     @staticmethod
-    def checksum(data):
-        return (~sum(data) + 1) & 0xFF
+    def checksum(data: bytes) -> bytes:
+        return cast(bytes, (~sum(data) + 1) & 0xFF)
 
     @staticmethod
-    def packet_time():
+    def packet_time() -> bytearray:
         t = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")[:16]
         b = bytearray()
         for i in range(0, len(t), 2):

@@ -4,6 +4,7 @@ import datetime
 import json
 import base64
 from threading import Lock
+from typing import Any, cast
 from aiohttp import ClientSession
 from secrets import token_hex
 from .security import (
@@ -78,7 +79,7 @@ class MideaCloud:
         account: str,
         password: str,
         api_url: str,
-    ):
+    ) -> None:
         self._device_id = CloudSecurity.get_deviceid(account)
         self._session = session
         self._security = security
@@ -88,14 +89,16 @@ class MideaCloud:
         self._account = account
         self._password = password
         self._api_url = api_url
-        self._access_token = None
-        self._uid = None
+        self._access_token: str | None = None
+        self._uid: str | None = None
         self._login_id = ""
 
-    def _make_general_data(self):
+    def _make_general_data(self) -> dict[Any, Any]:
         return {}
 
-    async def _api_request(self, endpoint: str, data: dict, header=None) -> dict | None:
+    async def _api_request(
+        self, endpoint: str, data: dict, header: dict[Any, Any] | None = None
+    ) -> dict | None:
         header = header or {}
         if not data.get("reqId"):
             data.update({"reqId": token_hex(16)})
@@ -133,7 +136,7 @@ class MideaCloud:
             except Exception as e:
                 _LOGGER.warning(f"Midea cloud API error, url: {url}, error: {repr(e)}")
         if int(response["code"]) == 0 and "data" in response:
-            return response["data"]
+            return cast(dict, response["data"])
         return None
 
     async def _get_login_id(self) -> str | None:
@@ -148,7 +151,7 @@ class MideaCloud:
     async def login(self) -> bool:
         raise NotImplementedError()
 
-    async def get_keys(self, appliance_id: int):
+    async def get_keys(self, appliance_id: int) -> dict[int, dict[str, Any]]:
         result = {}
         for method in [1, 2]:
             udp_id = self._security.get_udp_id(appliance_id, method)
@@ -167,16 +170,18 @@ class MideaCloud:
         result.update(default_keys)
         return result
 
-    async def list_home(self) -> dict | None:
+    async def list_home(self) -> dict[int, Any] | None:
         return {1: "My home"}
 
-    async def list_appliances(self, home_id) -> dict | None:
+    async def list_appliances(
+        self, home_id: str | None
+    ) -> dict[int, dict[str, Any]] | None:
         raise NotImplementedError()
 
-    async def get_device_info(self, device_id: int):
+    async def get_device_info(self, device_id: str) -> dict[str, Any] | None:
         if response := await self.list_appliances(home_id=None):
-            if device_id in response.keys():
-                return response[device_id]
+            if int(device_id) in response.keys():
+                return cast(dict, response[int(device_id)])
         return None
 
     async def download_lua(
@@ -186,7 +191,7 @@ class MideaCloud:
         sn: str,
         model_number: str | None,
         manufacturer_code: str = "0000",
-    ):
+    ) -> str | None:
         raise NotImplementedError()
 
 
@@ -250,7 +255,7 @@ class MeijuCloud(MideaCloud):
                 return True
         return False
 
-    async def list_home(self):
+    async def list_home(self) -> dict[int, Any] | None:
         if response := await self._api_request(
             endpoint="/v1/homegroup/list/get", data={}
         ):
@@ -260,7 +265,9 @@ class MeijuCloud(MideaCloud):
             return homes
         return None
 
-    async def list_appliances(self, home_id) -> dict | None:
+    async def list_appliances(
+        self, home_id: str | None
+    ) -> dict[int, dict[str, Any]] | None:
         data = {"homegroupId": home_id}
         if response := await self._api_request(
             endpoint="/v1/appliance/home/list/get", data=data
@@ -299,7 +306,7 @@ class MeijuCloud(MideaCloud):
             return appliances
         return None
 
-    async def get_device_info(self, device_id: int):
+    async def get_device_info(self, device_id: str) -> dict[str, Any] | None:
         data = {"applianceCode": device_id}
         if response := await self._api_request(
             endpoint="/v1/appliance/info/get", data=data
@@ -339,7 +346,7 @@ class MeijuCloud(MideaCloud):
         sn: str,
         model_number: str | None,
         manufacturer_code: str = "0000",
-    ):
+    ) -> str | None:
         data = {
             "applianceSn": sn,
             "applianceType": "0x%02X" % device_type,
@@ -391,7 +398,7 @@ class MSmartHomeCloud(MideaCloud):
             f"{self._app_key}:{clouds['MSmartHome']['iot_key']}".encode("ascii")
         ).decode("ascii")
 
-    def _make_general_data(self):
+    def _make_general_data(self) -> dict[str, Any]:
         return {
             # "appVersion": self.APP_VERSION,
             "src": self._app_id,
@@ -405,7 +412,9 @@ class MSmartHomeCloud(MideaCloud):
             "appId": self._app_id,
         }
 
-    async def _api_request(self, endpoint: str, data: dict, header=None) -> dict | None:
+    async def _api_request(
+        self, endpoint: str, data: dict, header: dict | None = None
+    ) -> dict[str, Any] | None:
         header = header or {}
         header.update(
             {"x-recipe-app": self._app_id, "authorization": f"Basic {self._auth_base}"}
@@ -413,7 +422,7 @@ class MSmartHomeCloud(MideaCloud):
 
         return await super()._api_request(endpoint, data, header)
 
-    async def _re_route(self):
+    async def _re_route(self) -> None:
         data = self._make_general_data()
         data.update({"userType": "0", "userName": f"{self._account}"})
         if response := await self._api_request(
@@ -461,7 +470,9 @@ class MSmartHomeCloud(MideaCloud):
                 return True
         return False
 
-    async def list_appliances(self, home_id) -> dict | None:
+    async def list_appliances(
+        self, home_id: str | None
+    ) -> dict[int, dict[str, Any]] | None:
         data = self._make_general_data()
         if response := await self._api_request(
             endpoint="/v1/appliance/user/list/get", data=data
@@ -502,7 +513,7 @@ class MSmartHomeCloud(MideaCloud):
         sn: str,
         model_number: str | None,
         manufacturer_code: str = "0000",
-    ):
+    ) -> str | None:
         data = {
             "clientType": "1",
             "appId": self._app_id,
@@ -554,9 +565,9 @@ class MideaAirCloud(MideaCloud):
             password=password,
             api_url=clouds[cloud_name]["api_url"],
         )
-        self._session_id = None
+        self._session_id: str | None = None
 
-    def _make_general_data(self):
+    def _make_general_data(self) -> dict[str, Any]:
         data = {
             "src": self._app_id,
             "format": "2",
@@ -570,7 +581,9 @@ class MideaAirCloud(MideaCloud):
             data.update({"sessionId": self._session_id})
         return data
 
-    async def _api_request(self, endpoint: str, data: dict, header=None) -> dict | None:
+    async def _api_request(
+        self, endpoint: str, data: dict, header: dict[str, Any] | None = None
+    ) -> dict[str, Any] | None:
         header = header or {}
         if not data.get("reqId"):
             data.update({"reqId": token_hex(16)})
@@ -600,7 +613,7 @@ class MideaAirCloud(MideaCloud):
             except Exception as e:
                 _LOGGER.warning(f"Midea cloud API error, url: {url}, error: {repr(e)}")
         if int(response["errorCode"]) == 0 and "result" in response:
-            return response["result"]
+            return cast(dict[str, Any], response["result"])
         return None
 
     async def login(self) -> bool:
@@ -624,7 +637,9 @@ class MideaAirCloud(MideaCloud):
                 return True
         return False
 
-    async def list_appliances(self, home_id) -> dict | None:
+    async def list_appliances(
+        self, home_id: str | None
+    ) -> dict[int, dict[str, Any]] | None:
         data = self._make_general_data()
         if response := await self._api_request(
             endpoint="/v1/appliance/user/list/get", data=data
