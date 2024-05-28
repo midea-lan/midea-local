@@ -1,8 +1,8 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
@@ -77,7 +77,7 @@ class MessageSet(MessageFABase):
                     0x00,
                     0x00,
                     0x00,
-                ]
+                ],
             )
             if self._subtype != 10:
                 _body_return[13] = 0xFF
@@ -133,7 +133,7 @@ class MessageSet(MessageFABase):
                     0x00,
                     0x00,
                     0x00,
-                ]
+                ],
             )
         if self.power is not None:
             if self.power:

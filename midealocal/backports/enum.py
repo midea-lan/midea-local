@@ -12,7 +12,10 @@ class StrEnum(str, Enum):
     """Partial backport of Python 3.11's StrEnum for our basic use cases."""
 
     def __new__(
-        cls: type[_StrEnumSelfT], value: str, *args: Any, **kwargs: Any
+        cls: type[_StrEnumSelfT],
+        value: str,
+        *args: Any,
+        **kwargs: Any,
     ) -> _StrEnumSelfT:
         """Create a new StrEnum instance."""
         if not isinstance(value, str):
@@ -25,10 +28,12 @@ class StrEnum(str, Enum):
 
     @staticmethod
     def _generate_next_value_(
-        name: str, start: int, count: int, last_values: list[Any]
+        name: str,
+        start: int,
+        count: int,
+        last_values: list[Any],
     ) -> Any:
-        """
-        Make `auto()` explicitly unsupported.
+        """Make `auto()` explicitly unsupported.
         We may revisit this when it's very clear that Python 3.11's
         `StrEnum.auto()` behavior will no longer change.
         """

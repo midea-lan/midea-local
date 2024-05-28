@@ -1,9 +1,9 @@
-import logging
 import json
-from typing import Any
-from .message import MessageQuery, MessageSet, MessageCDResponse
-
+import logging
 import sys
+from typing import Any
+
+from .message import MessageCDResponse, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -90,7 +90,7 @@ class MideaCDDevice(MideaDevice):
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
         if hasattr(message, "fields"):
-            self._fields = getattr(message, "fields")
+            self._fields = message.fields
         for status in self._attributes.keys():
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
@@ -110,7 +110,7 @@ class MideaCDDevice(MideaDevice):
             message = MessageSet(self._protocol_version)
             message.fields = self._fields
             message.mode = MideaCDDevice._modes.index(
-                self._attributes[DeviceAttributes.mode]
+                self._attributes[DeviceAttributes.mode],
             )
             message.power = self._attributes[DeviceAttributes.power]
             message.target_temperature = self._attributes[
@@ -131,7 +131,7 @@ class MideaCDDevice(MideaDevice):
                 if params and "temperature_step" in params:
                     self._temperature_step = params.get("temperature_step")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {repr(e)}")
+                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all({"temperature_step": self._temperature_step})
 
 

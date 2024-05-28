@@ -1,7 +1,7 @@
 import logging
-from .message import MessageQuery, MessageEDResponse, MessageNewSet, MessageOldSet
-
 import sys
+
+from .message import MessageEDResponse, MessageNewSet, MessageOldSet, MessageQuery
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -91,9 +91,8 @@ class MideaEDDevice(MideaDevice):
         if self._use_new_set():
             if attr in [DeviceAttributes.power, DeviceAttributes.child_lock]:
                 message = MessageNewSet(self._protocol_version)
-        else:
-            if attr in []:
-                message = MessageOldSet(self._protocol_version)
+        elif attr in []:
+            message = MessageOldSet(self._protocol_version)
         if message is not None:
             setattr(message, str(attr), value)
             self.build_send(message)

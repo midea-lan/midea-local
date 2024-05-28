@@ -1,13 +1,13 @@
 import logging
-from .message import (
-    MessageQuery,
-    MessagePower,
-    MessageStorage,
-    MessageLock,
-    MessageE1Response,
-)
-
 import sys
+
+from .message import (
+    MessageE1Response,
+    MessageLock,
+    MessagePower,
+    MessageQuery,
+    MessageStorage,
+)
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum

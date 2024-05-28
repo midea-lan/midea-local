@@ -1,9 +1,10 @@
 from enum import IntEnum
+
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
@@ -16,7 +17,7 @@ class EDNewSetParamPack:
     @staticmethod
     def pack(param, value, addition=0):
         return bytearray(
-            [param & 0xFF, param >> 8, value, addition & 0xFF, addition >> 8]
+            [param & 0xFF, param >> 8, value, addition & 0xFF, addition >> 8],
         )
 
 
@@ -67,7 +68,7 @@ class MessageNewSet(MessageEDBase):
                 EDNewSetParamPack.pack(
                     param=NewSetTags.power,  # power
                     value=0x01 if self.power else 0x00,
-                )
+                ),
             )
         if self.lock is not None:
             pack_count += 1
@@ -75,7 +76,7 @@ class MessageNewSet(MessageEDBase):
                 EDNewSetParamPack.pack(
                     param=NewSetTags.lock,  # lock
                     value=0x01 if self.lock else 0x00,
-                )
+                ),
             )
         payload[1] = pack_count
         return payload
@@ -167,7 +168,7 @@ class EDMessageBodyFF(MessageBody):
                         body[data_offset + 3]
                         + (body[data_offset + 4] << 8)
                         + (body[data_offset + 5] << 16)
-                        + (body[data_offset + 6] << 24)
+                        + (body[data_offset + 6] << 24),
                     )
                     / 1000
                 )

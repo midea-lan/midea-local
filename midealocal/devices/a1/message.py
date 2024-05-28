@@ -1,10 +1,11 @@
 from enum import IntEnum
+
 from ...crc8 import calculate
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
     NewProtocolMessageBody,
 )
 
@@ -70,7 +71,7 @@ class MessageQuery(MessageA1Base):
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
 
 
@@ -149,7 +150,7 @@ class MessageSet(MessageA1Base):
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
 
 
@@ -172,7 +173,7 @@ class MessageNewProtocolSet(MessageA1Base):
                 NewProtocolMessageBody.pack(
                     param=NewProtocolTags.light,
                     value=bytearray([0x01 if self.light else 0x00]),
-                )
+                ),
             )
         payload[0] = pack_count
         return payload

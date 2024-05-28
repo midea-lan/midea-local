@@ -3,10 +3,10 @@ from hashlib import md5, sha256
 from typing import Any, cast
 from urllib.parse import unquote_plus, urlencode, urlparse
 
+from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad, unpad
 from Crypto.Util.strxor import strxor
-from Crypto.Cipher import AES
 
 Buffer = bytes | bytearray | memoryview  # alias from Crypto.Cipher.AES
 
@@ -68,7 +68,7 @@ class CloudSecurity:
         else:
             return None
         data = bytearray(sha256(bytes_id).digest())
-        for i in range(0, 16):
+        for i in range(16):
             data[i] ^= data[i + 16]
         return data[0:16].hex()
 
@@ -87,7 +87,10 @@ class CloudSecurity:
         return self.aes_decrypt(data, self._fixed_key, self._fixed_iv)
 
     def aes_encrypt(
-        self, data: str | bytes, key: bytes | None = None, iv: bytes | None = None
+        self,
+        data: str | bytes,
+        key: bytes | None = None,
+        iv: bytes | None = None,
     ) -> bytes:
         if len(data) == 0:
             return b""
@@ -105,11 +108,15 @@ class CloudSecurity:
             return cast(bytes, AES.new(aes_key, AES.MODE_ECB).encrypt(pad(data, 16)))
         # CBC
         return cast(
-            bytes, AES.new(aes_key, AES.MODE_CBC, iv=aes_iv).encrypt(pad(data, 16))
+            bytes,
+            AES.new(aes_key, AES.MODE_CBC, iv=aes_iv).encrypt(pad(data, 16)),
         )
 
     def aes_decrypt(
-        self, data: str | bytes, key: bytes | None = None, iv: bytes | None = None
+        self,
+        data: str | bytes,
+        key: bytes | None = None,
+        iv: bytes | None = None,
     ) -> str:
         if len(data) == 0:
             return ""
@@ -127,7 +134,8 @@ class CloudSecurity:
             return cast(
                 str,
                 unpad(
-                    AES.new(aes_key, AES.MODE_ECB).decrypt(data), len(aes_key)
+                    AES.new(aes_key, AES.MODE_ECB).decrypt(data),
+                    len(aes_key),
                 ).decode(),
             )
         else:  # CBC
@@ -155,7 +163,11 @@ class MeijuCloudSecurity(CloudSecurity):
 class MSmartCloudSecurity(CloudSecurity):
     def __init__(self, login_key: str, iot_key: str, hmac_key: str) -> None:
         super().__init__(
-            login_key, iot_key, hmac_key, 13101328926877700970, 16429062708050928556
+            login_key,
+            iot_key,
+            hmac_key,
+            13101328926877700970,
+            16429062708050928556,
         )
 
     def encrypt_iam_password(self, login_id: str, data: str) -> str:
@@ -169,7 +181,9 @@ class MSmartCloudSecurity(CloudSecurity):
         return sha.hexdigest()
 
     def set_aes_keys(
-        self, encrypted_key: str | bytes, encrypted_iv: str | bytes
+        self,
+        encrypted_key: str | bytes,
+        encrypted_iv: str | bytes,
     ) -> None:
         key_digest = sha256(self._login_key.encode("ascii")).hexdigest()
         tmp_key = key_digest[:16].encode("ascii")
@@ -197,13 +211,13 @@ class LocalSecurity:
         self.block_size = 16
         self.iv = b"\0" * 16
         self.aes_key = bytes.fromhex(
-            format(141661095494369103254425781617665632877, "x")
+            format(141661095494369103254425781617665632877, "x"),
         )
         self.salt = bytes.fromhex(
             format(
                 233912452794221312800602098970898185176935770387238278451789080441632479840061417076563,
                 "x",
-            )
+            ),
         )
         self._tcp_key: bytes
         self._request_count = 0
@@ -220,7 +234,8 @@ class LocalSecurity:
 
     def aes_encrypt(self, raw: bytes) -> bytes:
         return cast(
-            bytes, AES.new(self.aes_key, AES.MODE_ECB).encrypt(bytearray(pad(raw, 16)))
+            bytes,
+            AES.new(self.aes_key, AES.MODE_ECB).encrypt(bytearray(pad(raw, 16))),
         )
 
     def aes_cbc_decrypt(self, raw: bytes, key: Buffer) -> bytes:

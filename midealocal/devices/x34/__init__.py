@@ -1,16 +1,14 @@
 import logging
-from .message import (
-    MessageQuery,
-    MessagePower,
-    MessageStorage,
-    MessageLock,
-    Message34Response,
-)
-
+import sys
 
 from ...device import MideaDevice
-
-import sys
+from .message import (
+    Message34Response,
+    MessageLock,
+    MessagePower,
+    MessageQuery,
+    MessageStorage,
+)
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum

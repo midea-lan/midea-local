@@ -3,6 +3,7 @@ import socket
 import threading
 import time
 from enum import IntEnum
+from typing import Any
 
 from .backports.enum import StrEnum
 from .message import (
@@ -17,8 +18,6 @@ from .security import (
     MSGTYPE_HANDSHAKE_REQUEST,
     LocalSecurity,
 )
-
-from typing import Any
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -169,7 +168,7 @@ class MideaDevice(threading.Thread):
         self._socket.send(request)
         response = self._socket.recv(512)
         if len(response) < 20:
-            raise AuthException()
+            raise AuthException
         response = response[8:72]
         self._security.tcp_key(response, self._key)
 
@@ -190,7 +189,9 @@ class MideaDevice(threading.Thread):
             )
 
     def send_message_v3(
-        self, data: bytes, msg_type: int = MSGTYPE_ENCRYPTED_REQUEST
+        self,
+        data: bytes,
+        msg_type: int = MSGTYPE_ENCRYPTED_REQUEST,
     ) -> None:
         data = self._security.encode_8370(data, msg_type)
         self.send_message_v2(data)
@@ -223,7 +224,7 @@ class MideaDevice(threading.Thread):
                                 continue
                             else:
                                 raise ResponseException
-                    except socket.timeout:
+                    except TimeoutError:
                         error_count += 1
                         self._unsupported_protocol.append(cmd.__class__.__name__)
                         _LOGGER.debug(
@@ -328,7 +329,10 @@ class MideaDevice(threading.Thread):
 
     def send_command(self, cmd_type: int, cmd_body: bytearray) -> None:
         cmd = MessageQuestCustom(
-            self._device_type, self._protocol_version, cmd_type, cmd_body
+            self._device_type,
+            self._protocol_version,
+            cmd_type,
+            cmd_body,
         )
         try:
             self.build_send(cmd)
@@ -416,7 +420,7 @@ class MideaDevice(threading.Thread):
                         break
                     elif result == ParseMessageResult.SUCCESS:
                         timeout_counter = 0
-                except socket.timeout:
+                except TimeoutError:
                     timeout_counter = timeout_counter + 1
                     if timeout_counter >= 120:
                         _LOGGER.debug("[%s] Heartbeat timed out", self._device_id)

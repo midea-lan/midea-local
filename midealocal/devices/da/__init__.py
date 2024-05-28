@@ -1,7 +1,7 @@
 import logging
-from .message import MessageQuery, MessagePower, MessageStart, MessageDAResponse
-
 import sys
+
+from .message import MessageDAResponse, MessagePower, MessageQuery, MessageStart
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum

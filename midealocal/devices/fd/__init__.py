@@ -1,6 +1,7 @@
 import logging
-from .message import MessageQuery, MessageFDResponse, MessageSet
 import sys
+
+from .message import MessageFDResponse, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -134,7 +135,7 @@ class MideaFDDevice(MideaDevice):
                 elif status == DeviceAttributes.screen_display:
                     if value in MideaFDDevice._screen_displays.keys():
                         self._attributes[status] = MideaFDDevice._screen_displays.get(
-                            value
+                            value,
                         )
                     else:
                         self._attributes[status] = None
@@ -160,7 +161,7 @@ class MideaFDDevice(MideaDevice):
             if self._attributes[DeviceAttributes.fan_speed] is None
             else list(self._speeds.keys())[
                 list(self._speeds.values()).index(
-                    self._attributes[DeviceAttributes.fan_speed]
+                    self._attributes[DeviceAttributes.fan_speed],
                 )
             ]
         )
@@ -169,7 +170,7 @@ class MideaFDDevice(MideaDevice):
             if self._attributes[DeviceAttributes.screen_display] is None
             else list(MideaFDDevice._screen_displays.keys())[
                 list(MideaFDDevice._screen_displays.values()).index(
-                    self._attributes[DeviceAttributes.screen_display]
+                    self._attributes[DeviceAttributes.screen_display],
                 )
             ]
         )
@@ -192,7 +193,7 @@ class MideaFDDevice(MideaDevice):
             elif attr == DeviceAttributes.screen_display:
                 if value in MideaFDDevice._screen_displays.values():
                     message.screen_display = list(
-                        MideaFDDevice._screen_displays.keys()
+                        MideaFDDevice._screen_displays.keys(),
                     )[list(MideaFDDevice._screen_displays.values()).index(value)]
                 elif not value:
                     message.screen_display = 7

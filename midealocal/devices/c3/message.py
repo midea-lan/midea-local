@@ -1,8 +1,8 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
@@ -77,7 +77,7 @@ class MessageSet(MessageC3Base):
                 dhw_target_temp,
                 room_target_temp,
                 zone1_curve | zone2_curve | disinfect | fast_dhw,
-            ]
+            ],
         )
 
 
@@ -97,7 +97,17 @@ class MessageSetSilent(MessageC3Base):
         super_silent = 0x02 if self.super_silent else 0
 
         return bytearray(
-            [silent_mode | super_silent, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+            [
+                silent_mode | super_silent,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+            ],
         )
 
 

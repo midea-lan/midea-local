@@ -60,7 +60,7 @@ class PacketBuilder:
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
         self.packet[12:20] = self.packet_time()
         self.packet[20:28] = device_id.to_bytes(8, "little")

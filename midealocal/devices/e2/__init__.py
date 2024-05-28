@@ -1,14 +1,14 @@
-import logging
 import json
+import logging
+import sys
+
 from .message import (
+    MessageE2Response,
+    MessageNewProtocolSet,
+    MessagePower,
     MessageQuery,
     MessageSet,
-    MessageE2Response,
-    MessagePower,
-    MessageNewProtocolSet,
 )
-
-import sys
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -134,7 +134,7 @@ class MideaE2Device(MideaDevice):
                 if params and "old_protocol" in params:
                     self._old_protocol = params.get("old_protocol")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {repr(e)}")
+                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all({"old_protocol": self._old_protocol})
 
 

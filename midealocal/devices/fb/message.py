@@ -1,8 +1,8 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
@@ -69,7 +69,7 @@ class MessageSet(MessageFBBase):
                 int(
                     (self.target_temperature + 41)
                     if -40 <= self.target_temperature <= 50
-                    else (0x80 if self.target_temperature in [0x80, 87] else 0)
+                    else (0x80 if self.target_temperature in [0x80, 87] else 0),
                 )
                 & 0xFF
             )
@@ -99,7 +99,7 @@ class MessageSet(MessageFBBase):
                 0x00,
                 child_lock,
                 0x00,
-            ]
+            ],
         )
         if self._subtype > 5:
             _return_body += bytearray([0x00, 0x00, 0x00])
