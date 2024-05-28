@@ -1,8 +1,8 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
@@ -27,7 +27,8 @@ class MessageE6Base(MessageRequest):
 class MessageQuery(MessageE6Base):
     def __init__(self, protocol_version):
         super().__init__(
-            protocol_version=protocol_version, message_type=MessageType.query
+            protocol_version=protocol_version,
+            message_type=MessageType.query,
         )
 
     @property
@@ -38,7 +39,8 @@ class MessageQuery(MessageE6Base):
 class MessageSet(MessageE6Base):
     def __init__(self, protocol_version):
         super().__init__(
-            protocol_version=protocol_version, message_type=MessageType.set
+            protocol_version=protocol_version,
+            message_type=MessageType.set,
         )
         self.main_power = None
         self.heating_temperature = None

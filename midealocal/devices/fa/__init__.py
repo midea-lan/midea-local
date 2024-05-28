@@ -1,8 +1,8 @@
-import logging
 import json
-from .message import MessageQuery, MessageFAResponse, MessageSet
-
+import logging
 import sys
+
+from .message import MessageFAResponse, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -178,7 +178,7 @@ class MideaFADevice(MideaDevice):
                 else:
                     message.oscillate = True
                     message.oscillation_mode = MideaFADevice._oscillation_modes.index(
-                        value
+                        value,
                     )
                     if value == "Oscillation":
                         if (
@@ -189,7 +189,9 @@ class MideaFADevice(MideaDevice):
                         else:
                             message.oscillation_angle = (
                                 MideaFADevice._oscillation_angles.index(
-                                    self._attributes[DeviceAttributes.oscillation_angle]
+                                    self._attributes[
+                                        DeviceAttributes.oscillation_angle
+                                    ],
                                 )
                             )
                     elif value == "Tilting":
@@ -197,7 +199,7 @@ class MideaFADevice(MideaDevice):
                             message.tilting_angle = 3  # 90
                         else:
                             message.tilting_angle = MideaFADevice._tilting_angles.index(
-                                self._attributes[DeviceAttributes.tilting_angle]
+                                self._attributes[DeviceAttributes.tilting_angle],
                             )
                     else:
                         if (
@@ -208,14 +210,16 @@ class MideaFADevice(MideaDevice):
                         else:
                             message.oscillation_angle = (
                                 MideaFADevice._oscillation_angles.index(
-                                    self._attributes[DeviceAttributes.oscillation_angle]
+                                    self._attributes[
+                                        DeviceAttributes.oscillation_angle
+                                    ],
                                 )
                             )
                         if self._attributes[DeviceAttributes.tilting_angle] == "Off":
                             message.tilting_angle = 3  # 90
                         else:
                             message.tilting_angle = MideaFADevice._tilting_angles.index(
-                                self._attributes[DeviceAttributes.tilting_angle]
+                                self._attributes[DeviceAttributes.tilting_angle],
                             )
             elif attr == DeviceAttributes.oscillation_angle and (
                 value in MideaFADevice._oscillation_angles or not value
@@ -228,11 +232,11 @@ class MideaFADevice(MideaDevice):
                         message.oscillate = True
                         message.oscillation_mode = 2
                         message.tilting_angle = MideaFADevice._tilting_angles.index(
-                            self._attributes[DeviceAttributes.tilting_angle]
+                            self._attributes[DeviceAttributes.tilting_angle],
                         )
                 else:
                     message.oscillation_angle = MideaFADevice._oscillation_angles.index(
-                        value
+                        value,
                     )
                     message.oscillate = True
                     if self._attributes[DeviceAttributes.tilting_angle] == "Off":
@@ -242,7 +246,7 @@ class MideaFADevice(MideaDevice):
                     ):
                         message.oscillation_mode = 6
                         message.tilting_angle = MideaFADevice._tilting_angles.index(
-                            self._attributes[DeviceAttributes.tilting_angle]
+                            self._attributes[DeviceAttributes.tilting_angle],
                         )
             elif attr == DeviceAttributes.tilting_angle and (
                 value in MideaFADevice._tilting_angles or not value
@@ -256,7 +260,7 @@ class MideaFADevice(MideaDevice):
                         message.oscillation_mode = 1
                         message.oscillation_angle = (
                             MideaFADevice._oscillation_angles.index(
-                                self._attributes[DeviceAttributes.oscillation_angle]
+                                self._attributes[DeviceAttributes.oscillation_angle],
                             )
                         )
                 else:
@@ -271,7 +275,7 @@ class MideaFADevice(MideaDevice):
                         message.oscillation_mode = 6
                         message.oscillation_angle = (
                             MideaFADevice._oscillation_angles.index(
-                                self._attributes[DeviceAttributes.oscillation_angle]
+                                self._attributes[DeviceAttributes.oscillation_angle],
                             )
                         )
         return message
@@ -320,7 +324,7 @@ class MideaFADevice(MideaDevice):
                 if params and "speed_count" in params:
                     self._speed_count = params.get("speed_count")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {repr(e)}")
+                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all({"speed_count": self._speed_count})
 
 

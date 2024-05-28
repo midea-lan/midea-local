@@ -1,10 +1,9 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
-
 
 NEW_PROTOCOL_PARAMS = {
     "zero_cold_water": 0x03,
@@ -102,7 +101,7 @@ class MessageSet(MessageE3Base):
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
 
 
@@ -144,7 +143,7 @@ class MessageNewProtocolSet(MessageE3Base):
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
 
 

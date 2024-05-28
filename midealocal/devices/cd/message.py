@@ -1,8 +1,8 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
@@ -65,7 +65,7 @@ class MessageSet(MessageCDBase):
                 self.read_field("openPTC"),
                 self.read_field("ptcTemp"),
                 0,  # self.read_field("byte8")
-            ]
+            ],
         )
 
 

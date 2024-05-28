@@ -1,8 +1,8 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
@@ -105,7 +105,7 @@ class MessageSet(MessageCCBase):
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
 
 

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import aiohttp
 
-from midealocal.cloud import get_midea_cloud, clouds
+from midealocal.cloud import clouds, get_midea_cloud
 from midealocal.devices import device_selector
 from midealocal.discover import discover
 

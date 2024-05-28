@@ -1,7 +1,7 @@
 import logging
-from .message import MessageQuery, MessageSet, MessageCCResponse
-
 import sys
+
+from .message import MessageCCResponse, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -121,7 +121,7 @@ class MideaCCDevice(MideaDevice):
                     self._fan_speeds = MideaCCDevice._fan_speeds_7level
             if fan_speed in self._fan_speeds.keys():
                 self._attributes[DeviceAttributes.fan_speed] = self._fan_speeds.get(
-                    fan_speed
+                    fan_speed,
                 )
             else:
                 self._attributes[DeviceAttributes.fan_speed] = None
@@ -148,7 +148,7 @@ class MideaCCDevice(MideaDevice):
         ]
         message.fan_speed = list(self._fan_speeds.keys())[
             list(self._fan_speeds.values()).index(
-                self._attributes[DeviceAttributes.fan_speed]
+                self._attributes[DeviceAttributes.fan_speed],
             )
         ]
         message.eco_mode = self._attributes[DeviceAttributes.eco_mode]

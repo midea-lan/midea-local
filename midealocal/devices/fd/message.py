@@ -1,9 +1,9 @@
 from ...crc8 import calculate
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
@@ -64,7 +64,7 @@ class MessageQuery(MessageFDBase):
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
 
 
@@ -111,7 +111,7 @@ class MessageSet(MessageFDBase):
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
 
 

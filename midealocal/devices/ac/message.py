@@ -1,12 +1,13 @@
 from enum import IntEnum
+
+from ...crc8 import calculate
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
     NewProtocolMessageBody,
 )
-from ...crc8 import calculate
 
 BB_AC_MODES = [0, 3, 1, 2, 4, 5]
 
@@ -78,7 +79,7 @@ class MessageQuery(MessageACBase):
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
 
 
@@ -134,7 +135,7 @@ class MessageToggleDisplay(MessageACBase):
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
 
 
@@ -166,7 +167,9 @@ class MessageNewProtocolQuery(MessageACBase):
 class MessageSubProtocol(MessageACBase):
     def __init__(self, protocol_version, message_type, subprotocol_query_type):
         super().__init__(
-            protocol_version=protocol_version, message_type=message_type, body_type=0xAA
+            protocol_version=protocol_version,
+            message_type=message_type,
+            body_type=0xAA,
         )
         self._subprotocol_query_type = subprotocol_query_type
 
@@ -193,7 +196,7 @@ class MessageSubProtocol(MessageACBase):
                 0xFF,
                 0xFF,
                 self._subprotocol_query_type,
-            ]
+            ],
         )
         if _subprotocol_body is not None:
             _body.extend(_subprotocol_body)
@@ -286,7 +289,7 @@ class MessageSubProtocolSet(MessageSubProtocol):
                 0x00,
                 0x00,
                 0x08,
-            ]
+            ],
         )
 
 
@@ -375,7 +378,7 @@ class MessageGeneralSet(MessageACBase):
                 0x00,
                 frost_protect,
                 comfort_mode,
-            ]
+            ],
         )
 
 
@@ -403,7 +406,7 @@ class MessageNewProtocolSet(MessageACBase):
                 NewProtocolMessageBody.pack(
                     param=NewProtocolTags.breezeless,
                     value=bytearray([0x01 if self.breezeless else 0x00]),
-                )
+                ),
             )
         if self.indirect_wind is not None:
             pack_count += 1
@@ -411,7 +414,7 @@ class MessageNewProtocolSet(MessageACBase):
                 NewProtocolMessageBody.pack(
                     param=NewProtocolTags.indirect_wind,
                     value=bytearray([0x02 if self.indirect_wind else 0x01]),
-                )
+                ),
             )
         if self.prompt_tone is not None:
             pack_count += 1
@@ -419,7 +422,7 @@ class MessageNewProtocolSet(MessageACBase):
                 NewProtocolMessageBody.pack(
                     param=NewProtocolTags.prompt_tone,
                     value=bytearray([0x01 if self.prompt_tone else 0x00]),
-                )
+                ),
             )
         if self.screen_display_alternate is not None:
             pack_count += 1
@@ -427,7 +430,7 @@ class MessageNewProtocolSet(MessageACBase):
                 NewProtocolMessageBody.pack(
                     param=NewProtocolTags.screen_display,
                     value=bytearray([0x64 if self.screen_display_alternate else 0x00]),
-                )
+                ),
             )
         if self.fresh_air_1 is not None and len(self.fresh_air_1) == 2:
             pack_count += 1
@@ -448,9 +451,9 @@ class MessageNewProtocolSet(MessageACBase):
                             0x00,
                             0x00,
                             0x00,
-                        ]
+                        ],
                     ),
-                )
+                ),
             )
         if self.fresh_air_2 is not None and len(self.fresh_air_2) == 2:
             pack_count += 1
@@ -460,7 +463,7 @@ class MessageNewProtocolSet(MessageACBase):
                 NewProtocolMessageBody.pack(
                     param=NewProtocolTags.fresh_air_2,
                     value=bytearray([fresh_air_power, fresh_air_fan_speed, 0xFF]),
-                )
+                ),
             )
         payload[0] = pack_count
         return payload
@@ -583,13 +586,24 @@ class XC1MessageBody(MessageBody):
         super().__init__(body)
         if body[3] == 0x44:
             self.total_energy_consumption = XC1MessageBody.parse_consumption(
-                analysis_method, body[4], body[5], body[6], body[7]
+                analysis_method,
+                body[4],
+                body[5],
+                body[6],
+                body[7],
             )
             self.current_energy_consumption = XC1MessageBody.parse_consumption(
-                analysis_method, body[12], body[13], body[14], body[15]
+                analysis_method,
+                body[12],
+                body[13],
+                body[14],
+                body[15],
             )
             self.realtime_power = XC1MessageBody.parse_power(
-                analysis_method, body[16], body[17], body[18]
+                analysis_method,
+                body[16],
+                body[17],
+                body[18],
             )
         elif body[3] == 0x40:
             pass
@@ -605,7 +619,7 @@ class XC1MessageBody(MessageBody):
                 float(
                     XC1MessageBody.parse_value(byte1) * 10000
                     + XC1MessageBody.parse_value(byte2) * 100
-                    + XC1MessageBody.parse_value(byte3)
+                    + XC1MessageBody.parse_value(byte3),
                 )
                 / 10
             )
@@ -622,7 +636,7 @@ class XC1MessageBody(MessageBody):
                     XC1MessageBody.parse_value(byte1) * 1000000
                     + XC1MessageBody.parse_value(byte2) * 10000
                     + XC1MessageBody.parse_value(byte3) * 100
-                    + XC1MessageBody.parse_value(byte4)
+                    + XC1MessageBody.parse_value(byte4),
                 )
                 / 100
             )

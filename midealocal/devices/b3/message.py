@@ -1,4 +1,4 @@
-from ...message import MessageType, MessageRequest, MessageResponse, MessageBody
+from ...message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class MessageB3Base(MessageRequest):
@@ -174,8 +174,11 @@ class MessageB3Response(MessageResponse):
             and self.body_type == 0x41
         ):
             self.set_body(B3MessageBody31(super().body))
-        elif self.message_type == MessageType.set and self.body_type == 0x21:
-            self.set_body(B3MessageBody21(super().body))
-        elif self.message_type == MessageType.set and self.body_type == 0x24:
+        elif (
+            self.message_type == MessageType.set
+            and self.body_type == 0x21
+            or self.message_type == MessageType.set
+            and self.body_type == 0x24
+        ):
             self.set_body(B3MessageBody21(super().body))
         self.set_attr()

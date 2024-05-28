@@ -1,8 +1,8 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
@@ -84,7 +84,7 @@ class MessageSet(MessageB6Base):
                     value2 = 0x02
                     value3 = self.fan_level
             return bytearray(
-                [0x01, light, value2, value3, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
+                [0x01, light, value2, value3, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF],
             )
         else:
             value13 = 0xFF

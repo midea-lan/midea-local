@@ -1,18 +1,18 @@
-import logging
 import json
+import logging
+import sys
+
 from .message import (
-    MessageQuery,
-    MessageToggleDisplay,
-    MessageNewProtocolQuery,
     MessageACResponse,
     MessageGeneralSet,
+    MessageNewProtocolQuery,
     MessageNewProtocolSet,
     MessagePowerQuery,
+    MessageQuery,
     MessageSubProtocolQuery,
     MessageSubProtocolSet,
+    MessageToggleDisplay,
 )
-
-import sys
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -368,7 +368,7 @@ class MideaACDevice(MideaDevice):
                 if params and "power_analysis_method" in params:
                     self._power_analysis_method = params.get("power_analysis_method")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {repr(e)}")
+                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all({"temperature_step": self._temperature_step})
 
 

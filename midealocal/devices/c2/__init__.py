@@ -1,8 +1,8 @@
-import logging
 import json
-from .message import MessageQuery, MessageC2Response, MessageSet, MessagePower
-
+import logging
 import sys
+
+from .message import MessageC2Response, MessagePower, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -136,17 +136,17 @@ class MideaC2Device(MideaDevice):
                 if params and "max_seat_temp_level" in params:
                     self._max_seat_temp_level = params.get("max_seat_temp_level")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {repr(e)}")
+                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all(
                 {
                     "dry_level": {"max_dry_level": self._max_dry_level},
                     "water_temp_level": {
-                        "max_water_temp_level": self._max_water_temp_level
+                        "max_water_temp_level": self._max_water_temp_level,
                     },
                     "seat_temp_level": {
-                        "max_seat_temp_level": self._max_seat_temp_level
+                        "max_seat_temp_level": self._max_seat_temp_level,
                     },
-                }
+                },
             )
 
 

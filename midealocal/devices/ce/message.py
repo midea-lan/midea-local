@@ -1,8 +1,8 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
@@ -69,7 +69,7 @@ class MessageSet(MessageFABase):
                 scheduled,
                 0x00,
                 child_lock,
-            ]
+            ],
         )
 
 

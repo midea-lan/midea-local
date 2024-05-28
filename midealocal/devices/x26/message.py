@@ -1,4 +1,4 @@
-from ...message import MessageType, MessageRequest, MessageResponse, MessageBody
+from ...message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class Message26Base(MessageRequest):
@@ -94,7 +94,7 @@ class MessageSet(Message26Base):
                 self.read_field("ANION_ENABLE"),
                 self.read_field("SMELLY_ENABLE"),
                 self.read_field("SMELLY_THRESHOLD"),
-            ]
+            ],
         )
 
 

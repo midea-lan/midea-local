@@ -1,14 +1,14 @@
-import logging
 import json
+import logging
+import sys
+
 from .message import (
-    MessageQuery,
-    MessageSet,
+    MessageE3Response,
     MessageNewProtocolSet,
     MessagePower,
-    MessageE3Response,
+    MessageQuery,
+    MessageSet,
 )
-
-import sys
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -123,8 +123,8 @@ class MideaE3Device(MideaDevice):
                 setattr(message, str(attr), value)
             else:
                 message = MessageNewProtocolSet(self._protocol_version)
-                setattr(message, "key", str(attr))
-                setattr(message, "value", value)
+                message.key = str(attr)
+                message.value = value
             self.build_send(message)
 
     def set_customize(self, customize):
@@ -135,7 +135,7 @@ class MideaE3Device(MideaDevice):
                 if params and "precision_halves" in params:
                     self._precision_halves = params.get("precision_halves")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {repr(e)}")
+                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all({"precision_halves": self._precision_halves})
 
 

@@ -1,9 +1,9 @@
 from ...crc8 import calculate
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
@@ -64,7 +64,7 @@ class MessageQuery(MessageFCBase):
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
 
 
@@ -131,7 +131,7 @@ class MessageSet(MessageFCBase):
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
 
 
@@ -202,13 +202,12 @@ class MessageFCResponse(MessageResponse):
         super().__init__(message)
         if self.body_type in [0xB0, 0xB1]:
             pass
-        else:
-            if (
-                self.message_type
-                in [MessageType.query, MessageType.set, MessageType.notify1]
-                and self.body_type == 0xC8
-            ):
-                self.set_body(FCGeneralMessageBody(super().body))
-            elif self.message_type == MessageType.notify1 and self.body_type == 0xA0:
-                self.set_body(FCNotifyMessageBody(super().body))
+        elif (
+            self.message_type
+            in [MessageType.query, MessageType.set, MessageType.notify1]
+            and self.body_type == 0xC8
+        ):
+            self.set_body(FCGeneralMessageBody(super().body))
+        elif self.message_type == MessageType.notify1 and self.body_type == 0xA0:
+            self.set_body(FCNotifyMessageBody(super().body))
         self.set_attr()

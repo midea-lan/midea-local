@@ -1,8 +1,8 @@
 import logging
 import socket
-from typing import Any
 import xml.etree.ElementTree as ET
 from ipaddress import IPv4Network
+from typing import Any
 
 import ifaddr
 
@@ -84,7 +84,7 @@ BROADCAST_MSG = bytearray(
         0x8E,
         0x92,
         0xE5,
-    ]
+    ],
 )
 
 DEVICE_INFO_MSG = bytearray(
@@ -145,12 +145,13 @@ DEVICE_INFO_MSG = bytearray(
         0x47,
         0x62,
         0xBE,
-    ]
+    ],
 )
 
 
 def discover(
-    discover_type: list | None = None, ip_address: list | None = None
+    discover_type: list | None = None,
+    ip_address: list | None = None,
 ) -> dict[int, dict[str, Any]]:
     if discover_type is None:
         discover_type = []
@@ -187,7 +188,8 @@ def discover(
                 else:
                     continue
                 device_id = int.from_bytes(
-                    bytearray.fromhex(data[20:26].hex()), "little"
+                    bytearray.fromhex(data[20:26].hex()),
+                    "little",
                 )
                 if device_id in found_devices:
                     continue
@@ -279,7 +281,7 @@ def get_device_info(device_ip: str, device_port: int) -> bytearray:
             )
             sock.sendall(DEVICE_INFO_MSG)
             response = bytearray(sock.recv(512))
-    except socket.timeout:
+    except TimeoutError:
         _LOGGER.warning(
             "Connect the device %s:%s timed out for 8s."
             "Don't care about a small amount of this. if many maybe not support.",
@@ -298,7 +300,8 @@ def enum_all_broadcast() -> list:
         for ip in adapter.ips:
             if ip.is_IPv4 and ip.network_prefix < 32:
                 local_network = IPv4Network(
-                    f"{ip.ip}/{ip.network_prefix}", strict=False
+                    f"{ip.ip}/{ip.network_prefix}",
+                    strict=False,
                 )
                 if (
                     local_network.is_private

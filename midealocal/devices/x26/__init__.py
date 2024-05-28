@@ -1,10 +1,10 @@
 import logging
-import sys
 import math
+import sys
 from typing import Any
-from .message import MessageQuery, MessageSet, Message26Response
 
 from ...device import MideaDevice
+from .message import Message26Response, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -99,7 +99,7 @@ class Midea26Device(MideaDevice):
         message = Message26Response(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
-        self._fields = getattr(message, "fields")
+        self._fields = message.fields
         for status in self._attributes.keys():
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
@@ -126,10 +126,10 @@ class Midea26Device(MideaDevice):
             message.main_light = self._attributes[DeviceAttributes.main_light]
             message.night_light = self._attributes[DeviceAttributes.night_light]
             message.mode = Midea26Device._modes.index(
-                self._attributes[DeviceAttributes.mode]
+                self._attributes[DeviceAttributes.mode],
             )
             message.direction = self._convert_to_midea_direction(
-                self._attributes[DeviceAttributes.direction]
+                self._attributes[DeviceAttributes.direction],
             )
             if attr in [DeviceAttributes.main_light, DeviceAttributes.night_light]:
                 message.main_light = False

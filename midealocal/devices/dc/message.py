@@ -1,8 +1,8 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
@@ -74,7 +74,7 @@ class DCGeneralMessageBody(MessageBody):
         self.start = True if body[2] in [2, 6] else False
         self.washing_data = body[3:15]
         self.progress = 0
-        for i in range(0, 7):
+        for i in range(7):
             if (body[16] & (1 << i)) > 0:
                 self.progress = i + 1
                 break

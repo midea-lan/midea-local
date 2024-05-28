@@ -1,7 +1,7 @@
 import logging
-from .message import MessageQuery, MessageA1Response, MessageSet
-
 import sys
+
+from .message import MessageA1Response, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -120,7 +120,7 @@ class MideaA1Device(MideaDevice):
                 else:
                     self._attributes[status] = value
                 tank_full = self._attributes[DeviceAttributes.tank] >= int(
-                    self._attributes[DeviceAttributes.water_level_set]
+                    self._attributes[DeviceAttributes.water_level_set],
                 )
                 if (
                     self._attributes[DeviceAttributes.tank_full] is None
@@ -147,7 +147,7 @@ class MideaA1Device(MideaDevice):
             if self._attributes[DeviceAttributes.fan_speed] is None
             else list(MideaA1Device._speeds.keys())[
                 list(MideaA1Device._speeds.values()).index(
-                    self._attributes[DeviceAttributes.fan_speed]
+                    self._attributes[DeviceAttributes.fan_speed],
                 )
             ]
         )
@@ -155,7 +155,7 @@ class MideaA1Device(MideaDevice):
         message.swing = self._attributes[DeviceAttributes.swing]
         message.anion = self._attributes[DeviceAttributes.anion]
         message.water_level_set = int(
-            self._attributes[DeviceAttributes.water_level_set]
+            self._attributes[DeviceAttributes.water_level_set],
         )
         return message
 

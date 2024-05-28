@@ -261,10 +261,7 @@ crc8_854_table: list[int] = [
 
 
 def calculate(data: bytearray) -> int:
-    """
-    Calculate CRC8 value of a bytearray.
-
-    """
+    """Calculate CRC8 value of a bytearray."""
     crc_value: int = 0
     for m in data:
         crc_value = crc8_854_table[crc_value ^ m]

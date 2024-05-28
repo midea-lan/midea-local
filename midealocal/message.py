@@ -98,7 +98,11 @@ class MessageBase(ABC):
 
 class MessageRequest(MessageBase):
     def __init__(
-        self, device_type: int, protocol_version: int, message_type: int, body_type: int
+        self,
+        device_type: int,
+        protocol_version: int,
+        message_type: int,
+        body_type: int,
     ) -> None:
         super().__init__()
         self.device_type = device_type
@@ -130,7 +134,7 @@ class MessageRequest(MessageBase):
                 self.protocol_version,
                 # frame type
                 self.message_type,
-            ]
+            ],
         )
 
     @property
@@ -233,7 +237,7 @@ class NewProtocolMessageBody(MessageBody):
         result = {}
         try:
             pos = 2
-            for pack in range(0, self.data[1]):
+            for pack in range(self.data[1]):
                 param = self.data[pos] + (self.data[pos + 1] << 8)
                 if self._pack_len == 5:
                     pos += 1

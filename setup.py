@@ -20,7 +20,8 @@ setuptools.setup(
     url="https://github.com/rokam/midea-local",
     install_requires=requires,
     packages=setuptools.find_packages(
-        include=["midealocal", "midealocal.*"], exclude=["tests", "tests.*"]
+        include=["midealocal", "midealocal.*"],
+        exclude=["tests", "tests.*"],
     ),
     python_requires=">=3.10",
     classifiers=[
