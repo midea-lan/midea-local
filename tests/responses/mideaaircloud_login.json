@@ -1,0 +1,11 @@
+{
+  "errorCode": 0,
+  "result": {
+    "sessionId": "ab527a62ed1caaa9f61b873475e5bfc336c18240d33a55d03721d8e3f14e10d8",
+    "userId": "1234567890abcdef1234567890abcdef",
+    "mdata": {
+      "accessToken": "1234567890abcdef1"
+    },
+    "accessToken": "ddfb3efba8121ee3a85a0d48ace6ba97c3f1d65a2c944f92fbe98985c3b759f2"
+  }
+}
