@@ -195,10 +195,10 @@ class MideaCloud:
     ) -> dict[int, dict[str, Any]] | None:
         raise NotImplementedError
 
-    async def get_device_info(self, device_id: str) -> dict[str, Any] | None:
+    async def get_device_info(self, device_id: int) -> dict[str, Any] | None:
         if response := await self.list_appliances(home_id=None):
             if int(device_id) in response.keys():
-                return cast(dict, response[int(device_id)])
+                return cast(dict, response[device_id])
         return None
 
     async def download_lua(
@@ -331,7 +331,7 @@ class MeijuCloud(MideaCloud):
             return appliances
         return None
 
-    async def get_device_info(self, device_id: str) -> dict[str, Any] | None:
+    async def get_device_info(self, device_id: int) -> dict[str, Any] | None:
         data = {"applianceCode": device_id}
         if response := await self._api_request(
             endpoint="/v1/appliance/info/get",
