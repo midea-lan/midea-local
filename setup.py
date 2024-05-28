@@ -10,7 +10,7 @@ requires = ["aiohttp", "ifaddr", "pycryptodome"]
 
 setuptools.setup(
     name="midea-local",
-    version="1.0.3",
+    version="1.0.4",
     author="rokam",
     author_email="lucas@mindello.com.br",
     description="Control your Midea M-Smart appliances via local area network",
