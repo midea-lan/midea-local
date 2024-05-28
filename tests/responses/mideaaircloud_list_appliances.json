@@ -1,0 +1,27 @@
+{
+  "errorCode": 0,
+  "result": {
+    "list": [
+      {
+        "modelNumber": 10,
+        "name": "Appliance Name",
+        "type": "0xAC",
+        "sn": "1234567890abcdef1234567890abcdef",
+        "enterpriseCode": "1234",
+        "productModel": "Product Model",
+        "onlineStatus": "1",
+        "id": "1"
+      },
+      {
+        "modelNumber": "ge",
+        "name": "Appliance Name 2",
+        "type": "0xAC",
+        "sn": "",
+        "sn8": "",
+        "enterpriseCode": "1234",
+        "onlineStatus": "0",
+        "id": "2"
+      }
+    ]
+  }
+}
