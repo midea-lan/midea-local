@@ -129,12 +129,17 @@ class MideaCloud:
                     )
                     raw = await r.read()
                     _LOGGER.debug(
-                        f"Midea cloud API url: {url}, data: {data}, response: {raw}"
+                        "Midea cloud API url: %s, data: %s, response: %s",
+                        url,
+                        data,
+                        raw,
                     )
                     response = json.loads(raw)
                     break
             except Exception as e:
-                _LOGGER.warning(f"Midea cloud API error, url: {url}, error: {repr(e)}")
+                _LOGGER.warning(
+                    "Midea cloud API error, url: %s, error: %s", url, repr(e)
+                )
         if int(response["code"]) == 0 and "data" in response:
             return cast(dict, response["data"])
         return None
@@ -602,12 +607,17 @@ class MideaAirCloud(MideaCloud):
                     )
                     raw = await r.read()
                     _LOGGER.debug(
-                        f"Midea cloud API url: {url}, data: {data}, response: {raw}"
+                        "Midea cloud API url: %s, data: %s, response: %s",
+                        url,
+                        data,
+                        raw,
                     )
                     response = json.loads(raw)
                     break
             except Exception as e:
-                _LOGGER.warning(f"Midea cloud API error, url: {url}, error: {repr(e)}")
+                _LOGGER.warning(
+                    "Midea cloud API error, url: %s, error: %s", url, repr(e)
+                )
         if int(response["errorCode"]) == 0 and "result" in response:
             return cast(dict[str, Any], response["result"])
         return None
