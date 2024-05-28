@@ -89,6 +89,8 @@ class CloudSecurity:
     def aes_encrypt(
         self, data: str | bytes, key: bytes | None = None, iv: bytes | None = None
     ) -> bytes:
+        if len(data) == 0:
+            return b""
         if key is not None:
             aes_key = key
             aes_iv = iv
@@ -99,7 +101,7 @@ class CloudSecurity:
             raise ValueError("Encrypt need a key")
         if isinstance(data, str):
             data = bytes.fromhex(data)
-        if aes_iv is None:  # ECB
+        if aes_iv is None or aes_iv == b"0":  # ECB
             return cast(bytes, AES.new(aes_key, AES.MODE_ECB).encrypt(pad(data, 16)))
         # CBC
         return cast(
@@ -109,6 +111,8 @@ class CloudSecurity:
     def aes_decrypt(
         self, data: str | bytes, key: bytes | None = None, iv: bytes | None = None
     ) -> str:
+        if len(data) == 0:
+            return ""
         if key is not None:
             aes_key = key
             aes_iv = iv
@@ -119,7 +123,7 @@ class CloudSecurity:
             raise ValueError("Encrypt need a key")
         if isinstance(data, str):
             data = bytes.fromhex(data)
-        if aes_iv is None:  # ECB
+        if aes_iv is None or aes_iv == b"0":  # ECB
             return cast(
                 str,
                 unpad(
