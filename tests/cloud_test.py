@@ -36,7 +36,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         response = Mock()
         response.read = AsyncMock(
             side_effect=[
-                self.responses["meijucloud_login_id.json"],
+                self.responses["cloud_login_id.json"],
                 self.responses["meijucloud_login.json"],
             ]
         )
@@ -51,7 +51,9 @@ class CloudTest(IsolatedAsyncioTestCase):
         """Test MeijuCloud login invalid user"""
         session = Mock()
         response = Mock()
-        response.read = AsyncMock(return_value=self.responses["invalid_response.json"])
+        response.read = AsyncMock(
+            return_value=self.responses["cloud_invalid_response.json"]
+        )
         session.request = AsyncMock(return_value=response)
         cloud = get_midea_cloud(
             "美的美居", session=session, account="account", password="password"
@@ -99,7 +101,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         response = Mock()
         response.read = AsyncMock(
             side_effect=[
-                self.responses["meijucloud_login_id.json"],
+                self.responses["cloud_login_id.json"],
                 self.responses["meijucloud_login.json"],
                 self.responses["meijucloud_list_appliances.json"],
             ]
@@ -110,26 +112,30 @@ class CloudTest(IsolatedAsyncioTestCase):
         )
         assert cloud is not None
         assert await cloud.login()
-        appliances = await cloud.list_appliances(1)
+        appliances = await cloud.list_appliances("1")
         assert appliances is not None
         assert len(appliances.keys()) == 2
-        assert appliances[1]["name"] == "Appliance Name"
-        assert appliances[1]["type"] == 0xAC
-        assert appliances[1]["sn"] == "mySecretKey"
-        assert appliances[1]["sn8"] == "9d52c159"
-        assert appliances[1]["model_number"] == 10
-        assert appliances[1]["manufacturer_code"] == "1234"
-        assert appliances[1]["model"] == "Product Model"
-        assert appliances[1]["online"]
+        appliance = appliances.get(1)
+        assert appliance is not None
+        assert appliance.get("name") == "Appliance Name"
+        assert appliance.get("type") == 0xAC
+        assert appliance.get("sn") == "mySecretKey"
+        assert appliance.get("sn8") == "9d52c159"
+        assert appliance.get("model_number") == 10
+        assert appliance.get("manufacturer_code") == "1234"
+        assert appliance.get("model") == "Product Model"
+        assert appliance.get("online")
 
-        assert appliances[2]["name"] == "Appliance Name 2"
-        assert appliances[2]["type"] == 0xAC
-        assert appliances[2]["sn"] == ""
-        assert appliances[2]["sn8"] == "00000000"
-        assert appliances[2]["model_number"] == 10
-        assert appliances[2]["manufacturer_code"] == "1234"
-        assert appliances[2]["model"] == "00000000"
-        assert not appliances[2]["online"]
+        appliance = appliances.get(2)
+        assert appliance is not None
+        assert appliance.get("name") == "Appliance Name 2"
+        assert appliance.get("type") == 0xAC
+        assert appliance.get("sn") == ""
+        assert appliance.get("sn8") == "00000000"
+        assert appliance.get("model_number") == 10
+        assert appliance.get("manufacturer_code") == "1234"
+        assert appliance.get("model") == "00000000"
+        assert not appliance.get("online")
 
     async def test_meijucloud_get_device_info(self) -> None:
         """Test MeijuCloud get_device_info"""
@@ -137,7 +143,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         response = Mock()
         response.read = AsyncMock(
             side_effect=[
-                self.responses["meijucloud_login_id.json"],
+                self.responses["cloud_login_id.json"],
                 self.responses["meijucloud_login.json"],
                 self.responses["meijucloud_get_device_info.json"],
                 self.responses["meijucloud_get_device_info_alt.json"],
@@ -151,24 +157,26 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert await cloud.login()
 
         device = await cloud.get_device_info(1)
-        assert device["name"] == "Appliance Name"
-        assert device["type"] == 0xAC
-        assert device["sn"] == "mySecretKey"
-        assert device["sn8"] == "9d52c159"
-        assert device["model_number"] == 10
-        assert device["manufacturer_code"] == "1234"
-        assert device["model"] == "Product Model"
-        assert device["online"]
+        assert device is not None
+        assert device.get("name") == "Appliance Name"
+        assert device.get("type") == 0xAC
+        assert device.get("sn") == "mySecretKey"
+        assert device.get("sn8") == "9d52c159"
+        assert device.get("model_number") == 10
+        assert device.get("manufacturer_code") == "1234"
+        assert device.get("model") == "Product Model"
+        assert device.get("online")
 
         device = await cloud.get_device_info(2)
-        assert device["name"] == "Appliance Name 2"
-        assert device["type"] == 0xAC
-        assert device["sn"] == ""
-        assert device["sn8"] == "00000000"
-        assert device["model_number"] == 10
-        assert device["manufacturer_code"] == "1234"
-        assert device["model"] == "00000000"
-        assert not device["online"]
+        assert device is not None
+        assert device.get("name") == "Appliance Name 2"
+        assert device.get("type") == 0xAC
+        assert device.get("sn") == ""
+        assert device.get("sn8") == "00000000"
+        assert device.get("model_number") == 10
+        assert device.get("manufacturer_code") == "1234"
+        assert device.get("model") == "00000000"
+        assert not device.get("online")
 
     async def test_meijucloud_download_lua(self) -> None:
         """Test MeijuCloud download_lua"""
@@ -176,7 +184,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         response = Mock()
         response.read = AsyncMock(
             side_effect=[
-                self.responses["meijucloud_login_id.json"],
+                self.responses["cloud_login_id.json"],
                 self.responses["meijucloud_login.json"],
                 self.responses["meijucloud_download_lua.json"],
                 self.responses["meijucloud_download_lua.json"],
@@ -214,7 +222,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         response.read = AsyncMock(
             side_effect=[
                 self.responses["msmartcloud_reroute.json"],
-                self.responses["msmartcloud_login_id.json"],
+                self.responses["cloud_login_id.json"],
                 self.responses["msmartcloud_login.json"],
             ]
         )
@@ -229,7 +237,9 @@ class CloudTest(IsolatedAsyncioTestCase):
         """Test MSmartCloud login invalid user"""
         session = Mock()
         response = Mock()
-        response.read = AsyncMock(return_value=self.responses["invalid_response.json"])
+        response.read = AsyncMock(
+            return_value=self.responses["cloud_invalid_response.json"]
+        )
         session.request = AsyncMock(return_value=response)
         cloud = get_midea_cloud(
             "MSmartHome", session=session, account="account", password="password"
@@ -255,10 +265,10 @@ class CloudTest(IsolatedAsyncioTestCase):
         response.read = AsyncMock(
             side_effect=[
                 self.responses["msmartcloud_reroute.json"],
-                self.responses["msmartcloud_login_id.json"],
+                self.responses["cloud_login_id.json"],
                 self.responses["msmartcloud_login.json"],
                 self.responses["msmartcloud_list_appliances.json"],
-                self.responses["invalid_response.json"],
+                self.responses["cloud_invalid_response.json"],
             ]
         )
         session.request = AsyncMock(return_value=response)
@@ -267,28 +277,32 @@ class CloudTest(IsolatedAsyncioTestCase):
         )
         assert cloud is not None
         assert await cloud.login()
-        appliances = await cloud.list_appliances(1)
+        appliances = await cloud.list_appliances(None)
         assert appliances is not None
         assert len(appliances.keys()) == 2
-        assert appliances[1]["name"] == "Appliance Name"
-        assert appliances[1]["type"] == 0xAC
-        assert appliances[1]["sn"] == "1234567890abcdef1234567890abcdef"
-        assert appliances[1]["sn8"] == "0abcdef1"
-        assert appliances[1]["model_number"] == 10
-        assert appliances[1]["manufacturer_code"] == "1234"
-        assert appliances[1]["model"] == "0abcdef1"
-        assert appliances[1]["online"]
+        appliance = appliances.get(1)
+        assert appliance is not None
+        assert appliance.get("name") == "Appliance Name"
+        assert appliance.get("type") == 0xAC
+        assert appliance.get("sn") == "1234567890abcdef1234567890abcdef"
+        assert appliance.get("sn8") == "0abcdef1"
+        assert appliance.get("model_number") == 10
+        assert appliance.get("manufacturer_code") == "1234"
+        assert appliance.get("model") == "0abcdef1"
+        assert appliance.get("online")
 
-        assert appliances[2]["name"] == "Appliance Name 2"
-        assert appliances[2]["type"] == 0xAC
-        assert appliances[2]["sn"] == ""
-        assert appliances[2]["sn8"] == ""
-        assert appliances[2]["model_number"] == 0
-        assert appliances[2]["manufacturer_code"] == "1234"
-        assert appliances[2]["model"] == ""
-        assert not appliances[2]["online"]
+        appliance = appliances.get(2)
+        assert appliance is not None
+        assert appliance.get("name") == "Appliance Name 2"
+        assert appliance.get("type") == 0xAC
+        assert appliance.get("sn") == ""
+        assert appliance.get("sn8") == ""
+        assert appliance.get("model_number") == 0
+        assert appliance.get("manufacturer_code") == "1234"
+        assert appliance.get("model") == ""
+        assert not appliance.get("online")
 
-        appliances = await cloud.list_appliances(1)
+        appliances = await cloud.list_appliances(None)
         assert appliances is None
 
     async def test_msmartcloud_get_device_info(self) -> None:
@@ -298,7 +312,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         response.read = AsyncMock(
             side_effect=[
                 self.responses["msmartcloud_reroute.json"],
-                self.responses["msmartcloud_login_id.json"],
+                self.responses["cloud_login_id.json"],
                 self.responses["msmartcloud_login.json"],
                 self.responses["msmartcloud_list_appliances.json"],
             ]
@@ -311,23 +325,24 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert await cloud.login()
 
         device = await cloud.get_device_info(1)
-        assert device["name"] == "Appliance Name"
-        assert device["type"] == 0xAC
-        assert device["sn"] == "1234567890abcdef1234567890abcdef"
-        assert device["sn8"] == "0abcdef1"
-        assert device["model_number"] == 10
-        assert device["manufacturer_code"] == "1234"
-        assert device["model"] == "0abcdef1"
-        assert device["online"]
+        assert device is not None
+        assert device.get("name") == "Appliance Name"
+        assert device.get("type") == 0xAC
+        assert device.get("sn") == "1234567890abcdef1234567890abcdef"
+        assert device.get("sn8") == "0abcdef1"
+        assert device.get("model_number") == 10
+        assert device.get("manufacturer_code") == "1234"
+        assert device.get("model") == "0abcdef1"
+        assert device.get("online")
 
-    async def test_msmartloud_download_lua(self) -> None:
+    async def test_msmartcloud_download_lua(self) -> None:
         """Test MSmartCloud download_lua"""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
             side_effect=[
                 self.responses["msmartcloud_reroute.json"],
-                self.responses["msmartcloud_login_id.json"],
+                self.responses["cloud_login_id.json"],
                 self.responses["msmartcloud_login.json"],
                 self.responses["meijucloud_download_lua.json"],
             ]
