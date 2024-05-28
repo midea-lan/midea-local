@@ -313,7 +313,7 @@ class MeijuCloud(MideaCloud):
         ):
             try:
                 model_number = int(response.get("modelNumber", 0))
-            except ValueError:
+            except (ValueError, TypeError):
                 model_number = 0
             model_type = response.get("type")
             device_info = {
