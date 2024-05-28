@@ -25,7 +25,9 @@ class NewProtocolTags(IntEnum):
 class MessageACBase(MessageRequest):
     _message_serial = 0
 
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xAC,
             protocol_version=protocol_version,
@@ -38,18 +40,18 @@ class MessageACBase(MessageRequest):
         self._message_id = MessageACBase._message_serial
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         body = bytearray([self.body_type]) + self._body + bytearray([self._message_id])
         body.append(calculate(body))
         return body
 
 
 class MessageQuery(MessageACBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -57,7 +59,7 @@ class MessageQuery(MessageACBase):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray(
             [
                 0x81,
@@ -84,7 +86,7 @@ class MessageQuery(MessageACBase):
 
 
 class MessagePowerQuery(MessageACBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -92,18 +94,18 @@ class MessagePowerQuery(MessageACBase):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([0x21, 0x01, 0x44, 0x00, 0x01])
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         body = bytearray([self.body_type]) + self._body
         body.append(calculate(body))
         return body
 
 
 class MessageToggleDisplay(MessageACBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -112,7 +114,7 @@ class MessageToggleDisplay(MessageACBase):
         self.prompt_tone = False
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         prompt_tone = 0x40 if self.prompt_tone else 0
         return bytearray(
             [
@@ -140,7 +142,7 @@ class MessageToggleDisplay(MessageACBase):
 
 
 class MessageNewProtocolQuery(MessageACBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -148,7 +150,7 @@ class MessageNewProtocolQuery(MessageACBase):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         query_params = [
             NewProtocolTags.indirect_wind,
             NewProtocolTags.breezeless,
@@ -165,7 +167,9 @@ class MessageNewProtocolQuery(MessageACBase):
 
 
 class MessageSubProtocol(MessageACBase):
-    def __init__(self, protocol_version, message_type, subprotocol_query_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, subprotocol_query_type: int
+    ) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=message_type,
@@ -174,18 +178,18 @@ class MessageSubProtocol(MessageACBase):
         self._subprotocol_query_type = subprotocol_query_type
 
     @property
-    def _subprotocol_body(self):
+    def _subprotocol_body(self) -> bytes:
         return bytes([])
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         body = bytearray([self.body_type]) + self._body
         body.append(calculate(body))
         body.append(self.checksum(body))
         return body
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         _subprotocol_body = self._subprotocol_body
         _body = bytearray(
             [
@@ -204,7 +208,7 @@ class MessageSubProtocol(MessageACBase):
 
 
 class MessageSubProtocolQuery(MessageSubProtocol):
-    def __init__(self, protocol_version, subprotocol_query_type):
+    def __init__(self, protocol_version: int, subprotocol_query_type: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -213,7 +217,7 @@ class MessageSubProtocolQuery(MessageSubProtocol):
 
 
 class MessageSubProtocolSet(MessageSubProtocol):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -233,7 +237,7 @@ class MessageSubProtocolSet(MessageSubProtocol):
         self.prompt_tone = False
 
     @property
-    def _subprotocol_body(self):
+    def _subprotocol_body(self) -> bytes:
         power = 0x01 if self.power else 0
         dry = 0x10 if self.power and self.dry else 0
         boost_mode = 0x20 if self.boost_mode else 0
@@ -294,7 +298,7 @@ class MessageSubProtocolSet(MessageSubProtocol):
 
 
 class MessageGeneralSet(MessageACBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -319,7 +323,7 @@ class MessageGeneralSet(MessageACBase):
         self.comfort_mode = False
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         # Byte1, Power, prompt_tone
         power = 0x01 if self.power else 0
         prompt_tone = 0x40 if self.prompt_tone else 0
@@ -383,21 +387,21 @@ class MessageGeneralSet(MessageACBase):
 
 
 class MessageNewProtocolSet(MessageACBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
             body_type=0xB0,
         )
-        self.indirect_wind = None
-        self.prompt_tone = None
-        self.breezeless = None
-        self.screen_display_alternate = None
-        self.fresh_air_1 = None
-        self.fresh_air_2 = None
+        self.indirect_wind: bytes | None = None
+        self.prompt_tone: bytes | None = None
+        self.breezeless: bytes | None = None
+        self.screen_display_alternate: bytes | None = None
+        self.fresh_air_1: bytes | None = None
+        self.fresh_air_2: bytes | None = None
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         pack_count = 0
         payload = bytearray([0x00])
         if self.breezeless is not None:
@@ -470,7 +474,7 @@ class MessageNewProtocolSet(MessageACBase):
 
 
 class XA0MessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[1] & 0x1) > 0
         self.target_temperature = (
@@ -492,7 +496,7 @@ class XA0MessageBody(MessageBody):
 
 
 class XA1MessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         if body[13] != 0xFF:
             temp_integer = int((body[13] - 50) / 2)
@@ -514,7 +518,7 @@ class XA1MessageBody(MessageBody):
 
 
 class XBXMessageBody(NewProtocolMessageBody):
-    def __init__(self, body, bt):
+    def __init__(self, body: bytearray, bt: int) -> None:
         super().__init__(body, bt)
         params = self.parse()
         if NewProtocolTags.indirect_wind in params:
@@ -541,7 +545,7 @@ class XBXMessageBody(NewProtocolMessageBody):
 
 
 class XC0MessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[1] & 0x1) > 0
         self.mode = (body[2] & 0xE0) >> 5
@@ -582,7 +586,7 @@ class XC0MessageBody(MessageBody):
 
 
 class XC1MessageBody(MessageBody):
-    def __init__(self, body, analysis_method=3):
+    def __init__(self, body: bytearray, analysis_method: int = 3) -> None:
         super().__init__(body)
         if body[3] == 0x44:
             self.total_energy_consumption = XC1MessageBody.parse_consumption(
@@ -609,11 +613,11 @@ class XC1MessageBody(MessageBody):
             pass
 
     @staticmethod
-    def parse_value(byte):
+    def parse_value(byte: int) -> int:
         return (byte >> 4) * 10 + (byte & 0x0F)
 
     @staticmethod
-    def parse_power(analysis_method, byte1, byte2, byte3):
+    def parse_power(analysis_method: int, byte1: int, byte2: int, byte3: int) -> float:
         if analysis_method == 1:
             return (
                 float(
@@ -629,7 +633,9 @@ class XC1MessageBody(MessageBody):
             return float(byte1 * 10000 + byte2 * 100 + byte3) / 10
 
     @staticmethod
-    def parse_consumption(analysis_method, byte1, byte2, byte3, byte4):
+    def parse_consumption(
+        analysis_method: int, byte1: int, byte2: int, byte3: int, byte4: int
+    ) -> float:
         if analysis_method == 1:
             return (
                 float(
@@ -647,7 +653,7 @@ class XC1MessageBody(MessageBody):
 
 
 class XBBMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         subprotocol_head = body[:6]
         subprotocol_body = body[6:]
@@ -704,7 +710,7 @@ class XBBMessageBody(MessageBody):
 
 
 class MessageACResponse(MessageResponse):
-    def __init__(self, message, power_analysis_method=3):
+    def __init__(self, message: bytearray, power_analysis_method: int = 3) -> None:
         super().__init__(message)
         if self.message_type == MessageType.notify2 and self.body_type == 0xA0:
             self.set_body(XA0MessageBody(super().body))
