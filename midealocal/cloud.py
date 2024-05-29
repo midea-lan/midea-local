@@ -630,7 +630,7 @@ class MideaAirCloud(MideaCloud):
             header.update({"uid": self._uid})
         if self._access_token is not None:
             header.update({"accessToken": self._access_token})
-        response: dict = {"code": -1}
+        response: dict = {"errorCode": -1}
         for i in range(3):
             try:
                 with self._api_lock:
