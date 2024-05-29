@@ -622,10 +622,6 @@ class MideaAirCloud(MideaCloud):
         header: dict[str, Any] | None = None,
     ) -> dict[str, Any] | None:
         header = header or {}
-        if not data.get("reqId"):
-            data.update({"reqId": token_hex(16)})
-        if not data.get("stamp"):
-            data.update({"stamp": datetime.datetime.now().strftime("%Y%m%d%H%M%S")})
         url = self._api_url + endpoint
 
         sign = self._security.sign(url, data, "")
