@@ -4,6 +4,8 @@ import os
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, Mock
 
+from aiohttp import ClientResponseError
+
 from midealocal.cloud import (
     MeijuCloud,
     MideaAirCloud,
@@ -536,15 +538,30 @@ class CloudTest(IsolatedAsyncioTestCase):
     async def test_mideaaircloud_get_device_info(self) -> None:
         """Test MideaAirCloud get_device_info"""
         session = Mock()
-        response = Mock()
-        response.read = AsyncMock(
+        response1 = Mock()
+        response1.read = AsyncMock(
+            return_value=self.responses["mideaaircloud_login_id.json"]
+        )
+        response2 = Mock()
+        response2.read = AsyncMock(
+            return_value=self.responses["mideaaircloud_login.json"]
+        )
+        response3 = Mock()
+        response3.read = AsyncMock(
+            return_value=self.responses["mideaaircloud_list_appliances.json"]
+        )
+
+        session.request = AsyncMock(
             side_effect=[
-                self.responses["mideaaircloud_login_id.json"],
-                self.responses["mideaaircloud_login.json"],
-                self.responses["mideaaircloud_list_appliances.json"],
+                response1,
+                response2,
+                response3,
+                ClientResponseError(Mock(), Mock()),
+                ClientResponseError(Mock(), Mock()),
+                ClientResponseError(Mock(), Mock()),
+                ClientResponseError(Mock(), Mock()),
             ]
         )
-        session.request = AsyncMock(return_value=response)
         cloud = get_midea_cloud(
             "Midea Air", session=session, account="account", password="password"
         )
@@ -561,6 +578,9 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert device.get("manufacturer_code") == "1234"
         assert device.get("model") == "0abcdef1"
         assert device.get("online")
+
+        device = await cloud.get_device_info(99)
+        assert device is None
 
     async def test_mideaaircloud_download_lua(self) -> None:
         """Test MideaAirCloud download_lua"""
