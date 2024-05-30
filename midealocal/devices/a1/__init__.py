@@ -1,4 +1,7 @@
 import logging
+from typing import Any
+from .message import MessageQuery, MessageA1Response, MessageSet
+
 import sys
 
 from .message import MessageA1Response, MessageQuery, MessageSet
@@ -53,7 +56,7 @@ class MideaA1Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -83,22 +86,22 @@ class MideaA1Device(MideaDevice):
         )
 
     @property
-    def modes(self):
+    def modes(self) -> list[str]:
         return MideaA1Device._modes
 
     @property
-    def fan_speeds(self):
+    def fan_speeds(self) -> list[str]:
         return list(MideaA1Device._speeds.values())
 
     @property
-    def water_level_sets(self):
+    def water_level_sets(self) -> list[str]:
         return MideaA1Device._water_level_sets
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
-        message = MessageA1Response(msg)
+    def process_message(self, msg: bytes) -> dict[str, Any]:
+        message = MessageA1Response(bytearray(msg))
         self._protocol_version = message.protocol_version
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -131,7 +134,7 @@ class MideaA1Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def make_message_set(self):
+    def make_message_set(self) -> MessageSet:
         message = MessageSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
@@ -159,7 +162,7 @@ class MideaA1Device(MideaDevice):
         )
         return message
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
             self.update_all({DeviceAttributes.prompt_tone.value: value})
