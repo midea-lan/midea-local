@@ -2,7 +2,9 @@ from ...message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class MessageBFBase(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xBF,
             protocol_version=protocol_version,
@@ -11,12 +13,12 @@ class MessageBFBase(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageBFBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -24,12 +26,12 @@ class MessageQuery(MessageBFBase):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class MessageSet(MessageBFBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -39,7 +41,7 @@ class MessageSet(MessageBFBase):
         self.child_lock = None
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         power = 0xFF if self.power is None else 0x11 if self.power else 0x01
         child_lock = (
             0xFF if self.child_lock is None else 0x01 if self.child_lock else 0x00
@@ -48,7 +50,7 @@ class MessageSet(MessageBFBase):
 
 
 class MessageBFBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.status = body[31]
         self.time_remaining = (
@@ -68,8 +70,8 @@ class MessageBFBody(MessageBody):
 
 
 class MessageBFResponse(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if (
             self.message_type
             in [MessageType.set, MessageType.notify1, MessageType.query]
