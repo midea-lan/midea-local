@@ -2,7 +2,9 @@ from ...message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class MessageB4Base(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xB4,
             protocol_version=protocol_version,
@@ -11,12 +13,12 @@ class MessageB4Base(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageB4Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -24,12 +26,12 @@ class MessageQuery(MessageB4Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class B4MessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.time_remaining = (
             (0 if body[22] == 0xFF else body[22]) * 3600
@@ -47,8 +49,8 @@ class B4MessageBody(MessageBody):
 
 
 class MessageB4Response(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if self.message_type in [
             MessageType.notify1,
             MessageType.query,
