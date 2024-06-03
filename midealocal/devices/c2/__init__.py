@@ -1,6 +1,7 @@
 import json
 import logging
 import sys
+from typing import Any
 
 from .message import MessageC2Response, MessagePower, MessageQuery, MessageSet
 
@@ -43,7 +44,7 @@ class MideaC2Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -71,30 +72,30 @@ class MideaC2Device(MideaDevice):
                 DeviceAttributes.filter_life: None,
             },
         )
-        self._max_dry_level = None
-        self._max_water_temp_level = None
-        self._max_seat_temp_level = None
+        self._max_dry_level: int | None = None
+        self._max_water_temp_level: int | None = None
+        self._max_seat_temp_level: int | None = None
         self._default_max_dry_level = 3
         self._default_max_water_temp_level = 5
         self._default_max_seat_temp_level = 5
         self.set_customize(customize)
 
     @property
-    def max_dry_level(self):
+    def max_dry_level(self) -> int | None:
         return self._max_dry_level
 
     @property
-    def max_water_temp_level(self):
+    def max_water_temp_level(self) -> int | None:
         return self._max_water_temp_level
 
     @property
-    def max_seat_temp_level(self):
+    def max_seat_temp_level(self) -> int | None:
         return self._max_seat_temp_level
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageC2Response(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -104,8 +105,8 @@ class MideaC2Device(MideaDevice):
                 new_status[str(status)] = getattr(message, str(status))
         return new_status
 
-    def set_attribute(self, attr, value):
-        message = None
+    def set_attribute(self, attr: str, value: Any) -> None:
+        message: MessagePower | MessageSet | None = None
         if attr == DeviceAttributes.power:
             message = MessagePower(self._protocol_version)
             message.power = value
@@ -122,7 +123,7 @@ class MideaC2Device(MideaDevice):
         if message:
             self.build_send(message)
 
-    def set_customize(self, customize):
+    def set_customize(self, customize: str) -> None:
         self._max_dry_level = self._default_max_dry_level
         self._max_water_temp_level = self._default_max_water_temp_level
         self._max_seat_temp_level = self._default_max_seat_temp_level
