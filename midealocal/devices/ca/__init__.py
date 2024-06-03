@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import Any
 
 from .message import MessageCAResponse, MessageQuery
 
@@ -47,7 +48,7 @@ class MideaCADevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -81,10 +82,10 @@ class MideaCADevice(MideaDevice):
         )
         self._modes = [""]
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageCAResponse(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -94,7 +95,7 @@ class MideaCADevice(MideaDevice):
                 new_status[str(status)] = getattr(message, str(status))
         return new_status
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         pass
 
 
