@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import Any
 
 from .message import MessageB4Response, MessageQuery
 
@@ -24,7 +25,7 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaB4Device(MideaDevice):
-    _status = {
+    _status: dict[int, str] = {
         0x01: "Standby",
         0x02: "Idle",
         0x03: "Working",
@@ -45,7 +46,7 @@ class MideaB4Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -68,10 +69,10 @@ class MideaB4Device(MideaDevice):
             },
         )
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageB4Response(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -90,7 +91,7 @@ class MideaB4Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         pass
 
 
