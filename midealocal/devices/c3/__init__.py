@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import Any
 
 from .message import (
     MessageC3Response,
@@ -75,7 +76,7 @@ class MideaC3Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -131,10 +132,10 @@ class MideaC3Device(MideaDevice):
             },
         )
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageC3Response(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -219,7 +220,7 @@ class MideaC3Device(MideaDevice):
 
         return new_status
 
-    def make_message_set(self):
+    def make_message_set(self) -> MessageSet:
         message = MessageSet(self._protocol_version)
         message.zone1_power = self._attributes[DeviceAttributes.zone1_power]
         message.zone2_power = self._attributes[DeviceAttributes.zone2_power]
@@ -235,8 +236,8 @@ class MideaC3Device(MideaDevice):
         message.fast_dhw = self._attributes[DeviceAttributes.fast_dhw]
         return message
 
-    def set_attribute(self, attr, value):
-        message = None
+    def set_attribute(self, attr: str, value: Any) -> None:
+        message: MessageSet | MessageSetECO | MessageSetSilent | None = None
         if attr in [
             DeviceAttributes.zone1_power,
             DeviceAttributes.zone2_power,
@@ -259,7 +260,7 @@ class MideaC3Device(MideaDevice):
         if message is not None:
             self.build_send(message)
 
-    def set_mode(self, zone, mode):
+    def set_mode(self, zone: int, mode: int) -> None:
         message = self.make_message_set()
         if zone == 0:
             message.zone1_power = True
@@ -268,7 +269,9 @@ class MideaC3Device(MideaDevice):
         message.mode = mode
         self.build_send(message)
 
-    def set_target_temperature(self, zone, target_temperature, mode):
+    def set_target_temperature(
+        self, zone: int, target_temperature: int, mode: int
+    ) -> None:
         message = self.make_message_set()
         if self._attributes[DeviceAttributes.zone_temp_type][zone]:
             message.zone_target_temp[zone] = target_temperature

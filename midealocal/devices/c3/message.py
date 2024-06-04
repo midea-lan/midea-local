@@ -7,7 +7,9 @@ from ...message import (
 
 
 class MessageC3Base(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xC3,
             protocol_version=protocol_version,
@@ -16,12 +18,12 @@ class MessageC3Base(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageC3Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -29,12 +31,12 @@ class MessageQuery(MessageC3Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class MessageSet(MessageC3Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -54,7 +56,7 @@ class MessageSet(MessageC3Base):
         self.tbh = False
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         # Byte 1
         zone1_power = 0x01 if self.zone1_power else 0x00
         zone2_power = 0x02 if self.zone2_power else 0x00
@@ -82,7 +84,7 @@ class MessageSet(MessageC3Base):
 
 
 class MessageSetSilent(MessageC3Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -92,7 +94,7 @@ class MessageSetSilent(MessageC3Base):
         self.super_silent = False
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         silent_mode = 0x01 if self.silent_mode else 0
         super_silent = 0x02 if self.super_silent else 0
 
@@ -112,7 +114,7 @@ class MessageSetSilent(MessageC3Base):
 
 
 class MessageSetECO(MessageC3Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -121,14 +123,14 @@ class MessageSetECO(MessageC3Base):
         self.eco_mode = False
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         eco_mode = 0x01 if self.eco_mode else 0
 
         return bytearray([eco_mode, 0x00, 0x00, 0x00, 0x00, 0x00])
 
 
 class C3MessageBody(MessageBody):
-    def __init__(self, body, data_offset=0):
+    def __init__(self, body: bytearray, data_offset: int = 0) -> None:
         super().__init__(body)
         self.zone1_power = body[data_offset + 0] & 0x01 > 0
         self.zone2_power = body[data_offset + 0] & 0x02 > 0
@@ -162,7 +164,7 @@ class C3MessageBody(MessageBody):
 
 
 class C3Notify1MessageBody(MessageBody):
-    def __init__(self, body, data_offset=0):
+    def __init__(self, body: bytearray, data_offset: int = 0) -> None:
         super().__init__(body)
         status_byte = body[data_offset]
         self.status_tbh = (status_byte & 0x08) > 0
@@ -190,8 +192,8 @@ class C3Notify1MessageBody(MessageBody):
 
 
 class MessageC3Response(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if (
             self.message_type
             in [MessageType.set, MessageType.notify1, MessageType.query]
