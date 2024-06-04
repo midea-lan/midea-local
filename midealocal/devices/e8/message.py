@@ -2,7 +2,9 @@ from ...message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class MessageE8Base(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xE8,
             protocol_version=protocol_version,
@@ -11,12 +13,12 @@ class MessageE8Base(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageE8Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -24,12 +26,12 @@ class MessageQuery(MessageE8Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([0x55, 0x00, 0x01, 0x00, 0x00])
 
 
 class E8MessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.status = body[11]
         self.time_remaining = body[16] * 3600 + body[17] * 60 + body[18]
@@ -42,8 +44,8 @@ class E8MessageBody(MessageBody):
 
 
 class MessageE8Response(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if len(super().body) > 6:
             sub_cmd = super().body[6]
             if (
