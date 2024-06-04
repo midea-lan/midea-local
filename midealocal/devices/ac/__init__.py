@@ -171,8 +171,8 @@ class MideaACDevice(MideaDevice):
             MessagePowerQuery(self._protocol_version),
         ]
 
-    def process_byte_message(self, msg: bytearray) -> dict[str, Any]:
-        message = MessageACResponse(msg, self._power_analysis_method)
+    def process_message(self, msg: bytes) -> dict[str, Any]:
+        message = MessageACResponse(bytearray(msg), self._power_analysis_method)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
         has_fresh_air = False
@@ -265,7 +265,7 @@ class MideaACDevice(MideaDevice):
             message = self.make_message_set()
         return message
 
-    def set_device_attribute(self, attr: DeviceAttributes, value: Any) -> None:
+    def set_attribute(self, attr: str, value: Any) -> None:
         # if nat a sensor
         message: MessageToggleDisplay | MessageNewProtocolSet | None = None
         if attr not in [
