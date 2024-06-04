@@ -7,7 +7,9 @@ from ...message import (
 
 
 class MessageEABase(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int | None
+    ) -> None:
         super().__init__(
             device_type=0xEA,
             protocol_version=protocol_version,
@@ -16,12 +18,12 @@ class MessageEABase(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageEABase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -29,16 +31,16 @@ class MessageQuery(MessageEABase):
         )
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         return bytearray([0xAA, 0x55, 0x01, 0x03, 0x00])
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class EABody1(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.mode = body[6] + (body[7] << 8)
         self.progress = body[14]
@@ -51,7 +53,7 @@ class EABody1(MessageBody):
 
 
 class EABody2(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.progress = body[9]
         self.cooking = self.progress == 2
@@ -64,7 +66,7 @@ class EABody2(MessageBody):
 
 
 class EABody3(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.mode = body[4] + (body[5] << 8)
         self.progress = body[8]
@@ -77,7 +79,7 @@ class EABody3(MessageBody):
 
 
 class EABodyNew(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         if body[6] in [2, 4, 6, 8, 10, 0x62]:
             self.mode = body[7] + (body[8] << 8)
@@ -91,8 +93,8 @@ class EABodyNew(MessageBody):
 
 
 class MessageEAResponse(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if self.message_type == MessageType.notify1 and super().body[3] == 0x01:
             self.set_body(EABodyNew(super().body))
         elif self.protocol_version == 0:
