@@ -10,7 +10,9 @@ from ...message import (
 class MessageFDBase(MessageRequest):
     _message_serial = 0
 
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xFD,
             protocol_version=protocol_version,
@@ -23,18 +25,18 @@ class MessageFDBase(MessageRequest):
         self._message_id = MessageFDBase._message_serial
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         body = bytearray([self.body_type]) + self._body + bytearray([self._message_id])
         body.append(calculate(body))
         return body
 
 
 class MessageQuery(MessageFDBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -42,7 +44,7 @@ class MessageQuery(MessageFDBase):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray(
             [
                 0x81,
@@ -69,7 +71,7 @@ class MessageQuery(MessageFDBase):
 
 
 class MessageSet(MessageFDBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -84,7 +86,7 @@ class MessageSet(MessageFDBase):
         self.disinfect = None
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         power = 0x01 if self.power else 0x00
         prompt_tone = 0x40 if self.prompt_tone else 0x00
         disinfect = 0 if self.disinfect is None else (1 if self.disinfect else 2)
@@ -116,7 +118,7 @@ class MessageSet(MessageFDBase):
 
 
 class FDC8MessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[1] & 0x01) > 0
         self.fan_speed = body[3] & 0x7F
@@ -135,7 +137,7 @@ class FDC8MessageBody(MessageBody):
 
 
 class FDA0MessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[1] & 0x01) > 0
         self.fan_speed = body[3] & 0x7F
@@ -154,8 +156,8 @@ class FDA0MessageBody(MessageBody):
 
 
 class MessageFDResponse(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if self.message_type in [
             MessageType.query,
             MessageType.set,
