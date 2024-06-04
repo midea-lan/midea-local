@@ -15,14 +15,16 @@ class NewSetTags(IntEnum):
 
 class EDNewSetParamPack:
     @staticmethod
-    def pack(param, value, addition=0):
+    def pack(param: int, value: int, addition: int = 0) -> bytearray:
         return bytearray(
             [param & 0xFF, param >> 8, value, addition & 0xFF, addition >> 8],
         )
 
 
 class MessageEDBase(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int | None
+    ) -> None:
         super().__init__(
             device_type=0xED,
             protocol_version=protocol_version,
@@ -31,35 +33,35 @@ class MessageEDBase(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageEDBase):
-    def __init__(self, protocol_version, device_class):
+    def __init__(self, protocol_version: int, body_type: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=device_class,
+            body_type=body_type,
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([0x01])
 
 
 class MessageNewSet(MessageEDBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
             body_type=0x15,
         )
-        self.power = None
-        self.lock = None
+        self.power: bool | None = None
+        self.lock: bool | None = None
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         pack_count = 0
         payload = bytearray([0x01, 0x00])
         if self.power is not None:
@@ -83,7 +85,7 @@ class MessageNewSet(MessageEDBase):
 
 
 class MessageOldSet(MessageEDBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -91,16 +93,16 @@ class MessageOldSet(MessageEDBase):
         )
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         return bytearray([])
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class EDMessageBody01(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[2] & 0x01) > 0
         self.water_consumption = body[7] + (body[8] << 8)
@@ -116,7 +118,7 @@ class EDMessageBody01(MessageBody):
 
 
 class EDMessageBody03(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[51] & 0x01) > 0
         self.child_lock = (body[51] & 0x08) > 0
@@ -129,7 +131,7 @@ class EDMessageBody03(MessageBody):
 
 
 class EDMessageBody05(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[51] & 0x01) > 0
         self.child_lock = (body[51] & 0x08) > 0
@@ -137,7 +139,7 @@ class EDMessageBody05(MessageBody):
 
 
 class EDMessageBody06(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[51] & 0x01) > 0
         self.child_lock = (body[51] & 0x08) > 0
@@ -145,7 +147,7 @@ class EDMessageBody06(MessageBody):
 
 
 class EDMessageBody07(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.water_consumption = (body[21] << 8) + body[20]
         self.power = (body[51] & 0x01) > 0
@@ -153,7 +155,7 @@ class EDMessageBody07(MessageBody):
 
 
 class EDMessageBodyFF(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         data_offset = 2
         while True:
@@ -186,8 +188,8 @@ class EDMessageBodyFF(MessageBody):
 
 
 class MessageEDResponse(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if self._message_type in [MessageType.query, MessageType.notify1]:
             self.device_class = self._body_type
             if self._body_type in [0x00, 0xFF]:
