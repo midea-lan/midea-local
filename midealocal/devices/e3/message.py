@@ -7,6 +7,7 @@ from ...message import (
 )
 
 NEW_PROTOCOL_PARAMS = {
+    "none": 0x00,
     "zero_cold_water": 0x03,
     # "zero_cold_master": 0x12,
     "zero_cold_pulse": 0x04,
@@ -115,7 +116,7 @@ class MessageNewProtocolSet(MessageE3Base):
             message_type=MessageType.set,
             body_type=0x14,
         )
-        self.key: str | None = None
+        self.key = "none"
         self.value: Any = None
 
     @property
