@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import Any
 
 from .message import MessageCCResponse, MessageQuery, MessageSet
 
@@ -57,7 +58,7 @@ class MideaCCDevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -88,20 +89,20 @@ class MideaCCDevice(MideaDevice):
                 DeviceAttributes.temp_fahrenheit: False,
             },
         )
-        self._fan_speeds = None
+        self._fan_speeds: dict[int, str] | None = None
 
     @property
-    def fan_modes(self):
+    def fan_modes(self) -> list[str] | None:
         return None if self._fan_speeds is None else list(self._fan_speeds.values())
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageCCResponse(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
-        fan_speed = None
+        fan_speed: int | None = None
         for status in self._attributes.keys():
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
@@ -139,18 +140,19 @@ class MideaCCDevice(MideaDevice):
             ]
         return new_status
 
-    def make_message_set(self):
+    def make_message_set(self) -> MessageSet:
         message = MessageSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.mode = self._attributes[DeviceAttributes.mode]
         message.target_temperature = self._attributes[
             DeviceAttributes.target_temperature
         ]
-        message.fan_speed = list(self._fan_speeds.keys())[
-            list(self._fan_speeds.values()).index(
-                self._attributes[DeviceAttributes.fan_speed],
-            )
-        ]
+        if self._fan_speeds:
+            message.fan_speed = list(self._fan_speeds.keys())[
+                list(self._fan_speeds.values()).index(
+                    self._attributes[DeviceAttributes.fan_speed],
+                )
+            ]
         message.eco_mode = self._attributes[DeviceAttributes.eco_mode]
         message.sleep_mode = self._attributes[DeviceAttributes.sleep_mode]
         message.night_light = self._attributes[DeviceAttributes.night_light]
@@ -158,7 +160,7 @@ class MideaCCDevice(MideaDevice):
         message.swing = self._attributes[DeviceAttributes.swing]
         return message
 
-    def set_target_temperature(self, target_temperature, mode):
+    def set_target_temperature(self, target_temperature: int, mode: int) -> None:
         message = self.make_message_set()
         message.target_temperature = target_temperature
         if mode is not None:
@@ -166,7 +168,7 @@ class MideaCCDevice(MideaDevice):
             message.mode = mode
         self.build_send(message)
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         # if nat a sensor
         if attr not in [
             DeviceAttributes.indoor_temperature,
@@ -177,7 +179,7 @@ class MideaCCDevice(MideaDevice):
         ]:
             message = self.make_message_set()
             if attr == DeviceAttributes.fan_speed:
-                if value in self._fan_speeds.values():
+                if self._fan_speeds and value in self._fan_speeds.values():
                     message.fan_speed = list(self._fan_speeds.keys())[
                         list(self._fan_speeds.values()).index(value)
                     ]
