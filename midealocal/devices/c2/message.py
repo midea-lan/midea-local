@@ -1,4 +1,5 @@
 from enum import IntEnum
+from typing import cast
 
 from ...message import (
     MessageBody,
@@ -9,6 +10,7 @@ from ...message import (
 
 
 class C2MessageEnum(IntEnum):
+    none = 0x00
     sensor_light = 0x01
     child_lock = 0x10
     foam_shield = 0x1F
@@ -42,7 +44,9 @@ C2_MESSAGE_KEYS = {
 
 
 class MessageC2Base(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xC2,
             protocol_version=protocol_version,
@@ -51,12 +55,12 @@ class MessageC2Base(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageC2Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -64,12 +68,12 @@ class MessageQuery(MessageC2Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([0x01])
 
 
 class MessagePower(MessageC2Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -78,7 +82,7 @@ class MessagePower(MessageC2Base):
         self.power = False
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         if self.power:
             self.body_type = 0x01
         else:
@@ -87,7 +91,7 @@ class MessagePower(MessageC2Base):
 
 
 class MessagePowerOff(MessageC2Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -95,30 +99,30 @@ class MessagePowerOff(MessageC2Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([0x01])
 
 
 class MessageSet(MessageC2Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
             body_type=0x00,
         )
 
-        self.child_lock = None
-        self.sensor_light = None
-        self.water_temp_level = None
-        self.seat_temp_level = None
-        self.dry_level = None
-        self.foam_shield = None
+        self.child_lock: bool | None = None
+        self.sensor_light: bool | None = None
+        self.water_temp_level: int | None = None
+        self.seat_temp_level: int | None = None
+        self.dry_level: int | None = None
+        self.foam_shield: bool | None = None
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         self.body_type = 0x14
-        key = 0x00
-        value = 0x00
+        key = C2MessageEnum.none
+        value: int | bool = 0x00
         if self.child_lock is not None:
             key = C2MessageEnum.child_lock
             value = self.child_lock
@@ -137,12 +141,13 @@ class MessageSet(MessageC2Base):
         elif self.foam_shield is not None:
             key = C2MessageEnum.foam_shield
             value = self.foam_shield
-        value = C2_MESSAGE_KEYS.get(key).get(value)
+        x = cast(dict, C2_MESSAGE_KEYS[key])
+        value = cast(int | bool, x.get(value))
         return bytearray([key, value])
 
 
 class C2MessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[2] & 0x01) > 0
         self.seat_status = (body[3] & 0x01) > 0
@@ -160,13 +165,13 @@ class C2MessageBody(MessageBody):
 
 
 class C2Notify1MessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
 
 
 class MessageC2Response(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if self.message_type in [
             MessageType.notify1,
             MessageType.query,
