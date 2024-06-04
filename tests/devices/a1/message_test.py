@@ -3,6 +3,7 @@
 import unittest
 from midealocal.devices.a1.message import (
     MessageA1Base,
+    MessageA1Response,
     MessageQuery,
     MessageNewProtocolQuery,
     MessageSet,
@@ -16,9 +17,13 @@ class TestMessageA1Base(unittest.TestCase):
 
     def test_message_id_increment(self) -> None:
         """Test message Id Increment."""
-        msg1 = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
+        msg = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
         msg2 = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
-        self.assertEqual(msg2._message_id, msg1._message_id + 1)
+        self.assertEqual(getattr(msg2, "_message_id"), getattr(msg, "_message_id") + 1)
+        # test reset
+        for idx in range(100 - getattr(msg2, "_message_id")):
+            msg = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
+        self.assertEqual(getattr(msg, "_message_id"), 1)
 
     def test_body_not_implemented(self) -> None:
         """Test body not implemented."""
@@ -115,3 +120,116 @@ class TestMessageNewProtocolSet(unittest.TestCase):
         msg_set.light = True
         expected_body = bytearray(b"\xb0\x01[\x00\x01\x01")
         self.assertEqual(msg_set.body[:-2], expected_body)
+
+
+class TestMessageA1Response(unittest.TestCase):
+    """Test Message A1 Response."""
+
+    def test_a1_general_response(self) -> None:
+        """Test general response."""
+        header = bytearray(
+            [
+                0xAA,
+                0x00,
+                0xA1,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x03,
+            ]
+        )
+        body = bytearray(21)
+        body[1] = 0b00000001  # Power on (1)
+        body[2] = 0b00000010  # Mode (2)
+        body[3] = 0b00000100  # Fan speed (4)
+        body[7] = 40  # Target humidity (40)
+        body[8] = 0b10000000  # Child lock on (128)
+        body[9] = 0b01000000  # Anion on (64)
+        body[10] = 0b00111111  # Tank (63)
+        body[15] = 50  # Water level set (50)
+        body[16] = 45  # Current humidity (45)
+        body[17] = 100  # Current temperature (75 degrees C, since (100 - 50) / 2 = 25)
+        body[19] = 0b00100000  # Swing on (32)
+        response = MessageA1Response(header + body)
+        self.assertEqual(getattr(response, "power"), True)
+        self.assertEqual(getattr(response, "mode"), 2)
+        self.assertEqual(getattr(response, "fan_speed"), 1)
+        self.assertEqual(getattr(response, "target_humidity"), 40)
+        self.assertEqual(getattr(response, "child_lock"), True)
+        self.assertEqual(getattr(response, "anion"), True)
+        self.assertEqual(getattr(response, "tank"), 63)
+        self.assertEqual(getattr(response, "water_level_set"), 50)
+        self.assertEqual(getattr(response, "current_humidity"), 45)
+        self.assertEqual(getattr(response, "current_temperature"), 25)
+        self.assertEqual(getattr(response, "swing"), True)
+
+    def test_a1_new_protocol_message_query(self) -> None:
+        """Test A1 new protocol message query."""
+        header = bytearray(
+            [
+                0xAA,
+                0x00,
+                0xA1,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x03,
+            ]
+        )
+        body = bytearray(8)
+        body[0] = 0xB0  # Body type
+        body[1] = 0x01  # param count
+        body[2] = 0x5B  # light param low byte
+        body[3] = 0x00  # light param high byte
+        body[5] = 0x01  # light value length
+        body[6] = 0x01  # light value
+        response = MessageA1Response(header + body)
+        self.assertEqual(getattr(response, "light"), True)
+
+    def test_a1_general_notify_response(self) -> None:
+        """Test general notify response."""
+        header = bytearray(
+            [
+                0xAA,
+                0x00,
+                0xA1,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x05,
+            ]
+        )
+        body = bytearray(21)
+        body[0] = 0xA0  # Body type
+        body[1] = 0b00000001  # Power on (1)
+        body[2] = 0b00000010  # Mode (2)
+        body[3] = 0b00000110  # Fan speed (6)
+        body[7] = 40  # Target humidity (40)
+        body[8] = 0b10000000  # Child lock on (128)
+        body[9] = 0b01000000  # Anion on (64)
+        body[10] = 0b00111111  # Tank (63)
+        body[15] = 50  # Water level set (50)
+        body[16] = 45  # Current humidity (45)
+        body[17] = 100  # Current temperature (75 degrees C, since (100 - 50) / 2 = 25)
+        body[19] = 0b00100000  # Swing on (32)
+        response = MessageA1Response(header + body)
+        self.assertEqual(getattr(response, "power"), True)
+        self.assertEqual(getattr(response, "mode"), 2)
+        self.assertEqual(getattr(response, "fan_speed"), 6)
+        self.assertEqual(getattr(response, "target_humidity"), 40)
+        self.assertEqual(getattr(response, "child_lock"), True)
+        self.assertEqual(getattr(response, "anion"), True)
+        self.assertEqual(getattr(response, "tank"), 63)
+        self.assertEqual(getattr(response, "water_level_set"), 50)
+        self.assertEqual(getattr(response, "current_humidity"), 45)
+        self.assertEqual(getattr(response, "current_temperature"), 25)
+        self.assertEqual(getattr(response, "swing"), True)
