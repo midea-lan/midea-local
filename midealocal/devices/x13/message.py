@@ -2,7 +2,9 @@ from ...message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class Message13Base(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0x13,
             protocol_version=protocol_version,
@@ -11,12 +13,12 @@ class Message13Base(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(Message13Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -24,24 +26,24 @@ class MessageQuery(Message13Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([0x00, 0x00, 0x00, 0x00])
 
 
 class MessageSet(Message13Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
             body_type=0x00,
         )
-        self.brightness = None
-        self.color_temperature = None
-        self.effect = None
-        self.power = None
+        self.brightness: int | None = None
+        self.color_temperature: int | None = None
+        self.effect: int | None = None
+        self.power: bool | None = None
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         body_byte = 0x00
         if self.power is not None:
             self.body_type = 0x01
@@ -59,32 +61,28 @@ class MessageSet(Message13Base):
 
 
 class MessageMainLightBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.brightness = self.read_byte(body, 1)
         self.color_temperature = self.read_byte(body, 2)
         self.effect = self.read_byte(body, 3) - 1
         if self.effect > 5:
             self.effect = 1
-        """
-        self.rgb_color = [self.read_byte(body, 5),
-                          self.read_byte(body, 6),
-                          self.read_byte(body, 7)]
-        """
         self.power = self.read_byte(body, 8) > 0
 
 
 class MessageMainLightResponseBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
-        self.control_success = body[1] > 0
+        self.control_success: bool = body[1] > 0
 
 
 class Message13Response(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if self.body_type == 0xA4:
             self.set_body(MessageMainLightBody(super().body))
         elif self.message_type == MessageType.set and self.body_type > 0x80:
             self.set_body(MessageMainLightResponseBody(super().body))
         self.set_attr()
+        self.control_success: bool
