@@ -102,7 +102,7 @@ class MessageRequest(MessageBase):
         device_type: int,
         protocol_version: int,
         message_type: int,
-        body_type: int,
+        body_type: int = NONE_VALUE,
     ) -> None:
         super().__init__()
         self.device_type = device_type
