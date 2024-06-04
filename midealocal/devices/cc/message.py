@@ -7,7 +7,9 @@ from ...message import (
 
 
 class MessageCCBase(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xCC,
             protocol_version=protocol_version,
@@ -16,12 +18,12 @@ class MessageCCBase(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageCCBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -29,12 +31,12 @@ class MessageQuery(MessageCCBase):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([0x00] * 23)
 
 
 class MessageSet(MessageCCBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -53,7 +55,7 @@ class MessageSet(MessageCCBase):
         self.swing = False
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         # Byte1, Power Mode
         power = 0x80 if self.power else 0
         mode = 1 << (self.mode - 1)
@@ -110,10 +112,10 @@ class MessageSet(MessageCCBase):
 
 
 class CCGeneralMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[1] & 0x80) > 0
-        mode = body[1] & 0x1F
+        mode: float = body[1] & 0x1F
         self.mode = 0
         while mode >= 1:
             mode /= 2
@@ -134,8 +136,8 @@ class CCGeneralMessageBody(MessageBody):
 
 
 class MessageCCResponse(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if (
             (self.message_type == MessageType.query and self.body_type == 0x01)
             or (
