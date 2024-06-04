@@ -7,7 +7,9 @@ from ...message import (
 
 
 class MessageE2Base(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xE2,
             protocol_version=protocol_version,
@@ -16,12 +18,12 @@ class MessageE2Base(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageE2Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -29,12 +31,12 @@ class MessageQuery(MessageE2Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([0x01])
 
 
 class MessagePower(MessageE2Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -43,7 +45,7 @@ class MessagePower(MessageE2Base):
         self.power = False
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         if self.power:
             self.body_type = 0x01
         else:
@@ -52,18 +54,18 @@ class MessagePower(MessageE2Base):
 
 
 class MessageNewProtocolSet(MessageE2Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
             body_type=0x14,
         )
-        self.target_temperature = None
-        self.variable_heating = None
-        self.whole_tank_heating = None
+        self.target_temperature: int | None = None
+        self.variable_heating: bool | None = None
+        self.whole_tank_heating: bool | None = None
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         byte1 = 0x00
         byte2 = 0x00
         if self.target_temperature is not None:
@@ -79,7 +81,7 @@ class MessageNewProtocolSet(MessageE2Base):
 
 
 class MessageSet(MessageE2Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -91,7 +93,7 @@ class MessageSet(MessageE2Base):
         self.protection = False
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         # Byte 4 whole_tank_heating, protection
         protection = 0x04 if self.protection else 0x00
         whole_tank_heating = 0x02 if self.whole_tank_heating else 0x01
@@ -124,7 +126,7 @@ class MessageSet(MessageE2Base):
 
 
 class E2GeneralMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[2] & 0x01) > 0
         self.heating = (body[2] & 0x04) > 0
@@ -142,8 +144,8 @@ class E2GeneralMessageBody(MessageBody):
 
 
 class MessageE2Response(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if (
             self.message_type in [MessageType.query, MessageType.notify1]
             and self.body_type == 0x01

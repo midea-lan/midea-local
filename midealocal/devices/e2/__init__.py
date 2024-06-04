@@ -1,6 +1,7 @@
 import json
 import logging
 import sys
+from typing import Any
 
 from .message import (
     MessageE2Response,
@@ -47,7 +48,7 @@ class MideaE2Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -77,13 +78,13 @@ class MideaE2Device(MideaDevice):
         self._old_protocol = self._default_old_protocol
         self.set_customize(customize)
 
-    def old_protocol(self):
+    def old_protocol(self) -> bool:
         return self.subtype <= 82 or self.subtype == 85 or self.subtype == 36353
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageE2Response(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -93,7 +94,7 @@ class MideaE2Device(MideaDevice):
                 new_status[str(status)] = getattr(message, str(status))
         return new_status
 
-    def make_message_set(self):
+    def make_message_set(self) -> MessageSet:
         message = MessageSet(self._protocol_version)
         message.protection = self._attributes[DeviceAttributes.protection]
         message.whole_tank_heating = self._attributes[
@@ -105,7 +106,8 @@ class MideaE2Device(MideaDevice):
         message.variable_heating = self._attributes[DeviceAttributes.variable_heating]
         return message
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
+        message: MessagePower | MessageSet | MessageNewProtocolSet | None = None
         if attr not in [
             DeviceAttributes.heating,
             DeviceAttributes.keep_warm,
@@ -126,7 +128,7 @@ class MideaE2Device(MideaDevice):
                 setattr(message, str(attr), value)
             self.build_send(message)
 
-    def set_customize(self, customize):
+    def set_customize(self, customize: str) -> None:
         self._old_protocol = self._default_old_protocol
         if customize and len(customize) > 0:
             try:
