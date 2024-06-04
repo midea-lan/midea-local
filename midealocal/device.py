@@ -10,6 +10,7 @@ from .message import (
     MessageApplianceResponse,
     MessageQueryAppliance,
     MessageQuestCustom,
+    MessageRequest,
     MessageType,
 )
 from .packet_builder import PacketBuilder
@@ -196,7 +197,7 @@ class MideaDevice(threading.Thread):
         data = self._security.encode_8370(data, msg_type)
         self.send_message_v2(data)
 
-    def build_send(self, cmd: MessageQuestCustom) -> None:
+    def build_send(self, cmd: MessageRequest) -> None:
         data = cmd.serialize()
         _LOGGER.debug("[%s] Sending: %s", self._device_id, cmd)
         msg = PacketBuilder(self._device_id, data).finalize()

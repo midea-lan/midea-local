@@ -32,11 +32,11 @@ class MessageA1Base(MessageRequest):
         self._message_id = MessageA1Base._message_serial
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         body = bytearray([self.body_type]) + self._body + bytearray([self._message_id])
         body.append(calculate(body))
         return body
@@ -163,7 +163,7 @@ class MessageNewProtocolSet(MessageA1Base):
             message_type=MessageType.set,
             body_type=0xB0,
         )
-        self.light = None
+        self.light: bool | None = None
 
     @property
     def _body(self) -> bytearray:
@@ -200,7 +200,7 @@ class A1GeneralMessageBody(MessageBody):
 
 
 class A1NewProtocolMessageBody(NewProtocolMessageBody):
-    def __init__(self, body: bytearray, bt) -> None:
+    def __init__(self, body: bytearray, bt: int) -> None:
         super().__init__(body, bt)
         params = self.parse()
         if NewProtocolTags.light in params:

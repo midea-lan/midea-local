@@ -4,7 +4,6 @@ from .message import MessageQuery, MessageA1Response, MessageSet
 
 import sys
 
-from .message import MessageA1Response, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -73,7 +72,7 @@ class MideaA1Device(MideaDevice):
                 DeviceAttributes.prompt_tone: True,
                 DeviceAttributes.child_lock: False,
                 DeviceAttributes.mode: None,
-                DeviceAttributes.fan_speed: 60,
+                DeviceAttributes.fan_speed: "Medium",
                 DeviceAttributes.swing: False,
                 DeviceAttributes.target_humidity: 35,
                 DeviceAttributes.anion: False,
