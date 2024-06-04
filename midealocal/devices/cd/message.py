@@ -1,3 +1,4 @@
+from typing import Any
 from ...message import (
     MessageBody,
     MessageRequest,
@@ -7,7 +8,9 @@ from ...message import (
 
 
 class MessageCDBase(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xCD,
             protocol_version=protocol_version,
@@ -16,12 +19,12 @@ class MessageCDBase(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageCDBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -29,12 +32,12 @@ class MessageQuery(MessageCDBase):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([0x01])
 
 
 class MessageSet(MessageCDBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -43,15 +46,15 @@ class MessageSet(MessageCDBase):
         self.power = False
         self.target_temperature = 0
         self.aux_heating = False
-        self.fields = {}
+        self.fields: dict[Any, Any] = {}
         self.mode = 1
 
-    def read_field(self, field):
+    def read_field(self, field: str) -> Any:
         value = self.fields.get(field, 0)
         return value if value else 0
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         power = 0x01 if self.power else 0x00
         mode = self.mode + 1
         target_temperature = round(self.target_temperature * 2 + 30)
@@ -70,7 +73,7 @@ class MessageSet(MessageCDBase):
 
 
 class CDGeneralMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[2] & 0x01) > 0
         self.target_temperature = round((body[3] - 30) / 2)
@@ -92,7 +95,7 @@ class CDGeneralMessageBody(MessageBody):
 
 
 class CD02MessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.fields = {}
         self.power = (body[2] & 0x01) > 0
@@ -105,8 +108,8 @@ class CD02MessageBody(MessageBody):
 
 
 class MessageCDResponse(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if self.message_type in [MessageType.query, MessageType.notify2]:
             self.set_body(CDGeneralMessageBody(super().body))
         elif self.message_type == MessageType.set and self.body_type == 0x01:
