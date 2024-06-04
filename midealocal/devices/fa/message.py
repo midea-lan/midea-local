@@ -7,7 +7,9 @@ from ...message import (
 
 
 class MessageFABase(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int | None
+    ) -> None:
         super().__init__(
             device_type=0xFA,
             protocol_version=protocol_version,
@@ -16,12 +18,12 @@ class MessageFABase(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageFABase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -29,33 +31,33 @@ class MessageQuery(MessageFABase):
         )
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         return bytearray([])
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class MessageSet(MessageFABase):
-    def __init__(self, protocol_version, subtype):
+    def __init__(self, protocol_version: int, subtype: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
             body_type=0x00,
         )
         self._subtype = subtype
-        self.power = None
-        self.lock = None
-        self.mode = None
-        self.fan_speed = None
-        self.oscillate = None
-        self.oscillation_angle = None
-        self.oscillation_mode = None
-        self.tilting_angle = None
+        self.power: bool | None = None
+        self.lock: bool | None = None
+        self.mode: int | None = None
+        self.fan_speed: int | None = None
+        self.oscillate: bool | None = None
+        self.oscillation_angle: int | None = None
+        self.oscillation_mode: int | None = None
+        self.tilting_angle: int | None = None
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         if 1 <= self._subtype <= 10 or self._subtype == 161:
             _body_return = bytearray(
                 [
@@ -168,7 +170,7 @@ class MessageSet(MessageFABase):
 
 
 class FAGeneralMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         lock = body[3] & 0x03
         if lock == 1:
@@ -191,8 +193,8 @@ class FAGeneralMessageBody(MessageBody):
 
 
 class MessageFAResponse(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if self.message_type in [
             MessageType.query,
             MessageType.set,

@@ -1,6 +1,7 @@
 import json
 import logging
 import sys
+from typing import Any
 
 from .message import MessageFAResponse, MessageQuery, MessageSet
 
@@ -65,7 +66,7 @@ class MideaFADevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -89,33 +90,33 @@ class MideaFADevice(MideaDevice):
             },
         )
         self._default_speed_count = 3
-        self._speed_count = self._default_speed_count
+        self._speed_count: int = self._default_speed_count
         self.set_customize(customize)
 
     @property
-    def speed_count(self):
+    def speed_count(self) -> int:
         return self._speed_count
 
     @property
-    def oscillation_angles(self):
+    def oscillation_angles(self) -> list[str]:
         return MideaFADevice._oscillation_angles
 
     @property
-    def tilting_angles(self):
+    def tilting_angles(self) -> list[str]:
         return MideaFADevice._tilting_angles
 
     @property
-    def oscillation_modes(self):
+    def oscillation_modes(self) -> list[str]:
         return MideaFADevice._oscillation_modes
 
     @property
-    def preset_modes(self):
+    def preset_modes(self) -> list[str]:
         return self._modes
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageFAResponse(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -160,8 +161,8 @@ class MideaFADevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_oscillation(self, attr, value):
-        message = None
+    def set_oscillation(self, attr: str, value: Any) -> MessageSet | None:
+        message: MessageSet | None = None
         if self._attributes[attr] != value:
             if attr == DeviceAttributes.oscillate:
                 message = MessageSet(self._protocol_version, self.subtype)
@@ -280,7 +281,7 @@ class MideaFADevice(MideaDevice):
                         )
         return message
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         message = None
         if attr in [
             DeviceAttributes.oscillate,
@@ -307,7 +308,7 @@ class MideaFADevice(MideaDevice):
         if message is not None:
             self.build_send(message)
 
-    def turn_on(self, fan_speed=None, mode=None):
+    def turn_on(self, fan_speed: int | None = None, mode: str | None = None) -> None:
         message = MessageSet(self._protocol_version, self.subtype)
         message.power = True
         if fan_speed is not None:
@@ -316,7 +317,7 @@ class MideaFADevice(MideaDevice):
             message.mode = mode
         self.build_send(message)
 
-    def set_customize(self, customize):
+    def set_customize(self, customize: str) -> None:
         self._speed_count = self._default_speed_count
         if customize and len(customize) > 0:
             try:
