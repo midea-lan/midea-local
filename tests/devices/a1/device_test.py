@@ -57,7 +57,7 @@ class TestMideaA1Device(unittest.TestCase):
             mock_message.prompt_tone = False
             mock_message.fan_speed = 40
             mock_message.target_humidity = 40
-            mock_message.mode = 0
+            mock_message.mode = 1
             mock_message.tank = 60
             mock_message.water_level_set = "50"
             new_status = self.device.process_message(b"")
@@ -66,6 +66,15 @@ class TestMideaA1Device(unittest.TestCase):
             self.assertEqual(new_status[DeviceAttributes.fan_speed.value], "Low")
             self.assertEqual(new_status[DeviceAttributes.target_humidity.value], 40)
             self.assertEqual(new_status[DeviceAttributes.tank_full.value], True)
+            self.assertEqual(new_status[DeviceAttributes.mode.value], "Manual")
+
+            mock_message.mode = 10
+            mock_message.fan_speed = 99
+            mock_message.tank = 30
+            new_status = self.device.process_message(b"")
+            self.assertIsNone(new_status[DeviceAttributes.mode.value])
+            self.assertIsNone(new_status[DeviceAttributes.fan_speed.value])
+            self.assertEqual(new_status[DeviceAttributes.tank_full.value], False)
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -75,20 +84,39 @@ class TestMideaA1Device(unittest.TestCase):
 
     def test_make_message_set(self) -> None:
         """Test make message set."""
+        with patch("midealocal.devices.a1.MessageA1Response") as mock_message_response:
+            mock_message = mock_message_response.return_value
+            mock_message.protocol_version = 3
+            mock_message.power = True
+            mock_message.prompt_tone = False
+            mock_message.fan_speed = 40
+            mock_message.target_humidity = 40
+            mock_message.mode = 1
+            mock_message.tank = 60
+            mock_message.water_level_set = "50"
+            self.device.process_message(b"")
+
         message_set = self.device.make_message_set()
         self.assertIsInstance(message_set, MessageSet)
-        self.assertEqual(message_set.power, False)
-        self.assertEqual(message_set.prompt_tone, True)
-        self.assertEqual(message_set.fan_speed, 60)
+        self.assertEqual(message_set.power, True)
+        self.assertEqual(message_set.prompt_tone, False)
+        self.assertEqual(message_set.fan_speed, 40)
+        self.assertEqual(message_set.mode, 1)
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.mode, "Auto")
+            self.device.set_attribute(DeviceAttributes.mode, "Continuous")
             mock_build_send.assert_called_once()
 
             self.device.set_attribute(DeviceAttributes.fan_speed, "Medium")
             mock_build_send.assert_called()
 
             self.device.set_attribute(DeviceAttributes.water_level_set, "75")
+            mock_build_send.assert_called()
+
+            self.device.set_attribute(DeviceAttributes.prompt_tone, True)
+            mock_build_send.assert_called()
+
+            self.device.set_attribute(DeviceAttributes.swing, True)
             mock_build_send.assert_called()
