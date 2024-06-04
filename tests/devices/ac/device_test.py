@@ -4,7 +4,12 @@ import unittest
 from unittest.mock import patch
 
 from midealocal.devices.ac import DeviceAttributes, MideaACDevice
-from midealocal.devices.ac.message import MessageSubProtocolQuery
+from midealocal.devices.ac.message import (
+    MessageNewProtocolQuery,
+    MessagePowerQuery,
+    MessageQuery,
+    MessageSubProtocolQuery,
+)
 
 
 class TestMideaACDevice(unittest.TestCase):
@@ -43,8 +48,13 @@ class TestMideaACDevice(unittest.TestCase):
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
-        with patch.object(self.device, "build_send") as mock_build_send:
+        with patch.object(self.device, "build_send") as mock_build_send, patch(
+            "midealocal.devices.ac.MessageACResponse"
+        ) as mock_message_response:
             self.device.set_attribute(DeviceAttributes.power.value, True)
+            mock_build_send.assert_called()
+
+            self.device.set_attribute(DeviceAttributes.power.value, False)
             mock_build_send.assert_called()
 
             self.device.set_attribute(DeviceAttributes.mode.value, 2)
@@ -64,13 +74,27 @@ class TestMideaACDevice(unittest.TestCase):
             )
             mock_build_send.assert_called()
 
+            mock_message = mock_message_response.return_value
+            mock_message.used_subprotocol = True
+            mock_message.timer = 30
+            mock_message.fresh_air_power = False
+            mock_message.fresh_air_1 = 1
+
+            self.device.process_message(bytearray())
+
             self.device.set_attribute(DeviceAttributes.fresh_air_power.value, True)
             mock_build_send.assert_called()
 
             self.device.set_attribute(DeviceAttributes.fresh_air_mode.value, "Medium")
             mock_build_send.assert_called()
 
+            self.device.set_attribute(DeviceAttributes.fresh_air_fan_speed.value, 50)
+            mock_build_send.assert_called()
+
             self.device.set_attribute(DeviceAttributes.comfort_mode.value, True)
+            mock_build_send.assert_called()
+
+            self.device.set_attribute(DeviceAttributes.fresh_air_mode.value, None)
             mock_build_send.assert_called()
 
     def test_build_query(self) -> None:
@@ -82,11 +106,18 @@ class TestMideaACDevice(unittest.TestCase):
         self.assertIsInstance(queries[1], MessageSubProtocolQuery)
         self.assertIsInstance(queries[2], MessageSubProtocolQuery)
 
+        setattr(self.device, "_used_subprotocol", False)
+        queries = self.device.build_query()
+        self.assertEqual(len(queries), 3)
+        self.assertIsInstance(queries[0], MessageQuery)
+        self.assertIsInstance(queries[1], MessageNewProtocolQuery)
+        self.assertIsInstance(queries[2], MessagePowerQuery)
+
     def test_process_message(self) -> None:
         """Test process message."""
         with patch("midealocal.devices.ac.MessageACResponse") as mock_message_response:
             mock_message = mock_message_response.return_value
-            mock_message.used_subprotocol = True
+            mock_message.used_subprotocol = False
             mock_message.prompt_tone = False
             mock_message.power = True
             mock_message.mode = 1
@@ -165,6 +196,11 @@ class TestMideaACDevice(unittest.TestCase):
             result = self.device.process_message(bytearray())
             self.assertEqual(result[DeviceAttributes.fresh_air_mode.value], "Off")
 
+            mock_message.power = False
+            result = self.device.process_message(bytearray())
+            self.assertFalse(result[DeviceAttributes.screen_display.value])
+            self.assertFalse(self.device.attributes[DeviceAttributes.screen_display])
+
     def test_set_target_temperature(self) -> None:
         """Test set target temperature."""
         with patch.object(self.device, "build_send") as mock_build_send:
@@ -174,3 +210,12 @@ class TestMideaACDevice(unittest.TestCase):
             self.assertEqual(message.target_temperature, 22.5)
             self.assertEqual(message.mode, 1)
             self.assertTrue(message.power)
+
+    def test_set_swing(self) -> None:
+        """Test set swing."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_swing(True, False)
+            mock_build_send.assert_called()
+
+    def test_invalid_customize_format(self) -> None:
+        self.device.set_customize("{")
