@@ -8,10 +8,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python-version: ["3.12", "3.11", "3.10"]
+        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
 
     steps:
       - uses: actions/checkout@v3
@@ -24,6 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8 pytest pytest-cov genbadge[all]
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        shell: bash
       - name: Build midea-local
         run: |
           python -m build
