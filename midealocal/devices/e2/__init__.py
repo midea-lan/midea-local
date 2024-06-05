@@ -89,6 +89,9 @@ class MideaE2Device(MideaDevice):
         try:
             if isinstance(value, str):
                 value = OldProtocol(value)
+                if value == OldProtocol.auto:
+                    result = self.subtype <= 82 or self.subtype == 85 or self.subtype == 36353
+                    value = OldProtocol.true if result else OldProtocol.false
             elif isinstance(value, int) or isinstance(value, bool):
                 value = OldProtocol.true if value else OldProtocol.false
             else:
