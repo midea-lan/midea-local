@@ -1,16 +1,18 @@
 """Test a1 Device"""
 
-import unittest
+import pytest
+from typing import Generator
 from unittest.mock import patch
 from midealocal.devices.a1 import MideaA1Device, DeviceAttributes
 from midealocal.devices.a1.message import MessageQuery, MessageSet
 
 
-class TestMideaA1Device(unittest.TestCase):
+class TestMideaA1Device:
     """Test Midea A1 Device."""
 
-    def setUp(self) -> None:
-        """Setup test."""
+    @pytest.fixture(autouse=True)  # type: ignore
+    def setup_device(self) -> Generator[None, None, None]:
+        """Midea A1 Device setup."""
         self.device = MideaA1Device(
             name="Test Device",
             device_id=1,
@@ -23,30 +25,39 @@ class TestMideaA1Device(unittest.TestCase):
             subtype=1,
             customize="test_customize",
         )
+        yield
 
     def test_initial_attributes(self) -> None:
         """Test initial attributes."""
-        self.assertEqual(self.device.attributes[DeviceAttributes.power], False)
-        self.assertEqual(self.device.attributes[DeviceAttributes.prompt_tone], True)
-        self.assertEqual(self.device.attributes[DeviceAttributes.fan_speed], "Medium")
-        self.assertEqual(self.device.attributes[DeviceAttributes.target_humidity], 35)
+        assert not self.device.attributes[DeviceAttributes.power]
+        assert self.device.attributes[DeviceAttributes.prompt_tone]
+        assert self.device.attributes[DeviceAttributes.fan_speed] == "Medium"
+        assert self.device.attributes[DeviceAttributes.target_humidity] == 35
 
     def test_modes(self) -> None:
         """Test modes."""
-        self.assertEqual(
-            self.device.modes,
-            ["Manual", "Continuous", "Auto", "Clothes-Dry", "Shoes-Dry"],
-        )
+        assert self.device.modes == [
+            "Manual",
+            "Continuous",
+            "Auto",
+            "Clothes-Dry",
+            "Shoes-Dry",
+        ]
 
     def test_fan_speeds(self) -> None:
         """Test fan speeds."""
-        self.assertEqual(
-            self.device.fan_speeds, ["Lowest", "Low", "Medium", "High", "Auto", "Off"]
-        )
+        assert self.device.fan_speeds == [
+            "Lowest",
+            "Low",
+            "Medium",
+            "High",
+            "Auto",
+            "Off",
+        ]
 
     def test_water_level_sets(self) -> None:
         """Test water level sets."""
-        self.assertEqual(self.device.water_level_sets, ["25", "50", "75", "100"])
+        assert self.device.water_level_sets == ["25", "50", "75", "100"]
 
     def test_process_message(self) -> None:
         """Test process message."""
@@ -61,26 +72,26 @@ class TestMideaA1Device(unittest.TestCase):
             mock_message.tank = 60
             mock_message.water_level_set = "50"
             new_status = self.device.process_message(b"")
-            self.assertEqual(new_status[DeviceAttributes.power.value], True)
-            self.assertEqual(new_status[DeviceAttributes.prompt_tone.value], False)
-            self.assertEqual(new_status[DeviceAttributes.fan_speed.value], "Low")
-            self.assertEqual(new_status[DeviceAttributes.target_humidity.value], 40)
-            self.assertEqual(new_status[DeviceAttributes.tank_full.value], True)
-            self.assertEqual(new_status[DeviceAttributes.mode.value], "Manual")
+            assert new_status[DeviceAttributes.power.value]
+            assert not new_status[DeviceAttributes.prompt_tone.value]
+            assert new_status[DeviceAttributes.fan_speed.value] == "Low"
+            assert new_status[DeviceAttributes.target_humidity.value] == 40
+            assert new_status[DeviceAttributes.tank_full.value]
+            assert new_status[DeviceAttributes.mode.value] == "Manual"
 
             mock_message.mode = 10
             mock_message.fan_speed = 99
             mock_message.tank = 30
             new_status = self.device.process_message(b"")
-            self.assertIsNone(new_status[DeviceAttributes.mode.value])
-            self.assertIsNone(new_status[DeviceAttributes.fan_speed.value])
-            self.assertEqual(new_status[DeviceAttributes.tank_full.value], False)
+            assert new_status[DeviceAttributes.mode.value] is None
+            assert new_status[DeviceAttributes.fan_speed.value] is None
+            assert not new_status[DeviceAttributes.tank_full.value]
 
     def test_build_query(self) -> None:
         """Test build query."""
         queries = self.device.build_query()
-        self.assertEqual(len(queries), 1)
-        self.assertIsInstance(queries[0], MessageQuery)
+        assert len(queries) == 1
+        assert isinstance(queries[0], MessageQuery)
 
     def test_make_message_set(self) -> None:
         """Test make message set."""
@@ -97,11 +108,11 @@ class TestMideaA1Device(unittest.TestCase):
             self.device.process_message(b"")
 
         message_set = self.device.make_message_set()
-        self.assertIsInstance(message_set, MessageSet)
-        self.assertEqual(message_set.power, True)
-        self.assertEqual(message_set.prompt_tone, False)
-        self.assertEqual(message_set.fan_speed, 40)
-        self.assertEqual(message_set.mode, 1)
+        assert isinstance(message_set, MessageSet)
+        assert message_set.power
+        assert not message_set.prompt_tone
+        assert message_set.fan_speed == 40
+        assert message_set.mode == 1
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""

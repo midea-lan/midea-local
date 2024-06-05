@@ -1,6 +1,6 @@
 """Test a1 message"""
 
-import unittest
+import pytest
 from midealocal.devices.a1.message import (
     MessageA1Base,
     MessageA1Response,
@@ -12,27 +12,27 @@ from midealocal.devices.a1.message import (
 )
 
 
-class TestMessageA1Base(unittest.TestCase):
+class TestMessageA1Base:
     """Test A1 Message Base."""
 
     def test_message_id_increment(self) -> None:
         """Test message Id Increment."""
         msg = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
         msg2 = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
-        self.assertEqual(getattr(msg2, "_message_id"), getattr(msg, "_message_id") + 1)
+        assert getattr(msg2, "_message_id") == getattr(msg, "_message_id") + 1
         # test reset
         for idx in range(100 - getattr(msg2, "_message_id")):
             msg = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
-        self.assertEqual(getattr(msg, "_message_id"), 1)
+        assert getattr(msg, "_message_id") == 1
 
     def test_body_not_implemented(self) -> None:
         """Test body not implemented."""
         msg = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             _ = msg.body
 
 
-class TestMessageQuery(unittest.TestCase):
+class TestMessageQuery:
     """Test Message Query."""
 
     def test_query_body(self) -> None:
@@ -62,10 +62,10 @@ class TestMessageQuery(unittest.TestCase):
                 0x00,
             ]
         )
-        self.assertEqual(query.body[:-2], expected_body)
+        assert query.body[:-2] == expected_body
 
 
-class TestMessageNewProtocolQuery(unittest.TestCase):
+class TestMessageNewProtocolQuery:
     """Test Message New Protocol Query."""
 
     def test_new_protocol_query_body(self) -> None:
@@ -74,10 +74,10 @@ class TestMessageNewProtocolQuery(unittest.TestCase):
         expected_body = bytearray(
             [0xB1, 1, NewProtocolTags.light & 0xFF, NewProtocolTags.light >> 8]
         )
-        self.assertEqual(query.body[:-2], expected_body)
+        assert query.body[:-2] == expected_body
 
 
-class TestMessageSet(unittest.TestCase):
+class TestMessageSet:
     """Test Message Set."""
 
     def test_set_body(self) -> None:
@@ -108,10 +108,10 @@ class TestMessageSet(unittest.TestCase):
                 0x00,
             ],
         )
-        self.assertEqual(msg_set.body[:-2], expected_body)
+        assert msg_set.body[:-2] == expected_body
 
 
-class TestMessageNewProtocolSet(unittest.TestCase):
+class TestMessageNewProtocolSet:
     """Test Message New Protocol Set."""
 
     def test_new_protocol_set_body(self) -> None:
@@ -119,10 +119,10 @@ class TestMessageNewProtocolSet(unittest.TestCase):
         msg_set = MessageNewProtocolSet(protocol_version=1)
         msg_set.light = True
         expected_body = bytearray(b"\xb0\x01[\x00\x01\x01")
-        self.assertEqual(msg_set.body[:-2], expected_body)
+        assert msg_set.body[:-2] == expected_body
 
 
-class TestMessageA1Response(unittest.TestCase):
+class TestMessageA1Response:
     """Test Message A1 Response."""
 
     def test_a1_general_response(self) -> None:
@@ -154,17 +154,17 @@ class TestMessageA1Response(unittest.TestCase):
         body[17] = 100  # Current temperature (75 degrees C, since (100 - 50) / 2 = 25)
         body[19] = 0b00100000  # Swing on (32)
         response = MessageA1Response(header + body)
-        self.assertEqual(getattr(response, "power"), True)
-        self.assertEqual(getattr(response, "mode"), 2)
-        self.assertEqual(getattr(response, "fan_speed"), 1)
-        self.assertEqual(getattr(response, "target_humidity"), 40)
-        self.assertEqual(getattr(response, "child_lock"), True)
-        self.assertEqual(getattr(response, "anion"), True)
-        self.assertEqual(getattr(response, "tank"), 63)
-        self.assertEqual(getattr(response, "water_level_set"), 50)
-        self.assertEqual(getattr(response, "current_humidity"), 45)
-        self.assertEqual(getattr(response, "current_temperature"), 25)
-        self.assertEqual(getattr(response, "swing"), True)
+        assert getattr(response, "power")
+        assert getattr(response, "mode") == 2
+        assert getattr(response, "fan_speed") == 1
+        assert getattr(response, "target_humidity") == 40
+        assert getattr(response, "child_lock")
+        assert getattr(response, "anion")
+        assert getattr(response, "tank") == 63
+        assert getattr(response, "water_level_set") == 50
+        assert getattr(response, "current_humidity") == 45
+        assert getattr(response, "current_temperature") == 25
+        assert getattr(response, "swing")
 
     def test_a1_new_protocol_message_query(self) -> None:
         """Test A1 new protocol message query."""
@@ -190,7 +190,7 @@ class TestMessageA1Response(unittest.TestCase):
         body[5] = 0x01  # light value length
         body[6] = 0x01  # light value
         response = MessageA1Response(header + body)
-        self.assertEqual(getattr(response, "light"), True)
+        assert getattr(response, "light")
 
     def test_a1_general_notify_response(self) -> None:
         """Test general notify response."""
@@ -222,14 +222,14 @@ class TestMessageA1Response(unittest.TestCase):
         body[17] = 100  # Current temperature (75 degrees C, since (100 - 50) / 2 = 25)
         body[19] = 0b00100000  # Swing on (32)
         response = MessageA1Response(header + body)
-        self.assertEqual(getattr(response, "power"), True)
-        self.assertEqual(getattr(response, "mode"), 2)
-        self.assertEqual(getattr(response, "fan_speed"), 6)
-        self.assertEqual(getattr(response, "target_humidity"), 40)
-        self.assertEqual(getattr(response, "child_lock"), True)
-        self.assertEqual(getattr(response, "anion"), True)
-        self.assertEqual(getattr(response, "tank"), 63)
-        self.assertEqual(getattr(response, "water_level_set"), 50)
-        self.assertEqual(getattr(response, "current_humidity"), 45)
-        self.assertEqual(getattr(response, "current_temperature"), 25)
-        self.assertEqual(getattr(response, "swing"), True)
+        assert getattr(response, "power")
+        assert getattr(response, "mode") == 2
+        assert getattr(response, "fan_speed") == 6
+        assert getattr(response, "target_humidity") == 40
+        assert getattr(response, "child_lock")
+        assert getattr(response, "anion")
+        assert getattr(response, "tank") == 63
+        assert getattr(response, "water_level_set") == 50
+        assert getattr(response, "current_humidity") == 45
+        assert getattr(response, "current_temperature") == 25
+        assert getattr(response, "swing")
