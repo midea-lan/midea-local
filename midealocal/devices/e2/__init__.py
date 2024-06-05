@@ -1,7 +1,7 @@
 import json
 import logging
 import sys
-from typing import Any
+from typing import Any, cast
 
 from .message import (
     MessageE2Response,
@@ -90,13 +90,17 @@ class MideaE2Device(MideaDevice):
             if isinstance(value, str):
                 value = OldProtocol(value)
                 if value == OldProtocol.auto:
-                    result = self.subtype <= 82 or self.subtype == 85 or self.subtype == 36353
+                    result = (
+                        self.subtype <= 82
+                        or self.subtype == 85
+                        or self.subtype == 36353
+                    )
                     value = OldProtocol.true if result else OldProtocol.false
             elif isinstance(value, int) or isinstance(value, bool):
                 value = OldProtocol.true if value else OldProtocol.false
             else:
                 raise ValueError("Invalid value for old_protocol")
-            return value
+            return cast(OldProtocol, value)
         except ValueError as e:
             _LOGGER.error(f"Invalid old_protocol value: {value}, error: {e}")
             return self._default_old_protocol
