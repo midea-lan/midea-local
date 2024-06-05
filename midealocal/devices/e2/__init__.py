@@ -1,7 +1,7 @@
 import json
 import logging
 import sys
-from typing import Any
+from typing import Any, Literal
 
 from .message import (
     MessageE2Response,
@@ -74,8 +74,8 @@ class MideaE2Device(MideaDevice):
                 DeviceAttributes.heating_power: None,
             },
         )
-        self._default_old_protocol = "auto"
-        self._old_protocol = self._default_old_protocol
+        self._default_old_protocol: Literal["auto"] = "auto"
+        self._old_protocol: Literal["auto"] | bool = self._default_old_protocol
         self.set_customize(customize)
 
     def old_protocol(self) -> bool:
@@ -113,6 +113,7 @@ class MideaE2Device(MideaDevice):
             DeviceAttributes.keep_warm,
             DeviceAttributes.current_temperature,
         ]:
+            old_protocol: Literal["auto"] | bool
             if self._old_protocol is not None and self._old_protocol != "auto":
                 old_protocol = self._old_protocol
             else:
