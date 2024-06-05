@@ -1,6 +1,7 @@
 """Test cloud"""
 
 import os
+from tempfile import gettempdir
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, Mock
 
@@ -261,17 +262,18 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert cloud is not None
         assert await cloud.login()
 
-        if not os.path.exists("/tmp/download"):
-            os.mkdir("/tmp/download")
-        file = await cloud.download_lua("/tmp/download", 10, "00000000", "0xAC", "0010")
+        tmp_download = os.path.join(gettempdir(), "download")
+        if not os.path.exists(tmp_download):
+            os.mkdir(tmp_download)
+        file = await cloud.download_lua(tmp_download, 10, "00000000", "0xAC", "0010")
         assert file is not None
         assert os.path.exists(file)
         os.remove(file)
-        os.removedirs("/tmp/download")
+        os.removedirs(tmp_download)
 
         res.status = 404
         assert (
-            await cloud.download_lua("/tmp/download", 10, "00000000", "0xAC", "0010")
+            await cloud.download_lua(tmp_download, 10, "00000000", "0xAC", "0010")
             is None
         )
 
@@ -439,13 +441,14 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert cloud is not None
         assert await cloud.login()
 
-        if not os.path.exists("/tmp/download"):
-            os.mkdir("/tmp/download")
-        file = await cloud.download_lua("/tmp/download", 10, "00000000", "0xAC", "0010")
+        tmp_download = os.path.join(gettempdir(), "download")
+        if not os.path.exists(tmp_download):
+            os.mkdir(tmp_download)
+        file = await cloud.download_lua(tmp_download, 10, "00000000", "0xAC", "0010")
         assert file is not None
         assert os.path.exists(file)
         os.remove(file)
-        os.removedirs("/tmp/download")
+        os.removedirs(tmp_download)
 
     async def test_mideaaircloud_login_success(self) -> None:
         """Test MideaAirCloud login"""
