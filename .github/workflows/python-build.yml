@@ -25,6 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8 pytest pytest-cov genbadge[all]
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        shell: bash
       - name: Build midea-local
         run: |
           python -m build
