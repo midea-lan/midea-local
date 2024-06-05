@@ -78,8 +78,13 @@ class MideaE2Device(MideaDevice):
         self._old_protocol = self._default_old_protocol
         self.set_customize(customize)
 
-    def old_protocol(self) -> bool:
-        return self.subtype <= 82 or self.subtype == 85 or self.subtype == 36353
+    def old_protocol(self, value: str | bool) -> str:
+        if value == "auto":
+            result = self.subtype <= 82 or self.subtype == 85 or self.subtype == 36353
+            return "true" if result else "false"
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        return value
 
     def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
@@ -113,10 +118,7 @@ class MideaE2Device(MideaDevice):
             DeviceAttributes.keep_warm,
             DeviceAttributes.current_temperature,
         ]:
-            if self._old_protocol is not None and self._old_protocol != "auto":
-                old_protocol = self._old_protocol
-            else:
-                old_protocol = "true" if self.old_protocol() else "false"
+            old_protocol = self.old_protocol(self._old_protocol)
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._protocol_version)
                 message.power = value
@@ -134,7 +136,7 @@ class MideaE2Device(MideaDevice):
             try:
                 params = json.loads(customize)
                 if params and "old_protocol" in params:
-                    self._old_protocol = params.get("old_protocol")
+                    self._old_protocol = self.old_protocol(params["old_protocol"])
             except Exception as e:
                 _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all({"old_protocol": self._old_protocol})
