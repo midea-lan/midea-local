@@ -85,7 +85,7 @@ class MideaE2Device(MideaDevice):
         self._old_protocol = self._default_old_protocol
         self.set_customize(customize)
 
-    def normalize_old_protocol(self, value: Any) -> OldProtocol:
+    def _normalize_old_protocol(self, value: Any) -> OldProtocol:
         result: bool
         if isinstance(value, str) and value in OldProtocol:
             if value == OldProtocol.auto:
@@ -135,7 +135,7 @@ class MideaE2Device(MideaDevice):
             DeviceAttributes.keep_warm,
             DeviceAttributes.current_temperature,
         ]:
-            old_protocol = self.normalize_old_protocol(self._old_protocol)
+            old_protocol = self._normalize_old_protocol(self._old_protocol)
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._protocol_version)
                 message.power = value
@@ -153,7 +153,7 @@ class MideaE2Device(MideaDevice):
             try:
                 params = json.loads(customize)
                 if params and "old_protocol" in params:
-                    self._old_protocol = self.normalize_old_protocol(
+                    self._old_protocol = self._normalize_old_protocol(
                         params["old_protocol"]
                     )
             except Exception as e:
