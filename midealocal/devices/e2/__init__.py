@@ -18,6 +18,13 @@ else:
 
 from ...device import MideaDevice
 
+
+class OldProtocol(StrEnum):
+    auto = "auto"
+    true = "true"
+    false = "false"
+
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -74,12 +81,27 @@ class MideaE2Device(MideaDevice):
                 DeviceAttributes.heating_power: None,
             },
         )
-        self._default_old_protocol = "auto"
+        self._default_old_protocol = OldProtocol.auto
         self._old_protocol = self._default_old_protocol
         self.set_customize(customize)
 
-    def old_protocol(self) -> bool:
-        return self.subtype <= 82 or self.subtype == 85 or self.subtype == 36353
+    def normalize_old_protocol(self, value: Any) -> OldProtocol:
+        result: bool
+        if isinstance(value, str) and value in OldProtocol:
+            if value == OldProtocol.auto:
+                result = (
+                    self.subtype <= 82 or self.subtype == 85 or self.subtype == 36353
+                )
+            else:
+                result = True if OldProtocol.true else False
+        elif isinstance(value, int):
+            result = bool(int)
+        else:
+            _LOGGER.error(
+                "Wrong data detected [old_protocol=%s], please update your customized configuration",
+                value,
+            )
+        return OldProtocol.true if result else OldProtocol.false
 
     def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
@@ -113,14 +135,11 @@ class MideaE2Device(MideaDevice):
             DeviceAttributes.keep_warm,
             DeviceAttributes.current_temperature,
         ]:
-            if self._old_protocol is not None and self._old_protocol != "auto":
-                old_protocol = self._old_protocol
-            else:
-                old_protocol = self.old_protocol()
+            old_protocol = self.normalize_old_protocol(self._old_protocol)
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._protocol_version)
                 message.power = value
-            elif old_protocol:
+            elif old_protocol == OldProtocol.true:
                 message = self.make_message_set()
                 setattr(message, str(attr), value)
             else:
@@ -134,7 +153,9 @@ class MideaE2Device(MideaDevice):
             try:
                 params = json.loads(customize)
                 if params and "old_protocol" in params:
-                    self._old_protocol = params.get("old_protocol")
+                    self._old_protocol = self.normalize_old_protocol(
+                        params["old_protocol"]
+                    )
             except Exception as e:
                 _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all({"old_protocol": self._old_protocol})
