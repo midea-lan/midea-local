@@ -1,7 +1,9 @@
 """Test AC Device"""
 
-import unittest
+from typing import Generator
 from unittest.mock import patch
+
+import pytest
 
 from midealocal.devices.ac import DeviceAttributes, MideaACDevice
 from midealocal.devices.ac.message import (
@@ -12,11 +14,14 @@ from midealocal.devices.ac.message import (
 )
 
 
-class TestMideaACDevice(unittest.TestCase):
+class TestMideaACDevice:
     """Test Midea AC Device."""
 
-    def setUp(self) -> None:
-        """Setup test."""
+    device: MideaACDevice
+
+    @pytest.fixture(autouse=True)  # type: ignore
+    def setup_device(self) -> Generator[None, None, None]:
+        """Midea AC Device setup."""
         self.device = MideaACDevice(
             name="Test Device",
             device_id=1,
@@ -29,22 +34,19 @@ class TestMideaACDevice(unittest.TestCase):
             subtype=1,
             customize='{"temperature_step": 1, "power_analysis_method": 2}',
         )
+        yield
 
     def test_initial_attributes(self) -> None:
         """Test initial attributes."""
-        self.assertEqual(self.device.attributes[DeviceAttributes.prompt_tone], True)
-        self.assertEqual(self.device.attributes[DeviceAttributes.power], False)
-        self.assertEqual(self.device.attributes[DeviceAttributes.mode], 0)
-        self.assertEqual(
-            self.device.attributes[DeviceAttributes.target_temperature], 24.0
-        )
-        self.assertEqual(self.device.attributes[DeviceAttributes.fan_speed], 102)
-        self.assertEqual(self.device.attributes[DeviceAttributes.swing_vertical], False)
-        self.assertEqual(
-            self.device.attributes[DeviceAttributes.swing_horizontal], False
-        )
-        self.assertEqual(self.device.temperature_step, 1)
-        self.assertIsNotNone(self.device.fresh_air_fan_speeds)
+        assert self.device.attributes[DeviceAttributes.prompt_tone]
+        assert not self.device.attributes[DeviceAttributes.power]
+        assert self.device.attributes[DeviceAttributes.mode] == 0
+        assert self.device.attributes[DeviceAttributes.target_temperature] == 24.0
+        assert self.device.attributes[DeviceAttributes.fan_speed] == 102
+        assert not self.device.attributes[DeviceAttributes.swing_vertical]
+        assert not self.device.attributes[DeviceAttributes.swing_horizontal]
+        assert self.device.temperature_step == 1
+        assert self.device.fresh_air_fan_speeds is not None
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
@@ -101,17 +103,17 @@ class TestMideaACDevice(unittest.TestCase):
         """Test build query."""
         setattr(self.device, "_used_subprotocol", True)
         queries = self.device.build_query()
-        self.assertEqual(len(queries), 3)
-        self.assertIsInstance(queries[0], MessageSubProtocolQuery)
-        self.assertIsInstance(queries[1], MessageSubProtocolQuery)
-        self.assertIsInstance(queries[2], MessageSubProtocolQuery)
+        assert len(queries) == 3
+        assert isinstance(queries[0], MessageSubProtocolQuery)
+        assert isinstance(queries[1], MessageSubProtocolQuery)
+        assert isinstance(queries[2], MessageSubProtocolQuery)
 
         setattr(self.device, "_used_subprotocol", False)
         queries = self.device.build_query()
-        self.assertEqual(len(queries), 3)
-        self.assertIsInstance(queries[0], MessageQuery)
-        self.assertIsInstance(queries[1], MessageNewProtocolQuery)
-        self.assertIsInstance(queries[2], MessagePowerQuery)
+        assert len(queries) == 3
+        assert isinstance(queries[0], MessageQuery)
+        assert isinstance(queries[1], MessageNewProtocolQuery)
+        assert isinstance(queries[2], MessagePowerQuery)
 
     def test_process_message(self) -> None:
         """Test process message."""
@@ -151,55 +153,51 @@ class TestMideaACDevice(unittest.TestCase):
             mock_message.fresh_air_2 = 1
 
             result = self.device.process_message(bytearray())
-            self.assertTrue(result[DeviceAttributes.power.value])
-            self.assertFalse(result[DeviceAttributes.prompt_tone.value])
-            self.assertEqual(result[DeviceAttributes.mode.value], 1)
-            self.assertEqual(result[DeviceAttributes.target_temperature.value], 25.0)
-            self.assertEqual(result[DeviceAttributes.fan_speed.value], 102)
-            self.assertTrue(result[DeviceAttributes.swing_vertical.value])
-            self.assertTrue(result[DeviceAttributes.swing_horizontal.value])
-            self.assertTrue(result[DeviceAttributes.smart_eye.value])
-            self.assertTrue(result[DeviceAttributes.dry.value])
-            self.assertTrue(result[DeviceAttributes.aux_heating.value])
-            self.assertTrue(result[DeviceAttributes.boost_mode.value])
-            self.assertTrue(result[DeviceAttributes.sleep_mode.value])
-            self.assertTrue(result[DeviceAttributes.frost_protect.value])
-            self.assertTrue(result[DeviceAttributes.comfort_mode.value])
-            self.assertTrue(result[DeviceAttributes.eco_mode.value])
-            self.assertTrue(result[DeviceAttributes.natural_wind.value])
-            self.assertTrue(result[DeviceAttributes.temp_fahrenheit.value])
-            self.assertTrue(result[DeviceAttributes.screen_display.value])
-            self.assertTrue(result[DeviceAttributes.screen_display_alternate.value])
-            self.assertTrue(result[DeviceAttributes.full_dust.value])
-            self.assertEqual(result[DeviceAttributes.indoor_temperature.value], None)
-            self.assertEqual(result[DeviceAttributes.outdoor_temperature.value], None)
-            self.assertEqual(result[DeviceAttributes.indoor_humidity.value], None)
-            self.assertTrue(result[DeviceAttributes.breezeless.value])
-            self.assertEqual(
-                result[DeviceAttributes.total_energy_consumption.value], None
-            )
-            self.assertEqual(
-                result[DeviceAttributes.current_energy_consumption.value], None
-            )
-            self.assertEqual(result[DeviceAttributes.realtime_power.value], None)
-            self.assertTrue(result[DeviceAttributes.fresh_air_power.value])
-            self.assertEqual(result[DeviceAttributes.fresh_air_mode.value], "Off")
-            self.assertEqual(result[DeviceAttributes.fresh_air_1.value], 1)
-            self.assertEqual(result[DeviceAttributes.fresh_air_2.value], 1)
+            assert result[DeviceAttributes.power.value]
+            assert not result[DeviceAttributes.prompt_tone.value]
+            assert result[DeviceAttributes.mode.value] == 1
+            assert result[DeviceAttributes.target_temperature.value] == 25.0
+            assert result[DeviceAttributes.fan_speed.value] == 102
+            assert result[DeviceAttributes.swing_vertical.value]
+            assert result[DeviceAttributes.swing_horizontal.value]
+            assert result[DeviceAttributes.smart_eye.value]
+            assert result[DeviceAttributes.dry.value]
+            assert result[DeviceAttributes.aux_heating.value]
+            assert result[DeviceAttributes.boost_mode.value]
+            assert result[DeviceAttributes.sleep_mode.value]
+            assert result[DeviceAttributes.frost_protect.value]
+            assert result[DeviceAttributes.comfort_mode.value]
+            assert result[DeviceAttributes.eco_mode.value]
+            assert result[DeviceAttributes.natural_wind.value]
+            assert result[DeviceAttributes.temp_fahrenheit.value]
+            assert result[DeviceAttributes.screen_display.value]
+            assert result[DeviceAttributes.screen_display_alternate.value]
+            assert result[DeviceAttributes.full_dust.value]
+            assert result[DeviceAttributes.indoor_temperature.value] is None
+            assert result[DeviceAttributes.outdoor_temperature.value] is None
+            assert result[DeviceAttributes.indoor_humidity.value] is None
+            assert result[DeviceAttributes.breezeless.value]
+            assert result[DeviceAttributes.total_energy_consumption.value] is None
+            assert result[DeviceAttributes.current_energy_consumption.value] is None
+            assert result[DeviceAttributes.realtime_power.value] is None
+            assert result[DeviceAttributes.fresh_air_power.value]
+            assert result[DeviceAttributes.fresh_air_mode.value] == "Off"
+            assert result[DeviceAttributes.fresh_air_1.value] == 1
+            assert result[DeviceAttributes.fresh_air_2.value] == 1
 
             mock_message.fresh_air_fan_speed = 55
             mock_message.fresh_air_1 = None
             result = self.device.process_message(bytearray())
-            self.assertEqual(result[DeviceAttributes.fresh_air_mode.value], "Medium")
+            assert result[DeviceAttributes.fresh_air_mode.value] == "Medium"
 
             mock_message.fresh_air_power = False
             result = self.device.process_message(bytearray())
-            self.assertEqual(result[DeviceAttributes.fresh_air_mode.value], "Off")
+            assert result[DeviceAttributes.fresh_air_mode.value] == "Off"
 
             mock_message.power = False
             result = self.device.process_message(bytearray())
-            self.assertFalse(result[DeviceAttributes.screen_display.value])
-            self.assertFalse(self.device.attributes[DeviceAttributes.screen_display])
+            assert not result[DeviceAttributes.screen_display.value]
+            assert not self.device.attributes[DeviceAttributes.screen_display]
 
     def test_set_target_temperature(self) -> None:
         """Test set target temperature."""
@@ -207,9 +205,9 @@ class TestMideaACDevice(unittest.TestCase):
             self.device.set_target_temperature(22.5, 1)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
-            self.assertEqual(message.target_temperature, 22.5)
-            self.assertEqual(message.mode, 1)
-            self.assertTrue(message.power)
+            assert message.target_temperature == 22.5
+            assert message.mode == 1
+            assert message.power
 
     def test_set_swing(self) -> None:
         """Test set swing."""
@@ -218,4 +216,5 @@ class TestMideaACDevice(unittest.TestCase):
             mock_build_send.assert_called()
 
     def test_invalid_customize_format(self) -> None:
+        """Test invalid customize format."""
         self.device.set_customize("{")
