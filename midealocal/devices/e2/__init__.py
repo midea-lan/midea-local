@@ -122,7 +122,7 @@ class MideaE2Device(MideaDevice):
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._protocol_version)
                 message.power = value
-            elif old_protocol:
+            elif old_protocol == "true":
                 message = self.make_message_set()
                 setattr(message, str(attr), value)
             else:
