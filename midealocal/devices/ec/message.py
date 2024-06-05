@@ -3,11 +3,14 @@ from ...message import (
     MessageRequest,
     MessageResponse,
     MessageType,
+    NONE_VALUE,
 )
 
 
 class MessageECBase(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int = NONE_VALUE
+    ) -> None:
         super().__init__(
             device_type=0xEC,
             protocol_version=protocol_version,
@@ -16,29 +19,28 @@ class MessageECBase(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageECBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=None,
         )
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         return bytearray([0xAA, 0x55, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class ECGeneralMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.mode = body[4] + (body[5] << 8)
         self.progress = body[8]
@@ -51,7 +53,7 @@ class ECGeneralMessageBody(MessageBody):
 
 
 class ECBodyNew(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.progress = body[11]
         self.cooking = self.progress == 1
@@ -63,8 +65,8 @@ class ECBodyNew(MessageBody):
 
 
 class MessageECResponse(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if self.message_type == MessageType.notify1 and super().body[3] == 0x01:
             self.set_body(ECBodyNew(super().body))
         elif (

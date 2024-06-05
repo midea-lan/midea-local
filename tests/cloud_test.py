@@ -1,6 +1,7 @@
 """Test cloud"""
 
 import os
+from tempfile import TemporaryDirectory
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, Mock
 
@@ -261,19 +262,16 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert cloud is not None
         assert await cloud.login()
 
-        if not os.path.exists("/tmp/download"):
-            os.mkdir("/tmp/download")
-        file = await cloud.download_lua("/tmp/download", 10, "00000000", "0xAC", "0010")
-        assert file is not None
-        assert os.path.exists(file)
-        os.remove(file)
-        os.removedirs("/tmp/download")
+        with TemporaryDirectory() as tmpdir:
+            file = await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
+            assert file is not None
+            assert os.path.exists(file)
+            os.remove(file)
 
-        res.status = 404
-        assert (
-            await cloud.download_lua("/tmp/download", 10, "00000000", "0xAC", "0010")
-            is None
-        )
+            res.status = 404
+            assert (
+                await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010") is None
+            )
 
     async def test_msmartcloud_login_success(self) -> None:
         """Test MSmartCloud login"""
@@ -439,13 +437,11 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert cloud is not None
         assert await cloud.login()
 
-        if not os.path.exists("/tmp/download"):
-            os.mkdir("/tmp/download")
-        file = await cloud.download_lua("/tmp/download", 10, "00000000", "0xAC", "0010")
-        assert file is not None
-        assert os.path.exists(file)
-        os.remove(file)
-        os.removedirs("/tmp/download")
+        with TemporaryDirectory() as tmpdir:
+            file = await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
+            assert file is not None
+            assert os.path.exists(file)
+            os.remove(file)
 
     async def test_mideaaircloud_login_success(self) -> None:
         """Test MideaAirCloud login"""

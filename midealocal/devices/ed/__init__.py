@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import Any
 
 from .message import MessageEDResponse, MessageNewSet, MessageOldSet, MessageQuery
 
@@ -40,7 +41,7 @@ class MideaEDDevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -68,13 +69,13 @@ class MideaEDDevice(MideaDevice):
         )
         self._device_class = 0
 
-    def _use_new_set(self):
+    def _use_new_set(self) -> bool:
         return True  # if (self.sub_type > 342 or self.sub_type == 340) else False
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version, self._device_class)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageEDResponse(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -86,8 +87,8 @@ class MideaEDDevice(MideaDevice):
                 self._attributes[status] = getattr(message, str(status))
         return new_status
 
-    def set_attribute(self, attr, value):
-        message = None
+    def set_attribute(self, attr: str, value: Any) -> None:
+        message: MessageNewSet | MessageOldSet | None = None
         if self._use_new_set():
             if attr in [DeviceAttributes.power, DeviceAttributes.child_lock]:
                 message = MessageNewSet(self._protocol_version)

@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import Any
 
 from .message import MessageFBResponse, MessageQuery, MessageSet
 
@@ -47,7 +48,7 @@ class MideaFBDevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -70,13 +71,13 @@ class MideaFBDevice(MideaDevice):
         )
 
     @property
-    def modes(self):
+    def modes(self) -> list[str]:
         return list(MideaFBDevice._modes.values())
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageFBResponse(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -93,7 +94,7 @@ class MideaFBDevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         if attr == DeviceAttributes.mode:
             message = MessageSet(self._protocol_version, self.subtype)
             if value in MideaFBDevice._modes.values():

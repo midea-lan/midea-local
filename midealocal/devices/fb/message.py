@@ -3,11 +3,14 @@ from ...message import (
     MessageRequest,
     MessageResponse,
     MessageType,
+    NONE_VALUE,
 )
 
 
 class MessageFBBase(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int = NONE_VALUE
+    ) -> None:
         super().__init__(
             device_type=0xFB,
             protocol_version=protocol_version,
@@ -16,43 +19,42 @@ class MessageFBBase(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageFBBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=None,
         )
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         return bytearray([])
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class MessageSet(MessageFBBase):
-    def __init__(self, protocol_version, subtype):
+    def __init__(self, protocol_version: int, subtype: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
             body_type=0x00,
         )
         self._subtype = subtype
-        self.power = None
-        self.mode = None
-        self.heating_level = None
-        self.target_temperature = None
-        self.child_lock = None
+        self.power: bool | None = None
+        self.mode: int | None = None
+        self.heating_level: int | None = None
+        self.target_temperature: int | None = None
+        self.child_lock: bool | None = None
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         power = 0 if self.power is None else (0x01 if self.power else 0x02)
         mode = 0 if self.mode is None else self.mode
         heating_level = (
@@ -106,12 +108,12 @@ class MessageSet(MessageFBBase):
         return _return_body
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class FBGeneralMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[0] & 0x01) not in [0, 2]
         self.mode = body[4]
@@ -128,8 +130,8 @@ class FBGeneralMessageBody(MessageBody):
 
 
 class MessageFBResponse(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if self.message_type in [
             MessageType.query,
             MessageType.set,

@@ -3,53 +3,54 @@ from ...message import (
     MessageRequest,
     MessageResponse,
     MessageType,
+    NONE_VALUE,
 )
 
 
 class MessageE6Base(MessageRequest):
-    def __init__(self, protocol_version, message_type):
+    def __init__(self, protocol_version: int, message_type: int) -> None:
         super().__init__(
             device_type=0xE6,
             protocol_version=protocol_version,
             message_type=message_type,
-            body_type=None,
+            body_type=NONE_VALUE,
         )
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         return self._body
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageE6Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([0x01, 0x01] + [0] * 28)
 
 
 class MessageSet(MessageE6Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
         )
-        self.main_power = None
-        self.heating_temperature = None
-        self.bathing_temperature = None
-        self.heating_power = None
+        self.main_power: bool | None = None
+        self.heating_temperature: int | None = None
+        self.bathing_temperature: int | None = None
+        self.heating_power: bool | None = None
 
     @property
-    def _body(self):
-        body = []
+    def _body(self) -> bytearray:
+        body: list[int] = []
         if self.main_power is not None:
             main_power = 0x01 if self.main_power else 0x02
             body = [main_power, 0x01]
@@ -65,7 +66,7 @@ class MessageSet(MessageE6Base):
 
 
 class E6GeneralMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.main_power = (body[2] & 0x04) > 0
         self.heating_working = (body[2] & 0x10) > 0
@@ -80,7 +81,7 @@ class E6GeneralMessageBody(MessageBody):
 
 
 class MessageE6Response(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         self.set_body(E6GeneralMessageBody(super().body))
         self.set_attr()
