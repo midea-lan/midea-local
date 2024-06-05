@@ -84,5 +84,5 @@ class Message13Response(MessageResponse):
             self.set_body(MessageMainLightBody(super().body))
         elif self.message_type == MessageType.set and self.body_type > 0x80:
             self.set_body(MessageMainLightResponseBody(super().body))
-        self.set_attr()
         self.control_success: bool
+        self.set_attr()

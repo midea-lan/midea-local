@@ -181,5 +181,5 @@ class Message26Response(MessageResponse):
             and self.body_type == 0x01
         ):
             self.set_body(Message26Body(super().body))
-        self.set_attr()
         self.fields: dict[str, Any]
+        self.set_attr()
