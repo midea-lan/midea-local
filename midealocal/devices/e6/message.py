@@ -3,6 +3,7 @@ from ...message import (
     MessageRequest,
     MessageResponse,
     MessageType,
+    NONE_VALUE,
 )
 
 
@@ -12,7 +13,7 @@ class MessageE6Base(MessageRequest):
             device_type=0xE6,
             protocol_version=protocol_version,
             message_type=message_type,
-            body_type=None,
+            body_type=NONE_VALUE,
         )
 
     @property
