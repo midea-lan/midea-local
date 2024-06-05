@@ -89,9 +89,9 @@ class MideaE2Device(MideaDevice):
         try:
             if isinstance(value, str):
                 value = OldProtocol(value)
-            elif isinstance(value, int):
+            elif isinstance(value, int) or isinstance(value, bool):
                 value = OldProtocol.true if value else OldProtocol.false
-            if not isinstance(value, OldProtocol):
+            else:
                 raise ValueError("Invalid value for old_protocol")
             return value
         except ValueError as e:
