@@ -86,22 +86,17 @@ class MideaE2Device(MideaDevice):
         self.set_customize(customize)
 
     def _normalize_old_protocol(self, value: Any) -> OldProtocol:
-        result: bool
-        if isinstance(value, str) and value in OldProtocol:
-            if value == OldProtocol.auto:
-                result = (
-                    self.subtype <= 82 or self.subtype == 85 or self.subtype == 36353
-                )
-            else:
-                result = True if OldProtocol.true else False
-        elif isinstance(value, int):
-            result = bool(int)
-        else:
-            _LOGGER.error(
-                "Wrong data detected [old_protocol=%s], please update your customized configuration",
-                value,
-            )
-        return OldProtocol.true if result else OldProtocol.false
+        try:
+            if isinstance(value, str):
+                value = OldProtocol(value)
+            elif isinstance(value, int):
+                value = OldProtocol.true if value else OldProtocol.false
+            if not isinstance(value, OldProtocol):
+                raise ValueError("Invalid value for old_protocol")
+            return value
+        except ValueError as e:
+            _LOGGER.error(f"Invalid old_protocol value: {value}, error: {e}")
+            return self._default_old_protocol
 
     def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
