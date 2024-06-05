@@ -3,12 +3,13 @@ from ...message import (
     MessageRequest,
     MessageResponse,
     MessageType,
+    NONE_VALUE,
 )
 
 
 class MessageEABase(MessageRequest):
     def __init__(
-        self, protocol_version: int, message_type: int, body_type: int | None
+        self, protocol_version: int, message_type: int, body_type: int = NONE_VALUE
     ) -> None:
         super().__init__(
             device_type=0xEA,
@@ -27,7 +28,6 @@ class MessageQuery(MessageEABase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=None,
         )
 
     @property

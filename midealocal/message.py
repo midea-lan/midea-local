@@ -90,7 +90,7 @@ class MessageBase(ABC):
             "body": self.body.hex(),
             "message type": "%02x" % self._message_type,
             "body type": (
-                ("%02x" % self._body_type) if self._body_type is not None else "None"
+                ("%02x" % self._body_type) if self._body_type != NONE_VALUE else "None"
             ),
         }
         return str(output)
@@ -102,7 +102,7 @@ class MessageRequest(MessageBase):
         device_type: int,
         protocol_version: int,
         message_type: int,
-        body_type: int | None,
+        body_type: int,
     ) -> None:
         super().__init__()
         self.device_type = device_type
@@ -144,7 +144,7 @@ class MessageRequest(MessageBase):
     @property
     def body(self) -> bytearray:
         body = bytearray([])
-        if self.body_type is not None:
+        if self.body_type != NONE_VALUE:
             body.append(self.body_type)
         if self._body is not None:
             body.extend(self._body)

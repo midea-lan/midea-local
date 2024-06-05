@@ -267,7 +267,9 @@ class MideaACDevice(MideaDevice):
 
     def set_attribute(self, attr: str, value: Any) -> None:
         # if nat a sensor
-        message: MessageToggleDisplay | MessageNewProtocolSet | None = None
+        message: (
+            MessageToggleDisplay | MessageNewProtocolSet | MessageGeneralSet | None
+        ) = None
         if attr not in [
             DeviceAttributes.indoor_temperature,
             DeviceAttributes.outdoor_temperature,
@@ -334,7 +336,7 @@ class MideaACDevice(MideaDevice):
                     )
                     setattr(message, str(self._fresh_air_version), fresh_air)
             elif attr in self._attributes.keys():
-                message = self.make_message_uniq_set()
+                message = self.make_message_set()
                 if attr in [
                     DeviceAttributes.boost_mode,
                     DeviceAttributes.sleep_mode,
@@ -354,7 +356,9 @@ class MideaACDevice(MideaDevice):
             self.build_send(message)
 
     def set_target_temperature(self, target_temperature: float, mode: int) -> None:
-        message: MessageGeneralSet = self.make_message_uniq_set()
+        message: MessageSubProtocolSet | MessageGeneralSet = (
+            self.make_message_uniq_set()
+        )
         message.target_temperature = target_temperature
         if mode is not None:
             message.power = True
@@ -362,7 +366,7 @@ class MideaACDevice(MideaDevice):
         self.build_send(message)
 
     def set_swing(self, swing_vertical: bool, swing_horizontal: bool) -> None:
-        message: MessageGeneralSet = self.make_message_uniq_set()
+        message: MessageGeneralSet = self.make_message_set()
         message.swing_vertical = swing_vertical
         message.swing_horizontal = swing_horizontal
         self.build_send(message)

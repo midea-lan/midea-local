@@ -1,8 +1,11 @@
+from typing import Any
 from ...message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class Message40Base(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0x40,
             protocol_version=protocol_version,
@@ -11,12 +14,12 @@ class Message40Base(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(Message40Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -24,30 +27,30 @@ class MessageQuery(Message40Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class MessageSet(Message40Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
             body_type=0x01,
         )
-        self.fields = {}
+        self.fields: dict[str, Any] = {}
         self.light = False
         self.fan_speed = 0
-        self.direction = False
+        self.direction: int
         self.ventilation = False
         self.smelly_sensor = False
 
-    def read_field(self, field):
+    def read_field(self, field: str) -> Any:
         value = self.fields.get(field, 0)
         return value if value else 0
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         light = 1 if self.light else 0
         blow = 1 if self.fan_speed > 0 else 0
         fan_speed = 0xFF if self.fan_speed == 0 else 30 if self.fan_speed == 1 else 100
@@ -100,7 +103,7 @@ class MessageSet(Message40Base):
 
 
 class Message40Body(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.fields = {}
         self.light = body[1] > 0
@@ -153,12 +156,13 @@ class Message40Body(MessageBody):
 
 
 class Message40Response(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if (
             self.message_type
             in [MessageType.set, MessageType.notify1, MessageType.query]
             and self.body_type == 0x01
         ):
             self.set_body(Message40Body(super().body))
+        self.fields: dict[str, Any]
         self.set_attr()

@@ -169,6 +169,7 @@ class MessageFDResponse(MessageResponse):
                 self.set_body(FDA0MessageBody(super().body))
             elif self.body_type == 0xC8:
                 self.set_body(FDC8MessageBody(super().body))
+        self.fan_speed: int
         self.set_attr()
         if (
             hasattr(self, "fan_speed")

@@ -5,6 +5,7 @@ from ...message import (
     MessageRequest,
     MessageResponse,
     MessageType,
+    NONE_VALUE,
 )
 
 
@@ -23,7 +24,7 @@ class EDNewSetParamPack:
 
 class MessageEDBase(MessageRequest):
     def __init__(
-        self, protocol_version: int, message_type: int, body_type: int | None
+        self, protocol_version: int, message_type: int, body_type: int = NONE_VALUE
     ) -> None:
         super().__init__(
             device_type=0xED,
@@ -89,7 +90,6 @@ class MessageOldSet(MessageEDBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=None,
         )
 
     @property

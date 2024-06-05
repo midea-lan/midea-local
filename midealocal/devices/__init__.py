@@ -1,4 +1,5 @@
 from importlib import import_module
+from typing import Any
 
 
 def device_selector(
@@ -13,7 +14,7 @@ def device_selector(
     model: str,
     subtype: int,
     customize: str,
-):
+) -> Any:
     try:
         if device_type < 0xA0:
             device_path = f".{'x%02x' % device_type}"
