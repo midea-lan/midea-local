@@ -113,10 +113,12 @@ class MideaE2Device(MideaDevice):
             DeviceAttributes.keep_warm,
             DeviceAttributes.current_temperature,
         ]:
+            old_protocol: str | bool | None = None
             if self._old_protocol is not None and self._old_protocol != "auto":
                 old_protocol = self._old_protocol
             else:
                 old_protocol = self.old_protocol()
+                raise TypeError("old_protocol is <bool> instead of <str>")
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._protocol_version)
                 message.power = value
@@ -135,6 +137,11 @@ class MideaE2Device(MideaDevice):
                 params = json.loads(customize)
                 if params and "old_protocol" in params:
                     self._old_protocol = params.get("old_protocol")
+                    _LOGGER.debug(
+                        "old_protocol: %s [%s]. Type variable",
+                        self._old_protocol,
+                        type(self._old_protocol),
+                    )
             except Exception as e:
                 _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all({"old_protocol": self._old_protocol})
