@@ -64,12 +64,12 @@ class DeviceAttributes(StrEnum):
 
 class MideaACDevice(MideaDevice):
     _fresh_air_fan_speeds = {
-        0: "Off",
-        20: "Silent",
-        40: "Low",
-        60: "Medium",
-        80: "High",
-        100: "Full",
+        0: "off",
+        20: "silent",
+        40: "low",
+        60: "medium",
+        80: "high",
+        100: "full",
     }
     _fresh_air_fan_speeds_rev = dict(reversed(_fresh_air_fan_speeds.items()))
 
@@ -197,7 +197,7 @@ class MideaACDevice(MideaDevice):
                     else:
                         self._attributes[DeviceAttributes.fresh_air_mode] = v
             else:
-                self._attributes[DeviceAttributes.fresh_air_mode] = "Off"
+                self._attributes[DeviceAttributes.fresh_air_mode] = "off"
             new_status[DeviceAttributes.fresh_air_mode.value] = self._attributes[
                 DeviceAttributes.fresh_air_mode
             ]
