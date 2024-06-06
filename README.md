@@ -1,9 +1,7 @@
 # Midea-local python lib
 
 [![Python build](https://github.com/rokam/midea-local/actions/workflows/python-build.yml/badge.svg)](https://github.com/rokam/midea-local/actions/workflows/python-build.yml)
-![Python tests](https://raw.githubusercontent.com/rokam/midea-local/badges/tests.svg)
-[![Python coverage](https://raw.githubusercontent.com/rokam/midea-local/badges/coverage.svg)](https://app.codecov.io/github/rokam/midea-local)
-![Python fake8](https://raw.githubusercontent.com/rokam/midea-local/badges/flake8.svg)
+[![codecov](https://codecov.io/github/rokam/midea-local/graph/badge.svg?token=8V0C1T2GJA)](https://codecov.io/github/rokam/midea-local)
 
 Control your Midea M-Smart appliances via local area network.
 
