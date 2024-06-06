@@ -1,13 +1,15 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
 class MessageFABase(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xCE,
             protocol_version=protocol_version,
@@ -16,12 +18,12 @@ class MessageFABase(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageFABase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -29,12 +31,12 @@ class MessageQuery(MessageFABase):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class MessageSet(MessageFABase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -52,7 +54,7 @@ class MessageSet(MessageFABase):
         self.child_lock = False
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         power = 0x80 if self.power else 0x00
         link_to_ac = 0x01 if self.link_to_ac else 0x00
         sleep_mode = 0x02 if self.sleep_mode else 0x00
@@ -69,12 +71,12 @@ class MessageSet(MessageFABase):
                 scheduled,
                 0x00,
                 child_lock,
-            ]
+            ],
         )
 
 
 class CEGeneralMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[1] & 0x80) > 0
         self.child_lock = (body[1] & 0x20) > 0
@@ -82,25 +84,22 @@ class CEGeneralMessageBody(MessageBody):
         self.fan_speed = body[2]
         self.pm25 = (body[3] << 8) + body[4]
         self.co2 = (body[5] << 8) + body[6]
+        self.current_humidity: float | None = None
+        self.current_temperature: float | None = None
+        self.hcho: float | None = None
+        self.aux_heating: bool | None = None
+
         if body[7] != 0xFF:
             self.current_humidity = (body[7] << 8) + body[8] / 10
-        else:
-            self.current_humidity = None
         if body[9] != 0xFF:
             self.current_temperature = (body[9] << 8) + (body[10] - 60) / 2
-        else:
-            self.current_temperature = None
         if body[11] != 0xFF:
             self.hcho = (body[11] << 8) + body[12] / 1000
-        else:
-            self.hcho = None
         self.link_to_ac = (body[17] & 0x01) > 0
         self.sleep_mode = (body[17] & 0x02) > 0
         self.eco_mode = (body[17] & 0x04) > 0
         if (body[19] & 0x02) > 0:
             self.aux_heating = (body[17] & 0x08) > 0
-        else:
-            self.aux_heating = None
         self.powerful_purify = (body[17] & 0x10) > 0
         self.filter_cleaning_reminder = (body[18] & 0x01) > 0
         self.filter_change_reminder = (body[18] & 0x02) > 0
@@ -108,28 +107,26 @@ class CEGeneralMessageBody(MessageBody):
 
 
 class CENotifyMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
+        self.current_humidity: float | None = None
+        self.current_temperature: float | None = None
+        self.hcho: float | None = None
+
         self.pm25 = (body[1] << 8) + body[2]
         self.co2 = (body[3] << 8) + body[4]
         if body[5] != 0xFF:
             self.current_humidity = (body[5] << 8) + body[6] / 10
-        else:
-            self.current_humidity = None
         if body[7] != 0xFF:
             self.current_temperature = (body[7] << 8) + (body[8] - 60) / 2
-        else:
-            self.current_temperature = None
         if body[9] != 0xFF:
             self.hcho = (body[9] << 8) + body[10] / 1000
-        else:
-            self.hcho = None
         self.error_code = body[12]
 
 
 class MessageCEResponse(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if (
             self.message_type in [MessageType.query, MessageType.set]
             and self.body_type == 0x01

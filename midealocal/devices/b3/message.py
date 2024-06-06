@@ -1,8 +1,10 @@
-from ...message import MessageType, MessageRequest, MessageResponse, MessageBody
+from ...message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class MessageB3Base(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xB3,
             protocol_version=protocol_version,
@@ -11,12 +13,12 @@ class MessageB3Base(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageB3Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -24,12 +26,12 @@ class MessageQuery(MessageB3Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class B3MessageBody31(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.top_compartment_status = body[1]
         self.top_compartment_mode = body[2]
@@ -86,7 +88,7 @@ class B3MessageBody31(MessageBody):
 
 
 class B3MessageBody21(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.top_compartment_status = body[1]
         self.top_compartment_mode = body[2]
@@ -134,7 +136,7 @@ class B3MessageBody21(MessageBody):
 
 
 class B3MessageBody24(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.top_compartment_status = body[5]
         self.top_compartment_mode = body[6]
@@ -165,8 +167,8 @@ class B3MessageBody24(MessageBody):
 
 
 class MessageB3Response(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if (
             self.message_type == MessageType.query
             and self.body_type == 0x31
@@ -174,8 +176,11 @@ class MessageB3Response(MessageResponse):
             and self.body_type == 0x41
         ):
             self.set_body(B3MessageBody31(super().body))
-        elif self.message_type == MessageType.set and self.body_type == 0x21:
-            self.set_body(B3MessageBody21(super().body))
-        elif self.message_type == MessageType.set and self.body_type == 0x24:
+        elif (
+            self.message_type == MessageType.set
+            and self.body_type == 0x21
+            or self.message_type == MessageType.set
+            and self.body_type == 0x24
+        ):
             self.set_body(B3MessageBody21(super().body))
         self.set_attr()

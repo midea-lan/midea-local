@@ -1,7 +1,9 @@
-import logging
 import json
-from .message import MessageQuery, MessageFCResponse, MessageSet
+import logging
 import sys
+from typing import Any
+
+from .message import MessageFCResponse, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -55,7 +57,7 @@ class MideaFCDevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -90,25 +92,25 @@ class MideaFCDevice(MideaDevice):
         self.set_customize(customize)
 
     @property
-    def modes(self):
+    def modes(self) -> list[str]:
         return list(MideaFCDevice._modes.values())
 
     @property
-    def fan_speeds(self):
+    def fan_speeds(self) -> list[str]:
         return list(MideaFCDevice._speeds.values())
 
     @property
-    def screen_displays(self):
+    def screen_displays(self) -> list[str]:
         return list(MideaFCDevice._screen_displays.values())
 
     @property
-    def detect_modes(self):
+    def detect_modes(self) -> list[str]:
         return self._detect_modes
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageFCResponse(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -128,7 +130,7 @@ class MideaFCDevice(MideaDevice):
                 elif status == DeviceAttributes.screen_display:
                     if value in MideaFCDevice._screen_displays.keys():
                         self._attributes[status] = MideaFCDevice._screen_displays.get(
-                            value
+                            value,
                         )
                     else:
                         self._attributes[status] = None
@@ -142,7 +144,7 @@ class MideaFCDevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def make_message_set(self):
+    def make_message_set(self) -> MessageSet:
         message = MessageSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.child_lock = self._attributes[DeviceAttributes.child_lock]
@@ -154,7 +156,7 @@ class MideaFCDevice(MideaDevice):
             0
             if self._attributes[DeviceAttributes.detect_mode] is None
             else MideaFCDevice._detect_modes.index(
-                self._attributes[DeviceAttributes.detect_mode]
+                self._attributes[DeviceAttributes.detect_mode],
             )
         )
         message.mode = (
@@ -162,7 +164,7 @@ class MideaFCDevice(MideaDevice):
             if self._attributes[DeviceAttributes.mode] is None
             else list(MideaFCDevice._modes.keys())[
                 list(MideaFCDevice._modes.values()).index(
-                    self._attributes[DeviceAttributes.mode]
+                    self._attributes[DeviceAttributes.mode],
                 )
             ]
         )
@@ -171,7 +173,7 @@ class MideaFCDevice(MideaDevice):
             if self._attributes[DeviceAttributes.fan_speed] is None
             else list(MideaFCDevice._speeds.keys())[
                 list(MideaFCDevice._speeds.values()).index(
-                    self._attributes[DeviceAttributes.fan_speed]
+                    self._attributes[DeviceAttributes.fan_speed],
                 )
             ]
         )
@@ -180,14 +182,14 @@ class MideaFCDevice(MideaDevice):
             if self._attributes[DeviceAttributes.screen_display] is None
             else list(MideaFCDevice._screen_displays.keys())[
                 list(MideaFCDevice._screen_displays.values()).index(
-                    self._attributes[DeviceAttributes.screen_display]
+                    self._attributes[DeviceAttributes.screen_display],
                 )
             ]
         )
         message.standby_detect = self._standby_detect
         return message
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
             self.update_all({DeviceAttributes.prompt_tone.value: value})
@@ -206,7 +208,7 @@ class MideaFCDevice(MideaDevice):
             elif attr == DeviceAttributes.screen_display:
                 if value in MideaFCDevice._screen_displays.values():
                     message.screen_display = list(
-                        MideaFCDevice._screen_displays.keys()
+                        MideaFCDevice._screen_displays.keys(),
                     )[list(MideaFCDevice._screen_displays.values()).index(value)]
                 elif not value:
                     message.screen_display = 7
@@ -219,7 +221,7 @@ class MideaFCDevice(MideaDevice):
                 setattr(message, str(attr), value)
             self.build_send(message)
 
-    def set_customize(self, customize):
+    def set_customize(self, customize: str) -> None:
         self._standby_detect = self._standby_detect_default
         if customize and len(customize) > 0:
             try:
@@ -229,7 +231,7 @@ class MideaFCDevice(MideaDevice):
                     if len(settings) == 2 and settings[0] > settings[1]:
                         self._standby_detect = settings
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {repr(e)}")
+                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all({"standby_detect": self._standby_detect})
 
 

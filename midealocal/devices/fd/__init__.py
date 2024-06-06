@@ -1,6 +1,8 @@
 import logging
-from .message import MessageQuery, MessageFDResponse, MessageSet
 import sys
+from typing import Any
+
+from .message import MessageFDResponse, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -65,7 +67,7 @@ class MideaFDDevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -96,25 +98,25 @@ class MideaFDDevice(MideaDevice):
             self._speeds = MideaFDDevice._speeds_old
 
     @property
-    def modes(self):
+    def modes(self) -> list[str]:
         return list(MideaFDDevice._modes)
 
     @property
-    def fan_speeds(self):
+    def fan_speeds(self) -> list[str]:
         return list(self._speeds.values())
 
     @property
-    def screen_displays(self):
+    def screen_displays(self) -> list[str]:
         return list(MideaFDDevice._screen_displays.values())
 
     @property
-    def detect_modes(self):
+    def detect_modes(self) -> list[str]:
         return self._detect_modes
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageFDResponse(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -134,7 +136,7 @@ class MideaFDDevice(MideaDevice):
                 elif status == DeviceAttributes.screen_display:
                     if value in MideaFDDevice._screen_displays.keys():
                         self._attributes[status] = MideaFDDevice._screen_displays.get(
-                            value
+                            value,
                         )
                     else:
                         self._attributes[status] = None
@@ -143,7 +145,7 @@ class MideaFDDevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def make_message_set(self):
+    def make_message_set(self) -> MessageSet:
         message = MessageSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
@@ -160,7 +162,7 @@ class MideaFDDevice(MideaDevice):
             if self._attributes[DeviceAttributes.fan_speed] is None
             else list(self._speeds.keys())[
                 list(self._speeds.values()).index(
-                    self._attributes[DeviceAttributes.fan_speed]
+                    self._attributes[DeviceAttributes.fan_speed],
                 )
             ]
         )
@@ -169,13 +171,13 @@ class MideaFDDevice(MideaDevice):
             if self._attributes[DeviceAttributes.screen_display] is None
             else list(MideaFDDevice._screen_displays.keys())[
                 list(MideaFDDevice._screen_displays.values()).index(
-                    self._attributes[DeviceAttributes.screen_display]
+                    self._attributes[DeviceAttributes.screen_display],
                 )
             ]
         )
         return message
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
             self.update_all({DeviceAttributes.prompt_tone.value: value})
@@ -192,7 +194,7 @@ class MideaFDDevice(MideaDevice):
             elif attr == DeviceAttributes.screen_display:
                 if value in MideaFDDevice._screen_displays.values():
                     message.screen_display = list(
-                        MideaFDDevice._screen_displays.keys()
+                        MideaFDDevice._screen_displays.keys(),
                     )[list(MideaFDDevice._screen_displays.values()).index(value)]
                 elif not value:
                     message.screen_display = 7

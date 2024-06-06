@@ -1,14 +1,15 @@
-import logging
 import json
+import logging
+import sys
+from typing import Any
+
 from .message import (
-    MessageQuery,
-    MessageSet,
+    MessageE3Response,
     MessageNewProtocolSet,
     MessagePower,
-    MessageE3Response,
+    MessageQuery,
+    MessageSet,
 )
-
-import sys
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -44,7 +45,7 @@ class MideaE3Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -68,18 +69,18 @@ class MideaE3Device(MideaDevice):
             },
         )
         self._old_subtypes = [32, 33, 34, 35, 36, 37, 40, 43, 48, 49, 80]
-        self._precision_halves = None
+        self._precision_halves: bool | None = None
         self._default_precision_halves = False
         self.set_customize(customize)
 
     @property
-    def precision_halves(self):
+    def precision_halves(self) -> bool | None:
         return self._precision_halves
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageE3Response(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -96,18 +97,19 @@ class MideaE3Device(MideaDevice):
 
         return new_status
 
-    def make_message_set(self):
+    def make_message_set(self) -> MessageSet:
         message = MessageSet(self._protocol_version)
         message.zero_cold_water = self._attributes[DeviceAttributes.zero_cold_water]
         message.protection = self._attributes[DeviceAttributes.protection]
-        message.zero_clod_pulse = self._attributes[DeviceAttributes.zero_cold_pulse]
+        message.zero_cold_pulse = self._attributes[DeviceAttributes.zero_cold_pulse]
         message.smart_volume = self._attributes[DeviceAttributes.smart_volume]
         message.target_temperature = self._attributes[
             DeviceAttributes.target_temperature
         ]
         return message
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
+        message: MessagePower | MessageSet | MessageNewProtocolSet | None = None
         if attr not in [
             DeviceAttributes.burning_state,
             DeviceAttributes.current_temperature,
@@ -123,11 +125,11 @@ class MideaE3Device(MideaDevice):
                 setattr(message, str(attr), value)
             else:
                 message = MessageNewProtocolSet(self._protocol_version)
-                setattr(message, "key", str(attr))
-                setattr(message, "value", value)
+                message.key = str(attr)
+                message.value = value
             self.build_send(message)
 
-    def set_customize(self, customize):
+    def set_customize(self, customize: str) -> None:
         self._precision_halves = self._default_precision_halves
         if customize and len(customize) > 0:
             try:
@@ -135,7 +137,7 @@ class MideaE3Device(MideaDevice):
                 if params and "precision_halves" in params:
                     self._precision_halves = params.get("precision_halves")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {repr(e)}")
+                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all({"precision_halves": self._precision_halves})
 
 

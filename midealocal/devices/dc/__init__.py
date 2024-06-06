@@ -1,7 +1,8 @@
 import logging
-from .message import MessageQuery, MessagePower, MessageStart, MessageDCResponse
-
 import sys
+from typing import Any
+
+from .message import MessageDCResponse, MessagePower, MessageQuery, MessageStart
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -34,7 +35,7 @@ class MideaDADevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -55,10 +56,10 @@ class MideaDADevice(MideaDevice):
             },
         )
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageDCResponse(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -81,7 +82,8 @@ class MideaDADevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
+        message: MessagePower | MessageStart | None = None
         if attr == DeviceAttributes.power:
             message = MessagePower(self._protocol_version)
             message.power = value

@@ -90,7 +90,7 @@ class MessageBase(ABC):
             "body": self.body.hex(),
             "message type": "%02x" % self._message_type,
             "body type": (
-                ("%02x" % self._body_type) if self._body_type is not None else "None"
+                ("%02x" % self._body_type) if self._body_type != NONE_VALUE else "None"
             ),
         }
         return str(output)
@@ -98,7 +98,11 @@ class MessageBase(ABC):
 
 class MessageRequest(MessageBase):
     def __init__(
-        self, device_type: int, protocol_version: int, message_type: int, body_type: int
+        self,
+        device_type: int,
+        protocol_version: int,
+        message_type: int,
+        body_type: int,
     ) -> None:
         super().__init__()
         self.device_type = device_type
@@ -130,7 +134,7 @@ class MessageRequest(MessageBase):
                 self.protocol_version,
                 # frame type
                 self.message_type,
-            ]
+            ],
         )
 
     @property
@@ -140,7 +144,7 @@ class MessageRequest(MessageBase):
     @property
     def body(self) -> bytearray:
         body = bytearray([])
-        if self.body_type is not None:
+        if self.body_type != NONE_VALUE:
             body.append(self.body_type)
         if self._body is not None:
             body.extend(self._body)
@@ -233,7 +237,7 @@ class NewProtocolMessageBody(MessageBody):
         result = {}
         try:
             pos = 2
-            for pack in range(0, self.data[1]):
+            for pack in range(self.data[1]):
                 param = self.data[pos] + (self.data[pos + 1] << 8)
                 if self._pack_len == 5:
                     pos += 1
@@ -244,7 +248,7 @@ class NewProtocolMessageBody(MessageBody):
                 pos += 3 + length
         except IndexError:
             # Some device used non-standard new-protocol(美的乐享三代中央空调?)
-            _LOGGER.debug(f"Non-standard new-protocol {self.data.hex()}")
+            _LOGGER.debug("Non-standard new-protocol %s", self.data.hex())
         return result
 
 

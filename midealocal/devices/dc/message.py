@@ -1,13 +1,15 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
 class MessageDCBase(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xDC,
             protocol_version=protocol_version,
@@ -16,12 +18,12 @@ class MessageDCBase(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageDCBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -29,12 +31,12 @@ class MessageQuery(MessageDCBase):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class MessagePower(MessageDCBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -43,13 +45,13 @@ class MessagePower(MessageDCBase):
         self.power = False
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         power = 0x01 if self.power else 0x00
         return bytearray([power, 0xFF])
 
 
 class MessageStart(MessageDCBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -59,7 +61,7 @@ class MessageStart(MessageDCBase):
         self.washing_data = bytearray([])
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         if self.start:
             return bytearray([0xFF, 0x01]) + self.washing_data
         else:
@@ -68,25 +70,24 @@ class MessageStart(MessageDCBase):
 
 
 class DCGeneralMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = body[1] > 0
         self.start = True if body[2] in [2, 6] else False
         self.washing_data = body[3:15]
         self.progress = 0
-        for i in range(0, 7):
+        self.time_remaining: float | None = None
+        for i in range(7):
             if (body[16] & (1 << i)) > 0:
                 self.progress = i + 1
                 break
         if self.power:
             self.time_remaining = body[17] + body[18] * 60
-        else:
-            self.time_remaining = None
 
 
 class MessageDCResponse(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if self.message_type in [MessageType.query, MessageType.set] or (
             self.message_type == MessageType.notify1 and self.body_type == 0x04
         ):

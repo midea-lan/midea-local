@@ -1,7 +1,9 @@
 import logging
+from typing import Any
 from .message import MessageQuery, MessageA1Response, MessageSet
 
 import sys
+
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -53,7 +55,7 @@ class MideaA1Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -70,7 +72,7 @@ class MideaA1Device(MideaDevice):
                 DeviceAttributes.prompt_tone: True,
                 DeviceAttributes.child_lock: False,
                 DeviceAttributes.mode: None,
-                DeviceAttributes.fan_speed: 60,
+                DeviceAttributes.fan_speed: "Medium",
                 DeviceAttributes.swing: False,
                 DeviceAttributes.target_humidity: 35,
                 DeviceAttributes.anion: False,
@@ -83,22 +85,22 @@ class MideaA1Device(MideaDevice):
         )
 
     @property
-    def modes(self):
+    def modes(self) -> list[str]:
         return MideaA1Device._modes
 
     @property
-    def fan_speeds(self):
+    def fan_speeds(self) -> list[str]:
         return list(MideaA1Device._speeds.values())
 
     @property
-    def water_level_sets(self):
+    def water_level_sets(self) -> list[str]:
         return MideaA1Device._water_level_sets
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
-        message = MessageA1Response(msg)
+    def process_message(self, msg: bytes) -> dict[str, Any]:
+        message = MessageA1Response(bytearray(msg))
         self._protocol_version = message.protocol_version
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -120,7 +122,7 @@ class MideaA1Device(MideaDevice):
                 else:
                     self._attributes[status] = value
                 tank_full = self._attributes[DeviceAttributes.tank] >= int(
-                    self._attributes[DeviceAttributes.water_level_set]
+                    self._attributes[DeviceAttributes.water_level_set],
                 )
                 if (
                     self._attributes[DeviceAttributes.tank_full] is None
@@ -131,7 +133,7 @@ class MideaA1Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def make_message_set(self):
+    def make_message_set(self) -> MessageSet:
         message = MessageSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
@@ -147,7 +149,7 @@ class MideaA1Device(MideaDevice):
             if self._attributes[DeviceAttributes.fan_speed] is None
             else list(MideaA1Device._speeds.keys())[
                 list(MideaA1Device._speeds.values()).index(
-                    self._attributes[DeviceAttributes.fan_speed]
+                    self._attributes[DeviceAttributes.fan_speed],
                 )
             ]
         )
@@ -155,11 +157,11 @@ class MideaA1Device(MideaDevice):
         message.swing = self._attributes[DeviceAttributes.swing]
         message.anion = self._attributes[DeviceAttributes.anion]
         message.water_level_set = int(
-            self._attributes[DeviceAttributes.water_level_set]
+            self._attributes[DeviceAttributes.water_level_set],
         )
         return message
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
             self.update_all({DeviceAttributes.prompt_tone.value: value})

@@ -1,9 +1,9 @@
-import logging
 import json
-from typing import Any
-from .message import MessageQuery, MessageSet, MessageCDResponse
-
+import logging
 import sys
+from typing import Any
+
+from .message import MessageCDResponse, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -44,7 +44,7 @@ class MideaCDDevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -69,28 +69,28 @@ class MideaCDDevice(MideaDevice):
                 DeviceAttributes.compressor_status: None,
             },
         )
-        self._fields = dict[Any, Any]
-        self._temperature_step = None
+        self._fields: dict[Any, Any] = {}
+        self._temperature_step: float | None = None
         self._default_temperature_step = 1
         self.set_customize(customize)
 
     @property
-    def temperature_step(self):
+    def temperature_step(self) -> float | None:
         return self._temperature_step
 
     @property
-    def preset_modes(self):
+    def preset_modes(self) -> list[str]:
         return MideaCDDevice._modes
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageCDResponse(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
         if hasattr(message, "fields"):
-            self._fields = getattr(message, "fields")
+            self._fields = message.fields
         for status in self._attributes.keys():
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
@@ -101,7 +101,7 @@ class MideaCDDevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         if attr in [
             DeviceAttributes.mode,
             DeviceAttributes.power,
@@ -110,7 +110,7 @@ class MideaCDDevice(MideaDevice):
             message = MessageSet(self._protocol_version)
             message.fields = self._fields
             message.mode = MideaCDDevice._modes.index(
-                self._attributes[DeviceAttributes.mode]
+                self._attributes[DeviceAttributes.mode],
             )
             message.power = self._attributes[DeviceAttributes.power]
             message.target_temperature = self._attributes[
@@ -123,7 +123,7 @@ class MideaCDDevice(MideaDevice):
                 setattr(message, str(attr), value)
             self.build_send(message)
 
-    def set_customize(self, customize):
+    def set_customize(self, customize: str) -> None:
         self._temperature_step = self._default_temperature_step
         if customize and len(customize) > 0:
             try:
@@ -131,7 +131,7 @@ class MideaCDDevice(MideaDevice):
                 if params and "temperature_step" in params:
                     self._temperature_step = params.get("temperature_step")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {repr(e)}")
+                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all({"temperature_step": self._temperature_step})
 
 

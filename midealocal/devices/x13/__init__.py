@@ -1,7 +1,9 @@
-import logging
 import json
+import logging
 import sys
-from .message import MessageQuery, MessageSet, Message13Response
+from typing import Any
+
+from .message import Message13Response, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -36,7 +38,7 @@ class Midea13Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -56,40 +58,40 @@ class Midea13Device(MideaDevice):
                 DeviceAttributes.power: False,
             },
         )
-        self._color_temp_range = None
-        self._default_color_temp_range = [2700, 6500]
+        self._color_temp_range: list[int] = []
+        self._default_color_temp_range: list[int] = [2700, 6500]
         self.set_customize(customize)
 
     @property
-    def effects(self):
+    def effects(self) -> list[str]:
         return Midea13Device._effects
 
     @property
-    def color_temp_range(self):
+    def color_temp_range(self) -> list[int]:
         return self._color_temp_range
 
-    def kelvin_to_midea(self, kelvin):
+    def kelvin_to_midea(self, kelvin: int) -> float:
         return round(
             (kelvin - self._color_temp_range[0])
             / (self._color_temp_range[1] - self._color_temp_range[0])
-            * 255
+            * 255,
         )
 
-    def midea_to_kelvin(self, midea):
+    def midea_to_kelvin(self, midea: int) -> float:
         return (
             round((self._color_temp_range[1] - self._color_temp_range[0]) / 255 * midea)
             + self._color_temp_range[0]
         )
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = Message13Response(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
-        new_status = {}
+        new_status: dict[str, Any] = {}
         if hasattr(message, "control_success"):
-            new_status = {"control_success", message.control_success}
+            new_status = {"control_success": message.control_success}
             if message.control_success:
                 self.refresh_status()
         else:
@@ -105,7 +107,7 @@ class Midea13Device(MideaDevice):
                     new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         if attr in [
             DeviceAttributes.brightness,
             DeviceAttributes.color_temperature,
@@ -121,7 +123,7 @@ class Midea13Device(MideaDevice):
                 setattr(message, str(attr), value)
             self.build_send(message)
 
-    def set_customize(self, customize):
+    def set_customize(self, customize: str) -> None:
         self._color_temp_range = self._default_color_temp_range
         if customize and len(customize) > 0:
             try:
@@ -129,7 +131,7 @@ class Midea13Device(MideaDevice):
                 if params and "color_temp_range_kelvin" in params:
                     self._color_temp_range = params.get("color_temp_range_kelvin")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {repr(e)}")
+                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all({"color_temp_range": self._color_temp_range})
 
 

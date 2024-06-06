@@ -1,13 +1,15 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
 class MessageB6Base(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xB6,
             protocol_version=protocol_version,
@@ -16,12 +18,12 @@ class MessageB6Base(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageB6Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -29,12 +31,12 @@ class MessageQuery(MessageB6Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class MessageQueryTips(MessageB6Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -42,23 +44,23 @@ class MessageQueryTips(MessageB6Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([0x01])
 
 
 class MessageSet(MessageB6Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
             body_type=0x22 if protocol_version in [0x00, 0x01] else 0x11,
         )
-        self.light = None
-        self.power = None
-        self.fan_level = None
+        self.light: int | None = None
+        self.power: bool | None = None
+        self.fan_level: int | None = None
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         if self.protocol_version in [0x00, 0x01]:
             light = 0xFF
             value2 = 0xFF
@@ -84,7 +86,7 @@ class MessageSet(MessageB6Base):
                     value2 = 0x02
                     value3 = self.fan_level
             return bytearray(
-                [0x01, light, value2, value3, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
+                [0x01, light, value2, value3, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF],
             )
         else:
             value13 = 0xFF
@@ -116,22 +118,22 @@ class MessageSet(MessageB6Base):
 
 
 class B6FeedbackBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
 
 
 class B6GeneralBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         if body[1] != 0xFF:
             self.light = body[1] > 0x00
         self.power = False
-        fan_level = None
+        fan_level: int = 0
         if body[2] != 0xFF:
             self.power = body[2] in [0x02, 0x06, 0x07, 0x14, 0x15, 0x16]
             if body[2] in [0x14, 0x16]:
                 fan_level = 0x16
-        if fan_level is None and body[3] != 0xFF:
+        if fan_level == 0 and body[3] != 0xFF:
             fan_level = body[3]
         if fan_level > 100:
             if fan_level < 130:
@@ -142,15 +144,13 @@ class B6GeneralBody(MessageBody):
                 fan_level = 3
             else:
                 fan_level = 4
-        else:
-            self.fan_level = fan_level
-        self.fan_level = 0 if fan_level is None else fan_level
+        self.fan_level = fan_level
         self.oilcup_full = (body[5] & 0x01) > 0
         self.cleaning_reminder = (body[5] & 0x02) > 0
 
 
 class B6NewProtocolBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         if body[1] == 0x01:
             pack_bytes = body[3 : 3 + body[2]]
@@ -166,7 +166,7 @@ class B6NewProtocolBody(MessageBody):
 
 
 class B6SpecialBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         if body[2] != 0xFF:
             self.light = body[2] > 0x00
@@ -178,13 +178,13 @@ class B6SpecialBody(MessageBody):
 
 
 class B6ExceptionBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
 
 
 class MessageB6Response(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if (
             self.message_type == MessageType.set
             and self.body_type == 0x22

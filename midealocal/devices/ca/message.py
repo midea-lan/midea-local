@@ -1,13 +1,15 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
 class MessageCABase(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xCA,
             protocol_version=protocol_version,
@@ -16,12 +18,12 @@ class MessageCABase(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageCABase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -29,12 +31,12 @@ class MessageQuery(MessageCABase):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class CAGeneralMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.refrigerator_setting_temp = body[2] & 0x0F
         self.freezer_setting_temp = -12 - ((body[2] & 0xF0) >> 4)
@@ -62,7 +64,7 @@ class CAGeneralMessageBody(MessageBody):
 
 
 class CAExceptionMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.refrigerator_door_overtime = (body[1] & 0x01) > 0
         self.freezer_door_overtime = (body[1] & 0x02) > 0
@@ -71,7 +73,7 @@ class CAExceptionMessageBody(MessageBody):
 
 
 class CANotify00MessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.refrigerator_door = (body[1] & 0x01) > 0
         self.freezer_door = (body[1] & 0x02) > 0
@@ -80,7 +82,7 @@ class CANotify00MessageBody(MessageBody):
 
 
 class CANotify01MessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.refrigerator_setting_temp = body[37]
         self.freezer_setting_temp = -12 - body[38]
@@ -102,8 +104,8 @@ class CANotify01MessageBody(MessageBody):
 
 
 class MessageCAResponse(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if (
             (
                 self.message_type in [MessageType.query, MessageType.set]

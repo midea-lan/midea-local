@@ -1,8 +1,9 @@
-import logging
 import json
-from .message import MessageQuery, MessageB6Response, MessageSet
-
+import logging
 import sys
+from typing import Any
+
+from .message import MessageB6Response, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -37,7 +38,7 @@ class MideaB6Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -66,17 +67,17 @@ class MideaB6Device(MideaDevice):
         self.set_customize(customize)
 
     @property
-    def speed_count(self):
+    def speed_count(self) -> int:
         return len(self._speeds) - 1
 
     @property
-    def preset_modes(self):
+    def preset_modes(self) -> list[str]:
         return list(self._speeds.values())
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageB6Response(msg)
         self._protocol_version = message.protocol_version
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
@@ -87,10 +88,10 @@ class MideaB6Device(MideaDevice):
                 if status == DeviceAttributes.fan_level:
                     if value in self._speeds.keys():
                         self._attributes[DeviceAttributes.mode] = self._speeds.get(
-                            value
+                            value,
                         )
                         self._attributes[DeviceAttributes.fan_speed] = list(
-                            self._speeds.keys()
+                            self._speeds.keys(),
                         ).index(value)
                     else:
                         self._attributes[DeviceAttributes.mode] = None
@@ -105,7 +106,7 @@ class MideaB6Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         message = None
         if attr == DeviceAttributes.fan_speed:
             if value < len(self._speeds):
@@ -130,7 +131,7 @@ class MideaB6Device(MideaDevice):
         if message is not None:
             self.build_send(message)
 
-    def turn_on(self, fan_speed=None, mode=None):
+    def turn_on(self, fan_speed: int | None = None, mode: str | None = None) -> None:
         message = MessageSet(self._protocol_version)
         message.power = True
         if fan_speed is not None and fan_speed < len(self._speeds):
@@ -143,7 +144,7 @@ class MideaB6Device(MideaDevice):
             ]
         self.build_send(message)
 
-    def set_customize(self, customize):
+    def set_customize(self, customize: str) -> None:
         self._speeds = self._default_speeds
         self._power_speed = self._default_power_speed
         if customize and len(customize) > 0:
@@ -161,10 +162,10 @@ class MideaB6Device(MideaDevice):
                         for k in keys:
                             self._speeds[k] = speeds[k]
                     self.update_all(
-                        {"speeds": self._speeds, "default_speed": self._power_speed}
+                        {"speeds": self._speeds, "default_speed": self._power_speed},
                     )
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {repr(e)}")
+                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
 
 
 class MideaAppliance(MideaB6Device):

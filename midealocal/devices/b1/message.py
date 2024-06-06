@@ -1,8 +1,10 @@
-from ...message import MessageType, MessageRequest, MessageResponse, MessageBody
+from ...message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class MessageB1Base(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xB1,
             protocol_version=protocol_version,
@@ -11,12 +13,12 @@ class MessageB1Base(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery(MessageB1Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -24,12 +26,12 @@ class MessageQuery(MessageB1Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class B1MessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.door = (body[16] & 0x02) > 0
         self.status = body[1]
@@ -45,8 +47,8 @@ class B1MessageBody(MessageBody):
 
 
 class MessageB1Response(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if self.message_type in [MessageType.notify1, MessageType.query]:
             self.set_body(B1MessageBody(super().body))
         self.set_attr()

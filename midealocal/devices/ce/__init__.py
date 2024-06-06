@@ -1,8 +1,9 @@
-import logging
 import json
-from .message import MessageQuery, MessageCEResponse, MessageSet
-
+import logging
 import sys
+from typing import Any
+
+from .message import MessageCEResponse, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -50,7 +51,7 @@ class MideaCEDevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -88,17 +89,17 @@ class MideaCEDevice(MideaDevice):
         self.set_customize(customize)
 
     @property
-    def speed_count(self):
+    def speed_count(self) -> int:
         return self._speed_count
 
     @property
-    def preset_modes(self):
+    def preset_modes(self) -> list[str]:
         return self._modes
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageCEResponse(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -118,7 +119,7 @@ class MideaCEDevice(MideaDevice):
         ]
         return new_status
 
-    def make_message_set(self):
+    def make_message_set(self) -> MessageSet:
         message = MessageSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.fan_speed = self._attributes[DeviceAttributes.fan_speed]
@@ -131,7 +132,7 @@ class MideaCEDevice(MideaDevice):
         message.child_lock = self._attributes[DeviceAttributes.child_lock]
         return message
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         message = self.make_message_set()
         if attr == DeviceAttributes.mode:
             message.sleep_mode = False
@@ -144,7 +145,7 @@ class MideaCEDevice(MideaDevice):
             setattr(message, str(attr), value)
         self.build_send(message)
 
-    def set_customize(self, customize):
+    def set_customize(self, customize: str) -> None:
         self._speed_count = self._default_speed_count
         if customize and len(customize) > 0:
             try:
@@ -152,7 +153,7 @@ class MideaCEDevice(MideaDevice):
                 if params and "speed_count" in params:
                     self._speed_count = params.get("speed_count")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {repr(e)}")
+                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all({"speed_count": self._speed_count})
 
 

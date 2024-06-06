@@ -1,16 +1,18 @@
 from ...crc8 import calculate
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
 class MessageFCBase(MessageRequest):
     _message_serial = 0
 
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xFC,
             protocol_version=protocol_version,
@@ -23,18 +25,18 @@ class MessageFCBase(MessageRequest):
         self._message_id = MessageFCBase._message_serial
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
     @property
-    def body(self):
+    def body(self) -> bytearray:
         body = bytearray([self.body_type]) + self._body + bytearray([self._message_id])
         body.append(calculate(body))
         return body
 
 
 class MessageQuery(MessageFCBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -42,7 +44,7 @@ class MessageQuery(MessageFCBase):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray(
             [
                 0x00,
@@ -64,12 +66,12 @@ class MessageQuery(MessageFCBase):
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
 
 
 class MessageSet(MessageFCBase):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -87,7 +89,7 @@ class MessageSet(MessageFCBase):
         self.standby_detect = [40, 20]
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         # byte1 power
         power = 0x01 if self.power else 0x00
         detect = 0x08 if self.detect_mode > 0 else 0x00
@@ -131,25 +133,25 @@ class MessageSet(MessageFCBase):
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
 
 
 class FCGeneralMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[1] & 0x01) > 0
         self.mode = body[2] & 0xF0
         self.fan_speed = body[3] & 0x7F
         self.screen_display = body[9] & 0x07
+        self.pm25: int | None = None
+        self.tvoc: int | None = None
+        self.hcho: int | None = None
+
         if len(body) > 14 and body[14] != 0xFF:
             self.pm25 = body[13] + (body[14] << 8)
-        else:
-            self.pm25 = None
         if len(body) > 15 and body[15] != 0xFF:
             self.tvoc = body[15]
-        else:
-            self.tvoc = None
         self.anion = (body[19] & 0x40 > 0) if len(body) > 19 else False
         self.standby = ((body[34] & 0xFF) == 0x14) if len(body) > 34 else False
         self.child_lock = (body[8] & 0x80 > 0) if len(body) > 8 else False
@@ -164,25 +166,23 @@ class FCGeneralMessageBody(MessageBody):
                 self.detect_mode = 0
         if len(body) > 38 and body[38] != 0xFF:
             self.hcho = body[37] + (body[38] << 8)
-        else:
-            self.hcho = None
 
 
 class FCNotifyMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = (body[1] & 0x01) > 0
         self.mode = body[2] & 0xF0
         self.fan_speed = body[3] & 0x7F
         self.screen_display = body[9] & 0x07
+        self.pm25: int | None = None
+        self.tvoc: int | None = None
+        self.hcho: int | None = None
+
         if len(body) > 14 and body[14] != 0xFF:
             self.pm25 = body[13] + (body[14] << 8)
-        else:
-            self.pm25 = None
         if len(body) > 15 and body[15] != 0xFF:
             self.tvoc = body[15]
-        else:
-            self.tvoc = None
         self.anion = (body[10] & 0x20 > 0) if len(body) > 10 else False
         self.standby = (body[27] & 0x14 == 0xFF) if len(body) > 27 else False
         self.child_lock = (body[10] & 0x10 > 0) if len(body) > 10 else False
@@ -193,22 +193,19 @@ class FCNotifyMessageBody(MessageBody):
                 self.detect_mode = 0
         if len(body) > 31 and body[31] != 0xFF:
             self.hcho = body[30] + (body[31] << 8)
-        else:
-            self.hcho = None
 
 
 class MessageFCResponse(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if self.body_type in [0xB0, 0xB1]:
             pass
-        else:
-            if (
-                self.message_type
-                in [MessageType.query, MessageType.set, MessageType.notify1]
-                and self.body_type == 0xC8
-            ):
-                self.set_body(FCGeneralMessageBody(super().body))
-            elif self.message_type == MessageType.notify1 and self.body_type == 0xA0:
-                self.set_body(FCNotifyMessageBody(super().body))
+        elif (
+            self.message_type
+            in [MessageType.query, MessageType.set, MessageType.notify1]
+            and self.body_type == 0xC8
+        ):
+            self.set_body(FCGeneralMessageBody(super().body))
+        elif self.message_type == MessageType.notify1 and self.body_type == 0xA0:
+            self.set_body(FCNotifyMessageBody(super().body))
         self.set_attr()

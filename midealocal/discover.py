@@ -1,8 +1,8 @@
 import logging
 import socket
-from typing import Any
 import xml.etree.ElementTree as ET
 from ipaddress import IPv4Network
+from typing import Any
 
 import ifaddr
 
@@ -84,7 +84,7 @@ BROADCAST_MSG = bytearray(
         0x8E,
         0x92,
         0xE5,
-    ]
+    ],
 )
 
 DEVICE_INFO_MSG = bytearray(
@@ -145,12 +145,13 @@ DEVICE_INFO_MSG = bytearray(
         0x47,
         0x62,
         0xBE,
-    ]
+    ],
 )
 
 
 def discover(
-    discover_type: list | None = None, ip_address: list | None = None
+    discover_type: list | None = None,
+    ip_address: list | None = None,
 ) -> dict[int, dict[str, Any]]:
     if discover_type is None:
         discover_type = []
@@ -163,18 +164,18 @@ def discover(
         addrs = enum_all_broadcast()
     else:
         addrs = [ip_address]
-    _LOGGER.debug(f"All addresses for broadcast: {addrs}")
+    _LOGGER.debug("All addresses for broadcast: %s", addrs)
     for addr in addrs:
         try:
             sock.sendto(BROADCAST_MSG, (addr, 6445))
             sock.sendto(BROADCAST_MSG, (addr, 20086))
         except Exception:
-            _LOGGER.warning(f"Can't access network {addr}")
+            _LOGGER.warning("Can't access network %s", addrs)
     while True:
         try:
             data, addr = sock.recvfrom(512)
             ip = addr[0]
-            _LOGGER.debug(f"Received response from {addr}: {data.hex()}")
+            _LOGGER.debug("Received response from %s: %s", addr, data.hex())
             if len(data) >= 104 and (
                 data[:2].hex() == "5a5a" or data[8:10].hex() == "5a5a"
             ):
@@ -187,13 +188,14 @@ def discover(
                 else:
                     continue
                 device_id = int.from_bytes(
-                    bytearray.fromhex(data[20:26].hex()), "little"
+                    bytearray.fromhex(data[20:26].hex()),
+                    "little",
                 )
                 if device_id in found_devices:
                     continue
                 encrypt_data = data[40:-16]
                 reply = security.aes_decrypt(encrypt_data)
-                _LOGGER.debug(f"Declassified reply: {reply.hex()}")
+                _LOGGER.debug("Declassified reply: %s", reply.hex())
                 ssid = reply[41 : 41 + reply[40]].decode("utf-8")
                 device_type = ssid.split("_")[1]
                 port = bytes2port(reply[4:8])
@@ -231,13 +233,13 @@ def discover(
             }
             if len(discover_type) == 0 or device.get("type") in discover_type:
                 found_devices[device_id] = device
-                _LOGGER.debug(f"Found a supported device: {device}")
+                _LOGGER.debug("Found a supported device: %s", device)
             else:
-                _LOGGER.debug(f"Found a unsupported device: {device}")
+                _LOGGER.debug("Found a unsupported device: %s", device)
         except socket.timeout:
             break
         except OSError as e:
-            _LOGGER.error(f"Socket error: {repr(e)}")
+            _LOGGER.error("Socket error: %s", repr(e))
     return found_devices
 
 
@@ -275,17 +277,19 @@ def get_device_info(device_ip: str, device_port: int) -> bytearray:
             device_address = (device_ip, device_port)
             sock.connect(device_address)
             _LOGGER.debug(
-                f"Sending to {device_ip}:{device_port} {DEVICE_INFO_MSG.hex()}"
+                "Sending to %s:%s %s", device_ip, device_port, DEVICE_INFO_MSG.hex()
             )
             sock.sendall(DEVICE_INFO_MSG)
             response = bytearray(sock.recv(512))
-    except socket.timeout:
+    except TimeoutError:
         _LOGGER.warning(
-            f"Connect the device {device_ip}:{device_port} timed out for 8s. "
-            f"Don't care about a small amount of this. if many maybe not support."
+            "Connect the device %s:%s timed out for 8s."
+            "Don't care about a small amount of this. if many maybe not support.",
+            device_ip,
+            device_port,
         )
     except OSError:
-        _LOGGER.warning(f"Can't connect to Device {device_ip}:{device_port}")
+        _LOGGER.warning("Can't connect to Device %s:%s", device_ip, device_port)
     return response
 
 
@@ -296,7 +300,8 @@ def enum_all_broadcast() -> list:
         for ip in adapter.ips:
             if ip.is_IPv4 and ip.network_prefix < 32:
                 local_network = IPv4Network(
-                    f"{ip.ip}/{ip.network_prefix}", strict=False
+                    f"{ip.ip}/{ip.network_prefix}",
+                    strict=False,
                 )
                 if (
                     local_network.is_private

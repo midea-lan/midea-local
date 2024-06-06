@@ -1,8 +1,10 @@
-from ...message import MessageType, MessageRequest, MessageResponse, MessageBody
+from ...message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class MessageB0Base(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xB0,
             protocol_version=protocol_version,
@@ -11,12 +13,12 @@ class MessageB0Base(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessageQuery00(MessageB0Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -24,12 +26,12 @@ class MessageQuery00(MessageB0Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class MessageQuery01(MessageB0Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -37,12 +39,12 @@ class MessageQuery01(MessageB0Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class B0MessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         if len(body) > 15:
             self.door = (body[0] & 0x80) > 0
@@ -52,7 +54,7 @@ class B0MessageBody(MessageBody):
 
 
 class B0Message01Body(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         if len(body) > 15:
             self.door = (body[32] & 0x02) > 0
@@ -71,7 +73,7 @@ class B0Message01Body(MessageBody):
 
 
 class MessageB0Response(MessageResponse):
-    def __init__(self, message):
+    def __init__(self, message: bytearray) -> None:
         super().__init__(message)
         if self.message_type in [MessageType.notify1, MessageType.query]:
             if self.body_type == 0x01:

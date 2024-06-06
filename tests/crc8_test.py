@@ -13,6 +13,6 @@ def test_calculate() -> None:
             0x11,
             0xFF,
             0x20,
-        ]
+        ],
     )
     assert calculate(data) == 101

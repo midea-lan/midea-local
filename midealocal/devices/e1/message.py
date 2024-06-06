@@ -1,13 +1,15 @@
 from ...message import (
-    MessageType,
+    MessageBody,
     MessageRequest,
     MessageResponse,
-    MessageBody,
+    MessageType,
 )
 
 
 class MessageE1Base(MessageRequest):
-    def __init__(self, protocol_version, message_type, body_type):
+    def __init__(
+        self, protocol_version: int, message_type: int, body_type: int
+    ) -> None:
         super().__init__(
             device_type=0xE1,
             protocol_version=protocol_version,
@@ -16,12 +18,12 @@ class MessageE1Base(MessageRequest):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         raise NotImplementedError
 
 
 class MessagePower(MessageE1Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -30,13 +32,13 @@ class MessagePower(MessageE1Base):
         self.power = False
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         power = 0x01 if self.power else 0x00
         return bytearray([power, 0x00, 0x00, 0x00])
 
 
 class MessageLock(MessageE1Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -45,13 +47,13 @@ class MessageLock(MessageE1Base):
         self.lock = False
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         lock = 0x03 if self.lock else 0x04
         return bytearray([lock]) + bytearray([0x00] * 36)
 
 
 class MessageStorage(MessageE1Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -60,7 +62,7 @@ class MessageStorage(MessageE1Base):
         self.storage = False
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         storage = 0x01 if self.storage else 0x00
         return (
             bytearray([0x00, 0x00, 0x00, storage])
@@ -70,7 +72,7 @@ class MessageStorage(MessageE1Base):
 
 
 class MessageQuery(MessageE1Base):
-    def __init__(self, protocol_version):
+    def __init__(self, protocol_version: int) -> None:
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -78,12 +80,12 @@ class MessageQuery(MessageE1Base):
         )
 
     @property
-    def _body(self):
+    def _body(self) -> bytearray:
         return bytearray([])
 
 
 class E1GeneralMessageBody(MessageBody):
-    def __init__(self, body):
+    def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = body[1] > 0
         self.status = body[1]
@@ -117,8 +119,8 @@ class E1GeneralMessageBody(MessageBody):
 
 
 class MessageE1Response(MessageResponse):
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message: bytes) -> None:
+        super().__init__(bytearray(message))
         if (self.message_type == MessageType.set and 0 <= self.body_type <= 7) or (
             self.message_type in [MessageType.query, MessageType.notify1]
             and self.body_type == 0

@@ -1,18 +1,20 @@
-import logging
 import json
+import logging
+import sys
+
+from typing import Any
+
 from .message import (
-    MessageQuery,
-    MessageToggleDisplay,
-    MessageNewProtocolQuery,
     MessageACResponse,
     MessageGeneralSet,
+    MessageNewProtocolQuery,
     MessageNewProtocolSet,
     MessagePowerQuery,
+    MessageQuery,
     MessageSubProtocolQuery,
     MessageSubProtocolSet,
+    MessageToggleDisplay,
 )
-
-import sys
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -83,7 +85,7 @@ class MideaACDevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -131,25 +133,32 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.fresh_air_2: None,
             },
         )
-        self._fresh_air_version = None
-        self._default_temperature_step = 0.5
-        self._temperature_step = None
-        self._used_subprotocol = False
-        self._bb_sn8_flag = False
-        self._bb_timer = False
-        self._power_analysis_method = None
-        self._default_power_analysis_method = 1
+        self._fresh_air_version: DeviceAttributes | None = None
+        self._default_temperature_step: float = 0.5
+        self._temperature_step: float = 0.5
+        self._used_subprotocol: bool = False
+        self._bb_sn8_flag: bool = False
+        self._bb_timer: bool = False
+        self._power_analysis_method: int = 1
+        self._default_power_analysis_method: int = 1
         self.set_customize(customize)
 
     @property
-    def temperature_step(self):
+    def temperature_step(self) -> float | None:
         return self._temperature_step
 
     @property
-    def fresh_air_fan_speeds(self):
+    def fresh_air_fan_speeds(self) -> list[str]:
         return list(MideaACDevice._fresh_air_fan_speeds.values())
 
-    def build_query(self):
+    def build_query(
+        self,
+    ) -> list[
+        MessageSubProtocolQuery
+        | MessageQuery
+        | MessageNewProtocolQuery
+        | MessagePowerQuery
+    ]:
         if self._used_subprotocol:
             return [
                 MessageSubProtocolQuery(self._protocol_version, 0x10),
@@ -162,8 +171,8 @@ class MideaACDevice(MideaDevice):
             MessagePowerQuery(self._protocol_version),
         ]
 
-    def process_message(self, msg):
-        message = MessageACResponse(msg, self._power_analysis_method)
+    def process_message(self, msg: bytes) -> dict[str, Any]:
+        message = MessageACResponse(bytearray(msg), self._power_analysis_method)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
         has_fresh_air = False
@@ -207,7 +216,7 @@ class MideaACDevice(MideaDevice):
             self._fresh_air_version = DeviceAttributes.fresh_air_2
         return new_status
 
-    def make_message_set(self):
+    def make_message_set(self) -> MessageGeneralSet:
         message = MessageGeneralSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
@@ -230,7 +239,7 @@ class MideaACDevice(MideaDevice):
         message.comfort_mode = self._attributes[DeviceAttributes.comfort_mode]
         return message
 
-    def make_subptotocol_message_set(self):
+    def make_subptotocol_message_set(self) -> MessageSubProtocolSet:
         message = MessageSubProtocolSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
@@ -248,16 +257,19 @@ class MideaACDevice(MideaDevice):
         message.timer = self._bb_timer
         return message
 
-    def make_message_uniq_set(self):
+    def make_message_uniq_set(self) -> MessageSubProtocolSet | MessageGeneralSet:
+        message: MessageSubProtocolSet | MessageGeneralSet
         if self._used_subprotocol:
             message = self.make_subptotocol_message_set()
         else:
             message = self.make_message_set()
         return message
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         # if nat a sensor
-        message = None
+        message: (
+            MessageToggleDisplay | MessageNewProtocolSet | MessageGeneralSet | None
+        ) = None
         if attr not in [
             DeviceAttributes.indoor_temperature,
             DeviceAttributes.outdoor_temperature,
@@ -324,7 +336,7 @@ class MideaACDevice(MideaDevice):
                     )
                     setattr(message, str(self._fresh_air_version), fresh_air)
             elif attr in self._attributes.keys():
-                message = self.make_message_uniq_set()
+                message = self.make_message_set()
                 if attr in [
                     DeviceAttributes.boost_mode,
                     DeviceAttributes.sleep_mode,
@@ -343,21 +355,23 @@ class MideaACDevice(MideaDevice):
         if message is not None:
             self.build_send(message)
 
-    def set_target_temperature(self, target_temperature, mode):
-        message = self.make_message_uniq_set()
+    def set_target_temperature(self, target_temperature: float, mode: int) -> None:
+        message: MessageSubProtocolSet | MessageGeneralSet = (
+            self.make_message_uniq_set()
+        )
         message.target_temperature = target_temperature
         if mode is not None:
             message.power = True
             message.mode = mode
         self.build_send(message)
 
-    def set_swing(self, swing_vertical, swing_horizontal):
-        message = self.make_message_uniq_set()
+    def set_swing(self, swing_vertical: bool, swing_horizontal: bool) -> None:
+        message: MessageGeneralSet = self.make_message_set()
         message.swing_vertical = swing_vertical
         message.swing_horizontal = swing_horizontal
         self.build_send(message)
 
-    def set_customize(self, customize):
+    def set_customize(self, customize: str) -> None:
         self._temperature_step = self._default_temperature_step
         self._power_analysis_method = self._default_power_analysis_method
         if customize and len(customize) > 0:
@@ -368,7 +382,7 @@ class MideaACDevice(MideaDevice):
                 if params and "power_analysis_method" in params:
                     self._power_analysis_method = params.get("power_analysis_method")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {repr(e)}")
+                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
             self.update_all({"temperature_step": self._temperature_step})
 
 

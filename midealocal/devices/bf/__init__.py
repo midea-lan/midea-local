@@ -1,7 +1,8 @@
 import logging
-from .message import MessageQuery, MessageBFResponse
-
 import sys
+from typing import Any
+
+from .message import MessageBFResponse, MessageQuery
 
 if sys.version_info < (3, 12):
     from ...backports.enum import StrEnum
@@ -24,7 +25,7 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaBFDevice(MideaDevice):
-    _status = {
+    _status: dict[int, str] = {
         0x01: "PowerSave",
         0x02: "Standby",
         0x03: "Working",
@@ -45,7 +46,7 @@ class MideaBFDevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
-    ):
+    ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
@@ -68,10 +69,10 @@ class MideaBFDevice(MideaDevice):
             },
         )
 
-    def build_query(self):
+    def build_query(self) -> list[MessageQuery]:
         return [MessageQuery(self._protocol_version)]
 
-    def process_message(self, msg):
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageBFResponse(msg)
         _LOGGER.debug(f"[{self.device_id}] Received: {message}")
         new_status = {}
@@ -90,7 +91,7 @@ class MideaBFDevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr, value):
+    def set_attribute(self, attr: str, value: Any) -> None:
         pass
 
 
