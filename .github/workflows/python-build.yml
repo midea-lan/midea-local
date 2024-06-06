@@ -13,7 +13,8 @@ jobs:
       matrix:
         python-version: ["3.12", "3.11", "3.10"]
         os: ["windows-latest", "ubuntu-latest", "macos-latest"]
-
+    env:
+      SKIP: no-commit-to-branch
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -26,6 +27,8 @@ jobs:
           pip install flake8 pytest pytest-cov genbadge[all]
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         shell: bash
+      - name: Pre-commit
+        uses: pre-commit/action@v3.0.1
       - name: Build midea-local
         run: |
           python -m build
