@@ -88,15 +88,19 @@ class MideaE2Device(MideaDevice):
     def _normalize_old_protocol(self, value: Any) -> OldProtocol:
         try:
             if isinstance(value, str):
-                value = OldProtocol(value)
-                if value == OldProtocol.auto:
-                    result = self.subtype <= 82 or self.subtype == 85 or self.subtype == 36353
-                    value = OldProtocol.true if result else OldProtocol.false
+                return_value = OldProtocol(value)
+                if return_value == OldProtocol.auto:
+                    result = (
+                        self.subtype <= 82
+                        or self.subtype == 85
+                        or self.subtype == 36353
+                    )
+                    return_value = OldProtocol.true if result else OldProtocol.false
             elif isinstance(value, int) or isinstance(value, bool):
-                value = OldProtocol.true if value else OldProtocol.false
+                return_value = OldProtocol.true if value else OldProtocol.false
             else:
                 raise ValueError("Invalid value for old_protocol")
-            return value
+            return return_value
         except ValueError as e:
             _LOGGER.error(f"Invalid old_protocol value: {value}, error: {e}")
             return self._default_old_protocol
