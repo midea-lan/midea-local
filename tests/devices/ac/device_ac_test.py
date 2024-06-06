@@ -50,7 +50,7 @@ class TestMideaACDevice:
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
-        with patch.object(self.device, "build_send") as mock_build_send, patch(
+        with patch.object(self.device, "send_message_v2") as mock_build_send, patch(
             "midealocal.devices.ac.MessageACResponse"
         ) as mock_message_response:
             self.device.set_attribute(DeviceAttributes.power.value, True)
@@ -71,6 +71,12 @@ class TestMideaACDevice:
             self.device.set_attribute(DeviceAttributes.screen_display.value, False)
             mock_build_send.assert_called()
 
+            self.device.set_attribute(DeviceAttributes.breezeless.value, False)
+            mock_build_send.assert_called()
+
+            self.device.set_attribute(DeviceAttributes.indirect_wind.value, False)
+            mock_build_send.assert_called()
+
             self.device.set_attribute(
                 DeviceAttributes.screen_display_alternate.value, False
             )
@@ -86,6 +92,10 @@ class TestMideaACDevice:
 
             self.device.set_attribute(DeviceAttributes.fresh_air_power.value, True)
             mock_build_send.assert_called()
+
+            mock_message.fresh_air_1 = None
+            mock_message.fresh_air_2 = 1
+            self.device.process_message(bytearray())
 
             self.device.set_attribute(DeviceAttributes.fresh_air_mode.value, "Medium")
             mock_build_send.assert_called()
@@ -208,10 +218,12 @@ class TestMideaACDevice:
             assert message.target_temperature == 22.5
             assert message.mode == 1
             assert message.power
+            setattr(self.device, "_used_subprotocol", True)
+            self.device.set_target_temperature(22.5, 1)
 
     def test_set_swing(self) -> None:
         """Test set swing."""
-        with patch.object(self.device, "build_send") as mock_build_send:
+        with patch.object(self.device, "send_message_v2") as mock_build_send:
             self.device.set_swing(True, False)
             mock_build_send.assert_called()
 
