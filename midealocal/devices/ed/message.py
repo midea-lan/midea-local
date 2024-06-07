@@ -1,11 +1,11 @@
 from enum import IntEnum
 
-from ...message import (
+from midealocal.message import (
+    NONE_VALUE,
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
-    NONE_VALUE,
 )
 
 
@@ -24,7 +24,10 @@ class EDNewSetParamPack:
 
 class MessageEDBase(MessageRequest):
     def __init__(
-        self, protocol_version: int, message_type: int, body_type: int = NONE_VALUE
+        self,
+        protocol_version: int,
+        message_type: int,
+        body_type: int = NONE_VALUE,
     ) -> None:
         super().__init__(
             device_type=0xED,

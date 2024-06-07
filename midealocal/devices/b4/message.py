@@ -1,9 +1,12 @@
-from ...message import MessageBody, MessageRequest, MessageResponse, MessageType
+from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class MessageB4Base(MessageRequest):
     def __init__(
-        self, protocol_version: int, message_type: int, body_type: int
+        self,
+        protocol_version: int,
+        message_type: int,
+        body_type: int,
     ) -> None:
         super().__init__(
             device_type=0xB4,

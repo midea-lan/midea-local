@@ -1,10 +1,14 @@
 from typing import Any
-from ...message import MessageBody, MessageRequest, MessageResponse, MessageType
+
+from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class Message40Base(MessageRequest):
     def __init__(
-        self, protocol_version: int, message_type: int, body_type: int
+        self,
+        protocol_version: int,
+        message_type: int,
+        body_type: int,
     ) -> None:
         super().__init__(
             device_type=0x40,

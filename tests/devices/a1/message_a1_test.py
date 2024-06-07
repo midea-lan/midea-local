@@ -1,13 +1,14 @@
 """Test a1 message"""
 
 import pytest
+
 from midealocal.devices.a1.message import (
     MessageA1Base,
     MessageA1Response,
-    MessageQuery,
     MessageNewProtocolQuery,
-    MessageSet,
     MessageNewProtocolSet,
+    MessageQuery,
+    MessageSet,
     NewProtocolTags,
 )
 
@@ -19,11 +20,11 @@ class TestMessageA1Base:
         """Test message Id Increment."""
         msg = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
         msg2 = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
-        assert getattr(msg2, "_message_id") == getattr(msg, "_message_id") + 1
+        assert msg2._message_id == msg._message_id + 1
         # test reset
-        for idx in range(100 - getattr(msg2, "_message_id")):
+        for idx in range(100 - msg2._message_id):
             msg = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
-        assert getattr(msg, "_message_id") == 1
+        assert msg._message_id == 1
 
     def test_body_not_implemented(self) -> None:
         """Test body not implemented."""
@@ -60,7 +61,7 @@ class TestMessageQuery:
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
         assert query.body[:-2] == expected_body
 
@@ -72,7 +73,7 @@ class TestMessageNewProtocolQuery:
         """Test new protocol query body"""
         query = MessageNewProtocolQuery(protocol_version=1)
         expected_body = bytearray(
-            [0xB1, 1, NewProtocolTags.light & 0xFF, NewProtocolTags.light >> 8]
+            [0xB1, 1, NewProtocolTags.light & 0xFF, NewProtocolTags.light >> 8],
         )
         assert query.body[:-2] == expected_body
 
@@ -139,7 +140,7 @@ class TestMessageA1Response:
                 0x00,
                 0x01,
                 0x03,
-            ]
+            ],
         )
         body = bytearray(21)
         body[1] = 0b00000001  # Power on (1)
@@ -154,24 +155,17 @@ class TestMessageA1Response:
         body[17] = 100  # Current temperature (75 degrees C, since (100 - 50) / 2 = 25)
         body[19] = 0b00100000  # Swing on (32)
         response = MessageA1Response(header + body)
-        assert hasattr(response, "power")
-        assert hasattr(response, "mode")
+        assert response.power
         assert response.mode == 2
-        assert hasattr(response, "fan_speed")
         assert response.fan_speed == 1
-        assert hasattr(response, "target_humidity")
         assert response.target_humidity == 40
-        assert hasattr(response, "child_lock")
-        assert hasattr(response, "anion")
-        assert hasattr(response, "tank")
+        assert response.child_lock
+        assert response.anion
         assert response.tank == 63
-        assert hasattr(response, "water_level_set")
         assert response.water_level_set == 50
-        assert hasattr(response, "current_humidity")
         assert response.current_humidity == 45
-        assert hasattr(response, "current_temperature")
         assert response.current_temperature == 25
-        assert hasattr(response, "swing")
+        assert response.swing
 
     def test_a1_new_protocol_message_query(self) -> None:
         """Test A1 new protocol message query."""
@@ -187,7 +181,7 @@ class TestMessageA1Response:
                 0x00,
                 0x01,
                 0x03,
-            ]
+            ],
         )
         body = bytearray(8)
         body[0] = 0xB0  # Body type
@@ -197,7 +191,7 @@ class TestMessageA1Response:
         body[5] = 0x01  # light value length
         body[6] = 0x01  # light value
         response = MessageA1Response(header + body)
-        assert getattr(response, "light")
+        assert response.light
 
     def test_a1_general_notify_response(self) -> None:
         """Test general notify response."""
@@ -213,7 +207,7 @@ class TestMessageA1Response:
                 0x00,
                 0x01,
                 0x05,
-            ]
+            ],
         )
         body = bytearray(21)
         body[0] = 0xA0  # Body type
@@ -229,21 +223,14 @@ class TestMessageA1Response:
         body[17] = 100  # Current temperature (75 degrees C, since (100 - 50) / 2 = 25)
         body[19] = 0b00100000  # Swing on (32)
         response = MessageA1Response(header + body)
-        assert hasattr(response, "power")
-        assert hasattr(response, "mode")
+        assert response.power
         assert response.mode == 2
-        assert hasattr(response, "fan_speed")
         assert response.fan_speed == 6
-        assert hasattr(response, "target_humidity")
         assert response.target_humidity == 40
-        assert hasattr(response, "child_lock")
-        assert hasattr(response, "anion")
-        assert hasattr(response, "tank")
+        assert response.child_lock
+        assert response.anion
         assert response.tank == 63
-        assert hasattr(response, "water_level_set")
         assert response.water_level_set == 50
-        assert hasattr(response, "current_humidity")
         assert response.current_humidity == 45
-        assert hasattr(response, "current_temperature")
         assert response.current_temperature == 25
-        assert hasattr(response, "swing")
+        assert response.swing

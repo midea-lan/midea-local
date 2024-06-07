@@ -140,7 +140,7 @@ class MideaDevice(threading.Thread):
                 self.refresh_status(wait_response=True)
             self.enable_device(True)
             return True
-        except socket.timeout:
+        except TimeoutError:
             _LOGGER.debug("[%s] Connection timed out", self._device_id)
         except OSError:
             _LOGGER.debug("[%s] Connection error", self._device_id)
@@ -283,7 +283,8 @@ class MideaDevice(threading.Thread):
                                 self.update_all(status)
                             else:
                                 _LOGGER.debug(
-                                    "[%s] Unidentified protocol", self._device_id
+                                    "[%s] Unidentified protocol",
+                                    self._device_id,
                                 )
 
                     except Exception:
@@ -435,7 +436,7 @@ class MideaDevice(threading.Thread):
                 except Exception as e:
                     assert e.__traceback__
                     _LOGGER.error(
-                        "[%s] Unknown error :%s, " "%s, %s",
+                        "[%s] Unknown error :%s, %s, %s",
                         self._device_id,
                         e.__traceback__.tb_frame.f_globals["__file__"],
                         e.__traceback__.tb_lineno,

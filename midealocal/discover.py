@@ -1,8 +1,8 @@
 import logging
 import socket
-import xml.etree.ElementTree as ET
 from ipaddress import IPv4Network
 from typing import Any
+from xml.etree import ElementTree
 
 import ifaddr
 
@@ -203,7 +203,9 @@ def discover(
                 sn = reply[8:40].decode("utf-8")
             elif data[:6].hex() == "3c3f786d6c20":
                 protocol = 1
-                root = ET.fromstring(data.decode(encoding="utf-8", errors="replace"))
+                root = ElementTree.fromstring(
+                    data.decode(encoding="utf-8", errors="replace")
+                )
                 child = root.find("body/device")
                 assert child
                 m = child.attrib
@@ -236,7 +238,7 @@ def discover(
                 _LOGGER.debug("Found a supported device: %s", device)
             else:
                 _LOGGER.debug("Found a unsupported device: %s", device)
-        except socket.timeout:
+        except TimeoutError:
             break
         except OSError as e:
             _LOGGER.error("Socket error: %s", repr(e))
@@ -246,7 +248,7 @@ def discover(
 def get_id_from_response(response: bytearray) -> int:
     if response[64:-16][:6].hex() == "3c3f786d6c20":
         xml = response[64:-16]
-        root = ET.fromstring(xml.decode(encoding="utf-8", errors="replace"))
+        root = ElementTree.fromstring(xml.decode(encoding="utf-8", errors="replace"))
         child = root.find("smartDevice")
         assert child
         m = child.attrib
@@ -277,7 +279,10 @@ def get_device_info(device_ip: str, device_port: int) -> bytearray:
             device_address = (device_ip, device_port)
             sock.connect(device_address)
             _LOGGER.debug(
-                "Sending to %s:%s %s", device_ip, device_port, DEVICE_INFO_MSG.hex()
+                "Sending to %s:%s %s",
+                device_ip,
+                device_port,
+                DEVICE_INFO_MSG.hex(),
             )
             sock.sendall(DEVICE_INFO_MSG)
             response = bytearray(sock.recv(512))

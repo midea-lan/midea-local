@@ -1,9 +1,9 @@
-from ...message import (
+from midealocal.message import (
+    NONE_VALUE,
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
-    NONE_VALUE,
 )
 
 

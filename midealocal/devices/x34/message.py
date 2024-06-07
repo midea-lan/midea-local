@@ -1,4 +1,4 @@
-from ...message import (
+from midealocal.message import (
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -8,7 +8,10 @@ from ...message import (
 
 class Message34Base(MessageRequest):
     def __init__(
-        self, protocol_version: int, message_type: int, body_type: int
+        self,
+        protocol_version: int,
+        message_type: int,
+        body_type: int,
     ) -> None:
         super().__init__(
             device_type=0x34,
