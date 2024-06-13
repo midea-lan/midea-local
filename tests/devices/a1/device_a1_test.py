@@ -12,7 +12,7 @@ class TestMideaA1Device:
     """Test Midea A1 Device."""
 
     @pytest.fixture(autouse=True)
-    def setup_device(self) -> None:
+    def _setup_device(self) -> None:
         """Midea A1 Device setup."""
         self.device = MideaA1Device(
             name="Test Device",
