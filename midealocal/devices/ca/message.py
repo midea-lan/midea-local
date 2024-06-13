@@ -1,9 +1,15 @@
+from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
 )
+
+TEMP_POS_LOWER_VALUE = 1
+TEMP_POS_UPPER_VALUE = 29
+TEMP_NEG_LOWER_VALUE = 49
+TEMP_NEG_UPPER_VALUE = 54
 
 
 class MessageCABase(MessageRequest):
@@ -46,15 +52,17 @@ class CAGeneralMessageBody(MessageBody):
         flex_zone_setting_temp = body[3]
         right_flex_zone_setting_temp = body[4]
 
-        if 1 <= flex_zone_setting_temp <= 29:
+        if TEMP_POS_LOWER_VALUE <= flex_zone_setting_temp <= TEMP_POS_UPPER_VALUE:
             self.flex_zone_setting_temp = flex_zone_setting_temp - 19
-        elif 49 <= flex_zone_setting_temp <= 54:
+        elif TEMP_NEG_LOWER_VALUE <= flex_zone_setting_temp <= TEMP_NEG_UPPER_VALUE:
             self.flex_zone_setting_temp = 30 - flex_zone_setting_temp
         else:
             self.flex_zone_setting_temp = 0
-        if 1 <= right_flex_zone_setting_temp <= 29:
+        if TEMP_POS_LOWER_VALUE <= right_flex_zone_setting_temp <= TEMP_POS_UPPER_VALUE:
             self.right_flex_zone_setting_temp = right_flex_zone_setting_temp - 19
-        elif 49 <= right_flex_zone_setting_temp <= 54:
+        elif (
+            TEMP_NEG_LOWER_VALUE <= right_flex_zone_setting_temp <= TEMP_NEG_UPPER_VALUE
+        ):
             self.right_flex_zone_setting_temp = 30 - right_flex_zone_setting_temp
         else:
             self.right_flex_zone_setting_temp = 0
@@ -92,15 +100,17 @@ class CANotify01MessageBody(MessageBody):
         flex_zone_setting_temp = body[39]
         right_flex_zone_setting_temp = body[40]
 
-        if 1 <= flex_zone_setting_temp <= 29:
+        if TEMP_POS_LOWER_VALUE <= flex_zone_setting_temp <= TEMP_POS_UPPER_VALUE:
             self.flex_zone_setting_temp = flex_zone_setting_temp - 19
-        elif 49 <= flex_zone_setting_temp <= 54:
+        elif TEMP_NEG_LOWER_VALUE <= flex_zone_setting_temp <= TEMP_NEG_UPPER_VALUE:
             self.flex_zone_setting_temp = 30 - flex_zone_setting_temp
         else:
             self.flex_zone_setting_temp = 0
-        if 1 <= right_flex_zone_setting_temp <= 29:
+        if TEMP_POS_LOWER_VALUE <= right_flex_zone_setting_temp <= TEMP_POS_UPPER_VALUE:
             self.right_flex_zone_setting_temp = right_flex_zone_setting_temp - 19
-        elif 49 <= right_flex_zone_setting_temp <= 54:
+        elif (
+            TEMP_NEG_LOWER_VALUE <= right_flex_zone_setting_temp <= TEMP_NEG_UPPER_VALUE
+        ):
             self.right_flex_zone_setting_temp = 30 - right_flex_zone_setting_temp
         else:
             self.right_flex_zone_setting_temp = 0
@@ -112,20 +122,28 @@ class MessageCAResponse(MessageResponse):
         if (
             (
                 self.message_type in [MessageType.query, MessageType.set]
-                and self.body_type == 0x00
+                and self.body_type == BodyType.X00
             )
-            or (self.message_type == MessageType.notify1 and self.body_type == 0x02)
+            or (
+                self.message_type == MessageType.notify1
+                and self.body_type == BodyType.X02
+            )
         ) and len(super().body) > 20:
             self.set_body(CAGeneralMessageBody(super().body))
         elif (
-            self.message_type == MessageType.exception and self.body_type == 0x01
-        ) or (self.message_type == 0x03 and self.body_type == 0x02):
+            self.message_type == MessageType.exception
+            and self.body_type == BodyType.X01
+        ) or (
+            self.message_type == MessageType.query and self.body_type == BodyType.X02
+        ):
             self.set_body(CAExceptionMessageBody(super().body))
-        elif self.message_type == MessageType.notify1 and self.body_type == 0x00:
+        elif (
+            self.message_type == MessageType.notify1 and self.body_type == BodyType.X00
+        ):
             self.set_body(CANotify00MessageBody(super().body))
         elif (
             self.message_type in [MessageType.query, MessageType.notify1]
-            and self.body_type == 0x01
+            and self.body_type == BodyType.X01
         ):
             self.set_body(CANotify01MessageBody(super().body))
         self.set_attr()

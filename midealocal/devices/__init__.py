@@ -14,7 +14,9 @@ class BodyType(IntEnum):
     BB = 0xBB
     C0 = 0xC0
     C1 = 0xC1
+    X00 = 0x00
     X01 = 0x01
+    X02 = 0x02
     X04 = 0x04
     X0A = 0x0A
     X11 = 0x11
