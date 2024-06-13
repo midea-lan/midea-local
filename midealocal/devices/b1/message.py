@@ -1,3 +1,4 @@
+from midealocal.const import MAX_BYTE_VALUE
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
@@ -39,9 +40,9 @@ class B1MessageBody(MessageBody):
         self.door = (body[16] & 0x02) > 0
         self.status = body[1]
         self.time_remaining = (
-            (0 if body[6] == 0xFF else body[6]) * 3600
-            + (0 if body[7] == 0xFF else body[7]) * 60
-            + (0 if body[8] == 0xFF else body[8])
+            (0 if body[6] == MAX_BYTE_VALUE else body[6]) * 3600
+            + (0 if body[7] == MAX_BYTE_VALUE else body[7]) * 60
+            + (0 if body[8] == MAX_BYTE_VALUE else body[8])
         )
         self.current_temperature = body[19]
         self.tank_ejected = (body[16] & 0x04) > 0
