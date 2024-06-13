@@ -98,7 +98,7 @@ class Midea26Device(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         message = Message26Response(msg)
-        _LOGGER.debug(f"[{self.device_id}] Received: {message}")
+        _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         self._fields = message.fields
         for status in self._attributes.keys():

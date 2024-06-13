@@ -88,7 +88,7 @@ class Midea13Device(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         message = Message13Response(msg)
-        _LOGGER.debug(f"[{self.device_id}] Received: {message}")
+        _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status: dict[str, Any] = {}
         if hasattr(message, "control_success"):
             new_status = {"control_success": message.control_success}
@@ -131,7 +131,7 @@ class Midea13Device(MideaDevice):
                 if params and "color_temp_range_kelvin" in params:
                     self._color_temp_range = params.get("color_temp_range_kelvin")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
+                _LOGGER.error("[%s] Set customize error: %s", self.device_id, repr(e))
             self.update_all({"color_temp_range": self._color_temp_range})
 
 
