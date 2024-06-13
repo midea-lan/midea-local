@@ -9,6 +9,19 @@ from midealocal.message import (
     NewProtocolMessageBody,
 )
 
+MAX_MSG_SERIAL_NUM = 100
+MIN_TARGET_HUMIDITY = 35
+MIN_FAN_SPEED = 5
+
+
+class A1BodyType(IntEnum):
+    """A1 Body Type."""
+
+    A0 = 0xA0
+    B0 = 0xB0
+    B1 = 0xB1
+    B5 = 0xB5
+
 
 class NewProtocolTags(IntEnum):
     light = 0x005B
@@ -30,7 +43,7 @@ class MessageA1Base(MessageRequest):
             body_type=body_type,
         )
         MessageA1Base._message_serial += 1
-        if MessageA1Base._message_serial >= 100:
+        if MessageA1Base._message_serial >= MAX_MSG_SERIAL_NUM:
             MessageA1Base._message_serial = 1
         self._message_id = MessageA1Base._message_serial
 
@@ -190,7 +203,9 @@ class A1GeneralMessageBody(MessageBody):
         self.power = (body[1] & 0x01) > 0
         self.mode = body[2] & 0x0F
         self.fan_speed = body[3] & 0x7F
-        self.target_humidity = 35 if (body[7] < 35) else body[7]
+        self.target_humidity = (
+            MIN_TARGET_HUMIDITY if (body[7] < MIN_TARGET_HUMIDITY) else body[7]
+        )
         self.child_lock = (body[8] & 0x80) > 0
         self.anion = (body[9] & 0x40) > 0
         self.tank = body[10] & 0x7F
@@ -198,7 +213,7 @@ class A1GeneralMessageBody(MessageBody):
         self.current_humidity = body[16]
         self.current_temperature = (body[17] - 50) / 2
         self.swing = (body[19] & 0x20) > 0
-        if self.fan_speed < 5:
+        if self.fan_speed < MIN_FAN_SPEED:
             self.fan_speed = 1
 
 
@@ -218,10 +233,12 @@ class MessageA1Response(MessageResponse):
             MessageType.set,
             MessageType.notify1,
         ]:
-            if self.body_type in [0xB0, 0xB1, 0xB5]:
+            if self.body_type in [A1BodyType.B0, A1BodyType.B1, A1BodyType.B5]:
                 self.set_body(A1NewProtocolMessageBody(super().body, self.body_type))
             else:
                 self.set_body(A1GeneralMessageBody(super().body))
-        elif self.message_type == MessageType.notify2 and self.body_type == 0xA0:
+        elif (
+            self.message_type == MessageType.notify2 and self.body_type == A1BodyType.A0
+        ):
             self.set_body(A1GeneralMessageBody(super().body))
         self.set_attr()
