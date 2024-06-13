@@ -204,7 +204,7 @@ def discover(
             elif data[:6].hex() == "3c3f786d6c20":
                 protocol = 1
                 root = ElementTree.fromstring(
-                    data.decode(encoding="utf-8", errors="replace")
+                    data.decode(encoding="utf-8", errors="replace"),
                 )
                 child = root.find("body/device")
                 assert child
