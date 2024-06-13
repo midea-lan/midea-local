@@ -76,11 +76,11 @@ class MideaB4Device(MideaDevice):
         message = MessageB4Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
-        for status in self._attributes.keys():
+        for status in self._attributes:
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
                 if status == DeviceAttributes.status:
-                    if value in MideaB4Device._status.keys():
+                    if value in MideaB4Device._status:
                         self._attributes[DeviceAttributes.status] = (
                             MideaB4Device._status.get(value)
                         )

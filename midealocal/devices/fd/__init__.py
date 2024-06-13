@@ -120,7 +120,7 @@ class MideaFDDevice(MideaDevice):
         message = MessageFDResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
-        for status in self._attributes.keys():
+        for status in self._attributes:
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
                 if status == DeviceAttributes.mode:
@@ -129,12 +129,12 @@ class MideaFDDevice(MideaDevice):
                     else:
                         self._attributes[status] = None
                 elif status == DeviceAttributes.fan_speed:
-                    if value in self._speeds.keys():
+                    if value in self._speeds:
                         self._attributes[status] = self._speeds.get(value)
                     else:
                         self._attributes[status] = None
                 elif status == DeviceAttributes.screen_display:
-                    if value in MideaFDDevice._screen_displays.keys():
+                    if value in MideaFDDevice._screen_displays:
                         self._attributes[status] = MideaFDDevice._screen_displays.get(
                             value,
                         )

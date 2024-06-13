@@ -277,7 +277,7 @@ class MessageResponse(MessageBase):
         self._body = body
 
     def set_attr(self) -> None:
-        for key in vars(self._body).keys():
+        for key in vars(self._body):
             if key != "data":
                 value = getattr(self._body, key, None)
                 setattr(self, key, value)

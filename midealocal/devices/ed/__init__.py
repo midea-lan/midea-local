@@ -81,7 +81,7 @@ class MideaEDDevice(MideaDevice):
         new_status = {}
         if hasattr(message, "device_class"):
             self._device_class = message.device_class
-        for status in self._attributes.keys():
+        for status in self._attributes:
             if hasattr(message, str(status)):
                 new_status[str(status)] = getattr(message, str(status))
                 self._attributes[status] = getattr(message, str(status))
