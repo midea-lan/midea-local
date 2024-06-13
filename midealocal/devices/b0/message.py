@@ -1,15 +1,8 @@
-from enum import IntEnum
 from midealocal.const import MAX_BYTE_VALUE
+from midealocal.devices import BodyType
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 MIN_MSG_BODY = 15
-
-
-class B0BodyType(IntEnum):
-    """B0 Body Type."""
-
-    X01 = 0x01
-    X04 = 0x04
 
 
 class MessageB0Base(MessageRequest):
@@ -90,9 +83,9 @@ class MessageB0Response(MessageResponse):
     def __init__(self, message: bytearray) -> None:
         super().__init__(message)
         if self.message_type in [MessageType.notify1, MessageType.query]:
-            if self.body_type == B0BodyType.X01:
+            if self.body_type == BodyType.X01:
                 self.set_body(B0Message01Body(super().body))
-            elif self.body_type == B0BodyType.X04:
+            elif self.body_type == BodyType.X04:
                 pass
             else:
                 self.set_body(B0MessageBody(super().body))

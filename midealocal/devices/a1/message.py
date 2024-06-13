@@ -1,6 +1,7 @@
 from enum import IntEnum
 
 from midealocal.crc8 import calculate
+from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
@@ -12,15 +13,6 @@ from midealocal.message import (
 MAX_MSG_SERIAL_NUM = 100
 MIN_TARGET_HUMIDITY = 35
 MIN_FAN_SPEED = 5
-
-
-class A1BodyType(IntEnum):
-    """A1 Body Type."""
-
-    A0 = 0xA0
-    B0 = 0xB0
-    B1 = 0xB1
-    B5 = 0xB5
 
 
 class NewProtocolTags(IntEnum):
@@ -233,12 +225,10 @@ class MessageA1Response(MessageResponse):
             MessageType.set,
             MessageType.notify1,
         ]:
-            if self.body_type in [A1BodyType.B0, A1BodyType.B1, A1BodyType.B5]:
+            if self.body_type in [BodyType.B0, BodyType.B1, BodyType.B5]:
                 self.set_body(A1NewProtocolMessageBody(super().body, self.body_type))
             else:
                 self.set_body(A1GeneralMessageBody(super().body))
-        elif (
-            self.message_type == MessageType.notify2 and self.body_type == A1BodyType.A0
-        ):
+        elif self.message_type == MessageType.notify2 and self.body_type == BodyType.A0:
             self.set_body(A1GeneralMessageBody(super().body))
         self.set_attr()

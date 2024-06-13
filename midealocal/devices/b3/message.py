@@ -1,5 +1,5 @@
-from enum import IntEnum
 from midealocal.const import MAX_BYTE_VALUE
+from midealocal.devices import BodyType
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 X21_BOTTOM_COMPARTMENT_REMAINING_BYTE = 18
@@ -8,15 +8,6 @@ X21_TOP_COMPARTMENT_REMAINING_BYTE = 17
 X31_BOTTOM_COMPARTMENT_REMAINING_BYTE = 24
 X31_MIDDLE_COMPARTMENT_REMAINING_BYTE = 25
 X31_TOP_COMPARTMENT_REMAINING_BYTE = 23
-
-
-class B3BodyType(IntEnum):
-    """B3 Body Type."""
-
-    X21 = 0x21
-    X24 = 0x24
-    X31 = 0x31
-    X41 = 0x41
 
 
 class MessageB3Base(MessageRequest):
@@ -202,16 +193,16 @@ class MessageB3Response(MessageResponse):
         super().__init__(bytearray(message))
         if (
             self.message_type == MessageType.query
-            and self.body_type == B3BodyType.X31
+            and self.body_type == BodyType.X31
             or self.message_type == MessageType.notify1
-            and self.body_type == B3BodyType.X41
+            and self.body_type == BodyType.X41
         ):
             self.set_body(B3MessageBody31(super().body))
         elif (
             self.message_type == MessageType.set
-            and self.body_type == B3BodyType.X21
+            and self.body_type == BodyType.X21
             or self.message_type == MessageType.set
-            and self.body_type == B3BodyType.X24
+            and self.body_type == BodyType.X24
         ):
             self.set_body(B3MessageBody21(super().body))
         self.set_attr()

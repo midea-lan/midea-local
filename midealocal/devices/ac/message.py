@@ -2,7 +2,7 @@ from enum import IntEnum
 
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.crc8 import calculate
-from midealocal.devices import DeviceType
+from midealocal.devices import BodyType, DeviceType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
@@ -28,20 +28,6 @@ TIMER_MIN_SUBPROTOCOL_LENGTH = 27
 XBB_SN8_BYTE_FLAG = 0x31
 XC1_SUBBODY_TYPE_44 = 0x44
 XC1_SUBBODY_TYPE_40 = 0x40
-
-
-class ACBodyType(IntEnum):
-    """AC Body Type."""
-
-    A0 = 0xA0
-    A1 = 0xA1
-    B0 = 0xB0
-    B1 = 0xB1
-    B5 = 0xB5
-    BB = 0xBB
-    C0 = 0xC0
-    C1 = 0xC1
-    X41 = 0x41
 
 
 class PowerAnalysisMethod(IntEnum):
@@ -110,7 +96,7 @@ class MessageQuery(MessageACBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=ACBodyType.X41,
+            body_type=BodyType.X41,
         )
 
     @property
@@ -145,7 +131,7 @@ class MessagePowerQuery(MessageACBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=ACBodyType.X41,
+            body_type=BodyType.X41,
         )
 
     @property
@@ -164,7 +150,7 @@ class MessageToggleDisplay(MessageACBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=ACBodyType.X41,
+            body_type=BodyType.X41,
         )
         self.prompt_tone = False
 
@@ -201,7 +187,7 @@ class MessageNewProtocolQuery(MessageACBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=ACBodyType.B1,
+            body_type=BodyType.B1,
         )
 
     @property
@@ -790,29 +776,27 @@ class XBBMessageBody(MessageBody):
 class MessageACResponse(MessageResponse):
     def __init__(self, message: bytearray, power_analysis_method: int = 3) -> None:
         super().__init__(message)
-        if self.message_type == MessageType.notify2 and self.body_type == ACBodyType.A0:
+        if self.message_type == MessageType.notify2 and self.body_type == BodyType.A0:
             self.set_body(XA0MessageBody(super().body))
-        elif (
-            self.message_type == MessageType.notify1 and self.body_type == ACBodyType.A1
-        ):
+        elif self.message_type == MessageType.notify1 and self.body_type == BodyType.A1:
             self.set_body(XA1MessageBody(super().body))
         elif self.message_type in [
             MessageType.query,
             MessageType.set,
             MessageType.notify2,
-        ] and self.body_type in [ACBodyType.B0, ACBodyType.B1, ACBodyType.B5]:
+        ] and self.body_type in [BodyType.B0, BodyType.B1, BodyType.B5]:
             self.set_body(XBXMessageBody(super().body, self.body_type))
         elif (
             self.message_type in [MessageType.query, MessageType.set]
-            and self.body_type == ACBodyType.C0
+            and self.body_type == BodyType.C0
         ):
             self.set_body(XC0MessageBody(super().body))
-        elif self.message_type == MessageType.query and self.body_type == ACBodyType.C1:
+        elif self.message_type == MessageType.query and self.body_type == BodyType.C1:
             self.set_body(XC1MessageBody(super().body, power_analysis_method))
         elif (
             self.message_type
             in [MessageType.set, MessageType.query, MessageType.notify2]
-            and self.body_type == ACBodyType.BB
+            and self.body_type == BodyType.BB
             and len(super().body) >= BB_MIN_BODY_LENGTH
         ):
             self.used_subprotocol = True
