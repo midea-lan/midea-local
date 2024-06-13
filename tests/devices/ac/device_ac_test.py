@@ -18,7 +18,7 @@ class TestMideaACDevice:
 
     device: MideaACDevice
 
-    @pytest.fixture(autouse=True)  # type: ignore
+    @pytest.fixture(autouse=True)
     def setup_device(self) -> None:
         """Midea AC Device setup."""
         self.device = MideaACDevice(

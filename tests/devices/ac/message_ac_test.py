@@ -335,7 +335,7 @@ class TestMessageGeneralSet:
 class TestMessageACResponse:
     """Test Message AC Response."""
 
-    @pytest.fixture(autouse=True)  # type: ignore
+    @pytest.fixture(autouse=True)
     def setup_header(self) -> None:
         """Setup header."""
         self.header = bytearray(
