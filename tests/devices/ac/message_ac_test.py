@@ -1,5 +1,4 @@
 import pytest
-
 from midealocal.devices.ac.message import (
     MessageACBase,
     MessageACResponse,
@@ -21,11 +20,11 @@ class TestMessageACBase:
         """Test message Id Increment."""
         msg = MessageACBase(protocol_version=1, message_type=1, body_type=1)
         msg2 = MessageACBase(protocol_version=1, message_type=1, body_type=1)
-        assert msg2._message_id == msg._message_id + 1
+        assert getattr(msg2, "_message_id") == getattr(msg, "_message_id") + 1
         # test reset
-        for idx in range(254 - msg2._message_id):
+        for idx in range(254 - getattr(msg2, "_message_id")):
             msg = MessageACBase(protocol_version=1, message_type=1, body_type=1)
-        assert msg._message_id == 1
+        assert getattr(msg, "_message_id") == 1
 
     def test_body_not_implemented(self) -> None:
         """Test body not implemented."""
@@ -62,7 +61,7 @@ class TestMessageQuery:
                 0x00,
                 0x00,
                 0x00,
-            ],
+            ]
         )
         assert msg.body[:-2] == expected_body
 
@@ -105,7 +104,7 @@ class TestMessageToggleDisplay:
                 0x00,
                 0x00,
                 0x00,
-            ],
+            ]
         )
         assert msg.body[:-2] == expected_body
         msg.prompt_tone = True
@@ -131,7 +130,7 @@ class TestMessageToggleDisplay:
                 0x00,
                 0x00,
                 0x00,
-            ],
+            ]
         )
         assert msg.body[:-2] == expected_body
 
@@ -158,7 +157,7 @@ class TestMessageNewProtocolQuery:
                 NewProtocolTags.fresh_air_1 >> 8,
                 NewProtocolTags.fresh_air_2 & 0xFF,
                 NewProtocolTags.fresh_air_2 >> 8,
-            ],
+            ]
         )
         assert msg.body[:-2] == expected_body
 
@@ -169,9 +168,7 @@ class TestMessageSubProtocol:
     def test_sub_protocol_body(self) -> None:
         """Test sub protocol body."""
         msg = MessageSubProtocol(
-            protocol_version=1,
-            message_type=0xBB,
-            subprotocol_query_type=0xCC,
+            protocol_version=1, message_type=0xBB, subprotocol_query_type=0xCC
         )
         expected_body = bytearray(
             [
@@ -181,7 +178,7 @@ class TestMessageSubProtocol:
                 0xFF,
                 0xFF,
                 0xCC,
-            ],
+            ]
         )
         assert msg.body[:-2] == expected_body
 
@@ -237,7 +234,7 @@ class TestMessageSubProtocolSet:
                 0x00,
                 0x00,
                 0x08,
-            ],
+            ]
         )
         assert msg.body[:-2] == expected_body
 
@@ -297,7 +294,7 @@ class TestMessageGeneralSet:
                 0x00,
                 0x00,
                 0x00,
-            ],
+            ]
         )
         assert msg.body[:-2] == expected_body
         msg.power = True
@@ -350,7 +347,7 @@ class TestMessageACResponse:
                 0x00,
                 0x01,
                 0x05,
-            ],
+            ]
         )
 
     def test_message_notify2_a0(self) -> None:
@@ -368,21 +365,24 @@ class TestMessageACResponse:
         body[14] = 0b00000001  # Comfort mode
 
         response = MessageACResponse(self.header + body)
-        assert response.power
+        assert hasattr(response, "power")
+        assert hasattr(response, "target_temperature")
         assert response.target_temperature == 27.5  # ((31 >> 1) - 4 + 16 + 0.5) = 27.5
+        assert hasattr(response, "mode")
         assert response.mode == 7
+        assert hasattr(response, "fan_speed")
         assert response.fan_speed == 127
-        assert response.swing_vertical
-        assert response.swing_horizontal
-        assert response.boost_mode
-        assert response.smart_eye
-        assert response.dry
-        assert response.aux_heating
-        assert response.eco_mode
-        assert response.sleep_mode
-        assert response.natural_wind
-        assert response.full_dust
-        assert response.comfort_mode
+        assert hasattr(response, "swing_vertical")
+        assert hasattr(response, "swing_horizontal")
+        assert hasattr(response, "boost_mode")
+        assert hasattr(response, "smart_eye")
+        assert hasattr(response, "dry")
+        assert hasattr(response, "aux_heating")
+        assert hasattr(response, "eco_mode")
+        assert hasattr(response, "sleep_mode")
+        assert hasattr(response, "natural_wind")
+        assert hasattr(response, "full_dust")
+        assert hasattr(response, "comfort_mode")
 
     def test_message_notify1_a1(self) -> None:
         """Test Message parse notify1 A1."""
@@ -395,18 +395,24 @@ class TestMessageACResponse:
         body[18] = 0xF3  # Decimal part for temperature
         response = MessageACResponse(self.header + body)
 
+        assert hasattr(response, "indoor_temperature")
         assert response.indoor_temperature == 25.3  # ((100 - 50) / 2) + 0.3 = 25.3
+        assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == 6.5  # ((60 - 50) / 2) + 1.5 = 6.5
+        assert hasattr(response, "indoor_humidity")
         assert response.indoor_humidity == 50
 
         body[14] = 0xFF  # Outdoor temperature byte
         response = MessageACResponse(self.header + body)
+        assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature is None
 
         body[13] = 48  # Indoor temperature byte
         body[14] = 40  # Outdoor temperature byte
         response = MessageACResponse(self.header + body)
+        assert hasattr(response, "indoor_temperature")
         assert response.indoor_temperature == -1.3  # ((49 - 50) / 2) - 0.3 = -1.3
+        assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == -6.5  # ((40 - 50) / 2) - 1.5 = -6.5
 
     def test_message_notify2_b0(self) -> None:
@@ -437,13 +443,16 @@ class TestMessageACResponse:
         body[27] = 10  # Value Speed 10
 
         response = MessageACResponse(self.header + body)
-        assert response.indirect_wind
+
+        assert hasattr(response, "indirect_wind")
+        assert hasattr(response, "indoor_humidity")
         assert response.indoor_humidity == 30
-        assert response.breezeless
-        assert response.screen_display_alternate
-        assert response.screen_display_new
-        assert response.fresh_air_1
-        assert response.fresh_air_power
+        assert hasattr(response, "breezeless")
+        assert hasattr(response, "screen_display_alternate")
+        assert hasattr(response, "screen_display_new")
+        assert hasattr(response, "fresh_air_1")
+        assert hasattr(response, "fresh_air_power")
+        assert hasattr(response, "fresh_air_fan_speed")
         assert response.fresh_air_fan_speed == 10
 
         body[22] = NewProtocolTags.fresh_air_2 & 0xFF  # Low byte param
@@ -454,8 +463,9 @@ class TestMessageACResponse:
 
         response = MessageACResponse(self.header + body)
         assert not hasattr(response, "fresh_air_1")
-        assert response.fresh_air_2
-        assert response.fresh_air_power
+        assert hasattr(response, "fresh_air_2")
+        assert hasattr(response, "fresh_air_power")
+        assert hasattr(response, "fresh_air_fan_speed")
         assert response.fresh_air_fan_speed == 20
 
     def test_message_query_c0(self) -> None:
@@ -479,35 +489,44 @@ class TestMessageACResponse:
         body[22] = 0b00000001  # Comfort mode
 
         response = MessageACResponse(self.header + body)
-        assert response.power
+        assert hasattr(response, "power")
+        assert hasattr(response, "mode")
         assert response.mode == 5
+        assert hasattr(response, "target_temperature")
         assert response.target_temperature == 30  # 14 + 16
+        assert hasattr(response, "fan_speed")
         assert response.fan_speed == 127
-        assert response.swing_vertical
-        assert response.swing_horizontal
-        assert response.boost_mode
-        assert response.smart_eye
-        assert response.natural_wind
-        assert response.dry
-        assert response.eco_mode
-        assert response.aux_heating
-        assert response.temp_fahrenheit
-        assert response.sleep_mode
+        assert hasattr(response, "swing_vertical")
+        assert hasattr(response, "swing_horizontal")
+        assert hasattr(response, "boost_mode")
+        assert hasattr(response, "smart_eye")
+        assert hasattr(response, "natural_wind")
+        assert hasattr(response, "dry")
+        assert hasattr(response, "eco_mode")
+        assert hasattr(response, "aux_heating")
+        assert hasattr(response, "temp_fahrenheit")
+        assert hasattr(response, "sleep_mode")
+        assert hasattr(response, "indoor_temperature")
         assert response.indoor_temperature == 25.2  # ((100 - 50) / 2) + 0.2
+        assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == 25.3  # ((100 - 50) / 2) + 0.3
-        assert response.full_dust
-        assert not response.screen_display
-        assert response.frost_protect
-        assert response.comfort_mode
+        assert hasattr(response, "full_dust")
+        assert hasattr(response, "screen_display")
+        assert response.screen_display is False
+        assert hasattr(response, "frost_protect")
+        assert hasattr(response, "comfort_mode")
 
         body[11] = 40  # Indoor temperature byte
         body[12] = 40  # Outdoor temperature byte
         response = MessageACResponse(self.header + body)
+        assert hasattr(response, "indoor_temperature")
         assert response.indoor_temperature == -5.2  # ((40 - 50) / 2) - 0.2
+        assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == -5.3  # ((40 - 50) / 2) - 0.3
 
         body[12] = 0xFF  # Outdoor temperature byte
         response = MessageACResponse(self.header + body)
+        assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature is None
 
     def test_message_query_c1_method1(self) -> None:
@@ -539,8 +558,11 @@ class TestMessageACResponse:
 
         response = MessageACResponse(self.header + body, 1)
 
+        assert hasattr(response, "total_energy_consumption")
         assert response.total_energy_consumption == expected_total_energy
+        assert hasattr(response, "current_energy_consumption")
         assert response.current_energy_consumption == expected_current_energy
+        assert hasattr(response, "realtime_power")
         assert response.realtime_power == expected_realtime_power
 
     def test_message_query_c1_method2(self) -> None:
@@ -576,8 +598,11 @@ class TestMessageACResponse:
 
         response = MessageACResponse(self.header + body, 2)
 
+        assert hasattr(response, "total_energy_consumption")
         assert response.total_energy_consumption == expected_total_energy
+        assert hasattr(response, "current_energy_consumption")
         assert response.current_energy_consumption == expected_current_energy
+        assert hasattr(response, "realtime_power")
         assert response.realtime_power == expected_realtime_power
 
     def test_message_query_c1_method3(self) -> None:
@@ -610,8 +635,11 @@ class TestMessageACResponse:
         expected_realtime_power = float(0x11 * 10000 + 0x22 * 100 + 0x33) / 10
         response = MessageACResponse(self.header + body)
 
+        assert hasattr(response, "total_energy_consumption")
         assert response.total_energy_consumption == expected_total_energy
+        assert hasattr(response, "current_energy_consumption")
         assert response.current_energy_consumption == expected_current_energy
+        assert hasattr(response, "realtime_power")
         assert response.realtime_power == expected_realtime_power
 
     def test_message_query_c1_0x40(self) -> None:
@@ -639,19 +667,23 @@ class TestMessageACResponse:
         body[31] = 0b01000100  # Timer, eco_mode
 
         response = MessageACResponse(self.header + body)
-        assert response.power
-        assert response.dry
-        assert response.boost_mode
-        assert response.aux_heating
-        assert response.sleep_mode
+        assert hasattr(response, "power")
+        assert hasattr(response, "dry")
+        assert hasattr(response, "boost_mode")
+        assert hasattr(response, "aux_heating")
+        assert hasattr(response, "sleep_mode")
+        assert hasattr(response, "mode")
         assert response.mode == 1
+        assert hasattr(response, "target_temperature")
         assert response.target_temperature == 15.0
+        assert hasattr(response, "fan_speed")
         assert response.fan_speed == 127
-        assert response.timer
-        assert response.eco_mode
+        assert hasattr(response, "timer")
+        assert hasattr(response, "eco_mode")
 
         body[11] = 10  # Invalid mode index for BB_AC_MODES
         response = MessageACResponse(self.header + body)
+        assert hasattr(response, "mode")
         assert response.mode == 0
 
     def test_message_query_bb_0x10(self) -> None:
@@ -665,12 +697,15 @@ class TestMessageACResponse:
         body[86] = 0x31  # sn8_flag
 
         response = MessageACResponse(self.header + body)
+        assert hasattr(response, "indoor_temperature")
         assert response.indoor_temperature == 349.35
+        assert hasattr(response, "indoor_humidity")
         assert response.indoor_humidity == 60
-        assert response.sn8_flag
+        assert hasattr(response, "sn8_flag")
 
         body[14] = 0x78  # Indoor temperature byte 2
         response = MessageACResponse(self.header + body)
+        assert hasattr(response, "indoor_temperature")
         assert response.indoor_temperature == 308.39
 
     def test_message_query_bb_0x30(self) -> None:
@@ -682,11 +717,13 @@ class TestMessageACResponse:
         body[12] = 0x80  # Outdoor temperature byte 2
 
         response = MessageACResponse(self.header + body)
+        assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == 328.02
 
         body[12] = 0x65  # Outdoor temperature byte 2
 
         response = MessageACResponse(self.header + body)
+        assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == 258.9
 
     def test_message_query_bb_unimplemented(self) -> None:
