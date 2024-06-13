@@ -93,10 +93,7 @@ class MessageSet(MessageB6Base):
             value13 = 0x01
             if self.power:
                 value15 = 0x02
-                if self.fan_level is not None:
-                    value16 = self.fan_level
-                else:
-                    value16 = 0x01
+                value16 = self.fan_level if self.fan_level is not None else 0x01
             else:
                 value15 = 0x01
         elif self.fan_level is not None:
