@@ -669,7 +669,7 @@ class XBBMessageBody(MessageBody):
         subprotocol_body = body[6:]
         data_type = subprotocol_head[-1]
         subprotocol_body_len = len(subprotocol_body)
-        if data_type == 0x20 or data_type == 0x11:
+        if data_type in (0x11, 0x20):
             self.power = (subprotocol_body[0] & 0x1) > 0
             self.dry = (subprotocol_body[0] & 0x10) > 0
             self.boost_mode = (subprotocol_body[0] & 0x20) > 0
@@ -715,7 +715,7 @@ class XBBMessageBody(MessageBody):
                 self.outdoor_temperature = (
                     subprotocol_body[5] + subprotocol_body[6] * 256
                 ) / 100
-        elif data_type == 0x13 or data_type == 0x21:
+        elif data_type in (0x13, 0x21):
             pass
 
 
