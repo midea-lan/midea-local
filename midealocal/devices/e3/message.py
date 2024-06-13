@@ -1,5 +1,6 @@
 from typing import Any
-from ...message import (
+
+from midealocal.message import (
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -18,7 +19,10 @@ NEW_PROTOCOL_PARAMS = {
 
 class MessageE3Base(MessageRequest):
     def __init__(
-        self, protocol_version: int, message_type: int, body_type: int
+        self,
+        protocol_version: int,
+        message_type: int,
+        body_type: int,
     ) -> None:
         super().__init__(
             device_type=0xE3,

@@ -1,6 +1,5 @@
 """Test AC Device"""
 
-from typing import Generator
 from unittest.mock import patch
 
 import pytest
@@ -20,7 +19,7 @@ class TestMideaACDevice:
     device: MideaACDevice
 
     @pytest.fixture(autouse=True)  # type: ignore
-    def setup_device(self) -> Generator[None, None, None]:
+    def setup_device(self) -> None:
         """Midea AC Device setup."""
         self.device = MideaACDevice(
             name="Test Device",
@@ -34,7 +33,6 @@ class TestMideaACDevice:
             subtype=1,
             customize='{"temperature_step": 1, "power_analysis_method": 2}',
         )
-        yield
 
     def test_initial_attributes(self) -> None:
         """Test initial attributes."""
@@ -50,9 +48,12 @@ class TestMideaACDevice:
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
-        with patch.object(self.device, "send_message_v2") as mock_build_send, patch(
-            "midealocal.devices.ac.MessageACResponse"
-        ) as mock_message_response:
+        with (
+            patch.object(self.device, "send_message_v2") as mock_build_send,
+            patch(
+                "midealocal.devices.ac.MessageACResponse",
+            ) as mock_message_response,
+        ):
             self.device.set_attribute(DeviceAttributes.power.value, True)
             mock_build_send.assert_called()
 
@@ -78,7 +79,8 @@ class TestMideaACDevice:
             mock_build_send.assert_called()
 
             self.device.set_attribute(
-                DeviceAttributes.screen_display_alternate.value, False
+                DeviceAttributes.screen_display_alternate.value,
+                False,
             )
             mock_build_send.assert_called()
 
@@ -111,14 +113,14 @@ class TestMideaACDevice:
 
     def test_build_query(self) -> None:
         """Test build query."""
-        setattr(self.device, "_used_subprotocol", True)
+        self.device._used_subprotocol = True
         queries = self.device.build_query()
         assert len(queries) == 3
         assert isinstance(queries[0], MessageSubProtocolQuery)
         assert isinstance(queries[1], MessageSubProtocolQuery)
         assert isinstance(queries[2], MessageSubProtocolQuery)
 
-        setattr(self.device, "_used_subprotocol", False)
+        self.device._used_subprotocol = False
         queries = self.device.build_query()
         assert len(queries) == 3
         assert isinstance(queries[0], MessageQuery)
@@ -218,7 +220,7 @@ class TestMideaACDevice:
             assert message.target_temperature == 22.5
             assert message.mode == 1
             assert message.power
-            setattr(self.device, "_used_subprotocol", True)
+            self.device._used_subprotocol = True
             self.device.set_target_temperature(22.5, 1)
 
     def test_set_swing(self) -> None:

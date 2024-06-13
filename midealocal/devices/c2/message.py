@@ -1,7 +1,7 @@
 from enum import IntEnum
 from typing import cast
 
-from ...message import (
+from midealocal.message import (
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -45,7 +45,10 @@ C2_MESSAGE_KEYS = {
 
 class MessageC2Base(MessageRequest):
     def __init__(
-        self, protocol_version: int, message_type: int, body_type: int
+        self,
+        protocol_version: int,
+        message_type: int,
+        body_type: int,
     ) -> None:
         super().__init__(
             device_type=0xC2,

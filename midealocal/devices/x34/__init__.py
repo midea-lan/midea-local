@@ -2,7 +2,8 @@ import logging
 import sys
 from typing import Any
 
-from ...device import MideaDevice
+from midealocal.device import MideaDevice
+
 from .message import (
     Message34Response,
     MessageLock,
@@ -12,7 +13,7 @@ from .message import (
 )
 
 if sys.version_info < (3, 12):
-    from ...backports.enum import StrEnum
+    from midealocal.backports.enum import StrEnum
 else:
     from enum import StrEnum
 
