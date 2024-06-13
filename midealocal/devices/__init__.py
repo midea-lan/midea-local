@@ -91,6 +91,7 @@ class SubBodyType(IntEnum):
     X02 = 0x02
     X03 = 0x03
     X04 = 0x04
+    X05 = 0x05
     X06 = 0x06
     X0A = 0x0A
     X10 = 0x10
