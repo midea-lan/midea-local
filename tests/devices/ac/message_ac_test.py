@@ -511,7 +511,7 @@ class TestMessageACResponse:
         assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == 25.3  # ((100 - 50) / 2) + 0.3
         assert hasattr(response, "full_dust")
-        assert not hasattr(response, "screen_display")
+        assert hasattr(response, "screen_display")
         assert hasattr(response, "frost_protect")
         assert hasattr(response, "comfort_mode")
 
