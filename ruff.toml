@@ -23,6 +23,7 @@ lint.ignore = [
 ]
 "tests/*" = [
     "S101",     # Use of `assert` detected
+    "PLR2014",  # Magic value used in comparison
 ]
 
 [lint.mccabe]
