@@ -2,7 +2,7 @@ from enum import IntEnum
 
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.crc8 import calculate
-from midealocal.devices import BodyType, DeviceType
+from midealocal.devices import BodyType, DeviceType, SubBodyType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
@@ -36,18 +36,6 @@ class PowerAnalysisMethod(IntEnum):
     TYPE_1 = 1
     TYPE_2 = 2
     TYPE_3 = 3
-
-
-class BBBodyDataType(IntEnum):
-    """BB Body data type."""
-
-    X10 = 0x10
-    X11 = 0x11
-    X12 = 0x12
-    X13 = 0x13
-    X20 = 0x20
-    X21 = 0x21
-    X30 = 0x30
 
 
 class NewProtocolTags(IntEnum):
@@ -723,7 +711,7 @@ class XBBMessageBody(MessageBody):
         subprotocol_body = body[6:]
         data_type = subprotocol_head[-1]
         subprotocol_body_len = len(subprotocol_body)
-        if data_type in (BBBodyDataType.X11, BBBodyDataType.X20):
+        if data_type in (SubBodyType.X11, SubBodyType.X20):
             self.power = (subprotocol_body[0] & 0x1) > 0
             self.dry = (subprotocol_body[0] & 0x10) > 0
             self.boost_mode = (subprotocol_body[0] & 0x20) > 0
@@ -745,7 +733,7 @@ class XBBMessageBody(MessageBody):
                 if subprotocol_body_len > ECO_MODE_MIN_SUBPROTOCOL_LENGTH
                 else False
             )
-        elif data_type == BBBodyDataType.X10:
+        elif data_type == SubBodyType.X10:
             if subprotocol_body[8] & 0x80 == SUB_PROTOCOL_BODY_TEMP_CHECK:
                 self.indoor_temperature = (
                     0 - (~(subprotocol_body[7] + subprotocol_body[8] * 256) + 1)
@@ -757,9 +745,9 @@ class XBBMessageBody(MessageBody):
                 ) / 100
             self.indoor_humidity = subprotocol_body[30]
             self.sn8_flag = subprotocol_body[80] == XBB_SN8_BYTE_FLAG
-        elif data_type == BBBodyDataType.X12:
+        elif data_type == SubBodyType.X12:
             pass
-        elif data_type == BBBodyDataType.X30:
+        elif data_type == SubBodyType.X30:
             if subprotocol_body[6] & 0x80 == SUB_PROTOCOL_BODY_TEMP_CHECK:
                 self.outdoor_temperature = (
                     0 - (~(subprotocol_body[5] + subprotocol_body[6] * 256) + 1)
@@ -769,7 +757,7 @@ class XBBMessageBody(MessageBody):
                 self.outdoor_temperature = (
                     subprotocol_body[5] + subprotocol_body[6] * 256
                 ) / 100
-        elif data_type in (BBBodyDataType.X13, BBBodyDataType.X21):
+        elif data_type in (SubBodyType.X13, SubBodyType.X21):
             pass
 
 
