@@ -154,17 +154,24 @@ class TestMessageA1Response:
         body[17] = 100  # Current temperature (75 degrees C, since (100 - 50) / 2 = 25)
         body[19] = 0b00100000  # Swing on (32)
         response = MessageA1Response(header + body)
-        assert getattr(response, "power")
-        assert getattr(response, "mode") == 2
-        assert getattr(response, "fan_speed") == 1
-        assert getattr(response, "target_humidity") == 40
-        assert getattr(response, "child_lock")
-        assert getattr(response, "anion")
-        assert getattr(response, "tank") == 63
-        assert getattr(response, "water_level_set") == 50
-        assert getattr(response, "current_humidity") == 45
-        assert getattr(response, "current_temperature") == 25
-        assert getattr(response, "swing")
+        assert hasattr(response, "power")
+        assert hasattr(response, "mode")
+        assert response.mode == 2
+        assert hasattr(response, "fan_speed")
+        assert response.fan_speed == 1
+        assert hasattr(response, "target_humidity")
+        assert response.target_humidity == 40
+        assert hasattr(response, "child_lock")
+        assert hasattr(response, "anion")
+        assert hasattr(response, "tank")
+        assert response.tank == 63
+        assert hasattr(response, "water_level_set")
+        assert response.water_level_set == 50
+        assert hasattr(response, "current_humidity")
+        assert response.current_humidity == 45
+        assert hasattr(response, "current_temperature")
+        assert response.current_temperature == 25
+        assert hasattr(response, "swing")
 
     def test_a1_new_protocol_message_query(self) -> None:
         """Test A1 new protocol message query."""
@@ -222,14 +229,21 @@ class TestMessageA1Response:
         body[17] = 100  # Current temperature (75 degrees C, since (100 - 50) / 2 = 25)
         body[19] = 0b00100000  # Swing on (32)
         response = MessageA1Response(header + body)
-        assert getattr(response, "power")
-        assert getattr(response, "mode") == 2
-        assert getattr(response, "fan_speed") == 6
-        assert getattr(response, "target_humidity") == 40
-        assert getattr(response, "child_lock")
-        assert getattr(response, "anion")
-        assert getattr(response, "tank") == 63
-        assert getattr(response, "water_level_set") == 50
-        assert getattr(response, "current_humidity") == 45
-        assert getattr(response, "current_temperature") == 25
-        assert getattr(response, "swing")
+        assert hasattr(response, "power")
+        assert hasattr(response, "mode")
+        assert response.mode == 2
+        assert hasattr(response, "fan_speed")
+        assert response.fan_speed == 6
+        assert hasattr(response, "target_humidity")
+        assert response.target_humidity == 40
+        assert hasattr(response, "child_lock")
+        assert hasattr(response, "anion")
+        assert hasattr(response, "tank")
+        assert response.tank == 63
+        assert hasattr(response, "water_level_set")
+        assert response.water_level_set == 50
+        assert hasattr(response, "current_humidity")
+        assert response.current_humidity == 45
+        assert hasattr(response, "current_temperature")
+        assert response.current_temperature == 25
+        assert hasattr(response, "swing")
