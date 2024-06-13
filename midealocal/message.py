@@ -88,9 +88,11 @@ class MessageBase(ABC):
         output = {
             "header": self.header.hex(),
             "body": self.body.hex(),
-            "message type": "%02x" % self._message_type,
+            "message type": f".{f'{self.message_type:02x}'}",
             "body type": (
-                ("%02x" % self._body_type) if self._body_type != NONE_VALUE else "None"
+                f".{f'{self._body_type:02x}'}"
+                if self._body_type != NONE_VALUE
+                else "None"
             ),
         }
         return str(output)
