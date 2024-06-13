@@ -1,10 +1,12 @@
 """Test cloud"""
 
 import os
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, Mock
 
+import pytest
 from aiohttp import ClientResponseError
 
 from midealocal.cloud import (
@@ -52,9 +54,9 @@ class CloudTest(IsolatedAsyncioTestCase):
             password="password",
             api_url="http://api.url/",
         )
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             await cloud.login()
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             await cloud.list_appliances(None)
 
     async def test_meijucloud_login_success(self) -> None:
@@ -265,8 +267,9 @@ class CloudTest(IsolatedAsyncioTestCase):
         with TemporaryDirectory() as tmpdir:
             file = await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
             assert file is not None
-            assert os.path.exists(file)
-            os.remove(file)
+            file_path = Path(file)
+            assert Path.exists(file_path)
+            Path.unlink(file_path)
 
             res.status = 404
             assert (
@@ -440,8 +443,9 @@ class CloudTest(IsolatedAsyncioTestCase):
         with TemporaryDirectory() as tmpdir:
             file = await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
             assert file is not None
-            assert os.path.exists(file)
-            os.remove(file)
+            file_path = Path(file)
+            assert Path.exists(file_path)
+            Path.unlink(file_path)
 
     async def test_mideaaircloud_login_success(self) -> None:
         """Test MideaAirCloud login"""
@@ -603,5 +607,5 @@ class CloudTest(IsolatedAsyncioTestCase):
             password="password",
         )
         assert cloud is not None
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             await cloud.download_lua("/tmp/download", 10, "00000000", "0xAC", "0010")
