@@ -1,6 +1,5 @@
 """Test cloud"""
 
-import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import IsolatedAsyncioTestCase
@@ -25,13 +24,13 @@ class CloudTest(IsolatedAsyncioTestCase):
 
     def setUp(self) -> None:
         """Set tests up."""
-        for file in os.listdir(os.path.join(os.path.dirname(__file__), "responses")):
-            filename = os.path.basename(file)
-            with open(
-                file=os.path.join(os.path.dirname(__file__), "responses", file),
+        file_path = Path(__file__)
+        for file in Path.iterdir(Path(file_path.parent, "responses")):
+            file_path = Path(file)
+            with file_path.open(
                 encoding="utf-8",
             ) as f:
-                self.responses[filename] = bytes(f.read(), encoding="utf-8")
+                self.responses[file_path.name] = bytes(f.read(), encoding="utf-8")
 
     def test_get_midea_cloud(self) -> None:
         """Test get midea cloud"""
