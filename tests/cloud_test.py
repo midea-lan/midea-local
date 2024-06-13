@@ -30,7 +30,7 @@ class CloudTest(IsolatedAsyncioTestCase):
             with file_path.open(
                 encoding="utf-8",
             ) as f:
-                self.responses[Path.name(file)] = bytes(f.read(), encoding="utf-8")
+                self.responses[file_path.name] = bytes(f.read(), encoding="utf-8")
 
     def test_get_midea_cloud(self) -> None:
         """Test get midea cloud"""
