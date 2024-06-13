@@ -181,7 +181,7 @@ class MideaACDevice(MideaDevice):
                 self._bb_sn8_flag = message.sn8_flag
             if hasattr(message, "timer"):
                 self._bb_timer = message.timer
-        for status in self._attributes.keys():
+        for status in self._attributes:
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
                 if status == DeviceAttributes.fresh_air_power:
@@ -334,7 +334,7 @@ class MideaACDevice(MideaDevice):
                         ]
                     )
                     setattr(message, str(self._fresh_air_version), fresh_air)
-            elif attr in self._attributes.keys():
+            elif attr in self._attributes:
                 message = self.make_message_set()
                 if attr in [
                     DeviceAttributes.boost_mode,

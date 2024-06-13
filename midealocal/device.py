@@ -458,6 +458,6 @@ class MideaDevice(threading.Thread):
     @property
     def attributes(self) -> dict[str, Any]:
         ret = {}
-        for status in self._attributes.keys():
+        for status in self._attributes:
             ret[str(status)] = self._attributes[status]
         return ret

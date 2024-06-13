@@ -199,7 +199,7 @@ class MideaCloud:
 
     async def get_device_info(self, device_id: int) -> dict[str, Any] | None:
         if response := await self.list_appliances(home_id=None):
-            if int(device_id) in response.keys():
+            if int(device_id) in response:
                 return cast(dict, response[device_id])
         return None
 

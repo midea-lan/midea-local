@@ -84,7 +84,7 @@ class MideaE3Device(MideaDevice):
         message = MessageE3Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
-        for status in self._attributes.keys():
+        for status in self._attributes:
             if hasattr(message, str(status)):
                 if self._precision_halves and status in [
                     DeviceAttributes.current_temperature,

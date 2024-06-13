@@ -95,7 +95,7 @@ class Midea13Device(MideaDevice):
             if message.control_success:
                 self.refresh_status()
         else:
-            for status in self._attributes.keys():
+            for status in self._attributes:
                 if hasattr(message, str(status)):
                     value = getattr(message, str(status))
                     if status == DeviceAttributes.effect:

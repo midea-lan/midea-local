@@ -81,11 +81,11 @@ class MideaFBDevice(MideaDevice):
         message = MessageFBResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
-        for status in self._attributes.keys():
+        for status in self._attributes:
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
                 if status == DeviceAttributes.mode:
-                    if value in MideaFBDevice._modes.keys():
+                    if value in MideaFBDevice._modes:
                         self._attributes[status] = MideaFBDevice._modes.get(value)
                     else:
                         self._attributes[status] = None

@@ -82,11 +82,11 @@ class MideaB6Device(MideaDevice):
         self._protocol_version = message.protocol_version
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
-        for status in self._attributes.keys():
+        for status in self._attributes:
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
                 if status == DeviceAttributes.fan_level:
-                    if value in self._speeds.keys():
+                    if value in self._speeds:
                         self._attributes[DeviceAttributes.mode] = self._speeds.get(
                             value,
                         )

@@ -101,7 +101,7 @@ class Midea26Device(MideaDevice):
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         self._fields = message.fields
-        for status in self._attributes.keys():
+        for status in self._attributes:
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
                 if status == DeviceAttributes.mode:

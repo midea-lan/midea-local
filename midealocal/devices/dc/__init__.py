@@ -73,7 +73,7 @@ class MideaDADevice(MideaDevice):
             "Prog6",
             "Prog7",
         ]
-        for status in self._attributes.keys():
+        for status in self._attributes:
             if hasattr(message, str(status)):
                 if status == DeviceAttributes.progress:
                     self._attributes[status] = progress[getattr(message, str(status))]
