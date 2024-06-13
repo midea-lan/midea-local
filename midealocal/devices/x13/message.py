@@ -1,4 +1,7 @@
+from midealocal.devices import BodyType
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+
+MAX_EFFECT = 5
 
 
 class Message13Base(MessageRequest):
@@ -69,7 +72,7 @@ class MessageMainLightBody(MessageBody):
         self.brightness = self.read_byte(body, 1)
         self.color_temperature = self.read_byte(body, 2)
         self.effect = self.read_byte(body, 3) - 1
-        if self.effect > 5:
+        if self.effect > MAX_EFFECT:
             self.effect = 1
         self.power = self.read_byte(body, 8) > 0
 
@@ -83,9 +86,9 @@ class MessageMainLightResponseBody(MessageBody):
 class Message13Response(MessageResponse):
     def __init__(self, message: bytes) -> None:
         super().__init__(bytearray(message))
-        if self.body_type == 0xA4:
+        if self.body_type == BodyType.A4:
             self.set_body(MessageMainLightBody(super().body))
-        elif self.message_type == MessageType.set and self.body_type > 0x80:
+        elif self.message_type == MessageType.set and self.body_type > BodyType.X80:
             self.set_body(MessageMainLightResponseBody(super().body))
         self.control_success: bool
         self.set_attr()
