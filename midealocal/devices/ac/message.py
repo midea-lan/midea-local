@@ -1,5 +1,6 @@
 from enum import IntEnum
 
+from midealocal.const import MAX_BYTE_VALUE
 from midealocal.crc8 import calculate
 from midealocal.devices import DeviceType
 from midealocal.message import (
@@ -18,7 +19,6 @@ ECO_MODE_MIN_SUBPROTOCOL_LENGTH = 27
 FRESH_AIR_LENGTH = 2
 FROST_PROTECT_C0_MIN_LENGTH = 22
 INDIRECT_WIND_VALUE = 0x02
-MAX_BYTE_VALUE = 0xFF
 MAX_MSG_SERIAL_NUM = 254
 SCREEN_DISPLAY_BYTE_CHECK = 0x07
 SUB_PROTOCOL_BODY_TEMP_CHECK = 0x80
