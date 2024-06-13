@@ -6,6 +6,7 @@ from midealocal.message import (
     MessageType,
 )
 
+MIN_CA_GENERAL_BODY_LENGTH = 20
 TEMP_POS_LOWER_VALUE = 1
 TEMP_POS_UPPER_VALUE = 29
 TEMP_NEG_LOWER_VALUE = 49
@@ -128,7 +129,7 @@ class MessageCAResponse(MessageResponse):
                 self.message_type == MessageType.notify1
                 and self.body_type == BodyType.X02
             )
-        ) and len(super().body) > 20:
+        ) and len(super().body) > MIN_CA_GENERAL_BODY_LENGTH:
             self.set_body(CAGeneralMessageBody(super().body))
         elif (
             self.message_type == MessageType.exception
