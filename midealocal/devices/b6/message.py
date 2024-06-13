@@ -69,17 +69,11 @@ class MessageSet(MessageB6Base):
             value2 = 0xFF
             value3 = 0xFF
             if self.light is not None:
-                if self.light:
-                    light = 0x1A
-                else:
-                    light = 0
+                light = 0x1A if self.light else 0
             elif self.power is not None:
                 if self.power:
                     value2 = 0x02
-                    if self.fan_level is not None:
-                        value3 = self.fan_level
-                    else:
-                        value3 = 0x01
+                    value3 = self.fan_level if self.fan_level is not None else 0x01
                 else:
                     value2 = 0x03
             elif self.fan_level is not None:
