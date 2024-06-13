@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, Mock
 
+import pytest
 from aiohttp import ClientResponseError
 
 from midealocal.cloud import (
@@ -52,9 +53,9 @@ class CloudTest(IsolatedAsyncioTestCase):
             password="password",
             api_url="http://api.url/",
         )
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             await cloud.login()
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             await cloud.list_appliances(None)
 
     async def test_meijucloud_login_success(self) -> None:
@@ -603,5 +604,5 @@ class CloudTest(IsolatedAsyncioTestCase):
             password="password",
         )
         assert cloud is not None
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             await cloud.download_lua("/tmp/download", 10, "00000000", "0xAC", "0010")
