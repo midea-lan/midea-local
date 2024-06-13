@@ -1,4 +1,22 @@
+from enum import IntEnum
+from midealocal.const import MAX_BYTE_VALUE
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+
+X21_BOTTOM_COMPARTMENT_REMAINING_BYTE = 18
+X21_MIDDLE_COMPARTMENT_REMAINING_BYTE = 19
+X21_TOP_COMPARTMENT_REMAINING_BYTE = 17
+X31_BOTTOM_COMPARTMENT_REMAINING_BYTE = 24
+X31_MIDDLE_COMPARTMENT_REMAINING_BYTE = 25
+X31_TOP_COMPARTMENT_REMAINING_BYTE = 23
+
+
+class B3BodyType(IntEnum):
+    """B3 Body Type."""
+
+    X21 = 0x21
+    X24 = 0x24
+    X31 = 0x31
+    X41 = 0x41
 
 
 class MessageB3Base(MessageRequest):
@@ -41,12 +59,13 @@ class B3MessageBody31(MessageBody):
         self.top_compartment_temperature = body[3]
         self.top_compartment_remaining = (
             body[23] * 3600
-            if len(body) > 23 and body[23] != 0xFF
+            if len(body) > X31_TOP_COMPARTMENT_REMAINING_BYTE
+            and body[23] != MAX_BYTE_VALUE
             else (
                 0 + body[4] * 60
-                if body[4] != 0xFF
+                if body[4] != MAX_BYTE_VALUE
                 else 0 + body[5]
-                if body[5] != 0xFF
+                if body[5] != MAX_BYTE_VALUE
                 else 0
             )
         )
@@ -55,12 +74,13 @@ class B3MessageBody31(MessageBody):
         self.bottom_compartment_temperature = body[8]
         self.bottom_compartment_remaining = (
             body[24] * 3600
-            if len(body) > 24 and body[24] != 0xFF
+            if len(body) > X31_BOTTOM_COMPARTMENT_REMAINING_BYTE
+            and body[24] != MAX_BYTE_VALUE
             else (
                 0 + body[9] * 60
-                if body[9] != 0xFF
+                if body[9] != MAX_BYTE_VALUE
                 else 0 + body[10]
-                if body[10] != 0xFF
+                if body[10] != MAX_BYTE_VALUE
                 else 0
             )
         )
@@ -69,12 +89,13 @@ class B3MessageBody31(MessageBody):
         self.middle_compartment_temperature = body[19]
         self.middle_compartment_remaining = (
             body[25] * 3600
-            if len(body) > 25 and body[25] != 0xFF
+            if len(body) > X31_MIDDLE_COMPARTMENT_REMAINING_BYTE
+            and body[25] != MAX_BYTE_VALUE
             else (
                 0 + body[20] * 60
-                if body[20] != 0xFF
+                if body[20] != MAX_BYTE_VALUE
                 else 0 + body[21]
-                if body[21] != 0xFF
+                if body[21] != MAX_BYTE_VALUE
                 else 0
             )
         )
@@ -98,12 +119,13 @@ class B3MessageBody21(MessageBody):
         self.top_compartment_temperature = body[3]
         self.top_compartment_remaining = (
             body[17] * 3600
-            if len(body) > 17 and body[17] != 0xFF
+            if len(body) > X21_TOP_COMPARTMENT_REMAINING_BYTE
+            and body[17] != MAX_BYTE_VALUE
             else (
                 0 + body[4] * 60
-                if body[4] != 0xFF
+                if body[4] != MAX_BYTE_VALUE
                 else 0 + body[5]
-                if body[5] != 0xFF
+                if body[5] != MAX_BYTE_VALUE
                 else 0
             )
         )
@@ -112,12 +134,13 @@ class B3MessageBody21(MessageBody):
         self.bottom_compartment_temperature = body[8]
         self.bottom_compartment_remaining = (
             body[18] * 3600
-            if len(body) > 18 and body[18] != 0xFF
+            if len(body) > X21_BOTTOM_COMPARTMENT_REMAINING_BYTE
+            and body[18] != MAX_BYTE_VALUE
             else (
                 0 + body[9] * 60
-                if body[9] != 0xFF
+                if body[9] != MAX_BYTE_VALUE
                 else 0 + body[10]
-                if body[10] != 0xFF
+                if body[10] != MAX_BYTE_VALUE
                 else 0
             )
         )
@@ -126,12 +149,13 @@ class B3MessageBody21(MessageBody):
         self.middle_compartment_temperature = body[14]
         self.middle_compartment_remaining = (
             body[19] * 3600
-            if len(body) > 19 and body[19] != 0xFF
+            if len(body) > X21_MIDDLE_COMPARTMENT_REMAINING_BYTE
+            and body[19] != MAX_BYTE_VALUE
             else (
                 0 + body[15] * 60
-                if body[15] != 0xFF
+                if body[15] != MAX_BYTE_VALUE
                 else 0 + body[16]
-                if body[16] != 0xFF
+                if body[16] != MAX_BYTE_VALUE
                 else 0
             )
         )
@@ -145,16 +169,20 @@ class B3MessageBody24(MessageBody):
         self.top_compartment_mode = body[6]
         self.top_compartment_temperature = body[7]
         self.top_compartment_remaining = (
-            body[8] * 60 if body[8] != 0xFF else 0 + body[9] if body[9] != 0xFF else 0
+            body[8] * 60
+            if body[8] != MAX_BYTE_VALUE
+            else 0 + body[9]
+            if body[9] != MAX_BYTE_VALUE
+            else 0
         )
         self.bottom_compartment_status = body[10]
         self.bottom_compartment_mode = body[11]
         self.bottom_compartment_temperature = body[12]
         self.bottom_compartment_remaining = (
             body[13] * 60
-            if body[13] != 0xFF
+            if body[13] != MAX_BYTE_VALUE
             else 0 + body[14]
-            if body[14] != 0xFF
+            if body[14] != MAX_BYTE_VALUE
             else 0
         )
         self.bottom_compartment_status = body[15]
@@ -162,9 +190,9 @@ class B3MessageBody24(MessageBody):
         self.bottom_compartment_temperature = body[17]
         self.bottom_compartment_remaining = (
             body[18] * 60
-            if body[18] != 0xFF
+            if body[18] != MAX_BYTE_VALUE
             else 0 + body[19]
-            if body[19] != 0xFF
+            if body[19] != MAX_BYTE_VALUE
             else 0
         )
 
@@ -174,16 +202,16 @@ class MessageB3Response(MessageResponse):
         super().__init__(bytearray(message))
         if (
             self.message_type == MessageType.query
-            and self.body_type == 0x31
+            and self.body_type == B3BodyType.X31
             or self.message_type == MessageType.notify1
-            and self.body_type == 0x41
+            and self.body_type == B3BodyType.X41
         ):
             self.set_body(B3MessageBody31(super().body))
         elif (
             self.message_type == MessageType.set
-            and self.body_type == 0x21
+            and self.body_type == B3BodyType.X21
             or self.message_type == MessageType.set
-            and self.body_type == 0x24
+            and self.body_type == B3BodyType.X24
         ):
             self.set_body(B3MessageBody21(super().body))
         self.set_attr()
