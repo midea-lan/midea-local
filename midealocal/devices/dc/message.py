@@ -76,7 +76,7 @@ class DCGeneralMessageBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = body[1] > 0
-        self.start = True if body[2] in [2, 6] else False
+        self.start = body[2] in [2, 6]
         self.washing_data = body[3:15]
         self.progress = 0
         self.time_remaining: float | None = None
