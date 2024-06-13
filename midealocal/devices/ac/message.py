@@ -633,10 +633,9 @@ class XC1MessageBody(MessageBody):
                 )
                 / 10
             )
-        elif analysis_method == 2:
+        if analysis_method == 2:
             return float((byte1 << 16) + (byte2 << 8) + byte3) / 10
-        else:
-            return float(byte1 * 10000 + byte2 * 100 + byte3) / 10
+        return float(byte1 * 10000 + byte2 * 100 + byte3) / 10
 
     @staticmethod
     def parse_consumption(
@@ -656,10 +655,9 @@ class XC1MessageBody(MessageBody):
                 )
                 / 100
             )
-        elif analysis_method == 2:
+        if analysis_method == 2:
             return float((byte1 << 32) + (byte2 << 16) + (byte3 << 8) + byte4) / 10
-        else:
-            return float(byte1 * 1000000 + byte2 * 10000 + byte3 * 100 + byte4) / 100
+        return float(byte1 * 1000000 + byte2 * 10000 + byte3 * 100 + byte4) / 100
 
 
 class XBBMessageBody(MessageBody):
