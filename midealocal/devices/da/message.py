@@ -76,7 +76,7 @@ class DAGeneralMessageBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.power = body[1] > 0
-        self.start = True if body[2] in [2, 6] else False
+        self.start = body[2] in [2, 6]
         self.error_code = body[24]
         self.program = body[4]
         self.wash_time = body[9]
