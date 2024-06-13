@@ -129,9 +129,9 @@ def device_selector(
 ) -> Any:
     try:
         if device_type < DeviceType.A0:
-            device_path = f".{'x%02x' % device_type}"
+            device_path = f".{f'x{device_type:02x}'}"
         else:
-            device_path = f".{'%02x' % device_type}"
+            device_path = f".{f'{device_type:02x}'}"
         module = import_module(device_path, __package__)
         device = module.MideaAppliance(
             name=name,

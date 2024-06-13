@@ -376,7 +376,7 @@ class MeijuCloud(MideaCloud):
     ) -> str | None:
         data = {
             "applianceSn": sn,
-            "applianceType": "0x%02X" % device_type,
+            "applianceType": f".{f'x{device_type:02x}'}",
             "applianceMFCode": manufacturer_code,
             "version": "0",
             "iotAppId": self._app_id,
@@ -561,7 +561,7 @@ class MSmartHomeCloud(MideaCloud):
             "deviceId": self._device_id,
             "iotAppId": self._app_id,
             "applianceMFCode": manufacturer_code,
-            "applianceType": "0x%02X" % device_type,
+            "applianceType": f".{f'x{device_type:02x}'}",
             "modelNumber": model_number,
             "applianceSn": self._security.aes_encrypt_with_fixed_key(
                 sn.encode("ascii"),
