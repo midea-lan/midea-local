@@ -1,6 +1,7 @@
 """Test cloud"""
 
 import os
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, Mock
@@ -265,8 +266,9 @@ class CloudTest(IsolatedAsyncioTestCase):
         with TemporaryDirectory() as tmpdir:
             file = await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
             assert file is not None
-            assert os.path.exists(file)
-            os.remove(file)
+            file_path = Path(file)
+            assert Path.exists(file_path)
+            Path.unlink(file_path)
 
             res.status = 404
             assert (
@@ -440,8 +442,9 @@ class CloudTest(IsolatedAsyncioTestCase):
         with TemporaryDirectory() as tmpdir:
             file = await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
             assert file is not None
-            assert os.path.exists(file)
-            os.remove(file)
+            file_path = Path(file)
+            assert Path.exists(file_path)
+            Path.unlink(file_path)
 
     async def test_mideaaircloud_login_success(self) -> None:
         """Test MideaAirCloud login"""
