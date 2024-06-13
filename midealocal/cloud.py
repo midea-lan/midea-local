@@ -3,6 +3,7 @@ import datetime
 import json
 import logging
 import time
+from http import HTTPStatus
 from secrets import token_hex
 from threading import Lock
 from typing import Any, cast
@@ -15,6 +16,8 @@ from .security import (
     MideaAirSecurity,
     MSmartCloudSecurity,
 )
+
+SN8_MIN_SERIAL_LENGTH = 17
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -384,7 +387,7 @@ class MeijuCloud(MideaCloud):
             data=data,
         ):
             res = await self._session.get(response["url"])
-            if res.status == 200:
+            if res.status == HTTPStatus.OK:
                 lua = await res.text()
                 if lua:
                     stream = (
@@ -534,7 +537,9 @@ class MSmartHomeCloud(MideaCloud):
                 }
                 serial_num = device_info.get("sn")
                 device_info["sn8"] = (
-                    serial_num[9:17] if (serial_num and len(serial_num) > 17) else ""
+                    serial_num[9:17]
+                    if (serial_num and len(serial_num) > SN8_MIN_SERIAL_LENGTH)
+                    else ""
                 )
                 device_info["model"] = device_info.get("sn8")
                 appliances[int(appliance["id"])] = device_info
@@ -570,7 +575,7 @@ class MSmartHomeCloud(MideaCloud):
             data=data,
         ):
             res = await self._session.get(response["url"])
-            if res.status == 200:
+            if res.status == HTTPStatus.OK:
                 lua = await res.text()
                 if lua:
                     stream = (
@@ -712,7 +717,9 @@ class MideaAirCloud(MideaCloud):
                 }
                 serial_num = device_info.get("sn")
                 device_info["sn8"] = (
-                    serial_num[9:17] if (serial_num and len(serial_num) > 17) else ""
+                    serial_num[9:17]
+                    if (serial_num and len(serial_num) > SN8_MIN_SERIAL_LENGTH)
+                    else ""
                 )
                 device_info["model"] = device_info.get("sn8")
                 appliances[int(appliance["id"])] = device_info
