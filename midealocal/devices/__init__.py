@@ -82,13 +82,18 @@ class SubBodyType(IntEnum):
     BB = 0xBB
     C0 = 0xC0
     C1 = 0xC1
+    C3 = 0xC3
     X01 = 0x01
+    X02 = 0x02
+    X03 = 0x03
     X04 = 0x04
+    X06 = 0x06
     X0A = 0x0A
     X10 = 0x10
     X11 = 0x11
     X12 = 0x12
     X13 = 0x13
+    X16 = 0x16
     X20 = 0x20
     X21 = 0x21
     X22 = 0x22
@@ -96,7 +101,9 @@ class SubBodyType(IntEnum):
     X30 = 0x30
     X31 = 0x31
     X32 = 0x32
+    X3D = 0x3D
     X41 = 0x41
+    X52 = 0x52
 
 
 def device_selector(

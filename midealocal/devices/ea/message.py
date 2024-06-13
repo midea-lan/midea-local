@@ -1,3 +1,5 @@
+from enum import IntEnum
+from midealocal.devices import SubBodyType
 from midealocal.message import (
     NONE_VALUE,
     MessageBody,
@@ -5,6 +7,13 @@ from midealocal.message import (
     MessageResponse,
     MessageType,
 )
+
+
+class Progress(IntEnum):
+    """Progress."""
+
+    COOKING = 2
+    KEEP_WARM = 3
 
 
 class MessageEABase(MessageRequest):
@@ -47,8 +56,8 @@ class EABody1(MessageBody):
         super().__init__(body)
         self.mode = body[6] + (body[7] << 8)
         self.progress = body[14]
-        self.cooking = self.progress == 2
-        self.keep_warm = self.progress == 3
+        self.cooking = self.progress == Progress.COOKING
+        self.keep_warm = self.progress == Progress.KEEP_WARM
         self.top_temperature = body[18]
         self.bottom_temperature = body[19]
         self.time_remaining = body[22] * 60 + body[23]
@@ -59,8 +68,8 @@ class EABody2(MessageBody):
     def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.progress = body[9]
-        self.cooking = self.progress == 2
-        self.keep_warm = self.progress == 3
+        self.cooking = self.progress == Progress.COOKING
+        self.keep_warm = self.progress == Progress.KEEP_WARM
         self.mode = body[58] + (body[59] << 8)
         self.time_remaining = body[50] * 60 + body[51]
         self.keep_warm_time = body[54] * 60 + body[55]
@@ -73,8 +82,8 @@ class EABody3(MessageBody):
         super().__init__(body)
         self.mode = body[4] + (body[5] << 8)
         self.progress = body[8]
-        self.cooking = self.progress == 2
-        self.keep_warm = self.progress == 3
+        self.cooking = self.progress == Progress.COOKING
+        self.keep_warm = self.progress == Progress.KEEP_WARM
         self.time_remaining = body[12] * 60 + body[13]
         self.top_temperature = body[20]
         self.bottom_temperature = body[21]
@@ -87,8 +96,8 @@ class EABodyNew(MessageBody):
         if body[6] in [2, 4, 6, 8, 10, 0x62]:
             self.mode = body[7] + (body[8] << 8)
             self.progress = body[11]
-            self.cooking = self.progress == 2
-            self.keep_warm = self.progress == 3
+            self.cooking = self.progress == Progress.COOKING
+            self.keep_warm = self.progress == Progress.KEEP_WARM
             self.time_remaining = body[16] * 60 + body[17]
             self.top_temperature = body[60]
             self.bottom_temperature = body[61]
@@ -98,26 +107,48 @@ class EABodyNew(MessageBody):
 class MessageEAResponse(MessageResponse):
     def __init__(self, message: bytes) -> None:
         super().__init__(bytearray(message))
-        if self.message_type == MessageType.notify1 and super().body[3] == 0x01:
+        if (
+            self.message_type == MessageType.notify1
+            and super().body[3] == SubBodyType.X01
+        ):
             self.set_body(EABodyNew(super().body))
         elif self.protocol_version == 0:
-            if self.message_type == MessageType.set and super().body[5] == 0x16:  # 381
+            if (
+                self.message_type == MessageType.set
+                and super().body[5] == SubBodyType.X16
+            ):  # 381
                 self.set_body(EABody1(super().body))
             elif self.message_type == MessageType.query:
-                if super().body[6] == 0x52 and super().body[7] == 0xC3:  # 404
+                if (
+                    super().body[6] == SubBodyType.X52
+                    and super().body[7] == SubBodyType.C3
+                ):  # 404
                     self.set_body(EABody2(super().body))
-                elif super().body[5] == 0x3D:  # 420
+                elif super().body[5] == SubBodyType.X3D:  # 420
                     self.set_body(EABody1(super().body))
             elif (
-                self.message_type == MessageType.notify1 and super().body[5] == 0x3D
+                self.message_type == MessageType.notify1
+                and super().body[5] == SubBodyType.X3D
             ):  # 463
                 self.set_body(EABody1(super().body))
         elif (
-            (self.message_type == MessageType.set and super().body[3] == 0x02)
-            or (self.message_type == MessageType.query and super().body[3] == 0x03)
-            or (self.message_type == MessageType.notify1 and super().body[3] == 0x04)
+            (
+                self.message_type == MessageType.set
+                and super().body[3] == SubBodyType.X02
+            )
+            or (
+                self.message_type == MessageType.query
+                and super().body[3] == SubBodyType.X03
+            )
+            or (
+                self.message_type == MessageType.notify1
+                and super().body[3] == SubBodyType.X04
+            )
         ):  # 351
             self.set_body(EABody3(super().body))
-        elif self.message_type == MessageType.notify1 and super().body[3] == 0x06:
+        elif (
+            self.message_type == MessageType.notify1
+            and super().body[3] == SubBodyType.X06
+        ):
             self.mode = super().body[4] + (super().body[5] << 8)
         self.set_attr()
