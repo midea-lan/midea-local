@@ -20,6 +20,12 @@ from .security import (
     LocalSecurity,
 )
 
+
+MIN_AUTH_RESPONSE = 20
+MIN_MSG_LENGTH = 56
+MIN_V2_FACTUAL_MSG_LENGTH = 6
+RESPONSE_TIMEOUT = 120
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -37,6 +43,14 @@ class RefreshFailed(Exception):
 
 class DeviceAttributes(StrEnum):
     pass
+
+
+class ProtocolVersion(IntEnum):
+    """Protocol version."""
+
+    V1 = 1
+    V2 = 2
+    V3 = 3
 
 
 class ParseMessageResult(IntEnum):
@@ -111,7 +125,7 @@ class MideaDevice(threading.Thread):
         result = []
         while len(msg) > 0:
             factual_msg_len = len(msg)
-            if factual_msg_len < 6:
+            if factual_msg_len < MIN_V2_FACTUAL_MSG_LENGTH:
                 break
             alleged_msg_len = msg[4] + (msg[5] << 8)
             if factual_msg_len >= alleged_msg_len:
@@ -133,7 +147,7 @@ class MideaDevice(threading.Thread):
             )
             self._socket.connect((self._ip_address, self._port))
             _LOGGER.debug("[%s] Connected", self._device_id)
-            if self._protocol == 3:
+            if self._protocol == ProtocolVersion.V3:
                 self.authenticate()
             _LOGGER.debug("[%s] Authentication success", self._device_id)
             if refresh_status:
@@ -168,13 +182,13 @@ class MideaDevice(threading.Thread):
         assert self._socket
         self._socket.send(request)
         response = self._socket.recv(512)
-        if len(response) < 20:
+        if len(response) < MIN_AUTH_RESPONSE:
             raise AuthException
         response = response[8:72]
         self._security.tcp_key(response, self._key)
 
     def send_message(self, data: bytes) -> None:
-        if self._protocol == 3:
+        if self._protocol == ProtocolVersion.V3:
             self.send_message_v3(data, msg_type=MSGTYPE_ENCRYPTED_REQUEST)
         else:
             self.send_message_v2(data)
@@ -255,7 +269,7 @@ class MideaDevice(threading.Thread):
         return True
 
     def parse_message(self, msg: bytes) -> ParseMessageResult:
-        if self._protocol == 3:
+        if self._protocol == ProtocolVersion.V3:
             messages, self._buffer = self._security.decode_8370(self._buffer + msg)
         else:
             messages, self._buffer = self.fetch_v2_message(self._buffer + msg)
@@ -269,7 +283,7 @@ class MideaDevice(threading.Thread):
             if payload_type in [0x1001, 0x0001]:
                 # Heartbeat detected
                 pass
-            elif len(message) > 56:
+            elif len(message) > MIN_MSG_LENGTH:
                 cryptographic = message[40:-16]
                 if payload_len % 16 == 0:
                     decrypted = self._security.aes_decrypt(cryptographic)
@@ -424,7 +438,7 @@ class MideaDevice(threading.Thread):
                         timeout_counter = 0
                 except TimeoutError:
                     timeout_counter = timeout_counter + 1
-                    if timeout_counter >= 120:
+                    if timeout_counter >= RESPONSE_TIMEOUT:
                         _LOGGER.debug("[%s] Heartbeat timed out", self._device_id)
                         self.close_socket()
                         break
