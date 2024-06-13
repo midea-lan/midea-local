@@ -1,9 +1,14 @@
+from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
 )
+
+BRIGTH_BYTE = 24
+STORAGE_REMAINING_BYTE = 18
+HUMIDITY_BYTE = 33
 
 
 class MessageE1Base(MessageRequest):
@@ -110,21 +115,25 @@ class E1GeneralMessageBody(MessageBody):
         self.storage_status = (body[5] & 0x40) > 0
         self.time_remaining = body[6]
         self.progress = body[9]
-        self.storage_remaining = body[18] if len(body) > 18 else False
+        self.storage_remaining = (
+            body[18] if len(body) > STORAGE_REMAINING_BYTE else False
+        )
         self.temperature = body[11]
-        self.humidity = body[33] if len(body) > 33 else None
+        self.humidity = body[33] if len(body) > HUMIDITY_BYTE else None
         self.waterswitch = (body[4] & 0x4) > 0
         self.water_lack = (body[5] & 0x80) > 0
         self.error_code = body[10]
         self.softwater = body[13]
         self.wrong_operation = body[16]
-        self.bright = body[24] if len(body) > 24 else None
+        self.bright = body[24] if len(body) > BRIGTH_BYTE else None
 
 
 class MessageE1Response(MessageResponse):
     def __init__(self, message: bytes) -> None:
         super().__init__(bytearray(message))
-        if (self.message_type == MessageType.set and 0 <= self.body_type <= 7) or (
+        if (
+            self.message_type == MessageType.set and 0 <= self.body_type <= BodyType.X07
+        ) or (
             self.message_type in [MessageType.query, MessageType.notify1]
             and self.body_type == 0
         ):
