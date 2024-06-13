@@ -2,6 +2,7 @@
 
 import pytest
 
+
 from midealocal.devices.a1.message import (
     MessageA1Base,
     MessageA1Response,
@@ -22,7 +23,7 @@ class TestMessageA1Base:
         msg2 = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
         assert msg2._message_id == msg._message_id + 1
         # test reset
-        for idx in range(100 - msg2._message_id):
+        for _ in range(100 - msg2._message_id):
             msg = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
         assert msg._message_id == 1
 
