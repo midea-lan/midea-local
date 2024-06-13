@@ -88,9 +88,11 @@ class MessageBase(ABC):
         output = {
             "header": self.header.hex(),
             "body": self.body.hex(),
-            "message type": "%02x" % self._message_type,
+            "message type": f".{f'{self.message_type:02x}'}",
             "body type": (
-                ("%02x" % self._body_type) if self._body_type != NONE_VALUE else "None"
+                f".{f'{self._body_type:02x}'}"
+                if self._body_type != NONE_VALUE
+                else "None"
             ),
         }
         return str(output)
@@ -237,7 +239,7 @@ class NewProtocolMessageBody(MessageBody):
         result = {}
         try:
             pos = 2
-            for pack in range(self.data[1]):
+            for _ in range(self.data[1]):
                 param = self.data[pos] + (self.data[pos + 1] << 8)
                 if self._pack_len == 5:
                     pos += 1
@@ -277,7 +279,7 @@ class MessageResponse(MessageBase):
         self._body = body
 
     def set_attr(self) -> None:
-        for key in vars(self._body).keys():
+        for key in vars(self._body):
             if key != "data":
                 value = getattr(self._body, key, None)
                 setattr(self, key, value)

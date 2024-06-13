@@ -73,7 +73,7 @@ class MideaE6Device(MideaDevice):
         message = MessageE6Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
-        for status in self._attributes.keys():
+        for status in self._attributes:
             if hasattr(message, str(status)):
                 self._attributes[status] = getattr(message, str(status))
                 new_status[str(status)] = self._attributes[status]

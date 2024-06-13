@@ -103,7 +103,7 @@ class MideaCCDevice(MideaDevice):
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         fan_speed: int | None = None
-        for status in self._attributes.keys():
+        for status in self._attributes:
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
                 if status == DeviceAttributes.fan_speed:
@@ -120,7 +120,7 @@ class MideaCCDevice(MideaDevice):
                     self._fan_speeds = MideaCCDevice._fan_speeds_3level
                 else:
                     self._fan_speeds = MideaCCDevice._fan_speeds_7level
-            if fan_speed in self._fan_speeds.keys():
+            if fan_speed in self._fan_speeds:
                 self._attributes[DeviceAttributes.fan_speed] = self._fan_speeds.get(
                     fan_speed,
                 )

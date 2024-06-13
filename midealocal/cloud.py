@@ -126,7 +126,7 @@ class MideaCloud:
         if self._access_token is not None:
             header.update({"accessToken": self._access_token})
         response: dict = {"code": -1}
-        for i in range(3):
+        for _ in range(3):
             try:
                 with self._api_lock:
                     r = await self._session.request(
@@ -199,7 +199,7 @@ class MideaCloud:
 
     async def get_device_info(self, device_id: int) -> dict[str, Any] | None:
         if response := await self.list_appliances(home_id=None):
-            if int(device_id) in response.keys():
+            if int(device_id) in response:
                 return cast(dict, response[device_id])
         return None
 
@@ -373,7 +373,7 @@ class MeijuCloud(MideaCloud):
     ) -> str | None:
         data = {
             "applianceSn": sn,
-            "applianceType": "0x%02X" % device_type,
+            "applianceType": f".{f'x{device_type:02x}'}",
             "applianceMFCode": manufacturer_code,
             "version": "0",
             "iotAppId": self._app_id,
@@ -556,7 +556,7 @@ class MSmartHomeCloud(MideaCloud):
             "deviceId": self._device_id,
             "iotAppId": self._app_id,
             "applianceMFCode": manufacturer_code,
-            "applianceType": "0x%02X" % device_type,
+            "applianceType": f".{f'x{device_type:02x}'}",
             "modelNumber": model_number,
             "applianceSn": self._security.aes_encrypt_with_fixed_key(
                 sn.encode("ascii"),
@@ -633,7 +633,7 @@ class MideaAirCloud(MideaCloud):
         if self._access_token is not None:
             header.update({"accessToken": self._access_token})
         response: dict = {"errorCode": -1}
-        for i in range(3):
+        for _ in range(3):
             try:
                 with self._api_lock:
                     r = await self._session.request(

@@ -11,8 +11,8 @@ from midealocal.devices.a1.message import MessageQuery, MessageSet
 class TestMideaA1Device:
     """Test Midea A1 Device."""
 
-    @pytest.fixture(autouse=True)  # type: ignore
-    def setup_device(self) -> None:
+    @pytest.fixture(autouse=True)
+    def _setup_device(self) -> None:
         """Midea A1 Device setup."""
         self.device = MideaA1Device(
             name="Test Device",

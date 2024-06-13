@@ -103,7 +103,7 @@ class MideaA1Device(MideaDevice):
         self._protocol_version = message.protocol_version
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
-        for status in self._attributes.keys():
+        for status in self._attributes:
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
                 if status == DeviceAttributes.mode:
@@ -112,7 +112,7 @@ class MideaA1Device(MideaDevice):
                     else:
                         self._attributes[status] = None
                 elif status == DeviceAttributes.fan_speed:
-                    if value in MideaA1Device._speeds.keys():
+                    if value in MideaA1Device._speeds:
                         self._attributes[status] = MideaA1Device._speeds.get(value)
                     else:
                         self._attributes[status] = None

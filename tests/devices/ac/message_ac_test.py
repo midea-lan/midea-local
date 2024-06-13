@@ -1,4 +1,5 @@
 import pytest
+
 from midealocal.devices.ac.message import (
     MessageACBase,
     MessageACResponse,
@@ -20,11 +21,11 @@ class TestMessageACBase:
         """Test message Id Increment."""
         msg = MessageACBase(protocol_version=1, message_type=1, body_type=1)
         msg2 = MessageACBase(protocol_version=1, message_type=1, body_type=1)
-        assert getattr(msg2, "_message_id") == getattr(msg, "_message_id") + 1
+        assert msg2._message_id == msg._message_id + 1
         # test reset
-        for idx in range(254 - getattr(msg2, "_message_id")):
+        for _ in range(254 - msg2._message_id):
             msg = MessageACBase(protocol_version=1, message_type=1, body_type=1)
-        assert getattr(msg, "_message_id") == 1
+        assert msg._message_id == 1
 
     def test_body_not_implemented(self) -> None:
         """Test body not implemented."""
@@ -61,7 +62,7 @@ class TestMessageQuery:
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
         assert msg.body[:-2] == expected_body
 
@@ -104,7 +105,7 @@ class TestMessageToggleDisplay:
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
         assert msg.body[:-2] == expected_body
         msg.prompt_tone = True
@@ -130,7 +131,7 @@ class TestMessageToggleDisplay:
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
         assert msg.body[:-2] == expected_body
 
@@ -157,7 +158,7 @@ class TestMessageNewProtocolQuery:
                 NewProtocolTags.fresh_air_1 >> 8,
                 NewProtocolTags.fresh_air_2 & 0xFF,
                 NewProtocolTags.fresh_air_2 >> 8,
-            ]
+            ],
         )
         assert msg.body[:-2] == expected_body
 
@@ -168,7 +169,9 @@ class TestMessageSubProtocol:
     def test_sub_protocol_body(self) -> None:
         """Test sub protocol body."""
         msg = MessageSubProtocol(
-            protocol_version=1, message_type=0xBB, subprotocol_query_type=0xCC
+            protocol_version=1,
+            message_type=0xBB,
+            subprotocol_query_type=0xCC,
         )
         expected_body = bytearray(
             [
@@ -178,7 +181,7 @@ class TestMessageSubProtocol:
                 0xFF,
                 0xFF,
                 0xCC,
-            ]
+            ],
         )
         assert msg.body[:-2] == expected_body
 
@@ -234,7 +237,7 @@ class TestMessageSubProtocolSet:
                 0x00,
                 0x00,
                 0x08,
-            ]
+            ],
         )
         assert msg.body[:-2] == expected_body
 
@@ -294,7 +297,7 @@ class TestMessageGeneralSet:
                 0x00,
                 0x00,
                 0x00,
-            ]
+            ],
         )
         assert msg.body[:-2] == expected_body
         msg.power = True
@@ -332,8 +335,8 @@ class TestMessageGeneralSet:
 class TestMessageACResponse:
     """Test Message AC Response."""
 
-    @pytest.fixture(autouse=True)  # type: ignore
-    def setup_header(self) -> None:
+    @pytest.fixture(autouse=True)
+    def _setup_header(self) -> None:
         """Setup header."""
         self.header = bytearray(
             [
@@ -347,7 +350,7 @@ class TestMessageACResponse:
                 0x00,
                 0x01,
                 0x05,
-            ]
+            ],
         )
 
     def test_message_notify2_a0(self) -> None:

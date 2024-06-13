@@ -160,10 +160,8 @@ def discover(
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     sock.settimeout(5)
     found_devices = {}
-    if ip_address is None:
-        addrs = enum_all_broadcast()
-    else:
-        addrs = [ip_address]
+    addrs = enum_all_broadcast() if ip_address is None else [ip_address]
+
     _LOGGER.debug("All addresses for broadcast: %s", addrs)
     for addr in addrs:
         try:
@@ -204,7 +202,7 @@ def discover(
             elif data[:6].hex() == "3c3f786d6c20":
                 protocol = 1
                 root = ElementTree.fromstring(
-                    data.decode(encoding="utf-8", errors="replace")
+                    data.decode(encoding="utf-8", errors="replace"),
                 )
                 child = root.find("body/device")
                 assert child
@@ -262,10 +260,7 @@ def bytes2port(paramArrayOfbyte: bytes | None) -> int:
         return 0
     b, i = 0, 0
     while b < 4:
-        if b < len(paramArrayOfbyte):
-            b1 = paramArrayOfbyte[b] & 0xFF
-        else:
-            b1 = 0
+        b1 = paramArrayOfbyte[b] & 0xFF if b < len(paramArrayOfbyte) else 0
         i |= b1 << b * 8
         b += 1
     return i

@@ -91,7 +91,7 @@ class MideaCDDevice(MideaDevice):
         new_status = {}
         if hasattr(message, "fields"):
             self._fields = message.fields
-        for status in self._attributes.keys():
+        for status in self._attributes:
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
                 if status == DeviceAttributes.mode:
