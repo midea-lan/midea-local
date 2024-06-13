@@ -5,11 +5,11 @@ from typing import Any
 from .message import MessageCCResponse, MessageQuery, MessageSet
 
 if sys.version_info < (3, 12):
-    from ...backports.enum import StrEnum
+    from midealocal.backports.enum import StrEnum
 else:
     from enum import StrEnum
 
-from ...device import MideaDevice
+from midealocal.device import MideaDevice
 
 _LOGGER = logging.getLogger(__name__)
 

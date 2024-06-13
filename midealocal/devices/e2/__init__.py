@@ -12,11 +12,11 @@ from .message import (
 )
 
 if sys.version_info < (3, 12):
-    from ...backports.enum import StrEnum
+    from midealocal.backports.enum import StrEnum
 else:
     from enum import StrEnum
 
-from ...device import MideaDevice
+from midealocal.device import MideaDevice
 
 
 class OldProtocol(StrEnum):
@@ -96,7 +96,7 @@ class MideaE2Device(MideaDevice):
                         or self.subtype == 36353
                     )
                     return_value = OldProtocol.true if result else OldProtocol.false
-            elif isinstance(value, int) or isinstance(value, bool):
+            elif isinstance(value, bool | int):
                 return_value = OldProtocol.true if value else OldProtocol.false
             else:
                 raise ValueError("Invalid value for old_protocol")
@@ -156,7 +156,7 @@ class MideaE2Device(MideaDevice):
                 params = json.loads(customize)
                 if params and "old_protocol" in params:
                     self._old_protocol = self._normalize_old_protocol(
-                        params["old_protocol"]
+                        params["old_protocol"],
                     )
             except Exception as e:
                 _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")

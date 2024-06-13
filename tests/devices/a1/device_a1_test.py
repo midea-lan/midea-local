@@ -1,9 +1,10 @@
 """Test a1 Device"""
 
-import pytest
-from typing import Generator
 from unittest.mock import patch
-from midealocal.devices.a1 import MideaA1Device, DeviceAttributes
+
+import pytest
+
+from midealocal.devices.a1 import DeviceAttributes, MideaA1Device
 from midealocal.devices.a1.message import MessageQuery, MessageSet
 
 
@@ -11,7 +12,7 @@ class TestMideaA1Device:
     """Test Midea A1 Device."""
 
     @pytest.fixture(autouse=True)  # type: ignore
-    def setup_device(self) -> Generator[None, None, None]:
+    def setup_device(self) -> None:
         """Midea A1 Device setup."""
         self.device = MideaA1Device(
             name="Test Device",
@@ -25,7 +26,6 @@ class TestMideaA1Device:
             subtype=1,
             customize="test_customize",
         )
-        yield
 
     def test_initial_attributes(self) -> None:
         """Test initial attributes."""

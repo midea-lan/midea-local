@@ -1,7 +1,7 @@
 from enum import IntEnum
 
-from ...crc8 import calculate
-from ...message import (
+from midealocal.crc8 import calculate
+from midealocal.message import (
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -26,7 +26,10 @@ class MessageACBase(MessageRequest):
     _message_serial = 0
 
     def __init__(
-        self, protocol_version: int, message_type: int, body_type: int
+        self,
+        protocol_version: int,
+        message_type: int,
+        body_type: int,
     ) -> None:
         super().__init__(
             device_type=0xAC,
@@ -168,7 +171,10 @@ class MessageNewProtocolQuery(MessageACBase):
 
 class MessageSubProtocol(MessageACBase):
     def __init__(
-        self, protocol_version: int, message_type: int, subprotocol_query_type: int
+        self,
+        protocol_version: int,
+        message_type: int,
+        subprotocol_query_type: int,
     ) -> None:
         super().__init__(
             protocol_version=protocol_version,
@@ -634,7 +640,11 @@ class XC1MessageBody(MessageBody):
 
     @staticmethod
     def parse_consumption(
-        analysis_method: int, byte1: int, byte2: int, byte3: int, byte4: int
+        analysis_method: int,
+        byte1: int,
+        byte2: int,
+        byte3: int,
+        byte4: int,
     ) -> float:
         if analysis_method == 1:
             return (

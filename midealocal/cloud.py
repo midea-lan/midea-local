@@ -147,7 +147,9 @@ class MideaCloud:
                     break
             except Exception as e:
                 _LOGGER.warning(
-                    "Midea cloud API error, url: %s, error: %s", url, repr(e)
+                    "Midea cloud API error, url: %s, error: %s",
+                    url,
+                    repr(e),
                 )
         if int(response["code"]) == 0 and "data" in response:
             return cast(dict, response["data"])
@@ -652,7 +654,9 @@ class MideaAirCloud(MideaCloud):
                     break
             except Exception as e:
                 _LOGGER.warning(
-                    "Midea cloud API error, url: %s, error: %s", url, repr(e)
+                    "Midea cloud API error, url: %s, error: %s",
+                    url,
+                    repr(e),
                 )
         if int(response["errorCode"]) == 0 and "result" in response:
             return cast(dict[str, Any], response["result"])
