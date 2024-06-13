@@ -64,14 +64,8 @@ class MessageSet(Message26Base):
                 self.read_field("RADAR_INDUCTION_CLOSING_TIME"),
                 self.read_field("LIGHT_INTENSITY_THRESHOLD"),
                 self.read_field("RADAR_SENSITIVITY"),
-                1 if self.mode == 1 or self.mode == 2 else 0,
-                (
-                    0
-                    if not (self.mode == 1 or self.mode == 2)
-                    else 55
-                    if self.mode == 1
-                    else 30
-                ),
+                1 if self.mode in (1, 2) else 0,
+                (0 if self.mode not in (1, 2) else 55 if self.mode == 1 else 30),
                 self.read_field("HEATING_SPEED"),
                 self.direction,
                 1 if self.mode == 3 else 0,
