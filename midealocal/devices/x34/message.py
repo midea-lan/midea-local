@@ -1,9 +1,13 @@
+from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
 )
+
+HUMIDITY_BYTE = 33
+STORAGE_REMAINING_BYTE = 18
 
 
 class Message34Base(MessageRequest):
@@ -110,9 +114,11 @@ class Message34Body(MessageBody):
         self.storage_status = (body[5] & 0x40) > 0
         self.time_remaining = body[6]
         self.progress = body[9]
-        self.storage_remaining = body[18] if len(body) > 18 else False
+        self.storage_remaining = (
+            body[18] if len(body) > STORAGE_REMAINING_BYTE else False
+        )
         self.temperature = body[11]
-        self.humidity = body[33] if len(body) > 33 else None
+        self.humidity = body[33] if len(body) > HUMIDITY_BYTE else None
         self.waterswitch = (body[4] & 0x4) > 0
         self.water_lack = (body[5] & 0x80) > 0
         self.error_code = body[10]
@@ -124,7 +130,9 @@ class Message34Body(MessageBody):
 class Message34Response(MessageResponse):
     def __init__(self, message: bytes) -> None:
         super().__init__(bytearray(message))
-        if (self.message_type == MessageType.set and 0 <= self.body_type <= 7) or (
+        if (
+            self.message_type == MessageType.set and 0 <= self.body_type <= BodyType.X07
+        ) or (
             self.message_type in [MessageType.query, MessageType.notify1]
             and self.body_type == 0
         ):
