@@ -1,10 +1,29 @@
+from midealocal.const import MAX_BYTE_VALUE
 from midealocal.crc8 import calculate
+from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
 )
+
+ANION_GET_BYTE = 19
+ANION_NOTIFY_BYTE = 10
+CHILD_LOCK_GET_BYTE = 8
+CHILD_LOCK_NOTIFY_BYTE = 10
+DETECT_MODE_GET_BYTE = 29
+DETECT_MODE_NOTIFY_BYTE = 22
+FILTER1_LIFE_BYTE = 23
+FILTER2_LIFE_BYTE = 24
+HCHO_GET_BYTE = 38
+HCHO_NOTIFY_BYTE = 31
+MAX_MSG_SERIAL_NUM = 254
+PM25_BYTE = 14
+STANDBY_GET_BYTE = 34
+STANDBY_NOTIFY_BYTE = 27
+STANDBY_VALUE = 0x14
+TVOC_BYTE = 15
 
 
 class MessageFCBase(MessageRequest):
@@ -23,7 +42,7 @@ class MessageFCBase(MessageRequest):
             body_type=body_type,
         )
         MessageFCBase._message_serial += 1
-        if MessageFCBase._message_serial >= 254:
+        if MessageFCBase._message_serial >= MAX_MSG_SERIAL_NUM:
             MessageFCBase._message_serial = 1
         self._message_id = MessageFCBase._message_serial
 
@@ -151,23 +170,29 @@ class FCGeneralMessageBody(MessageBody):
         self.tvoc: int | None = None
         self.hcho: int | None = None
 
-        if len(body) > 14 and body[14] != 0xFF:
+        if len(body) > PM25_BYTE and body[14] != MAX_BYTE_VALUE:
             self.pm25 = body[13] + (body[14] << 8)
-        if len(body) > 15 and body[15] != 0xFF:
+        if len(body) > TVOC_BYTE and body[15] != MAX_BYTE_VALUE:
             self.tvoc = body[15]
-        self.anion = (body[19] & 0x40 > 0) if len(body) > 19 else False
-        self.standby = ((body[34] & 0xFF) == 0x14) if len(body) > 34 else False
-        self.child_lock = (body[8] & 0x80 > 0) if len(body) > 8 else False
-        if len(body) > 23:
+        self.anion = (body[19] & 0x40 > 0) if len(body) > ANION_GET_BYTE else False
+        self.standby = (
+            ((body[34] & 0xFF) == STANDBY_VALUE)
+            if len(body) > STANDBY_GET_BYTE
+            else False
+        )
+        self.child_lock = (
+            (body[8] & 0x80 > 0) if len(body) > CHILD_LOCK_GET_BYTE else False
+        )
+        if len(body) > FILTER1_LIFE_BYTE:
             self.filter1_life = body[23]
-        if len(body) > 24:
+        if len(body) > FILTER2_LIFE_BYTE:
             self.filter2_life = body[24]
-        if len(body) > 29:
+        if len(body) > DETECT_MODE_GET_BYTE:
             if (body[1] & 0x08) > 0:
                 self.detect_mode = body[29] + 1
             else:
                 self.detect_mode = 0
-        if len(body) > 38 and body[38] != 0xFF:
+        if len(body) > HCHO_GET_BYTE and body[38] != MAX_BYTE_VALUE:
             self.hcho = body[37] + (body[38] << 8)
 
 
@@ -182,33 +207,39 @@ class FCNotifyMessageBody(MessageBody):
         self.tvoc: int | None = None
         self.hcho: int | None = None
 
-        if len(body) > 14 and body[14] != 0xFF:
+        if len(body) > PM25_BYTE and body[14] != MAX_BYTE_VALUE:
             self.pm25 = body[13] + (body[14] << 8)
-        if len(body) > 15 and body[15] != 0xFF:
+        if len(body) > TVOC_BYTE and body[15] != MAX_BYTE_VALUE:
             self.tvoc = body[15]
-        self.anion = (body[10] & 0x20 > 0) if len(body) > 10 else False
-        self.standby = (body[27] & 0x14 == 0xFF) if len(body) > 27 else False
-        self.child_lock = (body[10] & 0x10 > 0) if len(body) > 10 else False
-        if len(body) > 22:
+        self.anion = (body[10] & 0x20 > 0) if len(body) > ANION_NOTIFY_BYTE else False
+        self.standby = (
+            (body[27] & 0x14 == MAX_BYTE_VALUE)
+            if len(body) > STANDBY_NOTIFY_BYTE
+            else False
+        )
+        self.child_lock = (
+            (body[10] & 0x10 > 0) if len(body) > CHILD_LOCK_NOTIFY_BYTE else False
+        )
+        if len(body) > DETECT_MODE_NOTIFY_BYTE:
             if (body[1] & 0x08) > 0:
                 self.detect_mode = body[22] + 1
             else:
                 self.detect_mode = 0
-        if len(body) > 31 and body[31] != 0xFF:
+        if len(body) > HCHO_NOTIFY_BYTE and body[31] != MAX_BYTE_VALUE:
             self.hcho = body[30] + (body[31] << 8)
 
 
 class MessageFCResponse(MessageResponse):
     def __init__(self, message: bytes) -> None:
         super().__init__(bytearray(message))
-        if self.body_type in [0xB0, 0xB1]:
+        if self.body_type in [BodyType.B0, BodyType.B1]:
             pass
         elif (
             self.message_type
             in [MessageType.query, MessageType.set, MessageType.notify1]
-            and self.body_type == 0xC8
+            and self.body_type == BodyType.C8
         ):
             self.set_body(FCGeneralMessageBody(super().body))
-        elif self.message_type == MessageType.notify1 and self.body_type == 0xA0:
+        elif self.message_type == MessageType.notify1 and self.body_type == BodyType.A0:
             self.set_body(FCNotifyMessageBody(super().body))
         self.set_attr()
