@@ -97,7 +97,7 @@ class MideaC2Device(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageC2Response(msg)
-        _LOGGER.debug(f"[{self.device_id}] Received: {message}")
+        _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         for status in self._attributes.keys():
             if hasattr(message, str(status)):
@@ -137,7 +137,7 @@ class MideaC2Device(MideaDevice):
                 if params and "max_seat_temp_level" in params:
                     self._max_seat_temp_level = params.get("max_seat_temp_level")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
+                _LOGGER.error("[%s] Set customize error: %s", self.device_id, repr(e))
             self.update_all(
                 {
                     "dry_level": {"max_dry_level": self._max_dry_level},

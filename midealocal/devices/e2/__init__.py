@@ -102,7 +102,7 @@ class MideaE2Device(MideaDevice):
                 raise ValueError("Invalid value for old_protocol")
             return return_value
         except ValueError as e:
-            _LOGGER.error(f"Invalid old_protocol value: {value}, error: {e}")
+            _LOGGER.error("Invalid old_protocol value: %s, error: %s", value, e)
             return self._default_old_protocol
 
     def build_query(self) -> list[MessageQuery]:
@@ -110,7 +110,7 @@ class MideaE2Device(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageE2Response(msg)
-        _LOGGER.debug(f"[{self.device_id}] Received: {message}")
+        _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         for status in self._attributes.keys():
             if hasattr(message, str(status)):
@@ -159,7 +159,7 @@ class MideaE2Device(MideaDevice):
                         params["old_protocol"],
                     )
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
+                _LOGGER.error("[%s] Set customize error: %s", self.device_id, repr(e))
             self.update_all({"old_protocol": self._old_protocol})
 
 

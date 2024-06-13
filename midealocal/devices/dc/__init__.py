@@ -61,7 +61,7 @@ class MideaDADevice(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageDCResponse(msg)
-        _LOGGER.debug(f"[{self.device_id}] Received: {message}")
+        _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         progress = [
             "Prog0",

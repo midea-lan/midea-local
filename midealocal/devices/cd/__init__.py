@@ -87,7 +87,7 @@ class MideaCDDevice(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageCDResponse(msg)
-        _LOGGER.debug(f"[{self.device_id}] Received: {message}")
+        _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         if hasattr(message, "fields"):
             self._fields = message.fields
@@ -131,7 +131,7 @@ class MideaCDDevice(MideaDevice):
                 if params and "temperature_step" in params:
                     self._temperature_step = params.get("temperature_step")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
+                _LOGGER.error("[%s] Set customize error: %s", self.device_id, repr(e))
             self.update_all({"temperature_step": self._temperature_step})
 
 

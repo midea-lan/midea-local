@@ -61,7 +61,7 @@ class MideaDBDevice(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageDBResponse(msg)
-        _LOGGER.debug(f"[{self.device_id}] Received: {message}")
+        _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         progress = [
             "Idle",

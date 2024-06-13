@@ -103,7 +103,7 @@ class MideaB2Device(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageB3Response(msg)
-        _LOGGER.debug(f"[{self.device_id}] Received: {message}")
+        _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         for status in self._attributes.keys():
             if hasattr(message, str(status)):
