@@ -237,7 +237,7 @@ class NewProtocolMessageBody(MessageBody):
         result = {}
         try:
             pos = 2
-            for pack in range(self.data[1]):
+            for _ in range(self.data[1]):
                 param = self.data[pos] + (self.data[pos + 1] << 8)
                 if self._pack_len == 5:
                     pos += 1
