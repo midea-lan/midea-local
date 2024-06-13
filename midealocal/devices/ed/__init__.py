@@ -77,7 +77,7 @@ class MideaEDDevice(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageEDResponse(msg)
-        _LOGGER.debug(f"[{self.device_id}] Received: {message}")
+        _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         if hasattr(message, "device_class"):
             self._device_class = message.device_class

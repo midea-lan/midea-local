@@ -118,7 +118,7 @@ class MideaFADevice(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageFAResponse(msg)
-        _LOGGER.debug(f"[{self.device_id}] Received: {message}")
+        _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         for status in self._attributes.keys():
             if hasattr(message, str(status)):
@@ -325,7 +325,7 @@ class MideaFADevice(MideaDevice):
                 if params and "speed_count" in params:
                     self._speed_count = params.get("speed_count")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
+                _LOGGER.error("[%s] Set customize error: %s", self.device_id, repr(e))
             self.update_all({"speed_count": self._speed_count})
 
 

@@ -172,7 +172,7 @@ class MideaACDevice(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         message = MessageACResponse(bytearray(msg), self._power_analysis_method)
-        _LOGGER.debug(f"[{self.device_id}] Received: {message}")
+        _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         has_fresh_air = False
         if hasattr(message, "used_subprotocol"):
@@ -381,7 +381,7 @@ class MideaACDevice(MideaDevice):
                 if params and "power_analysis_method" in params:
                     self._power_analysis_method = params.get("power_analysis_method")
             except Exception as e:
-                _LOGGER.error(f"[{self.device_id}] Set customize error: {e!r}")
+                _LOGGER.error("[%s] Set customize error: %s", self.device_id, repr(e))
             self.update_all({"temperature_step": self._temperature_step})
 
 
