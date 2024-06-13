@@ -67,9 +67,8 @@ class MessageStart(MessageDCBase):
     def _body(self) -> bytearray:
         if self.start:
             return bytearray([0xFF, 0x01]) + self.washing_data
-        else:
-            # Stop
-            return bytearray([0xFF, 0x00])
+        # Stop
+        return bytearray([0xFF, 0x00])
 
 
 class DCGeneralMessageBody(MessageBody):

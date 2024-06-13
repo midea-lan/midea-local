@@ -91,33 +91,32 @@ class MessageSet(MessageB6Base):
             return bytearray(
                 [0x01, light, value2, value3, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF],
             )
-        else:
-            value13 = 0xFF
-            value14 = 0xFF
-            value15 = 0xFF
-            value16 = 0xFF
-            if self.power is not None:
-                value13 = 0x01
-                if self.power:
-                    value15 = 0x02
-                    if self.fan_level is not None:
-                        value16 = self.fan_level
-                    else:
-                        value16 = 0x01
-                else:
-                    value15 = 0x01
-            elif self.fan_level is not None:
-                value13 = 0x01
-                if self.fan_level == 0:
-                    value15 = 0x01
-                else:
-                    value15 = 0x02
+        value13 = 0xFF
+        value14 = 0xFF
+        value15 = 0xFF
+        value16 = 0xFF
+        if self.power is not None:
+            value13 = 0x01
+            if self.power:
+                value15 = 0x02
+                if self.fan_level is not None:
                     value16 = self.fan_level
-            elif self.light is not None:
-                value13 = 0x02
-                value14 = 0x02
-                value15 = 0x01 if self.light else 0x00
-            return bytearray([0x01, value13, value14, value15, value16, 0xFF, 0xFF])
+                else:
+                    value16 = 0x01
+            else:
+                value15 = 0x01
+        elif self.fan_level is not None:
+            value13 = 0x01
+            if self.fan_level == 0:
+                value15 = 0x01
+            else:
+                value15 = 0x02
+                value16 = self.fan_level
+        elif self.light is not None:
+            value13 = 0x02
+            value14 = 0x02
+            value15 = 0x01 if self.light else 0x00
+        return bytearray([0x01, value13, value14, value15, value16, 0xFF, 0xFF])
 
 
 class B6FeedbackBody(MessageBody):

@@ -91,9 +91,8 @@ class MessageStart(MessageDBBase):
     def _body(self) -> bytearray:
         if self.start:  # Pause
             return bytearray([0xFF, 0x01]) + self.washing_data
-        else:
-            # Pause
-            return bytearray([0xFF, 0x00])
+        # Pause
+        return bytearray([0xFF, 0x00])
 
 
 class DBGeneralMessageBody(MessageBody):
