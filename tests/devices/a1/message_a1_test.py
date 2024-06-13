@@ -2,7 +2,6 @@
 
 import pytest
 
-
 from midealocal.devices.a1.message import (
     MessageA1Base,
     MessageA1Response,
