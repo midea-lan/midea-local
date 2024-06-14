@@ -1,3 +1,4 @@
+from midealocal.devices import SubBodyType
 from midealocal.message import (
     NONE_VALUE,
     MessageBody,
@@ -70,15 +71,33 @@ class ECBodyNew(MessageBody):
 class MessageECResponse(MessageResponse):
     def __init__(self, message: bytes) -> None:
         super().__init__(bytearray(message))
-        if self.message_type == MessageType.notify1 and super().body[3] == 0x01:
+        if (
+            self.message_type == MessageType.notify1
+            and super().body[3] == SubBodyType.X01
+        ):
             self.set_body(ECBodyNew(super().body))
         elif (
-            (self.message_type == MessageType.set and super().body[3] == 0x02)
-            or (self.message_type == MessageType.query and super().body[3] == 0x03)
-            or (self.message_type == MessageType.notify1 and super().body[3] == 0x04)
-            or (self.message_type == MessageType.notify1 and super().body[3] == 0x3D)
+            (
+                self.message_type == MessageType.set
+                and super().body[3] == SubBodyType.X02
+            )
+            or (
+                self.message_type == MessageType.query
+                and super().body[3] == SubBodyType.X03
+            )
+            or (
+                self.message_type == MessageType.notify1
+                and super().body[3] == SubBodyType.X04
+            )
+            or (
+                self.message_type == MessageType.notify1
+                and super().body[3] == SubBodyType.X3D
+            )
         ):
             self.set_body(ECGeneralMessageBody(super().body))
-        elif self.message_type == MessageType.notify1 and super().body[3] == 0x06:
+        elif (
+            self.message_type == MessageType.notify1
+            and super().body[3] == SubBodyType.X06
+        ):
             self.mode = super().body[4] + (super().body[5] << 8)
         self.set_attr()

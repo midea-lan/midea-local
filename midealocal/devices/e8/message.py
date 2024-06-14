@@ -1,4 +1,15 @@
+from enum import IntEnum
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+
+MIN_RESPONSE_BODY_LENGTH = 6
+
+
+class SubCommand(IntEnum):
+    """Sub Command."""
+
+    X02 = 0x02
+    X04 = 0x04
+    X06 = 0x06
 
 
 class MessageE8Base(MessageRequest):
@@ -49,12 +60,15 @@ class E8MessageBody(MessageBody):
 class MessageE8Response(MessageResponse):
     def __init__(self, message: bytes) -> None:
         super().__init__(bytearray(message))
-        if len(super().body) > 6:
+        if len(super().body) > MIN_RESPONSE_BODY_LENGTH:
             sub_cmd = super().body[6]
             if (
-                (self.message_type == MessageType.set and sub_cmd in [0x02, 0x04, 0x06])
+                (
+                    self.message_type == MessageType.set
+                    and sub_cmd in [SubCommand.X02, SubCommand.X04, SubCommand.X06]
+                )
                 or self.message_type in [MessageType.query, MessageType.notify1]
-                and sub_cmd == 2
+                and sub_cmd == SubCommand.X02
             ):
                 self.set_body(E8MessageBody(super().body))
         self.set_attr()

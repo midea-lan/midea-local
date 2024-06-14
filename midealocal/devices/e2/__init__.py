@@ -1,3 +1,4 @@
+from enum import IntEnum
 import json
 import logging
 import sys
@@ -23,6 +24,12 @@ class OldProtocol(StrEnum):
     auto = "auto"
     true = "true"
     false = "false"
+
+
+class E2SubType(IntEnum):
+    T82 = 82
+    T85 = 85
+    T36353 = 36353
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -91,9 +98,9 @@ class MideaE2Device(MideaDevice):
                 return_value = OldProtocol(value)
                 if return_value == OldProtocol.auto:
                     result = (
-                        self.subtype <= 82
-                        or self.subtype == 85
-                        or self.subtype == 36353
+                        self.subtype <= E2SubType.T82
+                        or self.subtype == E2SubType.T85
+                        or self.subtype == E2SubType.T36353
                     )
                     return_value = OldProtocol.true if result else OldProtocol.false
             elif isinstance(value, bool | int):

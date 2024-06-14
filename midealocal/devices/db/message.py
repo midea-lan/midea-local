@@ -1,3 +1,4 @@
+from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
@@ -115,7 +116,7 @@ class MessageDBResponse(MessageResponse):
     def __init__(self, message: bytes) -> None:
         super().__init__(bytearray(message))
         if self.message_type in [MessageType.query, MessageType.set] or (
-            self.message_type == MessageType.notify1 and self.body_type == 0x04
+            self.message_type == MessageType.notify1 and self.body_type == BodyType.X04
         ):
             self.set_body(DBGeneralMessageBody(super().body))
         self.set_attr()

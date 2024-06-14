@@ -1,5 +1,6 @@
 from enum import IntEnum
 
+from midealocal.devices import BodyType
 from midealocal.message import (
     NONE_VALUE,
     MessageBody,
@@ -7,6 +8,15 @@ from midealocal.message import (
     MessageResponse,
     MessageType,
 )
+
+
+class Attributes(IntEnum):
+    """Attributes."""
+
+    CHILD_LOCK = 0x000
+    LIFE = 0x10
+    TDS = 0x013
+    WATER_CONSUMPTION = 0x011
 
 
 class NewSetTags(IntEnum):
@@ -164,10 +174,10 @@ class EDMessageBodyFF(MessageBody):
         while True:
             length = (body[data_offset + 2] >> 4) + 2
             attr = ((body[data_offset + 2] % 16) << 8) + body[data_offset + 1]
-            if attr == 0x000:
+            if attr == Attributes.CHILD_LOCK:
                 self.child_lock = (body[data_offset + 5] & 0x01) > 0
                 self.power = (body[data_offset + 6] & 0x01) > 0
-            elif attr == 0x011:
+            elif attr == Attributes.WATER_CONSUMPTION:
                 self.water_consumption = (
                     float(
                         body[data_offset + 3]
@@ -177,10 +187,10 @@ class EDMessageBodyFF(MessageBody):
                     )
                     / 1000
                 )
-            elif attr == 0x013:
+            elif attr == Attributes.TDS:
                 self.in_tds = body[data_offset + 3] + (body[data_offset + 4] << 8)
                 self.out_tds = body[data_offset + 5] + (body[data_offset + 6] << 8)
-            elif attr == 0x10:
+            elif attr == Attributes.LIFE:
                 self.life1 = body[data_offset + 3]
                 self.life2 = body[data_offset + 4]
                 self.life3 = body[data_offset + 5]
@@ -195,16 +205,16 @@ class MessageEDResponse(MessageResponse):
         super().__init__(bytearray(message))
         if self._message_type in [MessageType.query, MessageType.notify1]:
             self.device_class = self._body_type
-            if self._body_type in [0x00, 0xFF]:
+            if self._body_type in [BodyType.X00, BodyType.FF]:
                 self.set_body(EDMessageBodyFF(super().body))
-            if self.body_type == 0x01:
+            if self.body_type == BodyType.X01:
                 self.set_body(EDMessageBody01(super().body))
-            elif self.body_type in [0x03, 0x04]:
+            elif self.body_type in [BodyType.X03, BodyType.X04]:
                 self.set_body(EDMessageBody03(super().body))
-            elif self.body_type == 0x05:
+            elif self.body_type == BodyType.X05:
                 self.set_body(EDMessageBody05(super().body))
-            elif self.body_type == 0x06:
+            elif self.body_type == BodyType.X06:
                 self.set_body(EDMessageBody06(super().body))
-            elif self.body_type == 0x07:
+            elif self.body_type == BodyType.X07:
                 self.set_body(EDMessageBody07(super().body))
         self.set_attr()

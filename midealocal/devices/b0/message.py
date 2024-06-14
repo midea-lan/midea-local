@@ -1,4 +1,8 @@
+from midealocal.const import MAX_BYTE_VALUE
+from midealocal.devices import BodyType
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+
+MIN_MSG_BODY = 15
 
 
 class MessageB0Base(MessageRequest):
@@ -49,7 +53,7 @@ class MessageQuery01(MessageB0Base):
 class B0MessageBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         super().__init__(body)
-        if len(body) > 15:
+        if len(body) > MIN_MSG_BODY:
             self.door = (body[0] & 0x80) > 0
             self.status = body[0] & 0x7F
             self.time_remaining = body[2] * 60 + body[3]
@@ -59,13 +63,13 @@ class B0MessageBody(MessageBody):
 class B0Message01Body(MessageBody):
     def __init__(self, body: bytearray) -> None:
         super().__init__(body)
-        if len(body) > 15:
+        if len(body) > MIN_MSG_BODY:
             self.door = (body[32] & 0x02) > 0
             self.status = body[31]
             self.time_remaining = (
-                (0 if body[22] == 0xFF else body[22]) * 3600
-                + (0 if body[23] == 0xFF else body[23]) * 60
-                + (0 if body[24] == 0xFF else body[24])
+                (0 if body[22] == MAX_BYTE_VALUE else body[22]) * 3600
+                + (0 if body[23] == MAX_BYTE_VALUE else body[23]) * 60
+                + (0 if body[24] == MAX_BYTE_VALUE else body[24])
             )
             self.current_temperature = (body[25] << 8) + (body[26])
             if self.current_temperature == 0:
@@ -79,9 +83,9 @@ class MessageB0Response(MessageResponse):
     def __init__(self, message: bytearray) -> None:
         super().__init__(message)
         if self.message_type in [MessageType.notify1, MessageType.query]:
-            if self.body_type == 0x01:
+            if self.body_type == BodyType.X01:
                 self.set_body(B0Message01Body(super().body))
-            elif self.body_type == 0x04:
+            elif self.body_type == BodyType.X04:
                 pass
             else:
                 self.set_body(B0MessageBody(super().body))

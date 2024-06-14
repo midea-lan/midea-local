@@ -14,6 +14,9 @@ else:
 
 _LOGGER = logging.getLogger(__name__)
 
+DIRECTION_MIN_VALUE = 60
+DIRECTION_MAX_VALUE = 120
+
 
 class DeviceAttributes(StrEnum):
     main_light = "main_light"
@@ -79,7 +82,7 @@ class Midea26Device(MideaDevice):
 
     @staticmethod
     def _convert_from_midea_direction(direction: int) -> int:
-        if direction > 120 or direction < 60:
+        if direction > DIRECTION_MAX_VALUE or direction < DIRECTION_MIN_VALUE:
             result = 7
         else:
             result = math.floor((direction - 60 + 5) / 10)

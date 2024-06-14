@@ -1,3 +1,4 @@
+from midealocal.devices import SubBodyType
 from midealocal.message import (
     NONE_VALUE,
     MessageBody,
@@ -5,6 +6,13 @@ from midealocal.message import (
     MessageResponse,
     MessageType,
 )
+
+CHILD_LOCK_BYTE = 18
+ENERGY_CONSUMPTION_BYTE = 21
+MAX_HEATING_LEVEL = 10
+MAX_HUMIDITY = 100
+MAX_TARGET_TEMP = 50
+MIN_TARGET_TEMP = -40
 
 
 class MessageFBBase(MessageRequest):
@@ -64,7 +72,12 @@ class MessageSet(MessageFBBase):
             0
             if self.heating_level is None
             else (
-                int(self.heating_level if 1 <= self.heating_level <= 10 else 0) & 0xFF
+                int(
+                    self.heating_level
+                    if 1 <= self.heating_level <= MAX_HEATING_LEVEL
+                    else 0
+                )
+                & 0xFF
             )
         )
         target_temperature = (
@@ -73,7 +86,7 @@ class MessageSet(MessageFBBase):
             else (
                 int(
                     (self.target_temperature + 41)
-                    if -40 <= self.target_temperature <= 50
+                    if MIN_TARGET_TEMP <= self.target_temperature <= MAX_TARGET_TEMP
                     else (0x80 if self.target_temperature in [0x80, 87] else 0),
                 )
                 & 0xFF
@@ -106,7 +119,7 @@ class MessageSet(MessageFBBase):
                 0x00,
             ],
         )
-        if self._subtype > 5:
+        if self._subtype > SubBodyType.X05:
             _return_body += bytearray([0x00, 0x00, 0x00])
         return _return_body
 
@@ -122,13 +135,13 @@ class FBGeneralMessageBody(MessageBody):
         self.mode = body[4]
         self.heating_level = body[5]
         self.target_temperature = body[6] - 41
-        if 1 <= body[7] <= 100:
+        if 1 <= body[7] <= MAX_HUMIDITY:
             self.target_humidity = body[7]
             self.current_humidity = body[12]
         self.current_temperature = body[13] - 20
-        if len(body) > 18:
+        if len(body) > CHILD_LOCK_BYTE:
             self.child_lock = (body[18] & 0x01) > 0
-        if len(body) > 21:
+        if len(body) > ENERGY_CONSUMPTION_BYTE:
             self.energy_consumption = (body[21] << 8) + body[20]
 
 

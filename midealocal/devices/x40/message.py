@@ -2,6 +2,8 @@ from typing import Any
 
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
+MAX_BLOW_SPEED_LOW_FAN_SPEED = 30
+
 
 class Message40Base(MessageRequest):
     def __init__(
@@ -151,7 +153,7 @@ class Message40Body(MessageBody):
         self.smelly_sensor = body[45]
         self.fields["SMELLY_THRESHOLD"] = body[46]
         if blow:
-            if blow_speed <= 30:
+            if blow_speed <= MAX_BLOW_SPEED_LOW_FAN_SPEED:
                 self.fan_speed = 1
             else:
                 self.fan_speed = 2
