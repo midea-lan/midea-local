@@ -1,3 +1,5 @@
+"""Midea local CC message."""
+
 from enum import IntEnum
 
 from midealocal.devices import BodyType
@@ -17,12 +19,15 @@ class CCHeatStatus(IntEnum):
 
 
 class MessageCCBase(MessageRequest):
+    """CC message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize CC message base."""
         super().__init__(
             device_type=0xCC,
             protocol_version=protocol_version,
@@ -36,7 +41,10 @@ class MessageCCBase(MessageRequest):
 
 
 class MessageQuery(MessageCCBase):
+    """CC message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize CC message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -49,7 +57,10 @@ class MessageQuery(MessageCCBase):
 
 
 class MessageSet(MessageCCBase):
+    """CC message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize CC message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -125,7 +136,10 @@ class MessageSet(MessageCCBase):
 
 
 class CCGeneralMessageBody(MessageBody):
+    """CC message general body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize CC message general body."""
         super().__init__(body)
         self.power = (body[1] & 0x80) > 0
         mode: float = body[1] & 0x1F
@@ -149,7 +163,10 @@ class CCGeneralMessageBody(MessageBody):
 
 
 class MessageCCResponse(MessageResponse):
+    """CC message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize CC message response."""
         super().__init__(bytearray(message))
         if (
             (self.message_type == MessageType.query and self.body_type == BodyType.X01)
