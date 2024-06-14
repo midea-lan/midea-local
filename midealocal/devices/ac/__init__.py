@@ -70,7 +70,9 @@ class MideaACDevice(MideaDevice):
         80: "High",
         100: "Full",
     }
-    _fresh_air_fan_speeds_rev: ClassVar[dict[int, str]] = {k: v for v, k in _fresh_air_fan_speeds.items()}
+    _fresh_air_fan_speeds_rev: ClassVar[dict[str, int]] = {
+        k: v for v, k in _fresh_air_fan_speeds.items()
+    }
 
     def __init__(
         self,
