@@ -1,4 +1,4 @@
-"""Vodafone Station library exceptions."""
+"""Midea Local library exceptions."""
 
 from __future__ import annotations
 
