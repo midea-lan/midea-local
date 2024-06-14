@@ -1,4 +1,5 @@
 from enum import IntEnum
+
 from midealocal.devices import SubBodyType
 from midealocal.message import (
     NONE_VALUE,
