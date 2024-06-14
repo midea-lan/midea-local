@@ -192,7 +192,7 @@ class MideaCloud:
         return result
 
     @staticmethod
-    async def get_cloud_servers(self) -> dict[int, str]:
+    async def get_cloud_servers() -> dict[int, str]:
         """Get available cloud servers."""
         cloud_servers: dict[int, str] = {}
         for i, cloud in enumerate(clouds, start=1):
