@@ -15,6 +15,7 @@ from .const import MAX_DOUBLE_BYTE_VALUE
 from .exceptions import (
     CannotAuthenticate,
     DataSignDoesntMatch,
+    DataSignWrongType,
     DataUnexpectedLength,
     MessageWrongFormat,
 )
@@ -246,7 +247,7 @@ class MideaAirSecurity(CloudSecurity):
 
     def sign(self, url: str, data: dict[str, Any] | str, random: str) -> str:
         if isinstance(data, str):
-            raise Exception("wrong data type to sign")
+            raise DataSignWrongType
         payload = unquote_plus(urlencode(sorted(data.items(), key=lambda x: x[0])))
         sha = sha256()
         sha.update((urlparse(url).path + payload + self._login_key).encode("ascii"))
