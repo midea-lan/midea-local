@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from .message import MessageCCResponse, MessageQuery, MessageSet
 
@@ -34,7 +34,7 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaCCDevice(MideaDevice):
-    _fan_speeds_7level = {
+    _fan_speeds_7level: ClassVar[dict[int, str]] = {
         0x01: "Level 1",
         0x02: "Level 2",
         0x04: "Level 3",
@@ -44,7 +44,12 @@ class MideaCCDevice(MideaDevice):
         0x40: "Level 7",
         0x80: "Auto",
     }
-    _fan_speeds_3level = {0x01: "Low", 0x08: "Medium", 0x40: "High", 0x80: "Auto"}
+    _fan_speeds_3level: ClassVar[dict[int, str]] = {
+        0x01: "Low",
+        0x08: "Medium",
+        0x40: "High",
+        0x80: "Auto",
+    }
 
     def __init__(
         self,

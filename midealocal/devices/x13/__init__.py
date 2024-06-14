@@ -1,7 +1,7 @@
 import json
 import logging
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from .message import Message13Response, MessageQuery, MessageSet
 
@@ -24,7 +24,14 @@ class DeviceAttributes(StrEnum):
 
 
 class Midea13Device(MideaDevice):
-    _effects = ["Manual", "Living", "Reading", "Mildly", "Cinema", "Night"]
+    _effects: ClassVar[list[str]] = [
+        "Manual",
+        "Living",
+        "Reading",
+        "Mildly",
+        "Cinema",
+        "Night",
+    ]
 
     def __init__(
         self,

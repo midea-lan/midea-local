@@ -1,7 +1,7 @@
 import json
 import logging
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from .message import (
     MessageACResponse,
@@ -62,7 +62,7 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaACDevice(MideaDevice):
-    _fresh_air_fan_speeds = {
+    _fresh_air_fan_speeds: ClassVar[dict[int, str]] = {
         0: "Off",
         20: "Silent",
         40: "Low",
@@ -70,7 +70,9 @@ class MideaACDevice(MideaDevice):
         80: "High",
         100: "Full",
     }
-    _fresh_air_fan_speeds_rev = dict(reversed(_fresh_air_fan_speeds.items()))
+    _fresh_air_fan_speeds_rev: ClassVar[dict[int, str]] = dict(
+        reversed(_fresh_air_fan_speeds.items())
+    )
 
     def __init__(
         self,

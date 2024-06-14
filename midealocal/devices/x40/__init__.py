@@ -1,7 +1,7 @@
 import logging
 import math
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from midealocal.device import MideaDevice
 
@@ -30,7 +30,7 @@ class DeviceAttributes(StrEnum):
 
 
 class Midea40Device(MideaDevice):
-    _directions = ["60", "70", "80", "90", "100", "Oscillate"]
+    _directions: ClassVar[list[str]] = ["60", "70", "80", "90", "100", "Oscillate"]
 
     def __init__(
         self,

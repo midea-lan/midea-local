@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from .message import MessageFBResponse, MessageQuery, MessageSet
 
@@ -24,7 +24,7 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaFBDevice(MideaDevice):
-    _modes = {
+    _modes: ClassVar[dict[int, str]] = {
         0x01: "Auto",
         0x02: "ECO",
         0x03: "Sleep",

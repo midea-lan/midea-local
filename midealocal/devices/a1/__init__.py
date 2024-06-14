@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from .message import MessageA1Response, MessageQuery, MessageSet
 
@@ -31,8 +31,14 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaA1Device(MideaDevice):
-    _modes = ["Manual", "Continuous", "Auto", "Clothes-Dry", "Shoes-Dry"]
-    _speeds = {
+    _modes: ClassVar[list[str]] = [
+        "Manual",
+        "Continuous",
+        "Auto",
+        "Clothes-Dry",
+        "Shoes-Dry",
+    ]
+    _speeds: ClassVar[dict[int, str]] = {
         1: "Lowest",
         40: "Low",
         60: "Medium",
@@ -40,7 +46,7 @@ class MideaA1Device(MideaDevice):
         102: "Auto",
         127: "Off",
     }
-    _water_level_sets = ["25", "50", "75", "100"]
+    _water_level_sets: ClassVar[list[str]] = ["25", "50", "75", "100"]
 
     def __init__(
         self,
