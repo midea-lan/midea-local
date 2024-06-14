@@ -101,6 +101,7 @@ class MessageBase(ABC):
         self._protocol_version = protocol_version
 
     def __str__(self) -> str:
+        """Parse to string."""
         output = {
             "header": self.header.hex(),
             "body": self.body.hex(),
@@ -274,7 +275,7 @@ class NewProtocolMessageBody(MessageBody):
 
     @staticmethod
     def pack(param: int, value: bytearray, pack_len: int = 4) -> bytearray:
-        """New protocol pack."""
+        """Pack for new protocol."""
         length = len(value)
         if pack_len == NewProtocolPackLength.FOUR:
             stream = bytearray([param & 0xFF, param >> 8, length]) + value
