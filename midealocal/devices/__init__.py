@@ -1,3 +1,5 @@
+"""Midea local devices."""
+
 from enum import IntEnum
 from importlib import import_module
 from typing import Any
@@ -127,6 +129,7 @@ def device_selector(
     subtype: int,
     customize: str,
 ) -> Any:
+    """Select and load device."""
     try:
         if device_type < DeviceType.A0:
             device_path = f".{f'x{device_type:02x}'}"
