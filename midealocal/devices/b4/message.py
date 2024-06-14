@@ -1,3 +1,4 @@
+from midealocal.const import MAX_BYTE_VALUE
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
@@ -37,9 +38,9 @@ class B4MessageBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         super().__init__(body)
         self.time_remaining = (
-            (0 if body[22] == 0xFF else body[22]) * 3600
-            + (0 if body[23] == 0xFF else body[23]) * 60
-            + (0 if body[24] == 0xFF else body[24])
+            (0 if body[22] == MAX_BYTE_VALUE else body[22]) * 3600
+            + (0 if body[23] == MAX_BYTE_VALUE else body[23]) * 60
+            + (0 if body[24] == MAX_BYTE_VALUE else body[24])
         )
         self.current_temperature = (body[25] << 8) + body[26]
         if self.current_temperature == 0:

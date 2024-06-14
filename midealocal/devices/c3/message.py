@@ -1,9 +1,12 @@
+from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
 )
+
+TEMP_NEG_VALUE = 127
 
 
 class MessageC3Base(MessageRequest):
@@ -190,7 +193,7 @@ class C3Notify1MessageBody(MessageBody):
         )
         base_value = body[data_offset + 9]
         self.outdoor_temperature = (
-            (base_value - 256) if base_value > 127 else base_value
+            (base_value - 256) if base_value > TEMP_NEG_VALUE else base_value
         )
 
 
@@ -200,9 +203,11 @@ class MessageC3Response(MessageResponse):
         if (
             self.message_type
             in [MessageType.set, MessageType.notify1, MessageType.query]
-            and self.body_type == 0x01
+            and self.body_type == BodyType.X01
         ) or self.message_type == MessageType.notify2:
             self.set_body(C3MessageBody(super().body, data_offset=1))
-        elif self.message_type == MessageType.notify1 and self.body_type == 0x04:
+        elif (
+            self.message_type == MessageType.notify1 and self.body_type == BodyType.X04
+        ):
             self.set_body(C3Notify1MessageBody(super().body, data_offset=1))
         self.set_attr()

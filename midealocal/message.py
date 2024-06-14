@@ -5,6 +5,8 @@ from abc import ABC
 from enum import IntEnum
 from typing import SupportsIndex, cast
 
+from midealocal.devices import BodyType
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -252,22 +254,29 @@ class MessageBody:
         return body[byte] if len(body) > byte else default_value
 
 
+class NewProtocolPackLength(IntEnum):
+    """New Protocol Pack Length."""
+
+    FOUR = 4
+    FIVE = 5
+
+
 class NewProtocolMessageBody(MessageBody):
     """New protocol message body."""
 
     def __init__(self, body: bytearray, bt: int) -> None:
         """Initialize new protocol message body."""
         super().__init__(body)
-        if bt == 0xB5:
-            self._pack_len = 4
+        if bt == BodyType.B5:
+            self._pack_len = NewProtocolPackLength.FOUR
         else:
-            self._pack_len = 5
+            self._pack_len = NewProtocolPackLength.FIVE
 
     @staticmethod
     def pack(param: int, value: bytearray, pack_len: int = 4) -> bytearray:
         """New protocol pack."""
         length = len(value)
-        if pack_len == 4:
+        if pack_len == NewProtocolPackLength.FOUR:
             stream = bytearray([param & 0xFF, param >> 8, length]) + value
         else:
             stream = bytearray([param & 0xFF, param >> 8, 0x00, length]) + value
@@ -280,7 +289,7 @@ class NewProtocolMessageBody(MessageBody):
             pos = 2
             for _ in range(self.data[1]):
                 param = self.data[pos] + (self.data[pos + 1] << 8)
-                if self._pack_len == 5:
+                if self._pack_len == NewProtocolPackLength.FIVE:
                     pos += 1
                 length = self.data[pos + 2]
                 if length > 0:

@@ -1,9 +1,19 @@
+from enum import IntEnum
+
+from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
 )
+
+
+class CCHeatStatus(IntEnum):
+    """CC Heat Status."""
+
+    X10 = 1
+    X20 = 2
 
 
 class MessageCCBase(MessageRequest):
@@ -68,9 +78,9 @@ class MessageSet(MessageCCBase):
         temperature_integer = int(self.target_temperature) & 0xFF
         # Byte6 eco_mode ventilation aux_heating
         eco_mode = 0x01 if self.eco_mode else 0
-        if self.aux_heat_status == 1:
+        if self.aux_heat_status == CCHeatStatus.X10:
             aux_heating = 0x10
-        elif self.aux_heat_status == 2:
+        elif self.aux_heat_status == CCHeatStatus.X20:
             aux_heating = 0x20
         else:
             aux_heating = 0
@@ -142,12 +152,12 @@ class MessageCCResponse(MessageResponse):
     def __init__(self, message: bytes) -> None:
         super().__init__(bytearray(message))
         if (
-            (self.message_type == MessageType.query and self.body_type == 0x01)
+            (self.message_type == MessageType.query and self.body_type == BodyType.X01)
             or (
                 self.message_type in [MessageType.notify1, MessageType.notify2]
-                and self.body_type == 0x01
+                and self.body_type == BodyType.X01
             )
-            or (self.message_type == MessageType.set and self.body_type == 0xC3)
+            or (self.message_type == MessageType.set and self.body_type == BodyType.C3)
         ):
             self.set_body(CCGeneralMessageBody(super().body))
         self.set_attr()

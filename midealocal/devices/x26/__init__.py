@@ -1,7 +1,7 @@
 import logging
 import math
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from midealocal.device import MideaDevice
 
@@ -13,6 +13,9 @@ else:
     from enum import StrEnum
 
 _LOGGER = logging.getLogger(__name__)
+
+DIRECTION_MIN_VALUE = 60
+DIRECTION_MAX_VALUE = 120
 
 
 class DeviceAttributes(StrEnum):
@@ -26,8 +29,25 @@ class DeviceAttributes(StrEnum):
 
 
 class Midea26Device(MideaDevice):
-    _modes = ["Off", "Heat(high)", "Heat(low)", "Bath", "Blow", "Ventilation", "Dry"]
-    _directions = ["60", "70", "80", "90", "100", "110", "120", "Oscillate"]
+    _modes: ClassVar[list[str]] = [
+        "Off",
+        "Heat(high)",
+        "Heat(low)",
+        "Bath",
+        "Blow",
+        "Ventilation",
+        "Dry",
+    ]
+    _directions: ClassVar[list[str]] = [
+        "60",
+        "70",
+        "80",
+        "90",
+        "100",
+        "110",
+        "120",
+        "Oscillate",
+    ]
 
     def __init__(
         self,
@@ -79,7 +99,7 @@ class Midea26Device(MideaDevice):
 
     @staticmethod
     def _convert_from_midea_direction(direction: int) -> int:
-        if direction > 120 or direction < 60:
+        if direction > DIRECTION_MAX_VALUE or direction < DIRECTION_MIN_VALUE:
             result = 7
         else:
             result = math.floor((direction - 60 + 5) / 10)

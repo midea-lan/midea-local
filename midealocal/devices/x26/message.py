@@ -1,6 +1,22 @@
+from enum import IntEnum
 from typing import Any
 
+from midealocal.const import MAX_BYTE_VALUE
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+
+MAX_HEAT_LOW_TEMP = 50
+
+
+class DeviceMode(IntEnum):
+    """Device mode."""
+
+    OFF = 0
+    HEAT_HIGH = 1
+    HEAT_LOW = 2
+    BATH = 3
+    BLOW = 4
+    VENTILATION = 5
+    DRY = 6
 
 
 class Message26Base(MessageRequest):
@@ -64,24 +80,30 @@ class MessageSet(Message26Base):
                 self.read_field("RADAR_INDUCTION_CLOSING_TIME"),
                 self.read_field("LIGHT_INTENSITY_THRESHOLD"),
                 self.read_field("RADAR_SENSITIVITY"),
-                1 if self.mode in (1, 2) else 0,
-                (0 if self.mode not in (1, 2) else 55 if self.mode == 1 else 30),
+                1 if self.mode in (DeviceMode.HEAT_LOW, DeviceMode.HEAT_HIGH) else 0,
+                (
+                    0
+                    if self.mode not in (DeviceMode.HEAT_LOW, DeviceMode.HEAT_HIGH)
+                    else 55
+                    if self.mode == DeviceMode.HEAT_HIGH
+                    else 30
+                ),
                 self.read_field("HEATING_SPEED"),
                 self.direction,
-                1 if self.mode == 3 else 0,
+                1 if self.mode == DeviceMode.BATH else 0,
                 self.read_field("BATH_HEATING_TIME"),
                 self.read_field("BATH_TEMPERATURE"),
                 self.read_field("BATH_SPEED"),
                 self.direction,
-                1 if self.mode == 5 else 0,
+                1 if self.mode == DeviceMode.VENTILATION else 0,
                 self.read_field("VENTILATION_SPEED"),
                 self.direction,
-                1 if self.mode == 6 else 0,
+                1 if self.mode == DeviceMode.DRY else 0,
                 self.read_field("DRYING_TIME"),
                 self.read_field("DRYING_TEMPERATURE"),
                 self.read_field("DRYING_SPEED"),
                 self.direction,
-                1 if self.mode == 4 else 0,
+                1 if self.mode == DeviceMode.BLOW else 0,
                 self.read_field("BLOWING_SPEED"),
                 self.direction,
                 self.read_field("DELAY_ENABLE"),
@@ -133,11 +155,11 @@ class Message26Body(MessageBody):
         blow_direction = self.read_byte(body, 28)
         self.fields["DELAY_ENABLE"] = self.read_byte(body, 29)
         self.fields["DELAY_TIME"] = self.read_byte(body, 30)
-        if self.read_byte(body, 31) != 0xFF:
+        if self.read_byte(body, 31) != MAX_BYTE_VALUE:
             self.current_humidity = self.read_byte(body, 31)
-        if self.read_byte(body, 32) != 0xFF:
+        if self.read_byte(body, 32) != MAX_BYTE_VALUE:
             self.current_radar = self.read_byte(body, 32)
-        if self.read_byte(body, 33) != 0xFF:
+        if self.read_byte(body, 33) != MAX_BYTE_VALUE:
             self.current_temperature = self.read_byte(body, 33)
         self.fields["SOFT_WIND_ENABLE"] = self.read_byte(body, 38)
         self.fields["SOFT_WIND_TIME"] = self.read_byte(body, 39)
@@ -151,7 +173,7 @@ class Message26Body(MessageBody):
         self.mode = 0
         self.direction = 0xFD
         if heat_mode:
-            if heat_temperature > 50:
+            if heat_temperature > MAX_HEAT_LOW_TEMP:
                 self.mode = 1
             else:
                 self.mode = 2

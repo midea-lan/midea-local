@@ -1,9 +1,17 @@
+from midealocal.const import MAX_BYTE_VALUE
+from midealocal.device import ProtocolVersion
+from midealocal.devices import BodyType, SubBodyType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
 )
+
+FAN_LEVEL_RANGE_1 = 130
+FAN_LEVEL_RANGE_2 = 140
+FAN_LEVEL_RANGE_3 = 170
+MIN_FAN_LEVEL_RANGE = 100
 
 
 class MessageB6Base(MessageRequest):
@@ -30,7 +38,7 @@ class MessageQuery(MessageB6Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x11 if protocol_version == 2 else 0x31,
+            body_type=0x11 if protocol_version == ProtocolVersion.V2 else 0x31,
         )
 
     @property
@@ -118,22 +126,22 @@ class B6FeedbackBody(MessageBody):
 class B6GeneralBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         super().__init__(body)
-        if body[1] != 0xFF:
+        if body[1] != MAX_BYTE_VALUE:
             self.light = body[1] > 0x00
         self.power = False
         fan_level: int = 0
-        if body[2] != 0xFF:
+        if body[2] != MAX_BYTE_VALUE:
             self.power = body[2] in [0x02, 0x06, 0x07, 0x14, 0x15, 0x16]
             if body[2] in [0x14, 0x16]:
                 fan_level = 0x16
-        if fan_level == 0 and body[3] != 0xFF:
+        if fan_level == 0 and body[3] != MAX_BYTE_VALUE:
             fan_level = body[3]
-        if fan_level > 100:
-            if fan_level < 130:
+        if fan_level > MIN_FAN_LEVEL_RANGE:
+            if fan_level < FAN_LEVEL_RANGE_1:
                 fan_level = 1
-            elif fan_level < 140:
+            elif fan_level < FAN_LEVEL_RANGE_2:
                 fan_level = 2
-            elif fan_level < 170:
+            elif fan_level < FAN_LEVEL_RANGE_3:
                 fan_level = 3
             else:
                 fan_level = 4
@@ -147,12 +155,12 @@ class B6NewProtocolBody(MessageBody):
         super().__init__(body)
         if body[1] == 0x01:
             pack_bytes = body[3 : 3 + body[2]]
-            if pack_bytes[1] != 0xFF:
+            if pack_bytes[1] != MAX_BYTE_VALUE:
                 self.power = True
                 self.power = pack_bytes[1] not in [0x00, 0x01, 0x05, 0x07]
-            if pack_bytes[2] != 0xFF:
+            if pack_bytes[2] != MAX_BYTE_VALUE:
                 self.fan_level = pack_bytes[2]
-            if pack_bytes[6] != 0xFF:
+            if pack_bytes[6] != MAX_BYTE_VALUE:
                 self.light = pack_bytes[6] > 0
             self.oilcup_full = (pack_bytes[18] & 0x02) > 0
             self.cleaning_reminder = (pack_bytes[18] & 0x04) > 0
@@ -161,12 +169,12 @@ class B6NewProtocolBody(MessageBody):
 class B6SpecialBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         super().__init__(body)
-        if body[2] != 0xFF:
+        if body[2] != MAX_BYTE_VALUE:
             self.light = body[2] > 0x00
         self.power = False
-        if body[3] != 0xFF:
+        if body[3] != MAX_BYTE_VALUE:
             self.power = body[3] in [0x00, 0x02, 0x04]
-        if body[4] != 0xFF:
+        if body[4] != MAX_BYTE_VALUE:
             self.fan_level = body[4]
 
 
@@ -180,38 +188,41 @@ class MessageB6Response(MessageResponse):
         super().__init__(bytearray(message))
         if (
             self.message_type == MessageType.set
-            and self.body_type == 0x22
-            and super().body[1] == 0x01
+            and self.body_type == BodyType.X22
+            and super().body[1] == SubBodyType.X01
         ):
             self.set_body(B6SpecialBody(super().body))
         elif (
             self.message_type == MessageType.set
-            and self.body_type == 0x11
-            and super().body[1] == 0x01
+            and self.body_type == BodyType.X11
+            and super().body[1] == SubBodyType.X01
         ):
             #############################
             pass
         elif self.message_type == MessageType.query:
-            if self.body_type in [0x11, 0x31]:
+            if self.body_type in [BodyType.X11, BodyType.X31]:
                 if self.protocol_version in [0, 1]:
                     self.set_body(B6GeneralBody(super().body))
                 else:
                     self.set_body(B6NewProtocolBody(super().body))
-            elif self.body_type == 0x32 and super().body[1] == 0x01:
+            elif self.body_type == BodyType.X32 and super().body[1] == 0x01:
                 self.set_body(B6ExceptionBody(super().body))
         elif self.message_type == MessageType.notify1:
-            if self.body_type in [0x11, 0x41]:
+            if self.body_type in [BodyType.X11, BodyType.X41]:
                 if self.protocol_version in [0, 1]:
                     self.set_body(B6GeneralBody(super().body))
                 else:
                     self.set_body(B6NewProtocolBody(super().body))
-            elif self.body_type == 0x0A:
-                if super().body[1] == 0xA1:
+            elif self.body_type == BodyType.X0A:
+                if super().body[1] == SubBodyType.A1:
                     self.set_body(B6ExceptionBody(super().body))
-                elif super().body[1] == 0xA2:
+                elif super().body[1] == SubBodyType.A2:
                     self.oilcup_full = (super().body[2] & 0x01) > 0
                     self.cleaning_reminder = (super().body[2] & 0x02) > 0
-        elif self.message_type == MessageType.exception2 and self.body_type == 0xA1:
+        elif (
+            self.message_type == MessageType.exception2
+            and self.body_type == SubBodyType.A1
+        ):
             pass
 
         self.set_attr()

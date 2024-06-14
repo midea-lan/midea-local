@@ -12,6 +12,7 @@ from .security import LocalSecurity
 
 _LOGGER = logging.getLogger(__name__)
 
+BYTES_2_PORT_LENGTH = 4
 BROADCAST_MSG = bytearray(
     [
         0x5A,
@@ -150,6 +151,11 @@ DEVICE_INFO_MSG = bytearray(
     ],
 )
 
+DISCOVERY_MIN_RESPONSE_LENGTH = 104
+MAX_NETWORK_PREFIX_LENGHT = 32
+SERIAL_TYPE1_LENGTH = 32
+SERIAL_TYPE2_LENGTH = 22
+
 
 def discover(
     discover_type: list | None = None,
@@ -177,7 +183,7 @@ def discover(
             data, addr = sock.recvfrom(512)
             ip = addr[0]
             _LOGGER.debug("Received response from %s: %s", addr, data.hex())
-            if len(data) >= 104 and (
+            if len(data) >= DISCOVERY_MIN_RESPONSE_LENGTH and (
                 data[:2].hex() == "5a5a" or data[8:10].hex() == "5a5a"
             ):
                 if data[:2].hex() == "5a5a":
@@ -217,9 +223,9 @@ def discover(
                 )
                 response = get_device_info(ip, int(port))
                 device_id = get_id_from_response(response)
-                if len(sn) == 32:
+                if len(sn) == SERIAL_TYPE1_LENGTH:
                     model = sn[9:17]
-                elif len(sn) == 22:
+                elif len(sn) == SERIAL_TYPE2_LENGTH:
                     model = sn[3:11]
                 else:
                     model = ""
@@ -264,7 +270,7 @@ def bytes2port(paramArrayOfbyte: bytes | None) -> int:
     if paramArrayOfbyte is None:
         return 0
     b, i = 0, 0
-    while b < 4:
+    while b < BYTES_2_PORT_LENGTH:
         b1 = paramArrayOfbyte[b] & 0xFF if b < len(paramArrayOfbyte) else 0
         i |= b1 << b * 8
         b += 1
@@ -305,7 +311,7 @@ def enum_all_broadcast() -> list:
     adapters = ifaddr.get_adapters()
     for adapter in adapters:
         for ip in adapter.ips:
-            if ip.is_IPv4 and ip.network_prefix < 32:
+            if ip.is_IPv4 and ip.network_prefix < MAX_NETWORK_PREFIX_LENGHT:
                 local_network = IPv4Network(
                     f"{ip.ip}/{ip.network_prefix}",
                     strict=False,

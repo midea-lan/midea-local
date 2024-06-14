@@ -1,7 +1,7 @@
 import json
 import logging
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from .message import MessageFAResponse, MessageQuery, MessageSet
 
@@ -27,9 +27,28 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaFADevice(MideaDevice):
-    _oscillation_angles = ["Off", "30", "60", "90", "120", "180", "360"]
-    _tilting_angles = ["Off", "30", "60", "90", "120", "180", "360", "+60", "-60", "40"]
-    _oscillation_modes = [
+    _oscillation_angles: ClassVar[list[str]] = [
+        "Off",
+        "30",
+        "60",
+        "90",
+        "120",
+        "180",
+        "360",
+    ]
+    _tilting_angles: ClassVar[list[str]] = [
+        "Off",
+        "30",
+        "60",
+        "90",
+        "120",
+        "180",
+        "360",
+        "+60",
+        "-60",
+        "40",
+    ]
+    _oscillation_modes: ClassVar[list[str]] = [
         "Off",
         "Oscillation",
         "Tilting",
@@ -38,7 +57,7 @@ class MideaFADevice(MideaDevice):
         "Reserved",
         "Both",
     ]
-    _modes = [
+    _modes: ClassVar[list[str]] = [
         "Normal",
         "Natural",
         "Sleep",

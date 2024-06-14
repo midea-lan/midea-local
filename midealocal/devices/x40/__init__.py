@@ -1,7 +1,7 @@
 import logging
 import math
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from midealocal.device import MideaDevice
 
@@ -15,6 +15,10 @@ else:
 
 _LOGGER = logging.getLogger(__name__)
 
+DIRECTION_MIN_VALUE = 60
+DIRECTION_MAX_VALUE = 100
+VENTILATION_FAN_SPEED = 2
+
 
 class DeviceAttributes(StrEnum):
     light = "light"
@@ -26,7 +30,7 @@ class DeviceAttributes(StrEnum):
 
 
 class Midea40Device(MideaDevice):
-    _directions = ["60", "70", "80", "90", "100", "Oscillate"]
+    _directions: ClassVar[list[str]] = ["60", "70", "80", "90", "100", "Oscillate"]
 
     def __init__(
         self,
@@ -81,7 +85,7 @@ class Midea40Device(MideaDevice):
 
     @staticmethod
     def _convert_from_midea_direction(direction: int) -> int:
-        if direction > 100 or direction < 60:
+        if direction > DIRECTION_MAX_VALUE or direction < DIRECTION_MIN_VALUE:
             result = 5
         else:
             result = math.floor((direction - 60 + 5) / 10)
@@ -126,7 +130,10 @@ class Midea40Device(MideaDevice):
             )
             if attr == DeviceAttributes.direction:
                 message.direction = self._convert_to_midea_direction(value)
-            elif attr == DeviceAttributes.ventilation and message.fan_speed == 2:
+            elif (
+                attr == DeviceAttributes.ventilation
+                and message.fan_speed == VENTILATION_FAN_SPEED
+            ):
                 message.fan_speed = 1
                 message.ventilation = value
             else:

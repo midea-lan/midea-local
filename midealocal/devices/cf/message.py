@@ -1,9 +1,21 @@
+from enum import IntEnum
+
+from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
 )
+
+
+class CFMode(IntEnum):
+    """CF Mode."""
+
+    OFF = 0
+    AUTO = 1
+    COOL = 2
+    HEAT = 3
 
 
 class MessageCFBase(MessageRequest):
@@ -74,10 +86,10 @@ class CFMessageBody(MessageBody):
         self.mode = body[data_offset + 3]
         self.target_temperature = body[data_offset + 4]
         self.current_temperature = body[data_offset + 5]
-        if self.mode == 2:
+        if self.mode == CFMode.COOL:
             self.max_temperature = body[data_offset + 8]
             self.min_temperature = body[data_offset + 9]
-        elif self.mode == 3:
+        elif self.mode == CFMode.HEAT:
             self.max_temperature = body[data_offset + 6]
             self.min_temperature = body[data_offset + 7]
         else:
@@ -90,7 +102,7 @@ class MessageCFResponse(MessageResponse):
         super().__init__(bytearray(message))
         if (
             self.message_type in [MessageType.query, MessageType.set]
-            and self.body_type == 0x01
+            and self.body_type == BodyType.X01
         ):
             self.set_body(CFMessageBody(super().body, data_offset=1))
         elif self.message_type in [MessageType.notify1, MessageType.notify2]:

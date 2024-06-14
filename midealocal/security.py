@@ -1,6 +1,7 @@
 """Midea local security."""
 
 import hmac
+from enum import IntEnum
 from hashlib import md5, sha256
 from typing import Any, cast
 from urllib.parse import unquote_plus, urlencode, urlparse
@@ -10,12 +11,33 @@ from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad, unpad
 from Crypto.Util.strxor import strxor
 
+from .const import MAX_DOUBLE_BYTE_VALUE
+from .exceptions import (
+    CannotAuthenticate,
+    DataSignDoesntMatch,
+    DataUnexpectedLength,
+    MessageWrongFormat,
+)
+
 Buffer = bytes | bytearray | memoryview  # alias from Crypto.Cipher.AES
 
+HEADER_8370_1ST_BYTE = 0x83
+HEADER_8370_2ND_BYTE = 0x70
+HEADER_8370_4TH_BYTE = 0x20
+MIN_DECODE_8370_DATA_LENGTH = 6
 MSGTYPE_HANDSHAKE_REQUEST = 0x0
 MSGTYPE_HANDSHAKE_RESPONSE = 0x1
 MSGTYPE_ENCRYPTED_RESPONSE = 0x3
 MSGTYPE_ENCRYPTED_REQUEST = 0x6
+TCP_KEY_RESPONSE_LENGTH = 64
+
+
+class UdpIdMethod(IntEnum):
+    """Udp Id format method."""
+
+    REVERSED_BIG = 0
+    BIG = 1
+    LITTLE = 2
 
 
 class CloudSecurity:
@@ -69,11 +91,11 @@ class CloudSecurity:
     @staticmethod
     def get_udp_id(appliance_id: Any, method: int = 0) -> str | None:
         """Get UDP ID."""
-        if method == 0:
+        if method == UdpIdMethod.REVERSED_BIG:
             bytes_id = bytes(reversed(appliance_id.to_bytes(8, "big")))
-        elif method == 1:
+        elif method == UdpIdMethod.BIG:
             bytes_id = appliance_id.to_bytes(6, "big")
-        elif method == 2:
+        elif method == UdpIdMethod.LITTLE:
             bytes_id = appliance_id.to_bytes(6, "little")
         else:
             return None
@@ -283,14 +305,14 @@ class LocalSecurity:
     def tcp_key(self, response: bytes, key: Buffer) -> bytes:
         """TCP key."""
         if response == b"ERROR":
-            raise Exception("authentication failed")
-        if len(response) != 64:
-            raise Exception("unexpected data length")
+            raise CannotAuthenticate
+        if len(response) != TCP_KEY_RESPONSE_LENGTH:
+            raise DataUnexpectedLength
         payload = response[:32]
         sign = response[32:]
         plain = self.aes_cbc_decrypt(payload, key)
         if sha256(plain).digest() != sign:
-            raise Exception("sign does not match")
+            raise DataSignDoesntMatch
         self._tcp_key = strxor(plain, key)
         self._request_count = 0
         self._response_count = 0
@@ -309,7 +331,7 @@ class LocalSecurity:
         header += bytearray([0x20, padding << 4 | msgtype])
         data = self._request_count.to_bytes(2, "big") + data
         self._request_count += 1
-        if self._request_count >= 0xFFFF:
+        if self._request_count >= MAX_DOUBLE_BYTE_VALUE:
             self._request_count = 0
         if msgtype in (MSGTYPE_ENCRYPTED_RESPONSE, MSGTYPE_ENCRYPTED_REQUEST):
             sign = sha256(header + data).digest()
@@ -318,11 +340,11 @@ class LocalSecurity:
 
     def decode_8370(self, data: bytes) -> tuple[list, bytes]:
         """Decode 8370 data."""
-        if len(data) < 6:
+        if len(data) < MIN_DECODE_8370_DATA_LENGTH:
             return [], data
         header = data[:6]
-        if header[0] != 0x83 or header[1] != 0x70:
-            raise Exception("not an 8370 message")
+        if header[0] != HEADER_8370_1ST_BYTE or header[1] != HEADER_8370_2ND_BYTE:
+            raise MessageWrongFormat("not an 8370 message")
         size = int.from_bytes(header[2:4], "big") + 8
         leftover = None
         if len(data) < size:
@@ -330,8 +352,8 @@ class LocalSecurity:
         elif len(data) > size:
             leftover = data[size:]
             data = data[:size]
-        if header[4] != 0x20:
-            raise Exception("missing byte 4")
+        if header[4] != HEADER_8370_4TH_BYTE:
+            raise MessageWrongFormat("missing byte 4")
         padding = header[5] >> 4
         msgtype = header[5] & 0xF
         data = data[6:]
@@ -340,7 +362,7 @@ class LocalSecurity:
             data = data[:-32]
             data = self.aes_cbc_decrypt(raw=data, key=self._tcp_key)
             if sha256(header + data).digest() != sign:
-                raise Exception("sign does not match")
+                raise DataSignDoesntMatch
             if padding:
                 data = data[:-padding]
         self._response_count = int.from_bytes(data[:2], "big")

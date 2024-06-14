@@ -1,5 +1,6 @@
 import logging
 import sys
+from enum import IntEnum
 from typing import Any
 
 from .message import (
@@ -61,6 +62,13 @@ class DeviceAttributes(StrEnum):
     eco_mode = "eco_mode"
     tbh = "tbh"
     error_code = "error_code"
+
+
+class C3DeviceMode(IntEnum):
+    """C3 Device Mode."""
+
+    COOL = 2
+    HEAT = 3
 
 
 class MideaC3Device(MideaDevice):
@@ -152,7 +160,8 @@ class MideaC3Device(MideaDevice):
                         self._attributes[DeviceAttributes.zone_target_temp][zone]
                     )
                     if (
-                        self._attributes[DeviceAttributes.mode_auto] == 2
+                        self._attributes[DeviceAttributes.mode_auto]
+                        == C3DeviceMode.COOL
                     ):  # cooling mode
                         self._attributes[DeviceAttributes.temperature_max][zone] = (
                             self._attributes[
@@ -164,7 +173,9 @@ class MideaC3Device(MideaDevice):
                                 DeviceAttributes.zone_cooling_temp_min
                             ][zone]
                         )
-                    elif self._attributes[DeviceAttributes.mode] == 3:  # heating mode
+                    elif (
+                        self._attributes[DeviceAttributes.mode] == C3DeviceMode.HEAT
+                    ):  # heating mode
                         self._attributes[DeviceAttributes.temperature_max][zone] = (
                             self._attributes[
                                 DeviceAttributes.zone_heating_temp_max

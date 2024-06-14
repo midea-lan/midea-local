@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from .message import MessageB0Response, MessageQuery01
 
@@ -25,7 +25,7 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaB0Device(MideaDevice):
-    _status: dict[int, str] = {
+    _status: ClassVar[dict[int, str]] = {
         0x01: "Standby",
         0x02: "Idle",
         0x03: "Working",

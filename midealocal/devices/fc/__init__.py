@@ -1,7 +1,7 @@
 import json
 import logging
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from .message import MessageFCResponse, MessageQuery, MessageSet
 
@@ -13,6 +13,8 @@ else:
 from midealocal.device import MideaDevice
 
 _LOGGER = logging.getLogger(__name__)
+
+STANDBY_DETECT_LENGTH = 2
 
 
 class DeviceAttributes(StrEnum):
@@ -33,7 +35,7 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaFCDevice(MideaDevice):
-    _modes = {
+    _modes: ClassVar[dict[int, str]] = {
         0x00: "Standby",
         0x10: "Auto",
         0x20: "Manual",
@@ -41,9 +43,15 @@ class MideaFCDevice(MideaDevice):
         0x40: "Fast",
         0x50: "Smoke",
     }
-    _speeds = {1: "Auto", 4: "Standby", 39: "Low", 59: "Medium", 80: "High"}
-    _screen_displays = {0: "Bright", 6: "Dim", 7: "Off"}
-    _detect_modes = ["Off", "PM 2.5", "Methanal"]
+    _speeds: ClassVar[dict[int, str]] = {
+        1: "Auto",
+        4: "Standby",
+        39: "Low",
+        59: "Medium",
+        80: "High",
+    }
+    _screen_displays: ClassVar[dict[int, str]] = {0: "Bright", 6: "Dim", 7: "Off"}
+    _detect_modes: ClassVar[list[str]] = ["Off", "PM 2.5", "Methanal"]
 
     def __init__(
         self,
@@ -228,7 +236,10 @@ class MideaFCDevice(MideaDevice):
                 params = json.loads(customize)
                 if params and "standby_detect" in params:
                     settings = params.get("standby_detect")
-                    if len(settings) == 2 and settings[0] > settings[1]:
+                    if (
+                        len(settings) == STANDBY_DETECT_LENGTH
+                        and settings[0] > settings[1]
+                    ):
                         self._standby_detect = settings
             except Exception as e:
                 _LOGGER.error("[%s] Set customize error: %s", self.device_id, repr(e))

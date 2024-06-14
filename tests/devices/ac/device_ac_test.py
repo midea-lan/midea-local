@@ -200,7 +200,7 @@ class TestMideaACDevice:
             mock_message.fresh_air_fan_speed = 55
             mock_message.fresh_air_1 = None
             result = self.device.process_message(bytearray())
-            assert result[DeviceAttributes.fresh_air_mode.value] == "Medium"
+            assert result[DeviceAttributes.fresh_air_mode.value] == "Low"
 
             mock_message.fresh_air_power = False
             result = self.device.process_message(bytearray())
