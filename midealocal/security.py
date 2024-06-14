@@ -9,7 +9,13 @@ from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad, unpad
 from Crypto.Util.strxor import strxor
 
-from midealocal.const import MAX_DOUBLE_BYTE_VALUE
+from .const import MAX_DOUBLE_BYTE_VALUE
+from .exceptions import (
+    CannotAuthenticate,
+    DataSignDoesntMatch,
+    DataUnexpectedLength,
+    MessageWrongFormat,
+)
 
 Buffer = bytes | bytearray | memoryview  # alias from Crypto.Cipher.AES
 
@@ -265,14 +271,14 @@ class LocalSecurity:
 
     def tcp_key(self, response: bytes, key: Buffer) -> bytes:
         if response == b"ERROR":
-            raise Exception("authentication failed")
+            raise CannotAuthenticate
         if len(response) != TCP_KEY_RESPONSE_LENGTH:
-            raise Exception("unexpected data length")
+            raise DataUnexpectedLength
         payload = response[:32]
         sign = response[32:]
         plain = self.aes_cbc_decrypt(payload, key)
         if sha256(plain).digest() != sign:
-            raise Exception("sign does not match")
+            raise DataSignDoesntMatch
         self._tcp_key = strxor(plain, key)
         self._request_count = 0
         self._response_count = 0
@@ -302,7 +308,7 @@ class LocalSecurity:
             return [], data
         header = data[:6]
         if header[0] != HEADER_8370_1ST_BYTE or header[1] != HEADER_8370_2ND_BYTE:
-            raise Exception("not an 8370 message")
+            raise MessageWrongFormat("not an 8370 message")
         size = int.from_bytes(header[2:4], "big") + 8
         leftover = None
         if len(data) < size:
@@ -311,7 +317,7 @@ class LocalSecurity:
             leftover = data[size:]
             data = data[:size]
         if header[4] != HEADER_8370_4TH_BYTE:
-            raise Exception("missing byte 4")
+            raise MessageWrongFormat("missing byte 4")
         padding = header[5] >> 4
         msgtype = header[5] & 0xF
         data = data[6:]
@@ -320,7 +326,7 @@ class LocalSecurity:
             data = data[:-32]
             data = self.aes_cbc_decrypt(raw=data, key=self._tcp_key)
             if sha256(header + data).digest() != sign:
-                raise Exception("sign does not match")
+                raise DataSignDoesntMatch
             if padding:
                 data = data[:-padding]
         self._response_count = int.from_bytes(data[:2], "big")
