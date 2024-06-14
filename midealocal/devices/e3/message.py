@@ -1,3 +1,5 @@
+"""Midea local E3 message."""
+
 from typing import Any
 
 from midealocal.message import (
@@ -20,12 +22,15 @@ ADDITIONAL_BYTE = 20
 
 
 class MessageE3Base(MessageRequest):
+    """E3 message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize E3 message base."""
         super().__init__(
             device_type=0xE3,
             protocol_version=protocol_version,
@@ -39,7 +44,10 @@ class MessageE3Base(MessageRequest):
 
 
 class MessageQuery(MessageE3Base):
+    """E3 message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E3 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -52,7 +60,10 @@ class MessageQuery(MessageE3Base):
 
 
 class MessagePower(MessageE3Base):
+    """E3 message power."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E3 message power."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -70,7 +81,10 @@ class MessagePower(MessageE3Base):
 
 
 class MessageSet(MessageE3Base):
+    """E3 message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E3 message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -116,7 +130,10 @@ class MessageSet(MessageE3Base):
 
 
 class MessageNewProtocolSet(MessageE3Base):
+    """E3 message new protocol set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E3 message new protocol set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -158,7 +175,10 @@ class MessageNewProtocolSet(MessageE3Base):
 
 
 class E3GeneralMessageBody(MessageBody):
+    """E3 message general body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize E3 message general body."""
         super().__init__(body)
         self.power = (body[2] & 0x01) > 0
         self.burning_state = (body[2] & 0x02) > 0
@@ -175,7 +195,10 @@ class E3GeneralMessageBody(MessageBody):
 
 
 class MessageE3Response(MessageResponse):
+    """E3 message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize E3 message response."""
         super().__init__(bytearray(message))
         if (
             (self.message_type == MessageType.query and self.body_type == 0x01)
