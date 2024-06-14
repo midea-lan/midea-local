@@ -1,4 +1,5 @@
 from enum import IntEnum
+
 from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,

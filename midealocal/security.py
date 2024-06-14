@@ -1,5 +1,5 @@
-from enum import IntEnum
 import hmac
+from enum import IntEnum
 from hashlib import md5, sha256
 from typing import Any, cast
 from urllib.parse import unquote_plus, urlencode, urlparse
