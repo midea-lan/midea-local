@@ -192,7 +192,7 @@ class MideaCloud:
         return result
 
     async def get_cloud_servers(self) -> dict[int, str]:
-        """Get available cloud servers from upstream library."""
+        """Get available cloud servers."""
         cloud_servers: dict[int, str] = {}
         for i, cloud in enumerate(clouds, start=1):
             cloud_servers[i] = cloud
