@@ -1,3 +1,5 @@
+"""Midea local CA device."""
+
 import logging
 import sys
 from typing import Any
@@ -15,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea CA device attributes."""
+
     mode = "mode"
     energy_consumption = "energy_consumption"
     refrigerator_actual_temp = "refrigerator_actual_temp"
@@ -36,6 +40,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaCADevice(MideaDevice):
+    """Midea CA device."""
+
     def __init__(
         self,
         name: str,
@@ -49,6 +55,7 @@ class MideaCADevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea CA device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -83,9 +90,11 @@ class MideaCADevice(MideaDevice):
         self._modes = [""]
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea CA device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea CA device process message."""
         message = MessageCAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -96,8 +105,8 @@ class MideaCADevice(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
-        pass
+        """Midea CA device set attribute."""
 
 
 class MideaAppliance(MideaCADevice):
-    pass
+    """Midea CA appliance."""
