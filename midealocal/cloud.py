@@ -191,6 +191,15 @@ class MideaCloud:
         result.update(default_keys)
         return result
 
+    async def get_cloud_servers(self) -> dict[int, str]:
+        """Get available cloud servers from upstream library."""
+        cloud_servers: dict[int, str] = {}
+        i = 1
+        for cloud in clouds:
+            cloud_servers.update({i: cloud})
+            i = i + 1
+        return cloud_servers
+
     async def list_home(self) -> dict[int, Any] | None:
         return {1: "My home"}
 
