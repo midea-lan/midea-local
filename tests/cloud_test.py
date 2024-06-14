@@ -59,7 +59,7 @@ class CloudTest(IsolatedAsyncioTestCase):
             await cloud.list_appliances(None)
 
     async def test_meijucloud_login_success(self) -> None:
-        """Test MeijuCloud login"""
+        """Test MeijuCloud login."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -498,7 +498,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert len(homes.keys()) == 1
 
     async def test_mideaaircloud_list_appliances(self) -> None:
-        """Test MideaAirCloud list_appliances"""
+        """Test MideaAirCloud list_appliances."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
