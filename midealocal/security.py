@@ -89,8 +89,7 @@ class CloudSecurity:
         return sha256(f"Hello, {username}!".encode("ascii")).digest().hex()[:16]
 
     @staticmethod
-    def get_udp_id(appliance_id: Any, method: int = 0) -> str | None:
-        """Get UDP ID."""
+    def get_udp_id(appliance_id: int, method: int = 0) -> str | None:
         if method == UdpIdMethod.REVERSED_BIG:
             bytes_id = bytes(reversed(appliance_id.to_bytes(8, "big")))
         elif method == UdpIdMethod.BIG:
@@ -245,8 +244,9 @@ class MideaAirSecurity(CloudSecurity):
         """Initialize Midea Air Security."""
         super().__init__(login_key, None, None)
 
-    def sign(self, url: str, data: Any, random: str) -> str:
-        """Sign data."""
+    def sign(self, url: str, data: dict[str, Any] | str, random: str) -> str:
+        if isinstance(data, str):
+            raise Exception("wrong data type to sign")
         payload = unquote_plus(urlencode(sorted(data.items(), key=lambda x: x[0])))
         sha = sha256()
         sha.update((urlparse(url).path + payload + self._login_key).encode("ascii"))
