@@ -1,4 +1,5 @@
 from enum import IntEnum
+
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 MIN_RESPONSE_BODY_LENGTH = 6

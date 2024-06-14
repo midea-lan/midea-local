@@ -75,7 +75,7 @@ class MessageSet(MessageFBBase):
                 int(
                     self.heating_level
                     if 1 <= self.heating_level <= MAX_HEATING_LEVEL
-                    else 0
+                    else 0,
                 )
                 & 0xFF
             )
