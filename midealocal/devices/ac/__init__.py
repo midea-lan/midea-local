@@ -70,9 +70,6 @@ class MideaACDevice(MideaDevice):
         80: "High",
         100: "Full",
     }
-    _fresh_air_fan_speeds_rev: ClassVar[dict[str, int]] = {
-        k: v for v, k in _fresh_air_fan_speeds.items()
-    }
 
     def __init__(
         self,
@@ -192,8 +189,8 @@ class MideaACDevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         if has_fresh_air:
             if self._attributes[DeviceAttributes.fresh_air_power]:
-                for k, v in MideaACDevice._fresh_air_fan_speeds_rev.items():
-                    if self._attributes[DeviceAttributes.fresh_air_fan_speed] > k:
+                for k, v in MideaACDevice._fresh_air_fan_speeds.items():
+                    if self._attributes[DeviceAttributes.fresh_air_fan_speed] < k:
                         break
                     else:
                         self._attributes[DeviceAttributes.fresh_air_mode] = v
