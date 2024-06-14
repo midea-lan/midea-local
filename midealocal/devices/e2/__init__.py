@@ -1,7 +1,7 @@
-from enum import IntEnum
 import json
 import logging
 import sys
+from enum import IntEnum
 from typing import Any
 
 from .message import (

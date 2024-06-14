@@ -20,7 +20,6 @@ from .security import (
     LocalSecurity,
 )
 
-
 MIN_AUTH_RESPONSE = 20
 MIN_MSG_LENGTH = 56
 MIN_V2_FACTUAL_MSG_LENGTH = 6

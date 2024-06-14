@@ -1,6 +1,6 @@
-from enum import IntEnum
 import logging
 import sys
+from enum import IntEnum
 from typing import Any
 
 from .message import (
