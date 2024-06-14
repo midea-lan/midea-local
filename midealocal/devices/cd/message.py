@@ -1,3 +1,5 @@
+"""Midea local CD message."""
+
 from typing import Any
 
 from midealocal.message import (
@@ -9,12 +11,15 @@ from midealocal.message import (
 
 
 class MessageCDBase(MessageRequest):
+    """CD message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize CD message base."""
         super().__init__(
             device_type=0xCD,
             protocol_version=protocol_version,
@@ -28,7 +33,10 @@ class MessageCDBase(MessageRequest):
 
 
 class MessageQuery(MessageCDBase):
+    """CD message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize CD message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -41,7 +49,10 @@ class MessageQuery(MessageCDBase):
 
 
 class MessageSet(MessageCDBase):
+    """CD message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize CD message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -54,6 +65,7 @@ class MessageSet(MessageCDBase):
         self.mode = 1
 
     def read_field(self, field: str) -> Any:
+        """CD message set read field."""
         value = self.fields.get(field, 0)
         return value if value else 0
 
@@ -77,7 +89,10 @@ class MessageSet(MessageCDBase):
 
 
 class CDGeneralMessageBody(MessageBody):
+    """CD message general body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize CD message general body."""
         super().__init__(body)
         self.power = (body[2] & 0x01) > 0
         self.target_temperature = round((body[3] - 30) / 2)
@@ -99,7 +114,10 @@ class CDGeneralMessageBody(MessageBody):
 
 
 class CD02MessageBody(MessageBody):
+    """CD message 02 body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize CD message 02 body."""
         super().__init__(body)
         self.fields = {}
         self.power = (body[2] & 0x01) > 0
@@ -112,7 +130,10 @@ class CD02MessageBody(MessageBody):
 
 
 class MessageCDResponse(MessageResponse):
+    """CD message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize CD message response."""
         super().__init__(bytearray(message))
         if self.message_type in [MessageType.query, MessageType.notify2]:
             self.set_body(CDGeneralMessageBody(super().body))
