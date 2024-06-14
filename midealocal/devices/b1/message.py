@@ -1,14 +1,19 @@
+"""Midea local B1 message."""
+
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class MessageB1Base(MessageRequest):
+    """B1 message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize B1 message base."""
         super().__init__(
             device_type=0xB1,
             protocol_version=protocol_version,
@@ -22,7 +27,10 @@ class MessageB1Base(MessageRequest):
 
 
 class MessageQuery(MessageB1Base):
+    """B1 message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize B1 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -35,7 +43,10 @@ class MessageQuery(MessageB1Base):
 
 
 class B1MessageBody(MessageBody):
+    """B1 message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize B1 message body."""
         super().__init__(body)
         self.door = (body[16] & 0x02) > 0
         self.status = body[1]
@@ -51,7 +62,10 @@ class B1MessageBody(MessageBody):
 
 
 class MessageB1Response(MessageResponse):
+    """B1 message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize B1 message response."""
         super().__init__(bytearray(message))
         if self.message_type in [MessageType.notify1, MessageType.query]:
             self.set_body(B1MessageBody(super().body))
