@@ -5,6 +5,10 @@ from midealocal.message import (
     MessageType,
 )
 
+HEATING_POWER_BYTE = 34
+PROTECTION_BYTE = 22
+WATER_CONSUMPTION_BYTE = 25
+
 
 class MessageE2Base(MessageRequest):
     def __init__(
@@ -139,10 +143,12 @@ class E2GeneralMessageBody(MessageBody):
         self.whole_tank_heating = (body[7] & 0x08) > 0
         self.heating_time_remaining = body[9] * 60 + body[10]
         self.target_temperature = body[11]
-        self.protection = ((body[22] & 0x02) > 0) if len(body) > 22 else False
-        if len(body) > 25:
+        self.protection = (
+            ((body[22] & 0x02) > 0) if len(body) > PROTECTION_BYTE else False
+        )
+        if len(body) > WATER_CONSUMPTION_BYTE:
             self.water_consumption = body[24] + (body[25] << 8)
-        if len(body) > 34:
+        if len(body) > HEATING_POWER_BYTE:
             self.heating_power = body[34] * 100
 
 

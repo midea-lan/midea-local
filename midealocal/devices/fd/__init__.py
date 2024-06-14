@@ -12,6 +12,8 @@ from midealocal.device import MideaDevice
 
 _LOGGER = logging.getLogger(__name__)
 
+MAX_SUBTYPE_OLD_SPEEDS = 5
+
 
 class DeviceAttributes(StrEnum):
     power = "power"
@@ -92,7 +94,7 @@ class MideaFDDevice(MideaDevice):
                 DeviceAttributes.disinfect: None,
             },
         )
-        if self.subtype > 5:
+        if self.subtype > MAX_SUBTYPE_OLD_SPEEDS:
             self._speeds = MideaFDDevice._speeds_new
         else:
             self._speeds = MideaFDDevice._speeds_old

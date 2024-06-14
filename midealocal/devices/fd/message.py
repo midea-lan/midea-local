@@ -1,10 +1,16 @@
 from midealocal.crc8 import calculate
+from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
 )
+
+DISINFECT_A0_BODY_LENGTH = 29
+DISINFECT_C8_BODY_LENGTH = 36
+MAX_FAN_SPEED = 5
+MAX_MSG_SERIAL_NUM = 254
 
 
 class MessageFDBase(MessageRequest):
@@ -23,7 +29,7 @@ class MessageFDBase(MessageRequest):
             body_type=body_type,
         )
         MessageFDBase._message_serial += 1
-        if MessageFDBase._message_serial >= 254:
+        if MessageFDBase._message_serial >= MAX_MSG_SERIAL_NUM:
             MessageFDBase._message_serial = 1
         self._message_id = MessageFDBase._message_serial
 
@@ -131,12 +137,10 @@ class FDC8MessageBody(MessageBody):
         self.tank = body[10]
         self.mode = (body[8] & 0x70) >> 4
         self.screen_display = body[9] & 0x07
-        if len(body) > 36:
+        if len(body) > DISINFECT_C8_BODY_LENGTH:
             disinfect = body[34] & 0x03
-            if disinfect == 1:
-                self.disinfect = True
-            elif disinfect == 2:
-                self.disinfect = False
+            if disinfect:
+                self.disinfect = disinfect == 1
 
 
 class FDA0MessageBody(MessageBody):
@@ -150,12 +154,10 @@ class FDA0MessageBody(MessageBody):
         self.tank = body[10]
         self.mode = body[10] & 0x07
         self.screen_display = body[9] & 0x07
-        if len(body) > 29:
+        if len(body) > DISINFECT_A0_BODY_LENGTH:
             disinfect = body[27] & 0x03
-            if disinfect == 1:
-                self.disinfect = True
-            elif disinfect == 2:
-                self.disinfect = False
+            if disinfect:
+                self.disinfect = disinfect == 1
 
 
 class MessageFDResponse(MessageResponse):
@@ -168,15 +170,15 @@ class MessageFDResponse(MessageResponse):
         ]:
             if self.body_type in [0xB0, 0xB1]:
                 pass
-            elif self.body_type == 0xA0:
+            elif self.body_type == BodyType.A0:
                 self.set_body(FDA0MessageBody(super().body))
-            elif self.body_type == 0xC8:
+            elif self.body_type == BodyType.C8:
                 self.set_body(FDC8MessageBody(super().body))
         self.fan_speed: int
         self.set_attr()
         if (
             hasattr(self, "fan_speed")
             and self.fan_speed is not None
-            and self.fan_speed < 5
+            and self.fan_speed < MAX_FAN_SPEED
         ):
             self.fan_speed = 1

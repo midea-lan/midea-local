@@ -1,3 +1,4 @@
+from midealocal.devices import SubBodyType
 from midealocal.message import (
     NONE_VALUE,
     MessageBody,
@@ -5,6 +6,10 @@ from midealocal.message import (
     MessageResponse,
     MessageType,
 )
+
+MAX_FAN_SPEED = 26
+TILTING_ANGLE_GET_BYTE = 25
+TILTING_ANGLE_SET_BYTE = 24
 
 
 class MessageFABase(MessageRequest):
@@ -61,7 +66,7 @@ class MessageSet(MessageFABase):
 
     @property
     def _body(self) -> bytearray:
-        if 1 <= self._subtype <= 10 or self._subtype == 161:
+        if 1 <= self._subtype <= SubBodyType.X0A or self._subtype == SubBodyType.A1:
             _body_return = bytearray(
                 [
                     0x00,
@@ -84,7 +89,7 @@ class MessageSet(MessageFABase):
                     0x00,
                 ],
             )
-            if self._subtype != 10:
+            if self._subtype != SubBodyType.X0A:
                 _body_return[13] = 0xFF
         else:
             _body_return = bytearray(
@@ -152,7 +157,7 @@ class MessageSet(MessageFABase):
                 _body_return[2] = 2
         if self.mode is not None:
             _body_return[3] = 1 | (((self.mode + 1) << 1) & 0x1E)
-        if self.fan_speed is not None and 1 <= self.fan_speed <= 26:
+        if self.fan_speed is not None and 1 <= self.fan_speed <= MAX_FAN_SPEED:
             _body_return[4] = self.fan_speed
         if self.oscillate is not None:
             if self.oscillate:
@@ -167,7 +172,10 @@ class MessageSet(MessageFABase):
             _body_return[7] = (
                 1 | _body_return[7] | ((self.oscillation_mode << 1) & 0x0E)
             )
-        if self.tilting_angle is not None and len(_body_return) > 24:
+        if (
+            self.tilting_angle is not None
+            and len(_body_return) > TILTING_ANGLE_SET_BYTE
+        ):
             _body_return[24] = self.tilting_angle
         return _body_return
 
@@ -185,14 +193,14 @@ class FAGeneralMessageBody(MessageBody):
         if mode > 0:
             self.mode = mode - 1
         fan_speed = body[5]
-        if 1 <= fan_speed <= 26:
+        if 1 <= fan_speed <= MAX_FAN_SPEED:
             self.fan_speed = fan_speed
         else:
             self.fan_speed = 0
         self.oscillate = (body[8] & 0x01) > 0
         self.oscillation_angle = (body[8] & 0x70) >> 4
         self.oscillation_mode = (body[8] & 0x0E) >> 1
-        self.tilting_angle = body[25] if len(body) > 25 else 0
+        self.tilting_angle = body[25] if len(body) > TILTING_ANGLE_GET_BYTE else 0
 
 
 class MessageFAResponse(MessageResponse):

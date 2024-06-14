@@ -13,6 +13,8 @@ from midealocal.device import MideaDevice
 
 _LOGGER = logging.getLogger(__name__)
 
+MIN_TEMP = 15
+
 
 class DeviceAttributes(StrEnum):
     power = "power"
@@ -136,13 +138,13 @@ class MideaDADevice(MideaDevice):
                     self._attributes[status] = program[getattr(message, str(status))]
                 elif status == DeviceAttributes.rinse_level:
                     temp_rinse_level = getattr(message, str(status))
-                    if temp_rinse_level == 15:
+                    if temp_rinse_level == MIN_TEMP:
                         self._attributes[status] = "-"
                     else:
                         self._attributes[status] = temp_rinse_level
                 elif status == DeviceAttributes.dehydration_speed:
                     temp_speed = getattr(message, str(status))
-                    if temp_speed == 15:
+                    if temp_speed == MIN_TEMP:
                         self._attributes[status] = "-"
                     else:
                         self._attributes[status] = speed[temp_speed]

@@ -14,6 +14,8 @@ from midealocal.device import MideaDevice
 
 _LOGGER = logging.getLogger(__name__)
 
+STANDBY_DETECT_LENGTH = 2
+
 
 class DeviceAttributes(StrEnum):
     power = "power"
@@ -228,7 +230,10 @@ class MideaFCDevice(MideaDevice):
                 params = json.loads(customize)
                 if params and "standby_detect" in params:
                     settings = params.get("standby_detect")
-                    if len(settings) == 2 and settings[0] > settings[1]:
+                    if (
+                        len(settings) == STANDBY_DETECT_LENGTH
+                        and settings[0] > settings[1]
+                    ):
                         self._standby_detect = settings
             except Exception as e:
                 _LOGGER.error("[%s] Set customize error: %s", self.device_id, repr(e))

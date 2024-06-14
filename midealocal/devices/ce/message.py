@@ -1,3 +1,5 @@
+from midealocal.const import MAX_BYTE_VALUE
+from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
@@ -92,11 +94,11 @@ class CEGeneralMessageBody(MessageBody):
         self.hcho: float | None = None
         self.aux_heating: bool | None = None
 
-        if body[7] != 0xFF:
+        if body[7] != MAX_BYTE_VALUE:
             self.current_humidity = (body[7] << 8) + body[8] / 10
-        if body[9] != 0xFF:
+        if body[9] != MAX_BYTE_VALUE:
             self.current_temperature = (body[9] << 8) + (body[10] - 60) / 2
-        if body[11] != 0xFF:
+        if body[11] != MAX_BYTE_VALUE:
             self.hcho = (body[11] << 8) + body[12] / 1000
         self.link_to_ac = (body[17] & 0x01) > 0
         self.sleep_mode = (body[17] & 0x02) > 0
@@ -118,11 +120,11 @@ class CENotifyMessageBody(MessageBody):
 
         self.pm25 = (body[1] << 8) + body[2]
         self.co2 = (body[3] << 8) + body[4]
-        if body[5] != 0xFF:
+        if body[5] != MAX_BYTE_VALUE:
             self.current_humidity = (body[5] << 8) + body[6] / 10
-        if body[7] != 0xFF:
+        if body[7] != MAX_BYTE_VALUE:
             self.current_temperature = (body[7] << 8) + (body[8] - 60) / 2
-        if body[9] != 0xFF:
+        if body[9] != MAX_BYTE_VALUE:
             self.hcho = (body[9] << 8) + body[10] / 1000
         self.error_code = body[12]
 
@@ -132,9 +134,13 @@ class MessageCEResponse(MessageResponse):
         super().__init__(bytearray(message))
         if (
             self.message_type in [MessageType.query, MessageType.set]
-            and self.body_type == 0x01
-        ) or (self.message_type == MessageType.notify1 and self.body_type == 0x02):
+            and self.body_type == BodyType.X01
+        ) or (
+            self.message_type == MessageType.notify1 and self.body_type == BodyType.X02
+        ):
             self.set_body(CEGeneralMessageBody(super().body))
-        elif self.message_type == MessageType.notify1 and self.body_type == 0x01:
+        elif (
+            self.message_type == MessageType.notify1 and self.body_type == BodyType.X01
+        ):
             self.set_body(CENotifyMessageBody(super().body))
         self.set_attr()
