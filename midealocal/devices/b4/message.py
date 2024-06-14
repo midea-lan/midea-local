@@ -1,14 +1,19 @@
+"""Midea local B4 message."""
+
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class MessageB4Base(MessageRequest):
+    """B4 message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize B4 message base."""
         super().__init__(
             device_type=0xB4,
             protocol_version=protocol_version,
@@ -22,7 +27,10 @@ class MessageB4Base(MessageRequest):
 
 
 class MessageQuery(MessageB4Base):
+    """B4 message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize B4 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -35,7 +43,10 @@ class MessageQuery(MessageB4Base):
 
 
 class B4MessageBody(MessageBody):
+    """B4 message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize B4 message body."""
         super().__init__(body)
         self.time_remaining = (
             (0 if body[22] == MAX_BYTE_VALUE else body[22]) * 3600
@@ -53,7 +64,10 @@ class B4MessageBody(MessageBody):
 
 
 class MessageB4Response(MessageResponse):
+    """B4 message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize B4 message response."""
         super().__init__(bytearray(message))
         if self.message_type in [
             MessageType.notify1,
