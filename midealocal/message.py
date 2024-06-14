@@ -1,3 +1,5 @@
+"""Midea local message."""
+
 import logging
 from abc import ABC
 from enum import IntEnum
@@ -7,18 +9,20 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class MessageLenError(Exception):
-    pass
+    """Message length exception."""
 
 
 class MessageBodyError(Exception):
-    pass
+    """Message body exception."""
 
 
 class MessageCheckSumError(Exception):
-    pass
+    """Message checksum exception."""
 
 
 class MessageType(IntEnum):
+    """Message type."""
+
     set = (0x02,)
     query = (0x03,)
     notify1 = (0x04,)
@@ -32,9 +36,12 @@ NONE_VALUE = 0x00
 
 
 class MessageBase(ABC):
+    """Message base."""
+
     HEADER_LENGTH = 10
 
     def __init__(self) -> None:
+        """Initialize message base."""
         self._device_type = NONE_VALUE
         self._message_type = NONE_VALUE
         self._body_type = NONE_VALUE
@@ -42,18 +49,22 @@ class MessageBase(ABC):
 
     @staticmethod
     def checksum(data: bytes) -> SupportsIndex:
+        """Message checksum."""
         return cast(SupportsIndex, (~sum(data) + 1) & 0xFF)
 
     @property
     def header(self) -> bytearray:
+        """Message header."""
         raise NotImplementedError
 
     @property
     def body(self) -> bytearray:
+        """Message body."""
         raise NotImplementedError
 
     @property
     def message_type(self) -> int:
+        """Message type."""
         return self._message_type
 
     @message_type.setter
@@ -62,6 +73,7 @@ class MessageBase(ABC):
 
     @property
     def device_type(self) -> int:
+        """Message device type."""
         return self._device_type
 
     @device_type.setter
@@ -70,6 +82,7 @@ class MessageBase(ABC):
 
     @property
     def body_type(self) -> int:
+        """Message body type."""
         return self._body_type
 
     @body_type.setter
@@ -78,6 +91,7 @@ class MessageBase(ABC):
 
     @property
     def protocol_version(self) -> int:
+        """Message protocol version."""
         return self._protocol_version
 
     @protocol_version.setter
@@ -99,6 +113,8 @@ class MessageBase(ABC):
 
 
 class MessageRequest(MessageBase):
+    """Message request."""
+
     def __init__(
         self,
         device_type: int,
@@ -106,6 +122,7 @@ class MessageRequest(MessageBase):
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize message request."""
         super().__init__()
         self.device_type = device_type
         self.protocol_version = protocol_version
@@ -114,6 +131,7 @@ class MessageRequest(MessageBase):
 
     @property
     def header(self) -> bytearray:
+        """Message header."""
         length = self.HEADER_LENGTH + len(self.body)
         return bytearray(
             [
@@ -145,6 +163,7 @@ class MessageRequest(MessageBase):
 
     @property
     def body(self) -> bytearray:
+        """Message body."""
         body = bytearray([])
         if self.body_type != NONE_VALUE:
             body.append(self.body_type)
@@ -153,12 +172,15 @@ class MessageRequest(MessageBase):
         return body
 
     def serialize(self) -> bytearray:
+        """Serialize message."""
         stream = self.header + self.body
         stream.append(MessageBase.checksum(stream[1:]))
         return stream
 
 
 class MessageQuestCustom(MessageRequest):
+    """Message quest custom."""
+
     def __init__(
         self,
         device_type: int,
@@ -166,6 +188,7 @@ class MessageQuestCustom(MessageRequest):
         cmd_type: int,
         cmd_body: bytearray,
     ) -> None:
+        """Initialize message quest custom."""
         super().__init__(
             device_type=device_type,
             protocol_version=protocol_version,
@@ -180,11 +203,15 @@ class MessageQuestCustom(MessageRequest):
 
     @property
     def body(self) -> bytearray:
+        """Message body."""
         return self._cmd_body
 
 
 class MessageQueryAppliance(MessageRequest):
+    """Message query appliance."""
+
     def __init__(self, device_type: int) -> None:
+        """Initialize message query appliance."""
         super().__init__(
             device_type=device_type,
             protocol_version=0,
@@ -198,28 +225,38 @@ class MessageQueryAppliance(MessageRequest):
 
     @property
     def body(self) -> bytearray:
+        """Message body."""
         return bytearray([0x00] * 19)
 
 
 class MessageBody:
+    """Message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize message body."""
         self._data = body
 
     @property
     def data(self) -> bytearray:
+        """Message body data."""
         return self._data
 
     @property
     def body_type(self) -> int:
+        """Message body type."""
         return self._data[0]
 
     @staticmethod
     def read_byte(body: bytearray, byte: int, default_value: int = 0) -> int:
+        """Read bytes for message body."""
         return body[byte] if len(body) > byte else default_value
 
 
 class NewProtocolMessageBody(MessageBody):
+    """New protocol message body."""
+
     def __init__(self, body: bytearray, bt: int) -> None:
+        """Initialize new protocol message body."""
         super().__init__(body)
         if bt == 0xB5:
             self._pack_len = 4
@@ -228,6 +265,7 @@ class NewProtocolMessageBody(MessageBody):
 
     @staticmethod
     def pack(param: int, value: bytearray, pack_len: int = 4) -> bytearray:
+        """New protocol pack."""
         length = len(value)
         if pack_len == 4:
             stream = bytearray([param & 0xFF, param >> 8, length]) + value
@@ -236,6 +274,7 @@ class NewProtocolMessageBody(MessageBody):
         return stream
 
     def parse(self) -> dict[int, bytearray]:
+        """Parse new protocol body."""
         result = {}
         try:
             pos = 2
@@ -255,7 +294,10 @@ class NewProtocolMessageBody(MessageBody):
 
 
 class MessageResponse(MessageBase):
+    """Message response."""
+
     def __init__(self, message: bytearray) -> None:
+        """Initialize message response."""
         super().__init__()
         if message is None or len(message) < self.HEADER_LENGTH + 1:
             raise MessageLenError
@@ -269,16 +311,20 @@ class MessageResponse(MessageBase):
 
     @property
     def header(self) -> bytearray:
+        """Message response header."""
         return self._header
 
     @property
     def body(self) -> bytearray:
+        """Message response body."""
         return self._body.data
 
     def set_body(self, body: MessageBody) -> None:
+        """Message response set body."""
         self._body = body
 
     def set_attr(self) -> None:
+        """Message response set attribute."""
         for key in vars(self._body):
             if key != "data":
                 value = getattr(self._body, key, None)
@@ -286,5 +332,8 @@ class MessageResponse(MessageBase):
 
 
 class MessageApplianceResponse(MessageResponse):
+    """Message appliance response."""
+
     def __init__(self, message: bytearray) -> None:
+        """Initialize message appliance response."""
         super().__init__(message)
