@@ -191,6 +191,7 @@ class MideaCloud:
         result.update(default_keys)
         return result
 
+    @staticmethod
     async def get_cloud_servers(self) -> dict[int, str]:
         """Get available cloud servers."""
         cloud_servers: dict[int, str] = {}
