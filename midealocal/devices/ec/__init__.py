@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from .message import MessageECResponse, MessageQuery
 
@@ -26,7 +26,7 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaECDevice(MideaDevice):
-    _mode_list = (
+    _mode_list: ClassVar[list[str]] = (
         [
             "smart",
             "reserve",
@@ -128,7 +128,7 @@ class MideaECDevice(MideaDevice):
         + ["unknown"] * 5
         + ["keep_warm", "diy"]
     )
-    _progress = [
+    _progress: ClassVar[list[str]] = [
         "Idle",
         "Cooking",
         "Delay",

@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from .message import MessageBFResponse, MessageQuery
 
@@ -25,7 +25,7 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaBFDevice(MideaDevice):
-    _status: dict[int, str] = {
+    _status: ClassVar[dict[int, str]] = {
         0x01: "PowerSave",
         0x02: "Standby",
         0x03: "Working",
