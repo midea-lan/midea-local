@@ -1,4 +1,4 @@
-"""Test AC Device"""
+"""Test AC Device."""
 
 from unittest.mock import patch
 

@@ -1,3 +1,5 @@
+"""Test ac message."""
+
 import pytest
 
 from midealocal.devices.ac.message import (

@@ -1,4 +1,4 @@
-"""Test a1 message"""
+"""Test a1 message."""
 
 import pytest
 
@@ -37,7 +37,7 @@ class TestMessageQuery:
     """Test Message Query."""
 
     def test_query_body(self) -> None:
-        """Test query body"""
+        """Test query body."""
         query = MessageQuery(protocol_version=1)
         expected_body = bytearray(
             [
@@ -70,7 +70,7 @@ class TestMessageNewProtocolQuery:
     """Test Message New Protocol Query."""
 
     def test_new_protocol_query_body(self) -> None:
-        """Test new protocol query body"""
+        """Test new protocol query body."""
         query = MessageNewProtocolQuery(protocol_version=1)
         expected_body = bytearray(
             [0xB1, 1, NewProtocolTags.light & 0xFF, NewProtocolTags.light >> 8],

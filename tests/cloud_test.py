@@ -1,4 +1,4 @@
-"""Test cloud"""
+"""Test cloud."""
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -33,7 +33,7 @@ class CloudTest(IsolatedAsyncioTestCase):
                 self.responses[file_path.name] = bytes(f.read(), encoding="utf-8")
 
     def test_get_midea_cloud(self) -> None:
-        """Test get midea cloud"""
+        """Test get midea cloud."""
         assert isinstance(get_midea_cloud("美的美居", None, "", ""), MeijuCloud)
         assert isinstance(get_midea_cloud("MSmartHome", None, "", ""), MSmartHomeCloud)
         assert isinstance(get_midea_cloud("Midea Air", None, "", ""), MideaAirCloud)
@@ -41,7 +41,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert isinstance(get_midea_cloud("Ariston Clima", None, "", ""), MideaAirCloud)
 
     async def test_midea_cloud_unimplemented(self) -> None:
-        """Test unimplemented MideaCloud methods"""
+        """Test unimplemented MideaCloud methods."""
         session = Mock()
         security = Mock()
         cloud = MideaCloud(
@@ -79,7 +79,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert await cloud.login()
 
     async def test_meijucloud_login_invalid_user(self) -> None:
-        """Test MeijuCloud login invalid user"""
+        """Test MeijuCloud login invalid user."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -96,7 +96,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert not await cloud.login()
 
     async def test_meijucloud_get_keys(self) -> None:
-        """Test MeijuCloud get_keys"""
+        """Test MeijuCloud get_keys."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -115,7 +115,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert keys[1]["key"] == "returnedappliancekey"
 
     async def test_meijucloud_list_home(self) -> None:
-        """Test MeijuCloud list_home"""
+        """Test MeijuCloud list_home."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -141,7 +141,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert await cloud.list_home() is None
 
     async def test_meijucloud_list_appliances(self) -> None:
-        """Test MeijuCloud list_appliances"""
+        """Test MeijuCloud list_appliances."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -190,7 +190,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert appliances is None
 
     async def test_meijucloud_get_device_info(self) -> None:
-        """Test MeijuCloud get_device_info"""
+        """Test MeijuCloud get_device_info."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -238,7 +238,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert device is None
 
     async def test_meijucloud_download_lua(self) -> None:
-        """Test MeijuCloud download_lua"""
+        """Test MeijuCloud download_lua."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -276,7 +276,7 @@ class CloudTest(IsolatedAsyncioTestCase):
             )
 
     async def test_msmartcloud_login_success(self) -> None:
-        """Test MSmartCloud login"""
+        """Test MSmartCloud login."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -297,7 +297,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert await cloud.login()
 
     async def test_msmartcloud_login_invalid_user(self) -> None:
-        """Test MSmartCloud login invalid user"""
+        """Test MSmartCloud login invalid user."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -314,7 +314,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert not await cloud.login()
 
     async def test_msmartcloud_list_home(self) -> None:
-        """Test MSmartCloud list_home"""
+        """Test MSmartCloud list_home."""
         session = Mock()
         cloud = get_midea_cloud(
             "MSmartHome",
@@ -328,7 +328,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert len(homes.keys()) == 1
 
     async def test_msmartcloud_list_appliances(self) -> None:
-        """Test MSmartCloud list_appliances"""
+        """Test MSmartCloud list_appliances."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -378,7 +378,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert appliances is None
 
     async def test_msmartcloud_get_device_info(self) -> None:
-        """Test MSmartCloud get_device_info"""
+        """Test MSmartCloud get_device_info."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -414,7 +414,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert device is None
 
     async def test_msmartcloud_download_lua(self) -> None:
-        """Test MSmartCloud download_lua"""
+        """Test MSmartCloud download_lua."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -447,7 +447,7 @@ class CloudTest(IsolatedAsyncioTestCase):
             Path.unlink(file_path)
 
     async def test_mideaaircloud_login_success(self) -> None:
-        """Test MideaAirCloud login"""
+        """Test MideaAirCloud login."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -467,7 +467,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert await cloud.login()
 
     async def test_mideaaircloud_login_invalid_user(self) -> None:
-        """Test MideaAirCloud login invalid user"""
+        """Test MideaAirCloud login invalid user."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -484,7 +484,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert not await cloud.login()
 
     async def test_mideaaircloud_list_home(self) -> None:
-        """Test MideaAirCloud list_home"""
+        """Test MideaAirCloud list_home."""
         session = Mock()
         cloud = get_midea_cloud(
             "Midea Air",
@@ -547,7 +547,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert appliances is None
 
     async def test_mideaaircloud_get_device_info(self) -> None:
-        """Test MideaAirCloud get_device_info"""
+        """Test MideaAirCloud get_device_info."""
         session = Mock()
         response1 = Mock()
         response1.read = AsyncMock(
@@ -597,7 +597,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert device is None
 
     async def test_mideaaircloud_download_lua(self) -> None:
-        """Test MideaAirCloud download_lua"""
+        """Test MideaAirCloud download_lua."""
         session = Mock()
         cloud = get_midea_cloud(
             "Midea Air",
