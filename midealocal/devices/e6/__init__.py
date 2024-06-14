@@ -1,3 +1,5 @@
+"""Midea local E6 device."""
+
 import logging
 import sys
 from typing import Any
@@ -15,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea E6 device attributes."""
+
     main_power = "main_power"
     heating_power = "heating_power"
     heating_working = "heating_working"
@@ -28,6 +32,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaE6Device(MideaDevice):
+    """Midea E6 device."""
+
     def __init__(
         self,
         name: str,
@@ -41,6 +47,7 @@ class MideaE6Device(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea E6 device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -67,9 +74,11 @@ class MideaE6Device(MideaDevice):
         )
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea E6 device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea E6 device process message."""
         message = MessageE6Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -80,6 +89,7 @@ class MideaE6Device(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea E6 device set attribute."""
         if attr in [
             DeviceAttributes.main_power,
             DeviceAttributes.heating_power,
@@ -92,4 +102,4 @@ class MideaE6Device(MideaDevice):
 
 
 class MideaAppliance(MideaE6Device):
-    pass
+    """Midea E6 appliance."""
