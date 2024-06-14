@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from .message import MessageFDResponse, MessageQuery, MessageSet
 
@@ -29,7 +29,7 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaFDDevice(MideaDevice):
-    _modes = [
+    _modes: ClassVar[list[str]] = [
         "Manual",
         "Auto",
         "Continuous",
@@ -38,7 +38,7 @@ class MideaFDDevice(MideaDevice):
         "Kitchen",
         "Sleep",
     ]
-    _speeds_old = {
+    _speeds_old: ClassVar[dict[int, str]] = {
         1: "Lowest",
         40: "Low",
         60: "Medium",
@@ -46,7 +46,7 @@ class MideaFDDevice(MideaDevice):
         102: "Auto",
         127: "Off",
     }
-    _speeds_new = {
+    _speeds_new: ClassVar[dict[int, str]] = {
         1: "Lowest",
         39: "Low",
         59: "Medium",
@@ -54,8 +54,8 @@ class MideaFDDevice(MideaDevice):
         101: "Auto",
         127: "Off",
     }
-    _screen_displays = {0: "Bright", 6: "Dim", 7: "Off"}
-    _detect_modes = ["Off", "PM 2.5", "Methanal"]
+    _screen_displays: ClassVar[dict[int, str]] = {0: "Bright", 6: "Dim", 7: "Off"}
+    _detect_modes: ClassVar[list[str]] = ["Off", "PM 2.5", "Methanal"]
 
     def __init__(
         self,
