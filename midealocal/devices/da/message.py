@@ -1,3 +1,5 @@
+"""Midea local DA message."""
+
 from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
@@ -8,12 +10,15 @@ from midealocal.message import (
 
 
 class MessageDABase(MessageRequest):
+    """DA message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize DA message base."""
         super().__init__(
             device_type=0xDA,
             protocol_version=protocol_version,
@@ -27,7 +32,10 @@ class MessageDABase(MessageRequest):
 
 
 class MessageQuery(MessageDABase):
+    """DA message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize DA message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -40,7 +48,10 @@ class MessageQuery(MessageDABase):
 
 
 class MessagePower(MessageDABase):
+    """DA message power."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize DA message power."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -55,7 +66,10 @@ class MessagePower(MessageDABase):
 
 
 class MessageStart(MessageDABase):
+    """DA message start."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize DA message start."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -73,7 +87,10 @@ class MessageStart(MessageDABase):
 
 
 class DAGeneralMessageBody(MessageBody):
+    """DA message general body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize DA message general body."""
         super().__init__(body)
         self.power = body[1] > 0
         self.start = body[2] in [2, 6]
@@ -101,7 +118,10 @@ class DAGeneralMessageBody(MessageBody):
 
 
 class MessageDAResponse(MessageResponse):
+    """DA message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize DA message response."""
         super().__init__(bytearray(message))
         if self.message_type in [MessageType.query, MessageType.set] or (
             self.message_type == MessageType.notify1 and self.body_type == BodyType.X04
