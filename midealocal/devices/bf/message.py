@@ -1,14 +1,19 @@
+"""Midea local BF message."""
+
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class MessageBFBase(MessageRequest):
+    """BF message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize BF message base."""
         super().__init__(
             device_type=0xBF,
             protocol_version=protocol_version,
@@ -22,7 +27,10 @@ class MessageBFBase(MessageRequest):
 
 
 class MessageQuery(MessageBFBase):
+    """BF message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize BF message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -35,7 +43,10 @@ class MessageQuery(MessageBFBase):
 
 
 class MessageSet(MessageBFBase):
+    """BF message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize BF message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -54,7 +65,10 @@ class MessageSet(MessageBFBase):
 
 
 class MessageBFBody(MessageBody):
+    """BF message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize BF message body."""
         super().__init__(body)
         self.status = body[31]
         self.time_remaining = (
@@ -74,7 +88,10 @@ class MessageBFBody(MessageBody):
 
 
 class MessageBFResponse(MessageResponse):
+    """BF message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize BF message response."""
         super().__init__(bytearray(message))
         if (
             self.message_type
