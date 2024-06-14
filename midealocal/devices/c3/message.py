@@ -156,6 +156,7 @@ class C3MessageBody(MessageBody):
     """C3 message body."""
 
     def __init__(self, body: bytearray, data_offset: int = 0) -> None:
+        """Initialize C3 message body."""
         super().__init__(body)
         self.zone1_power = body[data_offset + 0] & 0x01 > 0
         self.zone2_power = body[data_offset + 0] & 0x02 > 0
