@@ -339,7 +339,7 @@ class TestMessageACResponse:
 
     @pytest.fixture(autouse=True)
     def _setup_header(self) -> None:
-        """Setup header."""
+        """Do setup header."""
         self.header = bytearray(
             [
                 0xAA,
