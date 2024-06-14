@@ -1,3 +1,5 @@
+"""Midea Local E2 device."""
+
 import json
 import logging
 import sys
@@ -21,12 +23,16 @@ from midealocal.device import MideaDevice
 
 
 class OldProtocol(StrEnum):
+    """Old protocol."""
+
     auto = "auto"
     true = "true"
     false = "false"
 
 
 class E2SubType(IntEnum):
+    """E2 sub type."""
+
     T82 = 82
     T85 = 85
     T36353 = 36353
@@ -36,6 +42,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea E2 device attributes."""
+
     power = "power"
     heating = "heating"
     keep_warm = "keep_warm"
@@ -50,6 +58,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaE2Device(MideaDevice):
+    """Midea E2 device."""
+
     def __init__(
         self,
         name: str,
@@ -63,6 +73,7 @@ class MideaE2Device(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea E2 device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -113,9 +124,11 @@ class MideaE2Device(MideaDevice):
             return self._default_old_protocol
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea E2 device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea E2 device process message."""
         message = MessageE2Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -126,6 +139,7 @@ class MideaE2Device(MideaDevice):
         return new_status
 
     def make_message_set(self) -> MessageSet:
+        """Midea E2 device make message set."""
         message = MessageSet(self._protocol_version)
         message.protection = self._attributes[DeviceAttributes.protection]
         message.whole_tank_heating = self._attributes[
@@ -138,6 +152,7 @@ class MideaE2Device(MideaDevice):
         return message
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea E2 device set attribute."""
         message: MessagePower | MessageSet | MessageNewProtocolSet | None = None
         if attr not in [
             DeviceAttributes.heating,
@@ -157,6 +172,7 @@ class MideaE2Device(MideaDevice):
             self.build_send(message)
 
     def set_customize(self, customize: str) -> None:
+        """Midea E2 device set customize."""
         self._old_protocol = self._default_old_protocol
         if customize and len(customize) > 0:
             try:
@@ -171,4 +187,4 @@ class MideaE2Device(MideaDevice):
 
 
 class MideaAppliance(MideaE2Device):
-    pass
+    """Midea E2 appliance."""
