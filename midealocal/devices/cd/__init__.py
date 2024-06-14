@@ -1,7 +1,7 @@
 import json
 import logging
 import sys
-from typing import Any
+from typing import Any, ClassVar
 
 from .message import MessageCDResponse, MessageQuery, MessageSet
 
@@ -30,7 +30,7 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaCDDevice(MideaDevice):
-    _modes = ["Energy-save", "Standard", "Dual", "Smart"]
+    _modes: ClassVar[list[str]] = ["Energy-save", "Standard", "Dual", "Smart"]
 
     def __init__(
         self,
