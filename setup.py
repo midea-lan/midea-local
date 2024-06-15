@@ -8,7 +8,7 @@ readme = Path("README.md")
 with readme.open(encoding="utf-8") as fh:
     long_description = fh.read()
 
-requires = ["aiohttp", "ifaddr", "pycryptodome"]
+requires = ["aiohttp", "defusedxml", "ifaddr", "pycryptodome"]
 
 setuptools.setup(
     name="midea-local",
