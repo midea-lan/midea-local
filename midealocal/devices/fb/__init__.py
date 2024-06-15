@@ -1,3 +1,5 @@
+"""Midea local FB device."""
+
 import logging
 import sys
 from typing import Any, ClassVar
@@ -15,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea FB device attributes."""
+
     power = "power"
     mode = "mode"
     heating_level = "heating_level"
@@ -24,6 +28,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaFBDevice(MideaDevice):
+    """Midea FB device."""
+
     _modes: ClassVar[dict[int, str]] = {
         0x01: "Auto",
         0x02: "ECO",
@@ -49,6 +55,7 @@ class MideaFBDevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea FB device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -72,12 +79,15 @@ class MideaFBDevice(MideaDevice):
 
     @property
     def modes(self) -> list[str]:
+        """Midea FB device modes."""
         return list(MideaFBDevice._modes.values())
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea FB device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea FB device process message."""
         message = MessageFBResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -95,6 +105,7 @@ class MideaFBDevice(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea FB device set attribute."""
         if attr == DeviceAttributes.mode:
             message = MessageSet(self._protocol_version, self.subtype)
             if value in MideaFBDevice._modes.values():
@@ -108,4 +119,4 @@ class MideaFBDevice(MideaDevice):
 
 
 class MideaAppliance(MideaFBDevice):
-    pass
+    """Midea FB appliance."""

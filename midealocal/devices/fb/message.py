@@ -1,3 +1,5 @@
+"""Midea local FB message."""
+
 from midealocal.devices import SubBodyType
 from midealocal.message import (
     NONE_VALUE,
@@ -16,12 +18,15 @@ MIN_TARGET_TEMP = -40
 
 
 class MessageFBBase(MessageRequest):
+    """FB message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int = NONE_VALUE,
     ) -> None:
+        """Initialize FB message base."""
         super().__init__(
             device_type=0xFB,
             protocol_version=protocol_version,
@@ -35,7 +40,10 @@ class MessageFBBase(MessageRequest):
 
 
 class MessageQuery(MessageFBBase):
+    """FB message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize FB message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -43,6 +51,7 @@ class MessageQuery(MessageFBBase):
 
     @property
     def body(self) -> bytearray:
+        """FB message query body."""
         return bytearray([])
 
     @property
@@ -51,7 +60,10 @@ class MessageQuery(MessageFBBase):
 
 
 class MessageSet(MessageFBBase):
+    """FB message set."""
+
     def __init__(self, protocol_version: int, subtype: int) -> None:
+        """Initialize FB message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -66,6 +78,7 @@ class MessageSet(MessageFBBase):
 
     @property
     def body(self) -> bytearray:
+        """FB message set body."""
         power = 0 if self.power is None else (0x01 if self.power else 0x02)
         mode = 0 if self.mode is None else self.mode
         heating_level = (
@@ -129,7 +142,10 @@ class MessageSet(MessageFBBase):
 
 
 class FBGeneralMessageBody(MessageBody):
+    """FB message general body."""
+
     def __init__(self, body: bytearray) -> None:
+        """initialize FB message general body."""
         super().__init__(body)
         self.power = (body[0] & 0x01) not in [0, 2]
         self.mode = body[4]
@@ -146,7 +162,10 @@ class FBGeneralMessageBody(MessageBody):
 
 
 class MessageFBResponse(MessageResponse):
+    """FB message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize FB message response."""
         super().__init__(bytearray(message))
         if self.message_type in [
             MessageType.query,
