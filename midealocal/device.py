@@ -192,6 +192,7 @@ class MideaDevice(threading.Thread):
 
     def connect(self, refresh_status: bool = True) -> bool:
         """Connect to device."""
+        connected = False
         try:
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._socket.settimeout(10)
@@ -208,8 +209,7 @@ class MideaDevice(threading.Thread):
             _LOGGER.debug("[%s] Authentication success", self._device_id)
             if refresh_status:
                 self.refresh_status(wait_response=True)
-            self.enable_device(True)
-            return True
+            connected = True
         except TimeoutError:
             _LOGGER.debug("[%s] Connection timed out", self._device_id)
         except OSError:
@@ -232,8 +232,8 @@ class MideaDevice(threading.Thread):
                 file,
                 lineno,
             )
-        self.enable_device(False)
-        return False
+        self.enable_device(connected)
+        return connected
 
     def authenticate(self) -> None:
         """Authenticate to device. V3 only."""
