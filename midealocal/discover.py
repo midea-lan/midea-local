@@ -273,13 +273,13 @@ def get_id_from_response(response: bytearray) -> int:
     return 0
 
 
-def bytes2port(paramArrayOfbyte: bytes | None) -> int:
+def bytes2port(value_bytes: bytes | None) -> int:
     """Bytes to port."""
-    if paramArrayOfbyte is None:
+    if value_bytes is None:
         return 0
     b, i = 0, 0
     while b < BYTES_2_PORT_LENGTH:
-        b1 = paramArrayOfbyte[b] & 0xFF if b < len(paramArrayOfbyte) else 0
+        b1 = value_bytes[b] & 0xFF if b < len(value_bytes) else 0
         i |= b1 << b * 8
         b += 1
     return i
