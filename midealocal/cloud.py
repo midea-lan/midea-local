@@ -220,9 +220,10 @@ class MideaCloud:
 
     async def get_device_info(self, device_id: int) -> dict[str, Any] | None:
         """Get device information."""
-        if response := await self.list_appliances(home_id=None):
-            if int(device_id) in response:
-                return cast(dict, response[device_id])
+        if (response := await self.list_appliances(home_id=None)) and (
+            int(device_id) in response
+        ):
+            return cast(dict, response[device_id])
         return None
 
     async def download_lua(
@@ -486,12 +487,13 @@ class MSmartHomeCloud(MideaCloud):
     async def _re_route(self) -> None:
         data = self._make_general_data()
         data.update({"userType": "0", "userName": f"{self._account}"})
-        if response := await self._api_request(
-            endpoint="/v1/multicloud/platform/user/route",
-            data=data,
-        ):
-            if api_url := response.get("masUrl"):
-                self._api_url = api_url
+        if (
+            response := await self._api_request(
+                endpoint="/v1/multicloud/platform/user/route",
+                data=data,
+            )
+        ) and (api_url := response.get("masUrl")):
+            self._api_url = api_url
 
     async def login(self) -> bool:
         """Authenticate to MSmart Cloud."""
