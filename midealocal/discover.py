@@ -9,6 +9,7 @@ import ifaddr
 from defusedxml import ElementTree
 
 from .security import LocalSecurity
+from .exceptions import ElementMissing
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -196,7 +197,8 @@ def _parse_discover_response(
             data.decode(encoding="utf-8", errors="replace"),
         )
         child = root.find("body/device")
-        assert child
+        if not child:
+            raise ElementMissing
         m = child.attrib
         port, sn, device_type = (
             int(m["port"]),
@@ -268,7 +270,8 @@ def get_id_from_response(response: bytearray) -> int:
         xml = response[64:-16]
         root = ElementTree.fromstring(xml.decode(encoding="utf-8", errors="replace"))
         child = root.find("smartDevice")
-        assert child
+        if not child:
+            raise ElementMissing
         m = child.attrib
         return int.from_bytes(bytearray.fromhex(m["devId"]), "little")
     return 0
