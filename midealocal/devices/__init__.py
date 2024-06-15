@@ -2,9 +2,8 @@
 
 from importlib import import_module
 from typing import cast
-from midealocal.device import MideaDevice
 
-from midealocal.device import DeviceType
+from midealocal.device import DeviceType, MideaDevice
 
 
 def device_selector(

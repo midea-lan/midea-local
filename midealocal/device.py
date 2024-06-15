@@ -550,7 +550,6 @@ class MideaDevice(threading.Thread):
 
     def get_attribute(self, attr: str) -> bool | int | str | None:
         """Get attribute."""
-
         return self._attributes.get(attr)
 
     def set_customize(self, customize: str) -> None:
