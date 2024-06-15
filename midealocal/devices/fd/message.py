@@ -1,3 +1,5 @@
+"""Midea local FD message."""
+
 from midealocal.crc8 import calculate
 from midealocal.devices import BodyType
 from midealocal.message import (
@@ -14,6 +16,8 @@ MAX_MSG_SERIAL_NUM = 254
 
 
 class MessageFDBase(MessageRequest):
+    """FD message base."""
+
     _message_serial = 0
 
     def __init__(
@@ -22,6 +26,7 @@ class MessageFDBase(MessageRequest):
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize FD message base."""
         super().__init__(
             device_type=0xFD,
             protocol_version=protocol_version,
@@ -45,7 +50,10 @@ class MessageFDBase(MessageRequest):
 
 
 class MessageQuery(MessageFDBase):
+    """FD message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize FD message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -80,7 +88,10 @@ class MessageQuery(MessageFDBase):
 
 
 class MessageSet(MessageFDBase):
+    """FD message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize FD message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -127,7 +138,10 @@ class MessageSet(MessageFDBase):
 
 
 class FDC8MessageBody(MessageBody):
+    """FD message C8 body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize FD message C8 body."""
         super().__init__(body)
         self.power = (body[1] & 0x01) > 0
         self.fan_speed = body[3] & 0x7F
@@ -144,7 +158,10 @@ class FDC8MessageBody(MessageBody):
 
 
 class FDA0MessageBody(MessageBody):
+    """FD message A0 body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize FD message A0 body."""
         super().__init__(body)
         self.power = (body[1] & 0x01) > 0
         self.fan_speed = body[3] & 0x7F
@@ -161,7 +178,10 @@ class FDA0MessageBody(MessageBody):
 
 
 class MessageFDResponse(MessageResponse):
+    """FD message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize FD message response."""
         super().__init__(bytearray(message))
         if self.message_type in [
             MessageType.query,
