@@ -135,9 +135,5 @@ class MideaB3Device(MideaDevice):
         """Midea local B3 device set attribute."""
 
 
-class MideaB2Device(MideaB3Device):
-    """Midea local B2 device compatibility."""
-
-
 class MideaAppliance(MideaB3Device):
     """Midea local B3 appliance."""
