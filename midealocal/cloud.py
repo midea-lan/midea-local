@@ -425,7 +425,7 @@ class MeijuCloud(MideaCloud):
                     fnm = Path(path, response["fileName"])
                     with fnm.open("w", encoding="utf-8") as fp:
                         fp.write(stream)
-        return fnm.name if fnm else None
+        return str(fnm) if fnm else None
 
 
 class MSmartHomeCloud(MideaCloud):
@@ -619,7 +619,7 @@ class MSmartHomeCloud(MideaCloud):
                     fnm = Path(path, response["fileName"])
                     with fnm.open("w", encoding="utf-8") as fp:
                         fp.write(stream)
-        return fnm.name if fnm else None
+        return str(fnm) if fnm else None
 
 
 class MideaAirCloud(MideaCloud):
