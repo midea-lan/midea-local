@@ -175,14 +175,14 @@ class CloudSecurity:
                     len(aes_key),
                 ).decode(),
             )
-        else:  # CBC
-            return cast(
-                str,
-                unpad(
-                    AES.new(aes_key, AES.MODE_CBC, iv=aes_iv).decrypt(data),
-                    len(aes_key),
-                ).decode(),
-            )
+        # CBC
+        return cast(
+            str,
+            unpad(
+                AES.new(aes_key, AES.MODE_CBC, iv=aes_iv).decrypt(data),
+                len(aes_key),
+            ).decode(),
+        )
 
 
 class MeijuCloudSecurity(CloudSecurity):
@@ -348,11 +348,11 @@ class LocalSecurity:
             raise MessageWrongFormat("not an 8370 message")
         size = int.from_bytes(header[2:4], "big") + 8
         leftover = None
-        if len(data) < size:
-            return [], data
-        elif len(data) > size:
+        if len(data) > size:
             leftover = data[size:]
             data = data[:size]
+        elif len(data) < size:
+            return [], data
         if header[4] != HEADER_8370_4TH_BYTE:
             raise MessageWrongFormat("missing byte 4")
         padding = header[5] >> 4
