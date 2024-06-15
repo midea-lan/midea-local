@@ -44,6 +44,7 @@ class MessageFDBase(MessageRequest):
 
     @property
     def body(self) -> bytearray:
+        """FD message base body."""
         body = bytearray([self.body_type]) + self._body + bytearray([self._message_id])
         body.append(calculate(body))
         return body
