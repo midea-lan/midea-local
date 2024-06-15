@@ -1,3 +1,5 @@
+"""Midea local x34 message."""
+
 from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
@@ -11,12 +13,15 @@ STORAGE_REMAINING_BYTE = 18
 
 
 class Message34Base(MessageRequest):
+    """X34 message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize X34 message base."""
         super().__init__(
             device_type=0x34,
             protocol_version=protocol_version,
@@ -30,7 +35,10 @@ class Message34Base(MessageRequest):
 
 
 class MessageQuery(Message34Base):
+    """X34 message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize X34 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -43,7 +51,10 @@ class MessageQuery(Message34Base):
 
 
 class MessagePower(Message34Base):
+    """X34 message power."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize X34 message power."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -58,7 +69,10 @@ class MessagePower(Message34Base):
 
 
 class MessageLock(Message34Base):
+    """X34 message lock."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize X34 message lock."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -73,7 +87,10 @@ class MessageLock(Message34Base):
 
 
 class MessageStorage(Message34Base):
+    """X34 message storage."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize X34 message storage."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -92,7 +109,10 @@ class MessageStorage(Message34Base):
 
 
 class Message34Body(MessageBody):
+    """X34 message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize X34 message body."""
         super().__init__(body)
         self.power = body[1] > 0
         self.status = body[1]
@@ -128,7 +148,10 @@ class Message34Body(MessageBody):
 
 
 class Message34Response(MessageResponse):
+    """X34 message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize X34 message response."""
         super().__init__(bytearray(message))
         if (
             self.message_type == MessageType.set and 0 <= self.body_type <= BodyType.X07
