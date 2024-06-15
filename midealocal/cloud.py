@@ -9,7 +9,7 @@ from http import HTTPStatus
 from secrets import token_hex
 from threading import Lock
 from typing import Any, cast
-
+from pathlib import Path
 from aiohttp import ClientSession
 
 from .security import (
@@ -422,10 +422,10 @@ class MeijuCloud(MideaCloud):
                         + self._security.aes_decrypt_with_fixed_key(lua)
                     )
                     stream = stream.replace("\r\n", "\n")
-                    fnm = f"{path}/{response['fileName']}"
-                    with open(fnm, "w") as fp:
+                    fnm = Path(path, response["fileName"])
+                    with fnm.open("w", encoding="utf-8") as fp:
                         fp.write(stream)
-        return fnm
+        return fnm.name if fnm else None
 
 
 class MSmartHomeCloud(MideaCloud):
@@ -616,10 +616,10 @@ class MSmartHomeCloud(MideaCloud):
                         + self._security.aes_decrypt_with_fixed_key(lua)
                     )
                     stream = stream.replace("\r\n", "\n")
-                    fnm = f"{path}/{response['fileName']}"
-                    with open(fnm, "w") as fp:
+                    fnm = Path(path, response["fileName"])
+                    with fnm.open("w", encoding="utf-8") as fp:
                         fp.write(stream)
-        return fnm
+        return fnm.name if fnm else None
 
 
 class MideaAirCloud(MideaCloud):

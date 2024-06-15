@@ -2,8 +2,10 @@
 """setup midea-local."""
 
 import setuptools
+from pathlib import Path
 
-with open("README.md", encoding="utf-8") as fh:
+readme = Path("README.md")
+with readme.open(encoding="utf-8") as fh:
     long_description = fh.read()
 
 requires = ["aiohttp", "ifaddr", "pycryptodome"]
