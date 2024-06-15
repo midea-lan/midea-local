@@ -1,4 +1,4 @@
-target-version = "py311"
+target-version = "py310"
 
 lint.select = ["ALL"]
 
