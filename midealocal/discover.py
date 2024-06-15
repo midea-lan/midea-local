@@ -157,6 +157,72 @@ SERIAL_TYPE1_LENGTH = 32
 SERIAL_TYPE2_LENGTH = 22
 
 
+def _parse_discover_response(
+    sock: socket.socket, found_devices: dict[int, dict[str, Any]]
+) -> tuple[int, dict[str, Any] | None]:
+    security = LocalSecurity()
+    data, addr = sock.recvfrom(512)
+    ip = addr[0]
+    _LOGGER.debug("Received response from %s: %s", addr, data.hex())
+    if len(data) >= DISCOVERY_MIN_RESPONSE_LENGTH and (
+        data[:2].hex() == "5a5a" or data[8:10].hex() == "5a5a"
+    ):
+        if data[:2].hex() == "5a5a":
+            protocol = 2
+        elif data[:2].hex() == "8370":
+            protocol = 3
+            if data[8:10].hex() == "5a5a":
+                data = data[8:-16]
+        else:
+            return 0, None
+        device_id = int.from_bytes(
+            bytearray.fromhex(data[20:26].hex()),
+            "little",
+        )
+        if device_id in found_devices:
+            return 0, None
+        encrypt_data = data[40:-16]
+        reply = security.aes_decrypt(encrypt_data)
+        _LOGGER.debug("Declassified reply: %s", reply.hex())
+        ssid = reply[41 : 41 + reply[40]].decode("utf-8")
+        device_type = ssid.split("_")[1]
+        port = bytes2port(reply[4:8])
+        model = reply[17:25].decode("utf-8")
+        sn = reply[8:40].decode("utf-8")
+    elif data[:6].hex() == "3c3f786d6c20":
+        protocol = 1
+        root = ElementTree.fromstring(
+            data.decode(encoding="utf-8", errors="replace"),
+        )
+        child = root.find("body/device")
+        assert child
+        m = child.attrib
+        port, sn, device_type = (
+            int(m["port"]),
+            m["apc_sn"],
+            str(hex(int(m["apc_type"])))[2:],
+        )
+        response = get_device_info(ip, int(port))
+        device_id = get_id_from_response(response)
+        if len(sn) == SERIAL_TYPE1_LENGTH:
+            model = sn[9:17]
+        elif len(sn) == SERIAL_TYPE2_LENGTH:
+            model = sn[3:11]
+        else:
+            model = ""
+    else:
+        return 0, None
+    return device_id, {
+        "device_id": device_id,
+        "type": int(device_type, 16),
+        "ip_address": ip,
+        "port": port,
+        "model": model,
+        "sn": sn,
+        "protocol": protocol,
+    }
+
+
 def discover(
     discover_type: list | None = None,
     ip_address: list | None = None,
@@ -164,11 +230,11 @@ def discover(
     """Discover devices."""
     if discover_type is None:
         discover_type = []
-    security = LocalSecurity()
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     sock.settimeout(5)
-    found_devices = {}
+    found_devices: dict[int, dict[str, Any]] = {}
     addrs = enum_all_broadcast() if ip_address is None else [ip_address]
 
     _LOGGER.debug("All addresses for broadcast: %s", addrs)
@@ -180,66 +246,9 @@ def discover(
             _LOGGER.warning("Can't access network %s", addrs)
     while True:
         try:
-            data, addr = sock.recvfrom(512)
-            ip = addr[0]
-            _LOGGER.debug("Received response from %s: %s", addr, data.hex())
-            if len(data) >= DISCOVERY_MIN_RESPONSE_LENGTH and (
-                data[:2].hex() == "5a5a" or data[8:10].hex() == "5a5a"
-            ):
-                if data[:2].hex() == "5a5a":
-                    protocol = 2
-                elif data[:2].hex() == "8370":
-                    protocol = 3
-                    if data[8:10].hex() == "5a5a":
-                        data = data[8:-16]
-                else:
-                    continue
-                device_id = int.from_bytes(
-                    bytearray.fromhex(data[20:26].hex()),
-                    "little",
-                )
-                if device_id in found_devices:
-                    continue
-                encrypt_data = data[40:-16]
-                reply = security.aes_decrypt(encrypt_data)
-                _LOGGER.debug("Declassified reply: %s", reply.hex())
-                ssid = reply[41 : 41 + reply[40]].decode("utf-8")
-                device_type = ssid.split("_")[1]
-                port = bytes2port(reply[4:8])
-                model = reply[17:25].decode("utf-8")
-                sn = reply[8:40].decode("utf-8")
-            elif data[:6].hex() == "3c3f786d6c20":
-                protocol = 1
-                root = ElementTree.fromstring(
-                    data.decode(encoding="utf-8", errors="replace"),
-                )
-                child = root.find("body/device")
-                assert child
-                m = child.attrib
-                port, sn, device_type = (
-                    int(m["port"]),
-                    m["apc_sn"],
-                    str(hex(int(m["apc_type"])))[2:],
-                )
-                response = get_device_info(ip, int(port))
-                device_id = get_id_from_response(response)
-                if len(sn) == SERIAL_TYPE1_LENGTH:
-                    model = sn[9:17]
-                elif len(sn) == SERIAL_TYPE2_LENGTH:
-                    model = sn[3:11]
-                else:
-                    model = ""
-            else:
+            device_id, device = _parse_discover_response(sock, found_devices)
+            if device is None:
                 continue
-            device = {
-                "device_id": device_id,
-                "type": int(device_type, 16),
-                "ip_address": ip,
-                "port": port,
-                "model": model,
-                "sn": sn,
-                "protocol": protocol,
-            }
             if len(discover_type) == 0 or device.get("type") in discover_type:
                 found_devices[device_id] = device
                 _LOGGER.debug("Found a supported device: %s", device)
