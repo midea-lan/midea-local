@@ -323,11 +323,12 @@ class LocalSecurity:
         """Encode 8370 data."""
         header = bytearray([0x83, 0x70])
         size, padding = len(data), 0
-        if msgtype in (MSGTYPE_ENCRYPTED_RESPONSE, MSGTYPE_ENCRYPTED_REQUEST):
-            if (size + 2) % 16 != 0:
-                padding = 16 - (size + 2 & 0xF)
-                size += padding + 32
-                data += get_random_bytes(padding)
+        if (msgtype in (MSGTYPE_ENCRYPTED_RESPONSE, MSGTYPE_ENCRYPTED_REQUEST)) and (
+            (size + 2) % 16 != 0
+        ):
+            padding = 16 - (size + 2 & 0xF)
+            size += padding + 32
+            data += get_random_bytes(padding)
         header += size.to_bytes(2, "big")
         header += bytearray([0x20, padding << 4 | msgtype])
         data = self._request_count.to_bytes(2, "big") + data
