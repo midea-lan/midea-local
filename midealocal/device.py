@@ -479,6 +479,16 @@ class MideaDevice(threading.Thread):
         """Set refresh interval."""
         self._refresh_interval = refresh_interval
 
+    def _check_refresh(self, now: float, previous_refresh: float) -> None:
+        if 0 < self._refresh_interval <= now - previous_refresh:
+            self.refresh_status()
+            previous_refresh = now
+
+    def _check_heartbeat(self, now: float, previous_heartbeat: float) -> None:
+        if now - previous_heartbeat >= self._heartbeat_interval:
+            self.send_heartbeat()
+            previous_heartbeat = now
+
     def run(self) -> None:
         """Run loop."""
         while self._is_run:
@@ -494,15 +504,10 @@ class MideaDevice(threading.Thread):
             while True:
                 try:
                     now = time.time()
-                    if 0 < self._refresh_interval <= now - previous_refresh:
-                        self.refresh_status()
-                        previous_refresh = now
-                    if now - previous_heartbeat >= self._heartbeat_interval:
-                        self.send_heartbeat()
-                        previous_heartbeat = now
+                    self._check_refresh(now, previous_refresh)
+                    self._check_heartbeat(now, previous_heartbeat)
                     msg = self._socket.recv(512)
-                    msg_len = len(msg)
-                    if msg_len == 0:
+                    if len(msg) == 0:
                         if self._is_run:
                             _LOGGER.error(
                                 "[%s] Socket error - Connection closed by peer",
