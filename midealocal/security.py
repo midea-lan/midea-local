@@ -61,7 +61,7 @@ class CloudSecurity:
         self._fixed_key = format(fixed_key, "x").encode("ascii") if fixed_key else None
         self._fixed_iv = format(fixed_iv, "x").encode("ascii") if fixed_iv else None
 
-    def sign(self, url: str, data: dict[str, Any] | str, random: str) -> str | None:
+    def sign(self, url: str, data: dict[str, Any] | str, random: str) -> str | None:  # noqa: ARG002
         """Sign cloud data."""
         msg: str = self._iot_key or ""
         msg += str(data)
@@ -192,7 +192,7 @@ class MeijuCloudSecurity(CloudSecurity):
         """Initialize Meiju Cloud security."""
         super().__init__(login_key, iot_key, hmac_key, 10864842703515613082)
 
-    def encrypt_iam_password(self, login_id: str, data: str) -> str:
+    def encrypt_iam_password(self, login_id: str, data: str) -> str:  # noqa: ARG002
         """Encrypt IAM password."""
         md = md5()
         md.update(data.encode("ascii"))
@@ -245,7 +245,7 @@ class MideaAirSecurity(CloudSecurity):
         """Initialize Midea Air Security."""
         super().__init__(login_key, None, None)
 
-    def sign(self, url: str, data: dict[str, Any] | str, random: str) -> str:
+    def sign(self, url: str, data: dict[str, Any] | str, random: str) -> str:  # noqa: ARG002
         if isinstance(data, str):
             raise DataSignWrongType
         payload = unquote_plus(urlencode(sorted(data.items(), key=lambda x: x[0])))
