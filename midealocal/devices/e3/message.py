@@ -12,7 +12,6 @@ from midealocal.message import (
 NEW_PROTOCOL_PARAMS = {
     "none": 0x00,
     "zero_cold_water": 0x03,
-    # "zero_cold_master": 0x12,
     "zero_cold_pulse": 0x04,
     "smart_volume": 0x07,
     "target_temperature": 0x08,
