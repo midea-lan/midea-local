@@ -1,7 +1,7 @@
 """Midea local CA message."""
 
-from midealocal.devices import BodyType
 from midealocal.message import (
+    BodyType,
     MessageBody,
     MessageRequest,
     MessageResponse,

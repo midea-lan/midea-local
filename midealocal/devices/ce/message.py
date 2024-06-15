@@ -1,8 +1,8 @@
 """Midea local CE message."""
 
 from midealocal.const import MAX_BYTE_VALUE
-from midealocal.devices import BodyType
 from midealocal.message import (
+    BodyType,
     MessageBody,
     MessageRequest,
     MessageResponse,

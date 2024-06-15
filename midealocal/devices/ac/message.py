@@ -4,13 +4,15 @@ from enum import IntEnum
 
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.crc8 import calculate
-from midealocal.devices import BodyType, DeviceType, SubBodyType
+from midealocal.device import DeviceType
 from midealocal.message import (
+    BodyType,
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
     NewProtocolMessageBody,
+    SubBodyType,
 )
 
 BB_AC_MODES = [0, 3, 1, 2, 4, 5]
