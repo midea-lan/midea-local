@@ -248,7 +248,7 @@ def discover(
         except TimeoutError:
             break
         except OSError as e:
-            _LOGGER.error("Socket error: %s", repr(e))
+            _LOGGER.exception("Socket error: %s", repr(e))
     return found_devices
 
 

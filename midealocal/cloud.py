@@ -458,7 +458,6 @@ class MSmartHomeCloud(MideaCloud):
 
     def _make_general_data(self) -> dict[str, Any]:
         return {
-            # "appVersion": self.APP_VERSION,
             "src": self._app_id,
             "format": "2",
             "stamp": datetime.datetime.now().strftime("%Y%m%d%H%M%S"),

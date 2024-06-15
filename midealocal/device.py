@@ -179,7 +179,7 @@ class MideaDevice(threading.Thread):
             _LOGGER.debug("[%s] Refresh status is timed out", self._device_id)
         except Exception as e:
             assert e.__traceback__
-            _LOGGER.error(
+            _LOGGER.exception(
                 "[%s] Unknown error: %s, %s, %s",
                 self._device_id,
                 e.__traceback__.tb_frame.f_globals["__file__"],
@@ -239,7 +239,7 @@ class MideaDevice(threading.Thread):
         """Refresh device status."""
         cmds: list = self.build_query()
         if self._appliance_query:
-            cmds = [MessageQueryAppliance(self.device_type)] + cmds
+            cmds = [MessageQueryAppliance(self.device_type), *cmds]
         error_count = 0
         for cmd in cmds:
             if cmd.__class__.__name__ not in self._unsupported_protocol:
@@ -257,7 +257,7 @@ class MideaDevice(threading.Thread):
                             elif result == ParseMessageResult.PADDING:
                                 continue
                             else:
-                                raise ResponseException
+                                error_count += 1
                     except TimeoutError:
                         error_count += 1
                         self._unsupported_protocol.append(cmd.__class__.__name__)
@@ -266,8 +266,6 @@ class MideaDevice(threading.Thread):
                             self._device_id,
                             cmd.__class__.__name__,
                         )
-                    except ResponseException:
-                        error_count += 1
             else:
                 error_count += 1
         if error_count == len(cmds):
@@ -323,7 +321,7 @@ class MideaDevice(threading.Thread):
                                 )
 
                     except Exception:
-                        _LOGGER.error(
+                        _LOGGER.exception(
                             "[%s] Error in process message, msg = %s",
                             self._device_id,
                             decrypted.hex(),
@@ -462,7 +460,13 @@ class MideaDevice(threading.Thread):
                     msg = self._socket.recv(512)
                     msg_len = len(msg)
                     if msg_len == 0:
-                        raise OSError("Connection closed by peer")
+                        if self._is_run:
+                            _LOGGER.error(
+                                "[%s] Socket error - Connection closed by peer",
+                                self._device_id,
+                            )
+                            self.close_socket()
+                        break
                     result = self.parse_message(msg)
                     if result == ParseMessageResult.ERROR:
                         _LOGGER.debug("[%s] Message 'ERROR' received", self._device_id)
@@ -483,7 +487,7 @@ class MideaDevice(threading.Thread):
                     break
                 except Exception as e:
                     assert e.__traceback__
-                    _LOGGER.error(
+                    _LOGGER.exception(
                         "[%s] Unknown error :%s, %s, %s",
                         self._device_id,
                         e.__traceback__.tb_frame.f_globals["__file__"],

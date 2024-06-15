@@ -179,7 +179,9 @@ class MideaB6Device(MideaDevice):
                         {"speeds": self._speeds, "default_speed": self._power_speed},
                     )
             except Exception as e:
-                _LOGGER.error("[%s] Set customize error: %s", self.device_id, repr(e))
+                _LOGGER.exception(
+                    "[%s] Set customize error: %s", self.device_id, repr(e)
+                )
 
 
 class MideaAppliance(MideaB6Device):
