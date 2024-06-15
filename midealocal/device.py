@@ -257,7 +257,7 @@ class MideaDevice(threading.Thread):
                             elif result == ParseMessageResult.PADDING:
                                 continue
                             else:
-                                raise ResponseException
+                                error_count += 1
                     except TimeoutError:
                         error_count += 1
                         self._unsupported_protocol.append(cmd.__class__.__name__)
@@ -266,8 +266,6 @@ class MideaDevice(threading.Thread):
                             self._device_id,
                             cmd.__class__.__name__,
                         )
-                    except ResponseException:
-                        error_count += 1
             else:
                 error_count += 1
         if error_count == len(cmds):
@@ -462,7 +460,13 @@ class MideaDevice(threading.Thread):
                     msg = self._socket.recv(512)
                     msg_len = len(msg)
                     if msg_len == 0:
-                        raise OSError("Connection closed by peer")
+                        if self._is_run:
+                            _LOGGER.error(
+                                "[%s] Socket error - Connection closed by peer",
+                                self._device_id,
+                            )
+                            self.close_socket()
+                        break
                     result = self.parse_message(msg)
                     if result == ParseMessageResult.ERROR:
                         _LOGGER.debug("[%s] Message 'ERROR' received", self._device_id)
