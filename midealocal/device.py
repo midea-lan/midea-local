@@ -543,7 +543,8 @@ class MideaDevice(threading.Thread):
         raise NotImplementedError
 
     def get_attribute(self, attr: str) -> bool | int | str | None:
-    """Get attribute."""
+        """Get attribute."""
+
         return self._attributes.get(attr)
 
     def set_customize(self, customize: str) -> None:
