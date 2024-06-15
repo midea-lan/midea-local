@@ -145,7 +145,7 @@ class FBGeneralMessageBody(MessageBody):
     """FB message general body."""
 
     def __init__(self, body: bytearray) -> None:
-        """initialize FB message general body."""
+        """Initialize FB message general body."""
         super().__init__(body)
         self.power = (body[0] & 0x01) not in [0, 2]
         self.mode = body[4]
