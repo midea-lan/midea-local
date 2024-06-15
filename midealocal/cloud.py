@@ -1,10 +1,10 @@
 """Midea Local cloud."""
 
 import base64
-import datetime
 import json
 import logging
 import time
+from datetime import UTC, datetime
 from http import HTTPStatus
 from pathlib import Path
 from secrets import token_hex
@@ -117,7 +117,7 @@ class MideaCloud:
         if not data.get("reqId"):
             data.update({"reqId": token_hex(16)})
         if not data.get("stamp"):
-            data.update({"stamp": datetime.datetime.now().strftime("%Y%m%d%H%M%S")})
+            data.update({"stamp": datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S")})
         random = str(int(time.time()))
         url = self._api_url + endpoint
         dump_data = json.dumps(data)
@@ -267,7 +267,7 @@ class MeijuCloud(MideaCloud):
         """Authenticate to Meiju Cloud."""
         if login_id := await self._get_login_id():
             self._login_id = login_id
-            stamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+            stamp = datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S")
             data = {
                 "iotData": {
                     "clientType": 1,
@@ -462,7 +462,7 @@ class MSmartHomeCloud(MideaCloud):
         return {
             "src": self._app_id,
             "format": "2",
-            "stamp": datetime.datetime.now().strftime("%Y%m%d%H%M%S"),
+            "stamp": datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S"),
             "platformId": "1",
             "deviceId": self._device_id,
             "reqId": token_hex(16),
@@ -502,7 +502,7 @@ class MSmartHomeCloud(MideaCloud):
             self._login_id = login_id
             iot_data = self._make_general_data()
             iot_data.pop("uid")
-            stamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+            stamp = datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S")
             iot_data.update(
                 {
                     "iampwd": self._security.encrypt_iam_password(
@@ -650,7 +650,7 @@ class MideaAirCloud(MideaCloud):
         data = {
             "src": self._app_id,
             "format": "2",
-            "stamp": datetime.datetime.now().strftime("%Y%m%d%H%M%S"),
+            "stamp": datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S"),
             "deviceId": self._device_id,
             "reqId": token_hex(16),
             "clientType": "1",
