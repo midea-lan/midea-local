@@ -1,7 +1,6 @@
 """Midea local message."""
 
 import logging
-from abc import ABC
 from enum import IntEnum
 from typing import SupportsIndex, cast
 
@@ -106,7 +105,7 @@ class MessageType(IntEnum):
 NONE_VALUE = 0x00
 
 
-class MessageBase(ABC):
+class MessageBase:
     """Message base."""
 
     HEADER_LENGTH = 10
