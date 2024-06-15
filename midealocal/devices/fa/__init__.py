@@ -348,7 +348,7 @@ class MideaFADevice(MideaDevice):
                 if params and "speed_count" in params:
                     self._speed_count = params.get("speed_count")
             except Exception:
-                _LOGGER.exception("[%s] Set customize error: %s", self.device_id)
+                _LOGGER.exception("[%s] Set customize error", self.device_id)
             self.update_all({"speed_count": self._speed_count})
 
 
