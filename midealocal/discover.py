@@ -247,8 +247,8 @@ def discover(
                 _LOGGER.debug("Found a unsupported device: %s", device)
         except TimeoutError:
             break
-        except OSError as e:
-            _LOGGER.exception("Socket error: %s", repr(e))
+        except OSError:
+            _LOGGER.exception("Socket error")
     return found_devices
 
 
