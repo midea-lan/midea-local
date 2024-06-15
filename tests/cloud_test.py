@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import ClassVar
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, Mock
 
@@ -20,7 +21,7 @@ from midealocal.cloud import (
 class CloudTest(IsolatedAsyncioTestCase):
     """Cloud test case."""
 
-    responses: dict[str, bytes] = {}
+    responses: ClassVar[dict[str, bytes]] = {}
 
     def setUp(self) -> None:
         """Set tests up."""
