@@ -369,5 +369,5 @@ class LocalSecurity:
         data = data[2:]
         if leftover:
             packets, incomplete = self.decode_8370(leftover)
-            return [data] + packets, incomplete
+            return [data, *packets], incomplete
         return [data], b""
