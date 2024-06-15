@@ -2,12 +2,13 @@
 
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.device import ProtocolVersion
-from midealocal.devices import BodyType, SubBodyType
 from midealocal.message import (
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
+    BodyType,
+    SubBodyType,
 )
 
 FAN_LEVEL_RANGE_1 = 130

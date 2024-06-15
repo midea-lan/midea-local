@@ -30,6 +30,46 @@ RESPONSE_TIMEOUT = 120
 _LOGGER = logging.getLogger(__name__)
 
 
+class DeviceType(IntEnum):
+    """Device Type."""
+
+    A0 = 0xA0
+    A1 = 0xA1
+    AC = 0xAC
+    B0 = 0xB0
+    B1 = 0xB1
+    B3 = 0xB3
+    B4 = 0xB4
+    B6 = 0xB6
+    BF = 0xBF
+    C2 = 0xC2
+    C3 = 0xC3
+    CA = 0xCA
+    CC = 0xCC
+    CD = 0xCD
+    CE = 0xCE
+    CF = 0xCF
+    DA = 0xDA
+    DB = 0xDB
+    DC = 0xDC
+    E1 = 0xE1
+    E2 = 0xE2
+    E3 = 0xE3
+    E6 = 0xE6
+    E8 = 0xE8
+    EA = 0xEA
+    EC = 0xEC
+    ED = 0xED
+    FA = 0xFA
+    FB = 0xFB
+    FC = 0xFC
+    FD = 0xFD
+    X13 = 0x13
+    X26 = 0x26
+    X34 = 0x34
+    X40 = 0x40
+
+
 class AuthException(Exception):
     """Authentication exception."""
 
@@ -178,13 +218,16 @@ class MideaDevice(threading.Thread):
         except RefreshFailed:
             _LOGGER.debug("[%s] Refresh status is timed out", self._device_id)
         except Exception as e:
-            assert e.__traceback__
+            file = None
+            lineno = None
+            if e.__traceback__:
+                file = e.__traceback__.tb_frame.f_globals["__file__"]
+                lineno = e.__traceback__.tb_lineno
             _LOGGER.exception(
-                "[%s] Unknown error: %s, %s, %s",
+                "[%s] Unknown error : %s, %s",
                 self._device_id,
-                e.__traceback__.tb_frame.f_globals["__file__"],
-                e.__traceback__.tb_lineno,
-                repr(e),
+                file,
+                lineno,
             )
         self.enable_device(False)
         return False
@@ -486,13 +529,16 @@ class MideaDevice(threading.Thread):
                         self.close_socket()
                     break
                 except Exception as e:
-                    assert e.__traceback__
+                    file = None
+                    lineno = None
+                    if e.__traceback__:
+                        file = e.__traceback__.tb_frame.f_globals["__file__"]
+                        lineno = e.__traceback__.tb_lineno
                     _LOGGER.exception(
-                        "[%s] Unknown error :%s, %s, %s",
+                        "[%s] Unknown error : %s, %s",
                         self._device_id,
-                        e.__traceback__.tb_frame.f_globals["__file__"],
-                        e.__traceback__.tb_lineno,
-                        repr(e),
+                        file,
+                        lineno,
                     )
 
                     self.close_socket()
@@ -502,8 +548,9 @@ class MideaDevice(threading.Thread):
         """Set attribute."""
         raise NotImplementedError
 
-    def get_attribute(self, attr: str) -> Any:
+    def get_attribute(self, attr: str) -> bool | int | str | None:
         """Get attribute."""
+
         return self._attributes.get(attr)
 
     def set_customize(self, customize: str) -> None:

@@ -2,8 +2,8 @@
 
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.crc8 import calculate
-from midealocal.devices import BodyType
 from midealocal.message import (
+    BodyType,
     MessageBody,
     MessageRequest,
     MessageResponse,

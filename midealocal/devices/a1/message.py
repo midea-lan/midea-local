@@ -3,8 +3,8 @@
 from enum import IntEnum
 
 from midealocal.crc8 import calculate
-from midealocal.devices import BodyType
 from midealocal.message import (
+    BodyType,
     MessageBody,
     MessageRequest,
     MessageResponse,

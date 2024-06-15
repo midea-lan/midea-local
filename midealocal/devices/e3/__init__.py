@@ -149,10 +149,8 @@ class MideaE3Device(MideaDevice):
                 params = json.loads(customize)
                 if params and "precision_halves" in params:
                     self._precision_halves = params.get("precision_halves")
-            except Exception as e:
-                _LOGGER.exception(
-                    "[%s] Set customize error: %s", self.device_id, repr(e)
-                )
+            except Exception:
+                _LOGGER.exception("[%s] Set customize error", self.device_id)
             self.update_all({"precision_halves": self._precision_halves})
 
 

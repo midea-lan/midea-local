@@ -1,8 +1,13 @@
 """Midea local B3 message."""
 
 from midealocal.const import MAX_BYTE_VALUE
-from midealocal.devices import BodyType
-from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+from midealocal.message import (
+    BodyType,
+    MessageBody,
+    MessageRequest,
+    MessageResponse,
+    MessageType,
+)
 
 X21_BOTTOM_COMPARTMENT_REMAINING_BYTE = 18
 X21_MIDDLE_COMPARTMENT_REMAINING_BYTE = 19

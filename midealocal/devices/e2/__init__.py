@@ -117,8 +117,8 @@ class MideaE2Device(MideaDevice):
             elif isinstance(value, bool | int):
                 return_value = OldProtocol.true if value else OldProtocol.false
             return return_value
-        except ValueError as e:
-            _LOGGER.exception("Invalid old_protocol value: %s, error: %s", value, e)
+        except ValueError:
+            _LOGGER.exception("Invalid old_protocol value: %s", value)
             return self._default_old_protocol
 
     def build_query(self) -> list[MessageQuery]:
@@ -179,10 +179,8 @@ class MideaE2Device(MideaDevice):
                     self._old_protocol = self._normalize_old_protocol(
                         params["old_protocol"],
                     )
-            except Exception as e:
-                _LOGGER.exception(
-                    "[%s] Set customize error: %s", self.device_id, repr(e)
-                )
+            except Exception:
+                _LOGGER.exception("[%s] Set customize error", self.device_id)
             self.update_all({"old_protocol": self._old_protocol})
 
 

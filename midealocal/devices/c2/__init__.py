@@ -150,10 +150,8 @@ class MideaC2Device(MideaDevice):
                     self._max_water_temp_level = params.get("max_water_temp_level")
                 if params and "max_seat_temp_level" in params:
                     self._max_seat_temp_level = params.get("max_seat_temp_level")
-            except Exception as e:
-                _LOGGER.exception(
-                    "[%s] Set customize error: %s", self.device_id, repr(e)
-                )
+            except Exception:
+                _LOGGER.exception("[%s] Set customize error: %s", self.device_id)
             self.update_all(
                 {
                     "dry_level": {"max_dry_level": self._max_dry_level},

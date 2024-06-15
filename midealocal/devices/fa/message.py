@@ -1,12 +1,12 @@
 """Midea local FA message."""
 
-from midealocal.devices import SubBodyType
 from midealocal.message import (
     NONE_VALUE,
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
+    SubBodyType,
 )
 
 MAX_FAN_SPEED = 26

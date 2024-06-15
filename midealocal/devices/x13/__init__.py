@@ -152,10 +152,8 @@ class Midea13Device(MideaDevice):
                 params = json.loads(customize)
                 if params and "color_temp_range_kelvin" in params:
                     self._color_temp_range = params.get("color_temp_range_kelvin")
-            except Exception as e:
-                _LOGGER.exception(
-                    "[%s] Set customize error: %s", self.device_id, repr(e)
-                )
+            except Exception:
+                _LOGGER.exception("[%s] Set customize error", self.device_id)
             self.update_all({"color_temp_range": self._color_temp_range})
 
 

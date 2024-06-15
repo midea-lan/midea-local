@@ -5,9 +5,79 @@ from abc import ABC
 from enum import IntEnum
 from typing import SupportsIndex, cast
 
-from midealocal.devices import BodyType
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class BodyType(IntEnum):
+    """Body Type."""
+
+    A0 = 0xA0
+    A1 = 0xA1
+    A4 = 0xA4
+    B0 = 0xB0
+    B1 = 0xB1
+    B5 = 0xB5
+    BB = 0xBB
+    C0 = 0xC0
+    C1 = 0xC1
+    C3 = 0xC3
+    C8 = 0xC8
+    FF = 0xFF
+    X00 = 0x00
+    X01 = 0x01
+    X02 = 0x02
+    X03 = 0x03
+    X04 = 0x04
+    X05 = 0x05
+    X06 = 0x06
+    X07 = 0x07
+    X0A = 0x0A
+    X11 = 0x11
+    X21 = 0x21
+    X22 = 0x22
+    X24 = 0x24
+    X31 = 0x31
+    X32 = 0x32
+    X41 = 0x41
+    X80 = 0x80
+
+
+class SubBodyType(IntEnum):
+    """Sub Body Type."""
+
+    A0 = 0xA0
+    A1 = 0xA1
+    A2 = 0xA2
+    B0 = 0xB0
+    B1 = 0xB1
+    B5 = 0xB5
+    BB = 0xBB
+    C0 = 0xC0
+    C1 = 0xC1
+    C3 = 0xC3
+    X01 = 0x01
+    X02 = 0x02
+    X03 = 0x03
+    X04 = 0x04
+    X05 = 0x05
+    X06 = 0x06
+    X0A = 0x0A
+    X10 = 0x10
+    X11 = 0x11
+    X12 = 0x12
+    X13 = 0x13
+    X16 = 0x16
+    X20 = 0x20
+    X21 = 0x21
+    X22 = 0x22
+    X24 = 0x24
+    X30 = 0x30
+    X31 = 0x31
+    X32 = 0x32
+    X3D = 0x3D
+    X41 = 0x41
+    X52 = 0x52
 
 
 class MessageLenError(Exception):

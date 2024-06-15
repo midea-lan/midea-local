@@ -19,5 +19,9 @@ class DataSignDoesntMatch(MideaLocalError):
     """Exception raised when data sign is not matching."""
 
 
+class DataSignWrongType(MideaLocalError):
+    """Exception raised when data is the wrong type to sign."""
+
+
 class MessageWrongFormat(MideaLocalError):
     """Exception raised when message format is wrong."""
