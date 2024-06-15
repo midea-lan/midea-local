@@ -178,13 +178,16 @@ class MideaDevice(threading.Thread):
         except RefreshFailed:
             _LOGGER.debug("[%s] Refresh status is timed out", self._device_id)
         except Exception as e:
-            assert e.__traceback__
+            file = None
+            lineno = None
+            if e.__traceback__:
+                file = e.__traceback__.tb_frame.f_globals["__file__"]
+                lineno = e.__traceback__.tb_lineno
             _LOGGER.exception(
-                "[%s] Unknown error: %s, %s, %s",
+                "[%s] Unknown error : %s, %s",
                 self._device_id,
-                e.__traceback__.tb_frame.f_globals["__file__"],
-                e.__traceback__.tb_lineno,
-                repr(e),
+                file,
+                lineno,
             )
         self.enable_device(False)
         return False
@@ -486,13 +489,16 @@ class MideaDevice(threading.Thread):
                         self.close_socket()
                     break
                 except Exception as e:
-                    assert e.__traceback__
+                    file = None
+                    lineno = None
+                    if e.__traceback__:
+                        file = e.__traceback__.tb_frame.f_globals["__file__"]
+                        lineno = e.__traceback__.tb_lineno
                     _LOGGER.exception(
-                        "[%s] Unknown error :%s, %s, %s",
+                        "[%s] Unknown error : %s, %s",
                         self._device_id,
-                        e.__traceback__.tb_frame.f_globals["__file__"],
-                        e.__traceback__.tb_lineno,
-                        repr(e),
+                        file,
+                        lineno,
                     )
 
                     self.close_socket()
