@@ -126,6 +126,7 @@ class MessageOldSet(MessageEDBase):
 
     @property
     def body(self) -> bytearray:
+        """ED message old set body."""
         return bytearray([])
 
     @property
