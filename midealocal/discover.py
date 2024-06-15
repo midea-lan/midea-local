@@ -4,9 +4,9 @@ import logging
 import socket
 from ipaddress import IPv4Network
 from typing import Any
-from xml.etree import ElementTree
 
 import ifaddr
+from defusedxml import ElementTree
 
 from .security import LocalSecurity
 
@@ -158,7 +158,8 @@ SERIAL_TYPE2_LENGTH = 22
 
 
 def _parse_discover_response(
-    sock: socket.socket, found_devices: dict[int, dict[str, Any]]
+    sock: socket.socket,
+    found_devices: dict[int, dict[str, Any]],
 ) -> tuple[int, dict[str, Any] | None]:
     security = LocalSecurity()
     data, addr = sock.recvfrom(512)
