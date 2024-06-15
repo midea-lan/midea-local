@@ -399,7 +399,7 @@ class MeijuCloud(MideaCloud):
         path: str,
         device_type: int,
         sn: str,
-        model_number: str | None,
+        model_number: str | None,  # noqa: ARG002
         manufacturer_code: str = "0000",
     ) -> str | None:
         """Download lua integration."""
@@ -541,7 +541,7 @@ class MSmartHomeCloud(MideaCloud):
 
     async def list_appliances(
         self,
-        home_id: str | None,
+        home_id: str | None,  # noqa: ARG002
     ) -> dict[int, dict[str, Any]] | None:
         """List MSmart Cloud Devices."""
         data = self._make_general_data()
@@ -731,7 +731,7 @@ class MideaAirCloud(MideaCloud):
 
     async def list_appliances(
         self,
-        home_id: str | None,
+        home_id: str | None,  # noqa: ARG002
     ) -> dict[int, dict[str, Any]] | None:
         """List Midea Air devices."""
         data = self._make_general_data()

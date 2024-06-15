@@ -45,7 +45,7 @@ class MideaE6Device(MideaDevice):
         protocol: int,
         model: str,
         subtype: int,
-        customize: str,
+        customize: str,  # noqa: ARG002
     ) -> None:
         """Initialize Midea E6 device."""
         super().__init__(
