@@ -42,7 +42,7 @@ class MideaCFDevice(MideaDevice):
         protocol: int,
         model: str,
         subtype: int,
-        customize: str,
+        customize: str,  # noqa: ARG002
     ) -> None:
         """Initialize Midea CF device."""
         super().__init__(

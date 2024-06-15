@@ -51,7 +51,7 @@ class MideaB0Device(MideaDevice):
         protocol: int,
         model: str,
         subtype: int,
-        customize: str,
+        customize: str,  # noqa: ARG002
     ) -> None:
         """Initialize B0 Midea device."""
         super().__init__(
