@@ -144,6 +144,8 @@ class MideaDevice(threading.Thread):
         self._refresh_interval = 30
         self._heartbeat_interval = 10
         self._default_refresh_interval = 30
+        self._previous_refresh = 0.0
+        self._previous_heartbeat = 0.0
         self.name = self._device_name
 
     @property
@@ -479,15 +481,15 @@ class MideaDevice(threading.Thread):
         """Set refresh interval."""
         self._refresh_interval = refresh_interval
 
-    def _check_refresh(self, now: float, previous_refresh: float) -> None:
-        if 0 < self._refresh_interval <= now - previous_refresh:
+    def _check_refresh(self, now: float) -> None:
+        if 0 < self._refresh_interval <= now - self._previous_refresh:
             self.refresh_status()
-            previous_refresh = now
+            self._previous_refresh = now
 
-    def _check_heartbeat(self, now: float, previous_heartbeat: float) -> None:
-        if now - previous_heartbeat >= self._heartbeat_interval:
+    def _check_heartbeat(self, now: float) -> None:
+        if now - self._previous_heartbeat >= self._heartbeat_interval:
             self.send_heartbeat()
-            previous_heartbeat = now
+            self._previous_heartbeat = now
 
     def run(self) -> None:
         """Run loop."""
@@ -498,14 +500,14 @@ class MideaDevice(threading.Thread):
                     time.sleep(5)
             timeout_counter = 0
             start = time.time()
-            previous_refresh = start
-            previous_heartbeat = start
+            self._previous_refresh = start
+            self._previous_heartbeat = start
             self._socket.settimeout(1)
             while True:
                 try:
                     now = time.time()
-                    self._check_refresh(now, previous_refresh)
-                    self._check_heartbeat(now, previous_heartbeat)
+                    self._check_refresh(now)
+                    self._check_heartbeat(now)
                     msg = self._socket.recv(512)
                     if len(msg) == 0:
                         if self._is_run:
