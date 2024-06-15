@@ -151,7 +151,9 @@ class MideaE3Device(MideaDevice):
                     self._precision_halves = params.get("precision_halves")
             except Exception as e:
                 _LOGGER.exception(
-                    "[%s] Set customize error: %s", self.device_id, repr(e)
+                    "[%s] Set customize error: %s",
+                    self.device_id,
+                    repr(e),
                 )
             self.update_all({"precision_halves": self._precision_halves})
 

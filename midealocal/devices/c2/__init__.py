@@ -152,7 +152,9 @@ class MideaC2Device(MideaDevice):
                     self._max_seat_temp_level = params.get("max_seat_temp_level")
             except Exception as e:
                 _LOGGER.exception(
-                    "[%s] Set customize error: %s", self.device_id, repr(e)
+                    "[%s] Set customize error: %s",
+                    self.device_id,
+                    repr(e),
                 )
             self.update_all(
                 {

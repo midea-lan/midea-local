@@ -154,7 +154,9 @@ class Midea13Device(MideaDevice):
                     self._color_temp_range = params.get("color_temp_range_kelvin")
             except Exception as e:
                 _LOGGER.exception(
-                    "[%s] Set customize error: %s", self.device_id, repr(e)
+                    "[%s] Set customize error: %s",
+                    self.device_id,
+                    repr(e),
                 )
             self.update_all({"color_temp_range": self._color_temp_range})
 

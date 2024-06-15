@@ -180,7 +180,9 @@ class MideaB6Device(MideaDevice):
                     )
             except Exception as e:
                 _LOGGER.exception(
-                    "[%s] Set customize error: %s", self.device_id, repr(e)
+                    "[%s] Set customize error: %s",
+                    self.device_id,
+                    repr(e),
                 )
 
 
