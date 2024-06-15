@@ -607,5 +607,5 @@ class CloudTest(IsolatedAsyncioTestCase):
             password="password",
         )
         assert cloud is not None
-        with pytest.raises(NotImplementedError):
-            await cloud.download_lua("/tmp/download", 10, "00000000", "0xAC", "0010")
+        with pytest.raises(NotImplementedError), TemporaryDirectory() as tmpdir:
+            await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
