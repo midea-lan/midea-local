@@ -144,7 +144,7 @@ class MideaCDDevice(MideaDevice):
                 if params and "temperature_step" in params:
                     self._temperature_step = params.get("temperature_step")
             except Exception:
-                _LOGGER.exception("[%s] Set customize error: %s", self.device_id)
+                _LOGGER.exception("[%s] Set customize error", self.device_id)
             self.update_all({"temperature_step": self._temperature_step})
 
 

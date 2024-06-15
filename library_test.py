@@ -63,7 +63,7 @@ async def main() -> None:
     devices = discover(ip_address=args.ip)
     print("-" * 20)
     print("Devices: ", devices)
-    first_device = list(devices.values())[0]
+    first_device = next(iter(devices.values()))
     print("-" * 20)
     print("First device: ", first_device)
     # The device type is in hexadecimal as in midealocal/devices/TYPE
