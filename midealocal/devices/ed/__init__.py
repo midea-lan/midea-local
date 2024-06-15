@@ -1,3 +1,5 @@
+"""Midea local ED device."""
+
 import logging
 import sys
 from typing import Any
@@ -15,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea ED device attributes."""
+
     power = "power"
     water_consumption = "water_consumption"
     in_tds = "in_tds"
@@ -29,6 +33,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaEDDevice(MideaDevice):
+    """Midea ED device."""
+
     def __init__(
         self,
         name: str,
@@ -42,6 +48,7 @@ class MideaEDDevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea ED device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -73,9 +80,11 @@ class MideaEDDevice(MideaDevice):
         return True  # if (self.sub_type > 342 or self.sub_type == 340) else False
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea ED device build query."""
         return [MessageQuery(self._protocol_version, self._device_class)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea ED device process message."""
         message = MessageEDResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -88,6 +97,7 @@ class MideaEDDevice(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea ED device set attribute."""
         message: MessageNewSet | MessageOldSet | None = None
         if self._use_new_set():
             if attr in [DeviceAttributes.power, DeviceAttributes.child_lock]:
@@ -100,4 +110,4 @@ class MideaEDDevice(MideaDevice):
 
 
 class MideaAppliance(MideaEDDevice):
-    pass
+    """Midea ED appliance."""

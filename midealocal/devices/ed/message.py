@@ -1,3 +1,5 @@
+"""Midea local ED message."""
+
 from enum import IntEnum
 
 from midealocal.devices import BodyType
@@ -20,25 +22,33 @@ class Attributes(IntEnum):
 
 
 class NewSetTags(IntEnum):
+    """New set tags."""
+
     power = 0x0100
     lock = 0x0201
 
 
 class EDNewSetParamPack:
+    """ED new set parameter pack."""
+
     @staticmethod
     def pack(param: int, value: int, addition: int = 0) -> bytearray:
+        """Pack parameter."""
         return bytearray(
             [param & 0xFF, param >> 8, value, addition & 0xFF, addition >> 8],
         )
 
 
 class MessageEDBase(MessageRequest):
+    """ED message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int = NONE_VALUE,
     ) -> None:
+        """Initialize ED message base."""
         super().__init__(
             device_type=0xED,
             protocol_version=protocol_version,
@@ -52,7 +62,10 @@ class MessageEDBase(MessageRequest):
 
 
 class MessageQuery(MessageEDBase):
+    """ED message query."""
+
     def __init__(self, protocol_version: int, body_type: int) -> None:
+        """Initialize ED message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -65,7 +78,10 @@ class MessageQuery(MessageEDBase):
 
 
 class MessageNewSet(MessageEDBase):
+    """ED message new set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize ED message new set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -99,7 +115,10 @@ class MessageNewSet(MessageEDBase):
 
 
 class MessageOldSet(MessageEDBase):
+    """ED message old set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize ED message old set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -107,6 +126,7 @@ class MessageOldSet(MessageEDBase):
 
     @property
     def body(self) -> bytearray:
+        """ED message old set body."""
         return bytearray([])
 
     @property
@@ -115,7 +135,10 @@ class MessageOldSet(MessageEDBase):
 
 
 class EDMessageBody01(MessageBody):
+    """ED message body 01."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize ED message body 01."""
         super().__init__(body)
         self.power = (body[2] & 0x01) > 0
         self.water_consumption = body[7] + (body[8] << 8)
@@ -131,7 +154,10 @@ class EDMessageBody01(MessageBody):
 
 
 class EDMessageBody03(MessageBody):
+    """ED message body 03."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize ED message body 03."""
         super().__init__(body)
         self.power = (body[51] & 0x01) > 0
         self.child_lock = (body[51] & 0x08) > 0
@@ -144,7 +170,10 @@ class EDMessageBody03(MessageBody):
 
 
 class EDMessageBody05(MessageBody):
+    """ED message body 05."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize ED message body 05."""
         super().__init__(body)
         self.power = (body[51] & 0x01) > 0
         self.child_lock = (body[51] & 0x08) > 0
@@ -152,7 +181,10 @@ class EDMessageBody05(MessageBody):
 
 
 class EDMessageBody06(MessageBody):
+    """ED message body 06."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize ED message body 06."""
         super().__init__(body)
         self.power = (body[51] & 0x01) > 0
         self.child_lock = (body[51] & 0x08) > 0
@@ -160,7 +192,10 @@ class EDMessageBody06(MessageBody):
 
 
 class EDMessageBody07(MessageBody):
+    """ED message body 07."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize ED message body 07."""
         super().__init__(body)
         self.water_consumption = (body[21] << 8) + body[20]
         self.power = (body[51] & 0x01) > 0
@@ -168,7 +203,10 @@ class EDMessageBody07(MessageBody):
 
 
 class EDMessageBodyFF(MessageBody):
+    """ED message body FF."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize ED message body FF."""
         super().__init__(body)
         data_offset = 2
         while True:
@@ -201,7 +239,10 @@ class EDMessageBodyFF(MessageBody):
 
 
 class MessageEDResponse(MessageResponse):
+    """ED message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize ED message response."""
         super().__init__(bytearray(message))
         if self._message_type in [MessageType.query, MessageType.notify1]:
             self.device_class = self._body_type

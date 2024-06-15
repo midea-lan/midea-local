@@ -1,3 +1,5 @@
+"""Midea local CD device."""
+
 import json
 import logging
 import sys
@@ -17,6 +19,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea CD device attributes."""
+
     power = "power"
     mode = "mode"
     max_temperature = "max_temperature"
@@ -30,6 +34,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaCDDevice(MideaDevice):
+    """Midea CD device."""
+
     _modes: ClassVar[list[str]] = ["Energy-save", "Standard", "Dual", "Smart"]
 
     def __init__(
@@ -45,6 +51,7 @@ class MideaCDDevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea CD device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -76,16 +83,20 @@ class MideaCDDevice(MideaDevice):
 
     @property
     def temperature_step(self) -> float | None:
+        """Midea CD device temperature step."""
         return self._temperature_step
 
     @property
     def preset_modes(self) -> list[str]:
+        """Midea CD device preset modes."""
         return MideaCDDevice._modes
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea CD device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea CD device process message."""
         message = MessageCDResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -102,6 +113,7 @@ class MideaCDDevice(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea CD device set attribute."""
         if attr in [
             DeviceAttributes.mode,
             DeviceAttributes.power,
@@ -124,6 +136,7 @@ class MideaCDDevice(MideaDevice):
             self.build_send(message)
 
     def set_customize(self, customize: str) -> None:
+        """Midea CD device set customize."""
         self._temperature_step = self._default_temperature_step
         if customize and len(customize) > 0:
             try:
@@ -136,4 +149,4 @@ class MideaCDDevice(MideaDevice):
 
 
 class MideaAppliance(MideaCDDevice):
-    pass
+    """Midea CD appliance."""

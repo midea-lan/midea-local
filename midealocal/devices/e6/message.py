@@ -1,3 +1,5 @@
+"""Midea local E6 message."""
+
 from midealocal.message import (
     NONE_VALUE,
     MessageBody,
@@ -8,7 +10,10 @@ from midealocal.message import (
 
 
 class MessageE6Base(MessageRequest):
+    """E6 message base."""
+
     def __init__(self, protocol_version: int, message_type: int) -> None:
+        """Initialize E6 message base."""
         super().__init__(
             device_type=0xE6,
             protocol_version=protocol_version,
@@ -18,6 +23,7 @@ class MessageE6Base(MessageRequest):
 
     @property
     def body(self) -> bytearray:
+        """E6 message base body."""
         return self._body
 
     @property
@@ -26,7 +32,10 @@ class MessageE6Base(MessageRequest):
 
 
 class MessageQuery(MessageE6Base):
+    """E6 message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E6 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -38,7 +47,10 @@ class MessageQuery(MessageE6Base):
 
 
 class MessageSet(MessageE6Base):
+    """E6 message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E6 message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -66,7 +78,10 @@ class MessageSet(MessageE6Base):
 
 
 class E6GeneralMessageBody(MessageBody):
+    """E6 message general body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize E6 message general body."""
         super().__init__(body)
         self.main_power = (body[2] & 0x04) > 0
         self.heating_working = (body[2] & 0x10) > 0
@@ -81,7 +96,10 @@ class E6GeneralMessageBody(MessageBody):
 
 
 class MessageE6Response(MessageResponse):
+    """E6 message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize E6 message response."""
         super().__init__(bytearray(message))
         self.set_body(E6GeneralMessageBody(super().body))
         self.set_attr()

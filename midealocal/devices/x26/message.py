@@ -1,3 +1,5 @@
+"""Midea local x26 message."""
+
 from enum import IntEnum
 from typing import Any
 
@@ -20,12 +22,15 @@ class DeviceMode(IntEnum):
 
 
 class Message26Base(MessageRequest):
+    """X26 message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize X26 message base."""
         super().__init__(
             device_type=0x26,
             protocol_version=protocol_version,
@@ -39,7 +44,10 @@ class Message26Base(MessageRequest):
 
 
 class MessageQuery(Message26Base):
+    """X26 message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize X26 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -52,7 +60,10 @@ class MessageQuery(Message26Base):
 
 
 class MessageSet(Message26Base):
+    """X26 message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize X26 message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -65,6 +76,7 @@ class MessageSet(Message26Base):
         self.direction = 0xFD
 
     def read_field(self, field: str) -> Any:
+        """X26 message set read field."""
         value = self.fields.get(field, 0)
         return value if value else 0
 
@@ -122,7 +134,10 @@ class MessageSet(Message26Base):
 
 
 class Message26Body(MessageBody):
+    """X26 message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize X26 message body."""
         super().__init__(body)
         self.fields = {}
         self.main_light = self.read_byte(body, 1) > 0
@@ -193,7 +208,10 @@ class Message26Body(MessageBody):
 
 
 class Message26Response(MessageResponse):
+    """X26 message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize X26 message response."""
         super().__init__(bytearray(message))
         if (
             self.message_type

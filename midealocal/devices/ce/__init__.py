@@ -1,3 +1,5 @@
+"""Midea local CE device."""
+
 import json
 import logging
 import sys
@@ -16,6 +18,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea CE device attributes."""
+
     power = "power"
     mode = "mode"
     child_lock = "child_lock"
@@ -37,6 +41,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaCEDevice(MideaDevice):
+    """Midea CE device."""
+
     _modes: ClassVar[list[str]] = ["Normal", "Sleep mode", "ECO mode"]
 
     def __init__(
@@ -52,6 +58,7 @@ class MideaCEDevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea CE device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -90,16 +97,20 @@ class MideaCEDevice(MideaDevice):
 
     @property
     def speed_count(self) -> int:
+        """Midea CE device speed count."""
         return self._speed_count
 
     @property
     def preset_modes(self) -> list[str]:
+        """Midea CE device preset modes."""
         return self._modes
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea CE device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea CE device process message."""
         message = MessageCEResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -120,6 +131,7 @@ class MideaCEDevice(MideaDevice):
         return new_status
 
     def make_message_set(self) -> MessageSet:
+        """Midea CE device make message set."""
         message = MessageSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.fan_speed = self._attributes[DeviceAttributes.fan_speed]
@@ -133,6 +145,7 @@ class MideaCEDevice(MideaDevice):
         return message
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea CE device set attribute."""
         message = self.make_message_set()
         if attr == DeviceAttributes.mode:
             message.sleep_mode = False
@@ -146,6 +159,7 @@ class MideaCEDevice(MideaDevice):
         self.build_send(message)
 
     def set_customize(self, customize: str) -> None:
+        """Midea CE device set customize."""
         self._speed_count = self._default_speed_count
         if customize and len(customize) > 0:
             try:
@@ -158,4 +172,4 @@ class MideaCEDevice(MideaDevice):
 
 
 class MideaAppliance(MideaCEDevice):
-    pass
+    """Midea CE appliance."""

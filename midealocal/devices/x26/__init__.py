@@ -1,3 +1,5 @@
+"""Midea local x26 device."""
+
 import logging
 import math
 import sys
@@ -19,6 +21,8 @@ DIRECTION_MAX_VALUE = 120
 
 
 class DeviceAttributes(StrEnum):
+    """Midea x26 device attributes."""
+
     main_light = "main_light"
     night_light = "night_light"
     mode = "mode"
@@ -29,6 +33,8 @@ class DeviceAttributes(StrEnum):
 
 
 class Midea26Device(MideaDevice):
+    """Midea x26 device."""
+
     _modes: ClassVar[list[str]] = [
         "Off",
         "Heat(high)",
@@ -62,6 +68,7 @@ class Midea26Device(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea x26 device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -107,16 +114,20 @@ class Midea26Device(MideaDevice):
 
     @property
     def preset_modes(self) -> list[str]:
+        """Midea x26 device preset modes."""
         return Midea26Device._modes
 
     @property
     def directions(self) -> list[str]:
+        """Midea x26 device directions."""
         return Midea26Device._directions
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea x26 device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea x26 device process message."""
         message = Message26Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -136,6 +147,7 @@ class Midea26Device(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea x26 device set attribute."""
         if attr in [
             DeviceAttributes.main_light,
             DeviceAttributes.night_light,
@@ -164,4 +176,4 @@ class Midea26Device(MideaDevice):
 
 
 class MideaAppliance(Midea26Device):
-    pass
+    """Midea x26 appliance."""

@@ -1,3 +1,5 @@
+"""Midea local B3 device."""
+
 import logging
 import sys
 from typing import Any, ClassVar
@@ -15,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea local B3 device attributes."""
+
     top_compartment_status = "top_compartment_status"
     top_compartment_mode = "top_compartment_mode"
     top_compartment_temperature = "top_compartment_temperature"
@@ -39,7 +43,9 @@ class DeviceAttributes(StrEnum):
     lock = "lock"
 
 
-class MideaB2Device(MideaDevice):
+class MideaB3Device(MideaDevice):
+    """Midea local B3 device."""
+
     _status: ClassVar[dict[int, str]] = {
         0x00: "Off",
         0x01: "Standby",
@@ -61,6 +67,7 @@ class MideaB2Device(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea local B3 device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -99,9 +106,11 @@ class MideaB2Device(MideaDevice):
         )
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea local B3 device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea local B3 process message."""
         message = MessageB3Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -113,8 +122,8 @@ class MideaB2Device(MideaDevice):
                     DeviceAttributes.middle_compartment_status,
                     DeviceAttributes.bottom_compartment_status,
                 ]:
-                    if value in MideaB2Device._status:
-                        self._attributes[status] = MideaB2Device._status.get(value)
+                    if value in MideaB3Device._status:
+                        self._attributes[status] = MideaB3Device._status.get(value)
                     else:
                         self._attributes[status] = None
                 else:
@@ -123,8 +132,8 @@ class MideaB2Device(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
-        pass
+        """Midea local B3 device set attribute."""
 
 
-class MideaAppliance(MideaB2Device):
-    pass
+class MideaAppliance(MideaB3Device):
+    """Midea local B3 appliance."""

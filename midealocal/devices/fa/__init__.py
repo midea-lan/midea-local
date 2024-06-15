@@ -1,3 +1,5 @@
+"""Midea local FA device."""
+
 import json
 import logging
 import sys
@@ -16,6 +18,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea FA device attributes."""
+
     power = "power"
     child_lock = "child_lock"
     mode = "mode"
@@ -27,6 +31,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaFADevice(MideaDevice):
+    """Midea FA device."""
+
     _oscillation_angles: ClassVar[list[str]] = [
         "Off",
         "30",
@@ -86,6 +92,7 @@ class MideaFADevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea FA device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -114,28 +121,35 @@ class MideaFADevice(MideaDevice):
 
     @property
     def speed_count(self) -> int:
+        """Return the speed count of the device."""
         return self._speed_count
 
     @property
     def oscillation_angles(self) -> list[str]:
+        """Return the list of possible oscillation angles."""
         return MideaFADevice._oscillation_angles
 
     @property
     def tilting_angles(self) -> list[str]:
+        """Return the list of possible tilting angles."""
         return MideaFADevice._tilting_angles
 
     @property
     def oscillation_modes(self) -> list[str]:
+        """Return a list of available oscillation modes."""
         return MideaFADevice._oscillation_modes
 
     @property
     def preset_modes(self) -> list[str]:
+        """Return a list of preset modes."""
         return self._modes
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea FA device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea FA device process message."""
         message = MessageFAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -181,6 +195,7 @@ class MideaFADevice(MideaDevice):
         return new_status
 
     def set_oscillation(self, attr: str, value: Any) -> MessageSet | None:
+        """Set oscillation mode."""
         message: MessageSet | None = None
         if self._attributes[attr] != value:
             if attr == DeviceAttributes.oscillate:
@@ -301,6 +316,7 @@ class MideaFADevice(MideaDevice):
         return message
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Set attribute."""
         message = None
         if attr in [
             DeviceAttributes.oscillate,
@@ -328,6 +344,7 @@ class MideaFADevice(MideaDevice):
             self.build_send(message)
 
     def turn_on(self, fan_speed: int | None = None, mode: str | None = None) -> None:
+        """Turn on the device."""
         message = MessageSet(self._protocol_version, self.subtype)
         message.power = True
         if fan_speed is not None:
@@ -337,6 +354,7 @@ class MideaFADevice(MideaDevice):
         self.build_send(message)
 
     def set_customize(self, customize: str) -> None:
+        """Set customize."""
         self._speed_count = self._default_speed_count
         if customize and len(customize) > 0:
             try:
@@ -349,4 +367,4 @@ class MideaFADevice(MideaDevice):
 
 
 class MideaAppliance(MideaFADevice):
-    pass
+    """Midea appliance device."""

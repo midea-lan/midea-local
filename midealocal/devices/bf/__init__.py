@@ -1,3 +1,5 @@
+"""Midea local BF device."""
+
 import logging
 import sys
 from typing import Any, ClassVar
@@ -15,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea BF device attributes."""
+
     door = "door"
     status = "status"
     time_remaining = "time_remaining"
@@ -25,6 +29,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaBFDevice(MideaDevice):
+    """Midea BF device."""
+
     _status: ClassVar[dict[int, str]] = {
         0x01: "PowerSave",
         0x02: "Standby",
@@ -47,6 +53,7 @@ class MideaBFDevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea BF device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -70,9 +77,11 @@ class MideaBFDevice(MideaDevice):
         )
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea BF device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea BF device process message."""
         message = MessageBFResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -92,8 +101,8 @@ class MideaBFDevice(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
-        pass
+        """Midea BF device set attribute."""
 
 
 class MideaAppliance(MideaBFDevice):
-    pass
+    """Midea BF appliance."""

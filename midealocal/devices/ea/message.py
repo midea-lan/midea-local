@@ -1,3 +1,5 @@
+"""Midea local EA message."""
+
 from enum import IntEnum
 
 from midealocal.devices import SubBodyType
@@ -18,12 +20,15 @@ class Progress(IntEnum):
 
 
 class MessageEABase(MessageRequest):
+    """EA message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int = NONE_VALUE,
     ) -> None:
+        """Initialize EA message base."""
         super().__init__(
             device_type=0xEA,
             protocol_version=protocol_version,
@@ -37,7 +42,10 @@ class MessageEABase(MessageRequest):
 
 
 class MessageQuery(MessageEABase):
+    """EA message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize EA message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -45,6 +53,7 @@ class MessageQuery(MessageEABase):
 
     @property
     def body(self) -> bytearray:
+        """EA message query body."""
         return bytearray([0xAA, 0x55, 0x01, 0x03, 0x00])
 
     @property
@@ -53,7 +62,10 @@ class MessageQuery(MessageEABase):
 
 
 class EABody1(MessageBody):
+    """EA message body 1."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize EA message body 1."""
         super().__init__(body)
         self.mode = body[6] + (body[7] << 8)
         self.progress = body[14]
@@ -66,7 +78,10 @@ class EABody1(MessageBody):
 
 
 class EABody2(MessageBody):
+    """EA message body 2."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize EA message body 2."""
         super().__init__(body)
         self.progress = body[9]
         self.cooking = self.progress == Progress.COOKING
@@ -79,7 +94,10 @@ class EABody2(MessageBody):
 
 
 class EABody3(MessageBody):
+    """EA message body 3."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize EA message body 3."""
         super().__init__(body)
         self.mode = body[4] + (body[5] << 8)
         self.progress = body[8]
@@ -92,7 +110,10 @@ class EABody3(MessageBody):
 
 
 class EABodyNew(MessageBody):
+    """EA message body new."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize EA message body new."""
         super().__init__(body)
         if body[6] in [2, 4, 6, 8, 10, 0x62]:
             self.mode = body[7] + (body[8] << 8)
@@ -106,7 +127,10 @@ class EABodyNew(MessageBody):
 
 
 class MessageEAResponse(MessageResponse):
+    """EA message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize EA message response."""
         super().__init__(bytearray(message))
         if (
             self.message_type == MessageType.notify1

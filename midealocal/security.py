@@ -1,3 +1,5 @@
+"""Midea local security."""
+
 import hmac
 from enum import IntEnum
 from hashlib import md5, sha256
@@ -39,6 +41,8 @@ class UdpIdMethod(IntEnum):
 
 
 class CloudSecurity:
+    """Cloud security."""
+
     def __init__(
         self,
         login_key: str,
@@ -47,6 +51,7 @@ class CloudSecurity:
         fixed_key: int | None = None,
         fixed_iv: int | None = None,
     ) -> None:
+        """Initialize cloud security."""
         self._login_key = login_key
         self._iot_key = iot_key
         self._hmac_key = hmac_key
@@ -56,6 +61,7 @@ class CloudSecurity:
         self._fixed_iv = format(fixed_iv, "x").encode("ascii") if fixed_iv else None
 
     def sign(self, url: str, data: dict[str, Any] | str, random: str) -> str | None:
+        """Sign cloud data."""
         msg: str = self._iot_key or ""
         msg += str(data)
         msg += random
@@ -65,6 +71,7 @@ class CloudSecurity:
         return sign.hexdigest()
 
     def encrypt_password(self, login_id: str, data: str) -> str:
+        """Encrypt password."""
         m = sha256()
         m.update(data.encode("ascii"))
         login_hash = login_id + m.hexdigest() + self._login_key
@@ -73,14 +80,17 @@ class CloudSecurity:
         return m.hexdigest()
 
     def encrypt_iam_password(self, login_id: str, data: str) -> str:
+        """Encrypt IAM password."""
         raise NotImplementedError
 
     @staticmethod
     def get_deviceid(username: str) -> str:
+        """Get device ID."""
         return sha256(f"Hello, {username}!".encode("ascii")).digest().hex()[:16]
 
     @staticmethod
     def get_udp_id(appliance_id: Any, method: int = 0) -> str | None:
+        """Get UDP ID."""
         if method == UdpIdMethod.REVERSED_BIG:
             bytes_id = bytes(reversed(appliance_id.to_bytes(8, "big")))
         elif method == UdpIdMethod.BIG:
@@ -95,6 +105,7 @@ class CloudSecurity:
         return data[0:16].hex()
 
     def set_aes_keys(self, key: bytes | str, iv: bytes | str) -> None:
+        """Set AES keys."""
         if isinstance(key, str):
             key = key.encode("ascii")
         if isinstance(iv, str):
@@ -103,9 +114,11 @@ class CloudSecurity:
         self._aes_iv = iv
 
     def aes_encrypt_with_fixed_key(self, data: bytes) -> bytes:
+        """Encrypt AES with fixed key."""
         return self.aes_encrypt(data, self._fixed_key, self._fixed_iv)
 
     def aes_decrypt_with_fixed_key(self, data: str) -> str:
+        """Decrypt AES with fixed key."""
         return self.aes_decrypt(data, self._fixed_key, self._fixed_iv)
 
     def aes_encrypt(
@@ -114,6 +127,7 @@ class CloudSecurity:
         key: bytes | None = None,
         iv: bytes | None = None,
     ) -> bytes:
+        """Encrypt AES."""
         if len(data) == 0:
             return b""
         if key is not None:
@@ -140,6 +154,7 @@ class CloudSecurity:
         key: bytes | None = None,
         iv: bytes | None = None,
     ) -> str:
+        """Decrypt AES."""
         if len(data) == 0:
             return ""
         if key is not None:
@@ -171,10 +186,14 @@ class CloudSecurity:
 
 
 class MeijuCloudSecurity(CloudSecurity):
+    """Meiju Cloud Security."""
+
     def __init__(self, login_key: str, iot_key: str, hmac_key: str) -> None:
+        """Initialize Meiju Cloud security."""
         super().__init__(login_key, iot_key, hmac_key, 10864842703515613082)
 
     def encrypt_iam_password(self, login_id: str, data: str) -> str:
+        """Encrypt IAM password."""
         md = md5()
         md.update(data.encode("ascii"))
         md_second = md5()
@@ -183,7 +202,10 @@ class MeijuCloudSecurity(CloudSecurity):
 
 
 class MSmartCloudSecurity(CloudSecurity):
+    """MSmart Cloud Security."""
+
     def __init__(self, login_key: str, iot_key: str, hmac_key: str) -> None:
+        """Initialize MSmart Cloud Security."""
         super().__init__(
             login_key,
             iot_key,
@@ -193,6 +215,7 @@ class MSmartCloudSecurity(CloudSecurity):
         )
 
     def encrypt_iam_password(self, login_id: str, data: str) -> str:
+        """Encrypt IAM password."""
         md = md5()
         md.update(data.encode("ascii"))
         md_second = md5()
@@ -207,6 +230,7 @@ class MSmartCloudSecurity(CloudSecurity):
         encrypted_key: str | bytes,
         encrypted_iv: str | bytes,
     ) -> None:
+        """Set AES keys."""
         key_digest = sha256(self._login_key.encode("ascii")).hexdigest()
         tmp_key = key_digest[:16].encode("ascii")
         tmp_iv = key_digest[16:32].encode("ascii")
@@ -215,10 +239,14 @@ class MSmartCloudSecurity(CloudSecurity):
 
 
 class MideaAirSecurity(CloudSecurity):
+    """Midea Air Security."""
+
     def __init__(self, login_key: str) -> None:
+        """Initialize Midea Air Security."""
         super().__init__(login_key, None, None)
 
     def sign(self, url: str, data: Any, random: str) -> str:
+        """Sign data."""
         payload = unquote_plus(urlencode(sorted(data.items(), key=lambda x: x[0])))
         sha = sha256()
         sha.update((urlparse(url).path + payload + self._login_key).encode("ascii"))
@@ -246,6 +274,7 @@ class LocalSecurity:
         self._response_count = 0
 
     def aes_decrypt(self, raw: bytes) -> bytearray:
+        """Decrypt AES."""
         try:
             return cast(
                 bytearray,
@@ -255,21 +284,26 @@ class LocalSecurity:
             return bytearray(0)
 
     def aes_encrypt(self, raw: bytes) -> bytes:
+        """Encrypt AES."""
         return cast(
             bytes,
             AES.new(self.aes_key, AES.MODE_ECB).encrypt(bytearray(pad(raw, 16))),
         )
 
     def aes_cbc_decrypt(self, raw: bytes, key: Buffer) -> bytes:
+        """Decrypt AES with CBC."""
         return cast(bytes, AES.new(key=key, mode=AES.MODE_CBC, iv=self.iv).decrypt(raw))
 
     def aes_cbc_encrypt(self, raw: bytes, key: Buffer) -> bytes:
+        """Encrypt AES with CBC."""
         return cast(bytes, AES.new(key=key, mode=AES.MODE_CBC, iv=self.iv).encrypt(raw))
 
     def encode32_data(self, raw: bytes) -> bytes:
+        """Encode 32 data."""
         return md5(raw + self.salt).digest()
 
     def tcp_key(self, response: bytes, key: Buffer) -> bytes:
+        """TCP key."""
         if response == b"ERROR":
             raise CannotAuthenticate
         if len(response) != TCP_KEY_RESPONSE_LENGTH:
@@ -285,6 +319,7 @@ class LocalSecurity:
         return self._tcp_key
 
     def encode_8370(self, data: bytes, msgtype: int) -> bytes:
+        """Encode 8370 data."""
         header = bytearray([0x83, 0x70])
         size, padding = len(data), 0
         if msgtype in (MSGTYPE_ENCRYPTED_RESPONSE, MSGTYPE_ENCRYPTED_REQUEST):
@@ -304,6 +339,7 @@ class LocalSecurity:
         return header + data
 
     def decode_8370(self, data: bytes) -> tuple[list, bytes]:
+        """Decode 8370 data."""
         if len(data) < MIN_DECODE_8370_DATA_LENGTH:
             return [], data
         header = data[:6]

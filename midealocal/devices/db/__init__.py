@@ -1,3 +1,5 @@
+"""Midea local DB device."""
+
 import logging
 import sys
 from typing import Any
@@ -15,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea DB device attributes."""
+
     power = "power"
     start = "start"
     washing_data = "washing_data"
@@ -23,6 +27,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaDBDevice(MideaDevice):
+    """Midea DB device."""
+
     def __init__(
         self,
         name: str,
@@ -36,6 +42,7 @@ class MideaDBDevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea DB device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -57,9 +64,11 @@ class MideaDBDevice(MideaDevice):
         )
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea DB device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea DB device process message."""
         message = MessageDBResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -84,6 +93,7 @@ class MideaDBDevice(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea DB device set attribute."""
         message: MessagePower | MessageStart | None = None
         if attr == DeviceAttributes.power:
             message = MessagePower(self._protocol_version)
@@ -97,4 +107,4 @@ class MideaDBDevice(MideaDevice):
 
 
 class MideaAppliance(MideaDBDevice):
-    pass
+    """Midea DB appliance."""

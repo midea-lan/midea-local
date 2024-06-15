@@ -1,3 +1,5 @@
+"""Midea local B4 device."""
+
 import logging
 import sys
 from typing import Any, ClassVar
@@ -15,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea local B4 device attributes."""
+
     door = "door"
     status = "status"
     time_remaining = "time_remaining"
@@ -25,6 +29,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaB4Device(MideaDevice):
+    """Midea B4 device."""
+
     _status: ClassVar[dict[int, str]] = {
         0x01: "Standby",
         0x02: "Idle",
@@ -47,6 +53,7 @@ class MideaB4Device(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea B4 device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -70,9 +77,11 @@ class MideaB4Device(MideaDevice):
         )
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea B4 device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea B4 device process message."""
         message = MessageB4Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -92,8 +101,8 @@ class MideaB4Device(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
-        pass
+        """Midea B4 device set attribute."""
 
 
 class MideaAppliance(MideaB4Device):
-    pass
+    """Midea B4 appliance."""

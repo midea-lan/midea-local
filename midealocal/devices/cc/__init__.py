@@ -1,3 +1,5 @@
+"""Midea local CC device."""
+
 import logging
 import sys
 from typing import Any, ClassVar
@@ -15,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea CC device attributes."""
+
     power = "power"
     mode = "mode"
     target_temperature = "target_temperature"
@@ -34,6 +38,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaCCDevice(MideaDevice):
+    """Midea CC device."""
+
     _fan_speeds_7level: ClassVar[dict[int, str]] = {
         0x01: "Level 1",
         0x02: "Level 2",
@@ -64,6 +70,7 @@ class MideaCCDevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea CC device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -98,12 +105,15 @@ class MideaCCDevice(MideaDevice):
 
     @property
     def fan_modes(self) -> list[str] | None:
+        """Midea CC device fan modes."""
         return None if self._fan_speeds is None else list(self._fan_speeds.values())
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea CC device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea CC device process message."""
         message = MessageCCResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -146,6 +156,7 @@ class MideaCCDevice(MideaDevice):
         return new_status
 
     def make_message_set(self) -> MessageSet:
+        """Midea CC device make message set."""
         message = MessageSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.mode = self._attributes[DeviceAttributes.mode]
@@ -166,6 +177,7 @@ class MideaCCDevice(MideaDevice):
         return message
 
     def set_target_temperature(self, target_temperature: int, mode: int) -> None:
+        """Midea CC device set target temperature."""
         message = self.make_message_set()
         message.target_temperature = target_temperature
         if mode is not None:
@@ -174,6 +186,7 @@ class MideaCCDevice(MideaDevice):
         self.build_send(message)
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea CC device set attribute."""
         # if nat a sensor
         if attr not in [
             DeviceAttributes.indoor_temperature,
@@ -205,4 +218,4 @@ class MideaCCDevice(MideaDevice):
 
 
 class MideaAppliance(MideaCCDevice):
-    pass
+    """Midea CC appliance."""

@@ -34,6 +34,7 @@ class StrEnum(str, Enum):
         last_values: list[Any],
     ) -> Any:
         """Make `auto()` explicitly unsupported.
+
         We may revisit this when it's very clear that Python 3.11's
         `StrEnum.auto()` behavior will no longer change.
         """

@@ -1,3 +1,5 @@
+"""Midea local FC message."""
+
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.crc8 import calculate
 from midealocal.devices import BodyType
@@ -27,6 +29,8 @@ TVOC_BYTE = 15
 
 
 class MessageFCBase(MessageRequest):
+    """FC message base."""
+
     _message_serial = 0
 
     def __init__(
@@ -35,6 +39,7 @@ class MessageFCBase(MessageRequest):
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize FC message base."""
         super().__init__(
             device_type=0xFC,
             protocol_version=protocol_version,
@@ -52,13 +57,17 @@ class MessageFCBase(MessageRequest):
 
     @property
     def body(self) -> bytearray:
+        """FC message base body."""
         body = bytearray([self.body_type]) + self._body + bytearray([self._message_id])
         body.append(calculate(body))
         return body
 
 
 class MessageQuery(MessageFCBase):
+    """FC message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize FC message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -93,7 +102,10 @@ class MessageQuery(MessageFCBase):
 
 
 class MessageSet(MessageFCBase):
+    """FC message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize FC message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -160,7 +172,10 @@ class MessageSet(MessageFCBase):
 
 
 class FCGeneralMessageBody(MessageBody):
+    """FC message general body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize FC message general body."""
         super().__init__(body)
         self.power = (body[1] & 0x01) > 0
         self.mode = body[2] & 0xF0
@@ -197,7 +212,10 @@ class FCGeneralMessageBody(MessageBody):
 
 
 class FCNotifyMessageBody(MessageBody):
+    """FC message notify body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize FC message notify body."""
         super().__init__(body)
         self.power = (body[1] & 0x01) > 0
         self.mode = body[2] & 0xF0
@@ -230,7 +248,10 @@ class FCNotifyMessageBody(MessageBody):
 
 
 class MessageFCResponse(MessageResponse):
+    """FC message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize FC message response."""
         super().__init__(bytearray(message))
         if self.body_type in [BodyType.B0, BodyType.B1]:
             pass

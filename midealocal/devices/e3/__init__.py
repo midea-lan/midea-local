@@ -1,3 +1,5 @@
+"""Midea local E3 device."""
+
 import json
 import logging
 import sys
@@ -22,6 +24,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea E3 device attributes."""
+
     power = "power"
     burning_state = "burning_state"
     zero_cold_water = "zero_cold_water"
@@ -33,6 +37,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaE3Device(MideaDevice):
+    """Midea E3 device."""
+
     def __init__(
         self,
         name: str,
@@ -46,6 +52,7 @@ class MideaE3Device(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea E3 device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -75,12 +82,15 @@ class MideaE3Device(MideaDevice):
 
     @property
     def precision_halves(self) -> bool | None:
+        """Midea E3 device precision halves."""
         return self._precision_halves
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea E3 device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea E3 device process message."""
         message = MessageE3Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -98,6 +108,7 @@ class MideaE3Device(MideaDevice):
         return new_status
 
     def make_message_set(self) -> MessageSet:
+        """Midea E3 device make message set."""
         message = MessageSet(self._protocol_version)
         message.zero_cold_water = self._attributes[DeviceAttributes.zero_cold_water]
         message.protection = self._attributes[DeviceAttributes.protection]
@@ -109,6 +120,7 @@ class MideaE3Device(MideaDevice):
         return message
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea E3 device set attribute."""
         message: MessagePower | MessageSet | MessageNewProtocolSet | None = None
         if attr not in [
             DeviceAttributes.burning_state,
@@ -130,6 +142,7 @@ class MideaE3Device(MideaDevice):
             self.build_send(message)
 
     def set_customize(self, customize: str) -> None:
+        """Midea E3 device set customize."""
         self._precision_halves = self._default_precision_halves
         if customize and len(customize) > 0:
             try:
@@ -142,4 +155,4 @@ class MideaE3Device(MideaDevice):
 
 
 class MideaAppliance(MideaE3Device):
-    pass
+    """Midea E3 appliance."""

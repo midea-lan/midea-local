@@ -1,3 +1,5 @@
+"""Midea local E1 message."""
+
 from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
@@ -12,12 +14,15 @@ HUMIDITY_BYTE = 33
 
 
 class MessageE1Base(MessageRequest):
+    """E1 message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize E1 message base."""
         super().__init__(
             device_type=0xE1,
             protocol_version=protocol_version,
@@ -31,7 +36,10 @@ class MessageE1Base(MessageRequest):
 
 
 class MessagePower(MessageE1Base):
+    """E1 message power."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E1 message power."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -46,7 +54,10 @@ class MessagePower(MessageE1Base):
 
 
 class MessageLock(MessageE1Base):
+    """E1 message lock."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E1 message lock."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -61,7 +72,10 @@ class MessageLock(MessageE1Base):
 
 
 class MessageStorage(MessageE1Base):
+    """E1 message storage."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E1 message storage."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -80,7 +94,10 @@ class MessageStorage(MessageE1Base):
 
 
 class MessageQuery(MessageE1Base):
+    """E1 message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E1 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -93,7 +110,10 @@ class MessageQuery(MessageE1Base):
 
 
 class E1GeneralMessageBody(MessageBody):
+    """E1 message general body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize E1 message general body."""
         super().__init__(body)
         self.power = body[1] > 0
         self.status = body[1]
@@ -129,7 +149,10 @@ class E1GeneralMessageBody(MessageBody):
 
 
 class MessageE1Response(MessageResponse):
+    """E1 message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize E1 message response."""
         super().__init__(bytearray(message))
         if (
             self.message_type == MessageType.set and 0 <= self.body_type <= BodyType.X07

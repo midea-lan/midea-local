@@ -1,3 +1,5 @@
+"""Midea local FD device."""
+
 import logging
 import sys
 from typing import Any, ClassVar
@@ -16,6 +18,8 @@ MAX_SUBTYPE_OLD_SPEEDS = 5
 
 
 class DeviceAttributes(StrEnum):
+    """Midea FD device attributes."""
+
     power = "power"
     fan_speed = "fan_speed"
     prompt_tone = "prompt_tone"
@@ -29,6 +33,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaFDDevice(MideaDevice):
+    """Midea FD device."""
+
     _modes: ClassVar[list[str]] = [
         "Manual",
         "Auto",
@@ -70,6 +76,7 @@ class MideaFDDevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea FD device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -101,24 +108,30 @@ class MideaFDDevice(MideaDevice):
 
     @property
     def modes(self) -> list[str]:
+        """Midea FD device modes."""
         return list(MideaFDDevice._modes)
 
     @property
     def fan_speeds(self) -> list[str]:
+        """Midea FD device fan speeds."""
         return list(self._speeds.values())
 
     @property
     def screen_displays(self) -> list[str]:
+        """Midea FD device screen displays."""
         return list(MideaFDDevice._screen_displays.values())
 
     @property
     def detect_modes(self) -> list[str]:
+        """Midea FD device detect modes."""
         return self._detect_modes
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea FD device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea FD device process message."""
         message = MessageFDResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -148,6 +161,7 @@ class MideaFDDevice(MideaDevice):
         return new_status
 
     def make_message_set(self) -> MessageSet:
+        """Midea FD device make message set."""
         message = MessageSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
@@ -180,6 +194,7 @@ class MideaFDDevice(MideaDevice):
         return message
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea FD device set attribute."""
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
             self.update_all({DeviceAttributes.prompt_tone.value: value})
@@ -206,4 +221,4 @@ class MideaFDDevice(MideaDevice):
 
 
 class MideaAppliance(MideaFDDevice):
-    pass
+    """Midea FD appliance."""

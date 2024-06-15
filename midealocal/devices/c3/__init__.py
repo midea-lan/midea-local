@@ -1,3 +1,5 @@
+"""Midea local C3 device."""
+
 import logging
 import sys
 from enum import IntEnum
@@ -22,6 +24,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea C3 device attributes."""
+
     zone1_power = "zone1_power"
     zone2_power = "zone2_power"
     dhw_power = "dhw_power"
@@ -72,6 +76,8 @@ class C3DeviceMode(IntEnum):
 
 
 class MideaC3Device(MideaDevice):
+    """Midea C3 device."""
+
     def __init__(
         self,
         name: str,
@@ -85,6 +91,7 @@ class MideaC3Device(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea C3 device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -141,9 +148,11 @@ class MideaC3Device(MideaDevice):
         )
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea C3 device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea C3 device process message."""
         message = MessageC3Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -232,6 +241,7 @@ class MideaC3Device(MideaDevice):
         return new_status
 
     def make_message_set(self) -> MessageSet:
+        """Midea C3 device make message set."""
         message = MessageSet(self._protocol_version)
         message.zone1_power = self._attributes[DeviceAttributes.zone1_power]
         message.zone2_power = self._attributes[DeviceAttributes.zone2_power]
@@ -248,6 +258,7 @@ class MideaC3Device(MideaDevice):
         return message
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea C3 device set attribute."""
         message: MessageSet | MessageSetECO | MessageSetSilent | None = None
         if attr in [
             DeviceAttributes.zone1_power,
@@ -272,6 +283,7 @@ class MideaC3Device(MideaDevice):
             self.build_send(message)
 
     def set_mode(self, zone: int, mode: int) -> None:
+        """Midea C3 device set mode."""
         message = self.make_message_set()
         if zone == 0:
             message.zone1_power = True
@@ -286,6 +298,7 @@ class MideaC3Device(MideaDevice):
         target_temperature: int,
         mode: int,
     ) -> None:
+        """Midea C3 device set target temperature."""
         message = self.make_message_set()
         if self._attributes[DeviceAttributes.zone_temp_type][zone]:
             message.zone_target_temp[zone] = target_temperature
@@ -301,4 +314,4 @@ class MideaC3Device(MideaDevice):
 
 
 class MideaAppliance(MideaC3Device):
-    pass
+    """Midea C3 appliance."""

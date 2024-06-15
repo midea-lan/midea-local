@@ -1,3 +1,5 @@
+"""Midea local packet builder."""
+
 import datetime
 from typing import cast
 
@@ -5,7 +7,10 @@ from .security import LocalSecurity
 
 
 class PacketBuilder:
+    """Packet builder."""
+
     def __init__(self, device_id: int, command: bytes) -> None:
+        """Initialize packet builder."""
         self.command: bytes
         self.security = LocalSecurity()
         # aa20ac00000000000003418100ff03ff000200000000000000000000000006f274
@@ -67,6 +72,7 @@ class PacketBuilder:
         self.command = command
 
     def finalize(self, msg_type: int = 1) -> bytearray:
+        """Finalize packet builder."""
         if msg_type != 1:
             self.packet[3] = 0x10
             self.packet[6] = 0x7B
@@ -79,14 +85,17 @@ class PacketBuilder:
         return self.packet
 
     def encode32(self, data: bytearray) -> bytes:
+        """Encode 32."""
         return self.security.encode32_data(data)
 
     @staticmethod
     def checksum(data: bytes) -> bytes:
+        """Packet builder checksum."""
         return cast(bytes, (~sum(data) + 1) & 0xFF)
 
     @staticmethod
     def packet_time() -> bytearray:
+        """Packet builder packet time."""
         t = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")[:16]
         b = bytearray()
         for i in range(0, len(t), 2):

@@ -1,3 +1,5 @@
+"""Midea local x13 device."""
+
 from midealocal.devices import BodyType
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
@@ -5,12 +7,15 @@ MAX_EFFECT = 5
 
 
 class Message13Base(MessageRequest):
+    """X13 message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize X13 message base."""
         super().__init__(
             device_type=0x13,
             protocol_version=protocol_version,
@@ -24,7 +29,10 @@ class Message13Base(MessageRequest):
 
 
 class MessageQuery(Message13Base):
+    """X13 message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize X13 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -37,7 +45,10 @@ class MessageQuery(Message13Base):
 
 
 class MessageSet(Message13Base):
+    """X13 message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize X13 message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -67,7 +78,10 @@ class MessageSet(Message13Base):
 
 
 class MessageMainLightBody(MessageBody):
+    """X13 message main light body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize X13 message main light body."""
         super().__init__(body)
         self.brightness = self.read_byte(body, 1)
         self.color_temperature = self.read_byte(body, 2)
@@ -78,13 +92,19 @@ class MessageMainLightBody(MessageBody):
 
 
 class MessageMainLightResponseBody(MessageBody):
+    """X13 message main light response body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize X13 message main light response body."""
         super().__init__(body)
         self.control_success: bool = body[1] > 0
 
 
 class Message13Response(MessageResponse):
+    """X13 message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize X13 message response."""
         super().__init__(bytearray(message))
         if self.body_type == BodyType.A4:
             self.set_body(MessageMainLightBody(super().body))

@@ -1,3 +1,5 @@
+"""Midea local A1 device."""
+
 import logging
 import sys
 from typing import Any, ClassVar
@@ -15,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Device A1 attributes."""
+
     power = "power"
     prompt_tone = "prompt_tone"
     child_lock = "child_lock"
@@ -31,6 +35,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaA1Device(MideaDevice):
+    """Midea A1 Device."""
+
     _modes: ClassVar[list[str]] = [
         "Manual",
         "Continuous",
@@ -61,6 +67,7 @@ class MideaA1Device(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea A1 device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -91,20 +98,25 @@ class MideaA1Device(MideaDevice):
 
     @property
     def modes(self) -> list[str]:
+        """Midea A1 device modes."""
         return MideaA1Device._modes
 
     @property
     def fan_speeds(self) -> list[str]:
+        """Midea A1 device fan speeds."""
         return list(MideaA1Device._speeds.values())
 
     @property
     def water_level_sets(self) -> list[str]:
+        """Midea A1 device water level options."""
         return MideaA1Device._water_level_sets
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea A1 device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea A1 device process message."""
         message = MessageA1Response(bytearray(msg))
         self._protocol_version = message.protocol_version
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
@@ -139,6 +151,7 @@ class MideaA1Device(MideaDevice):
         return new_status
 
     def make_message_set(self) -> MessageSet:
+        """Midea A1 device make message set."""
         message = MessageSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
@@ -167,6 +180,7 @@ class MideaA1Device(MideaDevice):
         return message
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea A1 device set attribute."""
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
             self.update_all({DeviceAttributes.prompt_tone.value: value})
@@ -189,4 +203,4 @@ class MideaA1Device(MideaDevice):
 
 
 class MideaAppliance(MideaA1Device):
-    pass
+    """Midea A1 Appliance."""

@@ -1,3 +1,5 @@
+"""Midea local DA device."""
+
 import logging
 import sys
 from typing import Any
@@ -17,6 +19,8 @@ MIN_TEMP = 15
 
 
 class DeviceAttributes(StrEnum):
+    """Midea DA device attributes."""
+
     power = "power"
     start = "start"
     washing_data = "washing_data"
@@ -37,6 +41,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaDADevice(MideaDevice):
+    """Midea DA device."""
+
     def __init__(
         self,
         name: str,
@@ -50,6 +56,7 @@ class MideaDADevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea DA device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -83,9 +90,11 @@ class MideaDADevice(MideaDevice):
         )
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea DA device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea DA device process message."""
         message = MessageDAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -160,6 +169,7 @@ class MideaDADevice(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea DA device set attribute."""
         message: MessagePower | MessageStart | None = None
         if attr == DeviceAttributes.power:
             message = MessagePower(self._protocol_version)
@@ -173,4 +183,4 @@ class MideaDADevice(MideaDevice):
 
 
 class MideaAppliance(MideaDADevice):
-    pass
+    """Midea DA appliance."""

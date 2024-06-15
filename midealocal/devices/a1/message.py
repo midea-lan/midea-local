@@ -1,3 +1,5 @@
+"""Midea local A1 device message."""
+
 from enum import IntEnum
 
 from midealocal.crc8 import calculate
@@ -16,10 +18,14 @@ MIN_FAN_SPEED = 5
 
 
 class NewProtocolTags(IntEnum):
+    """New protocol tags."""
+
     light = 0x005B
 
 
 class MessageA1Base(MessageRequest):
+    """Message A1 Base."""
+
     _message_serial = 0
 
     def __init__(
@@ -28,6 +34,7 @@ class MessageA1Base(MessageRequest):
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize message A1 base."""
         super().__init__(
             device_type=0xA1,
             protocol_version=protocol_version,
@@ -45,13 +52,17 @@ class MessageA1Base(MessageRequest):
 
     @property
     def body(self) -> bytearray:
+        """Message A1 base body."""
         body = bytearray([self.body_type]) + self._body + bytearray([self._message_id])
         body.append(calculate(body))
         return body
 
 
 class MessageQuery(MessageA1Base):
+    """Message A1 query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize message A1 query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -86,7 +97,10 @@ class MessageQuery(MessageA1Base):
 
 
 class MessageNewProtocolQuery(MessageA1Base):
+    """Message A1 new protocol query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize message A1 new protocol query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -103,7 +117,10 @@ class MessageNewProtocolQuery(MessageA1Base):
 
 
 class MessageSet(MessageA1Base):
+    """Message A1 set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize message A1 set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -165,7 +182,10 @@ class MessageSet(MessageA1Base):
 
 
 class MessageNewProtocolSet(MessageA1Base):
+    """Message A1 new protocol set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize message A1 new protocol set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -190,7 +210,10 @@ class MessageNewProtocolSet(MessageA1Base):
 
 
 class A1GeneralMessageBody(MessageBody):
+    """A1 general message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize A1 general message body."""
         super().__init__(body)
         self.power = (body[1] & 0x01) > 0
         self.mode = body[2] & 0x0F
@@ -210,7 +233,10 @@ class A1GeneralMessageBody(MessageBody):
 
 
 class A1NewProtocolMessageBody(NewProtocolMessageBody):
+    """A1 new protocol message body."""
+
     def __init__(self, body: bytearray, bt: int) -> None:
+        """Initialize A1 new protocol message body."""
         super().__init__(body, bt)
         params = self.parse()
         if NewProtocolTags.light in params:
@@ -218,7 +244,10 @@ class A1NewProtocolMessageBody(NewProtocolMessageBody):
 
 
 class MessageA1Response(MessageResponse):
+    """A1 message response."""
+
     def __init__(self, message: bytearray) -> None:
+        """Initialize A1 message response."""
         super().__init__(message)
         if self.message_type in [
             MessageType.query,

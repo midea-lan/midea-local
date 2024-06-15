@@ -1,3 +1,5 @@
+"""Midea local x35 device."""
+
 import logging
 import sys
 from typing import Any
@@ -21,6 +23,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea x34 device attributes."""
+
     power = "power"
     status = "status"
     mode = "mode"
@@ -48,6 +52,8 @@ class DeviceAttributes(StrEnum):
 
 
 class Midea34Device(MideaDevice):
+    """Midea x34 device."""
+
     def __init__(
         self,
         name: str,
@@ -61,6 +67,7 @@ class Midea34Device(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea x34 device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -127,9 +134,11 @@ class Midea34Device(MideaDevice):
         self._progress = ["Idle", "Pre-wash", "Wash", "Rinse", "Dry", "Complete"]
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea x34 device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea x34 device process message."""
         message = Message34Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -156,6 +165,7 @@ class Midea34Device(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea x34 device set attribute."""
         message: MessagePower | MessageLock | MessageStorage | None = None
         if attr == DeviceAttributes.power:
             message = MessagePower(self._protocol_version)
@@ -172,4 +182,4 @@ class Midea34Device(MideaDevice):
 
 
 class MideaAppliance(Midea34Device):
-    pass
+    """Midea x34 appliance."""

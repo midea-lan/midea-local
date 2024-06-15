@@ -1,3 +1,5 @@
+"""Midea local CA message."""
+
 from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
@@ -14,12 +16,15 @@ TEMP_NEG_UPPER_VALUE = 54
 
 
 class MessageCABase(MessageRequest):
+    """CA message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize CA message base."""
         super().__init__(
             device_type=0xCA,
             protocol_version=protocol_version,
@@ -33,7 +38,10 @@ class MessageCABase(MessageRequest):
 
 
 class MessageQuery(MessageCABase):
+    """CA message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize CA message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -46,7 +54,10 @@ class MessageQuery(MessageCABase):
 
 
 class CAGeneralMessageBody(MessageBody):
+    """CA message general body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize CA message general body."""
         super().__init__(body)
         self.refrigerator_setting_temp = body[2] & 0x0F
         self.freezer_setting_temp = -12 - ((body[2] & 0xF0) >> 4)
@@ -76,7 +87,10 @@ class CAGeneralMessageBody(MessageBody):
 
 
 class CAExceptionMessageBody(MessageBody):
+    """CA message exception body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize CA message exception body."""
         super().__init__(body)
         self.refrigerator_door_overtime = (body[1] & 0x01) > 0
         self.freezer_door_overtime = (body[1] & 0x02) > 0
@@ -85,7 +99,10 @@ class CAExceptionMessageBody(MessageBody):
 
 
 class CANotify00MessageBody(MessageBody):
+    """CA message notify00 body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize CA message notify00 body."""
         super().__init__(body)
         self.refrigerator_door = (body[1] & 0x01) > 0
         self.freezer_door = (body[1] & 0x02) > 0
@@ -94,7 +111,10 @@ class CANotify00MessageBody(MessageBody):
 
 
 class CANotify01MessageBody(MessageBody):
+    """CA message notify01 body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize CA message notify01 body."""
         super().__init__(body)
         self.refrigerator_setting_temp = body[37]
         self.freezer_setting_temp = -12 - body[38]
@@ -118,7 +138,10 @@ class CANotify01MessageBody(MessageBody):
 
 
 class MessageCAResponse(MessageResponse):
+    """CA message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize CA message response."""
         super().__init__(bytearray(message))
         if (
             (
