@@ -1,8 +1,13 @@
 """B0 Midea local message."""
 
 from midealocal.const import MAX_BYTE_VALUE
-from midealocal.devices import BodyType
-from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+from midealocal.message import (
+    BodyType,
+    MessageBody,
+    MessageRequest,
+    MessageResponse,
+    MessageType,
+)
 
 MIN_MSG_BODY = 15
 

@@ -1,7 +1,12 @@
 """Midea local x13 device."""
 
-from midealocal.devices import BodyType
-from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+from midealocal.message import (
+    BodyType,
+    MessageBody,
+    MessageRequest,
+    MessageResponse,
+    MessageType,
+)
 
 MAX_EFFECT = 5
 
