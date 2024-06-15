@@ -6,10 +6,11 @@ import json
 import logging
 import time
 from http import HTTPStatus
+from pathlib import Path
 from secrets import token_hex
 from threading import Lock
 from typing import Any, cast
-from pathlib import Path
+
 from aiohttp import ClientSession
 
 from .security import (

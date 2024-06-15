@@ -3,11 +3,11 @@
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.device import ProtocolVersion
 from midealocal.message import (
+    BodyType,
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
-    BodyType,
     SubBodyType,
 )
 
