@@ -239,7 +239,7 @@ class MideaDevice(threading.Thread):
         """Refresh device status."""
         cmds: list = self.build_query()
         if self._appliance_query:
-            cmds = [MessageQueryAppliance(self.device_type)] + cmds
+            cmds = [MessageQueryAppliance(self.device_type), *cmds]
         error_count = 0
         for cmd in cmds:
             if cmd.__class__.__name__ not in self._unsupported_protocol:
