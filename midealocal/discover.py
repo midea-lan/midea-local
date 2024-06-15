@@ -270,8 +270,7 @@ def get_id_from_response(response: bytearray) -> int:
         assert child
         m = child.attrib
         return int.from_bytes(bytearray.fromhex(m["devId"]), "little")
-    else:
-        return 0
+    return 0
 
 
 def bytes2port(paramArrayOfbyte: bytes | None) -> int:

@@ -297,7 +297,7 @@ class MideaDevice(threading.Thread):
                             result = self.parse_message(msg)
                             if result == ParseMessageResult.SUCCESS:
                                 break
-                            elif result == ParseMessageResult.PADDING:
+                            if result == ParseMessageResult.PADDING:
                                 continue
                             else:
                                 error_count += 1
@@ -520,7 +520,7 @@ class MideaDevice(threading.Thread):
                         _LOGGER.debug("[%s] Message 'ERROR' received", self._device_id)
                         self.close_socket()
                         break
-                    elif result == ParseMessageResult.SUCCESS:
+                    if result == ParseMessageResult.SUCCESS:
                         timeout_counter = 0
                 except TimeoutError:
                     timeout_counter = timeout_counter + 1
