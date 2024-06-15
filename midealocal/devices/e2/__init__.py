@@ -116,8 +116,6 @@ class MideaE2Device(MideaDevice):
                     return_value = OldProtocol.true if result else OldProtocol.false
             elif isinstance(value, bool | int):
                 return_value = OldProtocol.true if value else OldProtocol.false
-            else:
-                raise ValueError("Invalid value for old_protocol")
             return return_value
         except ValueError as e:
             _LOGGER.error("Invalid old_protocol value: %s, error: %s", value, e)
