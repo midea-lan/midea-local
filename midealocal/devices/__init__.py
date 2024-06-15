@@ -1,7 +1,8 @@
 """Midea local devices."""
 
 from importlib import import_module
-from typing import Any
+from typing import cast
+from midealocal.device import MideaDevice
 
 from midealocal.device import DeviceType
 
@@ -18,7 +19,7 @@ def device_selector(
     model: str,
     subtype: int,
     customize: str,
-) -> Any:
+) -> MideaDevice:
     """Select and load device."""
     try:
         if device_type < DeviceType.A0:
@@ -40,4 +41,4 @@ def device_selector(
         )
     except ModuleNotFoundError:
         device = None
-    return device
+    return cast(MideaDevice, device)

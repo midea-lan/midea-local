@@ -14,8 +14,8 @@ class StrEnum(str, Enum):
     def __new__(
         cls: type[_StrEnumSelfT],
         value: str,
-        *args: Any,
-        **kwargs: Any,
+        *args: tuple[str, Any],
+        **kwargs: dict[str, Any],
     ) -> _StrEnumSelfT:
         """Create a new StrEnum instance."""
         if not isinstance(value, str):
