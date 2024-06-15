@@ -1,7 +1,13 @@
 """Midea local B4 message."""
 
 from midealocal.const import MAX_BYTE_VALUE
-from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+from midealocal.message import (
+    BodyType,
+    MessageBody,
+    MessageRequest,
+    MessageResponse,
+    MessageType,
+)
 
 
 class MessageB4Base(MessageRequest):
@@ -69,11 +75,14 @@ class MessageB4Response(MessageResponse):
     def __init__(self, message: bytes) -> None:
         """Initialize B4 message response."""
         super().__init__(bytearray(message))
-        if self.message_type in [
-            MessageType.notify1,
-            MessageType.query,
-            MessageType.set,
-        ]:
-            if self.body_type == 0x01:
-                self.set_body(B4MessageBody(super().body))
+        if (
+            self.message_type
+            in [
+                MessageType.notify1,
+                MessageType.query,
+                MessageType.set,
+            ]
+            and self.body_type == BodyType.X01
+        ):
+            self.set_body(B4MessageBody(super().body))
         self.set_attr()
