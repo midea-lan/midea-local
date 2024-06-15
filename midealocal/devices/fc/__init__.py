@@ -258,7 +258,9 @@ class MideaFCDevice(MideaDevice):
                     ):
                         self._standby_detect = settings
             except Exception as e:
-                _LOGGER.error("[%s] Set customize error: %s", self.device_id, repr(e))
+                _LOGGER.exception(
+                    "[%s] Set customize error: %s", self.device_id, repr(e)
+                )
             self.update_all({"standby_detect": self._standby_detect})
 
 

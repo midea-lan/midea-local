@@ -398,7 +398,9 @@ class MideaACDevice(MideaDevice):
                 if params and "power_analysis_method" in params:
                     self._power_analysis_method = params.get("power_analysis_method")
             except Exception as e:
-                _LOGGER.error("[%s] Set customize error: %s", self.device_id, repr(e))
+                _LOGGER.exception(
+                    "[%s] Set customize error: %s", self.device_id, repr(e)
+                )
             self.update_all({"temperature_step": self._temperature_step})
 
 
