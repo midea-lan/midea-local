@@ -120,7 +120,7 @@ class MideaE2Device(MideaDevice):
                 raise ValueError("Invalid value for old_protocol")
             return return_value
         except ValueError as e:
-            _LOGGER.error("Invalid old_protocol value: %s, error: %s", value, e)
+            _LOGGER.exception("Invalid old_protocol value: %s, error: %s", value, e)
             return self._default_old_protocol
 
     def build_query(self) -> list[MessageQuery]:
@@ -182,7 +182,9 @@ class MideaE2Device(MideaDevice):
                         params["old_protocol"],
                     )
             except Exception as e:
-                _LOGGER.error("[%s] Set customize error: %s", self.device_id, repr(e))
+                _LOGGER.exception(
+                    "[%s] Set customize error: %s", self.device_id, repr(e)
+                )
             self.update_all({"old_protocol": self._old_protocol})
 
 

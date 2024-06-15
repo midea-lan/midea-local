@@ -179,7 +179,7 @@ class MideaDevice(threading.Thread):
             _LOGGER.debug("[%s] Refresh status is timed out", self._device_id)
         except Exception as e:
             assert e.__traceback__
-            _LOGGER.error(
+            _LOGGER.exception(
                 "[%s] Unknown error: %s, %s, %s",
                 self._device_id,
                 e.__traceback__.tb_frame.f_globals["__file__"],
@@ -323,7 +323,7 @@ class MideaDevice(threading.Thread):
                                 )
 
                     except Exception:
-                        _LOGGER.error(
+                        _LOGGER.exception(
                             "[%s] Error in process message, msg = %s",
                             self._device_id,
                             decrypted.hex(),
@@ -483,7 +483,7 @@ class MideaDevice(threading.Thread):
                     break
                 except Exception as e:
                     assert e.__traceback__
-                    _LOGGER.error(
+                    _LOGGER.exception(
                         "[%s] Unknown error :%s, %s, %s",
                         self._device_id,
                         e.__traceback__.tb_frame.f_globals["__file__"],
