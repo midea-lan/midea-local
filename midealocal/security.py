@@ -246,7 +246,6 @@ class MideaAirSecurity(CloudSecurity):
         """Initialize Midea Air Security."""
         super().__init__(login_key, None, None)
 
-
     def sign(self, url: str, data: dict[str, Any] | str, random: str) -> str:  # noqa: ARG002
         """Sign Midea Air."""
         if isinstance(data, str):
