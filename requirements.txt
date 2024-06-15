@@ -1,9 +1,6 @@
-pytest
-pytest-asyncio
-pytest-cov
-ruff
 aiohttp
-ifaddr
-pycryptodome
 build
 defusedxml
+ifaddr
+pycryptodome
+ruff
