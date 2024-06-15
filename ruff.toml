@@ -23,6 +23,10 @@ lint.ignore = [
 ]
 "tests/*" = [
     "S101",     # Use of `assert` detected
+    "S105",     # Possible hardcoded password assigned to
+    "S106",     # Possible hardcoded password assigned to argument
+    "SLF001",   # Private member accessed
+    "PLR0915",  # Too many statements
     "PLR2004",  # Magic value used in comparison
 ]
 
