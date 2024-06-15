@@ -91,6 +91,7 @@ class CloudSecurity:
 
     @staticmethod
     def get_udp_id(appliance_id: int, method: int = 0) -> str | None:
+        """Get udp id."""
         if method == UdpIdMethod.REVERSED_BIG:
             bytes_id = bytes(reversed(appliance_id.to_bytes(8, "big")))
         elif method == UdpIdMethod.BIG:
@@ -246,6 +247,7 @@ class MideaAirSecurity(CloudSecurity):
         super().__init__(login_key, None, None)
 
     def sign(self, url: str, data: dict[str, Any] | str, random: str) -> str:
+        """Sign Midea Air."""
         if isinstance(data, str):
             raise DataSignWrongType
         payload = unquote_plus(urlencode(sorted(data.items(), key=lambda x: x[0])))
