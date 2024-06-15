@@ -1,4 +1,3 @@
-#!/bin/python
 """setup midea-local."""
 
 import setuptools
