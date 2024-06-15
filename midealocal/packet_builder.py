@@ -1,6 +1,6 @@
 """Midea local packet builder."""
 
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import cast
 
 from .security import LocalSecurity
@@ -96,7 +96,7 @@ class PacketBuilder:
     @staticmethod
     def packet_time() -> bytearray:
         """Packet builder packet time."""
-        t = datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S%f")[:16]
+        t = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")[:16]
         b = bytearray()
         for i in range(0, len(t), 2):
             d = int(t[i : i + 2])
