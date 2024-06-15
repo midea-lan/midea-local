@@ -1,3 +1,5 @@
+"""Midea local x13 device."""
+
 import json
 import logging
 import sys
@@ -16,6 +18,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea x13 device attributes."""
+
     brightness = "brightness"
     color_temperature = "color_temperature"
     rgb_color = "rgb_color"
@@ -24,6 +28,8 @@ class DeviceAttributes(StrEnum):
 
 
 class Midea13Device(MideaDevice):
+    """Midea x13 Device."""
+
     _effects: ClassVar[list[str]] = [
         "Manual",
         "Living",
@@ -46,6 +52,7 @@ class Midea13Device(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea x13 Device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -71,13 +78,16 @@ class Midea13Device(MideaDevice):
 
     @property
     def effects(self) -> list[str]:
+        """Midea x13 Device effects."""
         return Midea13Device._effects
 
     @property
     def color_temp_range(self) -> list[int]:
+        """Midea x13 Device color temperature range."""
         return self._color_temp_range
 
     def kelvin_to_midea(self, kelvin: int) -> float:
+        """Midea x13 Device kelvin to midea."""
         return round(
             (kelvin - self._color_temp_range[0])
             / (self._color_temp_range[1] - self._color_temp_range[0])
@@ -85,15 +95,18 @@ class Midea13Device(MideaDevice):
         )
 
     def midea_to_kelvin(self, midea: int) -> float:
+        """Midea x13 Device midea to kelvin."""
         return (
             round((self._color_temp_range[1] - self._color_temp_range[0]) / 255 * midea)
             + self._color_temp_range[0]
         )
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea x13 Device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea x13 Device process message."""
         message = Message13Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status: dict[str, Any] = {}
@@ -115,6 +128,7 @@ class Midea13Device(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea x13 Device set attribute."""
         if attr in [
             DeviceAttributes.brightness,
             DeviceAttributes.color_temperature,
@@ -131,6 +145,7 @@ class Midea13Device(MideaDevice):
             self.build_send(message)
 
     def set_customize(self, customize: str) -> None:
+        """Midea x13 Device set customize."""
         self._color_temp_range = self._default_color_temp_range
         if customize and len(customize) > 0:
             try:
@@ -143,4 +158,4 @@ class Midea13Device(MideaDevice):
 
 
 class MideaAppliance(Midea13Device):
-    pass
+    """Midea x13 appliance."""

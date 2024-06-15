@@ -1,3 +1,5 @@
+"""Midea local x40 device."""
+
 import logging
 import math
 import sys
@@ -21,6 +23,8 @@ VENTILATION_FAN_SPEED = 2
 
 
 class DeviceAttributes(StrEnum):
+    """Midea x40 device attributes."""
+
     light = "light"
     fan_speed = "fan_speed"
     direction = "direction"
@@ -30,6 +34,8 @@ class DeviceAttributes(StrEnum):
 
 
 class Midea40Device(MideaDevice):
+    """Midea x40 Device."""
+
     _directions: ClassVar[list[str]] = ["60", "70", "80", "90", "100", "Oscillate"]
 
     def __init__(
@@ -45,6 +51,7 @@ class Midea40Device(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea x40 Device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -69,6 +76,7 @@ class Midea40Device(MideaDevice):
 
     @property
     def directions(self) -> list[str]:
+        """Midea x40 device directions."""
         return Midea40Device._directions
 
     @staticmethod
@@ -92,9 +100,11 @@ class Midea40Device(MideaDevice):
         return result
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea x40 Device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea x40 Device process message."""
         message = Message40Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -112,6 +122,7 @@ class Midea40Device(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea x40 Device set attribute."""
         if attr in [
             DeviceAttributes.light,
             DeviceAttributes.fan_speed,
@@ -142,4 +153,4 @@ class Midea40Device(MideaDevice):
 
 
 class MideaAppliance(Midea40Device):
-    pass
+    """Midea x40 appliance."""

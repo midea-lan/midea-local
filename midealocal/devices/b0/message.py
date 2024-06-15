@@ -1,3 +1,5 @@
+"""B0 Midea local message."""
+
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.devices import BodyType
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
@@ -6,12 +8,15 @@ MIN_MSG_BODY = 15
 
 
 class MessageB0Base(MessageRequest):
+    """B0 message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize B0 message base."""
         super().__init__(
             device_type=0xB0,
             protocol_version=protocol_version,
@@ -25,7 +30,10 @@ class MessageB0Base(MessageRequest):
 
 
 class MessageQuery00(MessageB0Base):
+    """B0 message query 00."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize B0 message query 00."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -38,7 +46,10 @@ class MessageQuery00(MessageB0Base):
 
 
 class MessageQuery01(MessageB0Base):
+    """B0 message query 01."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize B0 message query 01."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -51,7 +62,10 @@ class MessageQuery01(MessageB0Base):
 
 
 class B0MessageBody(MessageBody):
+    """B0 message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize B0 message body."""
         super().__init__(body)
         if len(body) > MIN_MSG_BODY:
             self.door = (body[0] & 0x80) > 0
@@ -61,7 +75,10 @@ class B0MessageBody(MessageBody):
 
 
 class B0Message01Body(MessageBody):
+    """B0 message 01 body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize B0 message 01 body."""
         super().__init__(body)
         if len(body) > MIN_MSG_BODY:
             self.door = (body[32] & 0x02) > 0
@@ -80,7 +97,10 @@ class B0Message01Body(MessageBody):
 
 
 class MessageB0Response(MessageResponse):
+    """B0 message response."""
+
     def __init__(self, message: bytearray) -> None:
+        """Initialize B0 message response."""
         super().__init__(message)
         if self.message_type in [MessageType.notify1, MessageType.query]:
             if self.body_type == BodyType.X01:

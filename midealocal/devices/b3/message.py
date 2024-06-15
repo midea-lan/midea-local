@@ -1,3 +1,5 @@
+"""Midea local B3 message."""
+
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.devices import BodyType
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
@@ -11,12 +13,15 @@ X31_TOP_COMPARTMENT_REMAINING_BYTE = 23
 
 
 class MessageB3Base(MessageRequest):
+    """B3 message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize B3 message base."""
         super().__init__(
             device_type=0xB3,
             protocol_version=protocol_version,
@@ -30,7 +35,10 @@ class MessageB3Base(MessageRequest):
 
 
 class MessageQuery(MessageB3Base):
+    """B3 message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize B3 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -43,7 +51,10 @@ class MessageQuery(MessageB3Base):
 
 
 class B3MessageBody31(MessageBody):
+    """B3 message body 31."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize B3 message body 31."""
         super().__init__(body)
         self.top_compartment_status = body[1]
         self.top_compartment_mode = body[2]
@@ -103,7 +114,10 @@ class B3MessageBody31(MessageBody):
 
 
 class B3MessageBody21(MessageBody):
+    """B3 message body 21."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize B3 message body 21."""
         super().__init__(body)
         self.top_compartment_status = body[1]
         self.top_compartment_mode = body[2]
@@ -154,7 +168,10 @@ class B3MessageBody21(MessageBody):
 
 
 class B3MessageBody24(MessageBody):
+    """B3 message body 24."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize B3 message body 24."""
         super().__init__(body)
         self.top_compartment_status = body[5]
         self.top_compartment_mode = body[6]
@@ -189,7 +206,10 @@ class B3MessageBody24(MessageBody):
 
 
 class MessageB3Response(MessageResponse):
+    """B3 message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize B3 message response."""
         super().__init__(bytearray(message))
         if (
             self.message_type == MessageType.query

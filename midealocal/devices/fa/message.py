@@ -1,3 +1,5 @@
+"""Midea local FA message."""
+
 from midealocal.devices import SubBodyType
 from midealocal.message import (
     NONE_VALUE,
@@ -13,12 +15,15 @@ TILTING_ANGLE_SET_BYTE = 24
 
 
 class MessageFABase(MessageRequest):
+    """FA message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int = NONE_VALUE,
     ) -> None:
+        """Initialize the message with protocol version, message type, and body type."""
         super().__init__(
             device_type=0xFA,
             protocol_version=protocol_version,
@@ -32,7 +37,10 @@ class MessageFABase(MessageRequest):
 
 
 class MessageQuery(MessageFABase):
+    """Message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize the message with protocol version."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -40,6 +48,7 @@ class MessageQuery(MessageFABase):
 
     @property
     def body(self) -> bytearray:
+        """Return an empty bytearray."""
         return bytearray([])
 
     @property
@@ -48,7 +57,10 @@ class MessageQuery(MessageFABase):
 
 
 class MessageSet(MessageFABase):
+    """Message set."""
+
     def __init__(self, protocol_version: int, subtype: int) -> None:
+        """Initialize the message with protocol version and subtype."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -181,7 +193,10 @@ class MessageSet(MessageFABase):
 
 
 class FAGeneralMessageBody(MessageBody):
+    """General message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize the message body."""
         super().__init__(body)
         lock = body[3] & 0x03
         if lock == 1:
@@ -204,7 +219,10 @@ class FAGeneralMessageBody(MessageBody):
 
 
 class MessageFAResponse(MessageResponse):
+    """FA response message."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize the message."""
         super().__init__(bytearray(message))
         if self.message_type in [
             MessageType.query,

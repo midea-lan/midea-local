@@ -1,3 +1,5 @@
+"""Midea local EA device."""
+
 import logging
 import sys
 from typing import Any, ClassVar
@@ -15,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea EA device attributes."""
+
     cooking = "cooking"
     keep_warm = "keep_warm"
     mode = "mode"
@@ -26,6 +30,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaEADevice(MideaDevice):
+    """Midea EA device."""
+
     _mode_list: ClassVar[list[str]] = (
         [
             "smart",
@@ -143,6 +149,7 @@ class MideaEADevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea EA device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -167,9 +174,11 @@ class MideaEADevice(MideaDevice):
         )
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea EA device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea EA device process message."""
         message = MessageEAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -192,8 +201,8 @@ class MideaEADevice(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
-        pass
+        """Midea EA device set attribute."""
 
 
 class MideaAppliance(MideaEADevice):
-    pass
+    """Midea EA appliance."""

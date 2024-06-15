@@ -1,4 +1,4 @@
-"""CRC8 Test"""
+"""CRC8 Test."""
 
 from midealocal.crc8 import calculate
 

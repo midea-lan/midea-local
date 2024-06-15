@@ -1,4 +1,4 @@
-"""Test a1 Device"""
+"""Test a1 Device."""
 
 from unittest.mock import patch
 

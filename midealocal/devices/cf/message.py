@@ -1,3 +1,5 @@
+"""Midea local CF message."""
+
 from enum import IntEnum
 
 from midealocal.devices import BodyType
@@ -19,12 +21,15 @@ class CFMode(IntEnum):
 
 
 class MessageCFBase(MessageRequest):
+    """CF message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize CF message base."""
         super().__init__(
             device_type=0xCF,
             protocol_version=protocol_version,
@@ -38,7 +43,10 @@ class MessageCFBase(MessageRequest):
 
 
 class MessageQuery(MessageCFBase):
+    """CF message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize CF message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -51,7 +59,10 @@ class MessageQuery(MessageCFBase):
 
 
 class MessageSet(MessageCFBase):
+    """CF message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize CF message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -78,7 +89,10 @@ class MessageSet(MessageCFBase):
 
 
 class CFMessageBody(MessageBody):
+    """CF message body."""
+
     def __init__(self, body: bytearray, data_offset: int = 0) -> None:
+        """Initialize CF message body."""
         super().__init__(body)
         self.power = (body[data_offset + 0] & 0x01) > 0
         self.aux_heating = (body[data_offset + 0] & 0x02) > 0
@@ -98,7 +112,10 @@ class CFMessageBody(MessageBody):
 
 
 class MessageCFResponse(MessageResponse):
+    """CF message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize CF message body."""
         super().__init__(bytearray(message))
         if (
             self.message_type in [MessageType.query, MessageType.set]

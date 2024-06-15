@@ -1,3 +1,5 @@
+"""Midea local DB message."""
+
 from midealocal.devices import BodyType
 from midealocal.message import (
     MessageBody,
@@ -8,12 +10,15 @@ from midealocal.message import (
 
 
 class MessageDBBase(MessageRequest):
+    """DB message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize DB message base."""
         super().__init__(
             device_type=0xDB,
             protocol_version=protocol_version,
@@ -27,7 +32,10 @@ class MessageDBBase(MessageRequest):
 
 
 class MessageQuery(MessageDBBase):
+    """DB message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize DB message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -40,7 +48,10 @@ class MessageQuery(MessageDBBase):
 
 
 class MessagePower(MessageDBBase):
+    """DB message power."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize DB message power."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -79,7 +90,10 @@ class MessagePower(MessageDBBase):
 
 
 class MessageStart(MessageDBBase):
+    """DB message start."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize DB message start."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -97,7 +111,10 @@ class MessageStart(MessageDBBase):
 
 
 class DBGeneralMessageBody(MessageBody):
+    """DB message general body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize DB message general body."""
         super().__init__(body)
         self.power = body[1] > 0
         self.start = body[2] in [2, 6]
@@ -113,7 +130,10 @@ class DBGeneralMessageBody(MessageBody):
 
 
 class MessageDBResponse(MessageResponse):
+    """DB message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize DB message response."""
         super().__init__(bytearray(message))
         if self.message_type in [MessageType.query, MessageType.set] or (
             self.message_type == MessageType.notify1 and self.body_type == BodyType.X04

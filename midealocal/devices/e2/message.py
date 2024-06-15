@@ -1,3 +1,5 @@
+"""Midea local E2 message."""
+
 from midealocal.message import (
     MessageBody,
     MessageRequest,
@@ -11,12 +13,15 @@ WATER_CONSUMPTION_BYTE = 25
 
 
 class MessageE2Base(MessageRequest):
+    """E2 message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize E2 message base."""
         super().__init__(
             device_type=0xE2,
             protocol_version=protocol_version,
@@ -30,7 +35,10 @@ class MessageE2Base(MessageRequest):
 
 
 class MessageQuery(MessageE2Base):
+    """E2 message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E2 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -43,7 +51,10 @@ class MessageQuery(MessageE2Base):
 
 
 class MessagePower(MessageE2Base):
+    """E2 message power."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E2 message power."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -61,7 +72,10 @@ class MessagePower(MessageE2Base):
 
 
 class MessageNewProtocolSet(MessageE2Base):
+    """E2 message new protocol set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E2 message new protocol set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -88,7 +102,10 @@ class MessageNewProtocolSet(MessageE2Base):
 
 
 class MessageSet(MessageE2Base):
+    """E2 message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E2 message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -133,7 +150,10 @@ class MessageSet(MessageE2Base):
 
 
 class E2GeneralMessageBody(MessageBody):
+    """E2 message general body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize E2 message general body."""
         super().__init__(body)
         self.power = (body[2] & 0x01) > 0
         self.heating = (body[2] & 0x04) > 0
@@ -153,7 +173,10 @@ class E2GeneralMessageBody(MessageBody):
 
 
 class MessageE2Response(MessageResponse):
+    """E2 message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize E2 message response."""
         super().__init__(bytearray(message))
         if (
             self.message_type in [MessageType.query, MessageType.notify1]

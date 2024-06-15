@@ -1,3 +1,5 @@
+"""Midea local EC device."""
+
 import logging
 import sys
 from typing import Any, ClassVar
@@ -15,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea EC device attributes."""
+
     cooking = "cooking"
     mode = "mode"
     time_remaining = "time_remaining"
@@ -26,6 +30,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaECDevice(MideaDevice):
+    """Midea EC device."""
+
     _mode_list: ClassVar[list[str]] = (
         [
             "smart",
@@ -155,6 +161,7 @@ class MideaECDevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea EC device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -179,9 +186,11 @@ class MideaECDevice(MideaDevice):
         )
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea EC device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea EC device process merge."""
         message = MessageECResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -206,8 +215,8 @@ class MideaECDevice(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
-        pass
+        """Midea EC device set attribute."""
 
 
 class MideaAppliance(MideaECDevice):
-    pass
+    """Midea EC appliance."""

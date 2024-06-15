@@ -1,3 +1,5 @@
+"""Midea local CF device."""
+
 import logging
 import sys
 from typing import Any
@@ -15,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea CF device attributes."""
+
     power = "power"
     mode = "mode"
     target_temperature = "target_temperature"
@@ -25,6 +29,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaCFDevice(MideaDevice):
+    """Midea CF device."""
+
     def __init__(
         self,
         name: str,
@@ -38,6 +44,7 @@ class MideaCFDevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea CF device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -61,9 +68,11 @@ class MideaCFDevice(MideaDevice):
         )
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea CF device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea CF device process message."""
         message = MessageCFResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -74,6 +83,7 @@ class MideaCFDevice(MideaDevice):
         return new_status
 
     def set_target_temperature(self, target_temperature: int, mode: int) -> None:
+        """Midea CF device set target temperature."""
         message = MessageSet(self._protocol_version)
         message.power = True
         message.mode = self._attributes[DeviceAttributes.mode]
@@ -83,6 +93,7 @@ class MideaCFDevice(MideaDevice):
         self.build_send(message)
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea CF device set attribute."""
         message = MessageSet(self._protocol_version)
         message.power = True
         message.mode = self._attributes[DeviceAttributes.mode]
@@ -99,4 +110,4 @@ class MideaCFDevice(MideaDevice):
 
 
 class MideaAppliance(MideaCFDevice):
-    pass
+    """Midea CF appliance."""

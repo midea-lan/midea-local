@@ -1,3 +1,5 @@
+"""Midea local C2 message."""
+
 from enum import IntEnum
 from typing import cast
 
@@ -10,6 +12,8 @@ from midealocal.message import (
 
 
 class C2MessageEnum(IntEnum):
+    """C2 message enum."""
+
     none = 0x00
     sensor_light = 0x01
     child_lock = 0x10
@@ -44,12 +48,15 @@ C2_MESSAGE_KEYS = {
 
 
 class MessageC2Base(MessageRequest):
+    """C2 message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize C2 message base."""
         super().__init__(
             device_type=0xC2,
             protocol_version=protocol_version,
@@ -63,7 +70,10 @@ class MessageC2Base(MessageRequest):
 
 
 class MessageQuery(MessageC2Base):
+    """C2 message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize C2 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -76,7 +86,10 @@ class MessageQuery(MessageC2Base):
 
 
 class MessagePower(MessageC2Base):
+    """C2 message power."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize C2 message power."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -94,7 +107,10 @@ class MessagePower(MessageC2Base):
 
 
 class MessagePowerOff(MessageC2Base):
+    """C2 message power off."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize C2 message power off."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -107,7 +123,10 @@ class MessagePowerOff(MessageC2Base):
 
 
 class MessageSet(MessageC2Base):
+    """C2 message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize C2 message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -150,7 +169,10 @@ class MessageSet(MessageC2Base):
 
 
 class C2MessageBody(MessageBody):
+    """C2 message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize C2 message body."""
         super().__init__(body)
         self.power = (body[2] & 0x01) > 0
         self.seat_status = (body[3] & 0x01) > 0
@@ -168,12 +190,18 @@ class C2MessageBody(MessageBody):
 
 
 class C2Notify1MessageBody(MessageBody):
+    """C2 notify1 message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize C2 notify1 message body."""
         super().__init__(body)
 
 
 class MessageC2Response(MessageResponse):
+    """C2 message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize C2 message response."""
         super().__init__(bytearray(message))
         if self.message_type in [
             MessageType.notify1,

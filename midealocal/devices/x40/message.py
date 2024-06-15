@@ -1,3 +1,5 @@
+"""Midea local x40 message."""
+
 from typing import Any
 
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
@@ -6,12 +8,15 @@ MAX_BLOW_SPEED_LOW_FAN_SPEED = 30
 
 
 class Message40Base(MessageRequest):
+    """X40 message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize X40 message base."""
         super().__init__(
             device_type=0x40,
             protocol_version=protocol_version,
@@ -25,7 +30,10 @@ class Message40Base(MessageRequest):
 
 
 class MessageQuery(Message40Base):
+    """X40 message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize X40 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -38,7 +46,10 @@ class MessageQuery(Message40Base):
 
 
 class MessageSet(Message40Base):
+    """X40 message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize X40 message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -52,6 +63,7 @@ class MessageSet(Message40Base):
         self.smelly_sensor = False
 
     def read_field(self, field: str) -> Any:
+        """X40 message set read field."""
         value = self.fields.get(field, 0)
         return value if value else 0
 
@@ -109,7 +121,10 @@ class MessageSet(Message40Base):
 
 
 class Message40Body(MessageBody):
+    """X40 message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize X40 message body."""
         super().__init__(body)
         self.fields = {}
         self.light = body[1] > 0
@@ -162,7 +177,10 @@ class Message40Body(MessageBody):
 
 
 class Message40Response(MessageResponse):
+    """X40 message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize X40 message response."""
         super().__init__(bytearray(message))
         if (
             self.message_type

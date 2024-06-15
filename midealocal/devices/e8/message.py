@@ -1,3 +1,5 @@
+"""Midea local E8 message."""
+
 from enum import IntEnum
 
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
@@ -14,12 +16,15 @@ class SubCommand(IntEnum):
 
 
 class MessageE8Base(MessageRequest):
+    """E8 message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize E8 message base."""
         super().__init__(
             device_type=0xE8,
             protocol_version=protocol_version,
@@ -33,7 +38,10 @@ class MessageE8Base(MessageRequest):
 
 
 class MessageQuery(MessageE8Base):
+    """E8 message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize E8 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -46,7 +54,10 @@ class MessageQuery(MessageE8Base):
 
 
 class E8MessageBody(MessageBody):
+    """E8 message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize E8 message body."""
         super().__init__(body)
         self.status = body[11]
         self.time_remaining = body[16] * 3600 + body[17] * 60 + body[18]
@@ -59,7 +70,10 @@ class E8MessageBody(MessageBody):
 
 
 class MessageE8Response(MessageResponse):
+    """E8 message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize E8 message response."""
         super().__init__(bytearray(message))
         if len(super().body) > MIN_RESPONSE_BODY_LENGTH:
             sub_cmd = super().body[6]

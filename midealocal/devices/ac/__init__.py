@@ -1,3 +1,5 @@
+"""Midea local AC device."""
+
 import json
 import logging
 import sys
@@ -26,6 +28,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea AC device attributes."""
+
     prompt_tone = "prompt_tone"
     power = "power"
     mode = "mode"
@@ -62,6 +66,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaACDevice(MideaDevice):
+    """Midea AC device."""
+
     _fresh_air_fan_speeds: ClassVar[dict[int, str]] = {
         0: "Off",
         20: "Silent",
@@ -84,6 +90,7 @@ class MideaACDevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea AC device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -143,10 +150,12 @@ class MideaACDevice(MideaDevice):
 
     @property
     def temperature_step(self) -> float | None:
+        """Midea AC device temperature step."""
         return self._temperature_step
 
     @property
     def fresh_air_fan_speeds(self) -> list[str]:
+        """Midea AC device fresh air fan speeds."""
         return list(MideaACDevice._fresh_air_fan_speeds.values())
 
     def build_query(
@@ -157,6 +166,7 @@ class MideaACDevice(MideaDevice):
         | MessageNewProtocolQuery
         | MessagePowerQuery
     ]:
+        """Midea AC device build query."""
         if self._used_subprotocol:
             return [
                 MessageSubProtocolQuery(self._protocol_version, 0x10),
@@ -170,6 +180,7 @@ class MideaACDevice(MideaDevice):
         ]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea AC device process message."""
         message = MessageACResponse(bytearray(msg), self._power_analysis_method)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -215,6 +226,7 @@ class MideaACDevice(MideaDevice):
         return new_status
 
     def make_message_set(self) -> MessageGeneralSet:
+        """Midea AC device make message set."""
         message = MessageGeneralSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
@@ -238,6 +250,7 @@ class MideaACDevice(MideaDevice):
         return message
 
     def make_subptotocol_message_set(self) -> MessageSubProtocolSet:
+        """Midea AC device make subprotocol message set."""
         message = MessageSubProtocolSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
@@ -256,6 +269,7 @@ class MideaACDevice(MideaDevice):
         return message
 
     def make_message_uniq_set(self) -> MessageSubProtocolSet | MessageGeneralSet:
+        """Midea AC device make message unique set."""
         message: MessageSubProtocolSet | MessageGeneralSet
         if self._used_subprotocol:
             message = self.make_subptotocol_message_set()
@@ -264,6 +278,7 @@ class MideaACDevice(MideaDevice):
         return message
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea AC device set attribute."""
         # if nat a sensor
         message: (
             MessageToggleDisplay | MessageNewProtocolSet | MessageGeneralSet | None
@@ -354,6 +369,7 @@ class MideaACDevice(MideaDevice):
             self.build_send(message)
 
     def set_target_temperature(self, target_temperature: float, mode: int) -> None:
+        """Midea AC device set target temperature."""
         message: MessageSubProtocolSet | MessageGeneralSet = (
             self.make_message_uniq_set()
         )
@@ -364,12 +380,14 @@ class MideaACDevice(MideaDevice):
         self.build_send(message)
 
     def set_swing(self, swing_vertical: bool, swing_horizontal: bool) -> None:
+        """Midea AC device set swing."""
         message: MessageGeneralSet = self.make_message_set()
         message.swing_vertical = swing_vertical
         message.swing_horizontal = swing_horizontal
         self.build_send(message)
 
     def set_customize(self, customize: str) -> None:
+        """Midea AC device set custommize."""
         self._temperature_step = self._default_temperature_step
         self._power_analysis_method = self._default_power_analysis_method
         if customize and len(customize) > 0:
@@ -385,4 +403,4 @@ class MideaACDevice(MideaDevice):
 
 
 class MideaAppliance(MideaACDevice):
-    pass
+    """Midea AC appliance."""

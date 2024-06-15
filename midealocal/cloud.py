@@ -1,3 +1,5 @@
+"""Midea Local cloud."""
+
 import base64
 import datetime
 import json
@@ -75,6 +77,8 @@ default_keys = {
 
 
 class MideaCloud:
+    """Midea Cloud."""
+
     def __init__(
         self,
         session: ClientSession,
@@ -85,6 +89,7 @@ class MideaCloud:
         password: str,
         api_url: str,
     ) -> None:
+        """Initialize Midea Cloud."""
         self._device_id = CloudSecurity.get_deviceid(account)
         self._session = session
         self._security = security
@@ -169,9 +174,11 @@ class MideaCloud:
         return None
 
     async def login(self) -> bool:
+        """Authenticate."""
         raise NotImplementedError
 
     async def get_keys(self, appliance_id: int) -> dict[int, dict[str, Any]]:
+        """Get keys for device."""
         result = {}
         for method in [1, 2]:
             udp_id = self._security.get_udp_id(appliance_id, method)
@@ -191,16 +198,27 @@ class MideaCloud:
         result.update(default_keys)
         return result
 
+    @staticmethod
+    async def get_cloud_servers() -> dict[int, str]:
+        """Get available cloud servers."""
+        cloud_servers: dict[int, str] = {}
+        for i, cloud in enumerate(clouds, start=1):
+            cloud_servers[i] = cloud
+        return cloud_servers
+
     async def list_home(self) -> dict[int, Any] | None:
+        """List homes."""
         return {1: "My home"}
 
     async def list_appliances(
         self,
         home_id: str | None,
     ) -> dict[int, dict[str, Any]] | None:
+        """List appliances."""
         raise NotImplementedError
 
     async def get_device_info(self, device_id: int) -> dict[str, Any] | None:
+        """Get device information."""
         if response := await self.list_appliances(home_id=None):
             if int(device_id) in response:
                 return cast(dict, response[device_id])
@@ -214,10 +232,13 @@ class MideaCloud:
         model_number: str | None,
         manufacturer_code: str = "0000",
     ) -> str | None:
+        """Download lua integration."""
         raise NotImplementedError
 
 
 class MeijuCloud(MideaCloud):
+    """Meiju Cloud."""
+
     def __init__(
         self,
         cloud_name: str,
@@ -225,6 +246,7 @@ class MeijuCloud(MideaCloud):
         account: str,
         password: str,
     ):
+        """Initialize Meiju Cloud."""
         super().__init__(
             session=session,
             security=MeijuCloudSecurity(
@@ -240,6 +262,7 @@ class MeijuCloud(MideaCloud):
         )
 
     async def login(self) -> bool:
+        """Authenticate to Meiju Cloud."""
         if login_id := await self._get_login_id():
             self._login_id = login_id
             stamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
@@ -282,6 +305,7 @@ class MeijuCloud(MideaCloud):
         return False
 
     async def list_home(self) -> dict[int, Any] | None:
+        """List Meiju Cloud homes."""
         if response := await self._api_request(
             endpoint="/v1/homegroup/list/get",
             data={},
@@ -296,6 +320,7 @@ class MeijuCloud(MideaCloud):
         self,
         home_id: str | None,
     ) -> dict[int, dict[str, Any]] | None:
+        """List Meiju Cloud devices."""
         data = {"homegroupId": home_id}
         if response := await self._api_request(
             endpoint="/v1/appliance/home/list/get",
@@ -337,6 +362,7 @@ class MeijuCloud(MideaCloud):
         return None
 
     async def get_device_info(self, device_id: int) -> dict[str, Any] | None:
+        """Get device information."""
         data = {"applianceCode": device_id}
         if response := await self._api_request(
             endpoint="/v1/appliance/info/get",
@@ -374,6 +400,7 @@ class MeijuCloud(MideaCloud):
         model_number: str | None,
         manufacturer_code: str = "0000",
     ) -> str | None:
+        """Download lua integration."""
         data = {
             "applianceSn": sn,
             "applianceType": f".{f'x{device_type:02x}'}",
@@ -402,6 +429,8 @@ class MeijuCloud(MideaCloud):
 
 
 class MSmartHomeCloud(MideaCloud):
+    """MSmart Home Cloud."""
+
     def __init__(
         self,
         cloud_name: str,
@@ -409,6 +438,7 @@ class MSmartHomeCloud(MideaCloud):
         account: str,
         password: str,
     ):
+        """Initialize MSmart Cloud."""
         super().__init__(
             session=session,
             security=MSmartCloudSecurity(
@@ -464,6 +494,7 @@ class MSmartHomeCloud(MideaCloud):
                 self._api_url = api_url
 
     async def login(self) -> bool:
+        """Authenticate to MSmart Cloud."""
         await self._re_route()
         if login_id := await self._get_login_id():
             self._login_id = login_id
@@ -510,6 +541,7 @@ class MSmartHomeCloud(MideaCloud):
         self,
         home_id: str | None,
     ) -> dict[int, dict[str, Any]] | None:
+        """List MSmart Cloud Devices."""
         data = self._make_general_data()
         if response := await self._api_request(
             endpoint="/v1/appliance/user/list/get",
@@ -554,6 +586,7 @@ class MSmartHomeCloud(MideaCloud):
         model_number: str | None,
         manufacturer_code: str = "0000",
     ) -> str | None:
+        """Download lua integration."""
         data = {
             "clientType": "1",
             "appId": self._app_id,
@@ -590,6 +623,8 @@ class MSmartHomeCloud(MideaCloud):
 
 
 class MideaAirCloud(MideaCloud):
+    """Midea Air Cloud."""
+
     def __init__(
         self,
         cloud_name: str,
@@ -597,6 +632,7 @@ class MideaAirCloud(MideaCloud):
         account: str,
         password: str,
     ):
+        """Initialize Midea Air Cloud."""
         super().__init__(
             session=session,
             security=MideaAirSecurity(login_key=clouds[cloud_name]["app_key"]),
@@ -668,6 +704,7 @@ class MideaAirCloud(MideaCloud):
         return None
 
     async def login(self) -> bool:
+        """Authenticate to Midea Air Cloud."""
         if login_id := await self._get_login_id():
             self._login_id = login_id
             data = self._make_general_data()
@@ -694,6 +731,7 @@ class MideaAirCloud(MideaCloud):
         self,
         home_id: str | None,
     ) -> dict[int, dict[str, Any]] | None:
+        """List Midea Air devices."""
         data = self._make_general_data()
         if response := await self._api_request(
             endpoint="/v1/appliance/user/list/get",
@@ -733,6 +771,7 @@ def get_midea_cloud(
     account: str,
     password: str,
 ) -> MideaCloud | None:
+    """Get Midea Cloud implementation."""
     cloud = None
     if cloud_name in clouds:
         cloud = globals()[clouds[cloud_name]["class_name"]](

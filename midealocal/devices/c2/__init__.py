@@ -1,3 +1,5 @@
+"""Midea local C2 device."""
+
 import json
 import logging
 import sys
@@ -16,6 +18,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea C2 device attributes."""
+
     power = "power"
     child_lock = "child_lock"
     sensor_light = "sensor_light"
@@ -32,6 +36,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaC2Device(MideaDevice):
+    """Midea C2 device."""
+
     def __init__(
         self,
         name: str,
@@ -45,6 +51,7 @@ class MideaC2Device(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea C2 device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -82,20 +89,25 @@ class MideaC2Device(MideaDevice):
 
     @property
     def max_dry_level(self) -> int | None:
+        """Midea C2 device max dry level."""
         return self._max_dry_level
 
     @property
     def max_water_temp_level(self) -> int | None:
+        """Midea C2 device max water temperature level."""
         return self._max_water_temp_level
 
     @property
     def max_seat_temp_level(self) -> int | None:
+        """Midea C2 device max seat temperature level."""
         return self._max_seat_temp_level
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea C2 device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea C2 device process message."""
         message = MessageC2Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -106,6 +118,7 @@ class MideaC2Device(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea C2 device set attribute."""
         message: MessagePower | MessageSet | None = None
         if attr == DeviceAttributes.power:
             message = MessagePower(self._protocol_version)
@@ -124,6 +137,7 @@ class MideaC2Device(MideaDevice):
             self.build_send(message)
 
     def set_customize(self, customize: str) -> None:
+        """Midea C2 device set customize."""
         self._max_dry_level = self._default_max_dry_level
         self._max_water_temp_level = self._default_max_water_temp_level
         self._max_seat_temp_level = self._default_max_seat_temp_level
@@ -152,4 +166,4 @@ class MideaC2Device(MideaDevice):
 
 
 class MideaAppliance(MideaC2Device):
-    pass
+    """Midea C2 appliance."""

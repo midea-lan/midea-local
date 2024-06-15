@@ -1,3 +1,5 @@
+"""Midea AC message."""
+
 from enum import IntEnum
 
 from midealocal.const import MAX_BYTE_VALUE
@@ -31,7 +33,7 @@ XC1_SUBBODY_TYPE_40 = 0x40
 
 
 class PowerAnalysisMethod(IntEnum):
-    """AC Power analysis method"""
+    """AC Power analysis method."""
 
     TYPE_1 = 1
     TYPE_2 = 2
@@ -39,6 +41,8 @@ class PowerAnalysisMethod(IntEnum):
 
 
 class NewProtocolTags(IntEnum):
+    """New protocol tags."""
+
     indoor_humidity = 0x0015
     screen_display = 0x0017
     breezeless = 0x0018
@@ -49,6 +53,8 @@ class NewProtocolTags(IntEnum):
 
 
 class MessageACBase(MessageRequest):
+    """AC message base."""
+
     _message_serial = 0
 
     def __init__(
@@ -57,6 +63,7 @@ class MessageACBase(MessageRequest):
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize AC message base."""
         super().__init__(
             device_type=DeviceType.AC,
             protocol_version=protocol_version,
@@ -74,13 +81,17 @@ class MessageACBase(MessageRequest):
 
     @property
     def body(self) -> bytearray:
+        """AC message base body."""
         body = bytearray([self.body_type]) + self._body + bytearray([self._message_id])
         body.append(calculate(body))
         return body
 
 
 class MessageQuery(MessageACBase):
+    """AC message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize AC message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -115,7 +126,10 @@ class MessageQuery(MessageACBase):
 
 
 class MessagePowerQuery(MessageACBase):
+    """AC message power query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize AC message power query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -128,13 +142,17 @@ class MessagePowerQuery(MessageACBase):
 
     @property
     def body(self) -> bytearray:
+        """AC message power query body."""
         body = bytearray([self.body_type]) + self._body
         body.append(calculate(body))
         return body
 
 
 class MessageToggleDisplay(MessageACBase):
+    """AC message toggle display."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize AC message toggle display."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -171,7 +189,10 @@ class MessageToggleDisplay(MessageACBase):
 
 
 class MessageNewProtocolQuery(MessageACBase):
+    """AC message new protocol query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize AC message new protocol query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -196,12 +217,15 @@ class MessageNewProtocolQuery(MessageACBase):
 
 
 class MessageSubProtocol(MessageACBase):
+    """AC message sub protocol."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         subprotocol_query_type: int,
     ) -> None:
+        """Initialize AC message sub protocol."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=message_type,
@@ -215,6 +239,7 @@ class MessageSubProtocol(MessageACBase):
 
     @property
     def body(self) -> bytearray:
+        """AC message sub protocol body."""
         body = bytearray([self.body_type]) + self._body
         body.append(calculate(body))
         body.append(self.checksum(body))
@@ -240,7 +265,10 @@ class MessageSubProtocol(MessageACBase):
 
 
 class MessageSubProtocolQuery(MessageSubProtocol):
+    """AC message sub protocol query."""
+
     def __init__(self, protocol_version: int, subprotocol_query_type: int) -> None:
+        """Initialize AC message sub protocol query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -249,7 +277,10 @@ class MessageSubProtocolQuery(MessageSubProtocol):
 
 
 class MessageSubProtocolSet(MessageSubProtocol):
+    """AC message sub protocol set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize AC message sub protocol set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -330,7 +361,10 @@ class MessageSubProtocolSet(MessageSubProtocol):
 
 
 class MessageGeneralSet(MessageACBase):
+    """AC message general set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize AC message general set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -419,7 +453,10 @@ class MessageGeneralSet(MessageACBase):
 
 
 class MessageNewProtocolSet(MessageACBase):
+    """AC message new protocol set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize AC message new protocol set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -506,7 +543,10 @@ class MessageNewProtocolSet(MessageACBase):
 
 
 class XA0MessageBody(MessageBody):
+    """AC A0 message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize AC A0 message body."""
         super().__init__(body)
         self.power = (body[1] & 0x1) > 0
         self.target_temperature = (
@@ -530,7 +570,10 @@ class XA0MessageBody(MessageBody):
 
 
 class XA1MessageBody(MessageBody):
+    """AC A1 message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize AC A1 message body."""
         super().__init__(body)
         if body[13] != MAX_BYTE_VALUE:
             temp_integer = int((body[13] - 50) / 2)
@@ -560,7 +603,10 @@ class XA1MessageBody(MessageBody):
 
 
 class XBXMessageBody(NewProtocolMessageBody):
+    """AC BX message body."""
+
     def __init__(self, body: bytearray, bt: int) -> None:
+        """Initialize AC BX message body."""
         super().__init__(body, bt)
         params = self.parse()
         if NewProtocolTags.indirect_wind in params:
@@ -589,7 +635,10 @@ class XBXMessageBody(NewProtocolMessageBody):
 
 
 class XC0MessageBody(MessageBody):
+    """AC C0 message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize AC C0 message body."""
         super().__init__(body)
         self.power = (body[1] & 0x1) > 0
         self.mode = (body[2] & 0xE0) >> 5
@@ -636,7 +685,10 @@ class XC0MessageBody(MessageBody):
 
 
 class XC1MessageBody(MessageBody):
+    """AC C1 message body."""
+
     def __init__(self, body: bytearray, analysis_method: int = 3) -> None:
+        """Initialize AC C1 message body."""
         super().__init__(body)
         if body[3] == XC1_SUBBODY_TYPE_44:
             self.total_energy_consumption = XC1MessageBody.parse_consumption(
@@ -664,10 +716,12 @@ class XC1MessageBody(MessageBody):
 
     @staticmethod
     def parse_value(byte: int) -> int:
+        """AC C1 message body parse value."""
         return (byte >> 4) * 10 + (byte & 0x0F)
 
     @staticmethod
     def parse_power(analysis_method: int, byte1: int, byte2: int, byte3: int) -> float:
+        """AC C1 message body parse power."""
         if analysis_method == PowerAnalysisMethod.TYPE_1:
             return (
                 float(
@@ -689,6 +743,7 @@ class XC1MessageBody(MessageBody):
         byte3: int,
         byte4: int,
     ) -> float:
+        """AC C1 message body parse consumption."""
         if analysis_method == PowerAnalysisMethod.TYPE_1:
             return (
                 float(
@@ -705,7 +760,10 @@ class XC1MessageBody(MessageBody):
 
 
 class XBBMessageBody(MessageBody):
+    """AC BB message body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initializ AC BB message body."""
         super().__init__(body)
         subprotocol_head = body[:6]
         subprotocol_body = body[6:]
@@ -762,7 +820,10 @@ class XBBMessageBody(MessageBody):
 
 
 class MessageACResponse(MessageResponse):
+    """AC message response."""
+
     def __init__(self, message: bytearray, power_analysis_method: int = 3) -> None:
+        """Initialize AC message response."""
         super().__init__(message)
         if self.message_type == MessageType.notify2 and self.body_type == BodyType.A0:
             self.set_body(XA0MessageBody(super().body))

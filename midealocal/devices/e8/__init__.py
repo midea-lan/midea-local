@@ -1,3 +1,5 @@
+"""Midea local E8 device."""
+
 import logging
 import sys
 from typing import Any, ClassVar
@@ -15,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceAttributes(StrEnum):
+    """Midea E8 device."""
+
     status = "status"
     time_remaining = "time_remaining"
     keep_warm_remaining = "keep_warm_remaining"
@@ -26,6 +30,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaE8Device(MideaDevice):
+    """Midea E8 device."""
+
     _status: ClassVar[dict[int, str]] = {
         0x00: "Standby",
         0x01: "Delay",
@@ -48,6 +54,7 @@ class MideaE8Device(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea E8 device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -72,9 +79,11 @@ class MideaE8Device(MideaDevice):
         )
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea E8 device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea E8 device process message."""
         message = MessageE8Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -94,8 +103,8 @@ class MideaE8Device(MideaDevice):
         return new_status
 
     def set_attribute(self, attr: str, value: Any) -> None:
-        pass
+        """Midea E8 device set attribute."""
 
 
 class MideaAppliance(MideaE8Device):
-    pass
+    """Midea E8 appliance."""

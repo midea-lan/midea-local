@@ -1,3 +1,5 @@
+"""Midea local B6 message."""
+
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.device import ProtocolVersion
 from midealocal.devices import BodyType, SubBodyType
@@ -15,12 +17,15 @@ MIN_FAN_LEVEL_RANGE = 100
 
 
 class MessageB6Base(MessageRequest):
+    """B6 message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize B6 message base."""
         super().__init__(
             device_type=0xB6,
             protocol_version=protocol_version,
@@ -34,7 +39,10 @@ class MessageB6Base(MessageRequest):
 
 
 class MessageQuery(MessageB6Base):
+    """B6 message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize B6 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -47,7 +55,10 @@ class MessageQuery(MessageB6Base):
 
 
 class MessageQueryTips(MessageB6Base):
+    """B6 message query tips."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize B6 message query tips."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -60,7 +71,10 @@ class MessageQueryTips(MessageB6Base):
 
 
 class MessageSet(MessageB6Base):
+    """B6 message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize B6 message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -119,12 +133,18 @@ class MessageSet(MessageB6Base):
 
 
 class B6FeedbackBody(MessageBody):
+    """B6 message feedback body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize B6 message feedback body."""
         super().__init__(body)
 
 
 class B6GeneralBody(MessageBody):
+    """B6 message general body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize B6 message general body."""
         super().__init__(body)
         if body[1] != MAX_BYTE_VALUE:
             self.light = body[1] > 0x00
@@ -151,7 +171,10 @@ class B6GeneralBody(MessageBody):
 
 
 class B6NewProtocolBody(MessageBody):
+    """B6 message new protocol body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize B6 message new protocol body."""
         super().__init__(body)
         if body[1] == 0x01:
             pack_bytes = body[3 : 3 + body[2]]
@@ -167,7 +190,10 @@ class B6NewProtocolBody(MessageBody):
 
 
 class B6SpecialBody(MessageBody):
+    """B6 message special body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize B6 message special body."""
         super().__init__(body)
         if body[2] != MAX_BYTE_VALUE:
             self.light = body[2] > 0x00
@@ -179,12 +205,14 @@ class B6SpecialBody(MessageBody):
 
 
 class B6ExceptionBody(MessageBody):
-    def __init__(self, body: bytearray) -> None:
-        super().__init__(body)
+    """B6 message exception body."""
 
 
 class MessageB6Response(MessageResponse):
+    """B6 message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize B6 message response."""
         super().__init__(bytearray(message))
         if (
             self.message_type == MessageType.set

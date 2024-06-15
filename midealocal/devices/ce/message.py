@@ -1,3 +1,5 @@
+"""Midea local CE message."""
+
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.devices import BodyType
 from midealocal.message import (
@@ -8,13 +10,16 @@ from midealocal.message import (
 )
 
 
-class MessageFABase(MessageRequest):
+class MessageCEBase(MessageRequest):
+    """CE message base."""
+
     def __init__(
         self,
         protocol_version: int,
         message_type: int,
         body_type: int,
     ) -> None:
+        """Initialize CE message base."""
         super().__init__(
             device_type=0xCE,
             protocol_version=protocol_version,
@@ -27,8 +32,11 @@ class MessageFABase(MessageRequest):
         raise NotImplementedError
 
 
-class MessageQuery(MessageFABase):
+class MessageQuery(MessageCEBase):
+    """CE message query."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize CE message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -40,8 +48,11 @@ class MessageQuery(MessageFABase):
         return bytearray([])
 
 
-class MessageSet(MessageFABase):
+class MessageSet(MessageCEBase):
+    """CE message set."""
+
     def __init__(self, protocol_version: int) -> None:
+        """Initialize CE message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
@@ -81,7 +92,10 @@ class MessageSet(MessageFABase):
 
 
 class CEGeneralMessageBody(MessageBody):
+    """CE message general body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize CE message general body."""
         super().__init__(body)
         self.power = (body[1] & 0x80) > 0
         self.child_lock = (body[1] & 0x20) > 0
@@ -112,7 +126,10 @@ class CEGeneralMessageBody(MessageBody):
 
 
 class CENotifyMessageBody(MessageBody):
+    """CE message notify body."""
+
     def __init__(self, body: bytearray) -> None:
+        """Initialize CE message notify body."""
         super().__init__(body)
         self.current_humidity: float | None = None
         self.current_temperature: float | None = None
@@ -130,7 +147,10 @@ class CENotifyMessageBody(MessageBody):
 
 
 class MessageCEResponse(MessageResponse):
+    """CE message response."""
+
     def __init__(self, message: bytes) -> None:
+        """Initialize CE message response."""
         super().__init__(bytearray(message))
         if (
             self.message_type in [MessageType.query, MessageType.set]

@@ -1,3 +1,5 @@
+"""Midea local discover."""
+
 import logging
 import socket
 from ipaddress import IPv4Network
@@ -159,6 +161,7 @@ def discover(
     discover_type: list | None = None,
     ip_address: list | None = None,
 ) -> dict[int, dict[str, Any]]:
+    """Discover devices."""
     if discover_type is None:
         discover_type = []
     security = LocalSecurity()
@@ -250,6 +253,7 @@ def discover(
 
 
 def get_id_from_response(response: bytearray) -> int:
+    """Get ID from response."""
     if response[64:-16][:6].hex() == "3c3f786d6c20":
         xml = response[64:-16]
         root = ElementTree.fromstring(xml.decode(encoding="utf-8", errors="replace"))
@@ -262,6 +266,7 @@ def get_id_from_response(response: bytearray) -> int:
 
 
 def bytes2port(paramArrayOfbyte: bytes | None) -> int:
+    """Bytes to port."""
     if paramArrayOfbyte is None:
         return 0
     b, i = 0, 0
@@ -273,6 +278,7 @@ def bytes2port(paramArrayOfbyte: bytes | None) -> int:
 
 
 def get_device_info(device_ip: str, device_port: int) -> bytearray:
+    """Get device info."""
     response = bytearray(0)
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -300,6 +306,7 @@ def get_device_info(device_ip: str, device_port: int) -> bytearray:
 
 
 def enum_all_broadcast() -> list:
+    """Enum all broadcast addresses."""
     nets = []
     adapters = ifaddr.get_adapters()
     for adapter in adapters:
