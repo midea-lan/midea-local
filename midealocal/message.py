@@ -5,7 +5,6 @@ from abc import ABC
 from enum import IntEnum
 from typing import SupportsIndex, cast
 
-
 _LOGGER = logging.getLogger(__name__)
 
 

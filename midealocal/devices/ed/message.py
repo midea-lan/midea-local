@@ -3,8 +3,8 @@
 from enum import IntEnum
 
 from midealocal.message import (
-    BodyType,
     NONE_VALUE,
+    BodyType,
     MessageBody,
     MessageRequest,
     MessageResponse,

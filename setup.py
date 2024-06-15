@@ -1,7 +1,8 @@
 """setup midea-local."""
 
-import setuptools
 from pathlib import Path
+
+import setuptools
 
 readme = Path("README.md")
 with readme.open(encoding="utf-8") as fh:
