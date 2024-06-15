@@ -23,5 +23,13 @@ class DataSignWrongType(MideaLocalError):
     """Exception raised when data is the wrong type to sign."""
 
 
+class ElementMissing(MideaLocalError):
+    """Exception raised when a element is missing."""
+
+
 class MessageWrongFormat(MideaLocalError):
     """Exception raised when message format is wrong."""
+
+
+class SocketException(MideaLocalError):
+    """Exception raise by socket error."""

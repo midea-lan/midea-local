@@ -15,6 +15,7 @@ from .message import (
     MessageRequest,
     MessageType,
 )
+from .exceptions import SocketException
 from .packet_builder import PacketBuilder
 from .security import (
     MSGTYPE_ENCRYPTED_REQUEST,
@@ -238,7 +239,8 @@ class MideaDevice(threading.Thread):
         """Authenticate to device. V3 only."""
         request = self._security.encode_8370(self._token, MSGTYPE_HANDSHAKE_REQUEST)
         _LOGGER.debug("[%s] Handshaking", self._device_id)
-        assert self._socket
+        if not self._socket:
+            raise SocketException
         self._socket.send(request)
         response = self._socket.recv(512)
         if len(response) < MIN_AUTH_RESPONSE:
@@ -292,7 +294,8 @@ class MideaDevice(threading.Thread):
                 if wait_response:
                     try:
                         while True:
-                            assert self._socket
+                            if not self._socket:
+                                raise SocketException
                             msg = self._socket.recv(512)
                             if len(msg) == 0:
                                 raise OSError
