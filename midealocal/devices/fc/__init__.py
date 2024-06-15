@@ -1,3 +1,5 @@
+"""Midea local FC device."""
+
 import json
 import logging
 import sys
@@ -18,6 +20,8 @@ STANDBY_DETECT_LENGTH = 2
 
 
 class DeviceAttributes(StrEnum):
+    """Midea FC device attributes."""
+
     power = "power"
     mode = "mode"
     fan_speed = "fan_speed"
@@ -35,6 +39,8 @@ class DeviceAttributes(StrEnum):
 
 
 class MideaFCDevice(MideaDevice):
+    """Midea FC device."""
+
     _modes: ClassVar[dict[int, str]] = {
         0x00: "Standby",
         0x10: "Auto",
@@ -66,6 +72,7 @@ class MideaFCDevice(MideaDevice):
         subtype: int,
         customize: str,
     ) -> None:
+        """Initialize Midea FC device."""
         super().__init__(
             name=name,
             device_id=device_id,
@@ -101,24 +108,30 @@ class MideaFCDevice(MideaDevice):
 
     @property
     def modes(self) -> list[str]:
+        """Midea FC device modes."""
         return list(MideaFCDevice._modes.values())
 
     @property
     def fan_speeds(self) -> list[str]:
+        """Midea FC device fan speeds."""
         return list(MideaFCDevice._speeds.values())
 
     @property
     def screen_displays(self) -> list[str]:
+        """Midea FC device screen displays."""
         return list(MideaFCDevice._screen_displays.values())
 
     @property
     def detect_modes(self) -> list[str]:
+        """Midea FC device detect modes."""
         return self._detect_modes
 
     def build_query(self) -> list[MessageQuery]:
+        """Midea FC device build query."""
         return [MessageQuery(self._protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
+        """Midea FC device process message."""
         message = MessageFCResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
@@ -153,6 +166,7 @@ class MideaFCDevice(MideaDevice):
         return new_status
 
     def make_message_set(self) -> MessageSet:
+        """Midea FC device make message set."""
         message = MessageSet(self._protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.child_lock = self._attributes[DeviceAttributes.child_lock]
@@ -198,6 +212,7 @@ class MideaFCDevice(MideaDevice):
         return message
 
     def set_attribute(self, attr: str, value: Any) -> None:
+        """Midea FC device set attribute."""
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
             self.update_all({DeviceAttributes.prompt_tone.value: value})
@@ -230,6 +245,7 @@ class MideaFCDevice(MideaDevice):
             self.build_send(message)
 
     def set_customize(self, customize: str) -> None:
+        """Midea FC device set customize."""
         self._standby_detect = self._standby_detect_default
         if customize and len(customize) > 0:
             try:
@@ -247,4 +263,4 @@ class MideaFCDevice(MideaDevice):
 
 
 class MideaAppliance(MideaFCDevice):
-    pass
+    """Midea FC appliance."""
