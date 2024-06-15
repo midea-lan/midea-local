@@ -203,8 +203,7 @@ class MideaACDevice(MideaDevice):
                 for k, v in MideaACDevice._fresh_air_fan_speeds.items():
                     if self._attributes[DeviceAttributes.fresh_air_fan_speed] < k:
                         break
-                    else:
-                        self._attributes[DeviceAttributes.fresh_air_mode] = v
+                    self._attributes[DeviceAttributes.fresh_air_mode] = v
             else:
                 self._attributes[DeviceAttributes.fresh_air_mode] = "Off"
             new_status[DeviceAttributes.fresh_air_mode.value] = self._attributes[
