@@ -11,7 +11,7 @@ from threading import Lock
 from typing import Any, cast
 
 from aiohttp import ClientSession
-from aiopath import AsyncPath
+import aiofiles
 
 from .security import (
     CloudSecurity,
@@ -426,9 +426,10 @@ class MeijuCloud(MideaCloud):
                         + self._security.aes_decrypt_with_fixed_key(lua)
                     )
                     stream = stream.replace("\r\n", "\n")
-                    fnm = AsyncPath(path, response["fileName"])
-                    with fnm.open("w", encoding="utf-8") as fp:
-                        fp.write(stream)
+                    async with aiofiles.open(
+                        f"{path}/{response['fileName']}", "rw"
+                    ) as fp:
+                        await fp.write(stream)
         return str(fnm) if fnm else None
 
 
@@ -620,8 +621,9 @@ class MSmartHomeCloud(MideaCloud):
                         + self._security.aes_decrypt_with_fixed_key(lua)
                     )
                     stream = stream.replace("\r\n", "\n")
-                    fnm = AsyncPath(path, response["fileName"])
-                    with fnm.open("w", encoding="utf-8") as fp:
+                    async with aiofiles.open(
+                        f"{path}/{response['fileName']}", "w"
+                    ) as fp:
                         fp.write(stream)
         return str(fnm) if fnm else None
 
