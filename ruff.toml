@@ -13,6 +13,7 @@ lint.ignore = [
     "FBT003",   # Boolean positional value in function call
     "N818",     # Exception name should be named with an Error suffix
     "PLR0912",  # Too many branches
+    "PLR0913",  # Too many arguments in function definition
     "TRY003",   # Avoid specifying long messages outside the exception class
 ]
 
