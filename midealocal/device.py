@@ -4,8 +4,9 @@ import logging
 import socket
 import threading
 import time
+from collections.abc import Callable
 from enum import IntEnum, StrEnum
-from typing import Any, Callable
+from typing import Any
 
 from .exceptions import SocketException
 from .message import (
