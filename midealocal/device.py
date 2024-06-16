@@ -552,7 +552,7 @@ class MideaDevice(threading.Thread):
                     self.close_socket()
                     break
 
-    def set_attribute(self, attr: str, value: Any) -> None:  # noqa: ANN401
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Set attribute."""
         raise NotImplementedError
 
