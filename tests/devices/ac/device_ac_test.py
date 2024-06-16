@@ -63,7 +63,7 @@ class TestMideaACDevice:
             self.device.set_attribute(DeviceAttributes.mode.value, 2)
             mock_build_send.assert_called()
 
-            self.device.set_attribute(DeviceAttributes.target_temperature.value, 26.0)
+            self.device.set_target_temperature(26.0, 2)
             mock_build_send.assert_called()
 
             self.device.set_attribute(DeviceAttributes.prompt_tone.value, False)
@@ -108,7 +108,7 @@ class TestMideaACDevice:
             self.device.set_attribute(DeviceAttributes.comfort_mode.value, True)
             mock_build_send.assert_called()
 
-            self.device.set_attribute(DeviceAttributes.fresh_air_mode.value, None)
+            self.device.set_attribute(DeviceAttributes.fresh_air_mode.value, False)
             mock_build_send.assert_called()
 
     def test_build_query(self) -> None:
