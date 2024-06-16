@@ -119,7 +119,7 @@ class MideaDevice(threading.Thread):
         model: str,
         subtype: int,
         attributes: dict,
-    ):
+    ) -> None:
         """Midea device initialization."""
         threading.Thread.__init__(self)
         self._attributes = attributes or {}
