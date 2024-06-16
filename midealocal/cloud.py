@@ -11,7 +11,7 @@ from threading import Lock
 from typing import Any, cast
 
 import aiofiles
-from aiohttp import ClientSession, ClientConnectionError
+from aiohttp import ClientConnectionError, ClientSession
 
 from .security import (
     CloudSecurity,
