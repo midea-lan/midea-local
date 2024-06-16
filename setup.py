@@ -10,7 +10,7 @@ with readme.open(encoding="utf-8") as fh:
 
 requirements = Path("requirements.txt")
 with requirements.open(encoding="utf-8") as fp:
-    requires = fp.read()
+    requires = fp.read().splitlines()
 
 setuptools.setup(
     name="midea-local",
