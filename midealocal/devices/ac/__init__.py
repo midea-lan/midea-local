@@ -271,7 +271,7 @@ class MideaACDevice(MideaDevice):
             message = self.make_message_set()
         return message
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea AC device set attribute."""
         # if nat a sensor
         message: (
@@ -311,7 +311,9 @@ class MideaACDevice(MideaDevice):
             elif attr == DeviceAttributes.fresh_air_mode:
                 if value in MideaACDevice._fresh_air_fan_speeds.values():
                     speed = list(MideaACDevice._fresh_air_fan_speeds.keys())[
-                        list(MideaACDevice._fresh_air_fan_speeds.values()).index(value)
+                        list(MideaACDevice._fresh_air_fan_speeds.values()).index(
+                            str(value)
+                        )
                     ]
                     fresh_air = (
                         [True, speed]
@@ -334,8 +336,8 @@ class MideaACDevice(MideaDevice):
                 if self._fresh_air_version is not None:
                     message = MessageNewProtocolSet(self._protocol_version)
                     fresh_air = (
-                        [True, value]
-                        if value > 0
+                        [True, int(value)]
+                        if int(value) > 0
                         else [
                             False,
                             self._attributes[DeviceAttributes.fresh_air_fan_speed],

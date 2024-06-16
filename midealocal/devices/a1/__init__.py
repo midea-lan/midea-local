@@ -174,7 +174,7 @@ class MideaA1Device(MideaDevice):
         )
         return message
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea A1 device set attribute."""
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
@@ -183,11 +183,11 @@ class MideaA1Device(MideaDevice):
             message = self.make_message_set()
             if attr == DeviceAttributes.mode:
                 if value in MideaA1Device._modes:
-                    message.mode = MideaA1Device._modes.index(value) + 1
+                    message.mode = MideaA1Device._modes.index(str(value)) + 1
             elif attr == DeviceAttributes.fan_speed:
                 if value in MideaA1Device._speeds.values():
                     message.fan_speed = list(MideaA1Device._speeds.keys())[
-                        list(MideaA1Device._speeds.values()).index(value)
+                        list(MideaA1Device._speeds.values()).index(str(value))
                     ]
             elif attr == DeviceAttributes.water_level_set:
                 if value in MideaA1Device._water_level_sets:
