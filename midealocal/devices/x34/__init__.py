@@ -159,7 +159,7 @@ class Midea34Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool) -> None:
         """Midea x34 device set attribute."""
         message: MessagePower | MessageLock | MessageStorage | None = None
         if attr == DeviceAttributes.power:
