@@ -99,13 +99,13 @@ class MideaFBDevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: str | int | bool) -> None:
         """Midea FB device set attribute."""
         if attr == DeviceAttributes.mode:
             message = MessageSet(self._protocol_version, self.subtype)
             if value in MideaFBDevice._modes.values():
                 message.mode = list(MideaFBDevice._modes.keys())[
-                    list(MideaFBDevice._modes.values()).index(value)
+                    list(MideaFBDevice._modes.values()).index(str(value))
                 ]
         else:
             message = MessageSet(self._protocol_version, self.subtype)

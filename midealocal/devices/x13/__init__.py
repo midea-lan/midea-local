@@ -122,7 +122,7 @@ class Midea13Device(MideaDevice):
                     new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: str | int | bool) -> None:
         """Midea x13 Device set attribute."""
         if attr in [
             DeviceAttributes.brightness,
@@ -132,9 +132,9 @@ class Midea13Device(MideaDevice):
         ]:
             message = MessageSet(self._protocol_version)
             if attr == DeviceAttributes.effect and value in self._effects:
-                setattr(message, str(attr), Midea13Device._effects.index(value))
+                setattr(message, str(attr), Midea13Device._effects.index(str(value)))
             elif attr == DeviceAttributes.color_temperature:
-                setattr(message, str(attr), self.kelvin_to_midea(value))
+                setattr(message, str(attr), self.kelvin_to_midea(int(value)))
             else:
                 setattr(message, str(attr), value)
             self.build_send(message)

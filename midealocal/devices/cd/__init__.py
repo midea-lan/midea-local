@@ -106,7 +106,7 @@ class MideaCDDevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: str | int | bool) -> None:
         """Midea CD device set attribute."""
         if attr in [
             DeviceAttributes.mode,
@@ -124,7 +124,7 @@ class MideaCDDevice(MideaDevice):
             ]
             if attr == DeviceAttributes.mode:
                 if value in MideaCDDevice._modes:
-                    setattr(message, str(attr), MideaCDDevice._modes.index(value))
+                    setattr(message, str(attr), MideaCDDevice._modes.index(str(value)))
             else:
                 setattr(message, str(attr), value)
             self.build_send(message)

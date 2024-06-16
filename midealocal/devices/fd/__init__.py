@@ -189,7 +189,7 @@ class MideaFDDevice(MideaDevice):
         )
         return message
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: str | int | bool) -> None:
         """Midea FD device set attribute."""
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
@@ -198,17 +198,17 @@ class MideaFDDevice(MideaDevice):
             message = self.make_message_set()
             if attr == DeviceAttributes.mode:
                 if value in MideaFDDevice._modes:
-                    message.mode = MideaFDDevice._modes.index(value) + 1
+                    message.mode = MideaFDDevice._modes.index(str(value)) + 1
             elif attr == DeviceAttributes.fan_speed:
                 if value in self._speeds.values():
                     message.fan_speed = list(self._speeds.keys())[
-                        list(self._speeds.values()).index(value)
+                        list(self._speeds.values()).index(str(value))
                     ]
             elif attr == DeviceAttributes.screen_display:
                 if value in MideaFDDevice._screen_displays.values():
                     message.screen_display = list(
                         MideaFDDevice._screen_displays.keys(),
-                    )[list(MideaFDDevice._screen_displays.values()).index(value)]
+                    )[list(MideaFDDevice._screen_displays.values()).index(str(value))]
                 elif not value:
                     message.screen_display = 7
             else:

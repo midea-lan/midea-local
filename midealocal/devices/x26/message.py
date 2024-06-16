@@ -69,13 +69,13 @@ class MessageSet(Message26Base):
             message_type=MessageType.set,
             body_type=0x01,
         )
-        self.fields: dict[str, Any] = {}
+        self.fields: dict[str, int] = {}
         self.main_light = False
         self.night_light = False
         self.mode = 0
         self.direction = 0xFD
 
-    def read_field(self, field: str) -> Any:
+    def read_field(self, field: str) -> int:
         """X26 message set read field."""
         value = self.fields.get(field, 0)
         return value if value else 0

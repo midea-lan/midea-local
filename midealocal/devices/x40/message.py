@@ -55,14 +55,14 @@ class MessageSet(Message40Base):
             message_type=MessageType.set,
             body_type=0x01,
         )
-        self.fields: dict[str, Any] = {}
+        self.fields: dict[str, int | bool] = {}
         self.light = False
         self.fan_speed = 0
         self.direction: int
         self.ventilation = False
         self.smelly_sensor = False
 
-    def read_field(self, field: str) -> Any:
+    def read_field(self, field: str) -> int | bool:
         """X40 message set read field."""
         value = self.fields.get(field, 0)
         return value if value else 0

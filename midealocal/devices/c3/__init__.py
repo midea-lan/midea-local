@@ -251,7 +251,7 @@ class MideaC3Device(MideaDevice):
         message.fast_dhw = self._attributes[DeviceAttributes.fast_dhw]
         return message
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea C3 device set attribute."""
         message: MessageSet | MessageSetECO | MessageSetSilent | None = None
         if attr in [

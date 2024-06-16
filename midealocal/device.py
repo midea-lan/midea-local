@@ -5,7 +5,7 @@ import socket
 import threading
 import time
 from enum import IntEnum, StrEnum
-from typing import Any
+from typing import Any, Callable
 
 from .exceptions import SocketException
 from .message import (
@@ -136,7 +136,7 @@ class MideaDevice(threading.Thread):
         self._model = model
         self._subtype = subtype
         self._protocol_version = 0
-        self._updates = [dict]
+        self._updates: list[Callable[[dict[str, Any]], None]] = []
         self._unsupported_protocol = [dict]
         self._is_run = False
         self._available = True
@@ -435,7 +435,7 @@ class MideaDevice(threading.Thread):
         msg = PacketBuilder(self._device_id, bytearray([0x00])).finalize(msg_type=0)
         self.send_message(msg)
 
-    def register_update(self, update: Any) -> None:
+    def register_update(self, update: Callable[[dict[str, Any]], None]) -> None:
         """Register update."""
         self._updates.append(update)
 
@@ -552,7 +552,7 @@ class MideaDevice(threading.Thread):
                     self.close_socket()
                     break
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Set attribute."""
         raise NotImplementedError
 
