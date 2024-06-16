@@ -4,9 +4,8 @@ import logging
 from enum import StrEnum
 from typing import Any
 
-from midealocal.exceptions import ValueWrongType
-
 from midealocal.device import MideaDevice
+from midealocal.exceptions import ValueWrongType
 
 from .message import MessageDAResponse, MessagePower, MessageQuery, MessageStart
 
@@ -95,8 +94,7 @@ class MideaDADevice(MideaDevice):
         message = MessageDAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
-        progress = ["Idle", "Spin", "Rinse", "Wash",
-                    "Weight", "Unknown", "Dry", "Soak"]
+        progress = ["Idle", "Spin", "Rinse", "Wash", "Weight", "Unknown", "Dry", "Soak"]
         program = [
             "Standard",
             "Fast",
@@ -140,11 +138,9 @@ class MideaDADevice(MideaDevice):
         for status in self._attributes:
             if hasattr(message, str(status)):
                 if status == DeviceAttributes.progress:
-                    self._attributes[status] = progress[getattr(
-                        message, str(status))]
+                    self._attributes[status] = progress[getattr(message, str(status))]
                 elif status == DeviceAttributes.program:
-                    self._attributes[status] = program[getattr(
-                        message, str(status))]
+                    self._attributes[status] = program[getattr(message, str(status))]
                 elif status == DeviceAttributes.rinse_level:
                     temp_rinse_level = getattr(message, str(status))
                     if temp_rinse_level == MIN_TEMP:
@@ -158,14 +154,11 @@ class MideaDADevice(MideaDevice):
                     else:
                         self._attributes[status] = speed[temp_speed]
                 elif status == DeviceAttributes.detergent:
-                    self._attributes[status] = detergent[getattr(
-                        message, str(status))]
+                    self._attributes[status] = detergent[getattr(message, str(status))]
                 elif status == DeviceAttributes.softener:
-                    self._attributes[status] = softener[getattr(
-                        message, str(status))]
+                    self._attributes[status] = softener[getattr(message, str(status))]
                 elif status == DeviceAttributes.wash_strength:
-                    self._attributes[status] = strength[getattr(
-                        message, str(status))]
+                    self._attributes[status] = strength[getattr(message, str(status))]
                 else:
                     self._attributes[status] = getattr(message, str(status))
                 new_status[str(status)] = self._attributes[status]

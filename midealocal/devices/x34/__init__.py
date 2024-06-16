@@ -6,6 +6,7 @@ from typing import Any
 
 from midealocal.device import MideaDevice
 from midealocal.exceptions import ValueWrongType
+
 from .message import (
     Message34Response,
     MessageLock,

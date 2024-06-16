@@ -4,9 +4,8 @@ import logging
 from enum import StrEnum
 from typing import Any
 
-from midealocal.exceptions import ValueWrongType
-
 from midealocal.device import MideaDevice
+from midealocal.exceptions import ValueWrongType
 
 from .message import MessageCFResponse, MessageQuery, MessageSet
 

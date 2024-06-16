@@ -4,9 +4,8 @@ import logging
 from enum import StrEnum
 from typing import Any
 
-from midealocal.exceptions import ValueWrongType
-
 from midealocal.device import MideaDevice
+from midealocal.exceptions import ValueWrongType
 
 from .message import (
     MessageE1Response,
@@ -128,8 +127,7 @@ class MideaE1Device(MideaDevice):
             0x19: "Cloud Wash",  # BYTE_MODE_CLOUD_WASH
         }
         self._status = ["Off", "Idle", "Delay", "Running", "Error"]
-        self._progress = ["Idle", "Pre-wash",
-                          "Wash", "Rinse", "Dry", "Complete"]
+        self._progress = ["Idle", "Pre-wash", "Wash", "Rinse", "Dry", "Complete"]
 
     def build_query(self) -> list[MessageQuery]:
         """Midea E1 device build query."""
