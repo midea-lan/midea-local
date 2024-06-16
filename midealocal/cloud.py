@@ -427,7 +427,7 @@ class MeijuCloud(MideaCloud):
                     )
                     stream = stream.replace("\r\n", "\n")
                     async with aiofiles.open(
-                        f"{path}/{response['fileName']}", "rw"
+                        f"{path}/{response['fileName']}", "+w"
                     ) as fp:
                         await fp.write(stream)
         return str(fnm) if fnm else None
@@ -624,7 +624,7 @@ class MSmartHomeCloud(MideaCloud):
                     async with aiofiles.open(
                         f"{path}/{response['fileName']}", "w"
                     ) as fp:
-                        fp.write(stream)
+                        await fp.write(stream)
         return str(fnm) if fnm else None
 
 
