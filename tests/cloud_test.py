@@ -7,7 +7,7 @@ from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from aiohttp import ClientResponseError
+from aiohttp import ClientConnectionError
 
 from midealocal.cloud import (
     MeijuCloud,
@@ -388,6 +388,8 @@ class CloudTest(IsolatedAsyncioTestCase):
                 self.responses["cloud_login_id.json"],
                 self.responses["msmartcloud_login.json"],
                 self.responses["msmartcloud_list_appliances.json"],
+                ClientConnectionError(),
+                self.responses["msmartcloud_list_appliances.json"],
             ],
         )
         session.request = AsyncMock(return_value=response)
@@ -568,10 +570,8 @@ class CloudTest(IsolatedAsyncioTestCase):
                 response1,
                 response2,
                 response3,
-                ClientResponseError(Mock(), Mock()),
-                ClientResponseError(Mock(), Mock()),
-                ClientResponseError(Mock(), Mock()),
-                ClientResponseError(Mock(), Mock()),
+                ClientConnectionError(),
+                response3,
             ],
         )
         cloud = get_midea_cloud(
