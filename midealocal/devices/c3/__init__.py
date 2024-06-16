@@ -1,9 +1,10 @@
 """Midea local C3 device."""
 
 import logging
-import sys
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 from typing import Any
+
+from midealocal.device import MideaDevice
 
 from .message import (
     MessageC3Response,
@@ -12,13 +13,6 @@ from .message import (
     MessageSetECO,
     MessageSetSilent,
 )
-
-if sys.version_info < (3, 12):
-    from midealocal.backports.enum import StrEnum
-else:
-    from enum import StrEnum
-
-from midealocal.device import MideaDevice
 
 _LOGGER = logging.getLogger(__name__)
 

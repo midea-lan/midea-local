@@ -3,12 +3,7 @@
 from enum import IntEnum
 from typing import cast
 
-from midealocal.message import (
-    MessageBody,
-    MessageRequest,
-    MessageResponse,
-    MessageType,
-)
+from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 
 class C2MessageEnum(IntEnum):

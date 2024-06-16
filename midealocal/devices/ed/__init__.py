@@ -1,17 +1,12 @@
 """Midea local ED device."""
 
 import logging
-import sys
+from enum import StrEnum
 from typing import Any
 
-from .message import MessageEDResponse, MessageNewSet, MessageOldSet, MessageQuery
-
-if sys.version_info < (3, 12):
-    from midealocal.backports.enum import StrEnum
-else:
-    from enum import StrEnum
-
 from midealocal.device import MideaDevice
+
+from .message import MessageEDResponse, MessageNewSet, MessageOldSet, MessageQuery
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -77,7 +72,8 @@ class MideaEDDevice(MideaDevice):
         self._device_class = 0
 
     def _use_new_set(self) -> bool:
-        return True  # if (self.sub_type > 342 or self.sub_type == 340) else False
+        # if (self.sub_type > 342 or self.sub_type == 340) else False
+        return True
 
     def build_query(self) -> list[MessageQuery]:
         """Midea ED device build query."""
