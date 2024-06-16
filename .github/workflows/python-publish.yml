@@ -28,8 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-cov
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -r requirements-all.txt
       - name: Test with pytest
         run: |
           python -m pytest --rootdir . --cov=midealocal --cov-report html --cov-report xml --junitxml=reports/junit/junit.xml ./tests/
