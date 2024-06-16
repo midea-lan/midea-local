@@ -8,8 +8,8 @@ from typing import Any
 import ifaddr
 from defusedxml import ElementTree
 
-from .security import LocalSecurity
 from .exceptions import ElementMissing
+from .security import LocalSecurity
 
 _LOGGER = logging.getLogger(__name__)
 
