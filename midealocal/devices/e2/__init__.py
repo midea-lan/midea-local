@@ -143,7 +143,7 @@ class MideaE2Device(MideaDevice):
         message.variable_heating = self._attributes[DeviceAttributes.variable_heating]
         return message
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool | int) -> None:
         """Midea E2 device set attribute."""
         message: MessagePower | MessageSet | MessageNewProtocolSet | None = None
         if attr not in [
@@ -154,7 +154,7 @@ class MideaE2Device(MideaDevice):
             old_protocol = self._normalize_old_protocol(self._old_protocol)
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._protocol_version)
-                message.power = value
+                message.power = bool(value)
             elif old_protocol == OldProtocol.true:
                 message = self.make_message_set()
                 setattr(message, str(attr), value)

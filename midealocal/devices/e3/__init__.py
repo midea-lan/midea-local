@@ -114,7 +114,7 @@ class MideaE3Device(MideaDevice):
         ]
         return message
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool | int) -> None:
         """Midea E3 device set attribute."""
         message: MessagePower | MessageSet | MessageNewProtocolSet | None = None
         if attr not in [
@@ -126,7 +126,7 @@ class MideaE3Device(MideaDevice):
                 value = int(value * 2)
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._protocol_version)
-                message.power = value
+                message.power = bool(value)
             elif self.subtype in self._old_subtypes:
                 message = self.make_message_set()
                 setattr(message, str(attr), value)

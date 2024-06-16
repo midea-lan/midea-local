@@ -195,7 +195,7 @@ class MideaEADevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: Any) -> None:  # noqa: ANN401
         """Midea EA device set attribute."""
 
 
