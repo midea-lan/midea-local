@@ -97,11 +97,7 @@ class MideaE2Device(MideaDevice):
         self._old_protocol = self._default_old_protocol
         self.set_customize(customize)
 
-    def _normalize_old_protocol(self, value: Any) -> OldProtocol:
-        if not isinstance(value, str | bool | int):
-            _LOGGER.exception("Invalid old_protocol value: %s", value)
-            return self._default_old_protocol
-
+    def _normalize_old_protocol(self, value: str | bool | int) -> OldProtocol:
         if isinstance(value, str):
             return_value = OldProtocol(value)
             if return_value == OldProtocol.auto:
