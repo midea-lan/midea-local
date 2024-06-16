@@ -141,7 +141,7 @@ class Midea26Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: str | bool) -> None:
         """Midea x26 device set attribute."""
         if attr in [
             DeviceAttributes.main_light,
@@ -164,9 +164,9 @@ class Midea26Device(MideaDevice):
                 message.night_light = False
                 setattr(message, str(attr), value)
             elif attr == DeviceAttributes.mode:
-                message.mode = Midea26Device._modes.index(value)
+                message.mode = Midea26Device._modes.index(str(value))
             elif attr == DeviceAttributes.direction:
-                message.direction = self._convert_to_midea_direction(value)
+                message.direction = self._convert_to_midea_direction(str(value))
             self.build_send(message)
 
 
