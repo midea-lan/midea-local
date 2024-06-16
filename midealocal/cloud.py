@@ -249,7 +249,7 @@ class MeijuCloud(MideaCloud):
         session: ClientSession,
         account: str,
         password: str,
-    ):
+    ) -> None:
         """Initialize Meiju Cloud."""
         super().__init__(
             session=session,
@@ -441,7 +441,7 @@ class MSmartHomeCloud(MideaCloud):
         session: ClientSession,
         account: str,
         password: str,
-    ):
+    ) -> None:
         """Initialize MSmart Cloud."""
         super().__init__(
             session=session,
@@ -635,7 +635,7 @@ class MideaAirCloud(MideaCloud):
         session: ClientSession,
         account: str,
         password: str,
-    ):
+    ) -> None:
         """Initialize Midea Air Cloud."""
         super().__init__(
             session=session,
