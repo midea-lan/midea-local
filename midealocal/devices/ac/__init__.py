@@ -2,8 +2,10 @@
 
 import json
 import logging
-import sys
+from enum import StrEnum
 from typing import Any, ClassVar
+
+from midealocal.device import MideaDevice
 
 from .message import (
     MessageACResponse,
@@ -16,13 +18,6 @@ from .message import (
     MessageSubProtocolSet,
     MessageToggleDisplay,
 )
-
-if sys.version_info < (3, 12):
-    from midealocal.backports.enum import StrEnum
-else:
-    from enum import StrEnum
-
-from midealocal.device import MideaDevice
 
 _LOGGER = logging.getLogger(__name__)
 

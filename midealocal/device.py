@@ -4,10 +4,9 @@ import logging
 import socket
 import threading
 import time
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 from typing import Any
 
-from .backports.enum import StrEnum
 from .exceptions import SocketException
 from .message import (
     MessageApplianceResponse,

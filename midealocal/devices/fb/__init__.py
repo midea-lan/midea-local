@@ -1,17 +1,12 @@
 """Midea local FB device."""
 
 import logging
-import sys
+from enum import StrEnum
 from typing import Any, ClassVar
 
-from .message import MessageFBResponse, MessageQuery, MessageSet
-
-if sys.version_info < (3, 12):
-    from midealocal.backports.enum import StrEnum
-else:
-    from enum import StrEnum
-
 from midealocal.device import MideaDevice
+
+from .message import MessageFBResponse, MessageQuery, MessageSet
 
 _LOGGER = logging.getLogger(__name__)
 
