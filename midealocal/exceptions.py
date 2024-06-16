@@ -33,3 +33,7 @@ class MessageWrongFormat(MideaLocalError):
 
 class SocketException(MideaLocalError):
     """Exception raise by socket error."""
+
+
+class ValueWrongType(MideaLocalError):
+    """Exception raised when the value has a wrong data type."""

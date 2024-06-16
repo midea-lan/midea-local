@@ -126,7 +126,7 @@ class MideaB3Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: Any) -> None:  # noqa: ANN401
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:  # noqa: ANN401
         """Midea local B3 device set attribute."""
 
 

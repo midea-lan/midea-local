@@ -114,7 +114,7 @@ class MideaE3Device(MideaDevice):
         ]
         return message
 
-    def set_attribute(self, attr: str, value: bool | int) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea E3 device set attribute."""
         message: MessagePower | MessageSet | MessageNewProtocolSet | None = None
         if attr not in [

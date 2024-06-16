@@ -83,7 +83,7 @@ class MideaE6Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: bool | int) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea E6 device set attribute."""
         if attr in [
             DeviceAttributes.main_power,

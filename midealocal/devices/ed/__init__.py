@@ -92,7 +92,7 @@ class MideaEDDevice(MideaDevice):
                 self._attributes[status] = getattr(message, str(status))
         return new_status
 
-    def set_attribute(self, attr: str, value: bool) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea ED device set attribute."""
         message: MessageNewSet | MessageOldSet | None = None
         if self._use_new_set():

@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any
 
 from midealocal.device import MideaDevice
-
+from midealocal.exceptions import ValueWrongType
 from .message import (
     Message34Response,
     MessageLock,
@@ -159,8 +159,10 @@ class Midea34Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: bool) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea x34 device set attribute."""
+        if not isinstance(value, bool):
+            raise ValueWrongType("[x34] Expected bool")
         message: MessagePower | MessageLock | MessageStorage | None = None
         if attr == DeviceAttributes.power:
             message = MessagePower(self._protocol_version)
@@ -172,7 +174,7 @@ class Midea34Device(MideaDevice):
             self.build_send(message)
         elif attr == DeviceAttributes.storage:
             message = MessageStorage(self._protocol_version)
-            message.storage = value
+            message.storage = bool(value)
             self.build_send(message)
 
 

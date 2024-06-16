@@ -4,6 +4,8 @@ import logging
 from enum import StrEnum
 from typing import Any
 
+from midealocal.exceptions import ValueWrongType
+
 from midealocal.device import MideaDevice
 
 from .message import (
@@ -126,7 +128,8 @@ class MideaE1Device(MideaDevice):
             0x19: "Cloud Wash",  # BYTE_MODE_CLOUD_WASH
         }
         self._status = ["Off", "Idle", "Delay", "Running", "Error"]
-        self._progress = ["Idle", "Pre-wash", "Wash", "Rinse", "Dry", "Complete"]
+        self._progress = ["Idle", "Pre-wash",
+                          "Wash", "Rinse", "Dry", "Complete"]
 
     def build_query(self) -> list[MessageQuery]:
         """Midea E1 device build query."""
@@ -159,8 +162,10 @@ class MideaE1Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: bool) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea E1 device set attribute."""
+        if not isinstance(value, bool):
+            raise ValueWrongType("[e1] Expected bool")
         message: MessagePower | MessageLock | MessageStorage | None = None
         if attr == DeviceAttributes.power:
             message = MessagePower(self._protocol_version)

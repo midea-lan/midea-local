@@ -139,7 +139,7 @@ class MideaE2Device(MideaDevice):
         message.variable_heating = self._attributes[DeviceAttributes.variable_heating]
         return message
 
-    def set_attribute(self, attr: str, value: bool | int) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea E2 device set attribute."""
         message: MessagePower | MessageSet | MessageNewProtocolSet | None = None
         if attr not in [

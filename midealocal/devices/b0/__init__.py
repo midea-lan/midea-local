@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from midealocal.device import MideaDevice
 
@@ -95,7 +95,7 @@ class MideaB0Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: Any) -> None:  # noqa: ANN401
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:  # noqa: ANN401
         """B0 Midea device set attribute."""
 
 

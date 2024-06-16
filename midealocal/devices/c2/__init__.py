@@ -112,7 +112,7 @@ class MideaC2Device(MideaDevice):
                 new_status[str(status)] = getattr(message, str(status))
         return new_status
 
-    def set_attribute(self, attr: str, value: bool | int) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea C2 device set attribute."""
         message: MessagePower | MessageSet | None = None
         if attr == DeviceAttributes.power:
