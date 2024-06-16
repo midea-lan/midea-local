@@ -3,4 +3,3 @@ build
 defusedxml
 ifaddr
 pycryptodome
-ruff
