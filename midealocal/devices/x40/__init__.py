@@ -115,7 +115,7 @@ class Midea40Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: int | str | bool) -> None:
         """Midea x40 Device set attribute."""
         if attr in [
             DeviceAttributes.light,
@@ -134,13 +134,13 @@ class Midea40Device(MideaDevice):
                 self._attributes[DeviceAttributes.direction],
             )
             if attr == DeviceAttributes.direction:
-                message.direction = self._convert_to_midea_direction(value)
+                message.direction = self._convert_to_midea_direction(str(value))
             elif (
                 attr == DeviceAttributes.ventilation
                 and message.fan_speed == VENTILATION_FAN_SPEED
             ):
                 message.fan_speed = 1
-                message.ventilation = value
+                message.ventilation = bool(value)
             else:
                 setattr(message, str(attr), value)
             self.build_send(message)

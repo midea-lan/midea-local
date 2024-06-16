@@ -112,29 +112,29 @@ class MideaB6Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea B6 device set attribute."""
         message = None
         if attr == DeviceAttributes.fan_speed:
-            if value < len(self._speeds):
+            if int(value) < len(self._speeds):
                 message = MessageSet(self._protocol_version)
-                message.fan_level = list(self._speeds.keys())[value]
+                message.fan_level = list(self._speeds.keys())[int(value)]
         elif attr == DeviceAttributes.mode:
             if value in self._speeds.values():
                 message = MessageSet(self._protocol_version)
                 message.fan_level = list(self._speeds.keys())[
-                    list(self._speeds.values()).index(value)
+                    list(self._speeds.values()).index(str(value))
                 ]
             elif not value:
                 message = MessageSet(self._protocol_version)
                 message.power = False
         elif attr == DeviceAttributes.power:
             message = MessageSet(self._protocol_version)
-            message.power = value
+            message.power = bool(value)
             message.fan_level = self._power_speed
         elif attr == DeviceAttributes.light:
             message = MessageSet(self._protocol_version)
-            message.light = value
+            message.light = int(value)
         if message is not None:
             self.build_send(message)
 

@@ -59,10 +59,10 @@ class MessageSet(MessageCDBase):
         self.fields: dict[Any, Any] = {}
         self.mode = 1
 
-    def read_field(self, field: str) -> Any:
+    def read_field(self, field: str) -> int:
         """CD message set read field."""
         value = self.fields.get(field, 0)
-        return value if value else 0
+        return int(value) if value else 0
 
     @property
     def _body(self) -> bytearray:

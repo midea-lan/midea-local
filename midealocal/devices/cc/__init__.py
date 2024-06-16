@@ -180,7 +180,7 @@ class MideaCCDevice(MideaDevice):
             message.mode = mode
         self.build_send(message)
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea CC device set attribute."""
         # if nat a sensor
         if attr not in [
@@ -194,7 +194,7 @@ class MideaCCDevice(MideaDevice):
             if attr == DeviceAttributes.fan_speed:
                 if self._fan_speeds and value in self._fan_speeds.values():
                     message.fan_speed = list(self._fan_speeds.keys())[
-                        list(self._fan_speeds.values()).index(value)
+                        list(self._fan_speeds.values()).index(str(value))
                     ]
             else:
                 setattr(message, str(attr), value)

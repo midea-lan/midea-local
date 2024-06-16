@@ -112,12 +112,12 @@ class MideaC2Device(MideaDevice):
                 new_status[str(status)] = getattr(message, str(status))
         return new_status
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea C2 device set attribute."""
         message: MessagePower | MessageSet | None = None
         if attr == DeviceAttributes.power:
             message = MessagePower(self._protocol_version)
-            message.power = value
+            message.power = bool(value)
         elif attr in [
             DeviceAttributes.child_lock,
             DeviceAttributes.sensor_light,

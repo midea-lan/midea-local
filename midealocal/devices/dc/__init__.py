@@ -5,6 +5,7 @@ from enum import StrEnum
 from typing import Any
 
 from midealocal.device import MideaDevice
+from midealocal.exceptions import ValueWrongType
 
 from .message import MessageDCResponse, MessagePower, MessageQuery, MessageStart
 
@@ -86,8 +87,10 @@ class MideaDCDevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea DC device set attribute."""
+        if not isinstance(value, bool):
+            raise ValueWrongType("[dc] Expected bool")
         message: MessagePower | MessageStart | None = None
         if attr == DeviceAttributes.power:
             message = MessagePower(self._protocol_version)

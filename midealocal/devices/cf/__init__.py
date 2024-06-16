@@ -5,6 +5,7 @@ from enum import StrEnum
 from typing import Any
 
 from midealocal.device import MideaDevice
+from midealocal.exceptions import ValueWrongType
 
 from .message import MessageCFResponse, MessageQuery, MessageSet
 
@@ -87,8 +88,10 @@ class MideaCFDevice(MideaDevice):
             message.mode = mode
         self.build_send(message)
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea CF device set attribute."""
+        if not isinstance(value, bool):
+            raise ValueWrongType("[cf] Expected bool")
         message = MessageSet(self._protocol_version)
         message.power = True
         message.mode = self._attributes[DeviceAttributes.mode]

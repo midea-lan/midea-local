@@ -206,7 +206,7 @@ class MideaFCDevice(MideaDevice):
         message.standby_detect = self._standby_detect
         return message
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea FC device set attribute."""
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
@@ -216,23 +216,23 @@ class MideaFCDevice(MideaDevice):
             if attr == DeviceAttributes.mode:
                 if value in MideaFCDevice._modes.values():
                     message.mode = list(MideaFCDevice._modes.keys())[
-                        list(MideaFCDevice._modes.values()).index(value)
+                        list(MideaFCDevice._modes.values()).index(str(value))
                     ]
             elif attr == DeviceAttributes.fan_speed:
                 if value in MideaFCDevice._speeds.values():
                     message.fan_speed = list(MideaFCDevice._speeds.keys())[
-                        list(MideaFCDevice._speeds.values()).index(value)
+                        list(MideaFCDevice._speeds.values()).index(str(value))
                     ]
             elif attr == DeviceAttributes.screen_display:
                 if value in MideaFCDevice._screen_displays.values():
                     message.screen_display = list(
                         MideaFCDevice._screen_displays.keys(),
-                    )[list(MideaFCDevice._screen_displays.values()).index(value)]
+                    )[list(MideaFCDevice._screen_displays.values()).index(str(value))]
                 elif not value:
                     message.screen_display = 7
             elif attr == DeviceAttributes.detect_mode:
                 if value in MideaFCDevice._detect_modes:
-                    message.detect_mode = MideaFCDevice._detect_modes.index(value)
+                    message.detect_mode = MideaFCDevice._detect_modes.index(str(value))
                 elif not value:
                     message.detect_mode = 0
             else:
