@@ -11,7 +11,7 @@ from threading import Lock
 from typing import Any, cast
 
 import aiofiles
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientConnectionError
 
 from .security import (
     CloudSecurity,
@@ -118,8 +118,7 @@ class MideaCloud:
             data.update({"reqId": token_hex(16)})
         if not data.get("stamp"):
             data.update(
-                {"stamp": datetime.now(
-                    tz=timezone.utc).strftime("%Y%m%d%H%M%S")}
+                {"stamp": datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")}
             )
         random = str(int(time.time()))
         url = self._api_url + endpoint
@@ -362,8 +361,7 @@ class MeijuCloud(MideaCloud):
                         model = device_info.get("model")
                         if not model or len(model) == 0:
                             device_info["model"] = device_info["sn8"]
-                        appliances[int(appliance["applianceCode"])
-                                   ] = device_info
+                        appliances[int(appliance["applianceCode"])] = device_info
             return appliances
         return None
 
@@ -459,8 +457,7 @@ class MSmartHomeCloud(MideaCloud):
             api_url=clouds[cloud_name]["api_url"],
         )
         self._auth_base = base64.b64encode(
-            f"{self._app_key}:{clouds['MSmartHome']['iot_key']}".encode(
-                "ascii"),
+            f"{self._app_key}:{clouds['MSmartHome']['iot_key']}".encode("ascii"),
         ).decode("ascii")
 
     def _make_general_data(self) -> dict[str, Any]:
@@ -484,8 +481,7 @@ class MSmartHomeCloud(MideaCloud):
     ) -> dict[str, Any] | None:
         header = header or {}
         header.update(
-            {"x-recipe-app": self._app_id,
-                "authorization": f"Basic {self._auth_base}"},
+            {"x-recipe-app": self._app_id, "authorization": f"Basic {self._auth_base}"},
         )
 
         return await super()._api_request(endpoint, data, header)
