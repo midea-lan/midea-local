@@ -8,6 +8,7 @@ from enum import IntEnum
 from typing import Any
 
 from .backports.enum import StrEnum
+from .exceptions import SocketException
 from .message import (
     MessageApplianceResponse,
     MessageQueryAppliance,
@@ -15,7 +16,6 @@ from .message import (
     MessageRequest,
     MessageType,
 )
-from .exceptions import SocketException
 from .packet_builder import PacketBuilder
 from .security import (
     MSGTYPE_ENCRYPTED_REQUEST,
