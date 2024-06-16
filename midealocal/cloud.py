@@ -6,12 +6,12 @@ import logging
 import time
 from datetime import UTC, datetime
 from http import HTTPStatus
-from pathlib import Path
 from secrets import token_hex
 from threading import Lock
 from typing import Any, cast
 
 from aiohttp import ClientSession
+import aiofiles
 
 from .security import (
     CloudSecurity,
@@ -249,7 +249,7 @@ class MeijuCloud(MideaCloud):
         session: ClientSession,
         account: str,
         password: str,
-    ):
+    ) -> None:
         """Initialize Meiju Cloud."""
         super().__init__(
             session=session,
@@ -426,9 +426,9 @@ class MeijuCloud(MideaCloud):
                         + self._security.aes_decrypt_with_fixed_key(lua)
                     )
                     stream = stream.replace("\r\n", "\n")
-                    fnm = Path(path, response["fileName"])
-                    with fnm.open("w", encoding="utf-8") as fp:
-                        fp.write(stream)
+                    fnm = f"{path}/{response['fileName']}"
+                    async with aiofiles.open(fnm, "w") as fp:
+                        await fp.write(stream)
         return str(fnm) if fnm else None
 
 
@@ -441,7 +441,7 @@ class MSmartHomeCloud(MideaCloud):
         session: ClientSession,
         account: str,
         password: str,
-    ):
+    ) -> None:
         """Initialize MSmart Cloud."""
         super().__init__(
             session=session,
@@ -620,9 +620,9 @@ class MSmartHomeCloud(MideaCloud):
                         + self._security.aes_decrypt_with_fixed_key(lua)
                     )
                     stream = stream.replace("\r\n", "\n")
-                    fnm = Path(path, response["fileName"])
-                    with fnm.open("w", encoding="utf-8") as fp:
-                        fp.write(stream)
+                    fnm = f"{path}/{response['fileName']}"
+                    async with aiofiles.open(fnm, "w") as fp:
+                        await fp.write(stream)
         return str(fnm) if fnm else None
 
 
@@ -635,7 +635,7 @@ class MideaAirCloud(MideaCloud):
         session: ClientSession,
         account: str,
         password: str,
-    ):
+    ) -> None:
         """Initialize Midea Air Cloud."""
         super().__init__(
             session=session,
