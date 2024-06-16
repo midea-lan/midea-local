@@ -87,20 +87,20 @@ class MideaCFDevice(MideaDevice):
             message.mode = mode
         self.build_send(message)
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool | int) -> None:
         """Midea CF device set attribute."""
         message = MessageSet(self._protocol_version)
         message.power = True
         message.mode = self._attributes[DeviceAttributes.mode]
         if attr == DeviceAttributes.power:
-            message.power = value
+            message.power = bool(value)
         elif attr == DeviceAttributes.mode:
             message.power = True
             message.mode = value
         elif attr == DeviceAttributes.target_temperature:
             message.target_temperature = value
         elif attr == DeviceAttributes.aux_heating:
-            message.aux_heating = value
+            message.aux_heating = bool(value)
         self.build_send(message)
 
 
