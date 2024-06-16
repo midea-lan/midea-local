@@ -312,7 +312,7 @@ class MideaACDevice(MideaDevice):
                 if value in MideaACDevice._fresh_air_fan_speeds.values():
                     speed = list(MideaACDevice._fresh_air_fan_speeds.keys())[
                         list(MideaACDevice._fresh_air_fan_speeds.values()).index(
-                            str(value)
+                            str(value),
                         )
                     ]
                     fresh_air = (
