@@ -301,8 +301,7 @@ class MideaDevice(threading.Thread):
                                 break
                             if result == ParseMessageResult.PADDING:
                                 continue
-                            else:
-                                error_count += 1
+                            error_count += 1
                     except TimeoutError:
                         error_count += 1
                         self._unsupported_protocol.append(cmd.__class__.__name__)
