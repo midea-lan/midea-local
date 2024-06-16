@@ -104,22 +104,22 @@ class MideaE2Device(MideaDevice):
         self.set_customize(customize)
 
     def _normalize_old_protocol(self, value: Any) -> OldProtocol:
-        try:
-            if isinstance(value, str):
-                return_value = OldProtocol(value)
-                if return_value == OldProtocol.auto:
-                    result = (
-                        self.subtype <= E2SubType.T82
-                        or self.subtype == E2SubType.T85
-                        or self.subtype == E2SubType.T36353
-                    )
-                    return_value = OldProtocol.true if result else OldProtocol.false
-            elif isinstance(value, bool | int):
-                return_value = OldProtocol.true if value else OldProtocol.false
-            return return_value
-        except ValueError:
+        if not isinstance(value, str | bool | int):
             _LOGGER.exception("Invalid old_protocol value: %s", value)
             return self._default_old_protocol
+
+        if isinstance(value, str):
+            return_value = OldProtocol(value)
+            if return_value == OldProtocol.auto:
+                result = (
+                    self.subtype <= E2SubType.T82
+                    or self.subtype == E2SubType.T85
+                    or self.subtype == E2SubType.T36353
+                )
+                return_value = OldProtocol.true if result else OldProtocol.false
+        if isinstance(value, bool | int):
+            return_value = OldProtocol.true if value else OldProtocol.false
+        return return_value
 
     def build_query(self) -> list[MessageQuery]:
         """Midea E2 device build query."""

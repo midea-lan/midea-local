@@ -15,6 +15,7 @@ from .message import (
     MessageRequest,
     MessageType,
 )
+from .exceptions import SocketException
 from .packet_builder import PacketBuilder
 from .security import (
     MSGTYPE_ENCRYPTED_REQUEST,
@@ -191,6 +192,7 @@ class MideaDevice(threading.Thread):
 
     def connect(self, refresh_status: bool = True) -> bool:
         """Connect to device."""
+        connected = False
         try:
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._socket.settimeout(10)
@@ -207,8 +209,7 @@ class MideaDevice(threading.Thread):
             _LOGGER.debug("[%s] Authentication success", self._device_id)
             if refresh_status:
                 self.refresh_status(wait_response=True)
-            self.enable_device(True)
-            return True
+            connected = True
         except TimeoutError:
             _LOGGER.debug("[%s] Connection timed out", self._device_id)
         except OSError:
@@ -231,14 +232,15 @@ class MideaDevice(threading.Thread):
                 file,
                 lineno,
             )
-        self.enable_device(False)
-        return False
+        self.enable_device(connected)
+        return connected
 
     def authenticate(self) -> None:
         """Authenticate to device. V3 only."""
         request = self._security.encode_8370(self._token, MSGTYPE_HANDSHAKE_REQUEST)
         _LOGGER.debug("[%s] Handshaking", self._device_id)
-        assert self._socket
+        if not self._socket:
+            raise SocketException
         self._socket.send(request)
         response = self._socket.recv(512)
         if len(response) < MIN_AUTH_RESPONSE:
@@ -292,7 +294,8 @@ class MideaDevice(threading.Thread):
                 if wait_response:
                     try:
                         while True:
-                            assert self._socket
+                            if not self._socket:
+                                raise SocketException
                             msg = self._socket.recv(512)
                             if len(msg) == 0:
                                 raise OSError
