@@ -11,7 +11,7 @@ from threading import Lock
 from typing import Any, cast
 
 import aiofiles
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientConnectionError
 
 from .security import (
     CloudSecurity,
@@ -156,7 +156,7 @@ class MideaCloud:
                     )
                     response = json.loads(raw)
                     break
-            except Exception as e:
+            except (TimeoutError, ClientConnectionError, json.JSONDecodeError) as e:
                 _LOGGER.warning(
                     "Midea cloud API error, url: %s, error: %s",
                     url,
@@ -697,7 +697,7 @@ class MideaAirCloud(MideaCloud):
                     )
                     response = json.loads(raw)
                     break
-            except Exception as e:
+            except (TimeoutError, ClientConnectionError, json.JSONDecodeError) as e:
                 _LOGGER.warning(
                     "Midea cloud API error, url: %s, error: %s",
                     url,

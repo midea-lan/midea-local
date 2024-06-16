@@ -245,8 +245,8 @@ def discover(
         try:
             sock.sendto(BROADCAST_MSG, (addr, 6445))
             sock.sendto(BROADCAST_MSG, (addr, 20086))
-        except Exception:
-            _LOGGER.warning("Can't access network %s", addrs)
+        except OSError as e:
+            _LOGGER.warning("Can't access network %s: %s", addrs, repr(e))
     while True:
         try:
             device_id, device = _parse_discover_response(sock, found_devices)
