@@ -189,7 +189,7 @@ class MideaFADevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def _set_oscillation_mode(self, message: MessageSet, value: Any) -> None:
+    def _set_oscillation_mode(self, message: MessageSet, value: str) -> None:
         if value == "Off" or not value:
             message.oscillate = False
         else:
@@ -225,7 +225,7 @@ class MideaFADevice(MideaDevice):
                         self._attributes[DeviceAttributes.tilting_angle],
                     )
 
-    def _set_oscillation_angle(self, message: MessageSet, value: Any) -> None:
+    def _set_oscillation_angle(self, message: MessageSet, value: str) -> None:
         if value == "Off" or not value:
             if self._attributes[DeviceAttributes.tilting_angle] == "Off":
                 message.oscillate = False
@@ -248,7 +248,7 @@ class MideaFADevice(MideaDevice):
                     self._attributes[DeviceAttributes.tilting_angle],
                 )
 
-    def _set_tilting_angle(self, message: MessageSet, value: Any) -> None:
+    def _set_tilting_angle(self, message: MessageSet, value: str) -> None:
         if value == "Off" or not value:
             if self._attributes[DeviceAttributes.oscillation_angle] == "Off":
                 message.oscillate = False
@@ -269,13 +269,13 @@ class MideaFADevice(MideaDevice):
                     self._attributes[DeviceAttributes.oscillation_angle],
                 )
 
-    def set_oscillation(self, attr: str, value: Any) -> MessageSet | None:
+    def set_oscillation(self, attr: str, value: int | str | bool) -> MessageSet | None:
         """Set oscillation mode."""
         message: MessageSet | None = None
         if self._attributes[attr] != value:
             if attr == DeviceAttributes.oscillate:
                 message = MessageSet(self._protocol_version, self.subtype)
-                message.oscillate = value
+                message.oscillate = bool(value)
                 if value:
                     message.oscillation_angle = 3  # 90
                     message.oscillation_mode = 1  # Oscillation
@@ -283,20 +283,20 @@ class MideaFADevice(MideaDevice):
                 value in MideaFADevice._oscillation_modes or not value
             ):
                 message = MessageSet(self._protocol_version, self.subtype)
-                self._set_oscillation_mode(message, value)
+                self._set_oscillation_mode(message, str(value))
             elif attr == DeviceAttributes.oscillation_angle and (
                 value in MideaFADevice._oscillation_angles or not value
             ):
                 message = MessageSet(self._protocol_version, self.subtype)
-                self._set_oscillation_angle(message, value)
+                self._set_oscillation_angle(message, str(value))
             elif attr == DeviceAttributes.tilting_angle and (
                 value in MideaFADevice._tilting_angles or not value
             ):
                 message = MessageSet(self._protocol_version, self.subtype)
-                self._set_tilting_angle(message, value)
+                self._set_tilting_angle(message, str(value))
         return message
 
-    def set_attribute(self, attr: str, value: Any) -> None:
+    def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Set attribute."""
         message = None
         if attr in [
@@ -308,16 +308,16 @@ class MideaFADevice(MideaDevice):
             message = self.set_oscillation(attr, value)
         elif (
             attr == DeviceAttributes.fan_speed
-            and value > 0
+            and int(value) > 0
             and not self._attributes[DeviceAttributes.power]
         ):
             message = MessageSet(self._protocol_version, self.subtype)
-            message.fan_speed = value
+            message.fan_speed = int(value)
             message.power = True
         elif attr == DeviceAttributes.mode:
             if value in MideaFADevice._modes:
                 message = MessageSet(self._protocol_version, self.subtype)
-                message.mode = MideaFADevice._modes.index(value)
+                message.mode = MideaFADevice._modes.index(str(value))
         elif not (attr == DeviceAttributes.fan_speed and value == 0):
             message = MessageSet(self._protocol_version, self.subtype)
             setattr(message, str(attr), value)
