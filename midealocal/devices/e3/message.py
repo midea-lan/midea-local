@@ -2,12 +2,7 @@
 
 from typing import Any
 
-from midealocal.message import (
-    MessageBody,
-    MessageRequest,
-    MessageResponse,
-    MessageType,
-)
+from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 NEW_PROTOCOL_PARAMS = {
     "none": 0x00,

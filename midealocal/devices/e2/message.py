@@ -1,11 +1,6 @@
 """Midea local E2 message."""
 
-from midealocal.message import (
-    MessageBody,
-    MessageRequest,
-    MessageResponse,
-    MessageType,
-)
+from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 HEATING_POWER_BYTE = 34
 PROTECTION_BYTE = 22

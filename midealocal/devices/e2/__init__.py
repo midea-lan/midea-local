@@ -2,9 +2,10 @@
 
 import json
 import logging
-import sys
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 from typing import Any
+
+from midealocal.device import MideaDevice
 
 from .message import (
     MessageE2Response,
@@ -13,13 +14,6 @@ from .message import (
     MessageQuery,
     MessageSet,
 )
-
-if sys.version_info < (3, 12):
-    from midealocal.backports.enum import StrEnum
-else:
-    from enum import StrEnum
-
-from midealocal.device import MideaDevice
 
 
 class OldProtocol(StrEnum):

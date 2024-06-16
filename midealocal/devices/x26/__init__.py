@@ -2,17 +2,12 @@
 
 import logging
 import math
-import sys
+from enum import StrEnum
 from typing import Any, ClassVar
 
 from midealocal.device import MideaDevice
 
 from .message import Message26Response, MessageQuery, MessageSet
-
-if sys.version_info < (3, 12):
-    from midealocal.backports.enum import StrEnum
-else:
-    from enum import StrEnum
 
 _LOGGER = logging.getLogger(__name__)
 
