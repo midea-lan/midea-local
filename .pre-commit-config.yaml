@@ -48,8 +48,10 @@ repos:
     rev: v2.3.0
     hooks:
       - id: codespell
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
+  - repo: local
     hooks:
       - id: mypy
-        additional_dependencies: ["types-aiofiles"]
+        name: mypy
+        entry: mypy
+        language: system
+        types: [python]

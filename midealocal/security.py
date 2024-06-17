@@ -142,12 +142,9 @@ class CloudSecurity:
         if isinstance(data, str):
             data = bytes.fromhex(data)
         if aes_iv is None or aes_iv == b"0":  # ECB
-            return cast(bytes, AES.new(aes_key, AES.MODE_ECB).encrypt(pad(data, 16)))
+            return AES.new(aes_key, AES.MODE_ECB).encrypt(pad(data, 16))
         # CBC
-        return cast(
-            bytes,
-            AES.new(aes_key, AES.MODE_CBC, iv=aes_iv).encrypt(pad(data, 16)),
-        )
+        return AES.new(aes_key, AES.MODE_CBC, iv=aes_iv).encrypt(pad(data, 16))
 
     def aes_decrypt(
         self,
@@ -169,21 +166,14 @@ class CloudSecurity:
         if isinstance(data, str):
             data = bytes.fromhex(data)
         if aes_iv is None or aes_iv == b"0":  # ECB
-            return cast(
-                str,
-                unpad(
-                    AES.new(aes_key, AES.MODE_ECB).decrypt(data),
-                    len(aes_key),
-                ).decode(),
-            )
-        # CBC
-        return cast(
-            str,
-            unpad(
-                AES.new(aes_key, AES.MODE_CBC, iv=aes_iv).decrypt(data),
+            return unpad(
+                AES.new(aes_key, AES.MODE_ECB).decrypt(data),
                 len(aes_key),
-            ).decode(),
-        )
+            ).decode()
+        return unpad(
+            AES.new(aes_key, AES.MODE_CBC, iv=aes_iv).decrypt(data),
+            len(aes_key),
+        ).decode()
 
 
 class MeijuCloudSecurity(CloudSecurity):
@@ -288,18 +278,15 @@ class LocalSecurity:
 
     def aes_encrypt(self, raw: bytes) -> bytes:
         """Encrypt AES."""
-        return cast(
-            bytes,
-            AES.new(self.aes_key, AES.MODE_ECB).encrypt(bytearray(pad(raw, 16))),
-        )
+        return AES.new(self.aes_key, AES.MODE_ECB).encrypt(bytearray(pad(raw, 16)))
 
     def aes_cbc_decrypt(self, raw: bytes, key: Buffer) -> bytes:
         """Decrypt AES with CBC."""
-        return cast(bytes, AES.new(key=key, mode=AES.MODE_CBC, iv=self.iv).decrypt(raw))
+        return AES.new(key=key, mode=AES.MODE_CBC, iv=self.iv).decrypt(raw)
 
     def aes_cbc_encrypt(self, raw: bytes, key: Buffer) -> bytes:
         """Encrypt AES with CBC."""
-        return cast(bytes, AES.new(key=key, mode=AES.MODE_CBC, iv=self.iv).encrypt(raw))
+        return AES.new(key=key, mode=AES.MODE_CBC, iv=self.iv).encrypt(raw)
 
     def encode32_data(self, raw: bytes) -> bytes:
         """Encode 32 data."""

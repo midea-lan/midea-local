@@ -35,11 +35,21 @@ class CloudTest(IsolatedAsyncioTestCase):
 
     def test_get_midea_cloud(self) -> None:
         """Test get midea cloud."""
-        assert isinstance(get_midea_cloud("美的美居", None, "", ""), MeijuCloud)
-        assert isinstance(get_midea_cloud("MSmartHome", None, "", ""), MSmartHomeCloud)
-        assert isinstance(get_midea_cloud("Midea Air", None, "", ""), MideaAirCloud)
-        assert isinstance(get_midea_cloud("NetHome Plus", None, "", ""), MideaAirCloud)
-        assert isinstance(get_midea_cloud("Ariston Clima", None, "", ""), MideaAirCloud)
+        session = AsyncMock()
+        assert isinstance(get_midea_cloud("美的美居", session, "", ""), MeijuCloud)
+        assert isinstance(
+            get_midea_cloud("MSmartHome", session, "", ""),
+            MSmartHomeCloud,
+        )
+        assert isinstance(get_midea_cloud("Midea Air", session, "", ""), MideaAirCloud)
+        assert isinstance(
+            get_midea_cloud("NetHome Plus", session, "", ""),
+            MideaAirCloud,
+        )
+        assert isinstance(
+            get_midea_cloud("Ariston Clima", session, "", ""),
+            MideaAirCloud,
+        )
 
     async def test_midea_cloud_unimplemented(self) -> None:
         """Test unimplemented MideaCloud methods."""
