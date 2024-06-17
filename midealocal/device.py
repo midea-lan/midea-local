@@ -138,7 +138,7 @@ class MideaDevice(threading.Thread):
         self._subtype = subtype
         self._protocol_version = 0
         self._updates: list[Callable[[dict[str, Any]], None]] = []
-        self._unsupported_protocol = [dict]
+        self._unsupported_protocol: list[str] = []
         self._is_run = False
         self._available = True
         self._appliance_query = True
