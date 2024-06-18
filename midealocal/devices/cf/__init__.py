@@ -80,7 +80,7 @@ class MideaCFDevice(MideaDevice):
 
     def set_target_temperature(
         self,
-        target_temperature: int,
+        target_temperature: float,
         mode: int | None,
         zone: int | None = None,  # noqa: ARG002
     ) -> None:
