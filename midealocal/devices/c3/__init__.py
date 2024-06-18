@@ -290,11 +290,11 @@ class MideaC3Device(MideaDevice):
         self,
         target_temperature: float,
         mode: int | None,
-        zone: int,
+        zone: int | None = None,
     ) -> None:
         """Midea C3 device set target temperature."""
         message = self.make_message_set()
-        if self._attributes[DeviceAttributes.zone_temp_type][zone]:
+        if zone and self._attributes[DeviceAttributes.zone_temp_type][zone]:
             message.zone_target_temp[zone] = target_temperature
         else:
             message.room_target_temp = target_temperature

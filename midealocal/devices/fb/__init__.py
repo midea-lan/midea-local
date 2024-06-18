@@ -112,6 +112,14 @@ class MideaFBDevice(MideaDevice):
             setattr(message, str(attr), value)
         self.build_send(message)
 
+    def set_target_temperature(
+        self,
+        target_temperature: float,
+        mode: int | None,
+        zone: int | None = None,
+    ) -> None:
+        """Midea FB device set target temperature."""
+
 
 class MideaAppliance(MideaFBDevice):
     """Midea FB appliance."""
