@@ -171,7 +171,12 @@ class MideaCCDevice(MideaDevice):
         message.swing = self._attributes[DeviceAttributes.swing]
         return message
 
-    def set_target_temperature(self, target_temperature: int, mode: int) -> None:
+    def set_target_temperature(
+        self,
+        target_temperature: int,
+        mode: int,
+        zone: int | None = None,  # noqa: ARG002
+    ) -> None:
         """Midea CC device set target temperature."""
         message = self.make_message_set()
         message.target_temperature = target_temperature
@@ -201,7 +206,8 @@ class MideaCCDevice(MideaDevice):
                 if attr == DeviceAttributes.mode:
                     setattr(message, str(DeviceAttributes.power.value), True)
                 elif attr == DeviceAttributes.eco_mode and value:
-                    setattr(message, str(DeviceAttributes.sleep_mode.value), False)
+                    setattr(message, str(
+                        DeviceAttributes.sleep_mode.value), False)
                 elif attr == DeviceAttributes.sleep_mode and value:
                     setattr(message, str(DeviceAttributes.eco_mode.value), False)
                 elif attr == DeviceAttributes.aux_heating:

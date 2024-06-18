@@ -288,9 +288,9 @@ class MideaC3Device(MideaDevice):
 
     def set_target_temperature(
         self,
-        zone: int,
         target_temperature: int,
         mode: int,
+        zone: int,
     ) -> None:
         """Midea C3 device set target temperature."""
         message = self.make_message_set()
