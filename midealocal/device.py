@@ -237,7 +237,8 @@ class MideaDevice(threading.Thread):
 
     def authenticate(self) -> None:
         """Authenticate to device. V3 only."""
-        request = self._security.encode_8370(self._token, MSGTYPE_HANDSHAKE_REQUEST)
+        request = self._security.encode_8370(
+            self._token, MSGTYPE_HANDSHAKE_REQUEST)
         _LOGGER.debug("[%s] Handshaking", self._device_id)
         if not self._socket:
             raise SocketException
@@ -307,7 +308,8 @@ class MideaDevice(threading.Thread):
                             error_count += 1
                     except TimeoutError:
                         error_count += 1
-                        self._unsupported_protocol.append(cmd.__class__.__name__)
+                        self._unsupported_protocol.append(
+                            cmd.__class__.__name__)
                         _LOGGER.debug(
                             "[%s] Does not supports the protocol %s, ignored",
                             self._device_id,
@@ -336,7 +338,8 @@ class MideaDevice(threading.Thread):
     def parse_message(self, msg: bytes) -> ParseMessageResult:
         """Parse message."""
         if self._protocol == ProtocolVersion.V3:
-            messages, self._buffer = self._security.decode_8370(self._buffer + msg)
+            messages, self._buffer = self._security.decode_8370(
+                self._buffer + msg)
         else:
             messages, self._buffer = self.fetch_v2_message(self._buffer + msg)
         if len(messages) == 0:
@@ -358,7 +361,7 @@ class MideaDevice(threading.Thread):
                         if self._appliance_query:
                             cont = self.pre_process_message(decrypted)
                         if cont:
-                            status = self.process_message(decrypted)
+                            status = self.process_message(bytes(decrypted))
                             if len(status) > 0:
                                 self.update_all(status)
                             else:
@@ -433,7 +436,8 @@ class MideaDevice(threading.Thread):
 
     def send_heartbeat(self) -> None:
         """Send heartbeat."""
-        msg = PacketBuilder(self._device_id, bytearray([0x00])).finalize(msg_type=0)
+        msg = PacketBuilder(self._device_id, bytearray(
+            [0x00])).finalize(msg_type=0)
         self.send_message(msg)
 
     def register_update(self, update: Callable[[dict[str, Any]], None]) -> None:
@@ -475,7 +479,8 @@ class MideaDevice(threading.Thread):
     def set_ip_address(self, ip_address: str) -> None:
         """Set IP address."""
         if self._ip_address != ip_address:
-            _LOGGER.debug("[%s] Update IP address to %s", self._device_id, ip_address)
+            _LOGGER.debug("[%s] Update IP address to %s",
+                          self._device_id, ip_address)
             self._ip_address = ip_address
             self.close_socket()
 
@@ -521,7 +526,8 @@ class MideaDevice(threading.Thread):
                         break
                     result = self.parse_message(msg)
                     if result == ParseMessageResult.ERROR:
-                        _LOGGER.debug("[%s] Message 'ERROR' received", self._device_id)
+                        _LOGGER.debug(
+                            "[%s] Message 'ERROR' received", self._device_id)
                         self.close_socket()
                         break
                     if result == ParseMessageResult.SUCCESS:
@@ -529,12 +535,14 @@ class MideaDevice(threading.Thread):
                 except TimeoutError:
                     timeout_counter = timeout_counter + 1
                     if timeout_counter >= RESPONSE_TIMEOUT:
-                        _LOGGER.debug("[%s] Heartbeat timed out", self._device_id)
+                        _LOGGER.debug(
+                            "[%s] Heartbeat timed out", self._device_id)
                         self.close_socket()
                         break
                 except OSError as e:
                     if self._is_run:
-                        _LOGGER.debug("[%s] Socket error %s", self._device_id, repr(e))
+                        _LOGGER.debug("[%s] Socket error %s",
+                                      self._device_id, repr(e))
                         self.close_socket()
                     break
                 except Exception as e:

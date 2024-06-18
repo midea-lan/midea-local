@@ -361,7 +361,8 @@ class MeijuCloud(MideaCloud):
                         model = device_info.get("model")
                         if not model or len(model) == 0:
                             device_info["model"] = device_info["sn8"]
-                        appliances[int(appliance["applianceCode"])] = device_info
+                        appliances[int(appliance["applianceCode"])
+                                   ] = device_info
             return appliances
         return None
 
@@ -380,7 +381,7 @@ class MeijuCloud(MideaCloud):
             device_info = {
                 "name": response.get("name"),
                 "type": int(model_type, 16) if model_type else 0,
-                "sn": (self._security.aes_decrypt(response.get("sn") or "")),
+                "sn": self._security.aes_decrypt(response.get("sn") or ""),
                 "sn8": response.get("sn8", "00000000"),
                 "model_number": model_number,
                 "manufacturer_code": response.get("enterpriseCode", "0000"),
@@ -457,7 +458,8 @@ class MSmartHomeCloud(MideaCloud):
             api_url=clouds[cloud_name]["api_url"],
         )
         self._auth_base = base64.b64encode(
-            f"{self._app_key}:{clouds['MSmartHome']['iot_key']}".encode("ascii"),
+            f"{self._app_key}:{clouds['MSmartHome']['iot_key']}".encode(
+                "ascii"),
         ).decode("ascii")
 
     def _make_general_data(self) -> dict[str, Any]:
@@ -481,7 +483,8 @@ class MSmartHomeCloud(MideaCloud):
     ) -> dict[str, Any] | None:
         header = header or {}
         header.update(
-            {"x-recipe-app": self._app_id, "authorization": f"Basic {self._auth_base}"},
+            {"x-recipe-app": self._app_id,
+                "authorization": f"Basic {self._auth_base}"},
         )
 
         return await super()._api_request(endpoint, data, header)
@@ -560,11 +563,7 @@ class MSmartHomeCloud(MideaCloud):
                 device_info = {
                     "name": appliance.get("name"),
                     "type": int(appliance.get("type"), 16),
-                    "sn": (
-                        self._security.aes_decrypt(appliance.get("sn"))
-                        if appliance.get("sn")
-                        else ""
-                    ),
+                    "sn": self._security.aes_decrypt(appliance.get("sn") or ""),
                     "sn8": "",
                     "model_number": model_number,
                     "manufacturer_code": appliance.get("enterpriseCode", "0000"),
