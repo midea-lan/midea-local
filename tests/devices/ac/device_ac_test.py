@@ -63,7 +63,7 @@ class TestMideaACDevice:
             self.device.set_attribute(DeviceAttributes.mode.value, 2)
             mock_build_send.assert_called()
 
-            self.device.set_target_temperature(26.0, 2)
+            self.device.set_target_temperature(26, 2)
             mock_build_send.assert_called()
 
             self.device.set_attribute(DeviceAttributes.prompt_tone.value, False)
@@ -214,14 +214,14 @@ class TestMideaACDevice:
     def test_set_target_temperature(self) -> None:
         """Test set target temperature."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_target_temperature(22.5, 1)
+            self.device.set_target_temperature(22, 1)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
-            assert message.target_temperature == 22.5
+            assert message.target_temperature == 22
             assert message.mode == 1
             assert message.power
             self.device._used_subprotocol = True
-            self.device.set_target_temperature(22.5, 1)
+            self.device.set_target_temperature(22, 1)
 
     def test_set_swing(self) -> None:
         """Test set swing."""
