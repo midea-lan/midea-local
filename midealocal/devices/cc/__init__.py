@@ -174,7 +174,7 @@ class MideaCCDevice(MideaDevice):
     def set_target_temperature(
         self,
         target_temperature: int,
-        mode: int,
+        mode: int | None,
         zone: int | None = None,  # noqa: ARG002
     ) -> None:
         """Midea CC device set target temperature."""
@@ -206,8 +206,7 @@ class MideaCCDevice(MideaDevice):
                 if attr == DeviceAttributes.mode:
                     setattr(message, str(DeviceAttributes.power.value), True)
                 elif attr == DeviceAttributes.eco_mode and value:
-                    setattr(message, str(
-                        DeviceAttributes.sleep_mode.value), False)
+                    setattr(message, str(DeviceAttributes.sleep_mode.value), False)
                 elif attr == DeviceAttributes.sleep_mode and value:
                     setattr(message, str(DeviceAttributes.eco_mode.value), False)
                 elif attr == DeviceAttributes.aux_heating:

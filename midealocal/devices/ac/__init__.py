@@ -176,8 +176,7 @@ class MideaACDevice(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea AC device process message."""
-        message = MessageACResponse(
-            bytearray(msg), self._power_analysis_method)
+        message = MessageACResponse(bytearray(msg), self._power_analysis_method)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         has_fresh_air = False
@@ -368,7 +367,7 @@ class MideaACDevice(MideaDevice):
     def set_target_temperature(
         self,
         target_temperature: int,
-        mode: int,
+        mode: int | None,
         zone: int | None = None,  # noqa: ARG002
     ) -> None:
         """Midea AC device set target temperature."""
@@ -398,8 +397,7 @@ class MideaACDevice(MideaDevice):
                 if params and "temperature_step" in params:
                     self._temperature_step = params.get("temperature_step")
                 if params and "power_analysis_method" in params:
-                    self._power_analysis_method = params.get(
-                        "power_analysis_method")
+                    self._power_analysis_method = params.get("power_analysis_method")
             except Exception:
                 _LOGGER.exception("[%s] Set customize error", self.device_id)
             self.update_all({"temperature_step": self._temperature_step})
