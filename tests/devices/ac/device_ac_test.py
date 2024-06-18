@@ -63,7 +63,7 @@ class TestMideaACDevice:
             self.device.set_attribute(DeviceAttributes.mode.value, 2)
             mock_build_send.assert_called()
 
-            self.device.set_target_temperature(26.0, 2)
+            self.device.set_target_temperature(26, 2)
             mock_build_send.assert_called()
 
             self.device.set_attribute(DeviceAttributes.prompt_tone.value, False)

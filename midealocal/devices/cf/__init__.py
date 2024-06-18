@@ -78,7 +78,12 @@ class MideaCFDevice(MideaDevice):
                 new_status[str(status)] = getattr(message, str(status))
         return new_status
 
-    def set_target_temperature(self, target_temperature: int, mode: int) -> None:
+    def set_target_temperature(
+        self,
+        target_temperature: float,
+        mode: int | None,
+        zone: int | None = None,  # noqa: ARG002
+    ) -> None:
         """Midea CF device set target temperature."""
         message = MessageSet(self._protocol_version)
         message.power = True
