@@ -353,9 +353,10 @@ class MideaDevice(threading.Thread):
                 # Heartbeat detected
                 pass
             elif len(message) > MIN_MSG_LENGTH:
-                cryptographic = message[40:-16]
+                cryptographic = bytes(message[40:-16])
                 if payload_len % 16 == 0:
-                    decrypted = self._security.aes_decrypt(cryptographic)
+                    decrypted: bytearray = self._security.aes_decrypt(
+                        cryptographic)
                     try:
                         cont = True
                         if self._appliance_query:
