@@ -2,12 +2,13 @@
 
 from typing import Any
 
+from midealocal.device import DeviceType
 from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
 
 MAX_BLOW_SPEED_LOW_FAN_SPEED = 30
 
 
-class Message40Base(MessageRequest):
+class MessageX40Base(MessageRequest):
     """X40 message base."""
 
     def __init__(
@@ -18,7 +19,7 @@ class Message40Base(MessageRequest):
     ) -> None:
         """Initialize X40 message base."""
         super().__init__(
-            device_type=0x40,
+            device_type=DeviceType.X40,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -29,7 +30,7 @@ class Message40Base(MessageRequest):
         raise NotImplementedError
 
 
-class MessageQuery(Message40Base):
+class MessageQuery(MessageX40Base):
     """X40 message query."""
 
     def __init__(self, protocol_version: int) -> None:
@@ -45,7 +46,7 @@ class MessageQuery(Message40Base):
         return bytearray([])
 
 
-class MessageSet(Message40Base):
+class MessageSet(MessageX40Base):
     """X40 message set."""
 
     def __init__(self, protocol_version: int) -> None:
@@ -120,7 +121,7 @@ class MessageSet(Message40Base):
         )
 
 
-class Message40Body(MessageBody):
+class MessageX40Body(MessageBody):
     """X40 message body."""
 
     def __init__(self, body: bytearray) -> None:
@@ -176,7 +177,7 @@ class Message40Body(MessageBody):
             self.fan_speed = 0
 
 
-class Message40Response(MessageResponse):
+class MessageX40Response(MessageResponse):
     """X40 message response."""
 
     def __init__(self, message: bytes) -> None:
@@ -187,6 +188,6 @@ class Message40Response(MessageResponse):
             in [MessageType.set, MessageType.notify1, MessageType.query]
             and self.body_type == 0x01
         ):
-            self.set_body(Message40Body(super().body))
+            self.set_body(MessageX40Body(super().body))
         self.fields: dict[str, Any]
         self.set_attr()
