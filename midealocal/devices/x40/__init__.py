@@ -71,7 +71,7 @@ class MideaX40Device(MideaDevice):
     @property
     def directions(self) -> list[str]:
         """Midea x40 device directions."""
-        return MideaX40Device._directions
+        return self._directions
 
     @staticmethod
     def _convert_to_midea_direction(direction: str) -> int:
