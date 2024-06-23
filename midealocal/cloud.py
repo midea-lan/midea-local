@@ -13,6 +13,8 @@ from typing import Any, cast
 import aiofiles
 from aiohttp import ClientConnectionError, ClientSession
 
+from midealocal.exceptions import ElementMissing
+
 from .security import (
     CloudSecurity,
     MeijuCloudSecurity,
@@ -770,14 +772,19 @@ def get_midea_cloud(
     session: ClientSession,
     account: str,
     password: str,
-) -> MideaCloud | None:
+) -> MideaCloud:
     """Get Midea Cloud implementation."""
-    cloud = None
-    if cloud_name in clouds:
-        cloud = globals()[clouds[cloud_name]["class_name"]](
+    if cloud_name not in clouds:
+        raise ElementMissing(
+            f"Unsupported Cloud specified: {cloud_name}",
+        )
+
+    return cast(
+        MideaCloud,
+        globals()[clouds[cloud_name]["class_name"]](
             cloud_name=cloud_name,
             session=session,
             account=account,
             password=password,
-        )
-    return cloud
+        ),
+    )
