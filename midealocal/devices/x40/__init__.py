@@ -73,17 +73,11 @@ class MideaX40Device(MideaDevice):
         """Midea x40 device directions."""
         return self._directions
 
-    @staticmethod
-    def _convert_to_midea_direction(direction: str) -> int:
-        if direction == "Oscillate":
-            result = 0xFD
-        else:
-            result = (
-                MideaX40Device._directions.index(direction) * 10 + 60
-                if direction in MideaX40Device._directions
-                else 0xFD
-            )
-        return result
+    def _convert_to_midea_direction(self, direction: str) -> int:
+        if direction == "Oscillate" or direction not in self._directions:
+            return 0xFD
+
+        return self._directions.index(direction) * 10 + 60
 
     @staticmethod
     def _convert_from_midea_direction(direction: int) -> int:
@@ -107,7 +101,7 @@ class MideaX40Device(MideaDevice):
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
                 if status == DeviceAttributes.direction:
-                    self._attributes[status] = MideaX40Device._directions[
+                    self._attributes[status] = self._directions[
                         self._convert_from_midea_direction(value)
                     ]
                 else:
