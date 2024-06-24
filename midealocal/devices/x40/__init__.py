@@ -5,9 +5,9 @@ import math
 from enum import StrEnum
 from typing import Any, ClassVar
 
-from midealocal.device import MideaDevice
+from midealocal.device import DeviceType, MideaDevice
 
-from .message import Message40Response, MessageQuery, MessageSet
+from .message import MessageQuery, MessageSet, MessageX40Response
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class DeviceAttributes(StrEnum):
     current_temperature = "current_temperature"
 
 
-class Midea40Device(MideaDevice):
+class MideaX40Device(MideaDevice):
     """Midea x40 Device."""
 
     _directions: ClassVar[list[str]] = ["60", "70", "80", "90", "100", "Oscillate"]
@@ -49,7 +49,7 @@ class Midea40Device(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0x40,
+            device_type=DeviceType.X40,
             ip_address=ip_address,
             port=port,
             token=token,
@@ -71,19 +71,13 @@ class Midea40Device(MideaDevice):
     @property
     def directions(self) -> list[str]:
         """Midea x40 device directions."""
-        return Midea40Device._directions
+        return self._directions
 
-    @staticmethod
-    def _convert_to_midea_direction(direction: str) -> int:
-        if direction == "Oscillate":
-            result = 0xFD
-        else:
-            result = (
-                Midea40Device._directions.index(direction) * 10 + 60
-                if direction in Midea40Device._directions
-                else 0xFD
-            )
-        return result
+    def _convert_to_midea_direction(self, direction: str) -> int:
+        if direction == "Oscillate" or direction not in self._directions:
+            return 0xFD
+
+        return self._directions.index(direction) * 10 + 60
 
     @staticmethod
     def _convert_from_midea_direction(direction: int) -> int:
@@ -99,7 +93,7 @@ class Midea40Device(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea x40 Device process message."""
-        message = Message40Response(msg)
+        message = MessageX40Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         self._fields = message.fields
@@ -107,7 +101,7 @@ class Midea40Device(MideaDevice):
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
                 if status == DeviceAttributes.direction:
-                    self._attributes[status] = Midea40Device._directions[
+                    self._attributes[status] = self._directions[
                         self._convert_from_midea_direction(value)
                     ]
                 else:
@@ -146,5 +140,5 @@ class Midea40Device(MideaDevice):
             self.build_send(message)
 
 
-class MideaAppliance(Midea40Device):
+class MideaAppliance(MideaX40Device):
     """Midea x40 appliance."""
