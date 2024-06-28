@@ -70,7 +70,7 @@ class MessageSet(MessageCFBase):
         )
         self.power = False
         self.mode = 0  # 1 自动 2 制冷 3 制热
-        self.target_temperature: int | None = None
+        self.target_temperature: float | None = None
         self.aux_heating: bool | None = None
 
     @property

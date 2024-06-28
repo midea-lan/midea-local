@@ -69,7 +69,7 @@ class MessageSet(MessageCCBase):
         self.power = False
         self.mode = 4
         self.fan_speed = 0x80
-        self.target_temperature = 26
+        self.target_temperature: float = 26
         self.eco_mode = False
         self.sleep_mode = False
         self.night_light = False

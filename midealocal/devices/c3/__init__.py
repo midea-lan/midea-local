@@ -288,11 +288,14 @@ class MideaC3Device(MideaDevice):
 
     def set_target_temperature(
         self,
-        zone: int,
-        target_temperature: int,
-        mode: int,
+        target_temperature: float,
+        mode: int | None,
+        zone: int | None = None,
     ) -> None:
         """Midea C3 device set target temperature."""
+        if zone is None:
+            raise ValueError("[C3] Parameter `zone` must be set")
+
         message = self.make_message_set()
         if self._attributes[DeviceAttributes.zone_temp_type][zone]:
             message.zone_target_temp[zone] = target_temperature

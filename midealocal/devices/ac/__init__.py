@@ -364,7 +364,12 @@ class MideaACDevice(MideaDevice):
         if message is not None:
             self.build_send(message)
 
-    def set_target_temperature(self, target_temperature: float, mode: int) -> None:
+    def set_target_temperature(
+        self,
+        target_temperature: float,
+        mode: int | None,
+        zone: int | None = None,  # noqa: ARG002
+    ) -> None:
         """Midea AC device set target temperature."""
         message: MessageSubProtocolSet | MessageGeneralSet = (
             self.make_message_uniq_set()
