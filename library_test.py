@@ -80,6 +80,9 @@ async def main() -> None:
     )
     cloud_keys = {}
     if cloud:
+        if not await cloud.login():
+            print("ERROR: cannot login")
+            sys.exit(2)
         cloud_keys = await cloud.get_keys(first_device["device_id"])
     print("-" * 20)
     print("Fist device Cloud info: ", cloud_keys)
