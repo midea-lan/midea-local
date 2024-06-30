@@ -194,7 +194,8 @@ class MideaCloud:
                 data=data,
             )
             _LOGGER.debug(
-                "Response from get_keys() with method %s: %s",
+                "Response from get_keys() for appliance_id %s with method %s: %s",
+                appliance_id,
                 method,
                 response,
             )
