@@ -316,6 +316,7 @@ class MeijuCloud(MideaCloud):
                 )
 
                 return True
+        _LOGGER.warning("Meiju Cloud login failed for device %s", self._device_id)
         return False
 
     async def list_home(self) -> dict[int, Any] | None:
@@ -549,6 +550,7 @@ class MSmartHomeCloud(MideaCloud):
                     response["randomData"],
                 )
                 return True
+        _LOGGER.warning("MSmartHome Cloud login failed for device %s", self._device_id)
         return False
 
     async def list_appliances(
@@ -735,6 +737,7 @@ class MideaAirCloud(MideaCloud):
                 self._uid = response["userId"]
                 self._session_id = response["sessionId"]
                 return True
+        _LOGGER.warning("Midea Air Cloud login failed for device %s", self._device_id)
         return False
 
     async def list_appliances(
