@@ -82,6 +82,7 @@ async def main() -> None:
     if cloud:
         if not await cloud.login():
             print("ERROR: cannot login")
+            await session.close()
             sys.exit(2)
         cloud_keys = await cloud.get_keys(first_device["device_id"])
     print("-" * 20)
@@ -124,7 +125,7 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     logging.getLogger("asyncio").setLevel(logging.INFO)
     logging.getLogger("charset_normalizer").setLevel(logging.INFO)
     asyncio.run(main())
