@@ -193,6 +193,12 @@ class MideaCloud:
                 endpoint="/v1/iot/secure/getToken",
                 data=data,
             )
+            _LOGGER.debug(
+                "Response from get_keys() for appliance_id %s with method %s: %s",
+                appliance_id,
+                method,
+                response,
+            )
             if response and "tokenlist" in response:
                 for token in response["tokenlist"]:
                     if token["udpId"] == udp_id:
@@ -200,7 +206,9 @@ class MideaCloud:
                             "token": token["token"].lower(),
                             "key": token["key"].lower(),
                         }
-        result.update(default_keys)
+                break
+        if not result:
+            result.update(default_keys)
         return result
 
     @staticmethod
