@@ -214,10 +214,7 @@ class MideaCloud:
     @staticmethod
     async def get_cloud_servers() -> dict[int, str]:
         """Get available cloud servers."""
-        cloud_servers: dict[int, str] = {}
-        for i, cloud in enumerate(clouds, start=1):
-            cloud_servers[i] = cloud
-        return cloud_servers
+        return {i: cloud for i, cloud in enumerate(clouds, start=1)}
 
     async def list_home(self) -> dict[int, Any] | None:
         """List homes."""
