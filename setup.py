@@ -14,7 +14,7 @@ with requirements.open(encoding="utf-8") as fp:
 
 setuptools.setup(
     name="midea-local",
-    version="1.1.3",
+    version="1.1.4",
     author="rokam",
     author_email="lucas@mindello.com.br",
     description="Control your Midea M-Smart appliances via local area network",
