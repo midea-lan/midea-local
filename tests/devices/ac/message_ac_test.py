@@ -420,6 +420,50 @@ class TestMessageACResponse:
         assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == -6.5  # ((40 - 50) / 2) - 1.5 = -6.5
 
+    def test_message_query_b5(self) -> None:
+        """Test message query b5."""
+        body = bytearray(
+            [
+                0xB5,
+                0x07,
+                0x12,
+                0x02,
+                0x01,
+                0x01,
+                0x13,
+                0x02,
+                0x01,
+                0x00,
+                0x14,
+                0x02,
+                0x01,
+                0x00,
+                0x15,
+                0x02,
+                0x01,
+                0x01,
+                0x16,
+                0x02,
+                0x01,
+                0x01,
+                0x17,
+                0x02,
+                0x01,
+                0x01,
+                0x1A,
+                0x02,
+                0x01,
+                0x01,
+                0xD6,
+            ],
+        )
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "modes")
+        assert not response.modes["heat"]
+        assert response.modes["cool"]
+        assert response.modes["dry"]
+        assert response.modes["auto"]
+
     def test_message_notify2_b0(self) -> None:
         """Test Message parse notify2 B0."""
         body = bytearray(29)

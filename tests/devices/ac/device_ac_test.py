@@ -6,6 +6,7 @@ import pytest
 
 from midealocal.devices.ac import DeviceAttributes, MideaACDevice
 from midealocal.devices.ac.message import (
+    MessageCapabilitiesQuery,
     MessageNewProtocolQuery,
     MessagePowerQuery,
     MessageQuery,
@@ -110,6 +111,13 @@ class TestMideaACDevice:
 
             self.device.set_attribute(DeviceAttributes.fresh_air_mode.value, False)
             mock_build_send.assert_called()
+
+    def test_capabilities_query(self) -> None:
+        """Test capabilities query."""
+        queries = self.device.capabilities_query()
+        assert len(queries) == 2
+        assert isinstance(queries[0], MessageCapabilitiesQuery)
+        assert isinstance(queries[1], MessageCapabilitiesQuery)
 
     def test_build_query(self) -> None:
         """Test build query."""
