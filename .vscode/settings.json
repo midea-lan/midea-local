@@ -1,5 +1,6 @@
 {
-  "python.testing.pytestArgs": ["--no-cov"],
-  "python.testing.pytestEnabled": false,
-  "pylint.importStrategy": "fromEnvironment"
+  "python.testing.pytestArgs": ["tests", "--no-cov"],
+  "python.testing.pytestEnabled": true,
+  "pylint.importStrategy": "fromEnvironment",
+  "python.testing.unittestEnabled": false
 }
