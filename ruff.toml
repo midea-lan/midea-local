@@ -2,8 +2,13 @@ target-version = "py311"
 
 lint.select = ["ALL"]
 
+lint.preview = true
+
 lint.ignore = [
     "ANN101",   # Missing type annotation for `self` in method
+    "B909",     # Mutation to loop iterable `self._attributes` during iteration
+    "C416",     # Unnecessary `dict` comprehension (rewrite using `dict()`)
+    "CPY001",   # Missing copyright notice at top of file
     "D203",     # 1 blank line required before class docstring
     "D213",     # Multi-line docstring summary should start at the second line
     "EM101",    # Exception must not use a string literal, assign to variable first
@@ -11,9 +16,23 @@ lint.ignore = [
     "FBT001",   # Boolean-typed positional argument in function definition
     "FBT002",   # Boolean default positional argument in function definition
     "FBT003",   # Boolean positional value in function call
+    "FURB110",  # Replace ternary `if` expression with `or` operator
+    "FURB116",  # Replace `hex` call with f-string
+    "FURB118",  # Use `operator.itemgetter(0)` instead of defining a lambda
     "N818",     # Exception name should be named with an Error suffix
+    "PLC1901",  # can be simplified as an empty string is falsey
+    "PLR0904",  # Too many public methods
     "PLR0912",  # Too many branches
     "PLR0913",  # Too many arguments in function definition
+    "PLR0914",  # Too many local variables
+    "PLR0916",  # Too many Boolean expressions
+    "PLR0917",  # Too many positional arguments
+    "PLR1702",  # Too many nested blocks
+    "PLR6104",  # Use `+=` to perform an augmented assignment directly
+    "PLR6201",  # Use a `set` literal when testing for membership
+    "PLR6301",  # Method could be a function, class method, or static method
+    "RUF021",   # Parenthesize expressions when chaining `and` and `or` together, to make the precedence clear
+    "S413",     # `pycrypto` library is known to have publicly disclosed buffer overflow vulnerability
     "TRY003",   # Avoid specifying long messages outside the exception class
 ]
 
