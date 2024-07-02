@@ -5,6 +5,7 @@ import pytest
 from midealocal.devices.ac.message import (
     MessageACBase,
     MessageACResponse,
+    MessageCapabilitiesQuery,
     MessageGeneralSet,
     MessageNewProtocolQuery,
     MessagePowerQuery,
@@ -65,6 +66,26 @@ class TestMessageQuery:
                 0x00,
                 0x00,
             ],
+        )
+        assert msg.body[:-2] == expected_body
+
+
+class TestMessageCapabilitiesQuery:
+    """Test Message Capabilities Query."""
+
+    def test_capabilities_query_body(self) -> None:
+        """Test capabilities query body."""
+        msg = MessageCapabilitiesQuery(1, False)
+        expected_body = bytearray(
+            [0xB5, 0x01, 0x00],
+        )
+        assert msg.body[:-2] == expected_body
+
+    def test_capabilities_query_body_additional(self) -> None:
+        """Test capabilities query body."""
+        msg = MessageCapabilitiesQuery(1, True)
+        expected_body = bytearray(
+            [0xB5, 0x01, 0x01, 0x01],
         )
         assert msg.body[:-2] == expected_body
 
