@@ -1,3 +1,4 @@
+colorlog
 mypy
 pytest
 pytest-asyncio

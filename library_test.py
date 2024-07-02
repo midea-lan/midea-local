@@ -8,6 +8,7 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 import aiohttp
+from colorlog import ColoredFormatter
 
 from midealocal.cloud import clouds, get_midea_cloud
 from midealocal.devices import device_selector
@@ -126,8 +127,31 @@ async def main() -> None:
     await session.close()
 
 
-if __name__ == "__main__":
+def set_logging() -> None:
+    """Set logging levels."""
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger("asyncio").setLevel(logging.INFO)
     logging.getLogger("charset_normalizer").setLevel(logging.INFO)
+    fmt = (
+        "%(asctime)s.%(msecs)03d %(levelname)s (%(threadName)s) [%(name)s] %(message)s"
+    )
+    colorfmt = f"%(log_color)s{fmt}%(reset)s"
+    logging.getLogger().handlers[0].setFormatter(
+        ColoredFormatter(
+            colorfmt,
+            datefmt="%Y-%m-%d %H:%M:%S",
+            reset=True,
+            log_colors={
+                "DEBUG": "cyan",
+                "INFO": "green",
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "red",
+            },
+        ),
+    )
+
+
+if __name__ == "__main__":
+    set_logging()
     asyncio.run(main())
