@@ -188,7 +188,7 @@ class MessageCapabilitiesQuery(MessageACBase):
     @property
     def _body(self) -> bytearray:
         if self._additional_capabilities:
-            return bytearray([0x01, 0x01, 0x1])
+            return bytearray([0x01, 0x01, 0x01])
         return bytearray([0x01, 0x00])
 
 
