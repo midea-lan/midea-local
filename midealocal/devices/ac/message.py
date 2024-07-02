@@ -705,7 +705,7 @@ class XBXMessageBody(NewProtocolMessageBody):
             v = params[Capabilities.MODES][0]
             self.modes: dict[str, bool] = {}
             self.modes["heat"] = v in [1, 2, 4, 6, 7, 9]
-            self.modes["cool"] = v != 2
+            self.modes["cool"] = v != 2  # noqa: PLR2004
             self.modes["dry"] = v in [0, 1, 5, 6, 9]
             self.modes["auto"] = v in [0, 1, 2, 7, 8, 9]
 
