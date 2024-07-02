@@ -39,7 +39,6 @@ lint.ignore = [
 [lint.per-file-ignores]
 "library_test.py" = [
     "PLR0915",  # Too many statements
-    "T201",     # `print` found
 ]
 "midealocal/security.py" = [
     "S324",     # Probable use of insecure hash functions in `hashlib`: `md5`

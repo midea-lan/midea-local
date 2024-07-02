@@ -14,6 +14,8 @@ from midealocal.cloud import clouds, get_midea_cloud
 from midealocal.devices import device_selector
 from midealocal.discover import discover
 
+_LOGGER = logging.getLogger("library_test")
+
 
 def get_arguments() -> tuple[ArgumentParser, Namespace]:
     """Get parsed passed in arguments."""
@@ -55,22 +57,18 @@ async def main() -> None:
     parser, args = get_arguments()
 
     if not args.password or not args.username or not args.cloud_name:
-        print("You have to specify all parameters: username, password and Cloud name")
+        _LOGGER.error("All parameters needed: username, password and Cloud name")
         parser.print_help()
         sys.exit(1)
 
-    print("-" * 20)
-    print("Starting network discovery...")
+    _LOGGER.info("Starting network discovery...")
     devices = discover(ip_address=args.ip)
-    print("-" * 20)
-    print("Devices: ", devices)
+    _LOGGER.info("Devices: %s", devices)
     first_device = next(iter(devices.values()))
-    print("-" * 20)
-    print("First device: ", first_device)
+    _LOGGER.info("First device: %s", first_device)
     # The device type is in hexadecimal as in midealocal/devices/TYPE
     type_code = hex(first_device["type"])[2:]
-    print("-" * 20)
-    print("First device type: ", type_code)
+    _LOGGER.info("First device type: %s", type_code)
 
     session = aiohttp.ClientSession()
     cloud = get_midea_cloud(
@@ -82,12 +80,13 @@ async def main() -> None:
     cloud_keys = {}
     if cloud:
         if not await cloud.login():
-            print("ERROR: cannot login")
+            msg = f"Cannot login into device {first_device['device_id']} \
+[{first_device['ip_address']}]"
+            _LOGGER.error(msg)
             await session.close()
             sys.exit(2)
         cloud_keys = await cloud.get_keys(first_device["device_id"])
-    print("-" * 20)
-    print("Fist device Cloud info: ", cloud_keys)
+    _LOGGER.info("Fist device Cloud info: %s", cloud_keys)
 
     token = ""
     key = ""
@@ -95,9 +94,8 @@ async def main() -> None:
         token = v["token"]
         key = v["key"]
 
-    print("-" * 20)
-    print("Fist device Cloud token: ", token)
-    print("Fist device Cloud key:   ", key)
+    _LOGGER.info("Fist device Cloud token: %s", token)
+    _LOGGER.info("Fist device Cloud key:   %s", key)
 
     # Select the device
     ac = device_selector(
@@ -118,8 +116,7 @@ async def main() -> None:
     ac.connect()
 
     # Getting the attributes
-    print("-" * 20)
-    print("First device attributes: ", ac.attributes)
+    _LOGGER.info("First device attributes: %s", ac.attributes)
 
     # Close session
     await session.close()
