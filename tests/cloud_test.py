@@ -14,8 +14,10 @@ from midealocal.cloud import (
     MideaAirCloud,
     MideaCloud,
     MSmartHomeCloud,
+    default_keys,
     get_midea_cloud,
 )
+from midealocal.exceptions import ElementMissing
 
 
 class CloudTest(IsolatedAsyncioTestCase):
@@ -50,6 +52,13 @@ class CloudTest(IsolatedAsyncioTestCase):
             get_midea_cloud("Ariston Clima", session, "", ""),
             MideaAirCloud,
         )
+        with pytest.raises(ElementMissing):
+            get_midea_cloud("Invalid", session, "", "")
+
+    async def test_get_cloud_servers(self) -> None:
+        """Test get cloud servers."""
+        servers = await MideaCloud.get_cloud_servers()
+        assert len(servers.items()) == 5
 
     async def test_midea_cloud_unimplemented(self) -> None:
         """Test unimplemented MideaCloud methods."""
@@ -111,7 +120,11 @@ class CloudTest(IsolatedAsyncioTestCase):
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
-            return_value=self.responses["meijucloud_get_keys.json"],
+            side_effect=[
+                self.responses["meijucloud_get_keys.json"],
+                self.responses["cloud_invalid_response.json"],
+                self.responses["cloud_invalid_response.json"],
+            ],
         )
         session.request = AsyncMock(return_value=response)
         cloud = get_midea_cloud(
@@ -124,6 +137,9 @@ class CloudTest(IsolatedAsyncioTestCase):
         keys: dict = await cloud.get_keys(100)
         assert keys[1]["token"] == "returnedappliancetoken"
         assert keys[1]["key"] == "returnedappliancekey"
+
+        keys = await cloud.get_keys(100)
+        assert keys == default_keys
 
     async def test_meijucloud_list_home(self) -> None:
         """Test MeijuCloud list_home."""
