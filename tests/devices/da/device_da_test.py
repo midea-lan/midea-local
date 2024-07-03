@@ -97,12 +97,12 @@ class TestMideaDADevice:
             mock_message.softener = 15
             mock_message.wash_strength = 15
             new_status = self.device.process_message(b"")
-            assert new_status[DeviceAttributes.program.value] == "-"
-            assert new_status[DeviceAttributes.progress.value] == "-"
-            assert new_status[DeviceAttributes.rinse_level.value] == "-"
+            assert new_status[DeviceAttributes.program.value] is None
+            assert new_status[DeviceAttributes.progress.value] is None
+            assert new_status[DeviceAttributes.rinse_level.value] is None
             assert new_status[DeviceAttributes.dehydration_speed.value] == "-"
-            assert new_status[DeviceAttributes.softener.value] == "-"
-            assert new_status[DeviceAttributes.detergent.value] == "-"
+            assert new_status[DeviceAttributes.softener.value] is None
+            assert new_status[DeviceAttributes.detergent.value] is None
             assert new_status[DeviceAttributes.wash_strength.value] == "-"
 
     def test_build_query(self) -> None:
