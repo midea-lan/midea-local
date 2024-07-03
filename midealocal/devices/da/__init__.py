@@ -140,13 +140,13 @@ class MideaDADevice(MideaDevice):
                 if status == DeviceAttributes.progress:
                     self._attributes[status] = (
                         "-"
-                        if status >= len(progress)
+                        if getattr(message, str(status)) >= len(progress)
                         else progress[getattr(message, str(status))]
                     )
                 elif status == DeviceAttributes.program:
                     self._attributes[status] = (
                         "-"
-                        if status >= len(program)
+                        if getattr(message, str(status)) >= len(program)
                         else program[getattr(message, str(status))]
                     )
                 elif status == DeviceAttributes.rinse_level:
@@ -158,25 +158,25 @@ class MideaDADevice(MideaDevice):
                 elif status == DeviceAttributes.dehydration_speed:
                     self._attributes[status] = (
                         "-"
-                        if status >= len(speed)
+                        if getattr(message, str(status)) >= len(speed)
                         else speed[getattr(message, str(status))]
                     )
                 elif status == DeviceAttributes.detergent:
                     self._attributes[status] = (
                         "-"
-                        if status >= len(detergent)
+                        if getattr(message, str(status)) >= len(detergent)
                         else detergent[getattr(message, str(status))]
                     )
                 elif status == DeviceAttributes.softener:
                     self._attributes[status] = (
                         "-"
-                        if status >= len(softener)
+                        if getattr(message, str(status)) >= len(softener)
                         else softener[getattr(message, str(status))]
                     )
                 elif status == DeviceAttributes.wash_strength:
                     self._attributes[status] = (
                         "-"
-                        if status >= len(strength)
+                        if getattr(message, str(status)) >= len(strength)
                         else strength[getattr(message, str(status))]
                     )
                 else:
