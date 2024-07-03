@@ -137,50 +137,39 @@ class MideaDADevice(MideaDevice):
         ]
         for status in self._attributes:
             if hasattr(message, str(status)):
+                value = getattr(message, str(status))
                 if status == DeviceAttributes.progress:
                     self._attributes[status] = (
-                        "-"
-                        if getattr(message, str(status)) >= len(progress)
-                        else progress[getattr(message, str(status))]
+                        None if value >= len(progress) else progress[value]
                     )
                 elif status == DeviceAttributes.program:
                     self._attributes[status] = (
-                        "-"
-                        if getattr(message, str(status)) >= len(program)
-                        else program[getattr(message, str(status))]
+                        None if value >= len(program) else program[value]
                     )
                 elif status == DeviceAttributes.rinse_level:
-                    temp_rinse_level = getattr(message, str(status))
+                    temp_rinse_level = value
                     if temp_rinse_level == MIN_TEMP:
-                        self._attributes[status] = "-"
+                        self._attributes[status] = None
                     else:
                         self._attributes[status] = temp_rinse_level
                 elif status == DeviceAttributes.dehydration_speed:
                     self._attributes[status] = (
-                        "-"
-                        if getattr(message, str(status)) >= len(speed)
-                        else speed[getattr(message, str(status))]
+                        "-" if value >= len(speed) else speed[value]
                     )
                 elif status == DeviceAttributes.detergent:
                     self._attributes[status] = (
-                        "-"
-                        if getattr(message, str(status)) >= len(detergent)
-                        else detergent[getattr(message, str(status))]
+                        None if value >= len(detergent) else detergent[value]
                     )
                 elif status == DeviceAttributes.softener:
                     self._attributes[status] = (
-                        "-"
-                        if getattr(message, str(status)) >= len(softener)
-                        else softener[getattr(message, str(status))]
+                        None if value >= len(softener) else softener[value]
                     )
                 elif status == DeviceAttributes.wash_strength:
                     self._attributes[status] = (
-                        "-"
-                        if getattr(message, str(status)) >= len(strength)
-                        else strength[getattr(message, str(status))]
+                        "-" if value >= len(strength) else strength[value]
                     )
                 else:
-                    self._attributes[status] = getattr(message, str(status))
+                    self._attributes[status] = value
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
