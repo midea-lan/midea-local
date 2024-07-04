@@ -121,7 +121,12 @@ class CloudTest(IsolatedAsyncioTestCase):
         response = Mock()
         response.read = AsyncMock(
             side_effect=[
-                self.responses["meijucloud_get_keys.json"],
+                self.responses["meijucloud_get_keys1.json"],
+                self.responses["meijucloud_get_keys2.json"],
+                self.responses["meijucloud_get_keys1.json"],
+                self.responses["cloud_invalid_response.json"],
+                self.responses["cloud_invalid_response.json"],
+                self.responses["meijucloud_get_keys2.json"],
                 self.responses["cloud_invalid_response.json"],
                 self.responses["cloud_invalid_response.json"],
             ],
@@ -134,11 +139,36 @@ class CloudTest(IsolatedAsyncioTestCase):
             password="password",
         )
         assert cloud is not None
-        keys: dict = await cloud.get_keys(100)
-        assert keys[1]["token"] == "returnedappliancetoken"
-        assert keys[1]["key"] == "returnedappliancekey"
 
+        # test method1 + method2 + default key
+        keys3: dict = await cloud.get_keys(100)
+        # test response token/key
+        assert keys3[1]["token"] == "method1_return_token1"
+        assert keys3[1]["key"] == "method1_return_key1"
+        assert keys3[2]["token"] == "method2_return_token2"
+        assert keys3[2]["key"] == "method2_return_key2"
+        # simple test default key with length
+        assert len(keys3) == 3
+
+        # test method1 + default key
+        keys1: dict = await cloud.get_keys(100)
+        # test response token/key
+        assert keys1[1]["token"] == "method1_return_token1"
+        assert keys1[1]["key"] == "method1_return_key1"
+        # simple test default key with length
+        assert len(keys1) == 2
+
+        # test method2 + default key
+        keys2: dict = await cloud.get_keys(100)
+        # test response token/key
+        assert keys2[2]["token"] == "method2_return_token2"
+        assert keys2[2]["key"] == "method2_return_key2"
+        # simple test default key with length
+        assert len(keys2) == 2
+
+        # test only default key
         keys = await cloud.get_keys(100)
+        assert len(keys) == 1
         assert keys == default_keys
 
     async def test_meijucloud_list_home(self) -> None:

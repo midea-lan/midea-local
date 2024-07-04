@@ -4,8 +4,8 @@
     "tokenlist": [
       {
         "udpId": "dec4da86e0aeefadde14a4e553680b9b",
-        "token": "returnedappliancetoken",
-        "key": "returnedappliancekey"
+        "token": "method1_return_token1",
+        "key": "method1_return_key1"
       }
     ]
   }
