@@ -12,9 +12,15 @@ requirements = Path("requirements.txt")
 with requirements.open(encoding="utf-8") as fp:
     requires = fp.read().splitlines()
 
+version: dict = {}
+version_file = Path("midealocal", "version.py")
+with version_file.open(encoding="utf-8") as fp:
+    exec(fp.read(), version)  # noqa: S102
+
+
 setuptools.setup(
     name="midea-local",
-    version="1.1.4",
+    version=version["__version__"],
     author="rokam",
     author_email="lucas@mindello.com.br",
     description="Control your Midea M-Smart appliances via local area network",
