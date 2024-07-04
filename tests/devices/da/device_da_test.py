@@ -100,10 +100,10 @@ class TestMideaDADevice:
             assert new_status[DeviceAttributes.program.value] is None
             assert new_status[DeviceAttributes.progress.value] is None
             assert new_status[DeviceAttributes.rinse_level.value] is None
-            assert new_status[DeviceAttributes.dehydration_speed.value] == "-"
+            assert new_status[DeviceAttributes.dehydration_speed.value] is None
             assert new_status[DeviceAttributes.softener.value] is None
             assert new_status[DeviceAttributes.detergent.value] is None
-            assert new_status[DeviceAttributes.wash_strength.value] == "-"
+            assert new_status[DeviceAttributes.wash_strength.value] is None
 
     def test_build_query(self) -> None:
         """Test build query."""
