@@ -154,7 +154,7 @@ class MideaDADevice(MideaDevice):
                         self._attributes[status] = temp_rinse_level
                 elif status == DeviceAttributes.dehydration_speed:
                     self._attributes[status] = (
-                        "-" if value >= len(speed) else speed[value]
+                        None if value >= len(speed) else speed[value]
                     )
                 elif status == DeviceAttributes.detergent:
                     self._attributes[status] = (
@@ -166,7 +166,7 @@ class MideaDADevice(MideaDevice):
                     )
                 elif status == DeviceAttributes.wash_strength:
                     self._attributes[status] = (
-                        "-" if value >= len(strength) else strength[value]
+                        None if value >= len(strength) else strength[value]
                     )
                 else:
                     self._attributes[status] = value
