@@ -1,12 +1,21 @@
-name: PR
-on: pull_request
+name: "Lint PR"
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions:
+  pull-requests: read
+
 jobs:
-  conventional:
-    name: Conventional PR
+  main:
+    name: Validate PR title
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-      - uses: beemojs/conventional-pr-action@v3
+      - uses: amannn/action-semantic-pull-request@v5
         env:
           GITHUB_TOKEN: ${{ secrets.MIDEA_GITHUB_PAT }}
