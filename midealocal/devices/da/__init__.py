@@ -147,11 +147,7 @@ class MideaDADevice(MideaDevice):
                         None if value >= len(program) else program[value]
                     )
                 elif status == DeviceAttributes.rinse_level:
-                    temp_rinse_level = value
-                    if temp_rinse_level == MIN_TEMP:
-                        self._attributes[status] = None
-                    else:
-                        self._attributes[status] = temp_rinse_level
+                    self._attributes[status] = "-" if value == MIN_TEMP else value
                 elif status == DeviceAttributes.dehydration_speed:
                     self._attributes[status] = (
                         None if value >= len(speed) else speed[value]
