@@ -94,12 +94,6 @@ def _message(args: Namespace) -> None:
     _LOGGER.info("Parsed message: %s", result)
 
 
-def _download(args: Namespace) -> None:
-    """Download a device's protocol implementation from the cloud."""
-    # Use discovery to to find device information
-    _LOGGER.info("Discovering %s on local network.", args.host)
-
-
 def main() -> NoReturn:
     """Launch main entry."""
     # Define the main parser to select subcommands
