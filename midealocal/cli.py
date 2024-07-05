@@ -22,8 +22,7 @@ _LOGGER = logging.getLogger("cli")
 
 
 async def _get_keys(args: Namespace, device_id: int) -> dict[int, dict[str, Any]]:
-    session = aiohttp.ClientSession()
-    with session:
+    async with aiohttp.ClientSession() as session:
         cloud = get_midea_cloud(
             cloud_name=args.cloud_name,
             session=session,
