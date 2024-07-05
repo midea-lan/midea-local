@@ -2,6 +2,7 @@
 
 import asyncio
 import contextlib
+import inspect
 import logging
 import sys
 from argparse import ArgumentParser, Namespace
@@ -17,18 +18,20 @@ from midealocal.devices import device_selector
 from midealocal.discover import discover
 from midealocal.version import __version__
 
-session = aiohttp.ClientSession()
+_LOGGER = logging.getLogger("cli")
 
 
 async def _get_keys(args: Namespace, device_id: int) -> dict[int, dict[str, Any]]:
-    cloud = get_midea_cloud(
-        cloud_name=args.cloud_name,
-        session=session,
-        account=args.username,
-        password=args.password,
-    )
+    session = aiohttp.ClientSession()
+    with session:
+        cloud = get_midea_cloud(
+            cloud_name=args.cloud_name,
+            session=session,
+            account=args.username,
+            password=args.password,
+        )
 
-    return await cloud.get_keys(device_id)
+        return await cloud.get_keys(device_id)
 
 
 async def _discover(args: Namespace) -> None:
@@ -36,15 +39,15 @@ async def _discover(args: Namespace) -> None:
     devices = discover(ip_address=args.host)
 
     if len(devices) == 0:
-        logging.error("No devices found.")
+        _LOGGER.error("No devices found.")
         return
 
     # Dump only basic device info from the base class
-    logging.info("Found %d devices.", len(devices))
+    _LOGGER.info("Found %d devices.", len(devices))
     for device in devices.values():
         keys = (
             {0: {"token": "", "key": ""}}
-            if device["protocol"] == ProtocolVersion.V3
+            if device["protocol"] != ProtocolVersion.V3
             else await _get_keys(args, device["device_id"])
         )
 
@@ -62,19 +65,20 @@ async def _discover(args: Namespace) -> None:
                 subtype=0,
                 customize="",
             )
-            if dev.connect(False, False):
-                logging.info("Found device:\n%s", dev)
-                dev.close()
+
+            if dev.connect():
+                _LOGGER.info("Found device:\n%s", dev.attributes)
                 break
-            dev.close()
 
 
 def _message(args: Namespace) -> None:
     """Load message into device."""
+    device_type = int(args.message[2])
+
     device = device_selector(
-        device_id=args.device,
-        name=args.device,
-        device_type=args.type,
+        device_id=0,
+        name="",
+        device_type=device_type,
         ip_address="192.168.192.168",
         port=6664,
         protocol=ProtocolVersion.V2,
@@ -84,17 +88,16 @@ def _message(args: Namespace) -> None:
         subtype=0,
         customize="",
     )
-    device.close()
 
     result = device.process_message(args.message)
 
-    logging.info("Parsed message: %s", result)
+    _LOGGER.info("Parsed message: %s", result)
 
 
 def _download(args: Namespace) -> None:
     """Download a device's protocol implementation from the cloud."""
     # Use discovery to to find device information
-    logging.info("Discovering %s on local network.", args.host)
+    _LOGGER.info("Discovering %s on local network.", args.host)
 
 
 def main() -> NoReturn:
@@ -135,8 +138,9 @@ def main() -> NoReturn:
         "--cloud-name",
         "-cn",
         type=str,
-        help="Set Cloud name, options are: " + ", ".join(clouds.keys()),
-        action="store_true",
+        help="Set Cloud name",
+        choices=clouds.keys(),
+        default="MSmartHome",
     )
 
     # Setup discover parser
@@ -146,75 +150,24 @@ def main() -> NoReturn:
         parents=[common_parser],
     )
     discover_parser.add_argument(
-        "host",
+        "--host",
         help="Hostname or IP address of a single device to discover.",
+        required=False,
         default=None,
     )
     discover_parser.set_defaults(func=_discover)
 
-    # Setup query parser
-    query_parser = subparsers.add_parser(
-        "query",
-        description="Query information from a device on the local network.",
-        parents=[common_parser],
-    )
-    query_parser.add_argument("host", help="Hostname or IP address of device.")
-    query_parser.add_argument(
-        "--auto",
-        help="Automatically authenticate V3 devices.",
-        action="store_true",
-    )
-    query_parser.add_argument(
-        "--id",
-        help="Device ID for V3 devices.",
-        dest="device_id",
-        type=int,
-        default=0,
-    )
-    query_parser.add_argument(
-        "--token",
-        help="Authentication token for V3 devices.",
-        type=bytes.fromhex,
-    )
-    query_parser.add_argument(
-        "--key",
-        help="Authentication key for V3 devices.",
-        type=bytes.fromhex,
-    )
-    query_parser.set_defaults(func=_discover)
-
     decode_msg_parser = subparsers.add_parser(
         "decode",
         description="Decode a message received to a device.",
-    )
-    query_parser.add_argument(
-        "device",
-        help="Device ID.",
-        dest="device_id",
-        type=int,
-    )
-    query_parser.add_argument(
-        "type",
-        help="Device type.",
-        type=bytes.fromhex,
-        required=True,
+        parents=[common_parser],
     )
     decode_msg_parser.add_argument(
         "message",
         help="Received message",
         type=bytes.fromhex,
-        required=True,
     )
     decode_msg_parser.set_defaults(func=_message)
-
-    # Setup download parser
-    download = subparsers.add_parser(
-        "download",
-        description="Download a device's lua implementation from the cloud.",
-        parents=[common_parser],
-    )
-    download.add_argument("host", help="Hostname or IP address of device.")
-    download.set_defaults(func=_download)
 
     # Run with args
     _run(parser.parse_args())
@@ -222,6 +175,18 @@ def main() -> NoReturn:
 
 def _run(args: Namespace) -> NoReturn:
     """Do setup logging, validate args and execute the desired function."""
+    # Configure logging
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+        # Keep httpx as info level
+        logging.getLogger("asyncio").setLevel(logging.INFO)
+        logging.getLogger("charset_normalizer").setLevel(logging.INFO)
+    else:
+        logging.basicConfig(level=logging.INFO)
+        # Set httpx to warning level
+        logging.getLogger("asyncio").setLevel(logging.WARNING)
+        logging.getLogger("charset_normalizer").setLevel(logging.WARNING)
+
     fmt = (
         "%(asctime)s.%(msecs)03d %(levelname)s (%(threadName)s) [%(name)s] %(message)s"
     )
@@ -241,20 +206,11 @@ def _run(args: Namespace) -> NoReturn:
         ),
     )
 
-    # Configure logging
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
-        # Keep httpx as info level
-        logging.getLogger("asyncio").setLevel(logging.INFO)
-        logging.getLogger("charset_normalizer").setLevel(logging.INFO)
-    else:
-        logging.basicConfig(level=logging.INFO)
-        # Set httpx to warning level
-        logging.getLogger("asyncio").setLevel(logging.WARNING)
-        logging.getLogger("charset_normalizer").setLevel(logging.WARNING)
-
     with contextlib.suppress(KeyboardInterrupt):
-        asyncio.run(args.func(args))
+        if inspect.iscoroutinefunction(args.func):
+            asyncio.run(args.func(args))
+        else:
+            args.func(args)
 
     sys.exit(0)
 
