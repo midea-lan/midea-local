@@ -99,7 +99,7 @@ class TestMideaDADevice:
             new_status = self.device.process_message(b"")
             assert new_status[DeviceAttributes.program.value] is None
             assert new_status[DeviceAttributes.progress.value] is None
-            assert new_status[DeviceAttributes.rinse_level.value] is None
+            assert new_status[DeviceAttributes.rinse_level.value] == "-"
             assert new_status[DeviceAttributes.dehydration_speed.value] is None
             assert new_status[DeviceAttributes.softener.value] is None
             assert new_status[DeviceAttributes.detergent.value] is None
