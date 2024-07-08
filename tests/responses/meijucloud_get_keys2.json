@@ -1,0 +1,12 @@
+{
+  "code": 0,
+  "data": {
+    "tokenlist": [
+      {
+        "udpId": "b2dd199071d527a33c8239833a5bf5fb",
+        "token": "method2_return_token2",
+        "key": "method2_return_key2"
+      }
+    ]
+  }
+}

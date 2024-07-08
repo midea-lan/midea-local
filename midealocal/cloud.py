@@ -206,9 +206,8 @@ class MideaCloud:
                             "token": token["token"].lower(),
                             "key": token["key"].lower(),
                         }
-                break
-        if not result:
-            result.update(default_keys)
+        # add default key with method 1 and method 2 key
+        result.update(default_keys)
         return result
 
     @staticmethod
