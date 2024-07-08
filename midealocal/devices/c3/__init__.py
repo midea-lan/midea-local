@@ -1,5 +1,6 @@
 """Midea local C3 device."""
 
+import json
 import logging
 from enum import IntEnum, StrEnum
 from typing import Any
@@ -83,7 +84,7 @@ class MideaC3Device(MideaDevice):
         protocol: int,
         model: str,
         subtype: int,
-        customize: str,  # noqa: ARG002
+        customize: str,
     ) -> None:
         """Initialize Midea C3 device."""
         super().__init__(
@@ -140,6 +141,14 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.error_code: 0,
             },
         )
+        self._default_temperature_step: float = 0.5
+        self._temperature_step: float = 0.5
+        self.set_customize(customize)
+
+    @property
+    def temperature_step(self) -> float | None:
+        """Midea C3 device temperature step."""
+        return self._temperature_step
 
     def build_query(self) -> list[MessageQuery]:
         """Midea C3 device build query."""
@@ -308,6 +317,18 @@ class MideaC3Device(MideaDevice):
                 message.zone2_power = True
             message.mode = mode
         self.build_send(message)
+
+    def set_customize(self, customize: str) -> None:
+        """Midea C3 device set custommize."""
+        self._temperature_step = self._default_temperature_step
+        if customize and len(customize) > 0:
+            try:
+                params = json.loads(customize)
+                if params and "temperature_step" in params:
+                    self._temperature_step = params.get("temperature_step")
+            except Exception:
+                _LOGGER.exception("[%s] Set customize error", self.device_id)
+            self.update_all({"temperature_step": self._temperature_step})
 
 
 class MideaAppliance(MideaC3Device):
