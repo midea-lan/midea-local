@@ -319,15 +319,26 @@ class MideaC3Device(MideaDevice):
         self.build_send(message)
 
     def set_customize(self, customize: str) -> None:
-        """Midea C3 device set custommize."""
+        """Midea C3 device set customize."""
         self._temperature_step = self._default_temperature_step
         if customize and len(customize) > 0:
             try:
                 params = json.loads(customize)
                 if params and "temperature_step" in params:
-                    self._temperature_step = params.get("temperature_step")
-            except Exception:
-                _LOGGER.exception("[%s] Set customize error", self.device_id)
+                    temp_step = params.get("temperature_step")
+                    if isinstance(temp_step, float | int):
+                        self._temperature_step = float(temp_step)
+                    else:
+                        _LOGGER.error(
+                            "[%s] Invalid type for temperature_step: %s",
+                            self.device_id,
+                            temp_step,
+                        )
+            except json.JSONDecodeError:
+                _LOGGER.exception(
+                    "[%s] JSON decode error in set_customize",
+                    self.device_id,
+                )
             self.update_all({"temperature_step": self._temperature_step})
 
 
