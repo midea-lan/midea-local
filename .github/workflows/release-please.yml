@@ -17,5 +17,3 @@ jobs:
         with:
           token: ${{ secrets.MIDEA_GITHUB_PAT }}
           release-type: python
-          include-v-in-tag: true
-          tag-separator: ""
