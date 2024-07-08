@@ -3,22 +3,34 @@
 import asyncio
 import contextlib
 import inspect
+import json
 import logging
 import sys
 from argparse import ArgumentParser, Namespace
+from pathlib import Path
 from typing import Any, NoReturn
 
 import aiohttp
+import platformdirs
 from colorlog import ColoredFormatter
 
 from midealocal.cloud import clouds, get_midea_cloud
-from midealocal.const import OPEN_MIDEA_APP_ACCOUNT, OPEN_MIDEA_APP_PASSWORD
 from midealocal.device import ProtocolVersion
 from midealocal.devices import device_selector
 from midealocal.discover import discover
 from midealocal.version import __version__
 
 _LOGGER = logging.getLogger("cli")
+
+
+def get_config_file_path(relative: bool = False) -> Path:
+    """Get the config file path."""
+    local_path = Path("midea-local.json")
+    if relative or local_path.exists():
+        return local_path
+    return platformdirs.user_config_path(appname="midea-local").joinpath(
+        "midea-local.json",
+    )
 
 
 async def _get_keys(args: Namespace, device_id: int) -> dict[int, dict[str, Any]]:
@@ -93,6 +105,18 @@ def _message(args: Namespace) -> None:
     _LOGGER.info("Parsed message: %s", result)
 
 
+def _save(args: Namespace) -> None:
+    data = {
+        "username": args.username,
+        "password": args.password,
+        "cloud_name": args.cloud_name,
+    }
+    json_data = json.dumps(data)
+    file = get_config_file_path(not args.user)
+    with file.open(mode="w+", encoding="utf-8") as f:
+        f.write(json_data)
+
+
 def main() -> NoReturn:
     """Launch main entry."""
     # Define the main parser to select subcommands
@@ -118,14 +142,12 @@ def main() -> NoReturn:
         "-u",
         type=str,
         help="Set cloud username",
-        default=OPEN_MIDEA_APP_ACCOUNT,
     )
     common_parser.add_argument(
         "--password",
         "-p",
         type=str,
         help="Set cloud password",
-        default=OPEN_MIDEA_APP_PASSWORD,
     )
     common_parser.add_argument(
         "--cloud-name",
@@ -133,7 +155,6 @@ def main() -> NoReturn:
         type=str,
         help="Set Cloud name",
         choices=clouds.keys(),
-        default="MSmartHome",
     )
 
     # Setup discover parser
@@ -145,7 +166,6 @@ def main() -> NoReturn:
     discover_parser.add_argument(
         "--host",
         help="Hostname or IP address of a single device to discover.",
-        required=False,
         default=None,
     )
     discover_parser.set_defaults(func=_discover)
@@ -162,8 +182,26 @@ def main() -> NoReturn:
     )
     decode_msg_parser.set_defaults(func=_message)
 
+    save_parser = subparsers.add_parser(
+        "save",
+        description="Save config file with cloud defaults.",
+        parents=[common_parser],
+    )
+    save_parser.add_argument(
+        "--user",
+        help="Save config file in your user config folder.",
+        action="store_true",
+    )
+    save_parser.set_defaults(func=_save)
+
+    config = get_config_file_path()
+    namespace = Namespace()
+    if config.exists():
+        with config.open("r", encoding="utf-8") as f:
+            namespace = Namespace(**json.load(f))
+
     # Run with args
-    _run(parser.parse_args())
+    _run(parser.parse_args(namespace=namespace))
 
 
 def _run(args: Namespace) -> NoReturn:

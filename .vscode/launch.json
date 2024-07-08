@@ -6,7 +6,65 @@
       "type": "debugpy",
       "request": "launch",
       "module": "midealocal.cli",
-      "args": ["discover"]
+      "args": ["discover", "-d", "--host", "${input:host}"]
+    },
+    {
+      "name": "Python Debugger: Decode message",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "midealocal.cli",
+      "args": ["decode", "-d", "${input:message}"]
+    },
+    {
+      "name": "Python Debugger: Save config",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "midealocal.cli",
+      "args": [
+        "save",
+        "--cloud-name",
+        "${input:cloud-name}",
+        "--username",
+        "${input:username}",
+        "--password",
+        "${input:password}"
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "host",
+      "type": "promptString",
+      "description": "Enter the host IP address (leave empty to broadcast on the network)",
+      "default": ""
+    },
+    {
+      "id": "message",
+      "type": "promptString",
+      "description": "Enter hex message, including header and body."
+    },
+    {
+      "id": "cloud-name",
+      "type": "pickString",
+      "options": [
+        "美的美居",
+        "MSmartHome",
+        "Midea Air",
+        "NetHome Plus",
+        "Ariston Clima"
+      ],
+      "description": "Choose one of the cloud servers."
+    },
+    {
+      "id": "username",
+      "type": "promptString",
+      "description": "Enter cloud username."
+    },
+    {
+      "id": "password",
+      "type": "promptString",
+      "password": true,
+      "description": "Enter cloud password."
     }
   ]
 }
