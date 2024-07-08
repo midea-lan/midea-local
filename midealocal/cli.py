@@ -18,6 +18,7 @@ from midealocal.cloud import clouds, get_midea_cloud
 from midealocal.device import ProtocolVersion
 from midealocal.devices import device_selector
 from midealocal.discover import discover
+from midealocal.exceptions import ElementMissing
 from midealocal.version import __version__
 
 _LOGGER = logging.getLogger("cli")
@@ -34,6 +35,8 @@ def get_config_file_path(relative: bool = False) -> Path:
 
 
 async def _get_keys(args: Namespace, device_id: int) -> dict[int, dict[str, Any]]:
+    if not args.cloud_name or not args.username or not args.password:
+        raise ElementMissing("Missing required parameters for cloud request.")
     async with aiohttp.ClientSession() as session:
         cloud = get_midea_cloud(
             cloud_name=args.cloud_name,
@@ -76,10 +79,12 @@ async def _discover(args: Namespace) -> None:
                 subtype=0,
                 customize="",
             )
-
+            _LOGGER.debug("Trying to connect with key: %s", key)
             if dev.connect():
                 _LOGGER.info("Found device:\n%s", dev.attributes)
                 break
+
+            _LOGGER.debug("Unable to connect with key: %s", key)
 
 
 def _message(args: Namespace) -> None:
@@ -184,7 +189,7 @@ def main() -> NoReturn:
 
     save_parser = subparsers.add_parser(
         "save",
-        description="Save config file with cloud defaults.",
+        description="Save config file with cloud parameters.",
         parents=[common_parser],
     )
     save_parser.add_argument(
