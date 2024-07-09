@@ -325,7 +325,7 @@ class MideaDevice(threading.Thread):
                         )
             else:
                 error_count += 1
-        if error_count == len(cmds):
+        if len(cmds) > 0 and error_count == len(cmds):
             raise CapabilitiesFailed
 
     def refresh_status(self, wait_response: bool = False) -> None:
