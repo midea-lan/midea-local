@@ -4,3 +4,4 @@ build
 defusedxml
 ifaddr
 pycryptodome
+platformdirs

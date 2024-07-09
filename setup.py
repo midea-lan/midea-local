@@ -33,6 +33,11 @@ setuptools.setup(
         include=["midealocal", "midealocal.*"],
         exclude=["tests", "tests.*"],
     ),
+    entry_points={
+        "console_scripts": [
+            "midealocal = midealocal.cli:main",
+        ],
+    },
     python_requires=">=3.11",
     classifiers=[
         "Programming Language :: Python :: 3",
