@@ -226,10 +226,10 @@ class MideaDevice(threading.Thread):
             _LOGGER.debug("[%s] Connection error", self._device_id)
         except AuthException:
             _LOGGER.debug("[%s] Authentication failed", self._device_id)
-        except ResponseException:
-            _LOGGER.debug("[%s] Unexpected response received", self._device_id)
         except RefreshFailed:
             _LOGGER.debug("[%s] Refresh status is timed out", self._device_id)
+        except CapabilitiesFailed:
+            _LOGGER.debug("[%s] Refresh capabilities is timed out", self._device_id)
         except Exception as e:
             file = None
             lineno = None
