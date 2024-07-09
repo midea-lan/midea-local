@@ -171,6 +171,7 @@ class C3MessageBody(MessageBody):
             body[data_offset + 1] & 0x20 > 0,
         ]
         self.silent_mode = body[data_offset + 2] & 0x02 > 0
+        self.super_silent = body[data_offset + 2] & 0x04 > 0
         self.eco_mode = body[data_offset + 2] & 0x08 > 0
         self.mode = body[data_offset + 3]
         self.mode_auto = body[data_offset + 4]
