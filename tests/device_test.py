@@ -93,6 +93,14 @@ class MideaDeviceTest(IsolatedAsyncioTestCase):
             assert self.device.connect(True, True) is True
             assert self.device.available is True
 
+    def test_connect_generic_exception(self) -> None:
+        """Test connect with generic exception."""
+        with patch("socket.socket.connect") as connect_mock:
+            connect_mock.side_effect = Exception()
+
+            assert self.device.connect(True, True) is False
+            assert self.device.available is False
+
     def test_authenticate(self) -> None:
         """Test authenticate."""
         socket_mock = MagicMock()
