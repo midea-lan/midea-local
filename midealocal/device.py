@@ -308,7 +308,7 @@ class MideaDevice(threading.Thread):
                                 raise SocketException
                             msg = self._socket.recv(512)
                             if len(msg) == 0:
-                                raise OSError
+                                raise OSError("Empty message received.")
                             result = self.parse_message(msg)
                             if result == ParseMessageResult.SUCCESS:
                                 break
@@ -344,7 +344,7 @@ class MideaDevice(threading.Thread):
                                 raise SocketException
                             msg = self._socket.recv(512)
                             if len(msg) == 0:
-                                raise OSError
+                                raise OSError("Empty message received.")
                             result = self.parse_message(msg)
                             if result == ParseMessageResult.SUCCESS:
                                 break
