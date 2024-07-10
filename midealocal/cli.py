@@ -14,7 +14,7 @@ import aiohttp
 import platformdirs
 from colorlog import ColoredFormatter
 
-from midealocal.cloud import clouds, get_midea_cloud
+from midealocal.cloud import MideaCloud, clouds, get_midea_cloud
 from midealocal.device import ProtocolVersion
 from midealocal.devices import device_selector
 from midealocal.discover import discover
@@ -22,6 +22,8 @@ from midealocal.exceptions import ElementMissing
 from midealocal.version import __version__
 
 _LOGGER = logging.getLogger("cli")
+
+_SESSION = aiohttp.ClientSession()
 
 
 def get_config_file_path(relative: bool = False) -> Path:
@@ -34,18 +36,21 @@ def get_config_file_path(relative: bool = False) -> Path:
     )
 
 
-async def _get_keys(args: Namespace, device_id: int) -> dict[int, dict[str, Any]]:
+def get_cloud(args: Namespace) -> MideaCloud:
+    """Get cloud instance."""
     if not args.cloud_name or not args.username or not args.password:
         raise ElementMissing("Missing required parameters for cloud request.")
-    async with aiohttp.ClientSession() as session:
-        cloud = get_midea_cloud(
-            cloud_name=args.cloud_name,
-            session=session,
-            account=args.username,
-            password=args.password,
-        )
+    return get_midea_cloud(
+        cloud_name=args.cloud_name,
+        session=_SESSION,
+        account=args.username,
+        password=args.password,
+    )
 
-        return await cloud.get_keys(device_id)
+
+async def _get_keys(args: Namespace, device_id: int) -> dict[int, dict[str, Any]]:
+    cloud = get_cloud(args)
+    return await cloud.get_keys(device_id)
 
 
 async def _discover(args: Namespace) -> None:
@@ -120,6 +125,23 @@ def _save(args: Namespace) -> None:
     file = get_config_file_path(not args.user)
     with file.open(mode="w+", encoding="utf-8") as f:
         f.write(json_data)
+
+
+async def _download(args: Namespace) -> None:
+    devices = discover(ip_address=args.host)
+
+    if len(devices) == 0:
+        _LOGGER.error("No devices found.")
+        return
+
+    device = devices[0]
+    cloud = get_cloud(args)
+    await cloud.download_lua(
+        str(Path()),
+        device["type"],
+        device["type"],
+        device["model"],
+    )
 
 
 def main() -> NoReturn:
@@ -198,6 +220,21 @@ def main() -> NoReturn:
         action="store_true",
     )
     save_parser.set_defaults(func=_save)
+
+    download_parser = subparsers.add_parser(
+        "download",
+        description="Download lua scripts from cloud.",
+        parents=[common_parser],
+    )
+    download_parser.add_argument(
+        "--device-id",
+        help="Device Id",
+    )
+    download_parser.add_argument(
+        "--host",
+        help="IP Address of the device.",
+    )
+    download_parser.set_defaults(func=_download)
 
     config = get_config_file_path()
     namespace = Namespace()
