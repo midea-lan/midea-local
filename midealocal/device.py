@@ -226,10 +226,10 @@ class MideaDevice(threading.Thread):
             _LOGGER.debug("[%s] Connection error", self._device_id)
         except AuthException:
             _LOGGER.debug("[%s] Authentication failed", self._device_id)
-        except ResponseException:
-            _LOGGER.debug("[%s] Unexpected response received", self._device_id)
         except RefreshFailed:
             _LOGGER.debug("[%s] Refresh status is timed out", self._device_id)
+        except CapabilitiesFailed:
+            _LOGGER.debug("[%s] Refresh capabilities is timed out", self._device_id)
         except Exception as e:
             file = None
             lineno = None
@@ -308,7 +308,7 @@ class MideaDevice(threading.Thread):
                                 raise SocketException
                             msg = self._socket.recv(512)
                             if len(msg) == 0:
-                                raise OSError
+                                raise OSError("Empty message received.")
                             result = self.parse_message(msg)
                             if result == ParseMessageResult.SUCCESS:
                                 break
@@ -325,7 +325,7 @@ class MideaDevice(threading.Thread):
                         )
             else:
                 error_count += 1
-        if error_count == len(cmds):
+        if len(cmds) > 0 and error_count == len(cmds):
             raise CapabilitiesFailed
 
     def refresh_status(self, wait_response: bool = False) -> None:
@@ -344,7 +344,7 @@ class MideaDevice(threading.Thread):
                                 raise SocketException
                             msg = self._socket.recv(512)
                             if len(msg) == 0:
-                                raise OSError
+                                raise OSError("Empty message received.")
                             result = self.parse_message(msg)
                             if result == ParseMessageResult.SUCCESS:
                                 break
