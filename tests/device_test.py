@@ -8,7 +8,6 @@ import pytest
 from midealocal.cloud import default_keys
 from midealocal.device import (
     AuthException,
-    CapabilitiesFailed,
     MideaDevice,
     ParseMessageResult,
     ProtocolVersion,
@@ -77,7 +76,7 @@ class MideaDeviceTest(IsolatedAsyncioTestCase):
             patch.object(
                 self.device,
                 "get_capabilities",
-                side_effect=[CapabilitiesFailed(), None],
+                side_effect=[None, None],
             ),
         ):
             connect_mock.side_effect = [
