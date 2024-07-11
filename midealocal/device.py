@@ -75,10 +75,6 @@ class AuthException(Exception):
     """Authentication exception."""
 
 
-class CapabilitiesFailed(Exception):
-    """Capabilities failed exception."""
-
-
 class ResponseException(Exception):
     """Response exception."""
 
@@ -228,8 +224,6 @@ class MideaDevice(threading.Thread):
             _LOGGER.debug("[%s] Authentication failed", self._device_id)
         except RefreshFailed:
             _LOGGER.debug("[%s] Refresh status is timed out", self._device_id)
-        except CapabilitiesFailed:
-            _LOGGER.debug("[%s] Refresh capabilities is timed out", self._device_id)
         except Exception as e:
             file = None
             lineno = None
