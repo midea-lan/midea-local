@@ -239,8 +239,6 @@ class MideaCloud:
         path: str,
         device_type: int,
         sn: str,
-        model_number: str | None,
-        manufacturer_code: str = "0000",
     ) -> str | None:
         """Download lua integration."""
         raise NotImplementedError
@@ -408,14 +406,12 @@ class MeijuCloud(MideaCloud):
         path: str,
         device_type: int,
         sn: str,
-        model_number: str | None,  # noqa: ARG002
-        manufacturer_code: str = "0000",
     ) -> str | None:
         """Download lua integration."""
         data = {
             "applianceSn": sn,
             "applianceType": f".{f'x{device_type:02x}'}",
-            "applianceMFCode": manufacturer_code,
+            "applianceMFCode": "0000",
             "version": "0",
             "iotAppId": self._app_id,
         }
@@ -591,8 +587,6 @@ class MSmartHomeCloud(MideaCloud):
         path: str,
         device_type: int,
         sn: str,
-        model_number: str | None,
-        manufacturer_code: str = "0000",
     ) -> str | None:
         """Download lua integration."""
         data = {
@@ -601,9 +595,8 @@ class MSmartHomeCloud(MideaCloud):
             "format": "2",
             "deviceId": self._device_id,
             "iotAppId": self._app_id,
-            "applianceMFCode": manufacturer_code,
-            "applianceType": f".{f'x{device_type:02x}'}",
-            "modelNumber": model_number,
+            "applianceMFCode": "0000",
+            "applianceType": hex(device_type),
             "applianceSn": self._security.aes_encrypt_with_fixed_key(
                 sn.encode("ascii"),
             ).hex(),
