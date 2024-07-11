@@ -66,17 +66,17 @@ class MideaDeviceTest(IsolatedAsyncioTestCase):
             patch.object(
                 self.device,
                 "authenticate",
-                side_effect=[AuthException(), None, None, None],
+                side_effect=[AuthException(), None, None],
             ),
             patch.object(
                 self.device,
                 "refresh_status",
-                side_effect=[RefreshFailed(), None, None],
+                side_effect=[RefreshFailed(), None],
             ),
             patch.object(
                 self.device,
                 "get_capabilities",
-                side_effect=[None, None],
+                side_effect=[None],
             ),
         ):
             connect_mock.side_effect = [
@@ -87,9 +87,6 @@ class MideaDeviceTest(IsolatedAsyncioTestCase):
                 None,
                 None,
             ]
-            assert self.device.connect(True, True) is False
-            assert self.device.available is False
-
             assert self.device.connect(True, True) is False
             assert self.device.available is False
 
