@@ -15,6 +15,7 @@ from midealocal.cloud import (
     MideaAirCloud,
     MideaCloud,
     MSmartHomeCloud,
+    get_default_cloud,
     get_midea_cloud,
     get_preset_account_cloud,
 )
@@ -55,6 +56,11 @@ class CloudTest(IsolatedAsyncioTestCase):
         )
         with pytest.raises(ElementMissing):
             get_midea_cloud("Invalid", session, "", "")
+
+    async def test_get_default_cloud(self) -> None:
+        """Test get default cloud name."""
+        default_cloud = get_default_cloud()
+        assert default_cloud == "MSmartHome"
 
     async def test_get_cloud_servers(self) -> None:
         """Test get cloud servers."""
