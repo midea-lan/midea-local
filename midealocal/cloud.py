@@ -26,7 +26,7 @@ SN8_MIN_SERIAL_LENGTH = 17
 
 _LOGGER = logging.getLogger(__name__)
 
-clouds = {
+SUPPORTED_CLOUDS = {
     "美的美居": {
         "class_name": "MeijuCloud",
         "app_id": "900",
@@ -41,6 +41,7 @@ clouds = {
         "api_url": "https://mp-prod.smartmidea.net/mas/v5/app/proxy?alias=",
     },
     "MSmartHome": {
+        "default": True,
         "class_name": "MSmartHomeCloud",
         "app_id": "1010",
         "app_key": "ac21b9f9cbfe4ca5a88562ef25e2b768",
@@ -77,6 +78,36 @@ DEFAULT_KEYS = {
         "key": "ed37bd31558a4b039aaf4e7a7a59aa7a75fd9101682045f69baf45d28380ae5c",
     },
 }
+
+PRESET_ACCOUNT_DATA = [
+    39182118275972017797890111985649342047468653967530949796945843010512,
+    29406100301096535908214728322278519471982973450672552249652548883645,
+    39182118275972017797890111985649342050088014265865102175083010656997,
+]
+
+
+def get_default_cloud() -> str:
+    """Return default cloud."""
+    for key, value in SUPPORTED_CLOUDS.items():
+        if cast(dict, value).get("default"):
+            return key
+    raise ElementMissing
+
+
+def get_preset_account_cloud() -> dict[str, str]:
+    """Return preset account data for cloud login."""
+    username: str = bytes.fromhex(
+        format((PRESET_ACCOUNT_DATA[0] ^ PRESET_ACCOUNT_DATA[1]), "X"),
+    ).decode("ASCII")
+    password: str = bytes.fromhex(
+        format((PRESET_ACCOUNT_DATA[0] ^ PRESET_ACCOUNT_DATA[2]), "X"),
+    ).decode("ASCII")
+
+    return {
+        "username": username,
+        "password": password,
+        "cloud_name": get_default_cloud(),
+    }
 
 
 class MideaCloud:
@@ -215,7 +246,7 @@ class MideaCloud:
     @staticmethod
     async def get_cloud_servers() -> dict[int, str]:
         """Get available cloud servers."""
-        return {i: cloud for i, cloud in enumerate(clouds, start=1)}
+        return {i: cloud for i, cloud in enumerate(SUPPORTED_CLOUDS, start=1)}
 
     async def list_home(self) -> dict[int, Any] | None:
         """List homes."""
@@ -259,18 +290,19 @@ class MeijuCloud(MideaCloud):
         password: str,
     ) -> None:
         """Initialize Meiju Cloud."""
+        cloud_data = cast(dict[str, Any], SUPPORTED_CLOUDS[cloud_name])
         super().__init__(
             session=session,
             security=MeijuCloudSecurity(
-                login_key=clouds[cloud_name]["login_key"],
-                iot_key=clouds[cloud_name]["iot_key"],
-                hmac_key=clouds[cloud_name]["hmac_key"],
+                login_key=cloud_data["login_key"],
+                iot_key=cloud_data["iot_key"],
+                hmac_key=cloud_data["hmac_key"],
             ),
-            app_id=clouds[cloud_name]["app_id"],
-            app_key=clouds[cloud_name]["app_key"],
+            app_id=cloud_data["app_id"],
+            app_key=cloud_data["app_key"],
             account=account,
             password=password,
-            api_url=clouds[cloud_name]["api_url"],
+            api_url=cloud_data["api_url"],
         )
 
     async def login(self) -> bool:
@@ -452,21 +484,24 @@ class MSmartHomeCloud(MideaCloud):
         password: str,
     ) -> None:
         """Initialize MSmart Cloud."""
+        cloud_data = cast(dict[str, Any], SUPPORTED_CLOUDS[cloud_name])
         super().__init__(
             session=session,
             security=MSmartCloudSecurity(
-                login_key=clouds[cloud_name]["app_key"],
-                iot_key=clouds[cloud_name]["iot_key"],
-                hmac_key=clouds[cloud_name]["hmac_key"],
+                login_key=cloud_data["app_key"],
+                iot_key=cloud_data["iot_key"],
+                hmac_key=cloud_data["hmac_key"],
             ),
-            app_id=clouds[cloud_name]["app_id"],
-            app_key=clouds[cloud_name]["app_key"],
+            app_id=cloud_data["app_id"],
+            app_key=cloud_data["app_key"],
             account=account,
             password=password,
-            api_url=clouds[cloud_name]["api_url"],
+            api_url=cloud_data["api_url"],
         )
         self._auth_base = base64.b64encode(
-            f"{self._app_key}:{clouds['MSmartHome']['iot_key']}".encode("ascii"),
+            f"{self._app_key}:{cloud_data['iot_key']}".encode(
+                "ascii",
+            ),
         ).decode("ascii")
 
     def _make_general_data(self) -> dict[str, Any]:
@@ -643,14 +678,15 @@ class MideaAirCloud(MideaCloud):
         password: str,
     ) -> None:
         """Initialize Midea Air Cloud."""
+        cloud_data = cast(dict[str, Any], SUPPORTED_CLOUDS[cloud_name])
         super().__init__(
             session=session,
-            security=MideaAirSecurity(login_key=clouds[cloud_name]["app_key"]),
-            app_id=clouds[cloud_name]["app_id"],
-            app_key=clouds[cloud_name]["app_key"],
+            security=MideaAirSecurity(login_key=cloud_data["app_key"]),
+            app_id=cloud_data["app_id"],
+            app_key=cloud_data["app_key"],
             account=account,
             password=password,
-            api_url=clouds[cloud_name]["api_url"],
+            api_url=cloud_data["api_url"],
         )
         self._session_id: str | None = None
 
@@ -783,14 +819,15 @@ def get_midea_cloud(
     password: str,
 ) -> MideaCloud:
     """Get Midea Cloud implementation."""
-    if cloud_name not in clouds:
+    if cloud_name not in SUPPORTED_CLOUDS:
         raise ElementMissing(
             f"Unsupported Cloud specified: {cloud_name}",
         )
 
+    cloud_data = cast(dict[str, Any], SUPPORTED_CLOUDS[cloud_name])
     return cast(
         MideaCloud,
-        globals()[clouds[cloud_name]["class_name"]](
+        globals()[cloud_data["class_name"]](
             cloud_name=cloud_name,
             session=session,
             account=account,

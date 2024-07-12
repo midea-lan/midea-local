@@ -15,7 +15,9 @@ from midealocal.cloud import (
     MideaAirCloud,
     MideaCloud,
     MSmartHomeCloud,
+    get_default_cloud,
     get_midea_cloud,
+    get_preset_account_cloud,
 )
 from midealocal.exceptions import ElementMissing
 
@@ -55,10 +57,22 @@ class CloudTest(IsolatedAsyncioTestCase):
         with pytest.raises(ElementMissing):
             get_midea_cloud("Invalid", session, "", "")
 
+    async def test_get_default_cloud(self) -> None:
+        """Test get default cloud name."""
+        default_cloud = get_default_cloud()
+        assert default_cloud == "MSmartHome"
+
     async def test_get_cloud_servers(self) -> None:
         """Test get cloud servers."""
         servers = await MideaCloud.get_cloud_servers()
         assert len(servers.items()) == 5
+
+    async def test_get_preset_account_cloud(self) -> None:
+        """Test get preset cloud account."""
+        credentials = get_preset_account_cloud()
+        assert credentials["username"] == "c414e631394b8639@outlook.com"
+        assert credentials["password"] == "a0d6e30c94b15"
+        assert credentials["cloud_name"] == "MSmartHome"
 
     async def test_midea_cloud_unimplemented(self) -> None:
         """Test unimplemented MideaCloud methods."""
