@@ -140,7 +140,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         )
         assert cloud is not None
 
-        # test method1 + method2 + default key
+        # test method1 + method2
         keys3: dict = await cloud.get_cloud_keys(100)
         # test response token/key
         assert keys3[1]["token"] == "method1_return_token1"
@@ -148,23 +148,23 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert keys3[2]["token"] == "method2_return_token2"
         assert keys3[2]["key"] == "method2_return_key2"
         # simple test default key with length
-        assert len(keys3) == 3
+        assert len(keys3) == 2
 
-        # test method1 + default key
+        # test method1
         keys1: dict = await cloud.get_cloud_keys(100)
         # test response token/key
         assert keys1[1]["token"] == "method1_return_token1"
         assert keys1[1]["key"] == "method1_return_key1"
         # simple test default key with length
-        assert len(keys1) == 2
+        assert len(keys1) == 1
 
-        # test method2 + default key
+        # test method2
         keys2: dict = await cloud.get_cloud_keys(100)
         # test response token/key
         assert keys2[2]["token"] == "method2_return_token2"
         assert keys2[2]["key"] == "method2_return_key2"
         # simple test default key with length
-        assert len(keys2) == 2
+        assert len(keys2) == 1
 
         # test only default key
         keys = await cloud.get_default_keys()
