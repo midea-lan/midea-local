@@ -8,12 +8,12 @@ import pytest
 from midealocal.cloud import default_keys
 from midealocal.device import (
     AuthException,
-    CapabilitiesFailed,
     MideaDevice,
     ParseMessageResult,
     ProtocolVersion,
     RefreshFailed,
 )
+from midealocal.devices.ac.message import MessageCapabilitiesQuery
 from midealocal.exceptions import SocketException
 from midealocal.message import MessageType
 
@@ -66,17 +66,17 @@ class MideaDeviceTest(IsolatedAsyncioTestCase):
             patch.object(
                 self.device,
                 "authenticate",
-                side_effect=[AuthException(), None, None, None],
+                side_effect=[AuthException(), None, None],
             ),
             patch.object(
                 self.device,
                 "refresh_status",
-                side_effect=[RefreshFailed(), None, None],
+                side_effect=[RefreshFailed(), None],
             ),
             patch.object(
                 self.device,
                 "get_capabilities",
-                side_effect=[CapabilitiesFailed(), None],
+                side_effect=[None],
             ),
         ):
             connect_mock.side_effect = [
@@ -87,9 +87,6 @@ class MideaDeviceTest(IsolatedAsyncioTestCase):
                 None,
                 None,
             ]
-            assert self.device.connect(True, True) is False
-            assert self.device.available is False
-
             assert self.device.connect(True, True) is False
             assert self.device.available is False
 
@@ -225,50 +222,16 @@ class MideaDeviceTest(IsolatedAsyncioTestCase):
 
     def test_get_capabilities(self) -> None:
         """Test get capabilities."""
-        self.device._appliance_query = False
         self.device.get_capabilities()  # Empty capabilities
-        self.device._appliance_query = True
-        socket_mock = MagicMock()
         with (
-            patch.object(
-                socket_mock,
-                "recv",
-                side_effect=[
-                    bytearray([]),
-                    bytearray([0x0]),
-                    bytearray([0x0]),
-                    bytearray([0x0]),
-                    TimeoutError(),
-                ],
-            ),
             patch.object(self.device, "build_send", return_value=None),
             patch.object(
                 self.device,
-                "parse_message",
-                side_effect=[
-                    ParseMessageResult.SUCCESS,
-                    ParseMessageResult.PADDING,
-                    ParseMessageResult.ERROR,
-                ],
+                "capabilities_query",
+                return_value=[MessageCapabilitiesQuery(ProtocolVersion.V2, False)],
             ),
         ):
-            self.device._socket = None
-            with pytest.raises(SocketException):
-                self.device.get_capabilities(True)
-
-            self.device._socket = socket_mock
-            with pytest.raises(OSError, match="Empty message received."):
-                self.device.get_capabilities(True)
-
-            self.device.get_capabilities(True)  # SUCCESS
-            self.device.get_capabilities(True)  # PADDING
-
-            with pytest.raises(CapabilitiesFailed):
-                self.device.get_capabilities(True)  # ERROR
-            with pytest.raises(CapabilitiesFailed):
-                self.device.get_capabilities(True)  # Timeout
-            with pytest.raises(CapabilitiesFailed):
-                self.device.get_capabilities(True)  # Unsupported protocol
+            self.device.get_capabilities()
 
     def test_refresh_status(self) -> None:
         """Test refresh status."""
