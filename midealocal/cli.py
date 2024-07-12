@@ -37,6 +37,7 @@ def get_config_file_path(relative: bool = False) -> Path:
 async def _get_keys(args: Namespace, device_id: int) -> dict[int, dict[str, Any]]:
     if not args.cloud_name or not args.username or not args.password:
         raise ElementMissing("Missing required parameters for cloud request.")
+    cloud_keys = {}
     async with aiohttp.ClientSession() as session:
         cloud = get_midea_cloud(
             cloud_name=args.cloud_name,
@@ -45,7 +46,9 @@ async def _get_keys(args: Namespace, device_id: int) -> dict[int, dict[str, Any]
             password=args.password,
         )
 
-        return await cloud.get_keys(device_id)
+        cloud_keys = await cloud.get_cloud_keys(device_id)
+    default_keys = await cloud.get_default_keys()
+    return {**cloud_keys, **default_keys}
 
 
 async def _discover(args: Namespace) -> None:

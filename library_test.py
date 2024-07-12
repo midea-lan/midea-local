@@ -85,7 +85,7 @@ async def main() -> None:
             _LOGGER.error(msg)
             await session.close()
             sys.exit(2)
-        cloud_keys = await cloud.get_keys(first_device["device_id"])
+        cloud_keys = await cloud.get_cloud_keys(first_device["device_id"])
     _LOGGER.info("Fist device Cloud info: %s", cloud_keys)
 
     token = ""
