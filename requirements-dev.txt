@@ -1,5 +1,6 @@
 build
 mypy
+pylint
 pytest
 pytest-asyncio
 pytest-cov
