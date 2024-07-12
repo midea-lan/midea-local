@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.0](https://github.com/rokam/midea-local/compare/v1.3.2...v2.0.0) (2024-07-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **cli:** download protocol ([#214](https://github.com/rokam/midea-local/issues/214))
+
+### Features
+
+* **cli:** download protocol ([#214](https://github.com/rokam/midea-local/issues/214)) ([7a99374](https://github.com/rokam/midea-local/commit/7a993745c0c7fcf1e9eff86a2287e3cbff3f3d8d))
+* rework auth flow - part 1 ([#219](https://github.com/rokam/midea-local/issues/219)) ([d8ac4fb](https://github.com/rokam/midea-local/commit/d8ac4fb5de25dbf04548b411f5a930878b32a2df))
+* rework auth flow - part 2 ([#221](https://github.com/rokam/midea-local/issues/221)) ([f74ff8e](https://github.com/rokam/midea-local/commit/f74ff8e1af924d84621958d0c6d8659cef1b98e6))
+
 ## [1.3.2](https://github.com/rokam/midea-local/compare/v1.3.1...v1.3.2) (2024-07-11)
 
 
