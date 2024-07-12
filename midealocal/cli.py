@@ -129,8 +129,9 @@ class MideaCLI:
 
     async def download(self) -> None:
         """Download lua from cloud."""
-        device_type = int.from_bytes(self.namespace.device_type)
+        device_type = int.from_bytes(self.namespace.device_type or bytearray())
         device_sn = str(self.namespace.device_sn)
+        model: str | None = None
 
         if self.namespace.host:
             devices = discover(ip_address=self.namespace.host)
@@ -142,6 +143,7 @@ class MideaCLI:
             _, device = devices.popitem()
             device_type = device["type"]
             device_sn = device["sn"]
+            model = device["model"]
 
         cloud = await self._get_cloud()
         _LOGGER.debug("Try to authenticate to the cloud.")
@@ -150,7 +152,7 @@ class MideaCLI:
             return
 
         _LOGGER.debug("Download lua file for %s [%s]", device_sn, hex(device_type))
-        lua = await cloud.download_lua(str(Path()), device_type, device_sn)
+        lua = await cloud.download_lua(str(Path()), device_type, device_sn, model)
         _LOGGER.info("Downloaded lua file: %s", lua)
 
     def run(self, namespace: Namespace) -> None:

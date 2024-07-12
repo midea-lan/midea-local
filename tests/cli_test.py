@@ -192,6 +192,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 str(Path()),
                 mock_device["type"],
                 mock_device["sn"],
+                mock_device["model"],
             )
 
     def test_run(self) -> None:
@@ -248,3 +249,12 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
 
         if clear_config:
             get_config_file_path().unlink()
+
+    def test_get_config_file_path(self) -> None:
+        """Test get config file path."""
+        mock_path = MagicMock()
+        with (
+            patch("midealocal.cli.Path", return_value=mock_path),
+            patch.object(mock_path, "exists", return_value=False),
+        ):
+            get_config_file_path()

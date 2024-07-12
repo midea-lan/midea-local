@@ -602,14 +602,15 @@ class MSmartHomeCloud(MideaCloud):
             "deviceId": self._device_id,
             "iotAppId": self._app_id,
             "applianceMFCode": manufacturer_code,
-            "applianceType": f".{f'x{device_type:02x}'}",
-            "modelNumber": model_number,
+            "applianceType": hex(device_type),
             "applianceSn": self._security.aes_encrypt_with_fixed_key(
                 sn.encode("ascii"),
             ).hex(),
             "version": "0",
             "encryptedType ": "2",
         }
+        if model_number is not None:
+            data["modelNumber"] = model_number
         fnm = None
         if response := await self._api_request(
             endpoint="/v2/luaEncryption/luaGet",
