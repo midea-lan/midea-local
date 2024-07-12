@@ -167,8 +167,7 @@ class C3MessageBody(MessageBody):
             body[data_offset + 1] & 0x10 > 0,
             body[data_offset + 1] & 0x20 > 0,
         ]
-        self.silent_mode = body[data_offset + 2] & 0x02 > 0
-        self.super_silent = body[data_offset + 2] & 0x04 > 0
+        self.silent_mode = body[data_offset + 2] & 0x02
         self.eco_mode = body[data_offset + 2] & 0x08 > 0
         self.mode = body[data_offset + 3]
         self.mode_auto = body[data_offset + 4]
@@ -218,6 +217,15 @@ class C3Notify1MessageBody(MessageBody):
         )
 
 
+class C3QuerySilenceMessageBody(MessageBody):
+    """C3 Query silence message body."""
+
+    def __init__(self, body: bytearray, data_offset: int = 0) -> None:
+        """Initialize C3 notify1 message body."""
+        super().__init__(body)
+        self.silence_mode = (body[data_offset] & 0x1) + (body[data_offset] & 0x8 >> 2)
+
+
 class MessageC3Response(MessageResponse):
     """C3 message response."""
 
@@ -234,4 +242,6 @@ class MessageC3Response(MessageResponse):
             self.message_type == MessageType.notify1 and self.body_type == BodyType.X04
         ):
             self.set_body(C3Notify1MessageBody(super().body, data_offset=1))
+        elif self.message_type == MessageType.query and self.body_type == BodyType.X05:
+            self.set_body(C3QuerySilenceMessageBody(super().body, data_offset=1))
         self.set_attr()
