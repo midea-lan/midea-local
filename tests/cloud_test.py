@@ -321,14 +321,16 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert await cloud.login()
 
         with TemporaryDirectory() as tmpdir:
-            file = await cloud.download_lua(tmpdir, 10, "00000000")
+            file = await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
             assert file is not None
             file_path = Path(file)
             assert Path.exists(file_path)
             Path.unlink(file_path)
 
             res.status = 404
-            assert await cloud.download_lua(tmpdir, 10, "00000000") is None
+            assert (
+                await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010") is None
+            )
 
     async def test_msmartcloud_login_success(self) -> None:
         """Test MSmartCloud login."""
@@ -497,7 +499,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert await cloud.login()
 
         with TemporaryDirectory() as tmpdir:
-            file = await cloud.download_lua(tmpdir, 10, "00000000")
+            file = await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
             assert file is not None
             file_path = Path(file)
             assert Path.exists(file_path)
@@ -662,4 +664,4 @@ class CloudTest(IsolatedAsyncioTestCase):
         )
         assert cloud is not None
         with pytest.raises(NotImplementedError), TemporaryDirectory() as tmpdir:
-            await cloud.download_lua(tmpdir, 10, "00000000")
+            await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
