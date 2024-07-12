@@ -10,12 +10,14 @@ import pytest
 from aiohttp import ClientConnectionError
 
 from midealocal.cloud import (
+    DEFAULT_KEYS,
     MeijuCloud,
     MideaAirCloud,
     MideaCloud,
     MSmartHomeCloud,
-    default_keys,
+    get_default_cloud,
     get_midea_cloud,
+    get_preset_account_cloud,
 )
 from midealocal.exceptions import ElementMissing
 
@@ -55,10 +57,22 @@ class CloudTest(IsolatedAsyncioTestCase):
         with pytest.raises(ElementMissing):
             get_midea_cloud("Invalid", session, "", "")
 
+    async def test_get_default_cloud(self) -> None:
+        """Test get default cloud name."""
+        default_cloud = get_default_cloud()
+        assert default_cloud == "MSmartHome"
+
     async def test_get_cloud_servers(self) -> None:
         """Test get cloud servers."""
         servers = await MideaCloud.get_cloud_servers()
         assert len(servers.items()) == 5
+
+    async def test_get_preset_account_cloud(self) -> None:
+        """Test get preset cloud account."""
+        credentials = get_preset_account_cloud()
+        assert credentials["username"] == "c414e631394b8639@outlook.com"
+        assert credentials["password"] == "a0d6e30c94b15"
+        assert credentials["cloud_name"] == "MSmartHome"
 
     async def test_midea_cloud_unimplemented(self) -> None:
         """Test unimplemented MideaCloud methods."""
@@ -116,7 +130,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert not await cloud.login()
 
     async def test_meijucloud_get_keys(self) -> None:
-        """Test MeijuCloud get_keys."""
+        """Test MeijuCloud get_cloud_keys."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
@@ -140,36 +154,36 @@ class CloudTest(IsolatedAsyncioTestCase):
         )
         assert cloud is not None
 
-        # test method1 + method2 + default key
-        keys3: dict = await cloud.get_keys(100)
+        # test method1 + method2
+        keys3: dict = await cloud.get_cloud_keys(100)
         # test response token/key
         assert keys3[1]["token"] == "method1_return_token1"
         assert keys3[1]["key"] == "method1_return_key1"
         assert keys3[2]["token"] == "method2_return_token2"
         assert keys3[2]["key"] == "method2_return_key2"
         # simple test default key with length
-        assert len(keys3) == 3
+        assert len(keys3) == 2
 
-        # test method1 + default key
-        keys1: dict = await cloud.get_keys(100)
+        # test method1
+        keys1: dict = await cloud.get_cloud_keys(100)
         # test response token/key
         assert keys1[1]["token"] == "method1_return_token1"
         assert keys1[1]["key"] == "method1_return_key1"
         # simple test default key with length
-        assert len(keys1) == 2
+        assert len(keys1) == 1
 
-        # test method2 + default key
-        keys2: dict = await cloud.get_keys(100)
+        # test method2
+        keys2: dict = await cloud.get_cloud_keys(100)
         # test response token/key
         assert keys2[2]["token"] == "method2_return_token2"
         assert keys2[2]["key"] == "method2_return_key2"
         # simple test default key with length
-        assert len(keys2) == 2
+        assert len(keys2) == 1
 
         # test only default key
-        keys = await cloud.get_keys(100)
+        keys = await cloud.get_default_keys()
         assert len(keys) == 1
-        assert keys == default_keys
+        assert keys == DEFAULT_KEYS
 
     async def test_meijucloud_list_home(self) -> None:
         """Test MeijuCloud list_home."""

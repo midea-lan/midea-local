@@ -133,7 +133,7 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.fresh_air_mode: None,
                 DeviceAttributes.fresh_air_1: None,
                 DeviceAttributes.fresh_air_2: None,
-                DeviceAttributes.MODES: dict[str, bool],
+                DeviceAttributes.MODES: {},
             },
         )
         self._fresh_air_version: DeviceAttributes | None = None

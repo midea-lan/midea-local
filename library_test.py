@@ -10,7 +10,7 @@ from pathlib import Path
 import aiohttp
 from colorlog import ColoredFormatter
 
-from midealocal.cloud import clouds, get_midea_cloud
+from midealocal.cloud import SUPPORTED_CLOUDS, get_midea_cloud
 from midealocal.devices import device_selector
 from midealocal.discover import discover
 
@@ -31,7 +31,7 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
         "--cloud_name",
         "-cn",
         type=str,
-        help="Set Cloud name, options are: " + ", ".join(clouds.keys()),
+        help="Set Cloud name, options are: " + ", ".join(SUPPORTED_CLOUDS.keys()),
     )
     parser.add_argument(
         "--configfile",
@@ -85,7 +85,7 @@ async def main() -> None:
             _LOGGER.error(msg)
             await session.close()
             sys.exit(2)
-        cloud_keys = await cloud.get_keys(first_device["device_id"])
+        cloud_keys = await cloud.get_cloud_keys(first_device["device_id"])
     _LOGGER.info("Fist device Cloud info: %s", cloud_keys)
 
     token = ""

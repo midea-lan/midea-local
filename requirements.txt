@@ -1,6 +1,7 @@
 aiofiles
 aiohttp
-build
+colorlog
 defusedxml
 ifaddr
 pycryptodome
+platformdirs

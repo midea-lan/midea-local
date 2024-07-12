@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.3.2](https://github.com/rokam/midea-local/compare/v1.3.1...v1.3.2) (2024-07-11)
+
+
+### Bug Fixes
+
+* **capabilities:** make capabilities optional ([#217](https://github.com/rokam/midea-local/issues/217)) ([c269e71](https://github.com/rokam/midea-local/commit/c269e717c2b2b5e7f390f0e2ba781513584442b2))
+
+## [1.3.1](https://github.com/rokam/midea-local/compare/v1.3.0...v1.3.1) (2024-07-10)
+
+
+### Bug Fixes
+
+* wrong dependencies with package ([#215](https://github.com/rokam/midea-local/issues/215)) ([d63fc6b](https://github.com/rokam/midea-local/commit/d63fc6b49394f9bfc9c9cb32b34c36b5e97f02a6))
+
+## [1.3.0](https://github.com/rokam/midea-local/compare/v1.2.0...v1.3.0) (2024-07-10)
+
+
+### Features
+
+* **c3:** temperature step as customize ([#209](https://github.com/rokam/midea-local/issues/209)) ([4da6e3e](https://github.com/rokam/midea-local/commit/4da6e3eb18eae9b24b4300274e307db0af8633de))
+* **cli:** midealocal CLI tool ([#204](https://github.com/rokam/midea-local/issues/204)) ([236e33a](https://github.com/rokam/midea-local/commit/236e33a95fde65aba499832bb6901f32ac21628d))
+
+
+### Bug Fixes
+
+* **device:** capabilities ([#212](https://github.com/rokam/midea-local/issues/212)) ([f7cff37](https://github.com/rokam/midea-local/commit/f7cff3767522a6f1008a5f7b4ef8677ecd9296bc))
+
 ## [1.2.0](https://github.com/rokam/midea-local/compare/v1.1.4...v1.2.0) (2024-07-08)
 
 
