@@ -4,7 +4,12 @@ from unittest.mock import patch
 
 import pytest
 
-from midealocal.devices.c3 import C3DeviceMode, DeviceAttributes, MideaC3Device
+from midealocal.devices.c3 import (
+    C3DeviceMode,
+    C3SilentLevel,
+    DeviceAttributes,
+    MideaC3Device,
+)
 from midealocal.devices.c3.message import (
     MessageQuery,
 )
@@ -46,6 +51,10 @@ class TestMideaC3Device:
         assert self.device.attributes[DeviceAttributes.zone1_water_temp_mode] is False
         assert self.device.attributes[DeviceAttributes.zone2_water_temp_mode] is False
         assert self.device.attributes[DeviceAttributes.silent_mode] is False
+        assert (
+            self.device.attributes[DeviceAttributes.SILENT_LEVEL]
+            == C3SilentLevel.SILENT
+        )
         assert self.device.attributes[DeviceAttributes.eco_mode] is False
         assert self.device.attributes[DeviceAttributes.tbh] is False
         assert self.device.attributes[DeviceAttributes.mode] == 1

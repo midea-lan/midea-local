@@ -1,6 +1,5 @@
 """Midea local C3 message."""
 
-from midealocal.devices.c3 import C3SilentLevel
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -111,13 +110,14 @@ class MessageSetSilent(MessageC3Base):
             message_type=MessageType.set,
             body_type=0x05,
         )
-        self.silent_mode = C3SilentLevel.OFF
+        self.silent_mode = False
+        self.silent_level = 0
 
     @property
     def _body(self) -> bytearray:
         return bytearray(
             [
-                self.silent_mode,
+                self.silent_level if self.silent_mode else 0x00,
                 0x00,
                 0x00,
                 0x00,
@@ -167,7 +167,7 @@ class C3MessageBody(MessageBody):
             body[data_offset + 1] & 0x10 > 0,
             body[data_offset + 1] & 0x20 > 0,
         ]
-        self.silent_mode = body[data_offset + 2] & 0x02
+        self.silent_mode = body[data_offset + 2] & 0x02 > 0
         self.eco_mode = body[data_offset + 2] & 0x08 > 0
         self.mode = body[data_offset + 3]
         self.mode_auto = body[data_offset + 4]
@@ -223,7 +223,8 @@ class C3QuerySilenceMessageBody(MessageBody):
     def __init__(self, body: bytearray, data_offset: int = 0) -> None:
         """Initialize C3 notify1 message body."""
         super().__init__(body)
-        self.silence_mode = (body[data_offset] & 0x1) + (body[data_offset] & 0x8 >> 2)
+        self.silence_mode = body[data_offset] & 0x1 > 0
+        self.silence_level = (body[data_offset] & 0x1) + (body[data_offset] & 0x8 >> 2)
 
 
 class MessageC3Response(MessageResponse):
