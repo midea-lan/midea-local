@@ -14,7 +14,7 @@ import aiohttp
 import platformdirs
 from colorlog import ColoredFormatter
 
-from midealocal.cloud import MideaCloud, SUPPORTED_CLOUDS, get_midea_cloud
+from midealocal.cloud import SUPPORTED_CLOUDS, MideaCloud, get_midea_cloud
 from midealocal.device import ProtocolVersion
 from midealocal.devices import device_selector
 from midealocal.discover import discover
