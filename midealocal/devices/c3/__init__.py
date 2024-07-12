@@ -58,10 +58,17 @@ class DeviceAttributes(StrEnum):
     total_produced_energy = "total_produced_energy"
     outdoor_temperature = "outdoor_temperature"
     silent_mode = "silent_mode"
-    super_silent = "super_silent"
     eco_mode = "eco_mode"
     tbh = "tbh"
     error_code = "error_code"
+
+
+class C3SilentLevel(IntEnum):
+    """C3 Silent Level."""
+
+    OFF = 0x0
+    SILENT = 0x1
+    SUPER_SILENT = 0x3
 
 
 class C3DeviceMode(IntEnum):
@@ -112,8 +119,7 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.zone2_room_temp_mode: False,
                 DeviceAttributes.zone1_water_temp_mode: False,
                 DeviceAttributes.zone2_water_temp_mode: False,
-                DeviceAttributes.silent_mode: False,
-                DeviceAttributes.super_silent: False,
+                DeviceAttributes.silent_mode: C3SilentLevel.OFF,
                 DeviceAttributes.eco_mode: False,
                 DeviceAttributes.tbh: False,
                 DeviceAttributes.mode: 1,
@@ -281,7 +287,7 @@ class MideaC3Device(MideaDevice):
         elif attr == DeviceAttributes.eco_mode:
             message = MessageSetECO(self._protocol_version)
             setattr(message, str(attr), value)
-        elif attr in [DeviceAttributes.silent_mode, DeviceAttributes.super_silent]:
+        elif attr == DeviceAttributes.silent_mode:
             message = MessageSetSilent(self._protocol_version)
             setattr(message, str(attr), value)
         if message is not None:

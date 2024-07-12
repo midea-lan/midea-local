@@ -1,5 +1,6 @@
 """Midea local C3 message."""
 
+from midealocal.devices.c3 import C3SilentLevel
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -110,17 +111,13 @@ class MessageSetSilent(MessageC3Base):
             message_type=MessageType.set,
             body_type=0x05,
         )
-        self.silent_mode = False
-        self.super_silent = False
+        self.silent_mode = C3SilentLevel.OFF
 
     @property
     def _body(self) -> bytearray:
-        silent_mode = 0x01 if self.silent_mode else 0
-        super_silent = 0x02 if self.super_silent else 0
-
         return bytearray(
             [
-                silent_mode | super_silent,
+                self.silent_mode,
                 0x00,
                 0x00,
                 0x00,
