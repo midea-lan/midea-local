@@ -132,6 +132,10 @@ reports/
 # IDE
 .idea/
 
-# Optional config file for library_test.py script
+# Optional config file for library script
 library_test.json
 midea-local.json
+
+# LUA protocol implementation
+*.lua
+cov.xml
