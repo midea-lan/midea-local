@@ -17,10 +17,6 @@ persistent=yes
 # increase not-an-iterable messages.
 prefer-stubs=yes
 
-# Minimum Python version to use for version dependent checks. Will default to
-# the version used to run pylint.
-py-version=3.11
-
 # Discover python modules and packages in the file system subtree.
 recursive=true
 
@@ -32,11 +28,9 @@ suggestion-mode=yes
 # active Python interpreter and may run arbitrary code.
 unsafe-load-any-extension=no
 
-[MASTER]
-
-# Add <file or directory> to the black list. It should be a
-# base name, not a path. You may set this option multiple times.
-ignore=tests
+# Add files or directories matching the regex patterns to the blacklist.
+# The regex matches against base names, not paths.
+ignore=^tests/**/*.py
 
 [BASIC]
 
