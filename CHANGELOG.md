@@ -5,7 +5,7 @@
 
 ### ⚠ BREAKING CHANGES
 
-* **cli:** download protocol ([#214](https://github.com/rokam/midea-local/issues/214))
+* rework auth flow - part 1 ([#219](https://github.com/rokam/midea-local/issues/219)) ([d8ac4fb](https://github.com/rokam/midea-local/commit/d8ac4fb5de25dbf04548b411f5a930878b32a2df))
 
 ### Features
 
