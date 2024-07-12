@@ -138,3 +138,4 @@ midea-local.json
 
 # LUA protocol implementation
 *.lua
+cov.xml

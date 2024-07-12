@@ -153,7 +153,7 @@ class MideaCLI:
         lua = await cloud.download_lua(str(Path()), device_type, device_sn)
         _LOGGER.info("Downloaded lua file: %s", lua)
 
-    def run(self, namespace: Namespace) -> NoReturn:
+    def run(self, namespace: Namespace) -> None:
         """Do setup logging, validate args and execute the desired function."""
         self.namespace = namespace
         # Configure logging
@@ -191,9 +191,8 @@ class MideaCLI:
             else:
                 self.namespace.func()
 
-        if self.session:
+        if hasattr(self, "session") and self.session:
             asyncio.run(self.session.close())
-        sys.exit(0)
 
 
 def get_config_file_path(relative: bool = False) -> Path:
@@ -312,6 +311,7 @@ def main() -> NoReturn:
 
     # Run with args
     cli.run(namespace)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
