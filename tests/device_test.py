@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from midealocal.cloud import default_keys
+from midealocal.cloud import DEFAULT_KEYS
 from midealocal.device import (
     AuthException,
     MideaDevice,
@@ -42,8 +42,8 @@ class MideaDeviceTest(IsolatedAsyncioTestCase):
             device_type=0xAC,
             ip_address="192.168.1.100",
             port=6444,
-            token=default_keys[99]["token"],
-            key=default_keys[99]["key"],
+            token=DEFAULT_KEYS[99]["token"],
+            key=DEFAULT_KEYS[99]["key"],
             protocol=3,
             model="test_model",
             subtype=1,
