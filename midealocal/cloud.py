@@ -70,7 +70,7 @@ clouds = {
     },
 }
 
-default_keys = {
+DEFAULT_KEYS = {
     99: {
         "token": "ee755a84a115703768bcc7c6c13d3d629aa416f1e2fd798beb9f78cbb1381d09"
         "1cc245d7b063aad2a900e5b498fbd936c811f5d504b2e656d4f33b3bbc6d1da3",
@@ -182,6 +182,10 @@ class MideaCloud:
         """Authenticate."""
         raise NotImplementedError
 
+    async def get_default_keys(self) -> dict[int, dict[str, Any]]:
+        """Get default cloud keys."""
+        return DEFAULT_KEYS
+
     async def get_keys(self, appliance_id: int) -> dict[int, dict[str, Any]]:
         """Get keys for device."""
         result = {}
@@ -206,8 +210,6 @@ class MideaCloud:
                             "token": token["token"].lower(),
                             "key": token["key"].lower(),
                         }
-        # add default key with method 1 and method 2 key
-        result.update(default_keys)
         return result
 
     @staticmethod
