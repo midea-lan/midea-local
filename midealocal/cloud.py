@@ -186,7 +186,7 @@ class MideaCloud:
         """Get default cloud keys."""
         return DEFAULT_KEYS
 
-    async def get_keys(self, appliance_id: int) -> dict[int, dict[str, Any]]:
+    async def get_cloud_keys(self, appliance_id: int) -> dict[int, dict[str, Any]]:
         """Get keys for device."""
         result = {}
         for method in [1, 2]:
