@@ -159,7 +159,7 @@ def main() -> NoReturn:
         "-cn",
         type=str,
         help="Set Cloud name",
-        choice=SUPPORTED_CLOUDS.keys(),
+        choices=SUPPORTED_CLOUDS.keys(),
     )
 
     # Setup discover parser
