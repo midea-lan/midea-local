@@ -22,6 +22,7 @@ from midealocal.exceptions import ElementMissing
 from midealocal.version import __version__
 
 _LOGGER = logging.getLogger("cli")
+
 LOG_FORMAT = (
     "%(asctime)s.%(msecs)03d %(levelname)s (%(threadName)s) [%(name)s] %(message)s"
 )
@@ -35,14 +36,15 @@ class MideaCLI:
 
     async def _get_cloud(self) -> MideaCloud:
         """Get cloud instance."""
-        if not hasattr(self, "session"):
-            self.session = aiohttp.ClientSession()
         if (
             not self.namespace.cloud_name
             or not self.namespace.username
             or not self.namespace.password
         ):
             raise ElementMissing("Missing required parameters for cloud request.")
+
+        if not hasattr(self, "session"):
+            self.session = aiohttp.ClientSession()
 
         return get_midea_cloud(
             cloud_name=self.namespace.cloud_name,
@@ -53,7 +55,9 @@ class MideaCLI:
 
     async def _get_keys(self, device_id: int) -> dict[int, dict[str, Any]]:
         cloud = await self._get_cloud()
-        return await cloud.get_keys(device_id)
+        cloud_keys = await cloud.get_cloud_keys(device_id)
+        default_keys = await cloud.get_default_keys()
+        return {**cloud_keys, **default_keys}
 
     async def discover(self) -> None:
         """Discover device information."""

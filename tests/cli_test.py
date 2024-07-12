@@ -86,8 +86,11 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             ),
         ):
             mock_discover.return_value = {1: mock_device}
-            mock_cloud_instance.get_keys.return_value = {
+            mock_cloud_instance.get_cloud_keys.return_value = {
                 0: {"token": "token", "key": "key"},
+            }
+            mock_cloud_instance.get_default_keys.return_value = {
+                99: {"token": "token", "key": "key"},
             }
 
             await self.cli.discover()  # V3 device
