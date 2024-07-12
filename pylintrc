@@ -3,7 +3,7 @@
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use, and will cap the count on Windows to
 # avoid hangs.
-jobs=1
+jobs=0
 
 # Control the amount of potential inferred values when inferring a single
 # object. This can help the performance when dealing with large functions or
@@ -15,7 +15,7 @@ persistent=yes
 
 # Resolve imports to .pyi stubs if available. May reduce no-member messages and
 # increase not-an-iterable messages.
-prefer-stubs=no
+prefer-stubs=yes
 
 # Minimum Python version to use for version dependent checks. Will default to
 # the version used to run pylint.
@@ -32,6 +32,11 @@ suggestion-mode=yes
 # active Python interpreter and may run arbitrary code.
 unsafe-load-any-extension=no
 
+[MASTER]
+
+# Add <file or directory> to the black list. It should be a
+# base name, not a path. You may set this option multiple times.
+ignore=tests
 
 [BASIC]
 
@@ -63,7 +68,7 @@ const-naming-style=UPPER_CASE
 
 # Minimum line length for functions/classes that require docstrings, shorter
 # ones are exempt.
-docstring-min-length=-1
+docstring-min-length=4
 
 # Naming style matching correct function names.
 function-naming-style=snake_case
