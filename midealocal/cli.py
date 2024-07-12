@@ -14,7 +14,7 @@ import aiohttp
 import platformdirs
 from colorlog import ColoredFormatter
 
-from midealocal.cloud import MideaCloud, clouds, get_midea_cloud
+from midealocal.cloud import MideaCloud, SUPPORTED_CLOUDS, get_midea_cloud
 from midealocal.device import ProtocolVersion
 from midealocal.devices import device_selector
 from midealocal.discover import discover
@@ -249,7 +249,7 @@ def main() -> NoReturn:
         "-cn",
         type=str,
         help="Set Cloud name",
-        choices=clouds.keys(),
+        choices=SUPPORTED_CLOUDS.keys(),
     )
 
     # Setup discover parser
