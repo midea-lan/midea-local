@@ -127,9 +127,8 @@ class TestMessageC3Response:
             ],
         )
 
-    def test_message_generic_query(self) -> None:
-        """Test message generic query."""
-        self.header[-1] = MessageType.set
+    def test_message_generic_response(self) -> None:
+        """Test message generic response."""
         body = bytearray(
             [
                 BodyType.X01,
@@ -163,58 +162,151 @@ class TestMessageC3Response:
             ],
         )
 
-        response = MessageC3Response(self.header + body)
+        for message_type in (
+            MessageType.set,
+            MessageType.query,
+            MessageType.notify1,
+            MessageType.notify2,
+        ):
+            self.header[-1] = message_type
+            response = MessageC3Response(self.header + body)
 
-        assert response.body_type == BodyType.X01
-        assert hasattr(response, "zone1_power")
-        assert response.zone1_power is True
-        assert hasattr(response, "zone2_power")
-        assert response.zone2_power is False
-        assert hasattr(response, "dhw_power")
-        assert response.dhw_power is True
-        assert hasattr(response, "zone1_curve")
-        assert response.zone1_curve is True
-        assert hasattr(response, "zone2_curve")
-        assert response.zone2_curve is False
-        assert hasattr(response, "disinfect")
-        assert response.disinfect is True
-        assert hasattr(response, "tbh")
-        assert response.tbh is True
-        assert hasattr(response, "fast_dhw")
-        assert response.fast_dhw is False
-        assert hasattr(response, "zone_temp_type")
-        assert response.zone_temp_type == [True, True]
-        assert hasattr(response, "silent_mode")
-        assert response.silent_mode is True
-        assert hasattr(response, "eco_mode")
-        assert response.eco_mode is True
-        assert hasattr(response, "mode")
-        assert response.mode == C3DeviceMode.HEAT
-        assert hasattr(response, "mode_auto")
-        assert response.mode_auto == C3DeviceMode.COOL
-        assert hasattr(response, "zone_target_temp")
-        assert response.zone_target_temp == [21.0, 22.0]
-        assert hasattr(response, "dhw_target_temp")
-        assert response.dhw_target_temp == 42.0
-        assert hasattr(response, "room_target_temp")
-        assert response.room_target_temp == 22.5
-        assert hasattr(response, "zone_heating_temp_max")
-        assert response.zone_heating_temp_max == [30.0, 35.0]
-        assert hasattr(response, "zone_heating_temp_min")
-        assert response.zone_heating_temp_min == [20.0, 20.0]
-        assert hasattr(response, "zone_cooling_temp_max")
-        assert response.zone_cooling_temp_max == [25.0, 30.0]
-        assert hasattr(response, "zone_cooling_temp_min")
-        assert response.zone_cooling_temp_min == [16.0, 18.0]
-        assert hasattr(response, "room_temp_max")
-        assert response.room_temp_max == 30.5
-        assert hasattr(response, "room_temp_min")
-        assert response.room_temp_min == 16.0
-        assert hasattr(response, "dhw_temp_max")
-        assert response.dhw_temp_max == 50
-        assert hasattr(response, "dhw_temp_min")
-        assert response.dhw_temp_min == 34
-        assert hasattr(response, "tank_actual_temperature")
-        assert response.tank_actual_temperature == 44
-        assert hasattr(response, "error_code")
-        assert response.error_code == 0x0
+            assert response.body_type == BodyType.X01
+            assert hasattr(response, "zone1_power")
+            assert response.zone1_power is True
+            assert hasattr(response, "zone2_power")
+            assert response.zone2_power is False
+            assert hasattr(response, "dhw_power")
+            assert response.dhw_power is True
+            assert hasattr(response, "zone1_curve")
+            assert response.zone1_curve is True
+            assert hasattr(response, "zone2_curve")
+            assert response.zone2_curve is False
+            assert hasattr(response, "disinfect")
+            assert response.disinfect is True
+            assert hasattr(response, "tbh")
+            assert response.tbh is True
+            assert hasattr(response, "fast_dhw")
+            assert response.fast_dhw is False
+            assert hasattr(response, "zone_temp_type")
+            assert response.zone_temp_type == [True, True]
+            assert hasattr(response, "silent_mode")
+            assert response.silent_mode is True
+            assert hasattr(response, "eco_mode")
+            assert response.eco_mode is True
+            assert hasattr(response, "mode")
+            assert response.mode == C3DeviceMode.HEAT
+            assert hasattr(response, "mode_auto")
+            assert response.mode_auto == C3DeviceMode.COOL
+            assert hasattr(response, "zone_target_temp")
+            assert response.zone_target_temp == [21.0, 22.0]
+            assert hasattr(response, "dhw_target_temp")
+            assert response.dhw_target_temp == 42.0
+            assert hasattr(response, "room_target_temp")
+            assert response.room_target_temp == 22.5
+            assert hasattr(response, "zone_heating_temp_max")
+            assert response.zone_heating_temp_max == [30.0, 35.0]
+            assert hasattr(response, "zone_heating_temp_min")
+            assert response.zone_heating_temp_min == [20.0, 20.0]
+            assert hasattr(response, "zone_cooling_temp_max")
+            assert response.zone_cooling_temp_max == [25.0, 30.0]
+            assert hasattr(response, "zone_cooling_temp_min")
+            assert response.zone_cooling_temp_min == [16.0, 18.0]
+            assert hasattr(response, "room_temp_max")
+            assert response.room_temp_max == 30.5
+            assert hasattr(response, "room_temp_min")
+            assert response.room_temp_min == 16.0
+            assert hasattr(response, "dhw_temp_max")
+            assert response.dhw_temp_max == 50
+            assert hasattr(response, "dhw_temp_min")
+            assert response.dhw_temp_min == 34
+            assert hasattr(response, "tank_actual_temperature")
+            assert response.tank_actual_temperature == 44
+            assert hasattr(response, "error_code")
+            assert response.error_code == 0x0
+
+    def test_message_notify1_x04_response(self) -> None:
+        """Test message notify1 x04 response."""
+        self.header[-1] = MessageType.notify1
+        body = bytearray(
+            [
+                BodyType.X04,
+                0x01 | 0x04,  # BYTE 1: status_dhw + status_heating
+                0x32,  # BYTE 2: total_energy_consumption
+                0x1A,  # BYTE 3: total_energy_consumption
+                0xB3,  # BYTE 4: total_energy_consumption
+                0xC2,  # BYTE 5: total_energy_consumption
+                21,  # BYTE 6: total_produced_energy
+                22,  # BYTE 7: total_produced_energy
+                42,  # BYTE 8: total_produced_energy
+                45,  # BYTE 9: total_produced_energy
+                30,  # BYTE 10: outdoor_temperature
+                0x0,  # CRC
+            ],
+        )
+        response = MessageC3Response(self.header + body)
+        assert response.body_type == BodyType.X04
+        assert hasattr(response, "status_tbh")
+        assert response.status_tbh is False
+        assert hasattr(response, "status_dhw")
+        assert response.status_dhw is True
+        assert hasattr(response, "status_ibh")
+        assert response.status_ibh is False
+        assert hasattr(response, "status_heating")
+        assert response.status_heating is True
+        assert hasattr(response, "total_energy_consumption")
+        assert response.total_energy_consumption == 214750114754
+        assert hasattr(response, "total_produced_energy")
+        assert response.total_produced_energy == 90195765805
+        assert hasattr(response, "outdoor_temperature")
+        assert response.outdoor_temperature == 30
+
+        body[10] = 253
+        response = MessageC3Response(self.header + body)
+        assert hasattr(response, "outdoor_temperature")
+        assert response.outdoor_temperature == -3
+
+    def test_message_silence_response(self) -> None:
+        """Test message silence response."""
+        self.header[-1] = MessageType.query
+        body = bytearray(
+            [
+                BodyType.X05,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+            ],
+        )
+        response = MessageC3Response(self.header + body)
+        assert hasattr(response, "silence_mode")
+        assert response.silence_mode is False
+        assert hasattr(response, "silence_level")
+        assert response.silence_level == C3SilentLevel.OFF
+
+        body[1] = 0x1
+        response = MessageC3Response(self.header + body)
+        assert hasattr(response, "silence_mode")
+        assert response.silence_mode is True
+        assert hasattr(response, "silence_level")
+        assert response.silence_level == C3SilentLevel.SILENT
+
+        body[1] = 0x8
+        response = MessageC3Response(self.header + body)
+        assert hasattr(response, "silence_mode")
+        assert response.silence_mode is False
+        assert hasattr(response, "silence_level")
+        assert response.silence_level == C3SilentLevel.OFF
+
+        body[1] = 0x9
+        response = MessageC3Response(self.header + body)
+        assert hasattr(response, "silence_mode")
+        assert response.silence_mode is True
+        assert hasattr(response, "silence_level")
+        assert response.silence_level == C3SilentLevel.SUPER_SILENT

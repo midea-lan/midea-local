@@ -67,6 +67,7 @@ class DeviceAttributes(StrEnum):
 class C3SilentLevel(IntEnum):
     """C3 Silent Level."""
 
+    OFF = 0x0
     SILENT = 0x1
     SUPER_SILENT = 0x3
 
