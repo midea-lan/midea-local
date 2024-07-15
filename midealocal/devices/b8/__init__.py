@@ -1,52 +1,24 @@
 """Midea local B8 device."""
 
 import logging
-from enum import IntEnum, StrEnum
+from enum import IntEnum
 from typing import Any
 
 from midealocal.device import MideaDevice
-
-from .message import (
-    CleanMode,
-    ControlType,
-    ErrorType,
+from midealocal.devices.b8.const import (
+    B8CleanMode,
+    B8ControlType,
+    B8DeviceAttributes,
+    B8ErrorType,
+    B8MopState,
+    B8Moviment,
+)
+from midealocal.devices.b8.message import (
     MessageB8Response,
     MessageQuery,
-    MopState,
-    Moviment,
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-
-class DeviceAttributes(StrEnum):
-    """Midea B8 device attributes."""
-
-    WORK_STATUS = "work_status"
-    FUNCTION_TYPE = "function_type"
-    CONTROL_TYPE = "control_type"
-    MOVE_DIRECTION = "move_direction"
-    CLEAN_MODE = "clean_mode"
-    FAN_LEVEL = "fan_level"
-    AREA = "area"
-    WATER_LEVEL = "water_level"
-    VOICE_VOLUME = "voice_volume"
-    MOP = "mop"
-    CARPET_SWITCH = "carpet_switch"
-    SPEED = "speed"
-    HAVE_RESERVE_TASK = "have_reserve_task"
-    BATTERY_PERCENT = "battery_percent"
-    WORK_TIME = "work_time"
-    UV_SWITCH = "uv_switch"
-    WIFI_SWITCH = "wifi_switch"
-    VOICE_SWITCH = "voice_switch"
-    COMMAND_SOURCE = "command_source"
-    ERROR_TYPE = "error_type"
-    ERROR_DESC = "error_desc"
-    DEVICE_ERROR = "device_error"
-    BOARD_COMMUNICATION_ERROR = "board_communication_error"
-    LASER_SENSOR_SHELTER = "laser_sensor_shelter"
-    LASER_SENSOR_ERROR = "laser_sensor_error"
 
 
 class MideaB8Device(MideaDevice):
@@ -78,31 +50,31 @@ class MideaB8Device(MideaDevice):
             model=model,
             subtype=subtype,
             attributes={
-                DeviceAttributes.WORK_STATUS: None,
-                DeviceAttributes.FUNCTION_TYPE: None,
-                DeviceAttributes.CONTROL_TYPE: ControlType.NONE,
-                DeviceAttributes.MOVE_DIRECTION: Moviment.NONE,
-                DeviceAttributes.CLEAN_MODE: CleanMode.NONE,
-                DeviceAttributes.FAN_LEVEL: None,
-                DeviceAttributes.AREA: None,
-                DeviceAttributes.WATER_LEVEL: None,
-                DeviceAttributes.VOICE_VOLUME: 0,
-                DeviceAttributes.MOP: MopState.OFF,
-                DeviceAttributes.CARPET_SWITCH: False,
-                DeviceAttributes.SPEED: None,
-                DeviceAttributes.HAVE_RESERVE_TASK: False,
-                DeviceAttributes.BATTERY_PERCENT: 0,
-                DeviceAttributes.WORK_TIME: 0,
-                DeviceAttributes.UV_SWITCH: False,
-                DeviceAttributes.WIFI_SWITCH: False,
-                DeviceAttributes.VOICE_SWITCH: False,
-                DeviceAttributes.COMMAND_SOURCE: False,
-                DeviceAttributes.ERROR_TYPE: ErrorType.NO,
-                DeviceAttributes.ERROR_DESC: None,
-                DeviceAttributes.DEVICE_ERROR: False,
-                DeviceAttributes.BOARD_COMMUNICATION_ERROR: False,
-                DeviceAttributes.LASER_SENSOR_SHELTER: False,
-                DeviceAttributes.LASER_SENSOR_ERROR: False,
+                B8DeviceAttributes.WORK_STATUS: None,
+                B8DeviceAttributes.FUNCTION_TYPE: None,
+                B8DeviceAttributes.CONTROL_TYPE: B8ControlType.NONE,
+                B8DeviceAttributes.MOVE_DIRECTION: B8Moviment.NONE,
+                B8DeviceAttributes.CLEAN_MODE: B8CleanMode.NONE,
+                B8DeviceAttributes.FAN_LEVEL: None,
+                B8DeviceAttributes.AREA: None,
+                B8DeviceAttributes.WATER_LEVEL: None,
+                B8DeviceAttributes.VOICE_VOLUME: 0,
+                B8DeviceAttributes.MOP: B8MopState.OFF,
+                B8DeviceAttributes.CARPET_SWITCH: False,
+                B8DeviceAttributes.SPEED: None,
+                B8DeviceAttributes.HAVE_RESERVE_TASK: False,
+                B8DeviceAttributes.BATTERY_PERCENT: 0,
+                B8DeviceAttributes.WORK_TIME: 0,
+                B8DeviceAttributes.UV_SWITCH: False,
+                B8DeviceAttributes.WIFI_SWITCH: False,
+                B8DeviceAttributes.VOICE_SWITCH: False,
+                B8DeviceAttributes.COMMAND_SOURCE: False,
+                B8DeviceAttributes.ERROR_TYPE: B8ErrorType.NO,
+                B8DeviceAttributes.ERROR_DESC: None,
+                B8DeviceAttributes.DEVICE_ERROR: False,
+                B8DeviceAttributes.BOARD_COMMUNICATION_ERROR: False,
+                B8DeviceAttributes.LASER_SENSOR_SHELTER: False,
+                B8DeviceAttributes.LASER_SENSOR_ERROR: False,
             },
         )
 
