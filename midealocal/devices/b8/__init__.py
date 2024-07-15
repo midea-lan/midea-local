@@ -55,12 +55,12 @@ class MideaB8Device(MideaDevice):
             attributes={
                 B8DeviceAttributes.WORK_STATUS: None,
                 B8DeviceAttributes.FUNCTION_TYPE: None,
-                B8DeviceAttributes.CONTROL_TYPE: B8ControlType.NONE,
-                B8DeviceAttributes.MOVE_DIRECTION: B8Moviment.NONE,
-                B8DeviceAttributes.CLEAN_MODE: B8CleanMode.NONE,
-                B8DeviceAttributes.FAN_LEVEL: B8FanLevel.OFF,
+                B8DeviceAttributes.CONTROL_TYPE: B8ControlType.NONE.name.lower(),
+                B8DeviceAttributes.MOVE_DIRECTION: B8Moviment.NONE.name.lower(),
+                B8DeviceAttributes.CLEAN_MODE: B8CleanMode.NONE.name.lower(),
+                B8DeviceAttributes.FAN_LEVEL: B8FanLevel.OFF.name.lower(),
                 B8DeviceAttributes.AREA: None,
-                B8DeviceAttributes.WATER_LEVEL: B8WaterLevel.OFF,
+                B8DeviceAttributes.WATER_LEVEL: B8WaterLevel.OFF.name.lower(),
                 B8DeviceAttributes.VOICE_VOLUME: 0,
                 B8DeviceAttributes.MOP: B8MopState.OFF,
                 B8DeviceAttributes.CARPET_SWITCH: False,
@@ -72,7 +72,7 @@ class MideaB8Device(MideaDevice):
                 B8DeviceAttributes.WIFI_SWITCH: False,
                 B8DeviceAttributes.VOICE_SWITCH: False,
                 B8DeviceAttributes.COMMAND_SOURCE: False,
-                B8DeviceAttributes.ERROR_TYPE: B8ErrorType.NO,
+                B8DeviceAttributes.ERROR_TYPE: B8ErrorType.NO.name.lower(),
                 B8DeviceAttributes.ERROR_DESC: None,
                 B8DeviceAttributes.DEVICE_ERROR: False,
                 B8DeviceAttributes.BOARD_COMMUNICATION_ERROR: False,
@@ -101,26 +101,35 @@ class MideaB8Device(MideaDevice):
 
     def _gen_set_msg_default_values(self) -> MessageSet:
         msg = MessageSet(self._protocol_version)
-        msg.clean_mode = self.attributes[B8DeviceAttributes.CLEAN_MODE]
-        msg.fan_level = self.attributes[B8DeviceAttributes.FAN_LEVEL]
-        msg.water_level = self.attributes[B8DeviceAttributes.WATER_LEVEL]
+        msg.clean_mode = B8CleanMode[
+            self.attributes[B8DeviceAttributes.CLEAN_MODE].upper()
+        ]
+        msg.fan_level = B8FanLevel[
+            self.attributes[B8DeviceAttributes.FAN_LEVEL].upper()
+        ]
+        msg.water_level = B8WaterLevel[
+            self.attributes[B8DeviceAttributes.WATER_LEVEL].upper()
+        ]
         msg.voice_volume = self.attributes[B8DeviceAttributes.VOICE_VOLUME]
         return msg
 
     def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea B8 device set attribute."""
-        msg = self._gen_set_msg_default_values()
-        if attr == B8DeviceAttributes.CLEAN_MODE:
-            msg.clean_mode = B8CleanMode[str(value).upper()]
-        elif attr == B8DeviceAttributes.FAN_LEVEL:
-            msg.fan_level = B8FanLevel[str(value).upper()]
-        elif attr == B8DeviceAttributes.WATER_LEVEL:
-            msg.water_level = B8WaterLevel[str(value).upper()]
-        elif attr == B8DeviceAttributes.VOICE_VOLUME:
-            msg.voice_volume = int(value)
+        try:
+            msg = self._gen_set_msg_default_values()
+            if attr == B8DeviceAttributes.CLEAN_MODE:
+                msg.clean_mode = B8CleanMode[str(value).upper()]
+            elif attr == B8DeviceAttributes.FAN_LEVEL:
+                msg.fan_level = B8FanLevel[str(value).upper()]
+            elif attr == B8DeviceAttributes.WATER_LEVEL:
+                msg.water_level = B8WaterLevel[str(value).upper()]
+            elif attr == B8DeviceAttributes.VOICE_VOLUME:
+                msg.voice_volume = int(value)
 
-        if msg is not None:
-            self.build_send(msg)
+            if msg is not None:
+                self.build_send(msg)
+        except KeyError:
+            _LOGGER.exception("Wrong value for attribute %s: %s", attr, value)
 
 
 class MideaAppliance(MideaB8Device):

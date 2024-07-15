@@ -47,19 +47,30 @@ class TestMideaB8Device:
         assert self.device.attributes[B8DeviceAttributes.FUNCTION_TYPE] is None
         assert (
             self.device.attributes[B8DeviceAttributes.CONTROL_TYPE]
-            == B8ControlType.NONE
+            == B8ControlType.NONE.name.lower()
         )
         assert (
-            self.device.attributes[B8DeviceAttributes.MOVE_DIRECTION] == B8Moviment.NONE
+            self.device.attributes[B8DeviceAttributes.MOVE_DIRECTION]
+            == B8Moviment.NONE.name.lower()
         )
-        assert self.device.attributes[B8DeviceAttributes.CLEAN_MODE] == B8CleanMode.NONE
-        assert self.device.attributes[B8DeviceAttributes.FAN_LEVEL] == B8FanLevel.OFF
+        assert (
+            self.device.attributes[B8DeviceAttributes.CLEAN_MODE]
+            == B8CleanMode.NONE.name.lower()
+        )
+        assert (
+            self.device.attributes[B8DeviceAttributes.FAN_LEVEL]
+            == B8FanLevel.OFF.name.lower()
+        )
         assert self.device.attributes[B8DeviceAttributes.AREA] is None
         assert (
-            self.device.attributes[B8DeviceAttributes.WATER_LEVEL] == B8WaterLevel.OFF
+            self.device.attributes[B8DeviceAttributes.WATER_LEVEL]
+            == B8WaterLevel.OFF.name.lower()
         )
         assert self.device.attributes[B8DeviceAttributes.VOICE_VOLUME] == 0
-        assert self.device.attributes[B8DeviceAttributes.MOP] is B8MopState.OFF
+        assert (
+            self.device.attributes[B8DeviceAttributes.MOP]
+            == B8MopState.OFF.name.lower()
+        )
         assert self.device.attributes[B8DeviceAttributes.CARPET_SWITCH] is False
         assert self.device.attributes[B8DeviceAttributes.SPEED] is None
         assert self.device.attributes[B8DeviceAttributes.HAVE_RESERVE_TASK] is False
@@ -69,7 +80,10 @@ class TestMideaB8Device:
         assert self.device.attributes[B8DeviceAttributes.WIFI_SWITCH] is False
         assert self.device.attributes[B8DeviceAttributes.VOICE_SWITCH] is False
         assert self.device.attributes[B8DeviceAttributes.COMMAND_SOURCE] is False
-        assert self.device.attributes[B8DeviceAttributes.ERROR_TYPE] == B8ErrorType.NO
+        assert (
+            self.device.attributes[B8DeviceAttributes.ERROR_TYPE]
+            == B8ErrorType.NO.name.lower()
+        )
         assert self.device.attributes[B8DeviceAttributes.ERROR_DESC] is None
         assert self.device.attributes[B8DeviceAttributes.DEVICE_ERROR] is False
         assert (
@@ -83,16 +97,23 @@ class TestMideaB8Device:
         """Test set attribute."""
         with patch.object(self.device, "send_message_v2") as mock_build_send:
             self.device.set_attribute(B8DeviceAttributes.CLEAN_MODE.value, "area")
-            mock_build_send.assert_called()
+            mock_build_send.assert_called_once()
+            mock_build_send.reset_mock()
 
             self.device.set_attribute(B8DeviceAttributes.FAN_LEVEL.value, "normal")
-            mock_build_send.assert_called()
+            mock_build_send.assert_called_once()
+            mock_build_send.reset_mock()
 
             self.device.set_attribute(B8DeviceAttributes.WATER_LEVEL.value, "normal")
-            mock_build_send.assert_called()
+            mock_build_send.assert_called_once()
+            mock_build_send.reset_mock()
 
             self.device.set_attribute(B8DeviceAttributes.VOICE_VOLUME.value, 10)
-            mock_build_send.assert_called()
+            mock_build_send.assert_called_once()
+            mock_build_send.reset_mock()
+
+            self.device.set_attribute(B8DeviceAttributes.WATER_LEVEL.value, "invalid")
+            mock_build_send.assert_not_called()
 
     def test_build_query(self) -> None:
         """Test build query."""
