@@ -9,7 +9,8 @@ from midealocal.devices.c3 import (
 )
 from midealocal.devices.c3.const import C3DeviceMode, C3SilentLevel, DeviceAttributes
 from midealocal.devices.c3.message import (
-    MessageQuery,
+    MessageQueryBasic,
+    MessageQuerySilence,
 )
 
 
@@ -109,8 +110,9 @@ class TestMideaC3Device:
     def test_build_query(self) -> None:
         """Test build query."""
         queries = self.device.build_query()
-        assert len(queries) == 1
-        assert isinstance(queries[0], MessageQuery)
+        assert len(queries) == 2
+        assert isinstance(queries[0], MessageQueryBasic)
+        assert isinstance(queries[1], MessageQuerySilence)
 
     def test_process_message(self) -> None:
         """Test process message."""

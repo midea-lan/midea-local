@@ -10,6 +10,8 @@ from midealocal.devices.c3.const import C3DeviceMode, C3SilentLevel, DeviceAttri
 from .message import (
     MessageC3Response,
     MessageQuery,
+    MessageQueryBasic,
+    MessageQuerySilence,
     MessageSet,
     MessageSetECO,
     MessageSetSilent,
@@ -101,7 +103,10 @@ class MideaC3Device(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea C3 device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [
+            MessageQueryBasic(self._protocol_version),
+            MessageQuerySilence(self._protocol_version),
+        ]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea C3 device process message."""

@@ -7,6 +7,8 @@ from midealocal.devices.c3.message import (
     MessageC3Base,
     MessageC3Response,
     MessageQuery,
+    MessageQueryBasic,
+    MessageQuerySilence,
     MessageSet,
     MessageSetECO,
     MessageSetSilent,
@@ -29,8 +31,12 @@ class TestC3MessageQuery:
 
     def test_query_body(self) -> None:
         """Test query body."""
-        msg = MessageQuery(protocol_version=1)
+        msg: MessageQuery = MessageQueryBasic(protocol_version=1)
         expected_body = bytearray([0x1])
+        assert msg.body == expected_body
+
+        msg = MessageQuerySilence(protocol_version=1)
+        expected_body = bytearray([0x5])
         assert msg.body == expected_body
 
 
