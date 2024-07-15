@@ -2,7 +2,7 @@
 
 import pytest
 
-from midealocal.devices.c3 import C3DeviceMode, C3SilentLevel
+from midealocal.devices.c3.const import C3DeviceMode, C3SilentLevel
 from midealocal.devices.c3.message import (
     MessageC3Base,
     MessageC3Response,

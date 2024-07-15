@@ -5,11 +5,9 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.devices.c3 import (
-    C3DeviceMode,
-    C3SilentLevel,
-    DeviceAttributes,
     MideaC3Device,
 )
+from midealocal.devices.c3.const import C3DeviceMode, C3SilentLevel, DeviceAttributes
 from midealocal.devices.c3.message import (
     MessageQuery,
 )

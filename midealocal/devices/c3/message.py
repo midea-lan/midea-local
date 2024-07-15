@@ -1,5 +1,6 @@
 """Midea local C3 message."""
 
+from midealocal.devices.c3.const import C3SilentLevel
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -111,13 +112,13 @@ class MessageSetSilent(MessageC3Base):
             body_type=0x05,
         )
         self.silent_mode = False
-        self.silent_level = 0
+        self.silent_level = C3SilentLevel.OFF
 
     @property
     def _body(self) -> bytearray:
         return bytearray(
             [
-                self.silent_level if self.silent_mode else 0x00,
+                self.silent_level if self.silent_mode else C3SilentLevel.OFF,
                 0x00,
                 0x00,
                 0x00,
@@ -227,7 +228,7 @@ class C3QuerySilenceMessageBody(MessageBody):
         self.silence_level = (
             (body[data_offset] & 0x1) + ((body[data_offset] & 0x8) >> 2)
             if self.silence_mode
-            else 0
+            else C3SilentLevel.OFF
         )
         # Message protocol information:
         # silence_function_state: Byte 1, BIT 0
