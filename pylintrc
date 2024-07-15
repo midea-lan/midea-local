@@ -28,10 +28,6 @@ suggestion-mode=yes
 # active Python interpreter and may run arbitrary code.
 unsafe-load-any-extension=no
 
-# Add files or directories matching the regex patterns to the blacklist.
-# The regex matches against base names, not paths.
-ignore=^tests/**/*.py
-
 [BASIC]
 
 # Naming style matching correct argument names.
