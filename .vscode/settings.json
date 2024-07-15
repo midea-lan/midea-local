@@ -1,5 +1,11 @@
 {
-  "python.testing.pytestArgs": ["tests", "--no-cov"],
+  "python.testing.pytestArgs": [
+    "tests",
+    "--cov-report",
+    "xml:cov.xml",
+    "--cov",
+    "midealocal"
+  ],
   "python.testing.pytestEnabled": true,
   "pylint.importStrategy": "fromEnvironment",
   "python.testing.unittestEnabled": false

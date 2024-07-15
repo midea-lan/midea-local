@@ -22,12 +22,34 @@
       "module": "midealocal.cli",
       "args": [
         "save",
+        "-d",
         "--cloud-name",
         "${input:cloud-name}",
         "--username",
         "${input:username}",
         "--password",
         "${input:password}"
+      ]
+    },
+    {
+      "name": "Python Debugger: Download from host",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "midealocal.cli",
+      "args": ["download", "-d", "--host", "${input:host}"]
+    },
+    {
+      "name": "Python Debugger: Download from sn and type",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "midealocal.cli",
+      "args": [
+        "download",
+        "-d",
+        "--device-type",
+        "${input:device-type}",
+        "--device-sn",
+        "${input:device-sn}"
       ]
     }
   ],
@@ -36,6 +58,18 @@
       "id": "host",
       "type": "promptString",
       "description": "Enter the host IP address (leave empty to broadcast on the network)",
+      "default": ""
+    },
+    {
+      "id": "device-type",
+      "type": "promptString",
+      "description": "Enter the device type ex. AC",
+      "default": ""
+    },
+    {
+      "id": "device-sn",
+      "type": "promptString",
+      "description": "Enter the device serial number.",
       "default": ""
     },
     {
