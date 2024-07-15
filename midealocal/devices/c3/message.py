@@ -1,5 +1,6 @@
 """Midea local C3 message."""
 
+from midealocal.devices.c3.const import C3SilentLevel
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -111,16 +112,13 @@ class MessageSetSilent(MessageC3Base):
             body_type=0x05,
         )
         self.silent_mode = False
-        self.super_silent = False
+        self.silent_level = C3SilentLevel.OFF
 
     @property
     def _body(self) -> bytearray:
-        silent_mode = 0x01 if self.silent_mode else 0
-        super_silent = 0x02 if self.super_silent else 0
-
         return bytearray(
             [
-                silent_mode | super_silent,
+                self.silent_level if self.silent_mode else C3SilentLevel.OFF,
                 0x00,
                 0x00,
                 0x00,
@@ -220,6 +218,33 @@ class C3Notify1MessageBody(MessageBody):
         )
 
 
+class C3QuerySilenceMessageBody(MessageBody):
+    """C3 Query silence message body."""
+
+    def __init__(self, body: bytearray, data_offset: int = 0) -> None:
+        """Initialize C3 notify1 message body."""
+        super().__init__(body)
+        self.silence_mode = body[data_offset] & 0x1 > 0
+        self.silence_level = (
+            (body[data_offset] & 0x1) + ((body[data_offset] & 0x8) >> 2)
+            if self.silence_mode
+            else C3SilentLevel.OFF
+        )
+        # Message protocol information:
+        # silence_function_state: Byte 1, BIT 0
+        # silence_timer1_state: Byte 1, BIT 1
+        # silence_timer2_state: Byte 1, BIT 2
+        # silence_function_level: Byte 1, BIT 3
+        # silence_timer1_starthour: Byte 2
+        # silence_timer1_startmin: Byte 3
+        # silence_timer1_endhour: Byte 4
+        # silence_timer1_endmin: Byte 5
+        # silence_timer2_starthour: Byte 6
+        # silence_timer2_startmin: Byte 7
+        # silence_timer2_endhour: Byte 8
+        # silence_timer2_endmin: Byte 9
+
+
 class MessageC3Response(MessageResponse):
     """C3 message response."""
 
@@ -236,4 +261,6 @@ class MessageC3Response(MessageResponse):
             self.message_type == MessageType.notify1 and self.body_type == BodyType.X04
         ):
             self.set_body(C3Notify1MessageBody(super().body, data_offset=1))
+        elif self.message_type == MessageType.query and self.body_type == BodyType.X05:
+            self.set_body(C3QuerySilenceMessageBody(super().body, data_offset=1))
         self.set_attr()
