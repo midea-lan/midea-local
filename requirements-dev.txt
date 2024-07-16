@@ -5,4 +5,5 @@ pytest
 pytest-asyncio
 pytest-cov
 ruff
+setuptools
 types-aiofiles

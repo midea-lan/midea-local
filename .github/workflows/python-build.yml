@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
-        os: ["windows-latest", "ubuntu-latest"]
+        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
     env:
       SKIP: no-commit-to-branch
     steps:
