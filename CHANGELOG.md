@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.0](https://github.com/rokam/midea-local/compare/v2.0.0...v2.1.0) (2024-07-16)
+
+
+### Features
+
+* **c3:** add option to set super_silent ([#210](https://github.com/rokam/midea-local/issues/210)) ([dcef500](https://github.com/rokam/midea-local/commit/dcef500f073ce150283730132fd4a3155850e332))
+* **c3:** query and set silence level ([#227](https://github.com/rokam/midea-local/issues/227)) ([556f7c2](https://github.com/rokam/midea-local/commit/556f7c234d4581472b0ce2f3830289b2ba529c90))
+
 ## [2.0.0](https://github.com/rokam/midea-local/compare/v1.3.2...v2.0.0) (2024-07-12)
 
 
