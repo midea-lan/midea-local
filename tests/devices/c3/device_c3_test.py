@@ -9,7 +9,8 @@ from midealocal.devices.c3 import (
 )
 from midealocal.devices.c3.const import C3DeviceMode, C3SilentLevel, DeviceAttributes
 from midealocal.devices.c3.message import (
-    MessageQuery,
+    MessageQueryBasic,
+    MessageQuerySilence,
 )
 
 
@@ -50,8 +51,7 @@ class TestMideaC3Device:
         assert self.device.attributes[DeviceAttributes.zone2_water_temp_mode] is False
         assert self.device.attributes[DeviceAttributes.silent_mode] is False
         assert (
-            self.device.attributes[DeviceAttributes.SILENT_LEVEL]
-            == C3SilentLevel.SILENT
+            self.device.attributes[DeviceAttributes.SILENT_LEVEL] == C3SilentLevel.OFF
         )
         assert self.device.attributes[DeviceAttributes.eco_mode] is False
         assert self.device.attributes[DeviceAttributes.tbh] is False
@@ -106,11 +106,17 @@ class TestMideaC3Device:
             self.device.set_attribute(DeviceAttributes.silent_mode.value, True)
             mock_build_send.assert_called()
 
+            self.device.set_attribute(
+                DeviceAttributes.SILENT_LEVEL.value,
+                C3SilentLevel.SILENT,
+            )
+
     def test_build_query(self) -> None:
         """Test build query."""
         queries = self.device.build_query()
-        assert len(queries) == 1
-        assert isinstance(queries[0], MessageQuery)
+        assert len(queries) == 2
+        assert isinstance(queries[0], MessageQueryBasic)
+        assert isinstance(queries[1], MessageQuerySilence)
 
     def test_process_message(self) -> None:
         """Test process message."""

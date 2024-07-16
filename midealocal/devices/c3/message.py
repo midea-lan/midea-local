@@ -37,17 +37,33 @@ class MessageC3Base(MessageRequest):
 class MessageQuery(MessageC3Base):
     """C3 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: int, body_type: BodyType) -> None:
         """Initialize C3 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x01,
+            body_type=body_type,
         )
 
     @property
     def _body(self) -> bytearray:
         return bytearray([])
+
+
+class MessageQueryBasic(MessageQuery):
+    """C3 Message query basic."""
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize C3 message query basic."""
+        super().__init__(protocol_version, BodyType.X01)
+
+
+class MessageQuerySilence(MessageQuery):
+    """C3 Message query silence."""
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize C3 message query silence."""
+        super().__init__(protocol_version, BodyType.X05)
 
 
 class MessageSet(MessageC3Base):
@@ -58,7 +74,7 @@ class MessageSet(MessageC3Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x01,
+            body_type=BodyType.X01,
         )
         self.zone1_power = False
         self.zone2_power = False
@@ -109,7 +125,7 @@ class MessageSetSilent(MessageC3Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x05,
+            body_type=BodyType.X05,
         )
         self.silent_mode = False
         self.silent_level = C3SilentLevel.OFF
@@ -139,7 +155,7 @@ class MessageSetECO(MessageC3Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x07,
+            body_type=BodyType.X07,
         )
         self.eco_mode = False
 

@@ -228,7 +228,7 @@ class MideaDevice(threading.Thread):
             file = None
             lineno = None
             if e.__traceback__:
-                file = e.__traceback__.tb_frame.f_globals["__file__"]
+                file = e.__traceback__.tb_frame.f_globals["__file__"]  # pylint: disable=E1101
                 lineno = e.__traceback__.tb_lineno
             _LOGGER.exception(
                 "[%s] Unknown error : %s, %s",
@@ -555,7 +555,7 @@ class MideaDevice(threading.Thread):
                     file = None
                     lineno = None
                     if e.__traceback__:
-                        file = e.__traceback__.tb_frame.f_globals["__file__"]
+                        file = e.__traceback__.tb_frame.f_globals["__file__"]  # pylint: disable=E1101
                         lineno = e.__traceback__.tb_lineno
                     _LOGGER.exception(
                         "[%s] Unknown error : %s, %s",

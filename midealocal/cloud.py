@@ -213,7 +213,8 @@ class MideaCloud:
         """Authenticate."""
         raise NotImplementedError
 
-    async def get_default_keys(self) -> dict[int, dict[str, Any]]:
+    @staticmethod
+    async def get_default_keys() -> dict[int, dict[str, Any]]:
         """Get default cloud keys."""
         return DEFAULT_KEYS
 

@@ -574,8 +574,8 @@ class MessageNewProtocolSet(MessageACBase):
             )
         if self.fresh_air_1 is not None and len(self.fresh_air_1) == FRESH_AIR_LENGTH:
             pack_count += 1
-            fresh_air_power = 2 if self.fresh_air_1[0] > 0 else 1
-            fresh_air_fan_speed = self.fresh_air_1[1]
+            fresh_air_power = 2 if next(iter(self.fresh_air_1)) > 0 else 1
+            fresh_air_fan_speed = list(self.fresh_air_1)[1]
             payload.extend(
                 NewProtocolMessageBody.pack(
                     param=NewProtocolTags.fresh_air_1,
@@ -597,8 +597,8 @@ class MessageNewProtocolSet(MessageACBase):
             )
         if self.fresh_air_2 is not None and len(self.fresh_air_2) == FRESH_AIR_LENGTH:
             pack_count += 1
-            fresh_air_power = 1 if self.fresh_air_2[0] > 0 else 0
-            fresh_air_fan_speed = self.fresh_air_2[1]
+            fresh_air_power = 1 if next(iter(self.fresh_air_2)) > 0 else 0
+            fresh_air_fan_speed = list(self.fresh_air_2)[1]
             payload.extend(
                 NewProtocolMessageBody.pack(
                     param=NewProtocolTags.fresh_air_2,
