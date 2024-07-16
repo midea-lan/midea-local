@@ -14,11 +14,13 @@ from midealocal.devices.b8.const import (
     B8MopState,
     B8Moviment,
     B8WaterLevel,
+    B8WorkMode,
 )
 from midealocal.devices.b8.message import (
     MessageB8Response,
     MessageQuery,
     MessageSet,
+    MessageSetCommand,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -112,6 +114,18 @@ class MideaB8Device(MideaDevice):
         ]
         msg.voice_volume = self.attributes[B8DeviceAttributes.VOICE_VOLUME]
         return msg
+
+    def set_work_mode(self, work_mode: B8WorkMode) -> None:
+        """Midea B8 device set work mode."""
+        if work_mode == B8WorkMode.WORK:
+            self.set_attribute(
+                B8DeviceAttributes.CLEAN_MODE,
+                self.attributes[B8DeviceAttributes.CLEAN_MODE],
+            )
+            return
+
+        msg = MessageSetCommand(self._protocol_version, work_mode=work_mode)
+        self.build_send(msg)
 
     def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea B8 device set attribute."""

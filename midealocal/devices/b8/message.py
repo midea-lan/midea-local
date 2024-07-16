@@ -14,6 +14,7 @@ from midealocal.devices.b8.const import (
     B8Speed,
     B8StatusType,
     B8WaterLevel,
+    B8WorkMode,
     B8WorkStatus,
 )
 from midealocal.message import (
@@ -92,6 +93,29 @@ class MessageSet(MessageB8Base):
                 self.zone_id,
             ]
             + [0x00] * 7,
+        )
+
+
+class MessageSetCommand(MessageB8Base):
+    """B8 message set command."""
+
+    def __init__(self, protocol_version: int, work_mode: B8WorkMode) -> None:
+        """Initialize B8 message set command."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.set,
+            body_type=0x22,
+        )
+        self.work_mode = work_mode
+
+    @property
+    def _body(self) -> bytearray:
+        return bytearray(
+            [
+                self.work_mode,
+                0x00,
+                0x00,
+            ],
         )
 
 

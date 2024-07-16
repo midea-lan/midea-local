@@ -33,6 +33,15 @@ class B8DeviceAttributes(StrEnum):
     LASER_SENSOR_ERROR = "laser_sensor_error"
 
 
+class B8WorkMode(IntEnum):
+    """Midea B8 work mode."""
+
+    CHARGE = 0x01
+    WORK = 0x02
+    STOP = 0x03
+    PAUSE = 0x1B
+
+
 class B8WorkStatus(IntEnum):
     """Midea B8 work status."""
 
