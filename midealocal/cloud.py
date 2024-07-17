@@ -430,7 +430,25 @@ class MeijuCloud(MideaCloud):
         return None
 
     async def get_device_info(self, device_id: int) -> dict[str, Any] | None:
-        """Get device information."""
+        r"""Get device information.
+
+        API url: https://mp-prod.smartmidea.net/mas/v5/app/proxy?alias=/v1/appliance/info/get
+        header:
+        input: {'applianceCode': 21000***830**18,
+            'reqId': 'b11bb9083be6d77906fe1c9f019cdea0', 'stamp': '20240710092728'}
+        response: b'{"code":0,"msg":null,"data":{"id":null,
+            "applianceCode":21000***830**18,
+            "sn":"7105f17f36a6afcce272f8053e2be60fd74b1a4baca120afaad83011bb50e8d5f3678bf88e32ea11885394e1a32c9c0e",
+            "onlineStatus":1,"type":"0xDB","modelNumber":"12877",
+            "name":"\xe6\xbb\x9a\xe7\xad\x92\xe6\xb4\x97\xe8\xa1\xa3\xe6\x9c\xba",
+            "des":null,"activeStatus":1,"activeTime":"2024-06-12 10:45:45",
+            "masterId":null,"wifiVersion":"059009012205","enterprise":"0000",
+            "isOtherEquipment":null,"attrs":null,"roomName":null,
+            "btMac":"54B8740FA801","btToken":null,"hotspotName":null,
+            "isBluetooth":0,"bindType":null,"ability":null,"nameChanged":null,
+            "sn8":"38127874","supportWot":false,"templateOfTSL":null,
+            "shadowLevel":null,"smartProductId":10004256,"brand":null}}'
+        """
         data = {"applianceCode": device_id}
         if response := await self._api_request(
             endpoint="/v1/appliance/info/get",
@@ -450,6 +468,26 @@ class MeijuCloud(MideaCloud):
                 "manufacturer_code": response.get("enterpriseCode", "0000"),
                 "model": response.get("productModel"),
                 "online": response.get("onlineStatus") == "1",
+                "des": response.get("des", None),
+                "active_status": response.get("activeStatus", None),
+                "active_time": response.get("activeTime", None),
+                "master_id": response.get("masterId", None),
+                "wifi_version": response.get("wifiVersion", None),
+                "enterprise": response.get("enterprise", None),
+                "is_other_equipment": response.get("isOtherEquipment", None),
+                "attrs": response.get("attrs", None),
+                "room_name": response.get("roomName", None),
+                "bt_mac": response.get("btMac", None),
+                "bt_token": response.get("btToken", None),
+                "is_bluetooth": response.get("isBluetooth", None),
+                "bind_type": response.get("bindType", None),
+                "ability": response.get("ability", None),
+                "name_changed": response.get("nameChanged", None),
+                "support_wot": response.get("supportWot", None),
+                "template_of_tsl": response.get("templateOfTSL", None),
+                "shadow_level": response.get("shadowLevel", None),
+                "smart_product_id": response.get("smartProductId", None),
+                "brand": response.get("brand", None),
             }
             sn8 = device_info.get("sn8")
             if sn8 is None or len(sn8) == 0:
