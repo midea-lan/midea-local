@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/rokam/midea-local/compare/v2.1.0...v2.1.1) (2024-07-16)
+
+
+### Bug Fixes
+
+* **cloud:** get default keys as static ([#229](https://github.com/rokam/midea-local/issues/229)) ([815643a](https://github.com/rokam/midea-local/commit/815643a1a59a14863090b0cdd65170605a8b91da))
+
 ## [2.1.0](https://github.com/rokam/midea-local/compare/v2.0.0...v2.1.0) (2024-07-16)
 
 
