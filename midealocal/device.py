@@ -190,59 +190,57 @@ class MideaDevice(threading.Thread):
                 break
         return result, msg
 
-    def connect(
-        self,
-        refresh_status: bool = True,
-        get_capabilities: bool = True,
-    ) -> bool:
+    def _authenticate_refresh_enable(self) -> bool:
+        connected = self.connect()
+        if self._protocol == ProtocolVersion.V3:
+            self.authenticate()
+        self.refresh_status(wait_response=True)
+        self.get_capabilities()
+        self.enable_device(connected)
+        return connected
+
+    def connect(self) -> bool:
         """Connect to device."""
         connected = False
-        try:
-            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._socket.settimeout(10)
-            _LOGGER.debug(
-                "[%s] Connecting to %s:%s",
-                self._device_id,
-                self._ip_address,
-                self._port,
-            )
-            self._socket.connect((self._ip_address, self._port))
-            _LOGGER.debug("[%s] Connected", self._device_id)
-            if self._protocol == ProtocolVersion.V3:
-                self.authenticate()
-            _LOGGER.debug("[%s] Authentication success", self._device_id)
-            if refresh_status:
-                self.refresh_status(wait_response=True)
-            if get_capabilities:
-                self.get_capabilities()
-            connected = True
-        except TimeoutError:
-            _LOGGER.debug("[%s] Connection timed out", self._device_id)
-        except OSError:
-            _LOGGER.debug("[%s] Connection error", self._device_id)
-        except AuthException:
-            _LOGGER.debug("[%s] Authentication failed", self._device_id)
-        except RefreshFailed:
-            _LOGGER.debug("[%s] Refresh status is timed out", self._device_id)
-        except Exception as e:
-            file = None
-            lineno = None
-            if e.__traceback__:
-                file = e.__traceback__.tb_frame.f_globals["__file__"]  # pylint: disable=E1101
-                lineno = e.__traceback__.tb_lineno
-            _LOGGER.exception(
-                "[%s] Unknown error : %s, %s",
-                self._device_id,
-                file,
-                lineno,
-            )
-        self.enable_device(connected)
+        for _ in range(3):
+            try:
+                self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self._socket.settimeout(10)
+                _LOGGER.debug(
+                    "[%s] Connecting to %s:%s",
+                    self._device_id,
+                    self._ip_address,
+                    self._port,
+                )
+                self._socket.connect((self._ip_address, self._port))
+                _LOGGER.debug("[%s] Connected", self._device_id)
+                connected = True
+            except TimeoutError:
+                _LOGGER.debug("[%s] Connection timed out", self._device_id)
+            except OSError:
+                _LOGGER.debug("[%s] Connection error", self._device_id)
+            except AuthException:
+                _LOGGER.debug("[%s] Authentication failed", self._device_id)
+            except RefreshFailed:
+                _LOGGER.debug("[%s] Refresh status is timed out", self._device_id)
+            except Exception as e:
+                file = None
+                lineno = None
+                if e.__traceback__:
+                    file = e.__traceback__.tb_frame.f_globals["__file__"]  # pylint: disable=E1101
+                    lineno = e.__traceback__.tb_lineno
+                _LOGGER.exception(
+                    "[%s] Unknown error : %s, %s",
+                    self._device_id,
+                    file,
+                    lineno,
+                )
         return connected
 
     def authenticate(self) -> None:
         """Authenticate to device. V3 only."""
         request = self._security.encode_8370(self._token, MSGTYPE_HANDSHAKE_REQUEST)
-        _LOGGER.debug("[%s] Handshaking", self._device_id)
+        _LOGGER.debug("[%s] Authentication handshaking", self._device_id)
         if not self._socket:
             raise SocketException
         self._socket.send(request)
@@ -251,6 +249,7 @@ class MideaDevice(threading.Thread):
             raise AuthException
         response = response[8:72]
         self._security.tcp_key(response, self._key)
+        _LOGGER.debug("[%s] Authentication success", self._device_id)
 
     def send_message(self, data: bytes) -> None:
         """Send message."""
@@ -462,6 +461,7 @@ class MideaDevice(threading.Thread):
 
     def enable_device(self, available: bool = True) -> None:
         """Enable device."""
+        _LOGGER.debug("[%s] Enabling device", self._device_id)
         self._available = available
         status = {"available": available}
         self.update_all(status)
@@ -510,10 +510,9 @@ class MideaDevice(threading.Thread):
     def run(self) -> None:
         """Run loop."""
         while self._is_run:
-            while self._socket is None:
-                if self.connect(refresh_status=True) is False:
-                    self.close_socket()
-                    time.sleep(5)
+            if not self._socket or not self.connect():
+                raise SocketException
+            self._authenticate_refresh_enable()
             timeout_counter = 0
             start = time.time()
             self._previous_refresh = start
