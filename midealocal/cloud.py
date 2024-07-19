@@ -430,8 +430,7 @@ class MeijuCloud(MideaCloud):
         return None
 
     async def get_device_info(self, device_id: int) -> dict[str, Any] | None:
-        """
-        Get device information.
+        """Get device information.
 
         API url: https://mp-prod.smartmidea.net/mas/v5/app/proxy?alias=/v1/appliance/info/get
         header:
