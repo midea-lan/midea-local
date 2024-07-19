@@ -430,7 +430,8 @@ class MeijuCloud(MideaCloud):
         return None
 
     async def get_device_info(self, device_id: int) -> dict[str, Any] | None:
-        r"""Get device information.
+        """
+        Get device information.
 
         API url: https://mp-prod.smartmidea.net/mas/v5/app/proxy?alias=/v1/appliance/info/get
         header:
@@ -440,7 +441,7 @@ class MeijuCloud(MideaCloud):
             "applianceCode":21000***830**18,
             "sn":"7105f17f36a6afcce272f8053e2be60fd74b1a4baca120afaad83011bb50e8d5f3678bf88e32ea11885394e1a32c9c0e",
             "onlineStatus":1,"type":"0xDB","modelNumber":"12877",
-            "name":"\xe6\xbb\x9a\xe7\xad\x92\xe6\xb4\x97\xe8\xa1\xa3\xe6\x9c\xba",
+            "name":"device_name_bytearray",
             "des":null,"activeStatus":1,"activeTime":"2024-06-12 10:45:45",
             "masterId":null,"wifiVersion":"059009012205","enterprise":"0000",
             "isOtherEquipment":null,"attrs":null,"roomName":null,
@@ -479,6 +480,7 @@ class MeijuCloud(MideaCloud):
                 "room_name": response.get("roomName", None),
                 "bt_mac": response.get("btMac", None),
                 "bt_token": response.get("btToken", None),
+                "hotspot_name": response.get("hotspotName", None),
                 "is_bluetooth": response.get("isBluetooth", None),
                 "bind_type": response.get("bindType", None),
                 "ability": response.get("ability", None),
