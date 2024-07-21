@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/rokam/midea-local/compare/v2.1.1...v2.2.0) (2024-07-20)
+
+
+### Features
+
+* redact data from cloud ([#232](https://github.com/rokam/midea-local/issues/232)) ([c61991e](https://github.com/rokam/midea-local/commit/c61991eb93ca817d6245328fe1f5828a33dc5738))
+
 ## [2.1.1](https://github.com/rokam/midea-local/compare/v2.1.0...v2.1.1) (2024-07-16)
 
 
