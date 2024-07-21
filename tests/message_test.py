@@ -8,6 +8,7 @@ from midealocal.message import (
     BoolParser,
     IntEnumParser,
     IntParser,
+    MessageBody,
 )
 
 
@@ -147,3 +148,42 @@ class TestIntParser:
                 assert parser._parse(i) == 255
             else:
                 assert parser._parse(i) == i
+
+
+class TestMessageBody:
+    """Test message body."""
+
+    def test_parse_all(self) -> None:
+        """Test parse all."""
+        data = bytearray(
+            [
+                0x00,
+                0x01,
+                0x02,
+                0x03,
+                0x04,
+                0x05,
+            ],
+        )
+
+        body = MessageBody(data)
+        body.parser_list.extend(
+            [
+                IntEnumParser("bt", 0, BodyType),
+                BoolParser("power", 1),
+                BoolParser("feature_1", 2, 0),
+                BoolParser("feature_2", 2, 1),
+                IntParser("speed", 3),
+            ],
+        )
+        body.parse_all()
+        assert hasattr(body, "bt") is True
+        assert getattr(body, "bt", None) == BodyType.X00
+        assert hasattr(body, "power") is True
+        assert getattr(body, "power", False) is True
+        assert hasattr(body, "feature_1") is True
+        assert getattr(body, "feature_1", True) is False
+        assert hasattr(body, "feature_2") is True
+        assert getattr(body, "feature_2", False) is True
+        assert hasattr(body, "speed") is True
+        assert getattr(body, "speed", 0) == 3
