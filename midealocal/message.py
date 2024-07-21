@@ -313,7 +313,7 @@ class BodyParser(Generic[T]):
         byte: int,
         bit: int | None = None,
         length_in_bytes: int = 1,
-        first_upper: bool = False,
+        first_upper: bool = True,
         default_raw_value: int = 0,
     ) -> None:
         """Init body parser with attribute name."""
@@ -325,7 +325,7 @@ class BodyParser(Generic[T]):
         self._default_raw_value = default_raw_value
         if length_in_bytes < 0:
             raise ValueError("Length in bytes must be a positive value.")
-        if bit is not None and bit < 0 and bit >= length_in_bytes * 8:
+        if bit is not None and (bit < 0 or bit >= length_in_bytes * 8):
             raise ValueError(
                 "Bit, if set, must be a valid value position for %d bytes.",
                 length_in_bytes,
@@ -333,18 +333,18 @@ class BodyParser(Generic[T]):
 
     def _get_raw_value(self, body: bytearray) -> int:
         """Get raw value from body."""
-        if len(body) <= self._byte + self._length_in_bytes - 1:
+        if len(body) < self._byte + self._length_in_bytes:
             return self._default_raw_value
         data = 0
         for i in range(self._length_in_bytes):
             byte = (
-                self._byte + i
+                self._byte + self._length_in_bytes - 1 - i
                 if self._first_upper
-                else self._byte + self._length_in_bytes - i
+                else self._byte + i
             )
             data += body[byte] << (8 * i)
         if self._bit is not None:
-            data = data & (1 << self._bit)
+            data = (data & (1 << self._bit)) >> self._bit
         return data
 
     def get_value(self, body: bytearray) -> T:
@@ -364,19 +364,19 @@ class BoolParser(BodyParser[bool]):
         name: str,
         byte: int,
         bit: int | None = None,
-        check_false_value: bool = False,
         true_value: int = 1,
         false_value: int = 0,
+        default_value: bool = True,
     ) -> None:
         """Init bool body parser."""
         super().__init__(name, byte, bit)
         self._true_value = true_value
-        self._check_false_value = check_false_value
+        self._default_value = default_value
         self._false_value = false_value
 
     def _parse(self, raw_value: int) -> bool:
-        if self._check_false_value:
-            return raw_value != self._false_value
+        if raw_value not in [self._true_value, self._false_value]:
+            return self._default_value
         return raw_value == self._true_value
 
 
@@ -387,6 +387,7 @@ class IntEnumParser(BodyParser[E]):
         self,
         name: str,
         byte: int,
+        enum_class: type[E],
         length_in_bytes: int = 1,
         first_upper: bool = False,
         default_value: E | None = None,
@@ -398,16 +399,17 @@ class IntEnumParser(BodyParser[E]):
             length_in_bytes=length_in_bytes,
             first_upper=first_upper,
         )
+        self._enum_class = enum_class
         self._default_value = default_value
 
     def _parse(self, raw_value: int) -> E:
         try:
-            return cast(E, IntEnum(raw_value))
-        except TypeError:
+            return self._enum_class(raw_value)
+        except ValueError:
             return (
                 self._default_value
                 if self._default_value is not None
-                else cast(E, IntEnum(0))
+                else self._enum_class(0)
             )
 
 
