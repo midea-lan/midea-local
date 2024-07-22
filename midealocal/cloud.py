@@ -3,6 +3,7 @@
 import base64
 import json
 import logging
+import re
 import time
 from datetime import UTC, datetime
 from http import HTTPStatus
@@ -12,6 +13,7 @@ from typing import Any, cast
 
 import aiofiles
 from aiohttp import ClientConnectionError, ClientSession
+from commonregex import CommonRegex
 
 from midealocal.exceptions import ElementMissing
 
@@ -110,6 +112,26 @@ def get_preset_account_cloud() -> dict[str, str]:
     }
 
 
+block = "\u2588"
+
+
+def _redact_data(data: str) -> str:
+    """Redact sensitive data."""
+    cr = CommonRegex(data)
+    token_list = (
+        getattr(cr, "phones", [])
+        + getattr(cr, "emails", [])
+        + getattr(cr, "credit_cards", [])
+        + getattr(cr, "btc_addresses", [])
+        + getattr(cr, "street_addresses", [])
+    )
+    for token in token_list:
+        m = len(token)
+        elm = r"\b" + token + r"\b"
+        data = re.sub(elm, block * m, data)
+    return data
+
+
 class MideaCloud:
     """Midea Cloud."""
 
@@ -184,8 +206,8 @@ class MideaCloud:
                     _LOGGER.debug(
                         "Midea cloud API url: %s, data: %s, response: %s",
                         url,
-                        data,
-                        raw,
+                        _redact_data(str(data)),
+                        _redact_data(str(raw)),
                     )
                     response = json.loads(raw)
                     break
