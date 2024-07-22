@@ -140,7 +140,7 @@ class MideaDevice(threading.Thread):
         self._updates: list[Callable[[dict[str, Any]], None]] = []
         self._unsupported_protocol: list[str] = []
         self._is_run = False
-        self._available = True
+        self._available = False
         self._appliance_query = True
         self._refresh_interval = 30
         self._heartbeat_interval = 10
@@ -196,7 +196,6 @@ class MideaDevice(threading.Thread):
             self.authenticate()
         self.refresh_status(wait_response=True)
         self.get_capabilities()
-        self.enable_device(connected)
         return connected
 
     def connect(self) -> bool:
@@ -235,6 +234,7 @@ class MideaDevice(threading.Thread):
                     file,
                     lineno,
                 )
+        self.enable_device(connected)
         return connected
 
     def authenticate(self) -> None:
@@ -242,10 +242,12 @@ class MideaDevice(threading.Thread):
         request = self._security.encode_8370(self._token, MSGTYPE_HANDSHAKE_REQUEST)
         _LOGGER.debug("[%s] Authentication handshaking", self._device_id)
         if not self._socket:
+            self.enable_device(False)
             raise SocketException
         self._socket.send(request)
         response = self._socket.recv(512)
         if len(response) < MIN_AUTH_RESPONSE:
+            self.enable_device(False)
             raise AuthException
         response = response[8:72]
         self._security.tcp_key(response, self._key)
