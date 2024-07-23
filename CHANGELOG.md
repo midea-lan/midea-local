@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://github.com/rokam/midea-local/compare/v2.2.0...v2.3.0) (2024-07-23)
+
+
+### Features
+
+* **message:** body parsers ([#235](https://github.com/rokam/midea-local/issues/235)) ([c636eee](https://github.com/rokam/midea-local/commit/c636eeef5128504c079704d023e2215896e3c770))
+
 ## [2.2.0](https://github.com/rokam/midea-local/compare/v2.1.1...v2.2.0) (2024-07-20)
 
 
