@@ -3,6 +3,7 @@
 from midealocal.devices.b8.const import (
     B8CleanMode,
     B8ControlType,
+    B8DeviceAttributes,
     B8ErrorCanFixDescription,
     B8ErrorRebootDescription,
     B8ErrorType,
@@ -19,6 +20,9 @@ from midealocal.devices.b8.const import (
 )
 from midealocal.message import (
     BodyType,
+    BoolParser,
+    IntEnumParser,
+    IntParser,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -119,56 +123,133 @@ class MessageSetCommand(MessageB8Base):
         )
 
 
-class MessageB8WorkStatusBody(MessageBody):
-    """B8 message work status body."""
+class MessageB8GenericBody(MessageBody):
+    """B8 message generic body."""
 
-    def __init__(self, body: bytearray) -> None:
-        """Initialize B8 message work status body."""
+    def __init__(self, body: bytearray, offset: int) -> None:
+        """Initialize B8 message generic body."""
         super().__init__(body)
-        self.work_status = B8WorkStatus(body[2])
-        self.function_type = B8FunctionType(body[3])
-        self.control_type = B8ControlType(body[4])
-        self.move_direction = B8Moviment(body[5])
-        self.clean_mode = B8CleanMode(body[6])
-        self.fan_level = B8FanLevel(body[7])
-        self.area = body[8]
-        self.water_level = B8WaterLevel(body[9])
-        self.voice_volume = body[10]
-        mop = body[17]
-        if mop == 0:
-            self.mop = B8MopState.OFF
-        elif mop == 1:
-            self.mop = B8MopState.ON
-        else:
-            self.mop = B8MopState.LACK_WATER
-        self.carpet_switch = body[18] == 1
-        self.speed = B8Speed.LOW if body[20] == 1 else B8Speed.HIGH
-        self.have_reserve_task = body[11] != 0
-        self.battery_percent = body[12]
-        self.work_time = body[13]
-        err_user_high = body[19]
-        status_summary = body[14]
-        self.error_type = B8ErrorType(body[15])
-        self.uv_switch = status_summary & 0x01 > 0
-        self.wifi_switch = status_summary & 0x02 > 0
-        self.voice_switch = status_summary & 0x04 > 0
-        self.command_source = status_summary & 0x40 > 0
-        self.device_error = status_summary & 0x80 > 0
-        self.board_communication_error = err_user_high & 0x4 > 0
-        self.laser_sensor_shelter = err_user_high & 0x2 > 0
-        self.laser_sensor_error = err_user_high & 0x1 > 0
+        self.parser_list.extend(
+            [
+                IntEnumParser[B8WorkStatus](
+                    B8DeviceAttributes.WORK_STATUS,
+                    1 + offset,
+                    B8WorkStatus,
+                ),
+                IntEnumParser[B8FunctionType](
+                    B8DeviceAttributes.FUNCTION_TYPE,
+                    2 + offset,
+                    B8FunctionType,
+                ),
+                IntEnumParser[B8ControlType](
+                    B8DeviceAttributes.CONTROL_TYPE,
+                    3 + offset,
+                    B8ControlType,
+                ),
+                IntEnumParser[B8Moviment](
+                    B8DeviceAttributes.MOVE_DIRECTION,
+                    4 + offset,
+                    B8Moviment,
+                ),
+                IntEnumParser[B8CleanMode](
+                    B8DeviceAttributes.CLEAN_MODE,
+                    5 + offset,
+                    B8CleanMode,
+                ),
+                IntEnumParser[B8FanLevel](
+                    B8DeviceAttributes.FAN_LEVEL,
+                    6 + offset,
+                    B8FanLevel,
+                ),
+                IntParser(B8DeviceAttributes.AREA, 7 + offset),
+                IntEnumParser[B8WaterLevel](
+                    B8DeviceAttributes.WATER_LEVEL,
+                    8 + offset,
+                    B8WaterLevel,
+                ),
+                IntParser(B8DeviceAttributes.VOICE_VOLUME, 9 + offset, max_value=100),
+                BoolParser(
+                    B8DeviceAttributes.HAVE_RESERVE_TASK,
+                    10 + offset,
+                ),
+                IntParser(
+                    B8DeviceAttributes.BATTERY_PERCENT,
+                    11 + offset,
+                    max_value=100,
+                ),
+                IntParser(B8DeviceAttributes.WORK_TIME, 12 + offset),
+                BoolParser(B8DeviceAttributes.UV_SWITCH, 13 + offset, bit=0),
+                BoolParser(B8DeviceAttributes.WIFI_SWITCH, 13 + offset, bit=1),
+                BoolParser(B8DeviceAttributes.VOICE_SWITCH, 13 + offset, bit=2),
+                BoolParser(B8DeviceAttributes.COMMAND_SOURCE, 13 + offset, bit=6),
+                BoolParser(B8DeviceAttributes.DEVICE_ERROR, 13 + offset, bit=7),
+                IntEnumParser[B8ErrorType](
+                    B8DeviceAttributes.ERROR_TYPE,
+                    14 + offset,
+                    B8ErrorType,
+                ),
+                IntEnumParser[B8MopState](
+                    B8DeviceAttributes.MOP,
+                    16 + offset,
+                    B8MopState,
+                    default_value=B8MopState.LACK_WATER,
+                ),
+                BoolParser(B8DeviceAttributes.CARPET_SWITCH, 17 + offset),
+                BoolParser(
+                    B8DeviceAttributes.LASER_SENSOR_ERROR,
+                    18 + offset,
+                    bit=0,
+                ),
+                BoolParser(
+                    B8DeviceAttributes.LASER_SENSOR_SHELTER,
+                    18 + offset,
+                    bit=1,
+                ),
+                BoolParser(
+                    B8DeviceAttributes.BOARD_COMMUNICATION_ERROR,
+                    18 + offset,
+                    bit=2,
+                ),
+                IntEnumParser[B8Speed](B8DeviceAttributes.SPEED, 19 + offset, B8Speed),
+            ],
+        )
+        self.parse_all()
+
+        # Error description without parser
         self.error_desc: (
             B8ErrorCanFixDescription
             | B8ErrorRebootDescription
             | B8ErrorWarningDescription
-            | None
-        ) = None
-        if self.error_type == B8ErrorType.CAN_FIX:
-            self.error_desc = B8ErrorCanFixDescription(body[16])
-        elif self.error_type == B8ErrorType.REBOOT:
-            self.error_desc = B8ErrorRebootDescription(body[16])
-        elif self.error_type == B8ErrorType.WARNING:
-            self.error_desc = B8ErrorWarningDescription(body[16])
+        ) = B8ErrorCanFixDescription.NO
+        error_type = getattr(self, B8DeviceAttributes.ERROR_TYPE, B8ErrorType.NO)
+        if error_type == B8ErrorType.CAN_FIX:
+            self.error_desc = B8ErrorCanFixDescription(
+                self.read_byte(body, 15 + offset),
+            )
+        elif error_type == B8ErrorType.REBOOT:
+            self.error_desc = B8ErrorRebootDescription(
+                self.read_byte(body, 15 + offset),
+            )
+        elif error_type == B8ErrorType.WARNING:
+            self.error_desc = B8ErrorWarningDescription(
+                self.read_byte(body, 15 + offset),
+            )
+
+
+class MessageB8WorkStatusBody(MessageB8GenericBody):
+    """B8 message work status body."""
+
+    def __init__(self, body: bytearray) -> None:
+        """Initialize B8 message work status body."""
+        super().__init__(body, 1)
+
+
+class MessageB8NotifyBody(MessageB8GenericBody):
+    """B8 message notify body."""
+
+    def __init__(self, body: bytearray) -> None:
+        """Initialize B8 message notify body."""
+        super().__init__(body, 0)
 
 
 class MessageB8Response(MessageResponse):
@@ -183,7 +264,7 @@ class MessageB8Response(MessageResponse):
         )
         if body is not None:
             self.set_body(body)
-        self.set_attr()
+            self.set_attr()
 
     @staticmethod
     def parse_body(message_type: MessageType, body: bytearray) -> MessageBody | None:
@@ -196,4 +277,6 @@ class MessageB8Response(MessageResponse):
             and status_type == B8StatusType.X01
         ):
             return MessageB8WorkStatusBody(body)
+        if message_type == MessageType.notify1 and body_type == BodyType.X42:
+            return MessageB8NotifyBody(body)
         return None

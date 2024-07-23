@@ -11,9 +11,12 @@ from midealocal.devices.b8.const import (
     B8DeviceAttributes,
     B8ErrorType,
     B8FanLevel,
+    B8FunctionType,
     B8MopState,
     B8Moviment,
+    B8Speed,
     B8WaterLevel,
+    B8WorkStatus,
 )
 from midealocal.devices.b8.message import (
     MessageQuery,
@@ -43,8 +46,14 @@ class TestMideaB8Device:
 
     def test_initial_attributes(self) -> None:
         """Test initial attributes."""
-        assert self.device.attributes[B8DeviceAttributes.WORK_STATUS] is None
-        assert self.device.attributes[B8DeviceAttributes.FUNCTION_TYPE] is None
+        assert (
+            self.device.attributes[B8DeviceAttributes.WORK_STATUS]
+            == B8WorkStatus.NONE.name.lower()
+        )
+        assert (
+            self.device.attributes[B8DeviceAttributes.FUNCTION_TYPE]
+            == B8FunctionType.NONE.name.lower()
+        )
         assert (
             self.device.attributes[B8DeviceAttributes.CONTROL_TYPE]
             == B8ControlType.NONE.name.lower()
@@ -61,7 +70,7 @@ class TestMideaB8Device:
             self.device.attributes[B8DeviceAttributes.FAN_LEVEL]
             == B8FanLevel.OFF.name.lower()
         )
-        assert self.device.attributes[B8DeviceAttributes.AREA] is None
+        assert self.device.attributes[B8DeviceAttributes.AREA] == 0
         assert (
             self.device.attributes[B8DeviceAttributes.WATER_LEVEL]
             == B8WaterLevel.OFF.name.lower()
@@ -72,7 +81,10 @@ class TestMideaB8Device:
             == B8MopState.OFF.name.lower()
         )
         assert self.device.attributes[B8DeviceAttributes.CARPET_SWITCH] is False
-        assert self.device.attributes[B8DeviceAttributes.SPEED] is None
+        assert (
+            self.device.attributes[B8DeviceAttributes.SPEED]
+            == B8Speed.HIGH.name.lower()
+        )
         assert self.device.attributes[B8DeviceAttributes.HAVE_RESERVE_TASK] is False
         assert self.device.attributes[B8DeviceAttributes.BATTERY_PERCENT] == 0
         assert self.device.attributes[B8DeviceAttributes.WORK_TIME] == 0
@@ -84,7 +96,7 @@ class TestMideaB8Device:
             self.device.attributes[B8DeviceAttributes.ERROR_TYPE]
             == B8ErrorType.NO.name.lower()
         )
-        assert self.device.attributes[B8DeviceAttributes.ERROR_DESC] is None
+        assert self.device.attributes[B8DeviceAttributes.ERROR_DESC] == "no"
         assert self.device.attributes[B8DeviceAttributes.DEVICE_ERROR] is False
         assert (
             self.device.attributes[B8DeviceAttributes.BOARD_COMMUNICATION_ERROR]

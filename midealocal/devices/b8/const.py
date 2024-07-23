@@ -45,6 +45,7 @@ class B8WorkMode(IntEnum):
 class B8WorkStatus(IntEnum):
     """Midea B8 work status."""
 
+    NONE = 0x00
     CHARGE = 0x01
     WORK = 0x02
     STOP = 0x03
@@ -68,6 +69,7 @@ class B8WorkStatus(IntEnum):
 class B8FunctionType(IntEnum):
     """Midea B8 function type."""
 
+    NONE = 0x00
     DUST_BOX_CLEANING = 0x01
     WATER_TANK_CLEANING = 0x02
 
@@ -127,19 +129,19 @@ class B8WaterLevel(IntEnum):
     HIGH = 0x3
 
 
-class B8MopState(StrEnum):
+class B8MopState(IntEnum):
     """Midea B8 mop state."""
 
-    OFF = "off"
-    ON = "on"
-    LACK_WATER = "lack_water"
+    OFF = 0x0
+    ON = 0x1
+    LACK_WATER = 0x2
 
 
-class B8Speed(StrEnum):
+class B8Speed(IntEnum):
     """Midea B8 speed."""
 
-    LOW = "low"
-    HIGH = "high"
+    LOW = 0x1
+    HIGH = 0x0
 
 
 class B8ErrorType(IntEnum):
