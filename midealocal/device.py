@@ -234,6 +234,9 @@ class MideaDevice(threading.Thread):
                     file,
                     lineno,
                 )
+            finally:
+                if self._socket:
+                    self._socket.close()
         self.enable_device(connected)
         return connected
 
