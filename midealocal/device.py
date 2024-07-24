@@ -8,7 +8,7 @@ from collections.abc import Callable
 from enum import IntEnum, StrEnum
 from typing import Any
 
-from .exceptions import SocketException
+from .exceptions import CannotConnect, SocketException
 from .message import (
     MessageApplianceResponse,
     MessageQueryAppliance,
@@ -190,13 +190,11 @@ class MideaDevice(threading.Thread):
                 break
         return result, msg
 
-    def _authenticate_refresh_enable(self) -> bool:
-        connected = self.connect()
+    def _authenticate_refresh_capabilities(self) -> None:
         if self._protocol == ProtocolVersion.V3:
             self.authenticate()
         self.refresh_status(wait_response=True)
         self.get_capabilities()
-        return connected
 
     def connect(self) -> bool:
         """Connect to device."""
@@ -234,9 +232,6 @@ class MideaDevice(threading.Thread):
                     file,
                     lineno,
                 )
-            finally:
-                if self._socket:
-                    self._socket.close()
         self.enable_device(connected)
         return connected
 
@@ -515,13 +510,14 @@ class MideaDevice(threading.Thread):
     def run(self) -> None:
         """Run loop."""
         while self._is_run:
-            if not self._socket or not self.connect():
+            if not self.connect():
+                raise CannotConnect
+            if not self._socket:
                 raise SocketException
-            self._authenticate_refresh_enable()
+            self._authenticate_refresh_capabilities()
             timeout_counter = 0
             start = time.time()
-            self._previous_refresh = start
-            self._previous_heartbeat = start
+            self._previous_refresh = self._previous_heartbeat = start
             self._socket.settimeout(1)
             while True:
                 try:
