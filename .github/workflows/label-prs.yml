@@ -8,4 +8,4 @@ jobs:
     steps:
       - uses: grafana/pr-labeler-action@v0.1.0
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.MIDEA_GITHUB_PAT }}
