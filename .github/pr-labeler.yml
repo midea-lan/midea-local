@@ -6,3 +6,5 @@ label-mapping:
   configuration: ["build", "ci"]
   documentation: ["docs"]
   enhancement: ["feat"]
+  misc: ["chore", "performance", "refactor", "style"]
+  test: ["test"]
