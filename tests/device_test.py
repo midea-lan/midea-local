@@ -1,5 +1,6 @@
 """Midea Local device test."""
 
+from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -27,7 +28,7 @@ def test_fetch_v2_message() -> None:
     )
 
 
-class MideaDeviceTest:
+class MideaDeviceTest(IsolatedAsyncioTestCase):
     """Midea device test case."""
 
     device: MideaDevice
@@ -58,28 +59,55 @@ class MideaDeviceTest:
         assert self.device.model == "test_model"
         assert self.device.subtype == 1
 
-    @pytest.mark.parametrize(
-        ("exc", "result"),
-        [
-            (TimeoutError, False),
-            (OSError, False),
-            (AuthException, False),
-            (RefreshFailed, False),
-            (None, True),
-        ],
-    )
-    def test_connect(self, exc: Exception, result: bool) -> None:
+    def test_connect(self) -> None:
         """Test connect."""
-        with patch("socket.socket.connect", side_effect=exc):
-            assert self.device.connect() is result
-            assert self.device.available is result
+        with (
+            patch("socket.socket.connect") as connect_mock,
+            patch.object(
+                self.device,
+                "authenticate",
+                side_effect=[AuthException(), None, None],
+            ),
+            patch.object(
+                self.device,
+                "refresh_status",
+                side_effect=[RefreshFailed(), None],
+            ),
+            patch.object(
+                self.device,
+                "get_capabilities",
+                side_effect=[None],
+            ),
+        ):
+            connect_mock.side_effect = [
+                TimeoutError(),
+                OSError(),
+                None,
+                None,
+                None,
+                None,
+            ]
+            assert self.device.connect(True, True) is False
+            assert self.device.available is False
+
+            assert self.device.connect(True, True) is False
+            assert self.device.available is False
+
+            assert self.device.connect(True, True) is False
+            assert self.device.available is False
+
+            assert self.device.connect(True, True) is False
+            assert self.device.available is False
+
+            assert self.device.connect(True, True) is True
+            assert self.device.available is True
 
     def test_connect_generic_exception(self) -> None:
         """Test connect with generic exception."""
         with patch("socket.socket.connect") as connect_mock:
             connect_mock.side_effect = Exception()
 
-            assert self.device.connect() is False
+            assert self.device.connect(True, True) is False
             assert self.device.available is False
 
     def test_authenticate(self) -> None:
