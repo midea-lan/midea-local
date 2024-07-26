@@ -126,8 +126,11 @@ def _redact_data(data: str) -> str:
         + getattr(cr, "street_addresses", [])
     )
     for token in token_list:
-        m = len(token)
-        elm = r"\b" + token + r"\b"
+        item = token
+        if item[0] == "'":
+            item = item[1:]
+        m = len(item)
+        elm = r"\b" + item + r"\b"
         data = re.sub(elm, block * m, data)
     return data
 
