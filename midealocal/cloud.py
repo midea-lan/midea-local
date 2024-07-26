@@ -127,8 +127,10 @@ def _redact_data(data: str) -> str:
     )
     for token in token_list:
         item = token
-        if item[0] == "'":
+        if len(item) > 0 and item[0] == "'":
             item = item[1:]
+        if len(item) == 0:
+            break
         m = len(item)
         elm = r"\b" + item + r"\b"
         data = re.sub(elm, block * m, data)
