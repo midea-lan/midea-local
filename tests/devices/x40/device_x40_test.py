@@ -49,3 +49,6 @@ class TestMideaX40Device:
             mock_message.current_temperature = 53
             new_status = self.device.process_message(b"")
             assert new_status[DeviceAttributes.current_temperature] == 26.5
+
+            self.device.set_customize("{")  # Test invalid json
+            assert self.device.precision_halves is False
