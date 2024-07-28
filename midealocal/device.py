@@ -212,6 +212,7 @@ class MideaDevice(threading.Thread):
                 self._socket.connect((self._ip_address, self._port))
                 _LOGGER.debug("[%s] Connected", self._device_id)
                 connected = True
+                break
             except TimeoutError:
                 _LOGGER.debug("[%s] Connection timed out", self._device_id)
             except OSError:
