@@ -16,7 +16,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   label-pr:
     runs-on: ubuntu-latest
-    if: "!contains( github.event.pull_request.labels.*.name, 'autorelease: pending') && !contains( github.event.pull_request.labels.*.name, 'autorelease: tagged'))"
+    if: "!contains( github.event.pull_request.labels.*.name, 'autorelease: pending') && !contains( github.event.pull_request.labels.*.name, 'autorelease: tagged')"
     permissions:
       pull-requests: write
     steps:
