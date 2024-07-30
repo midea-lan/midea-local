@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.5.0](https://github.com/rokam/midea-local/compare/v2.4.0...v2.5.0) (2024-07-30)
+
+
+### Features
+
+* **40:** add `precision_halves` customization ([#248](https://github.com/rokam/midea-local/issues/248)) ([8f5ec79](https://github.com/rokam/midea-local/commit/8f5ec79fe859ad88519360353cd3b6e159200625))
+* **b8:** first implementation ([#225](https://github.com/rokam/midea-local/issues/225)) ([259e4f2](https://github.com/rokam/midea-local/commit/259e4f2f715b38a280789530941acc53d98beca4))
+
+
+### Bug Fixes
+
+* `break` the loop when connected ([#244](https://github.com/rokam/midea-local/issues/244)) ([536f975](https://github.com/rokam/midea-local/commit/536f975b93a3d68466a1bfa5a7c152570121531e))
+* **ac:** correct attributes based on msg type ([#251](https://github.com/rokam/midea-local/issues/251)) ([fada9bc](https://github.com/rokam/midea-local/commit/fada9bc5fcc4158a6315566b8e9372c8805e21b4))
+* **cloud:** fix email obfuscation ([#245](https://github.com/rokam/midea-local/issues/245)) ([ad9f278](https://github.com/rokam/midea-local/commit/ad9f278c7284e7e80285d66adc8320bb944f1162))
+
 ## [2.4.0](https://github.com/rokam/midea-local/compare/v2.3.0...v2.4.0) (2024-07-24)
 
 
