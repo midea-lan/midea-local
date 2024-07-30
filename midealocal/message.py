@@ -38,6 +38,7 @@ class BodyType(IntEnum):
     X31 = 0x31
     X32 = 0x32
     X41 = 0x41
+    X42 = 0x42
     X80 = 0x80
 
 
