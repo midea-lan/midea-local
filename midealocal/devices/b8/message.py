@@ -76,7 +76,7 @@ class MessageSet(MessageB8Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x22,
+            body_type=BodyType.X22,
         )
         self.clean_mode = B8CleanMode.AUTO
         self.fan_level = B8FanLevel.NORMAL
@@ -108,7 +108,7 @@ class MessageSetCommand(MessageB8Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x22,
+            body_type=BodyType.X22,
         )
         self.work_mode = work_mode
 
