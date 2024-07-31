@@ -133,16 +133,27 @@ class MideaA1Device(MideaDevice):
                     self._attributes[status] = str(value)
                 else:
                     self._attributes[status] = value
-                tank_full = self._attributes[DeviceAttributes.tank] >= int(
-                    self._attributes[DeviceAttributes.water_level_set],
+                tank_full = self._attributes[DeviceAttributes.tank_full]
+                tank = self._attributes[DeviceAttributes.tank]
+                water_level = int(self._attributes[DeviceAttributes.water_level_set])
+                tank_full_calculated = tank >= water_level if water_level else False
+                _LOGGER.debug(
+                    "Device - tank: %s, tank_full: %s, \
+                                     water_leve:%s, tank_full_calculated: %s",
+                    tank,
+                    tank_full,
+                    water_level,
+                    tank_full_calculated,
                 )
-                if (
-                    self._attributes[DeviceAttributes.tank_full] is None
-                    or self._attributes[DeviceAttributes.tank_full] != tank_full
-                ):
-                    self._attributes[DeviceAttributes.tank_full] = tank_full
-                    new_status[str(DeviceAttributes.tank_full)] = tank_full
+                if tank_full is None or tank_full != tank_full_calculated:
+                    self._attributes[DeviceAttributes.tank_full] = tank_full_calculated
+                    new_status[str(DeviceAttributes.tank_full)] = tank_full_calculated
                 new_status[str(status)] = self._attributes[status]
+                _LOGGER.debug(
+                    "Device after - new_status: %s, tank_full: %s",
+                    new_status,
+                    self._attributes[DeviceAttributes.tank_full],
+                )
         return new_status
 
     def make_message_set(self) -> MessageSet:
