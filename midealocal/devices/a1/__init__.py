@@ -136,7 +136,7 @@ class MideaA1Device(MideaDevice):
                 tank_full = self._attributes[DeviceAttributes.tank_full]
                 tank = self._attributes[DeviceAttributes.tank]
                 water_level = int(self._attributes[DeviceAttributes.water_level_set])
-                tank_full_calculated = tank >= water_level if water_level else False
+                tank_full_calculated = tank >= water_level if bool(tank) else False
                 _LOGGER.debug(
                     "Device - tank: %s, tank_full: %s, \
                                      water_leve:%s, tank_full_calculated: %s",
