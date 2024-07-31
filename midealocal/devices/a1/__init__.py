@@ -139,7 +139,7 @@ class MideaA1Device(MideaDevice):
                 tank_full_calculated = tank >= water_level if bool(tank) else False
                 _LOGGER.debug(
                     "Device - tank: %s, tank_full: %s, \
-                                     water_leve:%s, tank_full_calculated: %s",
+                                     water_level: %s, tank_full_calculated: %s",
                     tank,
                     tank_full,
                     water_level,
