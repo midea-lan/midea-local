@@ -55,8 +55,14 @@ class MideaCLI:
 
     async def _get_keys(self, device_id: int) -> dict[int, dict[str, Any]]:
         cloud = await self._get_cloud()
-        cloud_keys = await cloud.get_cloud_keys(device_id)
         default_keys = await cloud.get_default_keys()
+        if not await cloud.login():
+            _LOGGER.warning(
+                "Failed to authenticate to the cloud. Using only default keys.",
+            )
+            return default_keys
+        cloud_keys = await cloud.get_cloud_keys(device_id)
+
         return {**cloud_keys, **default_keys}
 
     async def discover(self) -> MideaDevice | None:
