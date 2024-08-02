@@ -304,6 +304,27 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert device.get("manufacturer_code") == "1234"
         assert device.get("model") == "00000000"
         assert not device.get("online")
+        assert device.get("des") is None
+        assert device.get("active_status") == 1
+        assert device.get("active_time") == "2024-06-12 10:45:45"
+        assert device.get("master_id") is None
+        assert device.get("wifi_version") == "059009012205"
+        assert device.get("enterprise") == "0000"
+        assert device.get("is_other_equipment") is None
+        assert device.get("attrs") is None
+        assert device.get("room_name") is None
+        assert device.get("bt_mac") == "54B8740FA801"
+        assert device.get("bt_token") is None
+        assert device.get("hotspot_name") is None
+        assert device.get("is_bluetooth") == 0
+        assert device.get("bind_type") is None
+        assert device.get("ability") is None
+        assert device.get("name_changed") is None
+        assert not device.get("support_wot")
+        assert device.get("template_of_tsl") is None
+        assert device.get("shadow_level") is None
+        assert device.get("smart_product_id") == 10004256
+        assert device.get("brand") is None
 
         device = await cloud.get_device_info(99)
         assert device is None
