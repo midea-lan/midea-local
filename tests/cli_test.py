@@ -60,6 +60,46 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         with pytest.raises(ElementMissing):
             await self.cli._get_cloud()
 
+    async def test_get_keys(self) -> None:
+        """Test get keys."""
+        mock_cloud = AsyncMock()
+        with (
+            patch("midealocal.cli.get_midea_cloud", return_value=mock_cloud),
+            patch.object(
+                mock_cloud,
+                "get_default_keys",
+                return_value={99: {"key": "key99", "token": "token99"}},
+            ) as mock_default_keys,
+            patch.object(
+                mock_cloud,
+                "get_cloud_keys",
+                return_value={
+                    0: {"key": "key0", "token": "token0"},
+                    1: {"key": "key1", "token": "token1"},
+                },
+            ) as mock_cloud_keys,
+            patch.object(mock_cloud, "login", side_effect=[True, False]),
+        ):
+            keys = await self.cli._get_keys(0)
+            assert len(keys) == 3
+            assert keys[0]["key"] == "key0"
+            assert keys[1]["key"] == "key1"
+            assert keys[99]["key"] == "key99"
+            assert keys[0]["token"] == "token0"
+            assert keys[1]["token"] == "token1"
+            assert keys[99]["token"] == "token99"
+            mock_default_keys.assert_called_once()
+            mock_default_keys.reset_mock()
+            mock_cloud_keys.assert_called_once_with(0)
+            mock_cloud_keys.reset_mock()
+
+            keys = await self.cli._get_keys(0)
+            assert len(keys) == 1
+            assert keys[99]["key"] == "key99"
+            assert keys[99]["token"] == "token99"
+            mock_default_keys.assert_called_once()
+            mock_cloud_keys.assert_not_called()
+
     async def test_discover(self) -> None:
         """Test discover."""
         mock_device = {
