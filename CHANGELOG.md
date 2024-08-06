@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.6.0](https://github.com/rokam/midea-local/compare/v2.5.0...v2.6.0) (2024-08-02)
+
+
+### Features
+
+* parse all the response items from MeijuCloud for get_device_inf ([#231](https://github.com/rokam/midea-local/issues/231)) ([1976eb6](https://github.com/rokam/midea-local/commit/1976eb63578698d2b9a745a92c9c61a887219e0d))
+
+
+### Bug Fixes
+
+* **cli:** authenticate to get keys ([#256](https://github.com/rokam/midea-local/issues/256)) ([a017e7a](https://github.com/rokam/midea-local/commit/a017e7af46130266226f6c9a100b05703dd6cb5c))
+* tank is always seen as full ([#255](https://github.com/rokam/midea-local/issues/255)) ([3524405](https://github.com/rokam/midea-local/commit/3524405fd36131deb83c9ded236eb686860f58c2))
+
 ## [2.5.0](https://github.com/rokam/midea-local/compare/v2.4.0...v2.5.0) (2024-07-30)
 
 
