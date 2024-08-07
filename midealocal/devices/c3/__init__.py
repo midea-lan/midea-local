@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any
+from typing import Any, ClassVar
 
 from midealocal.device import MideaDevice
 from midealocal.devices.c3.const import C3DeviceMode, C3SilentLevel, DeviceAttributes
@@ -22,6 +22,12 @@ _LOGGER = logging.getLogger(__name__)
 
 class MideaC3Device(MideaDevice):
     """Midea C3 device."""
+
+    _silent_modes: ClassVar[dict[int, str]] = {
+        C3SilentLevel.OFF.value: C3SilentLevel.OFF.name,
+        C3SilentLevel.SILENT.value: C3SilentLevel.SILENT.name,
+        C3SilentLevel.SUPER_SILENT.value: C3SilentLevel.SUPER_SILENT.name,
+    }
 
     def __init__(
         self,
