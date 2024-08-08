@@ -90,6 +90,7 @@ class TestMideaC3Device:
         assert self.device.attributes[DeviceAttributes.outdoor_temperature] is None
         assert self.device.attributes[DeviceAttributes.error_code] == 0
         assert self.device.temperature_step == 1
+        assert len(self.device.silent_modes) == 3
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
