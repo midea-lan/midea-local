@@ -108,7 +108,7 @@ class TestMideaC3Device:
 
             self.device.set_attribute(
                 DeviceAttributes.SILENT_LEVEL.value,
-                C3SilentLevel.SILENT,
+                C3SilentLevel.SILENT.name,
             )
 
     def test_build_query(self) -> None:
