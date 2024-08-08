@@ -65,13 +65,14 @@ class MideaCLI:
 
         return {**cloud_keys, **default_keys}
 
-    async def discover(self) -> MideaDevice | None:
+    async def discover(self) -> list[MideaDevice]:
         """Discover device information."""
         devices = discover(ip_address=self.namespace.host)
 
+        device_list: list[MideaDevice] = []
         if len(devices) == 0:
             _LOGGER.error("No devices found.")
-            return None
+            return device_list
 
         # Dump only basic device info from the base class
         _LOGGER.info("Found %d devices.", len(devices))
@@ -99,10 +100,11 @@ class MideaCLI:
                 _LOGGER.debug("Trying to connect with key: %s", key)
                 if dev.connect():
                     _LOGGER.info("Found device:\n%s", dev.attributes)
-                    return dev
+                    device_list.append(dev)
+                    break
 
                 _LOGGER.debug("Unable to connect with key: %s", key)
-        return None
+        return device_list
 
     def message(self) -> None:
         """Load message into device."""
@@ -168,23 +170,23 @@ class MideaCLI:
 
     async def set_attribute(self) -> None:
         """Set attribute for device."""
-        device = await self.discover()
-        if device is None:
+        device_list = await self.discover()
+        if len(device_list) != 1:
             return
 
         _LOGGER.info(
             "Setting attribute %s for %s [%s]",
             self.namespace.attribute,
-            device.device_id,
-            device.device_type,
+            device_list[0].device_id,
+            device_list[0].device_type,
         )
-        device.set_attribute(
+        device_list[0].set_attribute(
             self.namespace.attribute,
             self._cast_attr_value(),
         )
         await asyncio.sleep(2)
-        device.refresh_status(True)
-        _LOGGER.info("New device status:\n%s", device.attributes)
+        device_list[0].refresh_status(True)
+        _LOGGER.info("New device status:\n%s", device_list[0].attributes)
 
     def _cast_attr_value(self) -> int | bool | str:
         if self.namespace.attr_type == "bool":
