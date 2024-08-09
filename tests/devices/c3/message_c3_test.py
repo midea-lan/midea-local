@@ -291,28 +291,28 @@ class TestMessageC3Response:
             ],
         )
         response = MessageC3Response(self.header + body)
-        assert hasattr(response, "silence_mode")
-        assert response.silence_mode is False
-        assert hasattr(response, "silence_level")
-        assert response.silence_level == C3SilentLevel.OFF
+        assert hasattr(response, "silent_mode")
+        assert response.silent_mode is False
+        assert hasattr(response, "silent_level")
+        assert response.silent_level == C3SilentLevel.OFF
 
         body[1] = 0x1
         response = MessageC3Response(self.header + body)
-        assert hasattr(response, "silence_mode")
-        assert response.silence_mode is True
-        assert hasattr(response, "silence_level")
-        assert response.silence_level == C3SilentLevel.SILENT
+        assert hasattr(response, "silent_mode")
+        assert response.silent_mode is True
+        assert hasattr(response, "silent_level")
+        assert response.silent_level == C3SilentLevel.SILENT
 
         body[1] = 0x8
         response = MessageC3Response(self.header + body)
-        assert hasattr(response, "silence_mode")
-        assert response.silence_mode is False
-        assert hasattr(response, "silence_level")
-        assert response.silence_level == C3SilentLevel.OFF
+        assert hasattr(response, "silent_mode")
+        assert response.silent_mode is False
+        assert hasattr(response, "silent_level")
+        assert response.silent_level == C3SilentLevel.OFF
 
         body[1] = 0x9
         response = MessageC3Response(self.header + body)
-        assert hasattr(response, "silence_mode")
-        assert response.silence_mode is True
-        assert hasattr(response, "silence_level")
-        assert response.silence_level == C3SilentLevel.SUPER_SILENT
+        assert hasattr(response, "silent_mode")
+        assert response.silent_mode is True
+        assert hasattr(response, "silent_level")
+        assert response.silent_level == C3SilentLevel.SUPER_SILENT
