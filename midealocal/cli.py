@@ -116,7 +116,6 @@ class MideaCLI:
                         device_list.append(dev)
         return device_list
 
-
     def message(self) -> None:
         """Load message into device."""
         device_type = int(self.namespace.message[2])
