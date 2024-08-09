@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any
+from typing import Any, ClassVar
 
 from midealocal.device import MideaDevice
 from midealocal.devices.c3.const import C3DeviceMode, C3SilentLevel, DeviceAttributes
@@ -22,6 +22,12 @@ _LOGGER = logging.getLogger(__name__)
 
 class MideaC3Device(MideaDevice):
     """Midea C3 device."""
+
+    _silent_modes: ClassVar[list[str]] = [
+        C3SilentLevel.OFF.name,
+        C3SilentLevel.SILENT.name,
+        C3SilentLevel.SUPER_SILENT.name,
+    ]
 
     def __init__(
         self,
@@ -100,6 +106,11 @@ class MideaC3Device(MideaDevice):
     def temperature_step(self) -> float | None:
         """Midea C3 device temperature step."""
         return self._temperature_step
+
+    @property
+    def silent_modes(self) -> list[str]:
+        """Midea C3 device silent modes."""
+        return MideaC3Device._silent_modes
 
     def build_query(self) -> list[MessageQuery]:
         """Midea C3 device build query."""
@@ -243,9 +254,9 @@ class MideaC3Device(MideaDevice):
                 message.silent_level = (
                     C3SilentLevel.SILENT if value else C3SilentLevel.OFF
                 )
-            elif attr == DeviceAttributes.SILENT_LEVEL.value and isinstance(value, int):
-                message.silent_level = C3SilentLevel(int(value))
-                message.silent_mode = value != C3SilentLevel.OFF
+            elif attr == DeviceAttributes.SILENT_LEVEL.value and isinstance(value, str):
+                message.silent_level = C3SilentLevel[value]
+                message.silent_mode = value != C3SilentLevel.OFF.name
         if message is not None:
             self.build_send(message)
 
