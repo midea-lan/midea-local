@@ -12,7 +12,7 @@ from threading import Lock
 from typing import Any, cast
 
 import aiofiles
-from aiohttp import ClientConnectionError, ClientSession
+from aiohttp import ClientConnectionError, ClientSession, ClientTimeout
 from commonregex import CommonRegex
 
 from midealocal.exceptions import ElementMissing
@@ -205,7 +205,7 @@ class MideaCloud:
                         url,
                         headers=header,
                         data=dump_data,
-                        timeout=10,
+                        timeout=ClientTimeout(10),
                     )
                     raw = await r.read()
                     _LOGGER.debug(
@@ -796,7 +796,7 @@ class MideaAirCloud(MideaCloud):
                         url,
                         headers=header,
                         data=data,
-                        timeout=10,
+                        timeout=ClientTimeout(10),
                     )
                     raw = await r.read()
                     _LOGGER.debug(
