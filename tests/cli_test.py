@@ -17,7 +17,8 @@ from midealocal.cli import (
     get_config_file_path,
 )
 from midealocal.cloud import MSmartHomeCloud
-from midealocal.device import ProtocolVersion
+from midealocal.device import AuthException, ProtocolVersion, RefreshFailed
+from midealocal.exceptions import SocketException
 
 
 class TestMideaCLI(IsolatedAsyncioTestCase):
@@ -127,6 +128,16 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 "midealocal.cli.device_selector",
                 return_value=mock_device_instance,
             ),
+            patch.object(
+                mock_device_instance,
+                "authenticate",
+                side_effect=[None, AuthException, SocketException],
+            ) as authenticate_mock,
+            patch.object(
+                mock_device_instance,
+                "refresh_status",
+                side_effect=[None, RefreshFailed, None],
+            ) as refresh_status_mock,
         ):
             mock_discover.return_value = {1: mock_device}
             mock_cloud_instance.get_cloud_keys.return_value = {
@@ -137,9 +148,20 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             }
 
             await self.cli.discover()  # V3 device
+            authenticate_mock.assert_called_once()
+            refresh_status_mock.assert_called_once_with(True)
+            authenticate_mock.reset_mock()
+            refresh_status_mock.reset_mock()
+
+            await self.cli.discover()  # V3 device AuthException
+            refresh_status_mock.assert_not_called()
+            authenticate_mock.assert_called()
+            authenticate_mock.reset_mock()
 
             mock_device["protocol"] = ProtocolVersion.V2
-            await self.cli.discover()  # V2 device
+            await self.cli.discover()  # V2 device RefreshFailed
+            authenticate_mock.assert_not_called()
+            refresh_status_mock.assert_called_once()
 
             mock_device_instance.connect.return_value = False
             await self.cli.discover()  # connect failed

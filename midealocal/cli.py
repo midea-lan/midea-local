@@ -15,10 +15,10 @@ import platformdirs
 from colorlog import ColoredFormatter
 
 from midealocal.cloud import SUPPORTED_CLOUDS, MideaCloud, get_midea_cloud
-from midealocal.device import MideaDevice, ProtocolVersion
+from midealocal.device import AuthException, MideaDevice, ProtocolVersion, RefreshFailed
 from midealocal.devices import device_selector
 from midealocal.discover import discover
-from midealocal.exceptions import ElementMissing
+from midealocal.exceptions import ElementMissing, SocketException
 from midealocal.version import __version__
 
 _LOGGER = logging.getLogger("cli")
@@ -96,12 +96,23 @@ class MideaCLI:
                     subtype=0,
                     customize="",
                 )
-                _LOGGER.debug("Trying to connect with key: %s", key)
+                _LOGGER.debug("Opening socket for device.")
                 if dev.connect():
-                    _LOGGER.info("Found device:\n%s", dev.attributes)
-                    return dev
-
-                _LOGGER.debug("Unable to connect with key: %s", key)
+                    try:
+                        if device["protocol"] == ProtocolVersion.V3:
+                            _LOGGER.debug("Trying to connect with key: %s", key)
+                            dev.authenticate()
+                        _LOGGER.debug("Trying to retrieve device attributes.")
+                        dev.refresh_status(True)
+                    except AuthException:
+                        _LOGGER.debug("Unable to connect with key: %s", key)
+                    except SocketException:
+                        _LOGGER.exception("Device socket closed.")
+                    except RefreshFailed:
+                        _LOGGER.exception("Unable to retrieve device attributes.")
+                    else:
+                        _LOGGER.info("Found device:\n%s", dev.attributes)
+                        return dev
         return None
 
     def message(self) -> None:
