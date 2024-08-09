@@ -240,10 +240,10 @@ class C3QuerySilenceMessageBody(MessageBody):
     def __init__(self, body: bytearray, data_offset: int = 0) -> None:
         """Initialize C3 notify1 message body."""
         super().__init__(body)
-        self.silence_mode = body[data_offset] & 0x1 > 0
-        self.silence_level = (
+        self.silent_mode = body[data_offset] & 0x1 > 0
+        self.silent_level = (
             (body[data_offset] & 0x1) + ((body[data_offset] & 0x8) >> 2)
-            if self.silence_mode
+            if self.silent_mode
             else C3SilentLevel.OFF
         )
         # Message protocol information:
