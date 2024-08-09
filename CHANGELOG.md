@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.1](https://github.com/rokam/midea-local/compare/v2.6.0...v2.6.1) (2024-08-09)
+
+
+### Bug Fixes
+
+* **c3:** silent typo ([#265](https://github.com/rokam/midea-local/issues/265)) ([97defcd](https://github.com/rokam/midea-local/commit/97defcdc100424992c0f2bc7d4797cbbb6825076))
+* **cli:** authenticate on discover v3 device ([#263](https://github.com/rokam/midea-local/issues/263)) ([05b0b11](https://github.com/rokam/midea-local/commit/05b0b11d98a3435373742c2cf50142f618700ed1))
+
 ## [2.6.0](https://github.com/rokam/midea-local/compare/v2.5.0...v2.6.0) (2024-08-02)
 
 
