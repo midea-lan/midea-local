@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.2](https://github.com/rokam/midea-local/compare/v2.6.1...v2.6.2) (2024-08-10)
+
+
+### Bug Fixes
+
+* **cli:** discover must return a list ([#266](https://github.com/rokam/midea-local/issues/266)) ([345794b](https://github.com/rokam/midea-local/commit/345794b1241c149c172c117412ed48707daff6b9))
+
 ## [2.6.1](https://github.com/rokam/midea-local/compare/v2.6.0...v2.6.1) (2024-08-09)
 
 
