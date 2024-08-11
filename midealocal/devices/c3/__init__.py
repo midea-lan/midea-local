@@ -68,7 +68,7 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.zone1_water_temp_mode: False,
                 DeviceAttributes.zone2_water_temp_mode: False,
                 DeviceAttributes.silent_mode: False,
-                DeviceAttributes.SILENT_LEVEL: C3SilentLevel.OFF,
+                DeviceAttributes.SILENT_LEVEL: C3SilentLevel.OFF.name,
                 DeviceAttributes.eco_mode: False,
                 DeviceAttributes.tbh: False,
                 DeviceAttributes.mode: 1,
@@ -252,7 +252,11 @@ class MideaC3Device(MideaDevice):
             if attr == DeviceAttributes.silent_mode.value and isinstance(value, bool):
                 message.silent_mode = bool(value)
                 message.silent_level = (
-                    C3SilentLevel.SILENT if value else C3SilentLevel.OFF
+                    C3SilentLevel.SILENT
+                    if value
+                    and self._attributes[DeviceAttributes.SILENT_LEVEL]
+                    == C3SilentLevel.OFF.name
+                    else C3SilentLevel[self._attributes[DeviceAttributes.SILENT_LEVEL]]
                 )
             elif attr == DeviceAttributes.SILENT_LEVEL.value and isinstance(value, str):
                 message.silent_level = C3SilentLevel[value]
