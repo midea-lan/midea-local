@@ -51,7 +51,8 @@ class TestMideaC3Device:
         assert self.device.attributes[DeviceAttributes.zone2_water_temp_mode] is False
         assert self.device.attributes[DeviceAttributes.silent_mode] is False
         assert (
-            self.device.attributes[DeviceAttributes.SILENT_LEVEL] == C3SilentLevel.OFF
+            self.device.attributes[DeviceAttributes.SILENT_LEVEL]
+            == C3SilentLevel.OFF.name
         )
         assert self.device.attributes[DeviceAttributes.eco_mode] is False
         assert self.device.attributes[DeviceAttributes.tbh] is False
