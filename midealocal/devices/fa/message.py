@@ -1,7 +1,7 @@
 """Midea local FA message."""
 
 from midealocal.message import (
-    NONE_VALUE,
+    ZERO_VALUE,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -21,7 +21,7 @@ class MessageFABase(MessageRequest):
         self,
         protocol_version: int,
         message_type: int,
-        body_type: int = NONE_VALUE,
+        body_type: int = ZERO_VALUE,
     ) -> None:
         """Initialize the message with protocol version, message type, and body type."""
         super().__init__(
@@ -64,7 +64,7 @@ class MessageSet(MessageFABase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x00,
+            body_type=ZERO_VALUE,
         )
         self._subtype = subtype
         self.power: bool | None = None

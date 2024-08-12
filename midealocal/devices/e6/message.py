@@ -1,7 +1,7 @@
 """Midea local E6 message."""
 
 from midealocal.message import (
-    NONE_VALUE,
+    ZERO_VALUE,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -18,7 +18,7 @@ class MessageE6Base(MessageRequest):
             device_type=0xE6,
             protocol_version=protocol_version,
             message_type=message_type,
-            body_type=NONE_VALUE,
+            body_type=ZERO_VALUE,
         )
 
     @property
