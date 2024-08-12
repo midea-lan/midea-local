@@ -3,7 +3,7 @@
 from enum import IntEnum
 
 from midealocal.message import (
-    NONE_VALUE,
+    ZERO_VALUE,
     BodyType,
     MessageBody,
     MessageRequest,
@@ -46,7 +46,7 @@ class MessageEDBase(MessageRequest):
         self,
         protocol_version: int,
         message_type: int,
-        body_type: int = NONE_VALUE,
+        body_type: int = ZERO_VALUE,
     ) -> None:
         """Initialize ED message base."""
         super().__init__(

@@ -1,7 +1,7 @@
 """Midea local FB message."""
 
 from midealocal.message import (
-    NONE_VALUE,
+    ZERO_VALUE,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -24,7 +24,7 @@ class MessageFBBase(MessageRequest):
         self,
         protocol_version: int,
         message_type: int,
-        body_type: int = NONE_VALUE,
+        body_type: int = ZERO_VALUE,
     ) -> None:
         """Initialize FB message base."""
         super().__init__(
