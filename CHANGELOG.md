@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.3](https://github.com/rokam/midea-local/compare/v2.6.2...v2.6.3) (2024-08-13)
+
+
+### Bug Fixes
+
+* body_type default value is zero and not None ([#271](https://github.com/rokam/midea-local/issues/271)) ([bf6b4f0](https://github.com/rokam/midea-local/commit/bf6b4f0d0548bf495339cf793acd30673634f6d1))
+* **c3:** silent level as string ([#270](https://github.com/rokam/midea-local/issues/270)) ([c851e33](https://github.com/rokam/midea-local/commit/c851e33dc9e8f7bb5a2f7d49f2e7c557d3a7151f))
+
 ## [2.6.2](https://github.com/rokam/midea-local/compare/v2.6.1...v2.6.2) (2024-08-10)
 
 
