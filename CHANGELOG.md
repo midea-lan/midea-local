@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.6.3](https://github.com/rokam/midea-local/compare/v2.6.2...v2.6.3) (2024-08-13)
+
+
+### Bug Fixes
+
+* body_type default value is zero and not None ([#271](https://github.com/rokam/midea-local/issues/271)) ([bf6b4f0](https://github.com/rokam/midea-local/commit/bf6b4f0d0548bf495339cf793acd30673634f6d1))
+* **c3:** silent level as string ([#270](https://github.com/rokam/midea-local/issues/270)) ([c851e33](https://github.com/rokam/midea-local/commit/c851e33dc9e8f7bb5a2f7d49f2e7c557d3a7151f))
+
+## [2.6.2](https://github.com/rokam/midea-local/compare/v2.6.1...v2.6.2) (2024-08-10)
+
+
+### Bug Fixes
+
+* **cli:** discover must return a list ([#266](https://github.com/rokam/midea-local/issues/266)) ([345794b](https://github.com/rokam/midea-local/commit/345794b1241c149c172c117412ed48707daff6b9))
+
+## [2.6.1](https://github.com/rokam/midea-local/compare/v2.6.0...v2.6.1) (2024-08-09)
+
+
+### Bug Fixes
+
+* **c3:** silent typo ([#265](https://github.com/rokam/midea-local/issues/265)) ([97defcd](https://github.com/rokam/midea-local/commit/97defcdc100424992c0f2bc7d4797cbbb6825076))
+* **cli:** authenticate on discover v3 device ([#263](https://github.com/rokam/midea-local/issues/263)) ([05b0b11](https://github.com/rokam/midea-local/commit/05b0b11d98a3435373742c2cf50142f618700ed1))
+
 ## [2.6.0](https://github.com/rokam/midea-local/compare/v2.5.0...v2.6.0) (2024-08-02)
 
 

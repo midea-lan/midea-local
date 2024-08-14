@@ -104,7 +104,7 @@ class MessageType(IntEnum):
     query_appliance = 0xA0
 
 
-NONE_VALUE = 0x00
+ZERO_VALUE = 0x00
 
 
 class MessageBase:
@@ -114,10 +114,10 @@ class MessageBase:
 
     def __init__(self) -> None:
         """Initialize message base."""
-        self._device_type = NONE_VALUE
-        self._message_type = NONE_VALUE
-        self._body_type = NONE_VALUE
-        self._protocol_version = NONE_VALUE
+        self._device_type = ZERO_VALUE
+        self._message_type = ZERO_VALUE
+        self._body_type = ZERO_VALUE
+        self._protocol_version = ZERO_VALUE
 
     @staticmethod
     def checksum(data: bytes) -> SupportsIndex:
@@ -178,7 +178,7 @@ class MessageBase:
             "message type": f".{f'{self.message_type:02x}'}",
             "body type": (
                 f".{f'{self._body_type:02x}'}"
-                if self._body_type != NONE_VALUE
+                if self._body_type is not None
                 else "None"
             ),
         }
@@ -238,7 +238,7 @@ class MessageRequest(MessageBase):
     def body(self) -> bytearray:
         """Message body."""
         body = bytearray([])
-        if self.body_type != NONE_VALUE:
+        if self.body_type is not None:
             body.append(self.body_type)
         if self._body is not None:
             body.extend(self._body)
@@ -266,7 +266,7 @@ class MessageQuestCustom(MessageRequest):
             device_type=device_type,
             protocol_version=protocol_version,
             message_type=cmd_type,
-            body_type=NONE_VALUE,
+            body_type=ZERO_VALUE,
         )
         self._cmd_body = cmd_body
 
@@ -289,7 +289,7 @@ class MessageQueryAppliance(MessageRequest):
             device_type=device_type,
             protocol_version=0,
             message_type=MessageType.query_appliance,
-            body_type=NONE_VALUE,
+            body_type=ZERO_VALUE,
         )
 
     @property
