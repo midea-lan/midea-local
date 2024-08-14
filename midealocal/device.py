@@ -73,6 +73,7 @@ class DeviceType(IntEnum):
     X26 = 0x26
     X34 = 0x34
     X40 = 0x40
+    X00 = 0x00
 
 
 class AuthException(Exception):
@@ -117,7 +118,7 @@ class MideaDevice(threading.Thread):
         self,
         name: str,
         device_id: int,
-        device_type: int,
+        device_type: DeviceType,
         ip_address: str,
         port: int,
         token: str,
@@ -167,7 +168,7 @@ class MideaDevice(threading.Thread):
         return self._device_id
 
     @property
-    def device_type(self) -> int:
+    def device_type(self) -> DeviceType:
         """Device type."""
         return self._device_type
 
@@ -538,7 +539,7 @@ class MideaDevice(threading.Thread):
         """Process message."""
         raise NotImplementedError
 
-    def send_command(self, cmd_type: int, cmd_body: bytearray) -> None:
+    def send_command(self, cmd_type: MessageType, cmd_body: bytearray) -> None:
         """Send command."""
         cmd = MessageQuestCustom(
             self._device_type,

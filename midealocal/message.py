@@ -4,6 +4,8 @@ import logging
 from enum import IntEnum
 from typing import Generic, SupportsIndex, TypeVar, cast
 
+from midealocal.device import DeviceType
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -122,10 +124,10 @@ class MessageBase:
 
     def __init__(self) -> None:
         """Initialize message base."""
-        self._device_type = ZERO_VALUE
-        self._message_type = ZERO_VALUE
-        self._body_type = ZERO_VALUE
-        self._protocol_version = ZERO_VALUE
+        self._device_type: DeviceType = DeviceType.X00
+        self._message_type: MessageType = MessageType.default
+        self._body_type: BodyType = BodyType.X00
+        self._protocol_version: int = 0
 
     @staticmethod
     def checksum(data: bytes) -> SupportsIndex:
@@ -143,30 +145,30 @@ class MessageBase:
         raise NotImplementedError
 
     @property
-    def message_type(self) -> int:
+    def message_type(self) -> MessageType:
         """Message type."""
         return self._message_type
 
     @message_type.setter
-    def message_type(self, value: int) -> None:
+    def message_type(self, value: MessageType) -> None:
         self._message_type = value
 
     @property
-    def device_type(self) -> int:
+    def device_type(self) -> DeviceType:
         """Message device type."""
         return self._device_type
 
     @device_type.setter
-    def device_type(self, value: int) -> None:
+    def device_type(self, value: DeviceType) -> None:
         self._device_type = value
 
     @property
-    def body_type(self) -> int:
+    def body_type(self) -> BodyType:
         """Message body type."""
         return self._body_type
 
     @body_type.setter
-    def body_type(self, value: int) -> None:
+    def body_type(self, value: BodyType) -> None:
         self._body_type = value
 
     @property
@@ -225,10 +227,10 @@ class MessageRequest(MessageBase):
 
     def __init__(
         self,
-        device_type: int,
+        device_type: DeviceType,
         protocol_version: int,
-        message_type: int,
-        body_type: int,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize message request."""
         super().__init__()
@@ -291,9 +293,9 @@ class MessageQuestCustom(MessageRequest):
 
     def __init__(
         self,
-        device_type: int,
+        device_type: DeviceType,
         protocol_version: int,
-        cmd_type: int,
+        cmd_type: MessageType,
         cmd_body: bytearray,
     ) -> None:
         """Initialize message quest custom."""
@@ -301,7 +303,7 @@ class MessageQuestCustom(MessageRequest):
             device_type=device_type,
             protocol_version=protocol_version,
             message_type=cmd_type,
-            body_type=ZERO_VALUE,
+            body_type=BodyType.X00,
         )
         self._cmd_body = cmd_body
 
@@ -318,13 +320,13 @@ class MessageQuestCustom(MessageRequest):
 class MessageQueryAppliance(MessageRequest):
     """Message query appliance."""
 
-    def __init__(self, device_type: int) -> None:
+    def __init__(self, device_type: DeviceType) -> None:
         """Initialize message query appliance."""
         super().__init__(
             device_type=device_type,
             protocol_version=0,
             message_type=MessageType.query_appliance,
-            body_type=ZERO_VALUE,
+            body_type=BodyType.X00,
         )
 
     @property
@@ -494,9 +496,9 @@ class MessageBody:
         return self._data
 
     @property
-    def body_type(self) -> int:
+    def body_type(self) -> BodyType:
         """Message body type."""
-        return self._data[0]
+        return BodyType(self._data[0])
 
     @staticmethod
     def read_byte(body: bytearray, byte: int, default_value: int = 0) -> int:
@@ -567,8 +569,8 @@ class MessageResponse(MessageBase):
             raise MessageLenError
         self._header = message[: self.HEADER_LENGTH]
         self.protocol_version = self._header[-2]
-        self.message_type = self._header[-1]
-        self.device_type = self._header[2]
+        self.message_type = MessageType(self._header[-1])
+        self.device_type = DeviceType(self._header[2])
         body = message[self.HEADER_LENGTH : -1]
         self._body = MessageBody(body)
         self.body_type = self._body.body_type
