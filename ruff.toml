@@ -2,7 +2,7 @@ target-version = "py311"
 
 lint.select = ["ALL"]
 
-lint.preview = true
+lint.preview = false
 
 lint.ignore = [
     "ANN101",   # Missing type annotation for `self` in method
@@ -11,8 +11,6 @@ lint.ignore = [
     "CPY001",   # Missing copyright notice at top of file
     "D203",     # 1 blank line required before class docstring
     "D213",     # Multi-line docstring summary should start at the second line
-    "DOC201",   # Docstring missing returns
-    "DOC501",   # Docstring missing raises
     "EM101",    # Exception must not use a string literal, assign to variable first
     "EM102",    # Exception must not use an f-string literal, assign to variable first
     "FBT001",   # Boolean-typed positional argument in function definition
