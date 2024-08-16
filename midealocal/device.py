@@ -245,6 +245,12 @@ class MideaDevice(threading.Thread):
             raise SocketException
         self._socket.send(request)
         response = self._socket.recv(512)
+        _LOGGER.debug(
+            "[%s] Received auth response with %d bytes: %s",
+            self._device_id,
+            len(response),
+            response.hex(),
+        )
         if len(response) < MIN_AUTH_RESPONSE:
             self.enable_device(False)
             raise AuthException
@@ -462,7 +468,11 @@ class MideaDevice(threading.Thread):
 
     def enable_device(self, available: bool = True) -> None:
         """Enable device."""
-        _LOGGER.debug("[%s] Enabling device", self._device_id)
+        _LOGGER.debug(
+            "[%s] %s device",
+            self._device_id,
+            "Enabling" if available else "Disabling",
+        )
         self._available = available
         status = {"available": available}
         self.update_all(status)
