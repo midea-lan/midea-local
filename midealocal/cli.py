@@ -14,11 +14,16 @@ import aiohttp
 import platformdirs
 from colorlog import ColoredFormatter
 
-from midealocal.cloud import SUPPORTED_CLOUDS, MideaCloud, get_midea_cloud
+from midealocal.cloud import (
+    SUPPORTED_CLOUDS,
+    MideaCloud,
+    get_midea_cloud,
+    get_preset_account_cloud,
+)
 from midealocal.device import AuthException, MideaDevice, ProtocolVersion, RefreshFailed
 from midealocal.devices import device_selector
 from midealocal.discover import discover
-from midealocal.exceptions import ElementMissing, SocketException
+from midealocal.exceptions import SocketException
 from midealocal.version import __version__
 
 _LOGGER = logging.getLogger("cli")
@@ -36,15 +41,22 @@ class MideaCLI:
 
     async def _get_cloud(self) -> MideaCloud:
         """Get cloud instance."""
+        if not hasattr(self, "session"):
+            self.session = aiohttp.ClientSession()
+
         if (
             not self.namespace.cloud_name
             or not self.namespace.username
             or not self.namespace.password
         ):
-            raise ElementMissing("Missing required parameters for cloud request.")
-
-        if not hasattr(self, "session"):
-            self.session = aiohttp.ClientSession()
+            default_cloud = get_preset_account_cloud()
+            _LOGGER.info("Using preset account.")
+            return get_midea_cloud(
+                cloud_name=default_cloud["cloud_name"],
+                session=self.session,
+                account=default_cloud["username"],
+                password=default_cloud["password"],
+            )
 
         return get_midea_cloud(
             cloud_name=self.namespace.cloud_name,
