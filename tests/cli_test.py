@@ -2,7 +2,7 @@
 
 import json
 import logging
-import subprocess  # noqa: S404
+import subprocess
 import sys
 from argparse import Namespace
 from pathlib import Path
