@@ -9,10 +9,7 @@ from pathlib import Path
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 from midealocal.cli import (
-    ElementMissing,
     MideaCLI,
     get_config_file_path,
 )
@@ -58,8 +55,9 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         assert cloud._session == mock_session_instance
 
         self.namespace.cloud_name = None
-        with pytest.raises(ElementMissing):
-            await self.cli._get_cloud()
+        cloud = await self.cli._get_cloud()
+        assert isinstance(cloud, MSmartHomeCloud)
+        assert cloud._session == mock_session_instance
 
     async def test_get_keys(self) -> None:
         """Test get keys."""
