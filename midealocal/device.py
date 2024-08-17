@@ -8,6 +8,8 @@ from collections.abc import Callable
 from enum import IntEnum, StrEnum
 from typing import Any
 
+from typing_extensions import deprecated
+
 from .exceptions import CannotConnect, SocketException
 from .message import (
     MessageApplianceResponse,
@@ -245,6 +247,12 @@ class MideaDevice(threading.Thread):
             raise SocketException
         self._socket.send(request)
         response = self._socket.recv(512)
+        _LOGGER.debug(
+            "[%s] Received auth response with %d bytes: %s",
+            self._device_id,
+            len(response),
+            response.hex(),
+        )
         if len(response) < MIN_AUTH_RESPONSE:
             self.enable_device(False)
             raise AuthException
@@ -460,12 +468,21 @@ class MideaDevice(threading.Thread):
         for update in self._updates:
             update(status)
 
-    def enable_device(self, available: bool = True) -> None:
-        """Enable device."""
-        _LOGGER.debug("[%s] Enabling device", self._device_id)
+    def set_available(self, available: bool = True) -> None:
+        """Set available value."""
+        _LOGGER.debug(
+            "[%s] %s device",
+            self._device_id,
+            "Enabling" if available else "Disabling",
+        )
         self._available = available
         status = {"available": available}
         self.update_all(status)
+
+    @deprecated("enable_device is replaced by set_available")
+    def enable_device(self, available: bool = True) -> None:
+        """Enable device."""
+        self.set_available(available)
 
     def open(self) -> None:
         """Open thread."""
