@@ -8,6 +8,8 @@ from collections.abc import Callable
 from enum import IntEnum, StrEnum
 from typing import Any
 
+from typing_extensions import deprecated
+
 from .exceptions import CannotConnect, SocketException
 from .message import (
     MessageApplianceResponse,
@@ -466,8 +468,8 @@ class MideaDevice(threading.Thread):
         for update in self._updates:
             update(status)
 
-    def enable_device(self, available: bool = True) -> None:
-        """Enable device."""
+    def set_available(self, available: bool = True) -> None:
+        """Set available value."""
         _LOGGER.debug(
             "[%s] %s device",
             self._device_id,
@@ -476,6 +478,11 @@ class MideaDevice(threading.Thread):
         self._available = available
         status = {"available": available}
         self.update_all(status)
+
+    @deprecated("enable_device is replaced by set_available")
+    def enable_device(self, available: bool = True) -> None:
+        """Enable device."""
+        self.set_available(available)
 
     def open(self) -> None:
         """Open thread."""
