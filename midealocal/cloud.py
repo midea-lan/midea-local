@@ -515,7 +515,7 @@ class MeijuCloud(MideaCloud):
         """Download lua integration."""
         data = {
             "applianceSn": sn,
-            "applianceType": f".{f'x{device_type:02x}'}",
+            "applianceType": hex(device_type),
             "applianceMFCode": manufacturer_code,
             "version": "0",
             "iotAppId": self._app_id,
