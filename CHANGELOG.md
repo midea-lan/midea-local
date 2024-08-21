@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.7.0](https://github.com/rokam/midea-local/compare/v2.6.3...v2.7.0) (2024-08-21)
+
+
+### Features
+
+* **cli:** use of preset account if cloud info missing ([#278](https://github.com/rokam/midea-local/issues/278)) ([84293bf](https://github.com/rokam/midea-local/commit/84293bfd86b9bb55f59b6897ff5d356df51f7fdb))
+
+
+### Bug Fixes
+
+* **cloud:** meiju cloud download_lua appliance_type error ([#281](https://github.com/rokam/midea-local/issues/281)) ([54f1bf4](https://github.com/rokam/midea-local/commit/54f1bf4a812c44590d9e01e9cd91c4c0f1768948))
+
 ## [2.6.3](https://github.com/rokam/midea-local/compare/v2.6.2...v2.6.3) (2024-08-13)
 
 
