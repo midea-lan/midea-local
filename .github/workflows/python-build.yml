@@ -13,6 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: wagoid/commitlint-github-action@v6.1.1
+        with:
+          configFile: .commitlint.config.mjs
   build:
     needs:
       - commitlint
