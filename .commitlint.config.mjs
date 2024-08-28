@@ -8,7 +8,7 @@ const Configuration = {
    * Any rules defined here will override rules from @commitlint/config-conventional
    */
   rules: {
-    "body-max-line-length": "Infinity",
+    "body-max-line-length": ["Infinity"],
   },
 };
 
