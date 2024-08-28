@@ -1,6 +1,0 @@
- commitlint: {
-    "rules": {
-      "body-max-line-length": "Infinity"
-    },
-  }
-
