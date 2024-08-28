@@ -1,3 +1,5 @@
+import { RuleConfigSeverity } from "@commitlint/types";
+
 const Configuration = {
   /*
    * Resolve and load @commitlint/config-conventional from node_modules.
@@ -8,7 +10,7 @@ const Configuration = {
    * Any rules defined here will override rules from @commitlint/config-conventional
    */
   rules: {
-    "body-max-line-length": ["Infinity"],
+    "body-max-line-length": [RuleConfigSeverity.Error, "always", 300],
   },
 };
 
