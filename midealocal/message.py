@@ -32,6 +32,7 @@ class BodyType(IntEnum):
     X07 = 0x07
     X0A = 0x0A
     X11 = 0x11
+    X15 = 0x15
     X21 = 0x21
     X22 = 0x22
     X24 = 0x24

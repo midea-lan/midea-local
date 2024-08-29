@@ -85,7 +85,7 @@ class MessageNewSet(MessageEDBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x15,
+            body_type=BodyType.X15,
         )
         self.power: bool | None = None
         self.lock: bool | None = None
@@ -244,9 +244,13 @@ class MessageEDResponse(MessageResponse):
     def __init__(self, message: bytes) -> None:
         """Initialize ED message response."""
         super().__init__(bytearray(message))
-        if self._message_type in [MessageType.query, MessageType.notify1]:
+        if self._message_type in [
+            MessageType.set,
+            MessageType.query,
+            MessageType.notify1,
+        ]:
             self.device_class = self._body_type
-            if self._body_type in [BodyType.X00, BodyType.FF]:
+            if self._body_type in [BodyType.X00, BodyType.X15, BodyType.FF]:
                 self.set_body(EDMessageBodyFF(super().body))
             if self.body_type == BodyType.X01:
                 self.set_body(EDMessageBody01(super().body))
