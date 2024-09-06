@@ -547,12 +547,12 @@ class MideaDevice(threading.Thread):
                     self._device_id,
                 )
                 connection_retries += 1
-                time.sleep(60 * connection_retries)
+                time.sleep(min(60 * connection_retries, 600))
                 continue
             if not self._socket:
                 _LOGGER.warning("[%s] No open socket available", self._device_id)
                 connection_retries += 1
-                time.sleep(60 * connection_retries)
+                time.sleep(min(60 * connection_retries, 600))
                 continue
             connection_retries = 0
             self._authenticate_refresh_capabilities()
