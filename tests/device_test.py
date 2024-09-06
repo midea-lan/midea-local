@@ -7,10 +7,10 @@ import pytest
 from midealocal.cloud import DEFAULT_KEYS
 from midealocal.device import (
     AuthException,
+    MessageResult,
     MideaDevice,
-    ParseMessageResult,
+    NoSupportedProtocol,
     ProtocolVersion,
-    RefreshFailed,
 )
 from midealocal.devices.ac.message import MessageCapabilitiesQuery
 from midealocal.exceptions import SocketException
@@ -64,7 +64,7 @@ class MideaDeviceTest:
             (TimeoutError, False),
             (OSError, False),
             (AuthException, False),
-            (RefreshFailed, False),
+            (NoSupportedProtocol, False),
             (None, True),
         ],
     )
@@ -229,9 +229,9 @@ class MideaDeviceTest:
                 self.device,
                 "parse_message",
                 side_effect=[
-                    ParseMessageResult.SUCCESS,
-                    ParseMessageResult.PADDING,
-                    ParseMessageResult.ERROR,
+                    MessageResult.SUCCESS,
+                    MessageResult.PADDING,
+                    MessageResult.ERROR,
                 ],
             ),
         ):
@@ -246,11 +246,11 @@ class MideaDeviceTest:
             self.device.refresh_status(True)  # SUCCESS
             self.device.refresh_status(True)  # PADDING
 
-            with pytest.raises(RefreshFailed):
+            with pytest.raises(NoSupportedProtocol):
                 self.device.refresh_status(True)  # ERROR
-            with pytest.raises(RefreshFailed):
+            with pytest.raises(NoSupportedProtocol):
                 self.device.refresh_status(True)  # Timeout
-            with pytest.raises(RefreshFailed):
+            with pytest.raises(NoSupportedProtocol):
                 self.device.refresh_status(True)  # Unsupported protocol
 
     def test_parse_message(self) -> None:
@@ -281,20 +281,15 @@ class MideaDeviceTest:
                 ],
             ),
         ):
-            assert (
-                self.device.parse_message(bytearray([])) == ParseMessageResult.PADDING
-            )
+            assert self.device.parse_message(bytearray([])) == MessageResult.PADDING
             self.device._protocol = ProtocolVersion.V2
-            assert self.device.parse_message(bytearray([])) == ParseMessageResult.ERROR
+            assert self.device.parse_message(bytearray([])) == MessageResult.ERROR
             with patch.object(
                 self.device,
                 "process_message",
                 side_effect=[{"power": True}, {}, NotImplementedError()],
             ):
-                assert (
-                    self.device.parse_message(bytearray([]))
-                    == ParseMessageResult.SUCCESS
-                )
+                assert self.device.parse_message(bytearray([])) == MessageResult.SUCCESS
 
     def test_pre_process_message(self) -> None:
         """Test pre process message."""

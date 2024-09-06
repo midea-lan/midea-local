@@ -14,7 +14,7 @@ from midealocal.cli import (
     get_config_file_path,
 )
 from midealocal.cloud import MSmartHomeCloud
-from midealocal.device import AuthException, ProtocolVersion, RefreshFailed
+from midealocal.device import AuthException, NoSupportedProtocol, ProtocolVersion
 from midealocal.exceptions import SocketException
 
 
@@ -134,7 +134,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             patch.object(
                 mock_device_instance,
                 "refresh_status",
-                side_effect=[None, None, RefreshFailed, None],
+                side_effect=[None, None, NoSupportedProtocol, None],
             ) as refresh_status_mock,
         ):
             mock_discover.return_value = {1: mock_device}
@@ -157,7 +157,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             authenticate_mock.reset_mock()
 
             mock_device["protocol"] = ProtocolVersion.V2
-            await self.cli.discover()  # V2 device RefreshFailed
+            await self.cli.discover()  # V2 device NoSupportedProtocol
             authenticate_mock.assert_not_called()
             refresh_status_mock.assert_called_once()
 
