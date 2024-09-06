@@ -527,7 +527,7 @@ class MideaDevice(threading.Thread):
 
     def _check_state(self) -> ParseMessageResult:
         if not self._socket:
-            _LOGGER.error("[%s] Socket closed", self._device_id)
+            _LOGGER.warning("[%s] Socket closed", self._device_id)
             return ParseMessageResult.ERROR
         now = time.time()
         self._check_refresh(now)
@@ -535,7 +535,7 @@ class MideaDevice(threading.Thread):
         msg = self._socket.recv(512)
         if len(msg) == 0:
             if self._is_run:
-                _LOGGER.error(
+                _LOGGER.warning(
                     "[%s] Socket error - Connection closed by peer",
                     self._device_id,
                 )
@@ -548,12 +548,15 @@ class MideaDevice(threading.Thread):
         connection_retries = 0
         while self._is_run:
             if not self.connect():
-                _LOGGER.error("[%s] Unable to connect with the device", self._device_id)
+                _LOGGER.warning(
+                    "[%s] Unable to connect with the device",
+                    self._device_id,
+                )
                 connection_retries += 1
                 time.sleep(60 * connection_retries)
                 continue
             if not self._socket:
-                _LOGGER.error("[%s] No open socket available", self._device_id)
+                _LOGGER.warning("[%s] No open socket available", self._device_id)
                 connection_retries += 1
                 time.sleep(60 * connection_retries)
                 continue
