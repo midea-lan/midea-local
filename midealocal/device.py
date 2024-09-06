@@ -10,7 +10,7 @@ from typing import Any
 
 from typing_extensions import deprecated
 
-from .exceptions import CannotConnect, SocketException
+from .exceptions import SocketException
 from .message import (
     MessageApplianceResponse,
     MessageQueryAppliance,
@@ -525,13 +525,39 @@ class MideaDevice(threading.Thread):
             self.send_heartbeat()
             self._previous_heartbeat = now
 
+    def _check_state(self) -> ParseMessageResult:
+        if not self._socket:
+            _LOGGER.error("[%s] Socket closed", self._device_id)
+            return ParseMessageResult.ERROR
+        now = time.time()
+        self._check_refresh(now)
+        self._check_heartbeat(now)
+        msg = self._socket.recv(512)
+        if len(msg) == 0:
+            if self._is_run:
+                _LOGGER.error(
+                    "[%s] Socket error - Connection closed by peer",
+                    self._device_id,
+                )
+                self.close_socket()
+            return ParseMessageResult.ERROR
+        return self.parse_message(msg)
+
     def run(self) -> None:
         """Run loop."""
+        connection_retries = 0
         while self._is_run:
             if not self.connect():
-                raise CannotConnect
+                _LOGGER.error("[%s] Unable to connect with the device", self._device_id)
+                connection_retries += 1
+                time.sleep(60 * connection_retries)
+                continue
             if not self._socket:
-                raise SocketException
+                _LOGGER.error("[%s] No open socket available", self._device_id)
+                connection_retries += 1
+                time.sleep(60 * connection_retries)
+                continue
+            connection_retries = 0
             self._authenticate_refresh_capabilities()
             timeout_counter = 0
             start = time.time()
@@ -539,19 +565,7 @@ class MideaDevice(threading.Thread):
             self._socket.settimeout(1)
             while True:
                 try:
-                    now = time.time()
-                    self._check_refresh(now)
-                    self._check_heartbeat(now)
-                    msg = self._socket.recv(512)
-                    if len(msg) == 0:
-                        if self._is_run:
-                            _LOGGER.error(
-                                "[%s] Socket error - Connection closed by peer",
-                                self._device_id,
-                            )
-                            self.close_socket()
-                        break
-                    result = self.parse_message(msg)
+                    result = self._check_state()
                     if result == ParseMessageResult.ERROR:
                         _LOGGER.debug("[%s] Message 'ERROR' received", self._device_id)
                         self.close_socket()
