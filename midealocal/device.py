@@ -201,41 +201,35 @@ class MideaDevice(threading.Thread):
     def connect(self) -> bool:
         """Connect to device."""
         connected = False
-        for _ in range(3):
-            try:
-                self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self._socket.settimeout(10)
-                _LOGGER.debug(
-                    "[%s] Connecting to %s:%s",
-                    self._device_id,
-                    self._ip_address,
-                    self._port,
-                )
-                self._socket.connect((self._ip_address, self._port))
-                _LOGGER.debug("[%s] Connected", self._device_id)
-                connected = True
-                break
-            except TimeoutError:
-                _LOGGER.debug("[%s] Connection timed out", self._device_id)
-            except OSError:
-                _LOGGER.debug("[%s] Connection error", self._device_id)
-            except AuthException:
-                _LOGGER.debug("[%s] Authentication failed", self._device_id)
-            except RefreshFailed:
-                _LOGGER.debug("[%s] Refresh status is timed out", self._device_id)
-            except Exception as e:
-                file = None
-                lineno = None
-                if e.__traceback__:
-                    file = e.__traceback__.tb_frame.f_globals["__file__"]  # pylint: disable=E1101
-                    lineno = e.__traceback__.tb_lineno
-                _LOGGER.exception(
-                    "[%s] Unknown error : %s, %s",
-                    self._device_id,
-                    file,
-                    lineno,
-                )
-        self.enable_device(connected)
+        try:
+            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._socket.settimeout(10)
+            _LOGGER.debug(
+                "[%s] Connecting to %s:%s",
+                self._device_id,
+                self._ip_address,
+                self._port,
+            )
+            self._socket.connect((self._ip_address, self._port))
+            _LOGGER.debug("[%s] Connected", self._device_id)
+            connected = True
+        except TimeoutError:
+            _LOGGER.debug("[%s] Connection timed out", self._device_id)
+        except OSError:
+            _LOGGER.debug("[%s] Connection error", self._device_id)
+        except Exception as e:
+            file = None
+            lineno = None
+            if e.__traceback__:
+                file = e.__traceback__.tb_frame.f_globals["__file__"]  # pylint: disable=E1101
+                lineno = e.__traceback__.tb_lineno
+            _LOGGER.exception(
+                "[%s] Unknown error : %s, %s",
+                self._device_id,
+                file,
+                lineno,
+            )
+        self.set_available(connected)
         return connected
 
     def authenticate(self) -> None:
