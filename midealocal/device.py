@@ -541,21 +541,21 @@ class MideaDevice(threading.Thread):
         """Run loop."""
         connection_retries = 0
         while self._is_run:
-            if not self.connect():
-                _LOGGER.warning(
-                    "[%s] Unable to connect with the device",
-                    self._device_id,
-                )
-                connection_retries += 1
-                time.sleep(min(60 * connection_retries, 600))
-                continue
-            if not self._socket:
-                _LOGGER.warning("[%s] No open socket available", self._device_id)
-                connection_retries += 1
-                time.sleep(min(60 * connection_retries, 600))
-                continue
+            while self._socket is None:
+                _LOGGER.debug("[%s] No open socket, try to connect", self._device_id)
+                if not self.connect():
+                    self.close_socket()
+                    connection_retries += 1
+                    sleep_time = min(60 * connection_retries, 600)
+                    _LOGGER.warning(
+                        "[%s] Unable to connect, sleep %s seconds",
+                        self._device_id,
+                        sleep_time,
+                    )
+                    time.sleep(sleep_time)
+                    continue
+                self._authenticate_refresh_capabilities()
             connection_retries = 0
-            self._authenticate_refresh_capabilities()
             timeout_counter = 0
             start = time.time()
             self._previous_refresh = self._previous_heartbeat = start
