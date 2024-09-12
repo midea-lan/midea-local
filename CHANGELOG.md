@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.1](https://github.com/rokam/midea-local/compare/v2.7.0...v2.7.1) (2024-09-12)
+
+
+### Bug Fixes
+
+* ed device power/lock return message set and body_type 0x15 parse ([#284](https://github.com/rokam/midea-local/issues/284)) ([d9d4fac](https://github.com/rokam/midea-local/commit/d9d4faca3bf7a3096f1e12a53dd5953b79f2a422))
+
 ## [2.7.0](https://github.com/rokam/midea-local/compare/v2.6.3...v2.7.0) (2024-08-21)
 
 
