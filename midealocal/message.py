@@ -103,6 +103,14 @@ class MessageType(IntEnum):
     exception2 = (0x0A,)
     query_appliance = 0xA0
 
+    @classmethod
+    def get_key_from_value(cls, value: int) -> str:
+        """Return the key corresponding to the given value."""
+        for key, val in cls.__members__.items():
+            if val == value:
+                return key
+        return "Unknown"
+
 
 ZERO_VALUE = 0x00
 
@@ -170,19 +178,46 @@ class MessageBase:
     def protocol_version(self, protocol_version: int) -> None:
         self._protocol_version = protocol_version
 
+    def _format_attribute(
+        self,
+        value: bytes | bytearray | int | str | bool | object,
+    ) -> int | str | bool | object:
+        """Format value as a hex string if it's bytes or bytearray.
+
+        Args:
+        ----
+            value (bytes | bytearray | int | str | bool): value to be formatted.
+
+        Returns:
+        -------
+            int | str | bool: The formatted result.
+
+        """
+        if isinstance(value, bytes | bytearray):
+            return value.hex()
+        return value
+
     def __str__(self) -> str:
         """Parse to string."""
-        output = {
-            "header": self.header.hex(),
-            "body": self.body.hex(),
-            "message type": f".{f'{self.message_type:02x}'}",
-            "body type": (
-                f".{f'{self._body_type:02x}'}"
-                if self._body_type is not None
-                else "None"
-            ),
+        # get attributes and value
+        attributes = {
+            key: self._format_attribute(value) for key, value in self.__dict__.items()
         }
-        return str(output)
+
+        # update some attributes
+        attributes.update(
+            {
+                "header": self._format_attribute(self.header),
+                "body": self._format_attribute(self.body),
+                "message_type": MessageType.get_key_from_value(self.message_type),
+                "body_type": (
+                    f"{self._body_type:02x}" if self._body_type is not None else "None"
+                ),
+                "self": self,
+            },
+        )
+
+        return str(attributes)
 
 
 class MessageRequest(MessageBase):
