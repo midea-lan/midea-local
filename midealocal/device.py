@@ -215,8 +215,12 @@ class MideaDevice(threading.Thread):
             connected = True
         except TimeoutError:
             _LOGGER.debug("[%s] Connection timed out", self._device_id)
+            # set _socket to None when connect exception matched
+            self._socket = None
         except OSError:
             _LOGGER.debug("[%s] Connection error", self._device_id)
+            # set _socket to None when connect exception matched
+            self._socket = None
         except Exception as e:
             file = None
             lineno = None
@@ -229,6 +233,8 @@ class MideaDevice(threading.Thread):
                 file,
                 lineno,
             )
+            # set _socket to None when connect exception matched
+            self._socket = None
         self.set_available(connected)
         return connected
 
@@ -239,8 +245,16 @@ class MideaDevice(threading.Thread):
         if not self._socket:
             self.enable_device(False)
             raise SocketException
-        self._socket.send(request)
-        response = self._socket.recv(512)
+        try:
+            self._socket.send(request)
+            response = self._socket.recv(512)
+        except Exception as e:
+            _LOGGER.exception(
+                "[%s] authenticate Unexpected socket error",
+                self._device_id,
+                exc_info=e,
+            )
+            self.close_socket()
         _LOGGER.debug(
             "[%s] Received auth response with %d bytes: %s",
             self._device_id,
@@ -264,7 +278,15 @@ class MideaDevice(threading.Thread):
     def send_message_v2(self, data: bytes) -> None:
         """Send message V2."""
         if self._socket is not None:
-            self._socket.send(data)
+            try:
+                self._socket.send(data)
+            except Exception as e:
+                _LOGGER.exception(
+                    "[%s] send_message_v2 Unexpected socket error",
+                    self._device_id,
+                    exc_info=e,
+                )
+                self.close_socket()
         else:
             _LOGGER.debug(
                 "[%s] Send failure, device disconnected, data: %s",
@@ -526,16 +548,29 @@ class MideaDevice(threading.Thread):
         now = time.time()
         self._check_refresh(now)
         self._check_heartbeat(now)
-        msg = self._socket.recv(512)
-        if len(msg) == 0:
-            if self._is_run:
-                _LOGGER.warning(
-                    "[%s] Socket error - Connection closed by peer",
-                    self._device_id,
-                )
-                self.close_socket()
+        try:
+            msg = self._socket.recv(512)
+            if len(msg) == 0:
+                if self._is_run:
+                    _LOGGER.warning(
+                        "[%s] Socket error - Connection closed by peer",
+                        self._device_id,
+                    )
+                    self.close_socket()
+                return ParseMessageResult.ERROR
+            return self.parse_message(msg)
+        except TimeoutError:
+            _LOGGER.debug("[%s] _check_state Socket timed out", self._device_id)
+            self.close_socket()
             return ParseMessageResult.ERROR
-        return self.parse_message(msg)
+        except Exception as e:
+            _LOGGER.exception(
+                "[%s] Unexpected socket error",
+                self._device_id,
+                exc_info=e,
+            )
+            self.close_socket()
+            return ParseMessageResult.ERROR
 
     def run(self) -> None:
         """Run loop."""
