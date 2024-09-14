@@ -594,7 +594,7 @@ class MideaDevice(threading.Thread):
             timeout_counter = 0
             start = time.time()
             self._previous_refresh = self._previous_heartbeat = start
-            self._socket.settimeout(1)
+            self._socket.settimeout(2)
             while True:
                 try:
                     result = self._check_state()
