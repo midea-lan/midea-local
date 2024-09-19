@@ -312,7 +312,10 @@ class MideaDevice(threading.Thread):
         for cmd in cmds:
             self.build_send(cmd)
 
-    def _recv_message(self) -> dict[str, MessageResult | bytes]:
+    def _recv_message(
+        self,
+        check_protocol: bool = False,
+    ) -> dict[str, MessageResult | bytes]:
         """Recv message."""
         if not self._socket:
             _LOGGER.warning("[%s] _recv_message socket error", self._device_id)
@@ -325,9 +328,14 @@ class MideaDevice(threading.Thread):
             if msg:
                 return {"result": MessageResult.SUCCESS, "msg": msg}
         except TimeoutError:
-            _LOGGER.debug("[%s] _recv_message Socket timed out", self._device_id)
-            # close socket when exception matched
-            self.close_socket()
+            _LOGGER.debug(
+                "[%s] _recv_message Socket timed out with check_protocol %s",
+                self._device_id,
+                check_protocol,
+            )
+            # close socket when timeout and not check_protocol
+            if not check_protocol:
+                self.close_socket()
             return {"result": MessageResult.TIMEOUT}
         except Exception as e:
             _LOGGER.exception(
@@ -350,7 +358,7 @@ class MideaDevice(threading.Thread):
             if cmd.__class__.__name__ not in self._unsupported_protocol:
                 # set query flag for query timeout
                 self.build_send(cmd, query=True)
-                response = self._recv_message()
+                response = self._recv_message(check_protocol=check_protocol)
                 # recovery timeout after _recv_message
                 self._recovery_timeout()
                 # normal msg
@@ -360,10 +368,13 @@ class MideaDevice(threading.Thread):
                         msg = response.get("msg")
                         if isinstance(msg, bytes):
                             result = self.parse_message(msg=msg)
-                            if result == MessageResult.SUCCESS:
-                                break
-                            # msg padding
-                            continue
+                            if result != MessageResult.SUCCESS:
+                                _LOGGER.error(
+                                    "[%s] parse_message %s result is %s",
+                                    self._device_id,
+                                    msg,
+                                    result,
+                                )
                 # empty msg
                 elif response.get("result") == MessageResult.PADDING:
                     continue
