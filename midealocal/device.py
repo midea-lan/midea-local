@@ -236,8 +236,9 @@ class MideaDevice(threading.Thread):
         request = self._security.encode_8370(self._token, MSGTYPE_HANDSHAKE_REQUEST)
         _LOGGER.debug("[%s] Authentication handshaking", self._device_id)
         if not self._socket:
+            _LOGGER.debug("[%s] socket is None, close and return", self._device_id)
             self.enable_device(False)
-            raise SocketException
+            return
         try:
             self._socket.send(request)
             response = self._socket.recv(512)
@@ -256,6 +257,12 @@ class MideaDevice(threading.Thread):
         )
         if len(response) < MIN_AUTH_RESPONSE:
             self.enable_device(False)
+            _LOGGER.debug(
+                "[%s] Received auth response len %d error, bytes: %s",
+                self._device_id,
+                len(response),
+                response.hex(),
+            )
             raise AuthException
         response = response[8:72]
         self._security.tcp_key(response, self._key)
@@ -317,8 +324,9 @@ class MideaDevice(threading.Thread):
         check_protocol: bool = False,
     ) -> dict[str, MessageResult | bytes]:
         """Recv message."""
+        # already connected and socket error
         if not self._socket:
-            _LOGGER.warning("[%s] _recv_message socket error", self._device_id)
+            _LOGGER.debug("[%s] _recv_message socket error, reconnect", self._device_id)
             raise SocketException
         try:
             msg = self._socket.recv(512)
@@ -356,14 +364,23 @@ class MideaDevice(threading.Thread):
         error_count = 0
         for cmd in cmds:
             if cmd.__class__.__name__ not in self._unsupported_protocol:
-                # set query flag for query timeout
-                self.build_send(cmd, query=True)
-                response = self._recv_message(check_protocol=check_protocol)
+                # catch socket exception and continue
+                try:
+                    # set query flag for query timeout
+                    self.build_send(cmd, query=True)
+                    # recv socket message send query
+                    response = self._recv_message(check_protocol=check_protocol)
+                    # recovery timeout after _recv_message is success/padding
+                    self._recovery_timeout()
+                except SocketException:
+                    _LOGGER.debug(
+                        "[%s] refresh_status socket error, close and reconnect",
+                        self._device_id,
+                    )
+                    self.close_socket()
+                    break
                 # normal msg
                 if response.get("result") == MessageResult.SUCCESS:
-                    # recovery timeout after _recv_message is success/padding
-                    # for exception/timeout result, self._socket closed
-                    self._recovery_timeout()
                     if response.get("msg"):
                         # parse response
                         msg = response.get("msg")
@@ -378,9 +395,6 @@ class MideaDevice(threading.Thread):
                                 )
                 # empty msg
                 elif response.get("result") == MessageResult.PADDING:
-                    # recovery timeout after _recv_message is success/padding
-                    # for exception/timeout result, self._socket closed
-                    self._recovery_timeout()
                     continue
                 # timeout msg
                 elif response.get("result") == MessageResult.TIMEOUT:
@@ -631,6 +645,27 @@ class MideaDevice(threading.Thread):
             self.close_socket()
             _LOGGER.debug("_recovery_timeout socket timeout")
 
+    def _connect_loop(self) -> None:
+        """Connect loop until device online."""
+        # init connection or socket broken, socket loop until device online
+        connection_retries = 0
+        while self._socket is None:
+            _LOGGER.debug("[%s] Socket is None, try to connect", self._device_id)
+            # connect and check result
+            if not self.connect():
+                self.close_socket()
+                connection_retries += 1
+                sleep_time = min(60 * connection_retries, 600)
+                _LOGGER.warning(
+                    "[%s] Unable to connect, sleep %s seconds and retry",
+                    self._device_id,
+                    sleep_time,
+                )
+                # sleep and reconnect loop
+                time.sleep(sleep_time)
+                continue
+        connection_retries = 0
+
     def run(self) -> None:
         """Run loop brief description.
 
@@ -652,24 +687,11 @@ class MideaDevice(threading.Thread):
             4.2 send heartbeat packet to keep alive
 
         """
-        connection_retries = 0
         while self._is_run:
-            # init connection or socket broken, socket connect/reconnect
-            while self._socket is None:
-                _LOGGER.debug("[%s] Socket is None, try to connect", self._device_id)
-                # connect and check result
-                if not self.connect():
-                    self.close_socket()
-                    connection_retries += 1
-                    sleep_time = min(60 * connection_retries, 600)
-                    _LOGGER.warning(
-                        "[%s] Unable to connect, sleep %s seconds and retry",
-                        self._device_id,
-                        sleep_time,
-                    )
-                    # sleep and reconnect loop
-                    time.sleep(sleep_time)
-                    continue
+            # init connection
+            if self._socket is None:
+                # connect device loop
+                self._connect_loop()
                 # connect pass, auth for v3 device
                 if self._protocol == ProtocolVersion.V3:
                     self.authenticate()
@@ -691,7 +713,6 @@ class MideaDevice(threading.Thread):
                     continue
                 self.get_capabilities()
             # socket exist
-            connection_retries = 0
             start = time.time()
             self._previous_refresh = self._previous_heartbeat = start
             # loop in query and parse response
