@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/rokam/midea-local/compare/v2.7.1...v3.0.0) (2024-09-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **device:** socket exception and process rebuild ([#296](https://github.com/rokam/midea-local/issues/296))
+
+### Bug Fixes
+
+* **device:** socket exception and process rebuild ([#296](https://github.com/rokam/midea-local/issues/296)) ([7f2e572](https://github.com/rokam/midea-local/commit/7f2e57294802d6ecae64618d28d1659465077672))
+
 ## [2.7.1](https://github.com/rokam/midea-local/compare/v2.7.0...v2.7.1) (2024-09-12)
 
 
