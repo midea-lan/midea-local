@@ -10,7 +10,7 @@ from typing import Any
 
 from typing_extensions import deprecated
 
-from .exceptions import CannotConnect, SocketException
+from .exceptions import SocketException
 from .message import (
     MessageApplianceResponse,
     MessageQueryAppliance,
@@ -28,7 +28,9 @@ from .security import (
 MIN_AUTH_RESPONSE = 20
 MIN_MSG_LENGTH = 56
 MIN_V2_FACTUAL_MSG_LENGTH = 6
-RESPONSE_TIMEOUT = 120
+SOCKET_TIMEOUT = 10  # socket connection default timeout
+QUERY_TIMEOUT = 2  # query response in 1s, 0xAC have more queries, set to 2s
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -81,8 +83,8 @@ class ResponseException(Exception):
     """Response exception."""
 
 
-class RefreshFailed(Exception):
-    """Refresh failed exception."""
+class NoSupportedProtocol(Exception):
+    """Query device failed exception."""
 
 
 class DeviceAttributes(StrEnum):
@@ -97,11 +99,14 @@ class ProtocolVersion(IntEnum):
     V3 = 3
 
 
-class ParseMessageResult(IntEnum):
+class MessageResult(IntEnum):
     """Parse message result."""
 
-    SUCCESS = 0
-    PADDING = 1
+    PADDING = 0
+    SUCCESS = 1
+    UNKNOWN = 96
+    UNEXPECTED = 97
+    TIMEOUT = 98
     ERROR = 99
 
 
@@ -145,7 +150,7 @@ class MideaDevice(threading.Thread):
         self._available = False
         self._appliance_query = True
         self._refresh_interval = 30
-        self._heartbeat_interval = 10
+        self._heartbeat_interval = SOCKET_TIMEOUT
         self._default_refresh_interval = 30
         self._previous_refresh = 0.0
         self._previous_heartbeat = 0.0
@@ -192,50 +197,38 @@ class MideaDevice(threading.Thread):
                 break
         return result, msg
 
-    def _authenticate_refresh_capabilities(self) -> None:
-        if self._protocol == ProtocolVersion.V3:
-            self.authenticate()
-        self.refresh_status(wait_response=True)
-        self.get_capabilities()
-
     def connect(self) -> bool:
         """Connect to device."""
         connected = False
-        for _ in range(3):
-            try:
-                self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self._socket.settimeout(10)
-                _LOGGER.debug(
-                    "[%s] Connecting to %s:%s",
-                    self._device_id,
-                    self._ip_address,
-                    self._port,
-                )
-                self._socket.connect((self._ip_address, self._port))
-                _LOGGER.debug("[%s] Connected", self._device_id)
-                connected = True
-                break
-            except TimeoutError:
-                _LOGGER.debug("[%s] Connection timed out", self._device_id)
-            except OSError:
-                _LOGGER.debug("[%s] Connection error", self._device_id)
-            except AuthException:
-                _LOGGER.debug("[%s] Authentication failed", self._device_id)
-            except RefreshFailed:
-                _LOGGER.debug("[%s] Refresh status is timed out", self._device_id)
-            except Exception as e:
-                file = None
-                lineno = None
-                if e.__traceback__:
-                    file = e.__traceback__.tb_frame.f_globals["__file__"]  # pylint: disable=E1101
-                    lineno = e.__traceback__.tb_lineno
-                _LOGGER.exception(
-                    "[%s] Unknown error : %s, %s",
-                    self._device_id,
-                    file,
-                    lineno,
-                )
-        self.enable_device(connected)
+        try:
+            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._socket.settimeout(SOCKET_TIMEOUT)
+            _LOGGER.debug(
+                "[%s] Connecting to %s:%s",
+                self._device_id,
+                self._ip_address,
+                self._port,
+            )
+            self._socket.connect((self._ip_address, self._port))
+            _LOGGER.debug("[%s] Connected", self._device_id)
+            connected = True
+        except TimeoutError:
+            _LOGGER.debug("[%s] Connection timed out", self._device_id)
+            # set _socket to None when connect exception matched
+            self._socket = None
+        except OSError:
+            _LOGGER.debug("[%s] Connection error", self._device_id)
+            # set _socket to None when connect exception matched
+            self._socket = None
+        except Exception as e:
+            _LOGGER.exception(
+                "[%s] Unknown error during connect device",
+                self._device_id,
+                exc_info=e,
+            )
+            # set _socket to None when connect exception matched
+            self._socket = None
+        self.set_available(connected)
         return connected
 
     def authenticate(self) -> None:
@@ -243,10 +236,19 @@ class MideaDevice(threading.Thread):
         request = self._security.encode_8370(self._token, MSGTYPE_HANDSHAKE_REQUEST)
         _LOGGER.debug("[%s] Authentication handshaking", self._device_id)
         if not self._socket:
+            _LOGGER.debug("[%s] socket is None, close and return", self._device_id)
             self.enable_device(False)
-            raise SocketException
-        self._socket.send(request)
-        response = self._socket.recv(512)
+            return
+        try:
+            self._socket.send(request)
+            response = self._socket.recv(512)
+        except Exception as e:
+            _LOGGER.exception(
+                "[%s] authenticate Unexpected socket error",
+                self._device_id,
+                exc_info=e,
+            )
+            self.close_socket()
         _LOGGER.debug(
             "[%s] Received auth response with %d bytes: %s",
             self._device_id,
@@ -255,25 +257,41 @@ class MideaDevice(threading.Thread):
         )
         if len(response) < MIN_AUTH_RESPONSE:
             self.enable_device(False)
+            _LOGGER.debug(
+                "[%s] Received auth response len %d error, bytes: %s",
+                self._device_id,
+                len(response),
+                response.hex(),
+            )
             raise AuthException
         response = response[8:72]
         self._security.tcp_key(response, self._key)
         _LOGGER.debug("[%s] Authentication success", self._device_id)
 
-    def send_message(self, data: bytes) -> None:
+    def send_message(self, data: bytes, query: bool = False) -> None:
         """Send message."""
         if self._protocol == ProtocolVersion.V3:
-            self.send_message_v3(data, msg_type=MSGTYPE_ENCRYPTED_REQUEST)
+            self.send_message_v3(data, msg_type=MSGTYPE_ENCRYPTED_REQUEST, query=query)
         else:
-            self.send_message_v2(data)
+            self.send_message_v2(data, query=query)
 
-    def send_message_v2(self, data: bytes) -> None:
+    def send_message_v2(self, data: bytes, query: bool = False) -> None:
         """Send message V2."""
         if self._socket is not None:
-            self._socket.send(data)
+            try:
+                if query:
+                    self._socket.settimeout(QUERY_TIMEOUT)
+                self._socket.send(data)
+            except Exception as e:
+                _LOGGER.exception(
+                    "[%s] send_message_v2 Unexpected socket error",
+                    self._device_id,
+                    exc_info=e,
+                )
+                self.close_socket()
         else:
             _LOGGER.debug(
-                "[%s] Send failure, device disconnected, data: %s",
+                "[%s] Send failure, device socket is none, data: %s",
                 self._device_id,
                 data.hex(),
             )
@@ -282,17 +300,18 @@ class MideaDevice(threading.Thread):
         self,
         data: bytes,
         msg_type: int = MSGTYPE_ENCRYPTED_REQUEST,
+        query: bool = False,
     ) -> None:
         """Send message V3."""
         data = self._security.encode_8370(data, msg_type)
-        self.send_message_v2(data)
+        self.send_message_v2(data, query=query)
 
-    def build_send(self, cmd: MessageRequest) -> None:
+    def build_send(self, cmd: MessageRequest, query: bool = False) -> None:
         """Serialize and send."""
         data = cmd.serialize()
         _LOGGER.debug("[%s] Sending: %s", self._device_id, cmd)
         msg = PacketBuilder(self._device_id, data).finalize()
-        self.send_message(msg)
+        self.send_message(msg, query=query)
 
     def get_capabilities(self) -> None:
         """Get device capabilities."""
@@ -300,7 +319,44 @@ class MideaDevice(threading.Thread):
         for cmd in cmds:
             self.build_send(cmd)
 
-    def refresh_status(self, wait_response: bool = False) -> None:
+    def _recv_message(
+        self,
+        check_protocol: bool = False,
+    ) -> dict[str, MessageResult | bytes]:
+        """Recv message."""
+        # already connected and socket error
+        if not self._socket:
+            _LOGGER.debug("[%s] _recv_message socket error, reconnect", self._device_id)
+            raise SocketException
+        try:
+            msg = self._socket.recv(512)
+            if len(msg) == 0:
+                _LOGGER.warning("[%s] Empty msg received", self._device_id)
+                return {"result": MessageResult.PADDING}
+            if msg:
+                return {"result": MessageResult.SUCCESS, "msg": msg}
+        except TimeoutError:
+            _LOGGER.debug(
+                "[%s] _recv_message Socket timed out with check_protocol %s",
+                self._device_id,
+                check_protocol,
+            )
+            # close socket when timeout and not check_protocol
+            if not check_protocol:
+                self.close_socket()
+            return {"result": MessageResult.TIMEOUT}
+        except Exception as e:
+            _LOGGER.exception(
+                "[%s] Unexpected socket error",
+                self._device_id,
+                exc_info=e,
+            )
+            # close socket when exception matched
+            self.close_socket()
+            return {"result": MessageResult.UNEXPECTED}
+        return {"result": MessageResult.UNKNOWN}  # Add a fallback return
+
+    def refresh_status(self, check_protocol: bool = False) -> None:
         """Refresh device status."""
         cmds: list = self.build_query()
         if self._appliance_query:
@@ -308,40 +364,90 @@ class MideaDevice(threading.Thread):
         error_count = 0
         for cmd in cmds:
             if cmd.__class__.__name__ not in self._unsupported_protocol:
-                self.build_send(cmd)
-                if wait_response:
-                    try:
-                        while True:
-                            if not self._socket:
-                                raise SocketException
-                            msg = self._socket.recv(512)
-                            if len(msg) == 0:
-                                raise OSError("Empty message received.")
-                            result = self.parse_message(msg)
-                            if result == ParseMessageResult.SUCCESS:
-                                break
-                            if result == ParseMessageResult.PADDING:
-                                continue
-                            error_count += 1
-                    except TimeoutError:
+                # catch socket exception and continue
+                try:
+                    # set query flag for query timeout
+                    self.build_send(cmd, query=True)
+                    # recv socket message send query
+                    response = self._recv_message(check_protocol=check_protocol)
+                    # recovery timeout after _recv_message is success/padding
+                    self._recovery_timeout()
+                except SocketException:
+                    _LOGGER.debug(
+                        "[%s] refresh_status socket error, close and reconnect",
+                        self._device_id,
+                    )
+                    self.close_socket()
+                    break
+                # normal msg
+                if response.get("result") == MessageResult.SUCCESS:
+                    if response.get("msg"):
+                        # parse response
+                        msg = response.get("msg")
+                        if isinstance(msg, bytes):
+                            result = self.parse_message(msg=msg)
+                            if result != MessageResult.SUCCESS:
+                                _LOGGER.error(
+                                    "[%s] parse_message %s result is %s",
+                                    self._device_id,
+                                    msg,
+                                    result,
+                                )
+                # empty msg
+                elif response.get("result") == MessageResult.PADDING:
+                    continue
+                # timeout msg
+                elif response.get("result") == MessageResult.TIMEOUT:
+                    _LOGGER.debug(
+                        "[%s] protocol %s, cmd %s, timeout",
+                        self._device_id,
+                        cmd.__class__.__name__,
+                        cmd,
+                    )
+                    # init connection, add timeout protocol to unsupported list
+                    if check_protocol:
                         error_count += 1
                         self._unsupported_protocol.append(cmd.__class__.__name__)
                         _LOGGER.debug(
-                            "[%s] Does not supports the protocol %s, ignored",
+                            "[%s] Does not supports the protocol %s, cmd %s, ignored",
                             self._device_id,
                             cmd.__class__.__name__,
+                            cmd,
                         )
-            else:
-                error_count += 1
-        if error_count == len(cmds):
-            raise RefreshFailed
+                # exception msg
+                else:
+                    _LOGGER.debug(
+                        "[%s] protocol %s, cmd %s, response exception %s",
+                        self._device_id,
+                        cmd.__class__.__name__,
+                        cmd,
+                        response,
+                    )
+                    # init connection, add exception protocol to unsupported list
+                    if check_protocol:
+                        error_count += 1
+                        self._unsupported_protocol.append(cmd.__class__.__name__)
+                        _LOGGER.debug(
+                            "[%s] Does not supports the protocol %s, cmd %s, ignored",
+                            self._device_id,
+                            cmd.__class__.__name__,
+                            cmd,
+                        )
+                # init connection and all the query  failed, raise error
+                if check_protocol and error_count == len(cmds):
+                    _LOGGER.debug(
+                        "[%s] all the query cmds failed %s, please report bug",
+                        self._device_id,
+                        cmds,
+                    )
+                    raise NoSupportedProtocol
 
     def pre_process_message(self, msg: bytearray) -> bool:
         """Pre process message."""
         if msg[9] == MessageType.query_appliance:
             message = MessageApplianceResponse(msg)
             self._appliance_query = False
-            _LOGGER.debug("[%s] Received: %s", self._device_id, message)
+            _LOGGER.debug("[%s] Appliance query Received: %s", self._device_id, message)
             self._protocol_version = message.protocol_version
             _LOGGER.debug(
                 "[%s] Device protocol version: %s",
@@ -351,17 +457,17 @@ class MideaDevice(threading.Thread):
             return False
         return True
 
-    def parse_message(self, msg: bytes) -> ParseMessageResult:
+    def parse_message(self, msg: bytes) -> MessageResult:
         """Parse message."""
         if self._protocol == ProtocolVersion.V3:
             messages, self._buffer = self._security.decode_8370(self._buffer + msg)
         else:
             messages, self._buffer = self.fetch_v2_message(self._buffer + msg)
         if len(messages) == 0:
-            return ParseMessageResult.PADDING
+            return MessageResult.PADDING
         for message in messages:
             if message == b"ERROR":
-                return ParseMessageResult.ERROR
+                return MessageResult.ERROR
             payload_len = message[4] + (message[5] << 8) - 56
             payload_type = message[2] + (message[3] << 8)
             if payload_type in [0x1001, 0x0001]:
@@ -384,7 +490,6 @@ class MideaDevice(threading.Thread):
                                     "[%s] Unidentified protocol",
                                     self._device_id,
                                 )
-
                     except Exception:
                         _LOGGER.exception(
                             "[%s] Error in process message, msg = %s",
@@ -419,7 +524,7 @@ class MideaDevice(threading.Thread):
                     payload_len,
                     len(message),
                 )
-        return ParseMessageResult.SUCCESS
+        return MessageResult.SUCCESS
 
     def build_query(self) -> list:
         """Build query."""
@@ -501,8 +606,13 @@ class MideaDevice(threading.Thread):
         self._unsupported_protocol = []
         self._buffer = b""
         if self._socket:
-            self._socket.close()
-            self._socket = None
+            try:
+                self._socket.close()
+                _LOGGER.debug("[%s] Socket closed", self._device_id)
+            except OSError as e:
+                _LOGGER.debug("[%s] Error while closing socket: %s", self._device_id, e)
+            finally:
+                self._socket = None
 
     def set_ip_address(self, ip_address: str) -> None:
         """Set IP address."""
@@ -525,63 +635,109 @@ class MideaDevice(threading.Thread):
             self.send_heartbeat()
             self._previous_heartbeat = now
 
-    def run(self) -> None:
-        """Run loop."""
-        while self._is_run:
+    def _recovery_timeout(self) -> None:
+        if not self._socket:
+            _LOGGER.warning("[%s] _recovery_timeout socket error", self._device_id)
+            raise SocketException
+        try:
+            self._socket.settimeout(SOCKET_TIMEOUT)
+        except TimeoutError:
+            self.close_socket()
+            _LOGGER.debug("_recovery_timeout socket timeout")
+
+    def _connect_loop(self) -> None:
+        """Connect loop until device online."""
+        # init connection or socket broken, socket loop until device online
+        connection_retries = 0
+        while self._socket is None:
+            _LOGGER.debug("[%s] Socket is None, try to connect", self._device_id)
+            # connect and check result
             if not self.connect():
-                raise CannotConnect
-            if not self._socket:
-                raise SocketException
-            self._authenticate_refresh_capabilities()
-            timeout_counter = 0
+                self.close_socket()
+                connection_retries += 1
+                sleep_time = min(60 * connection_retries, 600)
+                _LOGGER.warning(
+                    "[%s] Unable to connect, sleep %s seconds and retry",
+                    self._device_id,
+                    sleep_time,
+                )
+                # sleep and reconnect loop
+                time.sleep(sleep_time)
+                continue
+        connection_retries = 0
+
+    def run(self) -> None:
+        """Run loop brief description.
+
+        1. first/init connection, self._socket is None
+            1.1 connect() device loop, pass, enable device
+            1.2 auth for v3 device, MUST pass for v3 device
+            1.3 init refresh_status, send all query and check supported protocol
+                1.3.1 set socket timeout to QUERY_TIMEOUT before send query
+                1.3.2 get response and add timeout query cmd to not supported
+                1.3.1 parse recv response/status for supported protocol
+            1.4 get_capabilities()
+        2. after socket/device connected, loop for heartbeat/refresh_status
+        3. job1: check refresh_interval
+            3.1 socket/device connection should exist
+            3.2 send only supported query to get response and refresh status
+            3.3 set socket query timeout and recovery after recv msg
+        4. job2: check heartbeat interval
+            4.1 socket connection should exist
+            4.2 send heartbeat packet to keep alive
+
+        """
+        while self._is_run:
+            # init connection
+            if self._socket is None:
+                # connect device loop
+                self._connect_loop()
+                # connect pass, auth for v3 device
+                if self._protocol == ProtocolVersion.V3:
+                    self.authenticate()
+                try:
+                    # probe device with query and check response
+                    self.refresh_status(check_protocol=True)
+                except NoSupportedProtocol:
+                    _LOGGER.debug(
+                        "[%s] query device failed, please report bug",
+                        self._device_id,
+                    )
+                    break
+                except SocketException:
+                    _LOGGER.debug(
+                        "[%s] socket error, close and reconnect",
+                        self._device_id,
+                    )
+                    self.close_socket()
+                    continue
+                self.get_capabilities()
+            # socket exist
             start = time.time()
             self._previous_refresh = self._previous_heartbeat = start
-            self._socket.settimeout(1)
+            # loop in query and parse response
             while True:
                 try:
+                    # check refresh process
                     now = time.time()
                     self._check_refresh(now)
+                    # check heartbeat
+                    now = time.time()
                     self._check_heartbeat(now)
-                    msg = self._socket.recv(512)
-                    if len(msg) == 0:
-                        if self._is_run:
-                            _LOGGER.error(
-                                "[%s] Socket error - Connection closed by peer",
-                                self._device_id,
-                            )
-                            self.close_socket()
-                        break
-                    result = self.parse_message(msg)
-                    if result == ParseMessageResult.ERROR:
-                        _LOGGER.debug("[%s] Message 'ERROR' received", self._device_id)
-                        self.close_socket()
-                        break
-                    if result == ParseMessageResult.SUCCESS:
-                        timeout_counter = 0
                 except TimeoutError:
-                    timeout_counter = timeout_counter + 1
-                    if timeout_counter >= RESPONSE_TIMEOUT:
-                        _LOGGER.debug("[%s] Heartbeat timed out", self._device_id)
-                        self.close_socket()
-                        break
-                except OSError as e:
-                    if self._is_run:
-                        _LOGGER.debug("[%s] Socket error %s", self._device_id, repr(e))
-                        self.close_socket()
+                    _LOGGER.debug("[%s] Socket timed out", self._device_id)
+                    self.close_socket()
+                    break
+                except NoSupportedProtocol:
+                    _LOGGER.debug("[%s] query device failed", self._device_id)
+                    self.close_socket()
                     break
                 except Exception as e:
-                    file = None
-                    lineno = None
-                    if e.__traceback__:
-                        file = e.__traceback__.tb_frame.f_globals["__file__"]  # pylint: disable=E1101
-                        lineno = e.__traceback__.tb_lineno
                     _LOGGER.exception(
-                        "[%s] Unknown error : %s, %s",
+                        "[%s] Unexpected error",
                         self._device_id,
-                        file,
-                        lineno,
+                        exc_info=e,
                     )
-
                     self.close_socket()
                     break
 

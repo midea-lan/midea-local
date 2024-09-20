@@ -20,7 +20,12 @@ from midealocal.cloud import (
     get_midea_cloud,
     get_preset_account_cloud,
 )
-from midealocal.device import AuthException, MideaDevice, ProtocolVersion, RefreshFailed
+from midealocal.device import (
+    AuthException,
+    MideaDevice,
+    NoSupportedProtocol,
+    ProtocolVersion,
+)
 from midealocal.devices import device_selector
 from midealocal.discover import discover
 from midealocal.exceptions import SocketException
@@ -121,7 +126,7 @@ class MideaCLI:
                         _LOGGER.debug("Unable to connect with key: %s", key)
                     except SocketException:
                         _LOGGER.exception("Device socket closed.")
-                    except RefreshFailed:
+                    except NoSupportedProtocol:
                         _LOGGER.exception("Unable to retrieve device attributes.")
                     else:
                         _LOGGER.info("Found device:\n%s", dev.attributes)
