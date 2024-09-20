@@ -359,10 +359,11 @@ class MideaDevice(threading.Thread):
                 # set query flag for query timeout
                 self.build_send(cmd, query=True)
                 response = self._recv_message(check_protocol=check_protocol)
-                # recovery timeout after _recv_message
-                self._recovery_timeout()
                 # normal msg
                 if response.get("result") == MessageResult.SUCCESS:
+                    # recovery timeout after _recv_message is success/padding
+                    # for exception/timeout result, self._socket closed
+                    self._recovery_timeout()
                     if response.get("msg"):
                         # parse response
                         msg = response.get("msg")
@@ -377,6 +378,9 @@ class MideaDevice(threading.Thread):
                                 )
                 # empty msg
                 elif response.get("result") == MessageResult.PADDING:
+                    # recovery timeout after _recv_message is success/padding
+                    # for exception/timeout result, self._socket closed
+                    self._recovery_timeout()
                     continue
                 # timeout msg
                 elif response.get("result") == MessageResult.TIMEOUT:
@@ -628,7 +632,26 @@ class MideaDevice(threading.Thread):
             _LOGGER.debug("_recovery_timeout socket timeout")
 
     def run(self) -> None:
-        """Run loop."""
+        """Run loop brief description.
+
+        1. first/init connection, self._socket is None
+            1.1 connect() device loop, pass, enable device
+            1.2 auth for v3 device, MUST pass for v3 device
+            1.3 init refresh_status, send all query and check supported protocol
+                1.3.1 set socket timeout to QUERY_TIMEOUT before send query
+                1.3.2 get response and add timeout query cmd to not supported
+                1.3.1 parse recv response/status for supported protocol
+            1.4 get_capabilities()
+        2. after socket/device connected, loop for heartbeat/refresh_status
+        3. job1: check refresh_interval
+            3.1 socket/device connection should exist
+            3.2 send only supported query to get response and refresh status
+            3.3 set socket query timeout and recovery after recv msg
+        4. job2: check heartbeat interval
+            4.1 socket connection should exist
+            4.2 send heartbeat packet to keep alive
+
+        """
         connection_retries = 0
         while self._is_run:
             # init connection or socket broken, socket connect/reconnect
