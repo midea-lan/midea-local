@@ -637,7 +637,7 @@ class MideaDevice(threading.Thread):
 
     def _recovery_timeout(self) -> None:
         if not self._socket:
-            _LOGGER.warning("[%s] _recovery_timeout socket error", self._device_id)
+            _LOGGER.debug("[%s] _recovery_timeout socket error", self._device_id)
             raise SocketException
         try:
             self._socket.settimeout(SOCKET_TIMEOUT)
@@ -740,6 +740,8 @@ class MideaDevice(threading.Thread):
                     )
                     self.close_socket()
                     break
+                # prevent while True loop cpu 100%
+                time.sleep(0.1)
 
     def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Set attribute."""
