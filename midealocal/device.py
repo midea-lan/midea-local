@@ -637,7 +637,7 @@ class MideaDevice(threading.Thread):
 
     def _recovery_timeout(self) -> None:
         if not self._socket:
-            _LOGGER.warning("[%s] _recovery_timeout socket error", self._device_id)
+            _LOGGER.debug("[%s] _recovery_timeout socket error", self._device_id)
             raise SocketException
         try:
             self._socket.settimeout(SOCKET_TIMEOUT)
