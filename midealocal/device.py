@@ -741,7 +741,7 @@ class MideaDevice(threading.Thread):
                     self.close_socket()
                     break
                 # prevent while True loop cpu 100%
-                time.sleep(1)
+                time.sleep(0.1)
 
     def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Set attribute."""
