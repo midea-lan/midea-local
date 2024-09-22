@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/rokam/midea-local/compare/v3.0.0...v3.0.1) (2024-09-21)
+
+
+### Bug Fixes
+
+* **device:** prevent while true loop high cpu usage bug ([#298](https://github.com/rokam/midea-local/issues/298)) ([3bdec5c](https://github.com/rokam/midea-local/commit/3bdec5cbbad960d4fbc5b9a5520fa7c9219fe405))
+
 ## [3.0.0](https://github.com/rokam/midea-local/compare/v2.7.1...v3.0.0) (2024-09-20)
 
 
