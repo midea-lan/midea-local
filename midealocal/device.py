@@ -213,9 +213,9 @@ class MideaDevice(threading.Thread):
             _LOGGER.debug("[%s] Connected", self._device_id)
             if self._protocol == ProtocolVersion.V3:
                 self.authenticate()
-            # init connect, check_protocol
+            # reconnect skip check_protocol
+            self.refresh_status(check_protocol=init)
             if init:
-                self.refresh_status(check_protocol=True)
                 self.get_capabilities()
             connected = True
         except TimeoutError:
@@ -290,10 +290,42 @@ class MideaDevice(threading.Thread):
             # raise exception to main loop
             raise SocketException
         try:
+            _LOGGER.debug(
+                "[%s] send_message_v2 with data %s",
+                self._device_id,
+                data.hex(),
+            )
             # query msg, set timeout to QUERY_TIMEOUT
             if query:
                 self._socket.settimeout(QUERY_TIMEOUT)
             self._socket.send(data)
+            _LOGGER.debug(
+                "[%s] send_message_v2 success",
+                self._device_id,
+            )
+        except TimeoutError:
+            _LOGGER.debug(
+                "[%s] send_message_v2 timed out",
+                self._device_id,
+            )
+            # raise exception to main loop
+            raise
+        except ConnectionResetError as e:
+            _LOGGER.debug(
+                "[%s] send_message_v2 ConnectionResetError: %s",
+                self._device_id,
+                e,
+            )
+            # raise exception to main loop
+            raise
+        except OSError as e:
+            _LOGGER.debug(
+                "[%s] send_message_v2 OSError: %s",
+                self._device_id,
+                e,
+            )
+            # raise exception to main loop
+            raise
         except Exception as e:
             _LOGGER.exception(
                 "[%s] send_message_v2 Unexpected socket error",
@@ -319,6 +351,15 @@ class MideaDevice(threading.Thread):
         _LOGGER.debug("[%s] Sending: %s", self._device_id, cmd)
         msg = PacketBuilder(self._device_id, data).finalize()
         self.send_message(msg, query=query)
+        # after send set command, force refresh_status
+        if cmd.message_type == MessageType.set:
+            _LOGGER.debug(
+                "[%s] Force refresh after set status to: %s",
+                self._device_id,
+                cmd,
+            )
+            now = time.time()
+            self._previous_refresh = now - self._refresh_interval
 
     def get_capabilities(self) -> None:
         """Get device capabilities."""
@@ -350,12 +391,13 @@ class MideaDevice(threading.Thread):
                         if len(msg) == 0:
                             raise OSError("Empty message received.")
                         result = self.parse_message(msg)
+                        # Prevent infinite loop
                         if result == MessageResult.SUCCESS:
                             break
-                        if result == MessageResult.PADDING:
+                        elif result == MessageResult.PADDING:  # noqa: RET508
                             continue
-                        # parse msg error
-                        error_count += 1
+                        else:
+                            raise ResponseException  # noqa: TRY301
                     # recovery SOCKET_TIMEOUT after recv msg
                     self._socket.settimeout(SOCKET_TIMEOUT)
                 # only catch TimoutError for check_protocol
@@ -380,6 +422,9 @@ class MideaDevice(threading.Thread):
                     # refresh_status, raise timeout exception to main loop
                     else:
                         raise
+                except ResponseException:
+                    # parse msg error
+                    error_count += 1
             else:
                 error_count += 1
             # init check_protocol and all the query failed
@@ -557,6 +602,7 @@ class MideaDevice(threading.Thread):
         self._buffer = b""
         if self._socket:
             try:
+                self._socket.shutdown(socket.SHUT_RDWR)
                 self._socket.close()
                 _LOGGER.debug("[%s] Socket closed", self._device_id)
             except OSError as e:
@@ -620,8 +666,8 @@ class MideaDevice(threading.Thread):
                 if self.connect(init=True) is False:
                     self.close_socket(init=True)
                     connection_retries += 1
-                    # sleep time increase, maximum is 600 seconds
-                    sleep_time = min(5 * connection_retries, 600)
+                    # Sleep time with exponential backoff, maximum 600 seconds
+                    sleep_time = min(5 * (2 ** (connection_retries - 1)), 600)
                     _LOGGER.warning(
                         "[%s] Unable to connect, sleep %s seconds and retry",
                         self._device_id,
@@ -649,6 +695,9 @@ class MideaDevice(threading.Thread):
                     _LOGGER.debug("[%s] No Supported protocol", self._device_id)
                     # ignore and continue loop
                     continue
+                except ConnectionResetError:  # refresh_status -> build_send exception
+                    _LOGGER.debug("[%s] Connection reset by peer", self._device_id)
+                    reconnect = True
                 except OSError:  # refresh_status
                     _LOGGER.debug("[%s] OS error", self._device_id)
                     reconnect = True
