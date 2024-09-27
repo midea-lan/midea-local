@@ -2,6 +2,7 @@
 
 from midealocal.message import (
     BodyType,
+    DeviceType,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -18,12 +19,12 @@ class Message34Base(MessageRequest):
     def __init__(
         self,
         protocol_version: int,
-        message_type: int,
-        body_type: int,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize X34 message base."""
         super().__init__(
-            device_type=0x34,
+            device_type=DeviceType.X34,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -42,7 +43,7 @@ class MessageQuery(Message34Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x00,
+            body_type=BodyType.X00,
         )
 
     @property
@@ -58,7 +59,7 @@ class MessagePower(Message34Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x08,
+            body_type=BodyType.X08,
         )
         self.power = False
 
@@ -76,7 +77,7 @@ class MessageLock(Message34Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x83,
+            body_type=BodyType.X83,
         )
         self.lock = False
 
@@ -94,7 +95,7 @@ class MessageStorage(Message34Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x81,
+            body_type=BodyType.X81,
         )
         self.storage = False
 

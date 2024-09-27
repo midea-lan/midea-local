@@ -4,7 +4,14 @@ from enum import IntEnum
 from typing import Any
 
 from midealocal.const import MAX_BYTE_VALUE
-from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+from midealocal.message import (
+    BodyType,
+    DeviceType,
+    MessageBody,
+    MessageRequest,
+    MessageResponse,
+    MessageType,
+)
 
 MAX_HEAT_LOW_TEMP = 50
 
@@ -27,12 +34,12 @@ class Message26Base(MessageRequest):
     def __init__(
         self,
         protocol_version: int,
-        message_type: int,
-        body_type: int,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize X26 message base."""
         super().__init__(
-            device_type=0x26,
+            device_type=DeviceType.X26,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -51,7 +58,7 @@ class MessageQuery(Message26Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x01,
+            body_type=BodyType.X01,
         )
 
     @property
@@ -67,7 +74,7 @@ class MessageSet(Message26Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x01,
+            body_type=BodyType.X01,
         )
         self.fields: dict[str, int] = {}
         self.main_light = False

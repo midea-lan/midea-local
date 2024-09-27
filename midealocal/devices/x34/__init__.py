@@ -6,6 +6,7 @@ from typing import Any
 
 from midealocal.device import MideaDevice
 from midealocal.exceptions import ValueWrongType
+from midealocal.message import DeviceType
 
 from .message import (
     Message34Response,
@@ -67,7 +68,7 @@ class Midea34Device(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0x34,
+            device_type=DeviceType.X34,
             ip_address=ip_address,
             port=port,
             token=token,
