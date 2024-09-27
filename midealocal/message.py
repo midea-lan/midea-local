@@ -42,6 +42,7 @@ class BodyType(IntEnum):
     X32 = 0x32
     X41 = 0x41
     X42 = 0x42
+    X48 = 0x48
     X80 = 0x80
 
 
@@ -97,13 +98,14 @@ class MessageCheckSumError(Exception):
 class MessageType(IntEnum):
     """Message type."""
 
+    default = (0x00,)
     set = (0x02,)
     query = (0x03,)
     notify1 = (0x04,)
     notify2 = (0x05,)
     exception = (0x06,)
     exception2 = (0x0A,)
-    query_appliance = 0xA0
+    query_appliance = (0xA0,)
 
     @classmethod
     def get_key_from_value(cls, value: int) -> str:

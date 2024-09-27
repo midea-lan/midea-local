@@ -4,6 +4,7 @@ from midealocal.const import MAX_BYTE_VALUE
 from midealocal.device import ProtocolVersion
 from midealocal.message import (
     BodyType,
+    DeviceType,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -23,12 +24,12 @@ class MessageB6Base(MessageRequest):
     def __init__(
         self,
         protocol_version: int,
-        message_type: int,
-        body_type: int,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize B6 message base."""
         super().__init__(
-            device_type=0xB6,
+            device_type=DeviceType.B6,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -47,7 +48,9 @@ class MessageQuery(MessageB6Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x11 if protocol_version == ProtocolVersion.V2 else 0x31,
+            body_type=BodyType.X11
+            if protocol_version == ProtocolVersion.V2
+            else BodyType.X31,
         )
 
     @property
@@ -63,7 +66,7 @@ class MessageQueryTips(MessageB6Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x02,
+            body_type=BodyType.X02,
         )
 
     @property
@@ -79,7 +82,9 @@ class MessageSet(MessageB6Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x22 if protocol_version in [0x00, 0x01] else 0x11,
+            body_type=BodyType.X22
+            if protocol_version in [0x00, 0x01]
+            else BodyType.X11,
         )
         self.light: int | None = None
         self.power: bool | None = None
@@ -250,7 +255,7 @@ class MessageB6Response(MessageResponse):
                     self.cleaning_reminder = (super().body[2] & 0x02) > 0
         elif (
             self.message_type == MessageType.exception2
-            and self.body_type == SubBodyType.A1
+            and self.body_type == BodyType.A1
         ):
             pass
 

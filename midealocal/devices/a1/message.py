@@ -5,6 +5,7 @@ from enum import IntEnum
 from midealocal.crc8 import calculate
 from midealocal.message import (
     BodyType,
+    DeviceType,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -31,12 +32,12 @@ class MessageA1Base(MessageRequest):
     def __init__(
         self,
         protocol_version: int,
-        message_type: int,
-        body_type: int,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize message A1 base."""
         super().__init__(
-            device_type=0xA1,
+            device_type=DeviceType.A1,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -66,7 +67,7 @@ class MessageQuery(MessageA1Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x41,
+            body_type=BodyType.X41,
         )
 
     @property
@@ -104,7 +105,7 @@ class MessageNewProtocolQuery(MessageA1Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0xB1,
+            body_type=BodyType.B1,
         )
 
     @property
@@ -124,7 +125,7 @@ class MessageSet(MessageA1Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x48,
+            body_type=BodyType.X48,
         )
         self.power = False
         self.prompt_tone = False
@@ -189,7 +190,7 @@ class MessageNewProtocolSet(MessageA1Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0xB0,
+            body_type=BodyType.B0,
         )
         self.light: bool | None = None
 
