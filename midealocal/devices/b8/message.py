@@ -21,6 +21,7 @@ from midealocal.devices.b8.const import (
 from midealocal.message import (
     BodyType,
     BoolParser,
+    DeviceType,
     IntEnumParser,
     IntParser,
     MessageBody,
@@ -36,12 +37,12 @@ class MessageB8Base(MessageRequest):
     def __init__(
         self,
         protocol_version: int,
-        message_type: int,
-        body_type: int,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize B8 message base."""
         super().__init__(
-            device_type=0xB8,
+            device_type=DeviceType.B8,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,

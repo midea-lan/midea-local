@@ -5,7 +5,9 @@ from enum import IntEnum
 from typing import Any
 
 from midealocal.device import MideaDevice
-from midealocal.devices.b8.const import (
+from midealocal.message import DeviceType
+
+from .const import (
     B8CleanMode,
     B8ControlType,
     B8DeviceAttributes,
@@ -20,7 +22,7 @@ from midealocal.devices.b8.const import (
     B8WorkMode,
     B8WorkStatus,
 )
-from midealocal.devices.b8.message import (
+from .message import (
     MessageB8Response,
     MessageQuery,
     MessageSet,
@@ -50,7 +52,7 @@ class MideaB8Device(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0xB8,
+            device_type=DeviceType.B8,
             ip_address=ip_address,
             port=port,
             token=token,
