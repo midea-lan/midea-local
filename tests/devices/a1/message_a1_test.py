@@ -11,6 +11,7 @@ from midealocal.devices.a1.message import (
     MessageSet,
     NewProtocolTags,
 )
+from midealocal.message import BodyType, MessageType
 
 
 class TestMessageA1Base:
@@ -18,17 +19,33 @@ class TestMessageA1Base:
 
     def test_message_id_increment(self) -> None:
         """Test message Id Increment."""
-        msg = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
-        msg2 = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
+        msg = MessageA1Base(
+            protocol_version=1,
+            message_type=MessageType.test,
+            body_type=BodyType.X01,
+        )
+        msg2 = MessageA1Base(
+            protocol_version=1,
+            message_type=MessageType.test,
+            body_type=BodyType.X01,
+        )
         assert msg2._message_id == msg._message_id + 1
         # test reset
         for _ in range(100 - msg2._message_id):
-            msg = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
+            msg = MessageA1Base(
+                protocol_version=1,
+                message_type=MessageType.test,
+                body_type=BodyType.X01,
+            )
         assert msg._message_id == 1
 
     def test_body_not_implemented(self) -> None:
         """Test body not implemented."""
-        msg = MessageA1Base(protocol_version=1, message_type=1, body_type=1)
+        msg = MessageA1Base(
+            protocol_version=1,
+            message_type=MessageType.test,
+            body_type=BodyType.X01,
+        )
         with pytest.raises(NotImplementedError):
             _ = msg.body
 

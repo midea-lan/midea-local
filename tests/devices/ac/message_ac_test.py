@@ -15,6 +15,7 @@ from midealocal.devices.ac.message import (
     MessageToggleDisplay,
     NewProtocolTags,
 )
+from midealocal.message import BodyType, MessageType
 
 
 class TestMessageACBase:
@@ -22,17 +23,33 @@ class TestMessageACBase:
 
     def test_message_id_increment(self) -> None:
         """Test message Id Increment."""
-        msg = MessageACBase(protocol_version=1, message_type=1, body_type=1)
-        msg2 = MessageACBase(protocol_version=1, message_type=1, body_type=1)
+        msg = MessageACBase(
+            protocol_version=1,
+            message_type=MessageType.test,
+            body_type=BodyType.X01,
+        )
+        msg2 = MessageACBase(
+            protocol_version=1,
+            message_type=MessageType.test,
+            body_type=BodyType.X01,
+        )
         assert msg2._message_id == msg._message_id + 1
         # test reset
         for _ in range(254 - msg2._message_id):
-            msg = MessageACBase(protocol_version=1, message_type=1, body_type=1)
+            msg = MessageACBase(
+                protocol_version=1,
+                message_type=MessageType.test,
+                body_type=BodyType.X01,
+            )
         assert msg._message_id == 1
 
     def test_body_not_implemented(self) -> None:
         """Test body not implemented."""
-        msg = MessageACBase(protocol_version=1, message_type=1, body_type=1)
+        msg = MessageACBase(
+            protocol_version=1,
+            message_type=MessageType.test,
+            body_type=BodyType.X01,
+        )
         with pytest.raises(NotImplementedError):
             _ = msg.body
 
@@ -193,7 +210,7 @@ class TestMessageSubProtocol:
         """Test sub protocol body."""
         msg = MessageSubProtocol(
             protocol_version=1,
-            message_type=0xBB,
+            message_type=MessageType.query,
             subprotocol_query_type=0xCC,
         )
         expected_body = bytearray(

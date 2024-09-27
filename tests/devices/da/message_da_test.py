@@ -9,6 +9,7 @@ from midealocal.devices.da.message import (
     MessageQuery,
     MessageStart,
 )
+from midealocal.message import BodyType, MessageType
 
 
 class TestMessageDABase:
@@ -16,7 +17,11 @@ class TestMessageDABase:
 
     def test_body_not_implemented(self) -> None:
         """Test body not implemented."""
-        msg = MessageDABase(protocol_version=1, message_type=1, body_type=1)
+        msg = MessageDABase(
+            protocol_version=1,
+            message_type=MessageType.test,
+            body_type=BodyType.X01,
+        )
         with pytest.raises(NotImplementedError):
             _ = msg.body
 

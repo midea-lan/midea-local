@@ -14,6 +14,7 @@ from midealocal.devices.ed.message import (
     MessageNewSet,
     MessageQuery,
 )
+from midealocal.message import BodyType, MessageType
 
 
 class TestMessageEDBase:
@@ -21,7 +22,11 @@ class TestMessageEDBase:
 
     def test_body_not_implemented(self) -> None:
         """Test body not implemented."""
-        msg = MessageEDBase(protocol_version=1, message_type=1, body_type=1)
+        msg = MessageEDBase(
+            protocol_version=1,
+            message_type=MessageType.test,
+            body_type=BodyType.X01,
+        )
         with pytest.raises(NotImplementedError):
             _ = msg.body
 
@@ -31,7 +36,7 @@ class TestMessageQuery:
 
     def test_query_body(self) -> None:
         """Test query body."""
-        query = MessageQuery(protocol_version=1, body_type=2)
+        query = MessageQuery(protocol_version=1, body_type=BodyType.X02)
         expected_body = bytearray([0x02, 0x01])
         assert query.body == expected_body
 
