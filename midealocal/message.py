@@ -15,6 +15,7 @@ class BodyType(IntEnum):
     A0 = 0xA0
     A1 = 0xA1
     A4 = 0xA4
+    AA = 0xAA
     B0 = 0xB0
     B1 = 0xB1
     B5 = 0xB5
@@ -40,6 +41,7 @@ class BodyType(IntEnum):
     X24 = 0x24
     X31 = 0x31
     X32 = 0x32
+    X40 = 0x40
     X41 = 0x41
     X42 = 0x42
     X48 = 0x48

@@ -108,8 +108,8 @@ class MessageACBase(MessageRequest):
     def __init__(
         self,
         protocol_version: int,
-        message_type: int,
-        body_type: int,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize AC message base."""
         super().__init__(
@@ -289,14 +289,14 @@ class MessageSubProtocol(MessageACBase):
     def __init__(
         self,
         protocol_version: int,
-        message_type: int,
+        message_type: MessageType,
         subprotocol_query_type: int,
     ) -> None:
         """Initialize AC message sub protocol."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=message_type,
-            body_type=0xAA,
+            body_type=BodyType.AA,
         )
         self._subprotocol_query_type = subprotocol_query_type
 
@@ -435,7 +435,7 @@ class MessageGeneralSet(MessageACBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x40,
+            body_type=BodyType.X40,
         )
         self.power = False
         self.prompt_tone = True
@@ -527,7 +527,7 @@ class MessageNewProtocolSet(MessageACBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0xB0,
+            body_type=BodyType.B0,
         )
         self.indirect_wind: bytes | None = None
         self.prompt_tone: bytes | None = None

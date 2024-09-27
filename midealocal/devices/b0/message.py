@@ -3,6 +3,7 @@
 from midealocal.const import MAX_BYTE_VALUE
 from midealocal.message import (
     BodyType,
+    DeviceType,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -18,12 +19,12 @@ class MessageB0Base(MessageRequest):
     def __init__(
         self,
         protocol_version: int,
-        message_type: int,
-        body_type: int,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize B0 message base."""
         super().__init__(
-            device_type=0xB0,
+            device_type=DeviceType.B0,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -42,7 +43,7 @@ class MessageQuery00(MessageB0Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x00,
+            body_type=BodyType.X00,
         )
 
     @property
@@ -58,7 +59,7 @@ class MessageQuery01(MessageB0Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x01,
+            body_type=BodyType.X01,
         )
 
     @property
