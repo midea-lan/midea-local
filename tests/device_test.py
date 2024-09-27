@@ -14,7 +14,7 @@ from midealocal.device import (
 )
 from midealocal.devices.ac.message import MessageCapabilitiesQuery
 from midealocal.exceptions import SocketException
-from midealocal.message import MessageType
+from midealocal.message import DeviceType, MessageType
 
 
 def test_fetch_v2_message() -> None:
@@ -38,7 +38,7 @@ class MideaDeviceTest:
         self.device = MideaDevice(
             name="Test Device",
             device_id=1,
-            device_type=0xAC,
+            device_type=DeviceType.AC,
             ip_address="192.168.1.100",
             port=6444,
             token=DEFAULT_KEYS[99]["token"],
@@ -310,8 +310,8 @@ class MideaDeviceTest:
     def test_send_command(self) -> None:
         """Test send command."""
         with patch.object(self.device, "build_send", side_effect=[None, OSError()]):
-            self.device.send_command(0x03, bytearray([0x1] * 10))
-            self.device.send_command(0x03, bytearray([0x1] * 10))
+            self.device.send_command(MessageType.query, bytearray([0x1] * 10))
+            self.device.send_command(MessageType.query, bytearray([0x1] * 10))
 
     def test_send_heartbeat(self) -> None:
         """Test send heartbeat."""
