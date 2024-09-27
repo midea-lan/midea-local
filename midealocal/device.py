@@ -197,7 +197,7 @@ class MideaDevice(threading.Thread):
                 break
         return result, msg
 
-    def connect(self, init: bool = False) -> bool:
+    def connect(self, init: bool = False, reconnect: bool = False) -> bool:
         """Connect to device."""
         connected = False
         try:
@@ -213,8 +213,11 @@ class MideaDevice(threading.Thread):
             _LOGGER.debug("[%s] Connected", self._device_id)
             if self._protocol == ProtocolVersion.V3:
                 self.authenticate()
-            # reconnect skip check_protocol
-            self.refresh_status(check_protocol=init)
+            # 1. midea_ac_lan add device verify token with connect and auth
+            # 2. init connection, check_protocol
+            # 3. reconnect, skip check_protocol
+            if reconnect or init:
+                self.refresh_status(check_protocol=init)
             if init:
                 self.get_capabilities()
             connected = True
@@ -348,7 +351,7 @@ class MideaDevice(threading.Thread):
     def build_send(self, cmd: MessageRequest, query: bool = False) -> None:
         """Serialize and send."""
         data = cmd.serialize()
-        _LOGGER.debug("[%s] Sending: %s", self._device_id, cmd)
+        _LOGGER.debug("[%s] Sending: %s, query is %s", self._device_id, cmd, query)
         msg = PacketBuilder(self._device_id, data).finalize()
         self.send_message(msg, query=query)
         # after send set command, force refresh_status
@@ -373,6 +376,12 @@ class MideaDevice(threading.Thread):
         if self._appliance_query:
             cmds = [MessageQueryAppliance(self.device_type), *cmds]
         error_count = 0
+        _LOGGER.debug(
+            "[%s] refresh_status with cmds: %s, check_protocol %s",
+            self._device_id,
+            cmds,
+            check_protocol,
+        )
         for cmd in cmds:
             if cmd.__class__.__name__ not in self._unsupported_protocol:
                 # set socket QUERY_TIMEOUT for query msg
@@ -711,7 +720,7 @@ class MideaDevice(threading.Thread):
                 # reconnect socket and try to skip check_protocol
                 if reconnect:
                     self.close_socket()
-                    if self.connect():
+                    if self.connect(reconnect=True):
                         # pass, continue while True loop
                         continue
                     # device disconnect, break while True loop, start main loop
