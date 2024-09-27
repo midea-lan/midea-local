@@ -6,6 +6,7 @@ from enum import StrEnum
 from typing import Any
 
 from midealocal.device import MideaDevice
+from midealocal.message import DeviceType
 
 from .message import MessageC2Response, MessagePower, MessageQuery, MessageSet
 
@@ -50,7 +51,7 @@ class MideaC2Device(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0xC2,
+            device_type=DeviceType.C2,
             ip_address=ip_address,
             port=port,
             token=token,

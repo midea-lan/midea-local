@@ -3,6 +3,7 @@
 from midealocal.devices.c3.const import C3SilentLevel
 from midealocal.message import (
     BodyType,
+    DeviceType,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -18,12 +19,12 @@ class MessageC3Base(MessageRequest):
     def __init__(
         self,
         protocol_version: int,
-        message_type: int,
-        body_type: int,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize C3 message base."""
         super().__init__(
-            device_type=0xC3,
+            device_type=DeviceType.C3,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,

@@ -5,8 +5,9 @@ import logging
 from typing import Any, ClassVar
 
 from midealocal.device import MideaDevice
-from midealocal.devices.c3.const import C3DeviceMode, C3SilentLevel, DeviceAttributes
+from midealocal.message import DeviceType
 
+from .const import C3DeviceMode, C3SilentLevel, DeviceAttributes
 from .message import (
     MessageC3Response,
     MessageQuery,
@@ -46,7 +47,7 @@ class MideaC3Device(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0xC3,
+            device_type=DeviceType.C3,
             ip_address=ip_address,
             port=port,
             token=token,
