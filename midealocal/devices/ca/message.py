@@ -2,6 +2,7 @@
 
 from midealocal.message import (
     BodyType,
+    DeviceType,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -21,12 +22,12 @@ class MessageCABase(MessageRequest):
     def __init__(
         self,
         protocol_version: int,
-        message_type: int,
-        body_type: int,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize CA message base."""
         super().__init__(
-            device_type=0xCA,
+            device_type=DeviceType.CA,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -45,7 +46,7 @@ class MessageQuery(MessageCABase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x00,
+            body_type=BodyType.X00,
         )
 
     @property
