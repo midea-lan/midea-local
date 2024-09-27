@@ -6,6 +6,7 @@ from typing import Any
 
 from midealocal.device import MideaDevice
 from midealocal.exceptions import ValueWrongType
+from midealocal.message import DeviceType
 
 from .message import MessageDBResponse, MessagePower, MessageQuery, MessageStart
 
@@ -42,7 +43,7 @@ class MideaDBDevice(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0xDB,
+            device_type=DeviceType.DB,
             ip_address=ip_address,
             port=port,
             token=token,

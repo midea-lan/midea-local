@@ -33,6 +33,7 @@ class BodyType(IntEnum):
     X05 = 0x05
     X06 = 0x06
     X07 = 0x07
+    X08 = 0x08
     X0A = 0x0A
     X11 = 0x11
     X14 = 0x14
@@ -47,6 +48,8 @@ class BodyType(IntEnum):
     X42 = 0x42
     X48 = 0x48
     X80 = 0x80
+    X81 = 0x81
+    X83 = 0x83
 
 
 class SubBodyType(IntEnum):
