@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any
 
 from midealocal.device import MideaDevice
-from midealocal.message import DeviceType
+from midealocal.message import BodyType, DeviceType
 
 from .message import MessageEDResponse, MessageNewSet, MessageOldSet, MessageQuery
 
@@ -70,7 +70,7 @@ class MideaEDDevice(MideaDevice):
                 DeviceAttributes.child_lock: False,
             },
         )
-        self._device_class = 0
+        self._device_class = BodyType.X00
 
     def _use_new_set(self) -> bool:
         # if (self.sub_type > 342 or self.sub_type == 340) else False
