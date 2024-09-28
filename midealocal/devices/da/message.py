@@ -1,8 +1,8 @@
 """Midea local DA message."""
 
+from midealocal.const import DeviceType
 from midealocal.message import (
     BodyType,
-    DeviceType,
     MessageBody,
     MessageRequest,
     MessageResponse,

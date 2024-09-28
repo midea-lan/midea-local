@@ -2,9 +2,9 @@
 
 from enum import IntEnum
 
+from midealocal.const import DeviceType
 from midealocal.message import (
     BodyType,
-    DeviceType,
     MessageBody,
     MessageRequest,
     MessageResponse,

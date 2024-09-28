@@ -3,10 +3,9 @@
 from enum import IntEnum
 from typing import Any
 
-from midealocal.const import MAX_BYTE_VALUE
+from midealocal.const import MAX_BYTE_VALUE, DeviceType
 from midealocal.message import (
     BodyType,
-    DeviceType,
     MessageBody,
     MessageRequest,
     MessageResponse,

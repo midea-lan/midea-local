@@ -1,8 +1,8 @@
 """Midea local x34 message."""
 
+from midealocal.const import DeviceType
 from midealocal.message import (
     BodyType,
-    DeviceType,
     MessageBody,
     MessageRequest,
     MessageResponse,

@@ -1,9 +1,9 @@
 """Midea local C3 message."""
 
+from midealocal.const import DeviceType
 from midealocal.devices.c3.const import C3SilentLevel
 from midealocal.message import (
     BodyType,
-    DeviceType,
     MessageBody,
     MessageRequest,
     MessageResponse,

@@ -1,5 +1,6 @@
 """Midea local B8 message."""
 
+from midealocal.const import DeviceType
 from midealocal.devices.b8.const import (
     B8CleanMode,
     B8ControlType,
@@ -21,7 +22,6 @@ from midealocal.devices.b8.const import (
 from midealocal.message import (
     BodyType,
     BoolParser,
-    DeviceType,
     IntEnumParser,
     IntParser,
     MessageBody,

@@ -1,10 +1,9 @@
 """Midea local B6 message."""
 
-from midealocal.const import MAX_BYTE_VALUE
+from midealocal.const import MAX_BYTE_VALUE, DeviceType
 from midealocal.device import ProtocolVersion
 from midealocal.message import (
     BodyType,
-    DeviceType,
     MessageBody,
     MessageRequest,
     MessageResponse,
