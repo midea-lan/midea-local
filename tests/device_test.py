@@ -44,7 +44,7 @@ class MideaDeviceTest:
             port=6444,
             token=DEFAULT_KEYS[99]["token"],
             key=DEFAULT_KEYS[99]["key"],
-            protocol=3,
+            protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
             attributes={},

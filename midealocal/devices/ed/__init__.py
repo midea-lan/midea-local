@@ -4,7 +4,7 @@ import logging
 from enum import StrEnum
 from typing import Any
 
-from midealocal.device import MideaDevice
+from midealocal.device import MideaDevice, ProtocolVersion
 from midealocal.message import BodyType, DeviceType
 
 from .message import MessageEDResponse, MessageNewSet, MessageOldSet, MessageQuery
@@ -39,7 +39,7 @@ class MideaEDDevice(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002

@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+from midealocal.device import ProtocolVersion
 from midealocal.devices.da import DeviceAttributes, MideaDADevice
 from midealocal.devices.da.message import MessageQuery
 from midealocal.exceptions import ValueWrongType
@@ -24,7 +25,7 @@ class TestMideaDADevice:
             port=6444,
             token="AA",
             key="BB",
-            protocol=3,
+            protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
             customize="test_customize",

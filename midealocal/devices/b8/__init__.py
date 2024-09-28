@@ -5,7 +5,7 @@ from enum import IntEnum
 from typing import Any
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice
+from midealocal.device import MideaDevice, ProtocolVersion
 
 from .const import (
     B8CleanMode,
@@ -43,7 +43,7 @@ class MideaB8Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002

@@ -83,7 +83,7 @@ class MideaDevice(threading.Thread):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         attributes: dict,

@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+from midealocal.device import ProtocolVersion
 from midealocal.devices.b8 import MideaB8Device
 from midealocal.devices.b8.const import (
     B8CleanMode,
@@ -43,7 +44,7 @@ class TestMideaB8Device:
             port=12345,
             token="AA",
             key="BB",
-            protocol=1,
+            protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=1,
             customize="",

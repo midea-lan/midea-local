@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import ClassVar
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice
+from midealocal.device import MideaDevice, ProtocolVersion
 
 from .message import MessageB0Response, MessageQuery01
 
@@ -44,7 +44,7 @@ class MideaB0Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002

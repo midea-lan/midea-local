@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice
+from midealocal.device import MideaDevice, ProtocolVersion
 from midealocal.exceptions import ValueWrongType
 
 from .message import MessageDCResponse, MessagePower, MessageQuery, MessageStart
@@ -34,7 +34,7 @@ class MideaDCDevice(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002

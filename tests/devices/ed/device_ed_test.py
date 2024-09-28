@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+from midealocal.device import ProtocolVersion
 from midealocal.devices.ed import DeviceAttributes, MideaEDDevice
 from midealocal.devices.ed.message import MessageQuery
 
@@ -23,7 +24,7 @@ class TestMideaEDDevice:
             port=6444,
             token="AA",
             key="BB",
-            protocol=3,
+            protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
             customize="test_customize",

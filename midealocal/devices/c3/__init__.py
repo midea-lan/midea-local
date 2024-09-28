@@ -5,7 +5,7 @@ import logging
 from typing import Any, ClassVar
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice
+from midealocal.device import MideaDevice, ProtocolVersion
 
 from .const import C3DeviceMode, C3SilentLevel, DeviceAttributes
 from .message import (
@@ -38,7 +38,7 @@ class MideaC3Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,
