@@ -151,7 +151,9 @@ class TestMideaB8Device:
 
     def test_query_response(self) -> None:
         """Test query response."""
-        header = bytearray([0xAA] + ([0x0] * 8) + [MessageType.query])
+        header = bytearray(
+            [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.query],
+        )
         body = bytearray(
             [
                 0x32,
@@ -212,7 +214,9 @@ class TestMideaB8Device:
 
     def test_notify_response(self) -> None:
         """Test notify response."""
-        header = bytearray([0xAA] + ([0x0] * 8) + [MessageType.notify1])
+        header = bytearray(
+            [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.notify1],
+        )
         body = bytearray(
             [
                 0x42,
@@ -272,7 +276,9 @@ class TestMideaB8Device:
 
     def test_query_response_reboot_error(self) -> None:
         """Test query response."""
-        header = bytearray([0xAA] + ([0x0] * 8) + [MessageType.query])
+        header = bytearray(
+            [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.query],
+        )
         body = bytearray(
             [
                 0x32,
@@ -337,7 +343,9 @@ class TestMideaB8Device:
 
     def test_query_response_no_error(self) -> None:
         """Test query response."""
-        header = bytearray([0xAA] + ([0x0] * 8) + [MessageType.query])
+        header = bytearray(
+            [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.query],
+        )
         body = bytearray(
             [
                 0x32,
@@ -396,7 +404,9 @@ class TestMideaB8Device:
 
     def test_unexpected_response(self) -> None:
         """Test unexpected response."""
-        header = bytearray([0xAA] + ([0x0] * 8) + [MessageType.query])
+        header = bytearray(
+            [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.query],
+        )
         body = bytearray(
             [
                 0x32,
