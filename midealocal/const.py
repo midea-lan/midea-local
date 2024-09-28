@@ -46,3 +46,11 @@ class DeviceType(IntEnum):
     X34 = 0x34
     X40 = 0x40
     X00 = 0x00
+
+
+class ProtocolVersion(IntEnum):
+    """Protocol version."""
+
+    V1 = 1
+    V2 = 2
+    V3 = 3

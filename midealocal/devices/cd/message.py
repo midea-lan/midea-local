@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from midealocal.const import DeviceType
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -17,7 +17,7 @@ class MessageCDBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -37,7 +37,7 @@ class MessageCDBase(MessageRequest):
 class MessageQuery(MessageCDBase):
     """CD message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize CD message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -53,7 +53,7 @@ class MessageQuery(MessageCDBase):
 class MessageSet(MessageCDBase):
     """CD message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize CD message set."""
         super().__init__(
             protocol_version=protocol_version,

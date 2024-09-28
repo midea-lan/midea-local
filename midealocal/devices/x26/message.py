@@ -3,7 +3,7 @@
 from enum import IntEnum
 from typing import Any
 
-from midealocal.const import MAX_BYTE_VALUE, DeviceType
+from midealocal.const import MAX_BYTE_VALUE, DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -32,7 +32,7 @@ class Message26Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -52,7 +52,7 @@ class Message26Base(MessageRequest):
 class MessageQuery(Message26Base):
     """X26 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X26 message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -68,7 +68,7 @@ class MessageQuery(Message26Base):
 class MessageSet(Message26Base):
     """X26 message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X26 message set."""
         super().__init__(
             protocol_version=protocol_version,

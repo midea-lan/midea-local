@@ -1,6 +1,6 @@
 """Midea local FD message."""
 
-from midealocal.const import DeviceType
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.crc8 import calculate
 from midealocal.message import (
     BodyType,
@@ -23,7 +23,7 @@ class MessageFDBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -54,7 +54,7 @@ class MessageFDBase(MessageRequest):
 class MessageQuery(MessageFDBase):
     """FD message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize FD message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -92,7 +92,7 @@ class MessageQuery(MessageFDBase):
 class MessageSet(MessageFDBase):
     """FD message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize FD message set."""
         super().__init__(
             protocol_version=protocol_version,

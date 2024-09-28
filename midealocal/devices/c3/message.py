@@ -1,6 +1,6 @@
 """Midea local C3 message."""
 
-from midealocal.const import DeviceType
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.devices.c3.const import C3SilentLevel
 from midealocal.message import (
     BodyType,
@@ -18,7 +18,7 @@ class MessageC3Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -38,7 +38,7 @@ class MessageC3Base(MessageRequest):
 class MessageQuery(MessageC3Base):
     """C3 message query."""
 
-    def __init__(self, protocol_version: int, body_type: BodyType) -> None:
+    def __init__(self, protocol_version: ProtocolVersion, body_type: BodyType) -> None:
         """Initialize C3 message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -54,7 +54,7 @@ class MessageQuery(MessageC3Base):
 class MessageQueryBasic(MessageQuery):
     """C3 Message query basic."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize C3 message query basic."""
         super().__init__(protocol_version, BodyType.X01)
 
@@ -62,7 +62,7 @@ class MessageQueryBasic(MessageQuery):
 class MessageQuerySilence(MessageQuery):
     """C3 Message query silence."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize C3 message query silence."""
         super().__init__(protocol_version, BodyType.X05)
 
@@ -70,7 +70,7 @@ class MessageQuerySilence(MessageQuery):
 class MessageSet(MessageC3Base):
     """C3 message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize C3 message set."""
         super().__init__(
             protocol_version=protocol_version,
@@ -121,7 +121,7 @@ class MessageSet(MessageC3Base):
 class MessageSetSilent(MessageC3Base):
     """C3 message set silent."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize C3 message set silent."""
         super().__init__(
             protocol_version=protocol_version,
@@ -151,7 +151,7 @@ class MessageSetSilent(MessageC3Base):
 class MessageSetECO(MessageC3Base):
     """C3 message set eco."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize C3 message set eco."""
         super().__init__(
             protocol_version=protocol_version,

@@ -2,7 +2,7 @@
 
 from enum import IntEnum
 
-from midealocal.const import DeviceType
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.crc8 import calculate
 from midealocal.message import (
     BodyType,
@@ -31,7 +31,7 @@ class MessageA1Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -62,7 +62,7 @@ class MessageA1Base(MessageRequest):
 class MessageQuery(MessageA1Base):
     """Message A1 query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize message A1 query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -100,7 +100,7 @@ class MessageQuery(MessageA1Base):
 class MessageNewProtocolQuery(MessageA1Base):
     """Message A1 new protocol query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize message A1 new protocol query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -120,7 +120,7 @@ class MessageNewProtocolQuery(MessageA1Base):
 class MessageSet(MessageA1Base):
     """Message A1 set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize message A1 set."""
         super().__init__(
             protocol_version=protocol_version,
@@ -185,7 +185,7 @@ class MessageSet(MessageA1Base):
 class MessageNewProtocolSet(MessageA1Base):
     """Message A1 new protocol set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize message A1 new protocol set."""
         super().__init__(
             protocol_version=protocol_version,

@@ -64,7 +64,7 @@ class TestMideaA1Device:
         """Test process message."""
         with patch("midealocal.devices.a1.MessageA1Response") as mock_message_response:
             mock_message = mock_message_response.return_value
-            mock_message.protocol_version = 3
+            mock_message.protocol_version = ProtocolVersion.V3
             mock_message.power = True
             mock_message.prompt_tone = False
             mock_message.fan_speed = 40
@@ -98,7 +98,7 @@ class TestMideaA1Device:
         """Test make message set."""
         with patch("midealocal.devices.a1.MessageA1Response") as mock_message_response:
             mock_message = mock_message_response.return_value
-            mock_message.protocol_version = 3
+            mock_message.protocol_version = ProtocolVersion.V3
             mock_message.power = True
             mock_message.prompt_tone = False
             mock_message.fan_speed = 40

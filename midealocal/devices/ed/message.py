@@ -2,7 +2,7 @@
 
 from enum import IntEnum
 
-from midealocal.const import DeviceType
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -44,7 +44,7 @@ class MessageEDBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType = BodyType.X00,
     ) -> None:
@@ -64,7 +64,7 @@ class MessageEDBase(MessageRequest):
 class MessageQuery(MessageEDBase):
     """ED message query."""
 
-    def __init__(self, protocol_version: int, body_type: BodyType) -> None:
+    def __init__(self, protocol_version: ProtocolVersion, body_type: BodyType) -> None:
         """Initialize ED message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -80,7 +80,7 @@ class MessageQuery(MessageEDBase):
 class MessageNewSet(MessageEDBase):
     """ED message new set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize ED message new set."""
         super().__init__(
             protocol_version=protocol_version,
@@ -117,7 +117,7 @@ class MessageNewSet(MessageEDBase):
 class MessageOldSet(MessageEDBase):
     """ED message old set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize ED message old set."""
         super().__init__(
             protocol_version=protocol_version,

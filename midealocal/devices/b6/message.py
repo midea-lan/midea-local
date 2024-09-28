@@ -22,7 +22,7 @@ class MessageB6Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -42,7 +42,7 @@ class MessageB6Base(MessageRequest):
 class MessageQuery(MessageB6Base):
     """B6 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize B6 message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -60,7 +60,7 @@ class MessageQuery(MessageB6Base):
 class MessageQueryTips(MessageB6Base):
     """B6 message query tips."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize B6 message query tips."""
         super().__init__(
             protocol_version=protocol_version,
@@ -76,7 +76,7 @@ class MessageQueryTips(MessageB6Base):
 class MessageSet(MessageB6Base):
     """B6 message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize B6 message set."""
         super().__init__(
             protocol_version=protocol_version,

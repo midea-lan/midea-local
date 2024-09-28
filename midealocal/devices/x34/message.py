@@ -1,6 +1,6 @@
 """Midea local x34 message."""
 
-from midealocal.const import DeviceType
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -18,7 +18,7 @@ class Message34Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -38,7 +38,7 @@ class Message34Base(MessageRequest):
 class MessageQuery(Message34Base):
     """X34 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X34 message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -54,7 +54,7 @@ class MessageQuery(Message34Base):
 class MessagePower(Message34Base):
     """X34 message power."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X34 message power."""
         super().__init__(
             protocol_version=protocol_version,
@@ -72,7 +72,7 @@ class MessagePower(Message34Base):
 class MessageLock(Message34Base):
     """X34 message lock."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X34 message lock."""
         super().__init__(
             protocol_version=protocol_version,
@@ -90,7 +90,7 @@ class MessageLock(Message34Base):
 class MessageStorage(Message34Base):
     """X34 message storage."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X34 message storage."""
         super().__init__(
             protocol_version=protocol_version,

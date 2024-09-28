@@ -1,6 +1,6 @@
 """B0 Midea local message."""
 
-from midealocal.const import MAX_BYTE_VALUE, DeviceType
+from midealocal.const import MAX_BYTE_VALUE, DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -17,7 +17,7 @@ class MessageB0Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -37,7 +37,7 @@ class MessageB0Base(MessageRequest):
 class MessageQuery00(MessageB0Base):
     """B0 message query 00."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize B0 message query 00."""
         super().__init__(
             protocol_version=protocol_version,
@@ -53,7 +53,7 @@ class MessageQuery00(MessageB0Base):
 class MessageQuery01(MessageB0Base):
     """B0 message query 01."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize B0 message query 01."""
         super().__init__(
             protocol_version=protocol_version,

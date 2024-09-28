@@ -4,7 +4,7 @@ import logging
 from enum import IntEnum
 from typing import Generic, SupportsIndex, TypeVar, cast
 
-from midealocal.const import DeviceType
+from midealocal.const import DeviceType, ProtocolVersion
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -136,7 +136,7 @@ class MessageBase:
         self._device_type: DeviceType = DeviceType.X00
         self._message_type: MessageType = MessageType.default
         self._body_type: BodyType = BodyType.X00
-        self._protocol_version: int = 0
+        self._protocol_version: ProtocolVersion = ProtocolVersion.V1
 
     @staticmethod
     def checksum(data: bytes) -> SupportsIndex:
@@ -181,12 +181,12 @@ class MessageBase:
         self._body_type = value
 
     @property
-    def protocol_version(self) -> int:
+    def protocol_version(self) -> ProtocolVersion:
         """Message protocol version."""
         return self._protocol_version
 
     @protocol_version.setter
-    def protocol_version(self, protocol_version: int) -> None:
+    def protocol_version(self, protocol_version: ProtocolVersion) -> None:
         self._protocol_version = protocol_version
 
     def _format_attribute(
@@ -237,7 +237,7 @@ class MessageRequest(MessageBase):
     def __init__(
         self,
         device_type: DeviceType,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -303,7 +303,7 @@ class MessageQuestCustom(MessageRequest):
     def __init__(
         self,
         device_type: DeviceType,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         cmd_type: MessageType,
         cmd_body: bytearray,
     ) -> None:
@@ -333,7 +333,7 @@ class MessageQueryAppliance(MessageRequest):
         """Initialize message query appliance."""
         super().__init__(
             device_type=device_type,
-            protocol_version=0,
+            protocol_version=ProtocolVersion.V1,
             message_type=MessageType.query_appliance,
             body_type=BodyType.X00,
         )
@@ -577,7 +577,7 @@ class MessageResponse(MessageBase):
         if message is None or len(message) < self.HEADER_LENGTH + 1:
             raise MessageLenError
         self._header = message[: self.HEADER_LENGTH]
-        self.protocol_version = self._header[-2]
+        self.protocol_version = ProtocolVersion(self._header[-2])
         self.message_type = MessageType(self._header[-1])
         self.device_type = DeviceType(self._header[2])
         body = message[self.HEADER_LENGTH : -1]

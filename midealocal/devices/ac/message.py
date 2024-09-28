@@ -2,7 +2,7 @@
 
 from enum import IntEnum
 
-from midealocal.const import MAX_BYTE_VALUE, DeviceType
+from midealocal.const import MAX_BYTE_VALUE, DeviceType, ProtocolVersion
 from midealocal.crc8 import calculate
 from midealocal.message import (
     BodyType,
@@ -106,7 +106,7 @@ class MessageACBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -137,7 +137,7 @@ class MessageACBase(MessageRequest):
 class MessageQuery(MessageACBase):
     """AC message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize AC message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -175,7 +175,11 @@ class MessageQuery(MessageACBase):
 class MessageCapabilitiesQuery(MessageACBase):
     """AC message capabilities query."""
 
-    def __init__(self, protocol_version: int, additional_capabilities: bool) -> None:
+    def __init__(
+        self,
+        protocol_version: ProtocolVersion,
+        additional_capabilities: bool,
+    ) -> None:
         """Initialize AC message capabilities query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -194,7 +198,7 @@ class MessageCapabilitiesQuery(MessageACBase):
 class MessagePowerQuery(MessageACBase):
     """AC message power query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize AC message power query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -217,7 +221,7 @@ class MessagePowerQuery(MessageACBase):
 class MessageToggleDisplay(MessageACBase):
     """AC message toggle display."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize AC message toggle display."""
         super().__init__(
             protocol_version=protocol_version,
@@ -257,7 +261,7 @@ class MessageToggleDisplay(MessageACBase):
 class MessageNewProtocolQuery(MessageACBase):
     """AC message new protocol query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize AC message new protocol query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -287,7 +291,7 @@ class MessageSubProtocol(MessageACBase):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         subprotocol_query_type: int,
     ) -> None:
@@ -333,7 +337,11 @@ class MessageSubProtocol(MessageACBase):
 class MessageSubProtocolQuery(MessageSubProtocol):
     """AC message sub protocol query."""
 
-    def __init__(self, protocol_version: int, subprotocol_query_type: int) -> None:
+    def __init__(
+        self,
+        protocol_version: ProtocolVersion,
+        subprotocol_query_type: int,
+    ) -> None:
         """Initialize AC message sub protocol query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -345,7 +353,7 @@ class MessageSubProtocolQuery(MessageSubProtocol):
 class MessageSubProtocolSet(MessageSubProtocol):
     """AC message sub protocol set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize AC message sub protocol set."""
         super().__init__(
             protocol_version=protocol_version,
@@ -429,7 +437,7 @@ class MessageSubProtocolSet(MessageSubProtocol):
 class MessageGeneralSet(MessageACBase):
     """AC message general set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize AC message general set."""
         super().__init__(
             protocol_version=protocol_version,
@@ -521,7 +529,7 @@ class MessageGeneralSet(MessageACBase):
 class MessageNewProtocolSet(MessageACBase):
     """AC message new protocol set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize AC message new protocol set."""
         super().__init__(
             protocol_version=protocol_version,

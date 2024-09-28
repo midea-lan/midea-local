@@ -2,7 +2,7 @@
 
 from enum import IntEnum
 
-from midealocal.const import DeviceType
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -27,7 +27,7 @@ class MessageE8Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -47,7 +47,7 @@ class MessageE8Base(MessageRequest):
 class MessageQuery(MessageE8Base):
     """E8 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E8 message query."""
         super().__init__(
             protocol_version=protocol_version,

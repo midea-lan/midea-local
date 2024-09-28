@@ -10,7 +10,7 @@ from typing import Any
 
 from typing_extensions import deprecated
 
-from .const import DeviceType
+from .const import DeviceType, ProtocolVersion
 from .exceptions import SocketException
 from .message import (
     MessageApplianceResponse,
@@ -50,14 +50,6 @@ class NoSupportedProtocol(Exception):
 
 class DeviceAttributes(StrEnum):
     """Device attributes."""
-
-
-class ProtocolVersion(IntEnum):
-    """Protocol version."""
-
-    V1 = 1
-    V2 = 2
-    V3 = 3
 
 
 class MessageResult(IntEnum):
@@ -104,7 +96,7 @@ class MideaDevice(threading.Thread):
         self._protocol = protocol
         self._model = model
         self._subtype = subtype
-        self._protocol_version = 0
+        self._protocol_version: ProtocolVersion = ProtocolVersion.V1
         self._updates: list[Callable[[dict[str, Any]], None]] = []
         self._unsupported_protocol: list[str] = []
         self._is_run = False

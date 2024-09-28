@@ -1,6 +1,6 @@
 """Midea local B3 message."""
 
-from midealocal.const import MAX_BYTE_VALUE, DeviceType
+from midealocal.const import MAX_BYTE_VALUE, DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -22,7 +22,7 @@ class MessageB3Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -42,7 +42,7 @@ class MessageB3Base(MessageRequest):
 class MessageQuery(MessageB3Base):
     """B3 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize B3 message query."""
         super().__init__(
             protocol_version=protocol_version,

@@ -1,6 +1,6 @@
 """Midea local DB message."""
 
-from midealocal.const import DeviceType
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -15,7 +15,7 @@ class MessageDBBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -35,7 +35,7 @@ class MessageDBBase(MessageRequest):
 class MessageQuery(MessageDBBase):
     """DB message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize DB message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -51,7 +51,7 @@ class MessageQuery(MessageDBBase):
 class MessagePower(MessageDBBase):
     """DB message power."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize DB message power."""
         super().__init__(
             protocol_version=protocol_version,
@@ -93,7 +93,7 @@ class MessagePower(MessageDBBase):
 class MessageStart(MessageDBBase):
     """DB message start."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize DB message start."""
         super().__init__(
             protocol_version=protocol_version,

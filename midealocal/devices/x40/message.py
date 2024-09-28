@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from midealocal.const import DeviceType
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -19,7 +19,7 @@ class MessageX40Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
+        protocol_version: ProtocolVersion,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -39,7 +39,7 @@ class MessageX40Base(MessageRequest):
 class MessageQuery(MessageX40Base):
     """X40 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X40 message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -55,7 +55,7 @@ class MessageQuery(MessageX40Base):
 class MessageSet(MessageX40Base):
     """X40 message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X40 message set."""
         super().__init__(
             protocol_version=protocol_version,
