@@ -1,7 +1,6 @@
 """Midea local C3 message."""
 
 from midealocal.const import DeviceType, ProtocolVersion
-from midealocal.devices.c3.const import C3SilentLevel
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -9,6 +8,8 @@ from midealocal.message import (
     MessageResponse,
     MessageType,
 )
+
+from .const import C3SilentLevel
 
 TEMP_NEG_VALUE = 127
 

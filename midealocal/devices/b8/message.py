@@ -1,7 +1,18 @@
 """Midea local B8 message."""
 
 from midealocal.const import DeviceType, ProtocolVersion
-from midealocal.devices.b8.const import (
+from midealocal.message import (
+    BodyType,
+    BoolParser,
+    IntEnumParser,
+    IntParser,
+    MessageBody,
+    MessageRequest,
+    MessageResponse,
+    MessageType,
+)
+
+from .const import (
     B8CleanMode,
     B8ControlType,
     B8DeviceAttributes,
@@ -18,16 +29,6 @@ from midealocal.devices.b8.const import (
     B8WaterLevel,
     B8WorkMode,
     B8WorkStatus,
-)
-from midealocal.message import (
-    BodyType,
-    BoolParser,
-    IntEnumParser,
-    IntParser,
-    MessageBody,
-    MessageRequest,
-    MessageResponse,
-    MessageType,
 )
 
 
