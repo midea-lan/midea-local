@@ -2,6 +2,7 @@
 
 import pytest
 
+from midealocal.const import ProtocolVersion
 from midealocal.devices.c3.const import C3DeviceMode, C3SilentLevel
 from midealocal.devices.c3.message import (
     MessageC3Base,
@@ -22,7 +23,7 @@ class TestMessageC3Base:
     def test_body_not_implemented(self) -> None:
         """Test body not implemented."""
         msg = MessageC3Base(
-            protocol_version=1,
+            protocol_version=ProtocolVersion.V1,
             message_type=MessageType.test,
             body_type=BodyType.X01,
         )
@@ -35,11 +36,11 @@ class TestC3MessageQuery:
 
     def test_query_body(self) -> None:
         """Test query body."""
-        msg: MessageQuery = MessageQueryBasic(protocol_version=1)
+        msg: MessageQuery = MessageQueryBasic(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray([0x1])
         assert msg.body == expected_body
 
-        msg = MessageQuerySilence(protocol_version=1)
+        msg = MessageQuerySilence(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray([0x5])
         assert msg.body == expected_body
 
@@ -49,7 +50,7 @@ class TestC3MessageSet:
 
     def test_set_body(self) -> None:
         """Test set body."""
-        msg = MessageSet(protocol_version=1)
+        msg = MessageSet(protocol_version=ProtocolVersion.V1)
         msg.zone1_power = True
         msg.zone2_power = True
         msg.dhw_power = True
@@ -83,7 +84,7 @@ class TestC3MessageSetSilent:
 
     def test_set_silent_body(self) -> None:
         """Test set silent body."""
-        msg = MessageSetSilent(protocol_version=1)
+        msg = MessageSetSilent(protocol_version=ProtocolVersion.V1)
         expected_body_off = bytearray([0x5] + [0x0] * 9)
         expected_body_silent = bytearray([0x5, 0x1] + [0x0] * 8)
         expected_body_super_silent = bytearray([0x5, 0x3] + [0x0] * 8)
@@ -107,7 +108,7 @@ class TestC3MessageSetECO:
 
     def test_set_eco_body(self) -> None:
         """Test set ECO body."""
-        msg = MessageSetECO(protocol_version=1)
+        msg = MessageSetECO(protocol_version=ProtocolVersion.V1)
         expected_body_off = bytearray([0x7] + [0x0] * 6)
         expected_body_eco = bytearray([0x7, 0x1] + [0x0] * 5)
 

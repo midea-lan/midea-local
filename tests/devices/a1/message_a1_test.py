@@ -2,6 +2,7 @@
 
 import pytest
 
+from midealocal.const import ProtocolVersion
 from midealocal.devices.a1.message import (
     MessageA1Base,
     MessageA1Response,
@@ -20,12 +21,12 @@ class TestMessageA1Base:
     def test_message_id_increment(self) -> None:
         """Test message Id Increment."""
         msg = MessageA1Base(
-            protocol_version=1,
+            protocol_version=ProtocolVersion.V1,
             message_type=MessageType.test,
             body_type=BodyType.X01,
         )
         msg2 = MessageA1Base(
-            protocol_version=1,
+            protocol_version=ProtocolVersion.V1,
             message_type=MessageType.test,
             body_type=BodyType.X01,
         )
@@ -33,7 +34,7 @@ class TestMessageA1Base:
         # test reset
         for _ in range(100 - msg2._message_id):
             msg = MessageA1Base(
-                protocol_version=1,
+                protocol_version=ProtocolVersion.V1,
                 message_type=MessageType.test,
                 body_type=BodyType.X01,
             )
@@ -42,7 +43,7 @@ class TestMessageA1Base:
     def test_body_not_implemented(self) -> None:
         """Test body not implemented."""
         msg = MessageA1Base(
-            protocol_version=1,
+            protocol_version=ProtocolVersion.V1,
             message_type=MessageType.test,
             body_type=BodyType.X01,
         )
@@ -55,7 +56,7 @@ class TestMessageQuery:
 
     def test_query_body(self) -> None:
         """Test query body."""
-        query = MessageQuery(protocol_version=1)
+        query = MessageQuery(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray(
             [
                 0x41,
@@ -88,7 +89,7 @@ class TestMessageNewProtocolQuery:
 
     def test_new_protocol_query_body(self) -> None:
         """Test new protocol query body."""
-        query = MessageNewProtocolQuery(protocol_version=1)
+        query = MessageNewProtocolQuery(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray(
             [0xB1, 1, NewProtocolTags.light & 0xFF, NewProtocolTags.light >> 8],
         )
@@ -100,7 +101,7 @@ class TestMessageSet:
 
     def test_set_body(self) -> None:
         """Test set body."""
-        msg_set = MessageSet(protocol_version=1)
+        msg_set = MessageSet(protocol_version=ProtocolVersion.V1)
 
         expected_body = bytearray([msg_set.body_type]) + bytearray(
             [
@@ -134,7 +135,7 @@ class TestMessageNewProtocolSet:
 
     def test_new_protocol_set_body(self) -> None:
         """Test new protocol set body."""
-        msg_set = MessageNewProtocolSet(protocol_version=1)
+        msg_set = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
         msg_set.light = True
         expected_body = bytearray(b"\xb0\x01[\x00\x01\x01")
         assert msg_set.body[:-2] == expected_body
