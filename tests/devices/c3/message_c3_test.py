@@ -24,7 +24,7 @@ class TestMessageC3Base:
         """Test body not implemented."""
         msg = MessageC3Base(
             protocol_version=ProtocolVersion.V1,
-            message_type=MessageType.test,
+            message_type=MessageType.query,
             body_type=BodyType.X01,
         )
         with pytest.raises(NotImplementedError):

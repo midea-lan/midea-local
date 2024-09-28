@@ -26,12 +26,12 @@ class TestMessageACBase:
         """Test message Id Increment."""
         msg = MessageACBase(
             protocol_version=ProtocolVersion.V1,
-            message_type=MessageType.test,
+            message_type=MessageType.query,
             body_type=BodyType.X01,
         )
         msg2 = MessageACBase(
             protocol_version=ProtocolVersion.V1,
-            message_type=MessageType.test,
+            message_type=MessageType.query,
             body_type=BodyType.X01,
         )
         assert msg2._message_id == msg._message_id + 1
@@ -39,7 +39,7 @@ class TestMessageACBase:
         for _ in range(254 - msg2._message_id):
             msg = MessageACBase(
                 protocol_version=ProtocolVersion.V1,
-                message_type=MessageType.test,
+                message_type=MessageType.query,
                 body_type=BodyType.X01,
             )
         assert msg._message_id == 1
@@ -48,7 +48,7 @@ class TestMessageACBase:
         """Test body not implemented."""
         msg = MessageACBase(
             protocol_version=ProtocolVersion.V1,
-            message_type=MessageType.test,
+            message_type=MessageType.query,
             body_type=BodyType.X01,
         )
         with pytest.raises(NotImplementedError):

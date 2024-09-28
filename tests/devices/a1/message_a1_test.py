@@ -22,12 +22,12 @@ class TestMessageA1Base:
         """Test message Id Increment."""
         msg = MessageA1Base(
             protocol_version=ProtocolVersion.V1,
-            message_type=MessageType.test,
+            message_type=MessageType.query,
             body_type=BodyType.X01,
         )
         msg2 = MessageA1Base(
             protocol_version=ProtocolVersion.V1,
-            message_type=MessageType.test,
+            message_type=MessageType.query,
             body_type=BodyType.X01,
         )
         assert msg2._message_id == msg._message_id + 1
@@ -35,7 +35,7 @@ class TestMessageA1Base:
         for _ in range(100 - msg2._message_id):
             msg = MessageA1Base(
                 protocol_version=ProtocolVersion.V1,
-                message_type=MessageType.test,
+                message_type=MessageType.query,
                 body_type=BodyType.X01,
             )
         assert msg._message_id == 1
@@ -44,7 +44,7 @@ class TestMessageA1Base:
         """Test body not implemented."""
         msg = MessageA1Base(
             protocol_version=ProtocolVersion.V1,
-            message_type=MessageType.test,
+            message_type=MessageType.query,
             body_type=BodyType.X01,
         )
         with pytest.raises(NotImplementedError):

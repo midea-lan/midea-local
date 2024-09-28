@@ -105,7 +105,6 @@ class MessageType(IntEnum):
     """Message type."""
 
     default = (0x00,)
-    test = (0x01,)
     set = (0x02,)
     query = (0x03,)
     notify1 = (0x04,)

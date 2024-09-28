@@ -20,7 +20,7 @@ class TestMessageDABase:
         """Test body not implemented."""
         msg = MessageDABase(
             protocol_version=ProtocolVersion.V1,
-            message_type=MessageType.test,
+            message_type=MessageType.query,
             body_type=BodyType.X01,
         )
         with pytest.raises(NotImplementedError):
