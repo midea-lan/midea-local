@@ -3,7 +3,8 @@
 from importlib import import_module
 from typing import cast
 
-from midealocal.device import DeviceType, MideaDevice
+from midealocal.const import DeviceType
+from midealocal.device import MideaDevice
 
 
 def device_selector(

@@ -4,7 +4,7 @@ import logging
 from enum import IntEnum
 from typing import Generic, SupportsIndex, TypeVar, cast
 
-from midealocal.device import DeviceType
+from midealocal.const import DeviceType
 
 _LOGGER = logging.getLogger(__name__)
 

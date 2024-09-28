@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from midealocal.device import DeviceType
+from midealocal.const import DeviceType
 from midealocal.message import (
     BodyType,
     MessageBody,

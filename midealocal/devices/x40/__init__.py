@@ -6,7 +6,8 @@ import math
 from enum import StrEnum
 from typing import Any, ClassVar
 
-from midealocal.device import DeviceType, MideaDevice
+from midealocal.const import DeviceType
+from midealocal.device import MideaDevice
 
 from .message import MessageQuery, MessageSet, MessageX40Response
 

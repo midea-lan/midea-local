@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from midealocal.cloud import DEFAULT_KEYS
+from midealocal.const import DeviceType
 from midealocal.device import (
     AuthException,
     MessageResult,
@@ -14,7 +15,7 @@ from midealocal.device import (
 )
 from midealocal.devices.ac.message import MessageCapabilitiesQuery
 from midealocal.exceptions import SocketException
-from midealocal.message import DeviceType, MessageType
+from midealocal.message import MessageType
 
 
 def test_fetch_v2_message() -> None:

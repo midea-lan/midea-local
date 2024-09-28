@@ -2,9 +2,8 @@
 
 from enum import IntEnum
 
-from midealocal.const import MAX_BYTE_VALUE
+from midealocal.const import MAX_BYTE_VALUE, DeviceType
 from midealocal.crc8 import calculate
-from midealocal.device import DeviceType
 from midealocal.message import (
     BodyType,
     MessageBody,
