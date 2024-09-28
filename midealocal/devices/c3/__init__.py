@@ -4,8 +4,8 @@ import json
 import logging
 from typing import Any, ClassVar
 
-from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, ProtocolVersion
+from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.device import MideaDevice
 
 from .const import C3DeviceMode, C3SilentLevel, DeviceAttributes
 from .message import (

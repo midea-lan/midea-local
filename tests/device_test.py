@@ -5,13 +5,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from midealocal.cloud import DEFAULT_KEYS
-from midealocal.const import DeviceType
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import (
     AuthException,
     MessageResult,
     MideaDevice,
     NoSupportedProtocol,
-    ProtocolVersion,
 )
 from midealocal.devices.ac.message import MessageCapabilitiesQuery
 from midealocal.exceptions import SocketException

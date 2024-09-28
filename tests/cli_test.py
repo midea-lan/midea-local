@@ -14,7 +14,8 @@ from midealocal.cli import (
     get_config_file_path,
 )
 from midealocal.cloud import MSmartHomeCloud
-from midealocal.device import AuthException, NoSupportedProtocol, ProtocolVersion
+from midealocal.const import ProtocolVersion
+from midealocal.device import AuthException, NoSupportedProtocol
 from midealocal.exceptions import SocketException
 
 

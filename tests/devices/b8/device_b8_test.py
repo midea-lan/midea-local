@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from midealocal.device import ProtocolVersion
+from midealocal.const import ProtocolVersion
 from midealocal.devices.b8 import MideaB8Device
 from midealocal.devices.b8.const import (
     B8CleanMode,

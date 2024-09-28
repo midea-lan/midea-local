@@ -5,8 +5,8 @@ import logging
 from enum import StrEnum
 from typing import Any, ClassVar
 
-from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, ProtocolVersion
+from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.device import MideaDevice
 
 from .message import MessageCEResponse, MessageQuery, MessageSet
 

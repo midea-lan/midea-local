@@ -4,8 +4,8 @@ import logging
 from enum import IntEnum
 from typing import Any
 
-from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, ProtocolVersion
+from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.device import MideaDevice
 
 from .const import (
     B8CleanMode,

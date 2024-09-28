@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from midealocal.device import ProtocolVersion
+from midealocal.const import ProtocolVersion
 from midealocal.devices.ac import DeviceAttributes, MideaACDevice
 from midealocal.devices.ac.message import (
     MessageCapabilitiesQuery,
