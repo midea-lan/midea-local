@@ -1,5 +1,16 @@
 # Changelog
 
+## [4.0.0](https://github.com/rokam/midea-local/compare/v3.0.1...v4.0.0) (2024-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* **device:** rollback and improve send/recv socket exception ([#304](https://github.com/rokam/midea-local/issues/304))
+
+### Bug Fixes
+
+* **device:** rollback and improve send/recv socket exception ([#304](https://github.com/rokam/midea-local/issues/304)) ([7083464](https://github.com/rokam/midea-local/commit/7083464bba91e2f341d09de3b90b6bc77ccac9cb))
+
 ## [3.0.1](https://github.com/rokam/midea-local/compare/v3.0.0...v3.0.1) (2024-09-21)
 
 
