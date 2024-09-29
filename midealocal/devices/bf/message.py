@@ -1,7 +1,13 @@
 """Midea local BF message."""
 
-from midealocal.const import MAX_BYTE_VALUE
-from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+from midealocal.const import MAX_BYTE_VALUE, DeviceType, ProtocolVersion
+from midealocal.message import (
+    BodyType,
+    MessageBody,
+    MessageRequest,
+    MessageResponse,
+    MessageType,
+)
 
 
 class MessageBFBase(MessageRequest):
@@ -9,13 +15,13 @@ class MessageBFBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize BF message base."""
         super().__init__(
-            device_type=0xBF,
+            device_type=DeviceType.BF,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -29,12 +35,12 @@ class MessageBFBase(MessageRequest):
 class MessageQuery(MessageBFBase):
     """BF message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize BF message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x01,
+            body_type=BodyType.X01,
         )
 
     @property
@@ -45,12 +51,12 @@ class MessageQuery(MessageBFBase):
 class MessageSet(MessageBFBase):
     """BF message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize BF message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x02,
+            body_type=BodyType.X02,
         )
         self.power = None
         self.child_lock = None

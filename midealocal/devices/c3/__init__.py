@@ -4,9 +4,10 @@ import json
 import logging
 from typing import Any, ClassVar
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
-from midealocal.devices.c3.const import C3DeviceMode, C3SilentLevel, DeviceAttributes
 
+from .const import C3DeviceMode, C3SilentLevel, DeviceAttributes
 from .message import (
     MessageC3Response,
     MessageQuery,
@@ -37,7 +38,7 @@ class MideaC3Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,
@@ -46,7 +47,7 @@ class MideaC3Device(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0xC3,
+            device_type=DeviceType.C3,
             ip_address=ip_address,
             port=port,
             token=token,

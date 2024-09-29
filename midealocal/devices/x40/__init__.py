@@ -6,7 +6,8 @@ import math
 from enum import StrEnum
 from typing import Any, ClassVar
 
-from midealocal.device import DeviceType, MideaDevice
+from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.device import MideaDevice
 
 from .message import MessageQuery, MessageSet, MessageX40Response
 
@@ -41,7 +42,7 @@ class MideaX40Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,

@@ -4,8 +4,10 @@ import logging
 from enum import IntEnum
 from typing import Any
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
-from midealocal.devices.b8.const import (
+
+from .const import (
     B8CleanMode,
     B8ControlType,
     B8DeviceAttributes,
@@ -20,7 +22,7 @@ from midealocal.devices.b8.const import (
     B8WorkMode,
     B8WorkStatus,
 )
-from midealocal.devices.b8.message import (
+from .message import (
     MessageB8Response,
     MessageQuery,
     MessageSet,
@@ -41,7 +43,7 @@ class MideaB8Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
@@ -50,7 +52,7 @@ class MideaB8Device(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0xB8,
+            device_type=DeviceType.B8,
             ip_address=ip_address,
             port=port,
             token=token,

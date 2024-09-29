@@ -5,6 +5,7 @@ import logging
 from enum import StrEnum
 from typing import Any, ClassVar
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
 
 from .message import MessageCDResponse, MessageQuery, MessageSet
@@ -40,7 +41,7 @@ class MideaCDDevice(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,
@@ -49,7 +50,7 @@ class MideaCDDevice(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0xCD,
+            device_type=DeviceType.CD,
             ip_address=ip_address,
             port=port,
             token=token,

@@ -10,6 +10,7 @@ from typing import Any
 
 from typing_extensions import deprecated
 
+from .const import DeviceType, ProtocolVersion
 from .exceptions import SocketException
 from .message import (
     MessageApplianceResponse,
@@ -35,46 +36,6 @@ QUERY_TIMEOUT = 2  # query response in 1s, 0xAC have more queries, set to 2s
 _LOGGER = logging.getLogger(__name__)
 
 
-class DeviceType(IntEnum):
-    """Device Type."""
-
-    A0 = 0xA0
-    A1 = 0xA1
-    AC = 0xAC
-    B0 = 0xB0
-    B1 = 0xB1
-    B3 = 0xB3
-    B4 = 0xB4
-    B6 = 0xB6
-    BF = 0xBF
-    C2 = 0xC2
-    C3 = 0xC3
-    CA = 0xCA
-    CC = 0xCC
-    CD = 0xCD
-    CE = 0xCE
-    CF = 0xCF
-    DA = 0xDA
-    DB = 0xDB
-    DC = 0xDC
-    E1 = 0xE1
-    E2 = 0xE2
-    E3 = 0xE3
-    E6 = 0xE6
-    E8 = 0xE8
-    EA = 0xEA
-    EC = 0xEC
-    ED = 0xED
-    FA = 0xFA
-    FB = 0xFB
-    FC = 0xFC
-    FD = 0xFD
-    X13 = 0x13
-    X26 = 0x26
-    X34 = 0x34
-    X40 = 0x40
-
-
 class AuthException(Exception):
     """Authentication exception."""
 
@@ -89,14 +50,6 @@ class NoSupportedProtocol(Exception):
 
 class DeviceAttributes(StrEnum):
     """Device attributes."""
-
-
-class ProtocolVersion(IntEnum):
-    """Protocol version."""
-
-    V1 = 1
-    V2 = 2
-    V3 = 3
 
 
 class MessageResult(IntEnum):
@@ -117,12 +70,12 @@ class MideaDevice(threading.Thread):
         self,
         name: str,
         device_id: int,
-        device_type: int,
+        device_type: DeviceType,
         ip_address: str,
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         attributes: dict,
@@ -143,7 +96,7 @@ class MideaDevice(threading.Thread):
         self._protocol = protocol
         self._model = model
         self._subtype = subtype
-        self._protocol_version = 0
+        self._protocol_version: ProtocolVersion = ProtocolVersion.V1
         self._updates: list[Callable[[dict[str, Any]], None]] = []
         self._unsupported_protocol: list[str] = []
         self._is_run = False
@@ -167,7 +120,7 @@ class MideaDevice(threading.Thread):
         return self._device_id
 
     @property
-    def device_type(self) -> int:
+    def device_type(self) -> DeviceType:
         """Device type."""
         return self._device_type
 
@@ -538,7 +491,7 @@ class MideaDevice(threading.Thread):
         """Process message."""
         raise NotImplementedError
 
-    def send_command(self, cmd_type: int, cmd_body: bytearray) -> None:
+    def send_command(self, cmd_type: MessageType, cmd_body: bytearray) -> None:
         """Send command."""
         cmd = MessageQuestCustom(
             self._device_type,

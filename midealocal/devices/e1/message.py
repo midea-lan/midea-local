@@ -1,5 +1,6 @@
 """Midea local E1 message."""
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -18,13 +19,13 @@ class MessageE1Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize E1 message base."""
         super().__init__(
-            device_type=0xE1,
+            device_type=DeviceType.E1,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -38,12 +39,12 @@ class MessageE1Base(MessageRequest):
 class MessagePower(MessageE1Base):
     """E1 message power."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E1 message power."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x08,
+            body_type=BodyType.X08,
         )
         self.power = False
 
@@ -56,12 +57,12 @@ class MessagePower(MessageE1Base):
 class MessageLock(MessageE1Base):
     """E1 message lock."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E1 message lock."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x83,
+            body_type=BodyType.X83,
         )
         self.lock = False
 
@@ -74,12 +75,12 @@ class MessageLock(MessageE1Base):
 class MessageStorage(MessageE1Base):
     """E1 message storage."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E1 message storage."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x81,
+            body_type=BodyType.X81,
         )
         self.storage = False
 
@@ -96,12 +97,12 @@ class MessageStorage(MessageE1Base):
 class MessageQuery(MessageE1Base):
     """E1 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E1 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x00,
+            body_type=BodyType.X00,
         )
 
     @property

@@ -2,7 +2,14 @@
 
 from typing import Any
 
-from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.message import (
+    BodyType,
+    MessageBody,
+    MessageRequest,
+    MessageResponse,
+    MessageType,
+)
 
 NEW_PROTOCOL_PARAMS = {
     "none": 0x00,
@@ -20,13 +27,13 @@ class MessageE3Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize E3 message base."""
         super().__init__(
-            device_type=0xE3,
+            device_type=DeviceType.E3,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -40,12 +47,12 @@ class MessageE3Base(MessageRequest):
 class MessageQuery(MessageE3Base):
     """E3 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E3 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x01,
+            body_type=BodyType.X01,
         )
 
     @property
@@ -56,33 +63,33 @@ class MessageQuery(MessageE3Base):
 class MessagePower(MessageE3Base):
     """E3 message power."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E3 message power."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x02,
+            body_type=BodyType.X02,
         )
         self.power = False
 
     @property
     def _body(self) -> bytearray:
         if self.power:
-            self.body_type = 0x01
+            self.body_type = BodyType.X01
         else:
-            self.body_type = 0x02
+            self.body_type = BodyType.X02
         return bytearray([0x01])
 
 
 class MessageSet(MessageE3Base):
     """E3 message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E3 message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x04,
+            body_type=BodyType.X04,
         )
 
         self.target_temperature = 0
@@ -126,12 +133,12 @@ class MessageSet(MessageE3Base):
 class MessageNewProtocolSet(MessageE3Base):
     """E3 message new protocol set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E3 message new protocol set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x14,
+            body_type=BodyType.X14,
         )
         self.key = "none"
         self.value: Any = None

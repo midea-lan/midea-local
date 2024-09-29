@@ -5,6 +5,7 @@ import logging
 from enum import StrEnum
 from typing import Any, ClassVar
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
 
 from .message import MessageCEResponse, MessageQuery, MessageSet
@@ -48,7 +49,7 @@ class MideaCEDevice(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,
@@ -57,7 +58,7 @@ class MideaCEDevice(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0xCE,
+            device_type=DeviceType.CE,
             ip_address=ip_address,
             port=port,
             token=token,

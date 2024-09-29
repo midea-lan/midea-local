@@ -4,6 +4,7 @@ import logging
 from enum import StrEnum
 from typing import Any
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
 
 from .message import MessageE6Response, MessageQuery, MessageSet
@@ -37,7 +38,7 @@ class MideaE6Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
@@ -46,7 +47,7 @@ class MideaE6Device(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0xE6,
+            device_type=DeviceType.E6,
             ip_address=ip_address,
             port=port,
             token=token,

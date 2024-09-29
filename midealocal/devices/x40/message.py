@@ -2,8 +2,14 @@
 
 from typing import Any
 
-from midealocal.device import DeviceType
-from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.message import (
+    BodyType,
+    MessageBody,
+    MessageRequest,
+    MessageResponse,
+    MessageType,
+)
 
 MAX_BLOW_SPEED_LOW_FAN_SPEED = 30
 
@@ -13,9 +19,9 @@ class MessageX40Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize X40 message base."""
         super().__init__(
@@ -33,12 +39,12 @@ class MessageX40Base(MessageRequest):
 class MessageQuery(MessageX40Base):
     """X40 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X40 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x01,
+            body_type=BodyType.X01,
         )
 
     @property
@@ -49,12 +55,12 @@ class MessageQuery(MessageX40Base):
 class MessageSet(MessageX40Base):
     """X40 message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X40 message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x01,
+            body_type=BodyType.X01,
         )
         self.fields: dict[str, int | bool] = {}
         self.light = False

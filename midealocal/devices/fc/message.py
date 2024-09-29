@@ -1,6 +1,6 @@
 """Midea local FC message."""
 
-from midealocal.const import MAX_BYTE_VALUE
+from midealocal.const import MAX_BYTE_VALUE, DeviceType, ProtocolVersion
 from midealocal.crc8 import calculate
 from midealocal.message import (
     BodyType,
@@ -35,13 +35,13 @@ class MessageFCBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize FC message base."""
         super().__init__(
-            device_type=0xFC,
+            device_type=DeviceType.FC,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -66,12 +66,12 @@ class MessageFCBase(MessageRequest):
 class MessageQuery(MessageFCBase):
     """FC message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize FC message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x41,
+            body_type=BodyType.X41,
         )
 
     @property
@@ -104,12 +104,12 @@ class MessageQuery(MessageFCBase):
 class MessageSet(MessageFCBase):
     """FC message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize FC message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x48,
+            body_type=BodyType.X48,
         )
         self.power = False
         self.mode = 0

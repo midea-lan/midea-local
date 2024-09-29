@@ -1,7 +1,8 @@
 """Midea local E6 message."""
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
-    ZERO_VALUE,
+    BodyType,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -12,13 +13,17 @@ from midealocal.message import (
 class MessageE6Base(MessageRequest):
     """E6 message base."""
 
-    def __init__(self, protocol_version: int, message_type: int) -> None:
+    def __init__(
+        self,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+    ) -> None:
         """Initialize E6 message base."""
         super().__init__(
-            device_type=0xE6,
+            device_type=DeviceType.E6,
             protocol_version=protocol_version,
             message_type=message_type,
-            body_type=ZERO_VALUE,
+            body_type=BodyType.X00,
         )
 
     @property
@@ -34,7 +39,7 @@ class MessageE6Base(MessageRequest):
 class MessageQuery(MessageE6Base):
     """E6 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E6 message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -49,7 +54,7 @@ class MessageQuery(MessageE6Base):
 class MessageSet(MessageE6Base):
     """E6 message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E6 message set."""
         super().__init__(
             protocol_version=protocol_version,

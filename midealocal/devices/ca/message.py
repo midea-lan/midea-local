@@ -1,5 +1,6 @@
 """Midea local CA message."""
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -20,13 +21,13 @@ class MessageCABase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize CA message base."""
         super().__init__(
-            device_type=0xCA,
+            device_type=DeviceType.CA,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -40,12 +41,12 @@ class MessageCABase(MessageRequest):
 class MessageQuery(MessageCABase):
     """CA message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize CA message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x00,
+            body_type=BodyType.X00,
         )
 
     @property

@@ -1,5 +1,6 @@
 """Midea local DC message."""
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -14,13 +15,13 @@ class MessageDCBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize DC message base."""
         super().__init__(
-            device_type=0xDC,
+            device_type=DeviceType.DC,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -34,12 +35,12 @@ class MessageDCBase(MessageRequest):
 class MessageQuery(MessageDCBase):
     """DC message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize DC message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x03,
+            body_type=BodyType.X03,
         )
 
     @property
@@ -50,12 +51,12 @@ class MessageQuery(MessageDCBase):
 class MessagePower(MessageDCBase):
     """DC message power."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize DC message power."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x02,
+            body_type=BodyType.X02,
         )
         self.power = False
 
@@ -68,12 +69,12 @@ class MessagePower(MessageDCBase):
 class MessageStart(MessageDCBase):
     """DC message start."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize DC message start."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x02,
+            body_type=BodyType.X02,
         )
         self.start = False
         self.washing_data = bytearray([])

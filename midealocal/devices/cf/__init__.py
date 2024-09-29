@@ -4,6 +4,7 @@ import logging
 from enum import StrEnum
 from typing import Any
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
 from midealocal.exceptions import ValueWrongType
 
@@ -35,7 +36,7 @@ class MideaCFDevice(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
@@ -44,7 +45,7 @@ class MideaCFDevice(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0xCF,
+            device_type=DeviceType.CF,
             ip_address=ip_address,
             port=port,
             token=token,

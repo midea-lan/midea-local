@@ -2,7 +2,14 @@
 
 from typing import Any
 
-from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.message import (
+    BodyType,
+    MessageBody,
+    MessageRequest,
+    MessageResponse,
+    MessageType,
+)
 
 
 class MessageCDBase(MessageRequest):
@@ -10,13 +17,13 @@ class MessageCDBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize CD message base."""
         super().__init__(
-            device_type=0xCD,
+            device_type=DeviceType.CD,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -30,12 +37,12 @@ class MessageCDBase(MessageRequest):
 class MessageQuery(MessageCDBase):
     """CD message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize CD message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x01,
+            body_type=BodyType.X01,
         )
 
     @property
@@ -46,12 +53,12 @@ class MessageQuery(MessageCDBase):
 class MessageSet(MessageCDBase):
     """CD message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize CD message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x01,
+            body_type=BodyType.X01,
         )
         self.power = False
         self.target_temperature = 0

@@ -2,6 +2,7 @@
 
 from enum import IntEnum
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -23,13 +24,13 @@ class MessageCCBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize CC message base."""
         super().__init__(
-            device_type=0xCC,
+            device_type=DeviceType.CC,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -43,12 +44,12 @@ class MessageCCBase(MessageRequest):
 class MessageQuery(MessageCCBase):
     """CC message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize CC message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x01,
+            body_type=BodyType.X01,
         )
 
     @property
@@ -59,12 +60,12 @@ class MessageQuery(MessageCCBase):
 class MessageSet(MessageCCBase):
     """CC message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize CC message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0xC3,
+            body_type=BodyType.C3,
         )
         self.power = False
         self.mode = 4

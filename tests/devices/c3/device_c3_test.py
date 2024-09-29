@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+from midealocal.const import ProtocolVersion
 from midealocal.devices.c3 import (
     MideaC3Device,
 )
@@ -29,7 +30,7 @@ class TestMideaC3Device:
             port=12345,
             token="AA",
             key="BB",
-            protocol=1,
+            protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=1,
             customize='{"temperature_step": 1}',

@@ -1,5 +1,6 @@
 """Midea local x13 device."""
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -16,13 +17,13 @@ class Message13Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize X13 message base."""
         super().__init__(
-            device_type=0x13,
+            device_type=DeviceType.X13,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -36,12 +37,12 @@ class Message13Base(MessageRequest):
 class MessageQuery(Message13Base):
     """X13 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X13 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x24,
+            body_type=BodyType.X24,
         )
 
     @property
@@ -52,12 +53,12 @@ class MessageQuery(Message13Base):
 class MessageSet(Message13Base):
     """X13 message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X13 message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x00,
+            body_type=BodyType.X00,
         )
         self.brightness: int | None = None
         self.color_temperature: int | None = None
@@ -68,16 +69,16 @@ class MessageSet(Message13Base):
     def _body(self) -> bytearray:
         body_byte = 0x00
         if self.power is not None:
-            self.body_type = 0x01
+            self.body_type = BodyType.X01
             body_byte = 0x01 if self.power else 0x00
         elif self.effect is not None and self.effect in range(1, 6):
-            self.body_type = 0x02
+            self.body_type = BodyType.X01
             body_byte = self.effect + 1
         elif self.color_temperature is not None:
-            self.body_type = 0x03
+            self.body_type = BodyType.X03
             body_byte = self.color_temperature
         elif self.brightness is not None:
-            self.body_type = 0x04
+            self.body_type = BodyType.X04
             body_byte = self.brightness
         return bytearray([body_byte, 0x00, 0x00, 0x00])
 

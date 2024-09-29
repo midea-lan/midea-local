@@ -20,11 +20,11 @@ from midealocal.cloud import (
     get_midea_cloud,
     get_preset_account_cloud,
 )
+from midealocal.const import ProtocolVersion
 from midealocal.device import (
     AuthException,
     MideaDevice,
     NoSupportedProtocol,
-    ProtocolVersion,
 )
 from midealocal.devices import device_selector
 from midealocal.discover import discover

@@ -2,6 +2,7 @@
 
 from enum import IntEnum
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -25,13 +26,13 @@ class MessageCFBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize CF message base."""
         super().__init__(
-            device_type=0xCF,
+            device_type=DeviceType.CF,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -45,12 +46,12 @@ class MessageCFBase(MessageRequest):
 class MessageQuery(MessageCFBase):
     """CF message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize CF message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x01,
+            body_type=BodyType.X01,
         )
 
     @property
@@ -61,12 +62,12 @@ class MessageQuery(MessageCFBase):
 class MessageSet(MessageCFBase):
     """CF message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize CF message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x01,
+            body_type=BodyType.X01,
         )
         self.power = False
         self.mode = 0  # 1 自动 2 制冷 3 制热

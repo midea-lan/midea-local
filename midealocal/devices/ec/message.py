@@ -1,7 +1,8 @@
 """Midea local EC message."""
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
-    ZERO_VALUE,
+    BodyType,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -15,13 +16,13 @@ class MessageECBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int = ZERO_VALUE,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType = BodyType.X00,
     ) -> None:
         """Initialize EC message base."""
         super().__init__(
-            device_type=0xEC,
+            device_type=DeviceType.EC,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -35,7 +36,7 @@ class MessageECBase(MessageRequest):
 class MessageQuery(MessageECBase):
     """EC message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize EC message query."""
         super().__init__(
             protocol_version=protocol_version,

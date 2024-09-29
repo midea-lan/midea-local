@@ -1,5 +1,6 @@
 """Midea local x34 message."""
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -17,13 +18,13 @@ class Message34Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize X34 message base."""
         super().__init__(
-            device_type=0x34,
+            device_type=DeviceType.X34,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -37,12 +38,12 @@ class Message34Base(MessageRequest):
 class MessageQuery(Message34Base):
     """X34 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X34 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x00,
+            body_type=BodyType.X00,
         )
 
     @property
@@ -53,12 +54,12 @@ class MessageQuery(Message34Base):
 class MessagePower(Message34Base):
     """X34 message power."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X34 message power."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x08,
+            body_type=BodyType.X08,
         )
         self.power = False
 
@@ -71,12 +72,12 @@ class MessagePower(Message34Base):
 class MessageLock(Message34Base):
     """X34 message lock."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X34 message lock."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x83,
+            body_type=BodyType.X83,
         )
         self.lock = False
 
@@ -89,12 +90,12 @@ class MessageLock(Message34Base):
 class MessageStorage(Message34Base):
     """X34 message storage."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize X34 message storage."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x81,
+            body_type=BodyType.X81,
         )
         self.storage = False
 

@@ -4,7 +4,9 @@ import logging
 from enum import StrEnum
 from typing import Any
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
+from midealocal.message import BodyType
 
 from .message import MessageEDResponse, MessageNewSet, MessageOldSet, MessageQuery
 
@@ -38,7 +40,7 @@ class MideaEDDevice(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
@@ -47,7 +49,7 @@ class MideaEDDevice(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0xED,
+            device_type=DeviceType.ED,
             ip_address=ip_address,
             port=port,
             token=token,
@@ -69,7 +71,7 @@ class MideaEDDevice(MideaDevice):
                 DeviceAttributes.child_lock: False,
             },
         )
-        self._device_class = 0
+        self._device_class = BodyType.X00
 
     def _use_new_set(self) -> bool:
         # if (self.sub_type > 342 or self.sub_type == 340) else False

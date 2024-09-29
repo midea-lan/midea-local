@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+from midealocal.const import ProtocolVersion
 from midealocal.devices.ed import DeviceAttributes, MideaEDDevice
 from midealocal.devices.ed.message import MessageQuery
 
@@ -23,7 +24,7 @@ class TestMideaEDDevice:
             port=6444,
             token="AA",
             key="BB",
-            protocol=3,
+            protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
             customize="test_customize",
@@ -47,7 +48,7 @@ class TestMideaEDDevice:
         """Test process message."""
         with patch("midealocal.devices.ed.MessageEDResponse") as mock_message_response:
             mock_message = mock_message_response.return_value
-            mock_message.protocol_version = 3
+            mock_message.protocol_version = ProtocolVersion.V3
             mock_message.power = True
             mock_message.water_consumption = 123
             mock_message.in_tds = 200

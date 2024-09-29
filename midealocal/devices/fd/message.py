@@ -1,5 +1,6 @@
 """Midea local FD message."""
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.crc8 import calculate
 from midealocal.message import (
     BodyType,
@@ -22,13 +23,13 @@ class MessageFDBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize FD message base."""
         super().__init__(
-            device_type=0xFD,
+            device_type=DeviceType.FD,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -53,12 +54,12 @@ class MessageFDBase(MessageRequest):
 class MessageQuery(MessageFDBase):
     """FD message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize FD message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x41,
+            body_type=BodyType.X41,
         )
 
     @property
@@ -91,12 +92,12 @@ class MessageQuery(MessageFDBase):
 class MessageSet(MessageFDBase):
     """FD message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize FD message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x48,
+            body_type=BodyType.X48,
         )
         self.power = False
         self.fan_speed = 0

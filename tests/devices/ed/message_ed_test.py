@@ -2,6 +2,7 @@
 
 import pytest
 
+from midealocal.const import ProtocolVersion
 from midealocal.devices.ed.message import (
     EDMessageBody01,
     EDMessageBody03,
@@ -14,6 +15,7 @@ from midealocal.devices.ed.message import (
     MessageNewSet,
     MessageQuery,
 )
+from midealocal.message import BodyType, MessageType
 
 
 class TestMessageEDBase:
@@ -21,7 +23,11 @@ class TestMessageEDBase:
 
     def test_body_not_implemented(self) -> None:
         """Test body not implemented."""
-        msg = MessageEDBase(protocol_version=1, message_type=1, body_type=1)
+        msg = MessageEDBase(
+            protocol_version=ProtocolVersion.V1,
+            message_type=MessageType.query,
+            body_type=BodyType.X01,
+        )
         with pytest.raises(NotImplementedError):
             _ = msg.body
 
@@ -31,7 +37,10 @@ class TestMessageQuery:
 
     def test_query_body(self) -> None:
         """Test query body."""
-        query = MessageQuery(protocol_version=1, body_type=2)
+        query = MessageQuery(
+            protocol_version=ProtocolVersion.V1,
+            body_type=BodyType.X02,
+        )
         expected_body = bytearray([0x02, 0x01])
         assert query.body == expected_body
 
@@ -41,7 +50,7 @@ class TestMessageNewSet:
 
     def test_message_newset(self) -> None:
         """Test MessageNewSet."""
-        new_set = MessageNewSet(protocol_version=1)
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray([0x15, 0x01, 0x00])
         assert new_set.body == expected_body
         new_set.power = True

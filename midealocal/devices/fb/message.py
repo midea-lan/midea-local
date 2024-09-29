@@ -1,7 +1,8 @@
 """Midea local FB message."""
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.message import (
-    ZERO_VALUE,
+    BodyType,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -22,13 +23,13 @@ class MessageFBBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int = ZERO_VALUE,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType = BodyType.X00,
     ) -> None:
         """Initialize FB message base."""
         super().__init__(
-            device_type=0xFB,
+            device_type=DeviceType.FB,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -42,7 +43,7 @@ class MessageFBBase(MessageRequest):
 class MessageQuery(MessageFBBase):
     """FB message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize FB message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -62,12 +63,12 @@ class MessageQuery(MessageFBBase):
 class MessageSet(MessageFBBase):
     """FB message set."""
 
-    def __init__(self, protocol_version: int, subtype: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion, subtype: int) -> None:
         """Initialize FB message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x00,
+            body_type=BodyType.X00,
         )
         self._subtype = subtype
         self.power: bool | None = None

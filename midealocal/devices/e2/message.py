@@ -1,6 +1,13 @@
 """Midea local E2 message."""
 
-from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.message import (
+    BodyType,
+    MessageBody,
+    MessageRequest,
+    MessageResponse,
+    MessageType,
+)
 
 HEATING_POWER_BYTE = 34
 PROTECTION_BYTE = 22
@@ -12,13 +19,13 @@ class MessageE2Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: int,
-        message_type: int,
-        body_type: int,
+        protocol_version: ProtocolVersion,
+        message_type: MessageType,
+        body_type: BodyType,
     ) -> None:
         """Initialize E2 message base."""
         super().__init__(
-            device_type=0xE2,
+            device_type=DeviceType.E2,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -32,12 +39,12 @@ class MessageE2Base(MessageRequest):
 class MessageQuery(MessageE2Base):
     """E2 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E2 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x01,
+            body_type=BodyType.X01,
         )
 
     @property
@@ -48,33 +55,33 @@ class MessageQuery(MessageE2Base):
 class MessagePower(MessageE2Base):
     """E2 message power."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E2 message power."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x02,
+            body_type=BodyType.X02,
         )
         self.power = False
 
     @property
     def _body(self) -> bytearray:
         if self.power:
-            self.body_type = 0x01
+            self.body_type = BodyType.X01
         else:
-            self.body_type = 0x02
+            self.body_type = BodyType.X02
         return bytearray([0x01])
 
 
 class MessageNewProtocolSet(MessageE2Base):
     """E2 message new protocol set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E2 message new protocol set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x14,
+            body_type=BodyType.X14,
         )
         self.target_temperature: int | None = None
         self.variable_heating: bool | None = None
@@ -99,12 +106,12 @@ class MessageNewProtocolSet(MessageE2Base):
 class MessageSet(MessageE2Base):
     """E2 message set."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize E2 message set."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x04,
+            body_type=BodyType.X04,
         )
         self.target_temperature = 0
         self.variable_heating = False
