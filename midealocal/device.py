@@ -29,6 +29,7 @@ from .security import (
 MIN_AUTH_RESPONSE = 20
 MIN_MSG_LENGTH = 56
 MIN_V2_FACTUAL_MSG_LENGTH = 6
+RESPONSE_TIMEOUT = 12  # main loop socket recv timeout, 12 * 10s = 120s
 SOCKET_TIMEOUT = 10  # socket connection default timeout
 QUERY_TIMEOUT = 2  # query response in 1s, 0xAC have more queries, set to 2s
 
@@ -150,7 +151,7 @@ class MideaDevice(threading.Thread):
                 break
         return result, msg
 
-    def connect(self, init: bool = False, reconnect: bool = False) -> bool:
+    def connect(self, check_protocol: bool = False) -> bool:
         """Connect to device."""
         connected = False
         try:
@@ -168,10 +169,8 @@ class MideaDevice(threading.Thread):
                 self.authenticate()
             # 1. midea_ac_lan add device verify token with connect and auth
             # 2. init connection, check_protocol
-            # 3. reconnect, skip check_protocol
-            if reconnect or init:
-                self.refresh_status(check_protocol=init)
-            if init:
+            if check_protocol:
+                self.refresh_status(check_protocol=check_protocol)
                 self.get_capabilities()
             connected = True
         except TimeoutError:
@@ -194,7 +193,9 @@ class MideaDevice(threading.Thread):
                 exc_info=e,
             )
             self._socket = None
-        self.set_available(connected)
+        # enable/disable device in init connection
+        if check_protocol:
+            self.set_available(connected)
         return connected
 
     def authenticate(self) -> None:
@@ -246,19 +247,10 @@ class MideaDevice(threading.Thread):
             # raise exception to main loop
             raise SocketException
         try:
-            _LOGGER.debug(
-                "[%s] send_message_v2 with data %s",
-                self._device_id,
-                data.hex(),
-            )
             # query msg, set timeout to QUERY_TIMEOUT
             if query:
                 self._socket.settimeout(QUERY_TIMEOUT)
             self._socket.send(data)
-            _LOGGER.debug(
-                "[%s] send_message_v2 success",
-                self._device_id,
-            )
         except TimeoutError:
             _LOGGER.debug(
                 "[%s] send_message_v2 timed out",
@@ -307,15 +299,6 @@ class MideaDevice(threading.Thread):
         _LOGGER.debug("[%s] Sending: %s, query is %s", self._device_id, cmd, query)
         msg = PacketBuilder(self._device_id, data).finalize()
         self.send_message(msg, query=query)
-        # after send set command, force refresh_status
-        if cmd.message_type == MessageType.set:
-            _LOGGER.debug(
-                "[%s] Force refresh after set status to: %s",
-                self._device_id,
-                cmd,
-            )
-            now = time.time()
-            self._previous_refresh = now - self._refresh_interval
 
     def get_capabilities(self) -> None:
         """Get device capabilities."""
@@ -340,39 +323,33 @@ class MideaDevice(threading.Thread):
                 # set socket QUERY_TIMEOUT for query msg
                 # build_send exception should be catch by connect/run
                 self.build_send(cmd, query=True)
-                try:
-                    while True:
-                        if not self._socket:
-                            _LOGGER.debug(
-                                "[%s] authenticate failure, device socket is none",
-                                self._device_id,
-                            )
-                            # raise exception to connect/main loop
-                            raise SocketException
-                        msg = self._socket.recv(512)
-                        if len(msg) == 0:
-                            raise OSError("Empty message received.")
-                        result = self.parse_message(msg)
-                        # Prevent infinite loop
-                        if result == MessageResult.SUCCESS:
-                            break
-                        elif result == MessageResult.PADDING:  # noqa: RET508
-                            continue
-                        else:
-                            raise ResponseException  # noqa: TRY301
-                    # recovery SOCKET_TIMEOUT after recv msg
-                    self._socket.settimeout(SOCKET_TIMEOUT)
-                # only catch TimoutError for check_protocol
-                # unexpected exception in recv/settimeout, catch by main loop
-                except TimeoutError:
-                    _LOGGER.debug(
-                        "[%s] protocol %s, cmd %s, timeout",
-                        self._device_id,
-                        cmd.__class__.__name__,
-                        cmd,
-                    )
-                    # init check_protocol, skip timeout exception
-                    if check_protocol:
+                # init check_protocol, skip timeout exception
+                if check_protocol:
+                    try:
+                        while True:
+                            if not self._socket:
+                                _LOGGER.debug(
+                                    "[%s] device socket is none",
+                                    self._device_id,
+                                )
+                                # raise exception to connect/main loop
+                                raise SocketException
+                            msg = self._socket.recv(512)
+                            if len(msg) == 0:
+                                raise ConnectionResetError("Connection closed by peer.")
+                            result = self.parse_message(msg)
+                            # Prevent infinite loop
+                            if result == MessageResult.SUCCESS:
+                                break
+                            elif result == MessageResult.PADDING:  # noqa: RET508
+                                continue
+                            else:
+                                raise ResponseException  # noqa: TRY301
+                        # recovery SOCKET_TIMEOUT after recv msg
+                        self._socket.settimeout(SOCKET_TIMEOUT)
+                    # only catch TimoutError for check_protocol
+                    # unexpected exception in recv/settimeout, catch by main loop
+                    except TimeoutError:
                         error_count += 1
                         self._unsupported_protocol.append(cmd.__class__.__name__)
                         _LOGGER.debug(
@@ -381,16 +358,24 @@ class MideaDevice(threading.Thread):
                             cmd.__class__.__name__,
                             cmd,
                         )
-                    # refresh_status, raise timeout exception to main loop
-                    else:
-                        raise
-                except ResponseException:
-                    # parse msg error
-                    error_count += 1
+                    except ResponseException:
+                        # parse msg error
+                        error_count += 1
+                        _LOGGER.debug(
+                            "[%s] refresh_status ResponseException %s, cmd %s",
+                            self._device_id,
+                            cmd.__class__.__name__,
+                            cmd,
+                        )
             else:
+                _LOGGER.debug(
+                    "[%s] refresh_status with cmd: %s, unsupported protocol, SKIP",
+                    self._device_id,
+                    cmd,
+                )
                 error_count += 1
-            # init check_protocol and all the query failed
-            if check_protocol and error_count == len(cmds):
+            # all the query failed
+            if error_count == len(cmds):
                 _LOGGER.debug(
                     "[%s] all the query cmds failed %s, please report bug",
                     self._device_id,
@@ -556,11 +541,9 @@ class MideaDevice(threading.Thread):
             self._is_run = False
             self.close_socket()
 
-    def close_socket(self, init: bool = False) -> None:
+    def close_socket(self) -> None:
         """Close socket."""
-        # init connection, check_protocol
-        if init:
-            self._unsupported_protocol = []
+        self._unsupported_protocol = []
         self._buffer = b""
         if self._socket:
             try:
@@ -577,7 +560,7 @@ class MideaDevice(threading.Thread):
         if self._ip_address != ip_address:
             _LOGGER.debug("[%s] Update IP address to %s", self._device_id, ip_address)
             self._ip_address = ip_address
-            self.close_socket(init=True)
+            self.close_socket()
 
     def set_refresh_interval(self, refresh_interval: int) -> None:
         """Set refresh interval."""
@@ -593,93 +576,114 @@ class MideaDevice(threading.Thread):
             self.send_heartbeat()
             self._previous_heartbeat = now
 
-    def run(self) -> None:
+    def _connect_loop(self) -> None:
+        """Connect loop until device online."""
+        # connect loop until online
+        connection_retries = 0
+        while self._socket is None:
+            _LOGGER.debug("[%s] Socket is None, try to connect", self._device_id)
+            if self.connect(check_protocol=True) is False:
+                self.close_socket()
+                connection_retries += 1
+                # Sleep time with exponential backoff, maximum 600 seconds
+                sleep_time = min(5 * (2 ** (connection_retries - 1)), 600)
+                _LOGGER.warning(
+                    "[%s] Unable to connect, sleep %s seconds and retry",
+                    self._device_id,
+                    sleep_time,
+                )
+                # sleep and reconnect loop until device online
+                time.sleep(sleep_time)
+
+    def run(self) -> None:  # noqa: PLR0915
         """Run loop brief description.
 
         1. first/init connection, self._socket is None
             1.1 connect() device loop, pass, enable device
             1.2 auth for v3 device, MUST pass for v3 device
-            1.3 init refresh_status, send all query and check supported protocol
+            1.3 init refresh_status, send query and check supported protocol
                 1.3.1 set socket timeout to QUERY_TIMEOUT before send query
                 1.3.2 get response and add timeout query cmd to not supported
                 1.3.1 parse recv response/status for supported protocol
             1.4 get_capabilities()
-        2. after socket/device connected, loop for heartbeat/refresh_status
+        2. after socket/device connected, check for heartbeat/refresh_status
         3. job1: check refresh_interval
             3.1 socket/device connection should exist
-            3.2 send only supported query to get response and refresh status
-            3.3 set socket query timeout and recovery after recv msg
+            3.2 send only supported query and refresh status in main loop recv
+            3.3 set socket timeout before socket recv
         4. job2: check heartbeat interval
-            4.1 socket connection should exist
+            4.1 socket/device connection should exist
             4.2 send heartbeat packet to keep alive
 
         scenario/bug fix:
         1. while True loop should sleep 0.1 second to prevent cpu usage issue
         2. device running and power off become offline, status update
         3. device disconnected and power on, become online, status update
+        4. set command call build_send, main loop recv socket msg and refresh
 
         """
         # service loop
         while self._is_run:
-            # connect loop until online
-            connection_retries = 0
-            while self._socket is None:
-                _LOGGER.debug("[%s] Socket is None, try to connect", self._device_id)
-                if self.connect(init=True) is False:
-                    self.close_socket(init=True)
-                    connection_retries += 1
-                    # Sleep time with exponential backoff, maximum 600 seconds
-                    sleep_time = min(5 * (2 ** (connection_retries - 1)), 600)
-                    _LOGGER.warning(
-                        "[%s] Unable to connect, sleep %s seconds and retry",
-                        self._device_id,
-                        sleep_time,
-                    )
-                    # sleep and reconnect loop until device online
-                    time.sleep(sleep_time)
-            connection_retries = 0
+            # connect loop until device online
+            self._connect_loop()
+            # socket recv msg timeout counter
+            timeout_counter = 0
             start = time.time()
             self._previous_refresh = self._previous_heartbeat = start
-            # main loop after connected
+            # refresh/recv msg loop after connected
             while True:
-                reconnect = False
                 try:
+                    if not self._socket:
+                        _LOGGER.debug("[%s] Socket is none", self._device_id)
+                        raise SocketException  # noqa: TRY301
                     now = time.time()
+                    # refresh_status only send supported query msg
                     self._check_refresh(now)
                     self._check_heartbeat(now)
+                    # set SOCKET_TIMEOUT before recv socket msg
+                    self._socket.settimeout(SOCKET_TIMEOUT)
+                    # refresh status after set/query
+                    msg = self._socket.recv(512)
+                    if len(msg) == 0:
+                        raise ConnectionResetError("Connection closed by peer")  # noqa: TRY301
+                    # parse msg and update latest status
+                    result = self.parse_message(msg)
+                    if result == MessageResult.SUCCESS:
+                        timeout_counter = 0
+                    if result == MessageResult.ERROR:
+                        _LOGGER.debug("[%s] Message 'ERROR' received", self._device_id)
+                        self.close_socket()
+                        break
                 except TimeoutError:
-                    _LOGGER.debug("[%s] Socket timed out", self._device_id)
-                    reconnect = True
+                    timeout_counter += 1
+                    if timeout_counter >= RESPONSE_TIMEOUT:
+                        _LOGGER.debug("[%s] Heartbeat timed out", self._device_id)
+                        self.close_socket()
+                        break
                 except SocketException:  # refresh_status
                     _LOGGER.debug("[%s] Socket Exception", self._device_id)
-                    reconnect = True
+                    self.close_socket()
+                    break
                 except NoSupportedProtocol:
                     _LOGGER.debug("[%s] No Supported protocol", self._device_id)
                     # ignore and continue loop
                     continue
                 except ConnectionResetError:  # refresh_status -> build_send exception
                     _LOGGER.debug("[%s] Connection reset by peer", self._device_id)
-                    reconnect = True
+                    self.close_socket()
+                    break
                 except OSError:  # refresh_status
                     _LOGGER.debug("[%s] OS error", self._device_id)
-                    reconnect = True
+                    self.close_socket()
+                    break
                 except Exception as e:
                     _LOGGER.exception(
                         "[%s] Unexpected error",
                         self._device_id,
                         exc_info=e,
                     )
-                    reconnect = True
-                # reconnect socket and try to skip check_protocol
-                if reconnect:
                     self.close_socket()
-                    if self.connect(reconnect=True):
-                        # pass, continue while True loop
-                        continue
-                    # device disconnect, break while True loop, start main loop
                     break
-                # prevent while True loop cpu 100%
-                time.sleep(0.1)
 
     def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Set attribute."""
