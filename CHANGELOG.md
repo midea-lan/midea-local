@@ -1,5 +1,16 @@
 # Changelog
 
+## [5.0.0](https://github.com/rokam/midea-local/compare/v4.0.0...v5.0.0) (2024-10-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **device:** rollback and socket refresh_status ([#307](https://github.com/rokam/midea-local/issues/307))
+
+### Bug Fixes
+
+* **device:** rollback and socket refresh_status ([#307](https://github.com/rokam/midea-local/issues/307)) ([f65b6ac](https://github.com/rokam/midea-local/commit/f65b6ac8fcc8ff2ae7085068498b96066213b658))
+
 ## [4.0.0](https://github.com/rokam/midea-local/compare/v3.0.1...v4.0.0) (2024-09-29)
 
 
