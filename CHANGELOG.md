@@ -1,5 +1,16 @@
 # Changelog
 
+## [6.0.0](https://github.com/rokam/midea-local/compare/v5.0.0...v6.0.0) (2024-10-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **cloud:** rename MSmartHome ([#306](https://github.com/rokam/midea-local/issues/306))
+
+### Miscellaneous Chores
+
+* **cloud:** rename MSmartHome ([#306](https://github.com/rokam/midea-local/issues/306)) ([20c796e](https://github.com/rokam/midea-local/commit/20c796eb9f9728ff4042f3caf2e0ff11012e12f5)), closes [#286](https://github.com/rokam/midea-local/issues/286)
+
 ## [5.0.0](https://github.com/rokam/midea-local/compare/v4.0.0...v5.0.0) (2024-10-02)
 
 
