@@ -43,7 +43,7 @@ class MideaDeviceTest:
             port=6444,
             token=DEFAULT_KEYS[99]["token"],
             key=DEFAULT_KEYS[99]["key"],
-            protocol=ProtocolVersion.V3,
+            device_protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
             attributes={},
@@ -189,7 +189,7 @@ class MideaDeviceTest:
             self.device.authenticate()
             self.device.send_message(bytearray([0x0] * 20))
             self.device._socket = None
-            self.device._protocol = ProtocolVersion.V2
+            self.device._device_protocol_version = ProtocolVersion.V2
             self.device.send_message(bytearray([0x0] * 20))
 
     def test_get_capabilities(self) -> None:
@@ -282,7 +282,7 @@ class MideaDeviceTest:
             ),
         ):
             assert self.device.parse_message(bytearray([])) == MessageResult.PADDING
-            self.device._protocol = ProtocolVersion.V2
+            self.device._device_protocol_version = ProtocolVersion.V2
             assert self.device.parse_message(bytearray([])) == MessageResult.ERROR
             with patch.object(
                 self.device,

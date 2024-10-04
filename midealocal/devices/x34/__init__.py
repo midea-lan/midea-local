@@ -59,7 +59,7 @@ class Midea34Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: ProtocolVersion,
+        device_protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
@@ -73,7 +73,7 @@ class Midea34Device(MideaDevice):
             port=port,
             token=token,
             key=key,
-            protocol=protocol,
+            device_protocol=device_protocol,
             model=model,
             subtype=subtype,
             attributes={

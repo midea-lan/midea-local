@@ -23,7 +23,7 @@ class TestMideaX40Device:
             port=6444,
             token="AA",
             key="BB",
-            protocol=ProtocolVersion.V3,
+            device_protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
             customize="",

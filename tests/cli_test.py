@@ -186,7 +186,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 device_type=int(self.namespace.message[2]),
                 ip_address="192.168.192.168",
                 port=6664,
-                protocol=ProtocolVersion.V2,
+                device_protocol=ProtocolVersion.V2,
                 model="0000",
                 token="",
                 key="",
