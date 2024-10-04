@@ -122,9 +122,6 @@ class MessageType(IntEnum):
         return "Unknown"
 
 
-ZERO_VALUE = 0x00
-
-
 class MessageBase:
     """Message base."""
 
