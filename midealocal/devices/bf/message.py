@@ -15,7 +15,7 @@ class MessageBFBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: ProtocolVersion,
+        protocol_version: int,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -35,7 +35,7 @@ class MessageBFBase(MessageRequest):
 class MessageQuery(MessageBFBase):
     """BF message query."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize BF message query."""
         super().__init__(
             protocol_version=protocol_version,

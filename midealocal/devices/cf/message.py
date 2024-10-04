@@ -2,7 +2,7 @@
 
 from enum import IntEnum
 
-from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.const import DeviceType
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -26,7 +26,7 @@ class MessageCFBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: ProtocolVersion,
+        protocol_version: int,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -46,7 +46,7 @@ class MessageCFBase(MessageRequest):
 class MessageQuery(MessageCFBase):
     """CF message query."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize CF message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -62,7 +62,7 @@ class MessageQuery(MessageCFBase):
 class MessageSet(MessageCFBase):
     """CF message set."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize CF message set."""
         super().__init__(
             protocol_version=protocol_version,

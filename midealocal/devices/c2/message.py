@@ -54,7 +54,7 @@ class MessageC2Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: ProtocolVersion,
+        protocol_version: int,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -74,7 +74,7 @@ class MessageC2Base(MessageRequest):
 class MessageQuery(MessageC2Base):
     """C2 message query."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize C2 message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -90,7 +90,7 @@ class MessageQuery(MessageC2Base):
 class MessagePower(MessageC2Base):
     """C2 message power."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize C2 message power."""
         super().__init__(
             protocol_version=protocol_version,
@@ -127,7 +127,7 @@ class MessagePowerOff(MessageC2Base):
 class MessageSet(MessageC2Base):
     """C2 message set."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize C2 message set."""
         super().__init__(
             protocol_version=protocol_version,

@@ -17,7 +17,7 @@ class MessageB0Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: ProtocolVersion,
+        protocol_version: int,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -53,7 +53,7 @@ class MessageQuery00(MessageB0Base):
 class MessageQuery01(MessageB0Base):
     """B0 message query 01."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize B0 message query 01."""
         super().__init__(
             protocol_version=protocol_version,
