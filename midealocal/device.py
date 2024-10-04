@@ -76,7 +76,7 @@ class MideaDevice(threading.Thread):
         port: int,
         token: str,
         key: str,
-        protocol: ProtocolVersion,
+        device_protocol: ProtocolVersion,
         model: str,
         subtype: int,
         attributes: dict,
@@ -94,7 +94,7 @@ class MideaDevice(threading.Thread):
         self._device_name = name
         self._device_id = device_id
         self._device_type = device_type
-        self._device_protocol_version = protocol
+        self._device_protocol_version = device_protocol
         self._model = model
         self._subtype = subtype
         self._message_protocol_version: ProtocolVersion = ProtocolVersion.V1
