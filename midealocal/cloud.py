@@ -42,9 +42,9 @@ SUPPORTED_CLOUDS = {
         ).decode(),
         "api_url": "https://mp-prod.smartmidea.net/mas/v5/app/proxy?alias=",
     },
-    "MSmartHome": {
+    "SmartHome": {
         "default": True,
-        "class_name": "MSmartHomeCloud",
+        "class_name": "SmartHomeCloud",
         "app_id": "1010",
         "app_key": "ac21b9f9cbfe4ca5a88562ef25e2b768",
         "iot_key": bytes.fromhex(format(7882822598523843940, "x")).decode(),
@@ -540,7 +540,7 @@ class MeijuCloud(MideaCloud):
         return str(fnm) if fnm else None
 
 
-class MSmartHomeCloud(MideaCloud):
+class SmartHomeCloud(MideaCloud):
     """MSmart Home Cloud."""
 
     def __init__(
@@ -650,7 +650,7 @@ class MSmartHomeCloud(MideaCloud):
                     response["randomData"],
                 )
                 return True
-        _LOGGER.warning("MSmartHome Cloud login failed for device %s", self._device_id)
+        _LOGGER.warning("SmartHome Cloud login failed for device %s", self._device_id)
         return False
 
     async def list_appliances(
