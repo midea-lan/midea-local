@@ -88,7 +88,7 @@ class MideaDADevice(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea DA device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea DA device process message."""
@@ -176,11 +176,11 @@ class MideaDADevice(MideaDevice):
             raise ValueWrongType("[da] Expected bool")
         message: MessagePower | MessageStart | None = None
         if attr == DeviceAttributes.power:
-            message = MessagePower(self._protocol_version)
+            message = MessagePower(self._message_protocol_version)
             message.power = value
             self.build_send(message)
         elif attr == DeviceAttributes.start:
-            message = MessageStart(self._protocol_version)
+            message = MessageStart(self._message_protocol_version)
             message.start = value
             message.washing_data = self._attributes[DeviceAttributes.washing_data]
             self.build_send(message)

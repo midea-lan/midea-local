@@ -79,7 +79,7 @@ class MideaEDDevice(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea ED device build query."""
-        return [MessageQuery(self._protocol_version, self._device_class)]
+        return [MessageQuery(self._message_protocol_version, self._device_class)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea ED device process message."""
@@ -99,9 +99,9 @@ class MideaEDDevice(MideaDevice):
         message: MessageNewSet | MessageOldSet | None = None
         if self._use_new_set():
             if attr in [DeviceAttributes.power, DeviceAttributes.child_lock]:
-                message = MessageNewSet(self._protocol_version)
+                message = MessageNewSet(self._message_protocol_version)
         elif attr in []:
-            message = MessageOldSet(self._protocol_version)
+            message = MessageOldSet(self._message_protocol_version)
         if message is not None:
             setattr(message, str(attr), value)
             self.build_send(message)

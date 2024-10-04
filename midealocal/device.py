@@ -94,10 +94,10 @@ class MideaDevice(threading.Thread):
         self._device_name = name
         self._device_id = device_id
         self._device_type = device_type
-        self._protocol = protocol
+        self._device_protocol_version = protocol
         self._model = model
         self._subtype = subtype
-        self._protocol_version: ProtocolVersion = ProtocolVersion.V1
+        self._message_protocol_version: ProtocolVersion = ProtocolVersion.V1
         self._updates: list[Callable[[dict[str, Any]], None]] = []
         self._unsupported_protocol: list[str] = []
         self._is_run = False
@@ -165,7 +165,7 @@ class MideaDevice(threading.Thread):
             )
             self._socket.connect((self._ip_address, self._port))
             _LOGGER.debug("[%s] Connected", self._device_id)
-            if self._protocol == ProtocolVersion.V3:
+            if self._device_protocol_version == ProtocolVersion.V3:
                 self.authenticate()
             # 1. midea_ac_lan add device verify token with connect and auth
             # 2. init connection, check_protocol
@@ -231,7 +231,7 @@ class MideaDevice(threading.Thread):
 
     def send_message(self, data: bytes, query: bool = False) -> None:
         """Send message."""
-        if self._protocol == ProtocolVersion.V3:
+        if self._device_protocol_version == ProtocolVersion.V3:
             self.send_message_v3(data, msg_type=MSGTYPE_ENCRYPTED_REQUEST, query=query)
         else:
             self.send_message_v2(data, query=query)
@@ -389,18 +389,18 @@ class MideaDevice(threading.Thread):
             message = MessageApplianceResponse(msg)
             self._appliance_query = False
             _LOGGER.debug("[%s] Appliance query Received: %s", self._device_id, message)
-            self._protocol_version = message.protocol_version
+            self._message_protocol_version = message.protocol_version
             _LOGGER.debug(
                 "[%s] Device protocol version: %s",
                 self._device_id,
-                self._protocol_version,
+                self._message_protocol_version,
             )
             return False
         return True
 
     def parse_message(self, msg: bytes) -> MessageResult:
         """Parse message."""
-        if self._protocol == ProtocolVersion.V3:
+        if self._device_protocol_version == ProtocolVersion.V3:
             messages, self._buffer = self._security.decode_8370(self._buffer + msg)
         else:
             messages, self._buffer = self.fetch_v2_message(self._buffer + msg)
@@ -482,7 +482,7 @@ class MideaDevice(threading.Thread):
         """Send command."""
         cmd = MessageQuestCustom(
             self._device_type,
-            self._protocol_version,
+            self._message_protocol_version,
             cmd_type,
             cmd_body,
         )

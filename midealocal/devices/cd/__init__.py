@@ -88,7 +88,7 @@ class MideaCDDevice(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea CD device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea CD device process message."""
@@ -114,7 +114,7 @@ class MideaCDDevice(MideaDevice):
             DeviceAttributes.power,
             DeviceAttributes.target_temperature,
         ]:
-            message = MessageSet(self._protocol_version)
+            message = MessageSet(self._message_protocol_version)
             message.fields = self._fields
             message.mode = MideaCDDevice._modes.index(
                 self._attributes[DeviceAttributes.mode],

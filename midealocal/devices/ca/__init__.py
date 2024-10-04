@@ -87,7 +87,7 @@ class MideaCADevice(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea CA device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea CA device process message."""

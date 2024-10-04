@@ -125,7 +125,7 @@ class MideaFDDevice(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea FD device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea FD device process message."""
@@ -159,7 +159,7 @@ class MideaFDDevice(MideaDevice):
 
     def make_message_set(self) -> MessageSet:
         """Midea FD device make message set."""
-        message = MessageSet(self._protocol_version)
+        message = MessageSet(self._message_protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
         message.screen_display = self._attributes[DeviceAttributes.screen_display]

@@ -109,12 +109,12 @@ class MideaA1Device(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea A1 device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea A1 device process message."""
         message = MessageA1Response(bytearray(msg))
-        self._protocol_version = message.protocol_version
+        self._message_protocol_version = message.protocol_version
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         for status in self._attributes:
@@ -159,7 +159,7 @@ class MideaA1Device(MideaDevice):
 
     def make_message_set(self) -> MessageSet:
         """Midea A1 device make message set."""
-        message = MessageSet(self._protocol_version)
+        message = MessageSet(self._message_protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
         message.child_lock = self._attributes[DeviceAttributes.child_lock]

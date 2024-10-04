@@ -74,7 +74,7 @@ class MideaB0Device(MideaDevice):
 
     def build_query(self) -> list[MessageQuery01]:
         """B0 Midea device build query."""
-        return [MessageQuery01(self._protocol_version)]
+        return [MessageQuery01(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict:
         """B0 Midea device process message."""

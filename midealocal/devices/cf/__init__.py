@@ -66,7 +66,7 @@ class MideaCFDevice(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea CF device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea CF device process message."""
@@ -86,7 +86,7 @@ class MideaCFDevice(MideaDevice):
         zone: int | None = None,  # noqa: ARG002
     ) -> None:
         """Midea CF device set target temperature."""
-        message = MessageSet(self._protocol_version)
+        message = MessageSet(self._message_protocol_version)
         message.power = True
         message.mode = self._attributes[DeviceAttributes.mode]
         message.target_temperature = target_temperature
@@ -98,7 +98,7 @@ class MideaCFDevice(MideaDevice):
         """Midea CF device set attribute."""
         if not isinstance(value, bool):
             raise ValueWrongType("[cf] Expected bool")
-        message = MessageSet(self._protocol_version)
+        message = MessageSet(self._message_protocol_version)
         message.power = True
         message.mode = self._attributes[DeviceAttributes.mode]
         if attr == DeviceAttributes.power:

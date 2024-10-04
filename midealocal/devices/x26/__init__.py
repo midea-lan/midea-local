@@ -120,7 +120,7 @@ class Midea26Device(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea x26 device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea x26 device process message."""
@@ -150,7 +150,7 @@ class Midea26Device(MideaDevice):
             DeviceAttributes.mode,
             DeviceAttributes.direction,
         ]:
-            message = MessageSet(self._protocol_version)
+            message = MessageSet(self._message_protocol_version)
             message.fields = self._fields
             message.main_light = self._attributes[DeviceAttributes.main_light]
             message.night_light = self._attributes[DeviceAttributes.night_light]

@@ -116,8 +116,8 @@ class MideaC3Device(MideaDevice):
     def build_query(self) -> list[MessageQuery]:
         """Midea C3 device build query."""
         return [
-            MessageQueryBasic(self._protocol_version),
-            MessageQuerySilence(self._protocol_version),
+            MessageQueryBasic(self._message_protocol_version),
+            MessageQuerySilence(self._message_protocol_version),
         ]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
@@ -211,7 +211,7 @@ class MideaC3Device(MideaDevice):
 
     def make_message_set(self) -> MessageSet:
         """Midea C3 device make message set."""
-        message = MessageSet(self._protocol_version)
+        message = MessageSet(self._message_protocol_version)
         message.zone1_power = self._attributes[DeviceAttributes.zone1_power]
         message.zone2_power = self._attributes[DeviceAttributes.zone2_power]
         message.dhw_power = self._attributes[DeviceAttributes.dhw_power]
@@ -243,13 +243,13 @@ class MideaC3Device(MideaDevice):
             message = self.make_message_set()
             setattr(message, str(attr), value)
         elif attr == DeviceAttributes.eco_mode:
-            message = MessageSetECO(self._protocol_version)
+            message = MessageSetECO(self._message_protocol_version)
             setattr(message, str(attr), value)
         elif attr in [
             DeviceAttributes.silent_mode.value,
             DeviceAttributes.SILENT_LEVEL.value,
         ]:
-            message = MessageSetSilent(self._protocol_version)
+            message = MessageSetSilent(self._message_protocol_version)
             if attr == DeviceAttributes.silent_mode.value and isinstance(value, bool):
                 message.silent_mode = bool(value)
                 message.silent_level = (
