@@ -42,7 +42,7 @@ class MideaC2Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: ProtocolVersion,
+        device_protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,
@@ -56,7 +56,7 @@ class MideaC2Device(MideaDevice):
             port=port,
             token=token,
             key=key,
-            protocol=protocol,
+            device_protocol=device_protocol,
             model=model,
             subtype=subtype,
             attributes={
@@ -100,7 +100,7 @@ class MideaC2Device(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea C2 device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea C2 device process message."""
@@ -117,7 +117,7 @@ class MideaC2Device(MideaDevice):
         """Midea C2 device set attribute."""
         message: MessagePower | MessageSet | None = None
         if attr == DeviceAttributes.power:
-            message = MessagePower(self._protocol_version)
+            message = MessagePower(self._message_protocol_version)
             message.power = bool(value)
         elif attr in [
             DeviceAttributes.child_lock,
@@ -127,7 +127,7 @@ class MideaC2Device(MideaDevice):
             DeviceAttributes.seat_temp_level,
             DeviceAttributes.dry_level,
         ]:
-            message = MessageSet(self._protocol_version)
+            message = MessageSet(self._message_protocol_version)
             setattr(message, attr, value)
         if message:
             self.build_send(message)

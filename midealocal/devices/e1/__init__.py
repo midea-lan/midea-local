@@ -59,7 +59,7 @@ class MideaE1Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: ProtocolVersion,
+        device_protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
@@ -73,7 +73,7 @@ class MideaE1Device(MideaDevice):
             port=port,
             token=token,
             key=key,
-            protocol=protocol,
+            device_protocol=device_protocol,
             model=model,
             subtype=subtype,
             attributes={
@@ -132,7 +132,7 @@ class MideaE1Device(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea E1 device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea E1 device process message."""
@@ -167,15 +167,15 @@ class MideaE1Device(MideaDevice):
             raise ValueWrongType("[e1] Expected bool")
         message: MessagePower | MessageLock | MessageStorage | None = None
         if attr == DeviceAttributes.power:
-            message = MessagePower(self._protocol_version)
+            message = MessagePower(self._message_protocol_version)
             message.power = value
             self.build_send(message)
         elif attr == DeviceAttributes.child_lock:
-            message = MessageLock(self._protocol_version)
+            message = MessageLock(self._message_protocol_version)
             message.lock = value
             self.build_send(message)
         elif attr == DeviceAttributes.storage:
-            message = MessageStorage(self._protocol_version)
+            message = MessageStorage(self._message_protocol_version)
             message.storage = value
             self.build_send(message)
 

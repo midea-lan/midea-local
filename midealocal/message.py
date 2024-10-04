@@ -135,7 +135,7 @@ class MessageBase:
         self._device_type: DeviceType = DeviceType.X00
         self._message_type: MessageType = MessageType.default
         self._body_type: BodyType = BodyType.X00
-        self._protocol_version: ProtocolVersion = ProtocolVersion.V1
+        self._message_protocol_version: ProtocolVersion = ProtocolVersion.V1
 
     @staticmethod
     def checksum(data: bytes) -> SupportsIndex:
@@ -182,11 +182,11 @@ class MessageBase:
     @property
     def protocol_version(self) -> ProtocolVersion:
         """Message protocol version."""
-        return self._protocol_version
+        return self._message_protocol_version
 
     @protocol_version.setter
     def protocol_version(self, protocol_version: ProtocolVersion) -> None:
-        self._protocol_version = protocol_version
+        self._message_protocol_version = protocol_version
 
     def _format_attribute(
         self,

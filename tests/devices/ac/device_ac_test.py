@@ -30,7 +30,7 @@ class TestMideaACDevice:
             port=12345,
             token="AA",
             key="BB",
-            protocol=ProtocolVersion.V1,
+            device_protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=1,
             customize='{"temperature_step": 1, "power_analysis_method": 2}',

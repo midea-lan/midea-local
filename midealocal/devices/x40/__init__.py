@@ -42,7 +42,7 @@ class MideaX40Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: ProtocolVersion,
+        device_protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,
@@ -56,7 +56,7 @@ class MideaX40Device(MideaDevice):
             port=port,
             token=token,
             key=key,
-            protocol=protocol,
+            device_protocol=device_protocol,
             model=model,
             subtype=subtype,
             attributes={
@@ -99,7 +99,7 @@ class MideaX40Device(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea x40 Device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea x40 Device process message."""
@@ -133,7 +133,7 @@ class MideaX40Device(MideaDevice):
             DeviceAttributes.ventilation,
             DeviceAttributes.smelly_sensor,
         ]:
-            message = MessageSet(self._protocol_version)
+            message = MessageSet(self._message_protocol_version)
             message.fields = self._fields
             message.light = self._attributes[DeviceAttributes.light]
             message.ventilation = self._attributes[DeviceAttributes.ventilation]

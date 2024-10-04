@@ -3,7 +3,7 @@
 from importlib import import_module
 from typing import cast
 
-from midealocal.const import DeviceType
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
 
 
@@ -15,7 +15,7 @@ def device_selector(
     port: int,
     token: str,
     key: str,
-    protocol: int,
+    device_protocol: ProtocolVersion,
     model: str,
     subtype: int,
     customize: str,
@@ -34,7 +34,7 @@ def device_selector(
             port=port,
             token=token,
             key=key,
-            protocol=protocol,
+            device_protocol=device_protocol,
             model=model,
             subtype=subtype,
             customize=customize,

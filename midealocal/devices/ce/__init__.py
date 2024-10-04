@@ -49,7 +49,7 @@ class MideaCEDevice(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: ProtocolVersion,
+        device_protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,
@@ -63,7 +63,7 @@ class MideaCEDevice(MideaDevice):
             port=port,
             token=token,
             key=key,
-            protocol=protocol,
+            device_protocol=device_protocol,
             model=model,
             subtype=subtype,
             attributes={
@@ -103,7 +103,7 @@ class MideaCEDevice(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea CE device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea CE device process message."""
@@ -128,7 +128,7 @@ class MideaCEDevice(MideaDevice):
 
     def make_message_set(self) -> MessageSet:
         """Midea CE device make message set."""
-        message = MessageSet(self._protocol_version)
+        message = MessageSet(self._message_protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.fan_speed = self._attributes[DeviceAttributes.fan_speed]
         message.link_to_ac = self._attributes[DeviceAttributes.link_to_ac]

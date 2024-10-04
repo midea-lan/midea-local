@@ -61,7 +61,7 @@ class MideaCCDevice(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: ProtocolVersion,
+        device_protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
@@ -75,7 +75,7 @@ class MideaCCDevice(MideaDevice):
             port=port,
             token=token,
             key=key,
-            protocol=protocol,
+            device_protocol=device_protocol,
             model=model,
             subtype=subtype,
             attributes={
@@ -106,7 +106,7 @@ class MideaCCDevice(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea CC device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea CC device process message."""
@@ -153,7 +153,7 @@ class MideaCCDevice(MideaDevice):
 
     def make_message_set(self) -> MessageSet:
         """Midea CC device make message set."""
-        message = MessageSet(self._protocol_version)
+        message = MessageSet(self._message_protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.mode = self._attributes[DeviceAttributes.mode]
         message.target_temperature = self._attributes[

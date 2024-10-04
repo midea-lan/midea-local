@@ -44,7 +44,7 @@ class MideaB4Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: ProtocolVersion,
+        device_protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
@@ -58,7 +58,7 @@ class MideaB4Device(MideaDevice):
             port=port,
             token=token,
             key=key,
-            protocol=protocol,
+            device_protocol=device_protocol,
             model=model,
             subtype=subtype,
             attributes={
@@ -74,7 +74,7 @@ class MideaB4Device(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea B4 device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea B4 device process message."""

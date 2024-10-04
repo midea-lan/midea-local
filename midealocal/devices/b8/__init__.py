@@ -43,7 +43,7 @@ class MideaB8Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: ProtocolVersion,
+        device_protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
@@ -57,7 +57,7 @@ class MideaB8Device(MideaDevice):
             port=port,
             token=token,
             key=key,
-            protocol=protocol,
+            device_protocol=device_protocol,
             model=model,
             subtype=subtype,
             attributes={
@@ -91,7 +91,7 @@ class MideaB8Device(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea B8 device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea B8 device process message."""
@@ -108,7 +108,7 @@ class MideaB8Device(MideaDevice):
         return new_status
 
     def _gen_set_msg_default_values(self) -> MessageSet:
-        msg = MessageSet(self._protocol_version)
+        msg = MessageSet(self._message_protocol_version)
         msg.clean_mode = B8CleanMode[
             self.attributes[B8DeviceAttributes.CLEAN_MODE].upper()
         ]
@@ -130,7 +130,7 @@ class MideaB8Device(MideaDevice):
             )
             return
 
-        msg = MessageSetCommand(self._protocol_version, work_mode=work_mode)
+        msg = MessageSetCommand(self._message_protocol_version, work_mode=work_mode)
         self.build_send(msg)
 
     def set_attribute(self, attr: str, value: bool | int | str) -> None:
