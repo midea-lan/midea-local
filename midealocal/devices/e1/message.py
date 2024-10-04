@@ -1,6 +1,6 @@
 """Midea local E1 message."""
 
-from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.const import DeviceType
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -19,7 +19,7 @@ class MessageE1Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: ProtocolVersion,
+        protocol_version: int,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -39,7 +39,7 @@ class MessageE1Base(MessageRequest):
 class MessagePower(MessageE1Base):
     """E1 message power."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize E1 message power."""
         super().__init__(
             protocol_version=protocol_version,
@@ -57,7 +57,7 @@ class MessagePower(MessageE1Base):
 class MessageLock(MessageE1Base):
     """E1 message lock."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize E1 message lock."""
         super().__init__(
             protocol_version=protocol_version,
@@ -75,7 +75,7 @@ class MessageLock(MessageE1Base):
 class MessageStorage(MessageE1Base):
     """E1 message storage."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize E1 message storage."""
         super().__init__(
             protocol_version=protocol_version,
@@ -97,7 +97,7 @@ class MessageStorage(MessageE1Base):
 class MessageQuery(MessageE1Base):
     """E1 message query."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize E1 message query."""
         super().__init__(
             protocol_version=protocol_version,

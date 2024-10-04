@@ -1,6 +1,6 @@
 """Midea local DC message."""
 
-from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.const import DeviceType
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -15,7 +15,7 @@ class MessageDCBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: ProtocolVersion,
+        protocol_version: int,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -35,7 +35,7 @@ class MessageDCBase(MessageRequest):
 class MessageQuery(MessageDCBase):
     """DC message query."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize DC message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -51,7 +51,7 @@ class MessageQuery(MessageDCBase):
 class MessagePower(MessageDCBase):
     """DC message power."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize DC message power."""
         super().__init__(
             protocol_version=protocol_version,
@@ -69,7 +69,7 @@ class MessagePower(MessageDCBase):
 class MessageStart(MessageDCBase):
     """DC message start."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize DC message start."""
         super().__init__(
             protocol_version=protocol_version,
