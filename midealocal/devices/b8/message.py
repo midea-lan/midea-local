@@ -1,6 +1,6 @@
 """Midea local B8 message."""
 
-from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.const import DeviceType
 from midealocal.message import (
     BodyType,
     BoolParser,
@@ -37,7 +37,7 @@ class MessageB8Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: ProtocolVersion,
+        protocol_version: int,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -57,7 +57,7 @@ class MessageB8Base(MessageRequest):
 class MessageQuery(MessageB8Base):
     """B8 message query."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize B8 message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -73,7 +73,7 @@ class MessageQuery(MessageB8Base):
 class MessageSet(MessageB8Base):
     """B8 message set."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize B8 message set."""
         super().__init__(
             protocol_version=protocol_version,
@@ -107,7 +107,7 @@ class MessageSetCommand(MessageB8Base):
 
     def __init__(
         self,
-        protocol_version: ProtocolVersion,
+        protocol_version: int,
         work_mode: B8WorkMode,
     ) -> None:
         """Initialize B8 message set command."""

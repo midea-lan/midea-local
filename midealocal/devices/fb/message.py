@@ -1,6 +1,6 @@
 """Midea local FB message."""
 
-from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.const import DeviceType
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -23,7 +23,7 @@ class MessageFBBase(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: ProtocolVersion,
+        protocol_version: int,
         message_type: MessageType,
         body_type: BodyType = BodyType.X00,
     ) -> None:
@@ -43,7 +43,7 @@ class MessageFBBase(MessageRequest):
 class MessageQuery(MessageFBBase):
     """FB message query."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize FB message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -63,7 +63,7 @@ class MessageQuery(MessageFBBase):
 class MessageSet(MessageFBBase):
     """FB message set."""
 
-    def __init__(self, protocol_version: ProtocolVersion, subtype: int) -> None:
+    def __init__(self, protocol_version: int, subtype: int) -> None:
         """Initialize FB message set."""
         super().__init__(
             protocol_version=protocol_version,

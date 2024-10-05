@@ -97,7 +97,7 @@ class MideaDevice(threading.Thread):
         self._device_protocol_version = device_protocol
         self._model = model
         self._subtype = subtype
-        self._message_protocol_version: ProtocolVersion = ProtocolVersion.V1
+        self._message_protocol_version: int = 0
         self._updates: list[Callable[[dict[str, Any]], None]] = []
         self._unsupported_protocol: list[str] = []
         self._is_run = False

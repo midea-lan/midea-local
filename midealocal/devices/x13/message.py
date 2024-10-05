@@ -1,6 +1,6 @@
 """Midea local x13 device."""
 
-from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.const import DeviceType
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -17,7 +17,7 @@ class Message13Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: ProtocolVersion,
+        protocol_version: int,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -37,7 +37,7 @@ class Message13Base(MessageRequest):
 class MessageQuery(Message13Base):
     """X13 message query."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize X13 message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -53,7 +53,7 @@ class MessageQuery(Message13Base):
 class MessageSet(Message13Base):
     """X13 message set."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize X13 message set."""
         super().__init__(
             protocol_version=protocol_version,

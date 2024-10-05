@@ -1,6 +1,6 @@
 """Midea local E2 message."""
 
-from midealocal.const import DeviceType, ProtocolVersion
+from midealocal.const import DeviceType
 from midealocal.message import (
     BodyType,
     MessageBody,
@@ -19,7 +19,7 @@ class MessageE2Base(MessageRequest):
 
     def __init__(
         self,
-        protocol_version: ProtocolVersion,
+        protocol_version: int,
         message_type: MessageType,
         body_type: BodyType,
     ) -> None:
@@ -39,7 +39,7 @@ class MessageE2Base(MessageRequest):
 class MessageQuery(MessageE2Base):
     """E2 message query."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize E2 message query."""
         super().__init__(
             protocol_version=protocol_version,
@@ -55,7 +55,7 @@ class MessageQuery(MessageE2Base):
 class MessagePower(MessageE2Base):
     """E2 message power."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize E2 message power."""
         super().__init__(
             protocol_version=protocol_version,
@@ -76,7 +76,7 @@ class MessagePower(MessageE2Base):
 class MessageNewProtocolSet(MessageE2Base):
     """E2 message new protocol set."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize E2 message new protocol set."""
         super().__init__(
             protocol_version=protocol_version,
@@ -106,7 +106,7 @@ class MessageNewProtocolSet(MessageE2Base):
 class MessageSet(MessageE2Base):
     """E2 message set."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize E2 message set."""
         super().__init__(
             protocol_version=protocol_version,
