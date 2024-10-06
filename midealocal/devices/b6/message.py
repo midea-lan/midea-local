@@ -48,7 +48,9 @@ class MessageQuery(MessageB6Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=BodyType.X11 if protocol_version == 2 else BodyType.X31,
+            body_type=BodyType.X11
+            if protocol_version == MESSAGE_PROTOCOL_VERSION
+            else BodyType.X31,
         )
 
     @property
