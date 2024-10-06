@@ -15,6 +15,8 @@ FAN_LEVEL_RANGE_2 = 140
 FAN_LEVEL_RANGE_3 = 170
 MIN_FAN_LEVEL_RANGE = 100
 
+MESASGE_PROTOCOL_VERSION = 2
+
 
 class MessageB6Base(MessageRequest):
     """B6 message base."""
