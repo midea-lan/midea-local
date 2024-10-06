@@ -1,5 +1,14 @@
 # Changelog
 
+## [6.0.1](https://github.com/rokam/midea-local/compare/v6.0.0...v6.0.1) (2024-10-06)
+
+
+### Bug Fixes
+
+* add missing body_type "163" ([#317](https://github.com/rokam/midea-local/issues/317)) ([45f7bd2](https://github.com/rokam/midea-local/commit/45f7bd2432a04fb69c9fdb9b6204de7eac87aa2e))
+* message protocol version default ([#316](https://github.com/rokam/midea-local/issues/316)) ([2f4e5d1](https://github.com/rokam/midea-local/commit/2f4e5d1d1335696cc3a179a67cf287eef54b6864))
+* protocol check in B6 devices ([#320](https://github.com/rokam/midea-local/issues/320)) ([55659c1](https://github.com/rokam/midea-local/commit/55659c19a642fadfd37aee32fbeae76e48aed3dd))
+
 ## [6.0.0](https://github.com/rokam/midea-local/compare/v5.0.0...v6.0.0) (2024-10-03)
 
 
