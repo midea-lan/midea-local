@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.0.2](https://github.com/rokam/midea-local/compare/v6.0.1...v6.0.2) (2024-10-08)
+
+
+### Bug Fixes
+
+* add more BodyType ([#321](https://github.com/rokam/midea-local/issues/321)) ([a1b4ac8](https://github.com/rokam/midea-local/commit/a1b4ac807e3b475f0a32f44c0f1d7af980d7a486))
+
 ## [6.0.1](https://github.com/rokam/midea-local/compare/v6.0.0...v6.0.1) (2024-10-06)
 
 
