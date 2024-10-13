@@ -12,7 +12,7 @@ from midealocal.devices.a1.message import (
     MessageSet,
     NewProtocolTags,
 )
-from midealocal.message import BodyType, MessageType
+from midealocal.message import ListTypes, MessageType
 
 
 class TestMessageA1Base:
@@ -23,12 +23,12 @@ class TestMessageA1Base:
         msg = MessageA1Base(
             protocol_version=ProtocolVersion.V1,
             message_type=MessageType.query,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
         msg2 = MessageA1Base(
             protocol_version=ProtocolVersion.V1,
             message_type=MessageType.query,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
         assert msg2._message_id == msg._message_id + 1
         # test reset
@@ -36,7 +36,7 @@ class TestMessageA1Base:
             msg = MessageA1Base(
                 protocol_version=ProtocolVersion.V1,
                 message_type=MessageType.query,
-                body_type=BodyType.X01,
+                body_type=ListTypes.X01,
             )
         assert msg._message_id == 1
 
@@ -45,7 +45,7 @@ class TestMessageA1Base:
         msg = MessageA1Base(
             protocol_version=ProtocolVersion.V1,
             message_type=MessageType.query,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
         with pytest.raises(NotImplementedError):
             _ = msg.body

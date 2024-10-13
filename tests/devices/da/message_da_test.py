@@ -10,7 +10,7 @@ from midealocal.devices.da.message import (
     MessageQuery,
     MessageStart,
 )
-from midealocal.message import BodyType, MessageType
+from midealocal.message import ListTypes, MessageType
 
 
 class TestMessageDABase:
@@ -21,7 +21,7 @@ class TestMessageDABase:
         msg = MessageDABase(
             protocol_version=ProtocolVersion.V1,
             message_type=MessageType.query,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
         with pytest.raises(NotImplementedError):
             _ = msg.body

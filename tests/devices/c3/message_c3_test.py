@@ -14,7 +14,7 @@ from midealocal.devices.c3.message import (
     MessageSetECO,
     MessageSetSilent,
 )
-from midealocal.message import BodyType, MessageType
+from midealocal.message import ListTypes, MessageType
 
 
 class TestMessageC3Base:
@@ -25,7 +25,7 @@ class TestMessageC3Base:
         msg = MessageC3Base(
             protocol_version=ProtocolVersion.V1,
             message_type=MessageType.query,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
         with pytest.raises(NotImplementedError):
             _ = msg.body
@@ -142,7 +142,7 @@ class TestMessageC3Response:
         """Test message generic response."""
         body = bytearray(
             [
-                BodyType.X01,
+                ListTypes.X01,
                 0x01
                 | 0x04
                 | 0x08
@@ -182,7 +182,7 @@ class TestMessageC3Response:
             self.header[-1] = message_type
             response = MessageC3Response(self.header + body)
 
-            assert response.body_type == BodyType.X01
+            assert response.body_type == ListTypes.X01
             assert hasattr(response, "zone1_power")
             assert response.zone1_power is True
             assert hasattr(response, "zone2_power")
@@ -241,7 +241,7 @@ class TestMessageC3Response:
         self.header[-1] = MessageType.notify1
         body = bytearray(
             [
-                BodyType.X04,
+                ListTypes.X04,
                 0x01 | 0x04,  # BYTE 1: status_dhw + status_heating
                 0x32,  # BYTE 2: total_energy_consumption
                 0x1A,  # BYTE 3: total_energy_consumption
@@ -256,7 +256,7 @@ class TestMessageC3Response:
             ],
         )
         response = MessageC3Response(self.header + body)
-        assert response.body_type == BodyType.X04
+        assert response.body_type == ListTypes.X04
         assert hasattr(response, "status_tbh")
         assert response.status_tbh is False
         assert hasattr(response, "status_dhw")
@@ -282,7 +282,7 @@ class TestMessageC3Response:
         self.header[-1] = MessageType.query
         body = bytearray(
             [
-                BodyType.X05,
+                ListTypes.X05,
                 0x00,
                 0x00,
                 0x00,

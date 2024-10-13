@@ -6,7 +6,7 @@ from typing import Any
 
 from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
-from midealocal.message import BodyType
+from midealocal.message import ListTypes
 
 from .message import MessageEDResponse, MessageNewSet, MessageOldSet, MessageQuery
 
@@ -71,7 +71,7 @@ class MideaEDDevice(MideaDevice):
                 DeviceAttributes.child_lock: False,
             },
         )
-        self._device_class = BodyType.X00
+        self._device_class = ListTypes.X00
 
     def _use_new_set(self) -> bool:
         # if (self.sub_type > 342 or self.sub_type == 340) else False

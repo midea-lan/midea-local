@@ -16,7 +16,7 @@ from midealocal.devices.ac.message import (
     MessageToggleDisplay,
     NewProtocolTags,
 )
-from midealocal.message import BodyType, MessageType
+from midealocal.message import ListTypes, MessageType
 
 
 class TestMessageACBase:
@@ -27,12 +27,12 @@ class TestMessageACBase:
         msg = MessageACBase(
             protocol_version=ProtocolVersion.V1,
             message_type=MessageType.query,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
         msg2 = MessageACBase(
             protocol_version=ProtocolVersion.V1,
             message_type=MessageType.query,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
         assert msg2._message_id == msg._message_id + 1
         # test reset
@@ -40,7 +40,7 @@ class TestMessageACBase:
             msg = MessageACBase(
                 protocol_version=ProtocolVersion.V1,
                 message_type=MessageType.query,
-                body_type=BodyType.X01,
+                body_type=ListTypes.X01,
             )
         assert msg._message_id == 1
 
@@ -49,7 +49,7 @@ class TestMessageACBase:
         msg = MessageACBase(
             protocol_version=ProtocolVersion.V1,
             message_type=MessageType.query,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
         with pytest.raises(NotImplementedError):
             _ = msg.body

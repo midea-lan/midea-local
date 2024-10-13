@@ -2,12 +2,11 @@
 
 from midealocal.const import DeviceType
 from midealocal.message import (
-    BodyType,
+    ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
-    SubBodyType,
 )
 
 CHILD_LOCK_BYTE = 18
@@ -25,7 +24,7 @@ class MessageFBBase(MessageRequest):
         self,
         protocol_version: int,
         message_type: MessageType,
-        body_type: BodyType = BodyType.X00,
+        body_type: ListTypes = ListTypes.X00,
     ) -> None:
         """Initialize FB message base."""
         super().__init__(
@@ -68,7 +67,7 @@ class MessageSet(MessageFBBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X00,
+            body_type=ListTypes.X00,
         )
         self._subtype = subtype
         self.power: bool | None = None
@@ -133,7 +132,7 @@ class MessageSet(MessageFBBase):
                 0x00,
             ],
         )
-        if self._subtype > SubBodyType.X05:
+        if self._subtype > ListTypes.X05:
             _return_body += bytearray([0x00, 0x00, 0x00])
         return _return_body
 

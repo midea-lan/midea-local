@@ -2,7 +2,7 @@
 
 from midealocal.const import MAX_BYTE_VALUE, DeviceType
 from midealocal.message import (
-    BodyType,
+    ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -17,7 +17,7 @@ class MessageB4Base(MessageRequest):
         self,
         protocol_version: int,
         message_type: MessageType,
-        body_type: BodyType,
+        body_type: ListTypes,
     ) -> None:
         """Initialize B4 message base."""
         super().__init__(
@@ -40,7 +40,7 @@ class MessageQuery(MessageB4Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
 
     @property
@@ -82,7 +82,7 @@ class MessageB4Response(MessageResponse):
                 MessageType.query,
                 MessageType.set,
             ]
-            and self.body_type == BodyType.X01
+            and self.body_type == ListTypes.X01
         ):
             self.set_body(B4MessageBody(super().body))
         self.set_attr()
