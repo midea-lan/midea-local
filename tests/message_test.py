@@ -127,7 +127,7 @@ class TestIntEnumParser:
         parser = IntEnumParser[ListTypes]("name", 0, ListTypes)
         assert parser._parse(0x01) == ListTypes.X01
         assert parser._parse(0x00) == ListTypes.X00
-        assert parser._parse(0x10) == ListTypes.X00
+        assert parser._parse(0x10) == ListTypes.X10
 
         parser = IntEnumParser[ListTypes](
             "name",
@@ -137,7 +137,7 @@ class TestIntEnumParser:
         )
         assert parser._parse(0x01) == ListTypes.X01
         assert parser._parse(0x00) == ListTypes.X00
-        assert parser._parse(0x10) == ListTypes.A0
+        assert parser._parse(0xA0) == ListTypes.A0
 
 
 class TestIntParser:
