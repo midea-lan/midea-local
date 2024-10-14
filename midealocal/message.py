@@ -1,8 +1,9 @@
 """Midea local message."""
 
 import logging
+import warnings
 from enum import IntEnum
-from typing import Generic, SupportsIndex, TypeVar, cast
+from typing import Any, Generic, SupportsIndex, TypeVar, cast
 
 from midealocal.const import DeviceType
 
@@ -268,6 +269,32 @@ class ListTypes(IntEnum):
     X9D = 0x9D
     X9E = 0x9E
     X9F = 0x9F
+
+
+class BodyType(IntEnum):
+    """Body Types (Deprecated)."""
+
+    @classmethod
+    def _missing_(cls, value: Any) -> IntEnum:  # noqa: ANN401
+        warnings.warn(
+            "BodyType is deprecated, use ListTypes instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return ListTypes(value)
+
+
+class SubBodyType(IntEnum):
+    """SubBody Types (Deprecated)."""
+
+    @classmethod
+    def _missing_(cls, value: Any) -> IntEnum:  # noqa: ANN401
+        warnings.warn(
+            "SubBodyType is deprecated, use ListTypes instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return ListTypes(value)
 
 
 class MessageLenError(Exception):
