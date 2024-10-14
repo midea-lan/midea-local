@@ -285,6 +285,7 @@ class BodyType(IntEnum):
         return ListTypes(value)
 
 
+@deprecated("Use ListTypes instead")
 class SubBodyType(IntEnum):
     """SubBody Types (Deprecated)."""
 
