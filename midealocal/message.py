@@ -271,6 +271,7 @@ class ListTypes(IntEnum):
     X9F = 0x9F
 
 
+@deprecated("Use ListTypes instead")
 class BodyType(IntEnum):
     """Body Types (Deprecated)."""
 
