@@ -3,7 +3,7 @@
 from midealocal.const import DeviceType
 from midealocal.crc8 import calculate
 from midealocal.message import (
-    BodyType,
+    ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -25,7 +25,7 @@ class MessageFDBase(MessageRequest):
         self,
         protocol_version: int,
         message_type: MessageType,
-        body_type: BodyType,
+        body_type: ListTypes,
     ) -> None:
         """Initialize FD message base."""
         super().__init__(
@@ -59,7 +59,7 @@ class MessageQuery(MessageFDBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=BodyType.X41,
+            body_type=ListTypes.X41,
         )
 
     @property
@@ -97,7 +97,7 @@ class MessageSet(MessageFDBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X48,
+            body_type=ListTypes.X48,
         )
         self.power = False
         self.fan_speed = 0
@@ -192,9 +192,9 @@ class MessageFDResponse(MessageResponse):
         ]:
             if self.body_type in [0xB0, 0xB1]:
                 pass
-            elif self.body_type == BodyType.A0:
+            elif self.body_type == ListTypes.A0:
                 self.set_body(FDA0MessageBody(super().body))
-            elif self.body_type == BodyType.C8:
+            elif self.body_type == ListTypes.C8:
                 self.set_body(FDC8MessageBody(super().body))
         self.fan_speed: int
         self.set_attr()

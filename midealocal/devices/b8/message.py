@@ -2,10 +2,10 @@
 
 from midealocal.const import DeviceType
 from midealocal.message import (
-    BodyType,
     BoolParser,
     IntEnumParser,
     IntParser,
+    ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -39,7 +39,7 @@ class MessageB8Base(MessageRequest):
         self,
         protocol_version: int,
         message_type: MessageType,
-        body_type: BodyType,
+        body_type: ListTypes,
     ) -> None:
         """Initialize B8 message base."""
         super().__init__(
@@ -62,7 +62,7 @@ class MessageQuery(MessageB8Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=BodyType.X32,
+            body_type=ListTypes.X32,
         )
 
     @property
@@ -78,7 +78,7 @@ class MessageSet(MessageB8Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X22,
+            body_type=ListTypes.X22,
         )
         self.clean_mode = B8CleanMode.AUTO
         self.fan_level = B8FanLevel.NORMAL
@@ -114,7 +114,7 @@ class MessageSetCommand(MessageB8Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X22,
+            body_type=ListTypes.X22,
         )
         self.work_mode = work_mode
 
@@ -279,10 +279,10 @@ class MessageB8Response(MessageResponse):
         status_type = body[1]
         if (
             message_type == MessageType.query
-            and body_type == BodyType.X32
+            and body_type == ListTypes.X32
             and status_type == B8StatusType.X01
         ):
             return MessageB8WorkStatusBody(body)
-        if message_type == MessageType.notify1 and body_type == BodyType.X42:
+        if message_type == MessageType.notify1 and body_type == ListTypes.X42:
             return MessageB8NotifyBody(body)
         return None

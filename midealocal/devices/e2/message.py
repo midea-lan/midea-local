@@ -2,7 +2,7 @@
 
 from midealocal.const import DeviceType
 from midealocal.message import (
-    BodyType,
+    ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -21,7 +21,7 @@ class MessageE2Base(MessageRequest):
         self,
         protocol_version: int,
         message_type: MessageType,
-        body_type: BodyType,
+        body_type: ListTypes,
     ) -> None:
         """Initialize E2 message base."""
         super().__init__(
@@ -44,7 +44,7 @@ class MessageQuery(MessageE2Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
 
     @property
@@ -60,16 +60,16 @@ class MessagePower(MessageE2Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X02,
+            body_type=ListTypes.X02,
         )
         self.power = False
 
     @property
     def _body(self) -> bytearray:
         if self.power:
-            self.body_type = BodyType.X01
+            self.body_type = ListTypes.X01
         else:
-            self.body_type = BodyType.X02
+            self.body_type = ListTypes.X02
         return bytearray([0x01])
 
 
@@ -81,7 +81,7 @@ class MessageNewProtocolSet(MessageE2Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X14,
+            body_type=ListTypes.X14,
         )
         self.target_temperature: int | None = None
         self.variable_heating: bool | None = None
@@ -111,7 +111,7 @@ class MessageSet(MessageE2Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X04,
+            body_type=ListTypes.X04,
         )
         self.target_temperature = 0
         self.variable_heating = False

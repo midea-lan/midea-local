@@ -2,7 +2,7 @@
 
 from midealocal.const import DeviceType
 from midealocal.message import (
-    BodyType,
+    ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -23,7 +23,7 @@ class MessageCABase(MessageRequest):
         self,
         protocol_version: int,
         message_type: MessageType,
-        body_type: BodyType,
+        body_type: ListTypes,
     ) -> None:
         """Initialize CA message base."""
         super().__init__(
@@ -46,7 +46,7 @@ class MessageQuery(MessageCABase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=BodyType.X00,
+            body_type=ListTypes.X00,
         )
 
     @property
@@ -147,28 +147,28 @@ class MessageCAResponse(MessageResponse):
         if (
             (
                 self.message_type in [MessageType.query, MessageType.set]
-                and self.body_type == BodyType.X00
+                and self.body_type == ListTypes.X00
             )
             or (
                 self.message_type == MessageType.notify1
-                and self.body_type == BodyType.X02
+                and self.body_type == ListTypes.X02
             )
         ) and len(super().body) > MIN_CA_GENERAL_BODY_LENGTH:
             self.set_body(CAGeneralMessageBody(super().body))
         elif (
             self.message_type == MessageType.exception
-            and self.body_type == BodyType.X01
+            and self.body_type == ListTypes.X01
         ) or (
-            self.message_type == MessageType.query and self.body_type == BodyType.X02
+            self.message_type == MessageType.query and self.body_type == ListTypes.X02
         ):
             self.set_body(CAExceptionMessageBody(super().body))
         elif (
-            self.message_type == MessageType.notify1 and self.body_type == BodyType.X00
+            self.message_type == MessageType.notify1 and self.body_type == ListTypes.X00
         ):
             self.set_body(CANotify00MessageBody(super().body))
         elif (
             self.message_type in [MessageType.query, MessageType.notify1]
-            and self.body_type == BodyType.X01
+            and self.body_type == ListTypes.X01
         ):
             self.set_body(CANotify01MessageBody(super().body))
         self.set_attr()
