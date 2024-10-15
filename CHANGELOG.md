@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.0.3](https://github.com/rokam/midea-local/compare/v6.0.2...v6.0.3) (2024-10-15)
+
+
+### Bug Fixes
+
+* cleanup and complete body and subbody types lists ([#325](https://github.com/rokam/midea-local/issues/325)) ([914dcb8](https://github.com/rokam/midea-local/commit/914dcb8098efe50cc1583ad81fd22b49e9e2536b))
+
 ## [6.0.2](https://github.com/rokam/midea-local/compare/v6.0.1...v6.0.2) (2024-10-08)
 
 
