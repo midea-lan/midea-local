@@ -5,6 +5,8 @@ import warnings
 from enum import IntEnum
 from typing import Any, Generic, SupportsIndex, TypeVar, cast
 
+from deprecated import deprecated
+
 from midealocal.const import DeviceType
 
 _LOGGER = logging.getLogger(__name__)
