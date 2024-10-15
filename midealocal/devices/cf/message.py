@@ -4,7 +4,7 @@ from enum import IntEnum
 
 from midealocal.const import DeviceType
 from midealocal.message import (
-    BodyType,
+    ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -28,7 +28,7 @@ class MessageCFBase(MessageRequest):
         self,
         protocol_version: int,
         message_type: MessageType,
-        body_type: BodyType,
+        body_type: ListTypes,
     ) -> None:
         """Initialize CF message base."""
         super().__init__(
@@ -51,7 +51,7 @@ class MessageQuery(MessageCFBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
 
     @property
@@ -67,7 +67,7 @@ class MessageSet(MessageCFBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
         self.power = False
         self.mode = 0  # 1 自动 2 制冷 3 制热
@@ -120,7 +120,7 @@ class MessageCFResponse(MessageResponse):
         super().__init__(bytearray(message))
         if (
             self.message_type in [MessageType.query, MessageType.set]
-            and self.body_type == BodyType.X01
+            and self.body_type == ListTypes.X01
         ):
             self.set_body(CFMessageBody(super().body, data_offset=1))
         elif self.message_type in [MessageType.notify1, MessageType.notify2]:

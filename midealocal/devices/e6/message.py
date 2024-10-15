@@ -2,7 +2,7 @@
 
 from midealocal.const import DeviceType
 from midealocal.message import (
-    BodyType,
+    ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -23,7 +23,7 @@ class MessageE6Base(MessageRequest):
             device_type=DeviceType.E6,
             protocol_version=protocol_version,
             message_type=message_type,
-            body_type=BodyType.X00,
+            body_type=ListTypes.X00,
         )
 
     @property

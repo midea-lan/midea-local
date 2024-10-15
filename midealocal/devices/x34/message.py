@@ -2,7 +2,7 @@
 
 from midealocal.const import DeviceType
 from midealocal.message import (
-    BodyType,
+    ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -20,7 +20,7 @@ class Message34Base(MessageRequest):
         self,
         protocol_version: int,
         message_type: MessageType,
-        body_type: BodyType,
+        body_type: ListTypes,
     ) -> None:
         """Initialize X34 message base."""
         super().__init__(
@@ -43,7 +43,7 @@ class MessageQuery(Message34Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=BodyType.X00,
+            body_type=ListTypes.X00,
         )
 
     @property
@@ -59,7 +59,7 @@ class MessagePower(Message34Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X08,
+            body_type=ListTypes.X08,
         )
         self.power = False
 
@@ -77,7 +77,7 @@ class MessageLock(Message34Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X83,
+            body_type=ListTypes.X83,
         )
         self.lock = False
 
@@ -95,7 +95,7 @@ class MessageStorage(Message34Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X81,
+            body_type=ListTypes.X81,
         )
         self.storage = False
 
@@ -155,7 +155,8 @@ class Message34Response(MessageResponse):
         """Initialize X34 message response."""
         super().__init__(bytearray(message))
         if (
-            self.message_type == MessageType.set and 0 <= self.body_type <= BodyType.X07
+            self.message_type == MessageType.set
+            and 0 <= self.body_type <= ListTypes.X07
         ) or (
             self.message_type in [MessageType.query, MessageType.notify1]
             and self.body_type == 0

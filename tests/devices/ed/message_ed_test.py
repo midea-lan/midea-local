@@ -15,7 +15,7 @@ from midealocal.devices.ed.message import (
     MessageNewSet,
     MessageQuery,
 )
-from midealocal.message import BodyType, MessageType
+from midealocal.message import ListTypes, MessageType
 
 
 class TestMessageEDBase:
@@ -26,7 +26,7 @@ class TestMessageEDBase:
         msg = MessageEDBase(
             protocol_version=ProtocolVersion.V1,
             message_type=MessageType.query,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
         with pytest.raises(NotImplementedError):
             _ = msg.body
@@ -39,7 +39,7 @@ class TestMessageQuery:
         """Test query body."""
         query = MessageQuery(
             protocol_version=ProtocolVersion.V1,
-            body_type=BodyType.X02,
+            body_type=ListTypes.X02,
         )
         expected_body = bytearray([0x02, 0x01])
         assert query.body == expected_body

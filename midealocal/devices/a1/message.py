@@ -5,7 +5,7 @@ from enum import IntEnum
 from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.crc8 import calculate
 from midealocal.message import (
-    BodyType,
+    ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -33,7 +33,7 @@ class MessageA1Base(MessageRequest):
         self,
         protocol_version: int,
         message_type: MessageType,
-        body_type: BodyType,
+        body_type: ListTypes,
     ) -> None:
         """Initialize message A1 base."""
         super().__init__(
@@ -67,7 +67,7 @@ class MessageQuery(MessageA1Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=BodyType.X41,
+            body_type=ListTypes.X41,
         )
 
     @property
@@ -105,7 +105,7 @@ class MessageNewProtocolQuery(MessageA1Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=BodyType.B1,
+            body_type=ListTypes.B1,
         )
 
     @property
@@ -125,7 +125,7 @@ class MessageSet(MessageA1Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X48,
+            body_type=ListTypes.X48,
         )
         self.power = False
         self.prompt_tone = False
@@ -190,7 +190,7 @@ class MessageNewProtocolSet(MessageA1Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.B0,
+            body_type=ListTypes.B0,
         )
         self.light: bool | None = None
 
@@ -253,10 +253,12 @@ class MessageA1Response(MessageResponse):
             MessageType.set,
             MessageType.notify1,
         ]:
-            if self.body_type in [BodyType.B0, BodyType.B1, BodyType.B5]:
+            if self.body_type in [ListTypes.B0, ListTypes.B1, ListTypes.B5]:
                 self.set_body(A1NewProtocolMessageBody(super().body, self.body_type))
             else:
                 self.set_body(A1GeneralMessageBody(super().body))
-        elif self.message_type == MessageType.notify2 and self.body_type == BodyType.A0:
+        elif (
+            self.message_type == MessageType.notify2 and self.body_type == ListTypes.A0
+        ):
             self.set_body(A1GeneralMessageBody(super().body))
         self.set_attr()

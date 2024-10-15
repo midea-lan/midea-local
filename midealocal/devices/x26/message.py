@@ -5,7 +5,7 @@ from typing import Any
 
 from midealocal.const import MAX_BYTE_VALUE, DeviceType
 from midealocal.message import (
-    BodyType,
+    ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -34,7 +34,7 @@ class Message26Base(MessageRequest):
         self,
         protocol_version: int,
         message_type: MessageType,
-        body_type: BodyType,
+        body_type: ListTypes,
     ) -> None:
         """Initialize X26 message base."""
         super().__init__(
@@ -57,7 +57,7 @@ class MessageQuery(Message26Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
 
     @property
@@ -73,7 +73,7 @@ class MessageSet(Message26Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X01,
+            body_type=ListTypes.X01,
         )
         self.fields: dict[str, int] = {}
         self.main_light = False
