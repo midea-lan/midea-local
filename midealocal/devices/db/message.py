@@ -130,14 +130,12 @@ class DBGeneralMessageBody(MessageBody):
         self.dehydration_time = body[10]
         self.detergent = body[11]
         self.softener = body[12]
+        self.progress = body[16]
+        self.stains = body[26]
         self.wash_time_value = body[27]
         self.dehydration_time_value = body[28]
-        self.progress = 0
+        self.dirty_degree = body[30]
         self.time_remaining: float | None = None
-        for i in range(7):
-            if (body[16] & (1 << i)) > 0:
-                self.progress = i + 1
-                break
         if self.power:
             self.time_remaining = body[17] + (body[18] << 8)
 

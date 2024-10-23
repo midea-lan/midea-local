@@ -33,6 +33,8 @@ class DeviceAttributes(StrEnum):
     washing_data = "washing_data"
     progress = "progress"
     time_remaining = "time_remaining"
+    stains = "stains"
+    dirty_degree = "dirty_degree"
 
 
 class MideaDBDevice(MideaDevice):
@@ -46,6 +48,13 @@ class MideaDBDevice(MideaDevice):
         4: "end",
         5: "fault",
         6: "delay",
+    }
+
+    _mode: ClassVar[dict[int, str]] = {
+        0: "normal",
+        1: "factory_test",
+        2: "service",
+        3: "normal_continus",
     }
 
     _dehydration_speed: ClassVar[dict[int, str]] = {
@@ -67,6 +76,7 @@ class MideaDBDevice(MideaDevice):
         0x03: "High",
         0x04: "4",
         0x05: "Auto",
+        0xFF: "default",
     }
 
     _program: ClassVar[dict[int, str]] = {
@@ -205,10 +215,12 @@ class MideaDBDevice(MideaDevice):
                 DeviceAttributes.detergent: None,
                 DeviceAttributes.softener: None,
                 DeviceAttributes.washing_data: bytearray([]),
-                DeviceAttributes.progress: "Unknown",
+                DeviceAttributes.progress: None,
+                DeviceAttributes.stains: None,
                 DeviceAttributes.time_remaining: None,
                 DeviceAttributes.wash_time_value: None,
                 DeviceAttributes.dehydration_time_value: None,
+                DeviceAttributes.dirty_degree: None,
             },
         )
 
@@ -221,63 +233,41 @@ class MideaDBDevice(MideaDevice):
         message = MessageDBResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
-        progress = [
-            "Idle",
-            "Spin",
-            "Rinse",
-            "Wash",
-            "Pre-wash",
-            "Dry",
-            "Weight",
-            "Hi-speed Spin",
-            "Unknown",
-        ]
+
         for status in self._attributes:
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
-                # parse progress
-                if status == DeviceAttributes.progress:
-                    self._attributes[status] = progress[value]
+                # parse mode
+                if status == DeviceAttributes.mode:
+                    self._attributes[DeviceAttributes.mode] = MideaDBDevice._mode.get(
+                        value,
+                        value,
+                    )
                 # parse status
                 elif status == DeviceAttributes.status:
-                    if value in MideaDBDevice._status:
-                        self._attributes[DeviceAttributes.status] = (
-                            MideaDBDevice._status.get(value)
-                        )
-                    else:
-                        self._attributes[DeviceAttributes.status] = None
+                    self._attributes[DeviceAttributes.status] = (
+                        MideaDBDevice._status.get(value, value)
+                    )
                 # parse dehydration_speed
                 elif status == DeviceAttributes.dehydration_speed:
-                    if value in MideaDBDevice._dehydration_speed:
-                        self._attributes[DeviceAttributes.dehydration_speed] = (
-                            MideaDBDevice._dehydration_speed.get(value)
-                        )
-                    else:
-                        self._attributes[DeviceAttributes.dehydration_speed] = None
+                    self._attributes[DeviceAttributes.dehydration_speed] = (
+                        MideaDBDevice._dehydration_speed.get(value, value)
+                    )
                 # parse water_level
                 elif status == DeviceAttributes.water_level:
-                    if value in MideaDBDevice._water_level:
-                        self._attributes[DeviceAttributes.water_level] = (
-                            MideaDBDevice._water_level.get(value)
-                        )
-                    else:
-                        self._attributes[DeviceAttributes.water_level] = None
+                    self._attributes[DeviceAttributes.water_level] = (
+                        MideaDBDevice._water_level.get(value, value)
+                    )
                 # parse program
                 elif status == DeviceAttributes.program:
-                    if value in MideaDBDevice._program:
-                        self._attributes[DeviceAttributes.program] = (
-                            MideaDBDevice._program.get(value)
-                        )
-                    else:
-                        self._attributes[DeviceAttributes.program] = None
+                    self._attributes[DeviceAttributes.program] = (
+                        MideaDBDevice._program.get(value, value)
+                    )
                 # parse temperature
                 elif status == DeviceAttributes.temperature:
-                    if value in MideaDBDevice._temperature:
-                        self._attributes[DeviceAttributes.temperature] = (
-                            MideaDBDevice._temperature.get(value)
-                        )
-                    else:
-                        self._attributes[DeviceAttributes.temperature] = None
+                    self._attributes[DeviceAttributes.temperature] = (
+                        MideaDBDevice._temperature.get(value, value)
+                    )
                 else:
                     self._attributes[status] = value
                 new_status[str(status)] = self._attributes[status]
