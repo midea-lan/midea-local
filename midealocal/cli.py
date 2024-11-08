@@ -17,6 +17,7 @@ from colorlog import ColoredFormatter
 from midealocal.cloud import (
     SUPPORTED_CLOUDS,
     MideaCloud,
+    get_default_cloud,
     get_midea_cloud,
     get_preset_account_cloud,
 )
@@ -55,9 +56,10 @@ class MideaCLI:
             or not self.namespace.password
         ):
             default_cloud = get_preset_account_cloud()
+            default_cloud_name = get_default_cloud()
             _LOGGER.info("Using preset account.")
             return get_midea_cloud(
-                cloud_name=default_cloud["cloud_name"],
+                cloud_name=default_cloud_name,
                 session=self.session,
                 account=default_cloud["username"],
                 password=default_cloud["password"],
@@ -194,6 +196,10 @@ class MideaCLI:
         _LOGGER.debug("Download lua file for %s [%s]", device_sn, hex(device_type))
         lua = await cloud.download_lua(str(Path()), device_type, device_sn, model)
         _LOGGER.info("Downloaded lua file: %s", lua)
+
+        _LOGGER.debug("Download plugin file for %s [%s]", device_sn, hex(device_type))
+        plugin = await cloud.download_plugin(str(Path()), device_type, device_sn)
+        _LOGGER.info("Downloaded plugin file: %s", plugin)
 
     async def set_attribute(self) -> None:
         """Set attribute for device."""
