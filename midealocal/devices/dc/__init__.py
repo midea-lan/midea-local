@@ -169,23 +169,21 @@ class MideaDCDevice(MideaDevice):
                 value = getattr(message, str(status))
                 # parse progress
                 if status == DeviceAttributes.progress:
-                    self._attributes[status] = progress[value]
-                # parse status
-                elif status == DeviceAttributes.status:
-                    if value in MideaDCDevice._status:
-                        self._attributes[DeviceAttributes.status] = (
-                            MideaDCDevice._status.get(value)
-                        )
+                    # prevent value out of index range
+                    if value in progress:
+                        self._attributes[DeviceAttributes.status] = progress[value]
                     else:
                         self._attributes[DeviceAttributes.status] = None
+                # parse status
+                elif status == DeviceAttributes.status:
+                    self._attributes[DeviceAttributes.status] = (
+                        MideaDCDevice._status.get(value, value)
+                    )
                 # parse program
                 elif status == DeviceAttributes.program:
-                    if value in MideaDCDevice._program:
-                        self._attributes[DeviceAttributes.program] = (
-                            MideaDCDevice._program.get(value)
-                        )
-                    else:
-                        self._attributes[DeviceAttributes.program] = None
+                    self._attributes[DeviceAttributes.program] = (
+                        MideaDCDevice._program.get(value, value)
+                    )
                 else:
                     self._attributes[status] = getattr(message, str(status))
                 new_status[str(status)] = self._attributes[status]
