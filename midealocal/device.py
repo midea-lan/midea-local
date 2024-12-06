@@ -135,6 +135,12 @@ class MideaDevice(threading.Thread):
         """Device subtype."""
         return self._subtype
 
+    def __str__(self) -> str:
+        """Parse to string."""
+        # get attributes and value
+        attributes = {key: value for key, value in self.__dict__.items()}
+        return str(attributes)
+
     @staticmethod
     def fetch_v2_message(msg: bytes) -> tuple[list, bytes]:
         """Fetch V2 message."""
@@ -313,10 +319,19 @@ class MideaDevice(threading.Thread):
             cmds = [MessageQueryAppliance(self.device_type), *cmds]
         error_count = 0
         _LOGGER.debug(
-            "[%s] refresh_status with cmds: %s, check_protocol %s",
+            "[%s] refresh_status with cmds: %s, check_protocol %s, \
+             device %s, type %s, model %s, subtype %s, device_protocol: %s, \
+                message_protocol %s, unsupported_protocol: %s",
             self._device_id,
             cmds,
             check_protocol,
+            self._device_name,
+            self._device_type,
+            self._model,
+            self._subtype,
+            self._device_protocol_version,
+            self._message_protocol_version,
+            self._unsupported_protocol,
         )
         for cmd in cmds:
             if cmd.__class__.__name__ not in self._unsupported_protocol:
@@ -391,8 +406,12 @@ class MideaDevice(threading.Thread):
             _LOGGER.debug("[%s] Appliance query Received: %s", self._device_id, message)
             self._message_protocol_version = message.protocol_version
             _LOGGER.debug(
-                "[%s] Device protocol version: %s",
+                "[%s] device model %s, subtype %s, \
+                    device protocol %s, message protocol %s",
                 self._device_id,
+                self._model,
+                self._subtype,
+                self._device_protocol_version,
                 self._message_protocol_version,
             )
             return False
@@ -422,6 +441,18 @@ class MideaDevice(threading.Thread):
                         if self._appliance_query:
                             cont = self.pre_process_message(decrypted)
                         if cont:
+                            _LOGGER.debug(
+                                "[%s] process message %s for device %s, \
+                                    model %s, subtype %s, \
+                                    device protocol %s, message procol %s",
+                                self._device_id,
+                                decrypted.hex(),
+                                self._device_name,
+                                self._model,
+                                self._subtype,
+                                self._device_protocol_version,
+                                self._message_protocol_version,
+                            )
                             status = self.process_message(bytes(decrypted))
                             if len(status) > 0:
                                 self.update_all(status)
@@ -432,9 +463,15 @@ class MideaDevice(threading.Thread):
                                 )
                     except Exception:
                         _LOGGER.exception(
-                            "[%s] Error in process message, msg = %s",
+                            "[%s] Error in process message %s, \
+                                model %s, subtype %s, \
+                                device protocol %s, message procol %s",
                             self._device_id,
                             decrypted.hex(),
+                            self._model,
+                            self._subtype,
+                            self._device_protocol_version,
+                            self._message_protocol_version,
                         )
                 else:
                     _LOGGER.warning(
