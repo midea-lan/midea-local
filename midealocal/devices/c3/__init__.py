@@ -12,6 +12,7 @@ from .message import (
     MessageC3Response,
     MessageQuery,
     MessageQueryBasic,
+    MessageQueryDisinfect,
     MessageQuerySilence,
     MessageSet,
     MessageSetECO,
@@ -117,6 +118,7 @@ class MideaC3Device(MideaDevice):
         """Midea C3 device build query."""
         return [
             MessageQueryBasic(self._message_protocol_version),
+            MessageQueryDisinfect(self._message_protocol_version),
             MessageQuerySilence(self._message_protocol_version),
         ]
 
@@ -221,7 +223,6 @@ class MideaC3Device(MideaDevice):
         message.room_target_temp = self._attributes[DeviceAttributes.room_target_temp]
         message.zone1_curve = self._attributes[DeviceAttributes.zone1_curve]
         message.zone2_curve = self._attributes[DeviceAttributes.zone2_curve]
-        message.disinfect = self._attributes[DeviceAttributes.disinfect]
         message.tbh = self._attributes[DeviceAttributes.tbh]
         message.fast_dhw = self._attributes[DeviceAttributes.fast_dhw]
         return message
@@ -235,10 +236,9 @@ class MideaC3Device(MideaDevice):
             DeviceAttributes.dhw_power,
             DeviceAttributes.zone1_curve,
             DeviceAttributes.zone2_curve,
-            DeviceAttributes.disinfect,
+            DeviceAttributes.tbh,
             DeviceAttributes.fast_dhw,
             DeviceAttributes.dhw_target_temp,
-            DeviceAttributes.tbh,
         ]:
             message = self.make_message_set()
             setattr(message, str(attr), value)
