@@ -14,7 +14,9 @@ from .message import (
     MessageQueryBasic,
     MessageQueryDisinfect,
     MessageQuerySilence,
+    MessageQueryUnitPara,
     MessageSet,
+    MessageSetDisinfect,
     MessageSetECO,
     MessageSetSilent,
 )
@@ -120,6 +122,7 @@ class MideaC3Device(MideaDevice):
             MessageQueryBasic(self._message_protocol_version),
             MessageQueryDisinfect(self._message_protocol_version),
             MessageQuerySilence(self._message_protocol_version),
+            MessageQueryUnitPara(self._message_protocol_version),
         ]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
@@ -229,7 +232,9 @@ class MideaC3Device(MideaDevice):
 
     def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea C3 device set attribute."""
-        message: MessageSet | MessageSetECO | MessageSetSilent | None = None
+        message: (
+            MessageSet | MessageSetECO | MessageSetSilent | MessageSetDisinfect | None
+        ) = None
         if attr in [
             DeviceAttributes.zone1_power,
             DeviceAttributes.zone2_power,
@@ -244,6 +249,9 @@ class MideaC3Device(MideaDevice):
             setattr(message, str(attr), value)
         elif attr == DeviceAttributes.eco_mode:
             message = MessageSetECO(self._message_protocol_version)
+            setattr(message, str(attr), value)
+        elif attr == DeviceAttributes.disinfect:
+            message = MessageSetDisinfect(self._message_protocol_version)
             setattr(message, str(attr), value)
         elif attr in [
             DeviceAttributes.silent_mode.value,

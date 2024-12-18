@@ -76,6 +76,14 @@ class MessageQueryDisinfect(MessageQuery):
         super().__init__(protocol_version, ListTypes.X09)
 
 
+class MessageQueryUnitPara(MessageQuery):
+    """C3 Message query UNITPARA."""
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize C3 message query silence."""
+        super().__init__(protocol_version, ListTypes.X10)
+
+
 class MessageSet(MessageC3Base):
     """C3 message set."""
 
@@ -175,6 +183,25 @@ class MessageSetECO(MessageC3Base):
         return bytearray([eco_mode, 0x00, 0x00, 0x00, 0x00, 0x00])
 
 
+class MessageSetDisinfect(MessageC3Base):
+    """C3 message set Disinfect."""
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize C3 message set eco."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.set,
+            body_type=ListTypes.X09,
+        )
+        self.disinfect = False
+
+    @property
+    def _body(self) -> bytearray:
+        disinfect = 0x01 if self.disinfect else 0
+
+        return bytearray([disinfect, 0x00, 0x00, 0x00])
+
+
 class C3MessageBody(MessageBody):
     """C3 message body."""
 
@@ -263,6 +290,11 @@ class C3EnergyMessageBody(MessageBody):
         self.outdoor_temperature = (
             (base_value - 256) if base_value > TEMP_NEG_VALUE else base_value
         )
+        self.t4 = body[data_offset + 9]
+        self.zone1_temp_set = body[data_offset + 10]
+        self.zone2_temp_set = body[data_offset + 11]
+        self.t5s = body[data_offset + 12]
+        self.tas = body[data_offset + 13]
 
 
 class C3SilenceMessageBody(MessageBody):
@@ -305,6 +337,86 @@ class C3DisinfectMessageBody(MessageBody):
         self.disinfect_start_minutes = body[data_offset + 3]
 
 
+class C3UnitParaMessageBody(MessageBody):
+    """C3 UnitPara message body."""
+
+    def __init__(self, body: bytearray, data_offset: int = 0) -> None:
+        """Initialize C3 UnitPara message body."""
+        super().__init__(body)
+        self.comp_run_freq = body[data_offset]
+        self.unit_mode_run = body[data_offset + 1]
+        self.fan_speed = body[data_offset + 3] * 10
+        self.fg_capacity_need = body[data_offset + 5]
+        self.temp_t3 = body[data_offset + 6]
+        self.temp_t4 = body[data_offset + 7]
+        self.temp_tp = body[data_offset + 8]
+        self.temp_tw_in = body[data_offset + 9]
+        self.temp_tw_out = body[data_offset + 10]
+        self.temp_tsolar = body[data_offset + 11]
+        self.hydbox_subtype = body[data_offset + 12]
+        self.fg_usb_info_connect = body[data_offset + 13]
+        self.odu_voltage = body[data_offset + 17] * 256 + body[data_offset + 18]
+        self.exv_current = body[data_offset + 19] * 256 + body[data_offset + 20]
+        self.odu_model = body[data_offset + 21]
+        self.temp_t1 = body[data_offset + 33]
+        self.temp_tw2 = body[data_offset + 34]
+        self.temp_t2 = body[data_offset + 35]
+        self.temp_t2b = body[data_offset + 36]
+        self.temp_t5 = body[data_offset + 37]
+        self.temp_ta = body[data_offset + 38]
+        self.temp_tb_t1 = body[data_offset + 39]
+        self.temp_tb_t2 = body[data_offset + 40]
+        self.hydrobox_capacity = body[data_offset + 41]
+        self.pressure_high = body[data_offset + 42] * 256 + body[data_offset + 43]
+        self.pressure_low = body[data_offset + 44] * 256 + body[data_offset + 45]
+        self.temp_th = body[data_offset + 46]
+        self.machine_type = body[data_offset + 47]
+        self.odu_target_fre = body[data_offset + 48]
+        self.dc_current = body[data_offset + 49]
+        self.temp_tf = body[data_offset + 51]
+        self.idu_t1s1 = body[data_offset + 52]
+        self.idu_t1s2 = body[data_offset + 53]
+        self.water_flower = body[data_offset + 54] * 256 + body[data_offset + 55]
+        self.odu_plan_vol_lmt = body[data_offset + 56]
+        self.current_unit_capacity = body[data_offset + 57]
+        self.sphera_ahs_voltage = body[data_offset + 59]
+        self.temp_t4a_ver = body[data_offset + 60]
+        self.water_pressure = body[data_offset + 61] * 256 + body[data_offset + 62]
+        self.room_rel_hum = body[data_offset + 63]
+        self.pwm_pump_out = body[data_offset + 63]
+        self.total_electricity0 = (
+            (body[data_offset + 66] << 32)
+            + (body[data_offset + 67] << 16)
+            + (body[data_offset + 68] << 8)
+            + (body[data_offset + 69])
+        )
+        self.total_thermal0 = (
+            (body[data_offset + 70] << 32)
+            + (body[data_offset + 71] << 16)
+            + (body[data_offset + 72] << 8)
+            + (body[data_offset + 73])
+        )
+        self.heat_elec_total_consum0 = (
+            (body[data_offset + 74] << 32)
+            + (body[data_offset + 75] << 16)
+            + (body[data_offset + 76] << 8)
+            + (body[data_offset + 77])
+        )
+        self.heat_elec_total_capacity0 = (
+            (body[data_offset + 78] << 32)
+            + (body[data_offset + 79] << 16)
+            + (body[data_offset + 80] << 8)
+            + (body[data_offset + 81])
+        )
+        self.instant_power0 = (body[data_offset + 82] << 8) + (body[data_offset + 83])
+        self.instant_renew_power0 = (body[data_offset + 84] << 8) + (
+            body[data_offset + 85]
+        )
+        self.total_renew_power0 = (body[data_offset + 84] << 8) + (
+            body[data_offset + 85]
+        )
+
+
 class MessageC3Response(MessageResponse):
     """C3 message response."""
 
@@ -325,4 +437,6 @@ class MessageC3Response(MessageResponse):
             self.set_body(C3SilenceMessageBody(super().body, data_offset=1))
         elif self.message_type == MessageType.query and self.body_type == ListTypes.X09:
             self.set_body(C3DisinfectMessageBody(super().body, data_offset=1))
+        elif self.message_type == MessageType.query and self.body_type == ListTypes.X10:
+            self.set_body(C3UnitParaMessageBody(super().body, data_offset=1))
         self.set_attr()
