@@ -68,6 +68,22 @@ class MessageQuerySilence(MessageQuery):
         super().__init__(protocol_version, ListTypes.X05)
 
 
+class MessageQueryECO(MessageQuery):
+    """C3 Message query ECO."""
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize C3 message query silence."""
+        super().__init__(protocol_version, ListTypes.X07)
+
+
+class MessageQueryInstall(MessageQuery):
+    """C3 Message query INSTALL."""
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize C3 message query silence."""
+        super().__init__(protocol_version, ListTypes.X08)
+
+
 class MessageQueryDisinfect(MessageQuery):
     """C3 Message query Disinfect."""
 
@@ -82,6 +98,14 @@ class MessageQueryUnitPara(MessageQuery):
     def __init__(self, protocol_version: int) -> None:
         """Initialize C3 message query silence."""
         super().__init__(protocol_version, ListTypes.X10)
+
+
+class MessageQueryHMIPara(MessageQuery):
+    """C3 Message query HMIPARA."""
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize C3 message query silence."""
+        super().__init__(protocol_version, ListTypes.X0A)
 
 
 class MessageSet(MessageC3Base):
@@ -202,8 +226,8 @@ class MessageSetDisinfect(MessageC3Base):
         return bytearray([disinfect, 0x00, 0x00, 0x00])
 
 
-class C3MessageBody(MessageBody):
-    """C3 message body."""
+class C3BasicBody(MessageBody):
+    """C3 Basic message body."""
 
     def __init__(self, body: bytearray, data_offset: int = 0) -> None:
         """Initialize C3 message body."""
@@ -255,7 +279,7 @@ class C3MessageBody(MessageBody):
         self.tbh_control = body[data_offset + 23] & 0x80 > 0
 
 
-class C3EnergyMessageBody(MessageBody):
+class C3EnergyBody(MessageBody):
     """C3 Energy MSG_TYPE_UP_POWER4 message body."""
 
     def __init__(self, body: bytearray, data_offset: int = 0) -> None:
@@ -297,7 +321,7 @@ class C3EnergyMessageBody(MessageBody):
         self.tas = body[data_offset + 13]
 
 
-class C3SilenceMessageBody(MessageBody):
+class C3SilenceBody(MessageBody):
     """C3 Silence message body."""
 
     def __init__(self, body: bytearray, data_offset: int = 0) -> None:
@@ -324,7 +348,7 @@ class C3SilenceMessageBody(MessageBody):
         # silence_timer2_endmin: Byte 9
 
 
-class C3DisinfectMessageBody(MessageBody):
+class C3DisinfectBody(MessageBody):
     """C3 Disinfect message body."""
 
     def __init__(self, body: bytearray, data_offset: int = 0) -> None:
@@ -337,7 +361,7 @@ class C3DisinfectMessageBody(MessageBody):
         self.disinfect_start_minutes = body[data_offset + 3]
 
 
-class C3UnitParaMessageBody(MessageBody):
+class C3UnitParaBody(MessageBody):
     """C3 UnitPara message body."""
 
     def __init__(self, body: bytearray, data_offset: int = 0) -> None:
@@ -432,15 +456,15 @@ class MessageC3Response(MessageResponse):
             in [MessageType.set, MessageType.notify1, MessageType.query]
             and self.body_type == ListTypes.X01
         ) or self.message_type == MessageType.notify2:
-            self.set_body(C3MessageBody(super().body, data_offset=1))
+            self.set_body(C3BasicBody(super().body, data_offset=1))
         elif (
             self.message_type == MessageType.notify1 and self.body_type == ListTypes.X04
         ):
-            self.set_body(C3EnergyMessageBody(super().body, data_offset=1))
+            self.set_body(C3EnergyBody(super().body, data_offset=1))
         elif self.message_type == MessageType.query and self.body_type == ListTypes.X05:
-            self.set_body(C3SilenceMessageBody(super().body, data_offset=1))
-        elif self.message_type == MessageType.query and self.body_type == ListTypes.X09:
-            self.set_body(C3DisinfectMessageBody(super().body, data_offset=1))
-        elif self.message_type == MessageType.query and self.body_type == ListTypes.X10:
-            self.set_body(C3UnitParaMessageBody(super().body, data_offset=1))
+            self.set_body(C3SilenceBody(super().body, data_offset=1))
+        elif self.body_type == ListTypes.X09:
+            self.set_body(C3DisinfectBody(super().body, data_offset=1))
+        elif self.body_type == ListTypes.X10:
+            self.set_body(C3UnitParaBody(super().body, data_offset=1))
         self.set_attr()
