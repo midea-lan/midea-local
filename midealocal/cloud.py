@@ -112,7 +112,7 @@ def get_preset_account_cloud() -> dict[str, str]:
     }
 
 
-block = "\u2588"
+block = "*"
 
 
 def _redact_data(data: str) -> str:
@@ -132,8 +132,10 @@ def _redact_data(data: str) -> str:
         if len(item) == 0:
             break
         m = len(item)
-        elm = r"\b" + item + r"\b"
-        data = re.sub(elm, block * m, data)
+        visible = item[:5]  # Keep up to the first 5 characters
+        redacted = visible + block * (m - len(visible))  # Use block for masking
+        elm = re.escape(item)  # Escape regex metacharacters
+        data = re.sub(elm, redacted, data)
     return data
 
 
