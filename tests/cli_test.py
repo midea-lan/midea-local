@@ -35,6 +35,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             device_sn="",
             user=False,
             debug=True,
+            get_sn=False,
             attribute="power",
             value="0",
             attr_type="bool",
@@ -108,8 +109,8 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "type": "AC",
             "ip_address": "192.168.0.2",
             "port": 6444,
-            "model": "AC123",
-            "sn": "AC123",
+            "model": "AC123000",
+            "sn": "0000AC12300000000000000000000000",
         }
         mock_cloud_instance = AsyncMock()
         mock_device_instance = MagicMock()
