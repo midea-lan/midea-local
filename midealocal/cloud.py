@@ -112,7 +112,7 @@ def get_preset_account_cloud() -> dict[str, str]:
     }
 
 
-block = "\u2588"
+block = "*"
 
 
 def _redact_data(data: str) -> str:
@@ -132,8 +132,10 @@ def _redact_data(data: str) -> str:
         if len(item) == 0:
             break
         m = len(item)
-        elm = r"\b" + item + r"\b"
-        data = re.sub(elm, block * m, data)
+        visible = item[:5]  # Keep up to the first 5 characters
+        redacted = visible + block * (m - len(visible))  # Use block for masking
+        elm = re.escape(item)  # Escape regex metacharacters
+        data = re.sub(elm, redacted, data)
     return data
 
 
@@ -209,7 +211,7 @@ class MideaCloud:
                     )
                     raw = await r.read()
                     _LOGGER.debug(
-                        "Midea cloud API url: %s, data: %s, response: %s",
+                        "Midea cloud API url: %s, \n data: %s, \n response: %s",
                         url,
                         _redact_data(str(data)),
                         _redact_data(str(raw)),
@@ -306,6 +308,15 @@ class MideaCloud:
         """Download lua integration."""
         raise NotImplementedError
 
+    async def download_plugin(
+        self,
+        path: str,
+        device_type: int,
+        sn: str,
+    ) -> str | None:
+        """Download lua integration."""
+        raise NotImplementedError
+
 
 class MeijuCloud(MideaCloud):
     """Meiju Cloud."""
@@ -332,6 +343,20 @@ class MeijuCloud(MideaCloud):
             password=password,
             api_url=cloud_data["api_url"],
         )
+
+    def _make_general_data(self) -> dict[str, Any]:
+        return {
+            "src": self._app_id,
+            "format": "2",
+            "stamp": datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S"),
+            "platformId": "1",
+            "deviceId": self._device_id,
+            "reqId": token_hex(16),
+            "uid": self._uid,
+            "clientType": "1",
+            "appId": self._app_id,
+            "language": "en_US",
+        }
 
     async def login(self) -> bool:
         """Authenticate to Meiju Cloud."""
@@ -539,6 +564,46 @@ class MeijuCloud(MideaCloud):
                         await fp.write(stream)
         return str(fnm) if fnm else None
 
+    async def download_plugin(
+        self,
+        path: str,
+        device_type: int,
+        sn: str,
+    ) -> str | None:
+        """Download lua integration."""
+        data = self._make_general_data()
+        data.update(
+            {
+                "clientVersion": "201",
+                "match": "1",
+                "applianceList": [
+                    {
+                        "appModel": sn[9:17],
+                        "appType": hex(device_type),
+                        "modelNumber": "0",
+                    },
+                ],
+            },
+        )
+        fnm = None
+        if response := await self._api_request(
+            endpoint="/v1/plugin/update/getplugin",
+            data=data,
+        ):
+            # get file name from url
+            _LOGGER.debug("response: %s, type: %s", response, type(response))
+            file_name = response["list"][0]["url"].split("/")[-1]
+            # download plugin from url
+            res = await self._session.get(response["list"][0]["url"])
+            if res.status == HTTPStatus.OK:
+                # get the file content in binary mode
+                plugin = await res.read()
+                if plugin:
+                    fnm = f"{path}/{file_name}"
+                    async with aiofiles.open(fnm, "wb") as fp:
+                        await fp.write(plugin)
+        return str(fnm) if fnm else None
+
 
 class SmartHomeCloud(MideaCloud):
     """MSmart Home Cloud."""
@@ -582,6 +647,7 @@ class SmartHomeCloud(MideaCloud):
             "uid": self._uid,
             "clientType": "1",
             "appId": self._app_id,
+            "language": "en_US",
         }
 
     async def _api_request(
@@ -699,20 +765,18 @@ class SmartHomeCloud(MideaCloud):
         manufacturer_code: str = "0000",
     ) -> str | None:
         """Download lua integration."""
-        data = {
-            "clientType": "1",
-            "appId": self._app_id,
-            "format": "2",
-            "deviceId": self._device_id,
-            "iotAppId": self._app_id,
-            "applianceMFCode": manufacturer_code,
-            "applianceType": hex(device_type),
-            "applianceSn": self._security.aes_encrypt_with_fixed_key(
-                sn.encode("ascii"),
-            ).hex(),
-            "version": "0",
-            "encryptedType ": "2",
-        }
+        data = self._make_general_data()
+        data.update(
+            {
+                "applianceMFCode": manufacturer_code,
+                "applianceType": hex(device_type),
+                "applianceSn": self._security.aes_encrypt_with_fixed_key(
+                    sn.encode("ascii"),
+                ).hex(),
+                "version": "0",
+                "encryptedType ": "2",
+            },
+        )
         if model_number is not None:
             data["modelNumber"] = model_number
         fnm = None
@@ -732,6 +796,45 @@ class SmartHomeCloud(MideaCloud):
                     fnm = f"{path}/{response['fileName']}"
                     async with aiofiles.open(fnm, "w") as fp:
                         await fp.write(stream)
+        return str(fnm) if fnm else None
+
+    async def download_plugin(
+        self,
+        path: str,
+        device_type: int,
+        sn: str,
+    ) -> str | None:
+        """Download lua integration."""
+        data = self._make_general_data()
+        data.update(
+            {
+                "clientVersion": "0",
+                "applianceList": [
+                    {
+                        "appModel": sn[9:17],
+                        "appType": hex(device_type),
+                        "modelNumber": "0",
+                    },
+                ],
+            },
+        )
+        fnm = None
+        if response := await self._api_request(
+            endpoint="/v1/plugin/update/overseas/get",
+            data=data,
+        ):
+            # get file name from url
+            _LOGGER.debug("response: %s, type: %s", response, type(response))
+            file_name = response["result"][0]["url"].split("/")[-1]
+            # download plugin from url
+            res = await self._session.get(response["result"][0]["url"])
+            if res.status == HTTPStatus.OK:
+                # get the file content in binary mode
+                plugin = await res.read()
+                if plugin:
+                    fnm = f"{path}/{file_name}"
+                    async with aiofiles.open(fnm, "wb") as fp:
+                        await fp.write(plugin)
         return str(fnm) if fnm else None
 
 
