@@ -147,6 +147,14 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 99: {"token": "token", "key": "key"},
             }
 
+            # test V3 device get_sn
+            self.namespace.get_sn = True
+            await self.cli.discover()  # test V3 device get_sn
+            mock_discover.assert_called()
+            # set get_sn to default False after test done
+            self.namespace.get_sn = False
+
+            # test V3 device
             await self.cli.discover()  # V3 device
             authenticate_mock.assert_called()
             refresh_status_mock.assert_called_with(True)
@@ -227,17 +235,17 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "type": 0xAC,
             "ip_address": "192.168.0.2",
             "port": 6444,
-            "model": "AC123000",
-            "sn": "0000AC12300000000000000000000000",
+            "model": "ABCD1234",
+            "sn": "0000AC000ABCD1234000000000000000",
         }
         mock_cloud_instance = AsyncMock()
         with (
             patch(
                 "midealocal.cli.discover",
                 side_effect=[
-                    {},
-                    {1: mock_device},
-                    {1: mock_device},
+                    {},  # test no device
+                    {1: mock_device},  # test cloud login failed
+                    {1: mock_device},  # test download lua with host ip
                 ],
             ) as mock_discover,
             patch.object(
@@ -247,20 +255,30 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             ),
         ):
             await self.cli.download()  # No device found
+            # default is discover with host ip, test result is None
             mock_discover.assert_called_once_with(ip_address=self.namespace.host)
             mock_discover.reset_mock()
 
-            mock_cloud_instance.login.side_effect = [False, True, True]
+            mock_cloud_instance.login.side_effect = [
+                False,  # test cloud login failed
+                True,  # test download lua with host ip
+                True,  # test download lua with SN
+                True,  # test download lua with SN
+            ]
             await self.cli.download()  # Cloud login failed
+            # default is discover with host ip
             mock_discover.assert_called_once_with(ip_address=self.namespace.host)
             mock_discover.reset_mock()
+            # test cloud login failed
             mock_cloud_instance.login.assert_called_once()
             mock_cloud_instance.login.reset_mock()
 
-            # download lua with type/model/sn
+            # download lua with host (default is host)
             await self.cli.download()
+            # default is discover with host ip
             mock_discover.assert_called_once_with(ip_address=self.namespace.host)
             mock_discover.reset_mock()
+            # cloud login pass
             mock_cloud_instance.login.assert_called_once()
             mock_cloud_instance.login.reset_mock()
             mock_cloud_instance.download_lua.assert_called_once_with(
@@ -269,11 +287,34 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 mock_device["sn"],
                 mock_device["model"],
             )
+            mock_cloud_instance.download_lua.reset_mock()
             mock_cloud_instance.download_plugin.assert_called_once_with(
                 str(Path()),
                 mock_device["type"],
                 mock_device["sn"],
             )
+            mock_cloud_instance.download_plugin.reset_mock()
+
+            # download lua with SN (set host to None and match elif)
+            self.namespace.host = None
+            self.namespace.device_sn = mock_device["sn"]
+            await self.cli.download()
+            # skip discover and cloud login pass
+            mock_cloud_instance.login.assert_called_once()
+            mock_cloud_instance.login.reset_mock()
+            mock_cloud_instance.download_lua.assert_called_once_with(
+                str(Path()),
+                mock_device["type"],
+                mock_device["sn"],
+                mock_device["model"],
+            )
+            mock_cloud_instance.download_lua.reset_mock()
+            mock_cloud_instance.download_plugin.assert_called_once_with(
+                str(Path()),
+                mock_device["type"],
+                mock_device["sn"],
+            )
+            mock_cloud_instance.download_plugin.reset_mock()
 
     async def test_set_attribute(self) -> None:
         """Test set attribute."""
