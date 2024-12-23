@@ -227,14 +227,18 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "type": 0xAC,
             "ip_address": "192.168.0.2",
             "port": 6444,
-            "model": "AC123",
-            "sn": "AC123",
+            "model": "AC123000",
+            "sn": "0000AC12300000000000000000000000",
         }
         mock_cloud_instance = AsyncMock()
         with (
             patch(
                 "midealocal.cli.discover",
-                side_effect=[{}, {1: mock_device}, {1: mock_device}],
+                side_effect=[
+                    {},
+                    {1: mock_device},
+                    {1: mock_device},
+                ],
             ) as mock_discover,
             patch.object(
                 self.cli,
@@ -246,21 +250,29 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             mock_discover.assert_called_once_with(ip_address=self.namespace.host)
             mock_discover.reset_mock()
 
-            mock_cloud_instance.login.side_effect = [False, True]
+            mock_cloud_instance.login.side_effect = [False, True, True]
             await self.cli.download()  # Cloud login failed
             mock_discover.assert_called_once_with(ip_address=self.namespace.host)
             mock_discover.reset_mock()
             mock_cloud_instance.login.assert_called_once()
             mock_cloud_instance.login.reset_mock()
 
+            # download lua with type/model/sn
             await self.cli.download()
             mock_discover.assert_called_once_with(ip_address=self.namespace.host)
+            mock_discover.reset_mock()
             mock_cloud_instance.login.assert_called_once()
+            mock_cloud_instance.login.reset_mock()
             mock_cloud_instance.download_lua.assert_called_once_with(
                 str(Path()),
                 mock_device["type"],
                 mock_device["sn"],
                 mock_device["model"],
+            )
+            mock_cloud_instance.download_plugin.assert_called_once_with(
+                str(Path()),
+                mock_device["type"],
+                mock_device["sn"],
             )
 
     async def test_set_attribute(self) -> None:
