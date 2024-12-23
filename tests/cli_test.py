@@ -316,6 +316,34 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             )
             mock_cloud_instance.download_plugin.reset_mock()
 
+            # download lua with SN and device_type
+            self.namespace.host = None
+            self.namespace.device_sn = mock_device["sn"]
+            self.namespace.device_type = bytes.fromhex("AC")
+            await self.cli.download()
+            # skip discover and cloud login pass
+            mock_cloud_instance.login.assert_called_once()
+            mock_cloud_instance.login.reset_mock()
+            mock_cloud_instance.download_lua.assert_called_once_with(
+                str(Path()),
+                mock_device["type"],
+                mock_device["sn"],
+                mock_device["model"],
+            )
+            mock_cloud_instance.download_lua.reset_mock()
+            mock_cloud_instance.download_plugin.assert_called_once_with(
+                str(Path()),
+                mock_device["type"],
+                mock_device["sn"],
+            )
+            mock_cloud_instance.download_plugin.reset_mock()
+
+            # test no host and no device_sn
+            self.namespace.host = None
+            self.namespace.device_sn = None
+            # result is None
+            await self.cli.download()
+
     async def test_set_attribute(self) -> None:
         """Test set attribute."""
         mock_device_instance = MagicMock()

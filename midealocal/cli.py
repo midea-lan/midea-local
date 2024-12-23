@@ -200,9 +200,7 @@ class MideaCLI:
                 device_type = int.from_bytes(self.namespace.device_type or bytearray())
             # no device type input, parse device_type from SN
             elif len(device_sn) == SERIAL_TYPE1_LENGTH:
-                device_type = int.from_bytes(
-                    bytes.fromhex(device_sn[4:6]) or bytearray(),
-                )
+                device_type = int.from_bytes(bytes.fromhex(device_sn[4:6]))
             # parse model from SN
             model = str(device_sn[9:17])
         else:
