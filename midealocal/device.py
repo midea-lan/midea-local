@@ -135,12 +135,6 @@ class MideaDevice(threading.Thread):
         """Device subtype."""
         return self._subtype
 
-    def __str__(self) -> str:
-        """Parse to string."""
-        # get attributes and value
-        attributes = {key: value for key, value in self.__dict__.items()}
-        return str(attributes)
-
     @staticmethod
     def fetch_v2_message(msg: bytes) -> tuple[list, bytes]:
         """Fetch V2 message."""
@@ -320,8 +314,8 @@ class MideaDevice(threading.Thread):
         error_count = 0
         _LOGGER.debug(
             "[%s] refresh_status with cmds: %s, check_protocol %s, \
-             device %s, type %s, model %s, subtype %s, device_protocol: %s, \
-                message_protocol %s, unsupported_protocol: %s",
+            device %s, type %s, model %s, subtype %s, device_protocol: %s, \
+            message_protocol %s, unsupported_protocol: %s",
             self._device_id,
             cmds,
             check_protocol,
@@ -407,7 +401,7 @@ class MideaDevice(threading.Thread):
             self._message_protocol_version = message.protocol_version
             _LOGGER.debug(
                 "[%s] device model %s, subtype %s, \
-                    device protocol %s, message protocol %s",
+                device protocol %s, message protocol %s",
                 self._device_id,
                 self._model,
                 self._subtype,
@@ -443,8 +437,8 @@ class MideaDevice(threading.Thread):
                         if cont:
                             _LOGGER.debug(
                                 "[%s] process message %s for device %s, \
-                                    model %s, subtype %s, \
-                                    device protocol %s, message procol %s",
+                                model %s, subtype %s, \
+                                device protocol %s, message procol %s",
                                 self._device_id,
                                 decrypted.hex(),
                                 self._device_name,
