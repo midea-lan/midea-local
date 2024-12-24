@@ -6,7 +6,7 @@ import inspect
 import json
 import logging
 import sys
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser, BooleanOptionalAction, Namespace
 from pathlib import Path
 from typing import Any, NoReturn
 
@@ -17,6 +17,7 @@ from colorlog import ColoredFormatter
 from midealocal.cloud import (
     SUPPORTED_CLOUDS,
     MideaCloud,
+    get_default_cloud,
     get_midea_cloud,
     get_preset_account_cloud,
 )
@@ -27,7 +28,7 @@ from midealocal.device import (
     NoSupportedProtocol,
 )
 from midealocal.devices import device_selector
-from midealocal.discover import discover
+from midealocal.discover import SERIAL_TYPE1_LENGTH, discover
 from midealocal.exceptions import SocketException
 from midealocal.version import __version__
 
@@ -55,9 +56,10 @@ class MideaCLI:
             or not self.namespace.password
         ):
             default_cloud = get_preset_account_cloud()
+            default_cloud_name = get_default_cloud()
             _LOGGER.info("Using preset account.")
             return get_midea_cloud(
-                cloud_name=default_cloud["cloud_name"],
+                cloud_name=default_cloud_name,
                 session=self.session,
                 account=default_cloud["username"],
                 password=default_cloud["password"],
@@ -84,15 +86,20 @@ class MideaCLI:
 
     async def discover(self) -> list[MideaDevice]:
         """Discover device information."""
+        device_list: list[MideaDevice] = []
+
         devices = discover(ip_address=self.namespace.host)
 
-        device_list: list[MideaDevice] = []
         if len(devices) == 0:
             _LOGGER.error("No devices found.")
             return device_list
 
         # Dump only basic device info from the base class
         _LOGGER.info("Found %d devices.", len(devices))
+        # get sn
+        if self.namespace.get_sn:
+            _LOGGER.info("Found devices: %s", devices)
+            return device_list
         for device in devices.values():
             keys = (
                 {0: {"token": "", "key": ""}}
@@ -169,10 +176,11 @@ class MideaCLI:
 
     async def download(self) -> None:
         """Download lua from cloud."""
-        device_type = int.from_bytes(self.namespace.device_type or bytearray())
-        device_sn = str(self.namespace.device_sn)
+        # model and device_type will be get from SN or host
         model: str | None = None
+        device_type: int = 0
 
+        # download with host ip
         if self.namespace.host:
             devices = discover(ip_address=self.namespace.host)
 
@@ -184,6 +192,20 @@ class MideaCLI:
             device_type = device["type"]
             device_sn = device["sn"]
             model = device["model"]
+        # download with SN
+        elif self.namespace.device_sn:
+            device_sn = str(self.namespace.device_sn)
+            # manual input device_type exist
+            if self.namespace.device_type:
+                device_type = int.from_bytes(self.namespace.device_type or bytearray())
+            # no device type input, parse device_type from SN
+            elif len(device_sn) == SERIAL_TYPE1_LENGTH:
+                device_type = int.from_bytes(bytes.fromhex(device_sn[4:6]))
+            # parse model from SN
+            model = str(device_sn[9:17])
+        else:
+            _LOGGER.error("host or sn is mandatory")
+            return
 
         cloud = await self._get_cloud()
         _LOGGER.debug("Try to authenticate to the cloud.")
@@ -191,9 +213,18 @@ class MideaCLI:
             _LOGGER.error("Failed to authenticate to the cloud.")
             return
 
-        _LOGGER.debug("Download lua file for %s [%s]", device_sn, hex(device_type))
+        _LOGGER.debug(
+            "Download lua file for %s [%s] %s",
+            device_sn,
+            hex(device_type),
+            model,
+        )
         lua = await cloud.download_lua(str(Path()), device_type, device_sn, model)
         _LOGGER.info("Downloaded lua file: %s", lua)
+
+        _LOGGER.debug("Download plugin file for %s [%s]", device_sn, hex(device_type))
+        plugin = await cloud.download_plugin(str(Path()), device_type, device_sn)
+        _LOGGER.info("Downloaded plugin file: %s", plugin)
 
     async def set_attribute(self) -> None:
         """Set attribute for device."""
@@ -325,6 +356,12 @@ def main() -> NoReturn:
         "--host",
         help="Hostname or IP address of a single device to discover.",
         default=None,
+    )
+    discover_parser.add_argument(
+        "--get_sn",
+        help="Get device SN with host ip.",
+        default=False,
+        action=BooleanOptionalAction,
     )
     discover_parser.set_defaults(func=cli.discover)
 
