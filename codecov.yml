@@ -1,11 +1,9 @@
-# temp disable codecoverage check as PRs still need test and confirm
-github_checks: false
-
 coverage:
   status:
-    patch: off
     project:
       default:
+        # temp disable coverage as more PRs still need to test and confirm
+        if_ci_failed: success #success, error
         # Fail the build if the coverage decreases by more than 1%
         threshold: 1%
         # Set a minimum coverage percentage that must be met
