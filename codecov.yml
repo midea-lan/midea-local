@@ -1,3 +1,6 @@
+# temp disable codecoverage check as PRs still need test and confirm
+github_checks: false
+
 coverage:
   status:
     patch: off
@@ -9,9 +12,6 @@ coverage:
         target: auto
         # The status context shown in GitHub (optional)
         name: Coverage Check
-
-# temp disable codecoverage check as PRs still need test and confirm
-github_checks: false
 
 comment:
   layout: "reach, diff, flags, files"
