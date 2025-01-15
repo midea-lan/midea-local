@@ -9,6 +9,9 @@ coverage:
         # The status context shown in GitHub (optional)
         name: Coverage Check
 
+github_checks:
+  annotations: false
+
 comment:
   layout: "reach, diff, flags, files"
   behavior: default
