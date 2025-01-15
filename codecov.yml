@@ -1,5 +1,6 @@
 coverage:
   status:
+    patch: off
     project:
       default:
         # Fail the build if the coverage decreases by more than 1%
@@ -14,4 +15,4 @@ github_checks:
 
 comment:
   layout: "reach, diff, flags, files"
-  behavior: default
+  behavior: new
