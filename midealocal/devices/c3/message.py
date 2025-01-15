@@ -313,8 +313,7 @@ class C3EnergyBody(MessageBody):
         base_value = body[data_offset + 9]
         self.outdoor_temperature = (
             (base_value - 256) if base_value > TEMP_NEG_VALUE else base_value
-        )
-        self.t4 = body[data_offset + 9]
+        )  # outdoor_temperature is t4
         self.zone1_temp_set = body[data_offset + 10]
         self.zone2_temp_set = body[data_offset + 11]
         self.t5s = body[data_offset + 12]
