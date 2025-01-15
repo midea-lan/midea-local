@@ -10,6 +10,7 @@ coverage:
         target: auto
         # The status context shown in GitHub (optional)
         name: Coverage Check
+      patch: false # PR comment for Git diff only
 
 comment:
   layout: "reach, diff, flags, files"
