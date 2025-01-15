@@ -60,9 +60,8 @@ class TestC3MessageSet:
         msg.room_target_temp = 24.0
         msg.zone1_curve = True
         msg.zone2_curve = True
-        msg.disinfect = True
-        msg.fast_dhw = True
         msg.tbh = True
+        msg.fast_dhw = True
 
         expected_body = bytearray(
             [
