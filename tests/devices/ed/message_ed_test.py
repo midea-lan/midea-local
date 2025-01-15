@@ -14,6 +14,13 @@ from midealocal.devices.ed.message import (
     MessageEDResponse,
     MessageNewSet,
     MessageQuery,
+    MessageQuery01,
+    MessageQuery03,
+    MessageQuery04,
+    MessageQuery05,
+    MessageQuery06,
+    MessageQuery07,
+    MessageQueryFF,
 )
 from midealocal.message import ListTypes, MessageType
 
@@ -39,9 +46,92 @@ class TestMessageQuery:
         """Test query body."""
         query = MessageQuery(
             protocol_version=ProtocolVersion.V1,
-            body_type=ListTypes.X02,
         )
-        expected_body = bytearray([0x02, 0x01])
+        expected_body = bytearray([0x00, 0x01])
+        assert query.body == expected_body
+
+
+class TestMessageQuery01:
+    """Test Message Query01."""
+
+    def test_query_body(self) -> None:
+        """Test query body."""
+        query = MessageQuery01(
+            protocol_version=ProtocolVersion.V1,
+        )
+        expected_body = bytearray([0x01, 0x01])
+        assert query.body == expected_body
+
+
+class TestMessageQuery03:
+    """Test Message Query03."""
+
+    def test_query_body(self) -> None:
+        """Test query body."""
+        query = MessageQuery03(
+            protocol_version=ProtocolVersion.V1,
+        )
+        expected_body = bytearray([0x03, 0x01])
+        assert query.body == expected_body
+
+
+class TestMessageQuery04:
+    """Test Message Query04."""
+
+    def test_query_body(self) -> None:
+        """Test query body."""
+        query = MessageQuery04(
+            protocol_version=ProtocolVersion.V1,
+        )
+        expected_body = bytearray([0x04, 0x01])
+        assert query.body == expected_body
+
+
+class TestMessageQuery05:
+    """Test Message Query05."""
+
+    def test_query_body(self) -> None:
+        """Test query body."""
+        query = MessageQuery05(
+            protocol_version=ProtocolVersion.V1,
+        )
+        expected_body = bytearray([0x05, 0x01])
+        assert query.body == expected_body
+
+
+class TestMessageQuery06:
+    """Test Message Query06."""
+
+    def test_query_body(self) -> None:
+        """Test query body."""
+        query = MessageQuery06(
+            protocol_version=ProtocolVersion.V1,
+        )
+        expected_body = bytearray([0x06, 0x01])
+        assert query.body == expected_body
+
+
+class TestMessageQuery07:
+    """Test Message Query07."""
+
+    def test_query_body(self) -> None:
+        """Test query body."""
+        query = MessageQuery07(
+            protocol_version=ProtocolVersion.V1,
+        )
+        expected_body = bytearray([0x07, 0x01])
+        assert query.body == expected_body
+
+
+class TestMessageQueryFF:
+    """Test Message QueryFF."""
+
+    def test_query_body(self) -> None:
+        """Test query body."""
+        query = MessageQueryFF(
+            protocol_version=ProtocolVersion.V1,
+        )
+        expected_body = bytearray([0xFF, 0x01])
         assert query.body == expected_body
 
 
