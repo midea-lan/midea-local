@@ -697,6 +697,8 @@ class MideaDevice(threading.Thread):
                     break
                 except NoSupportedProtocol:
                     _LOGGER.debug("[%s] No Supported protocol", self._device_id)
+                    # sleep 1 seconds to prevent high cpu usage in for loop
+                    time.sleep(1)
                     # ignore and continue loop
                     continue
                 except ConnectionResetError:  # refresh_status -> build_send exception

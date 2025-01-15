@@ -3,13 +3,13 @@ coverage:
     patch: off
     project: off
     # project:
-    # default:
-    # Fail the build if the coverage decreases by more than 1%
-    # threshold: 1%
-    # Set a minimum coverage percentage that must be met
-    # target: auto
-    # The status context shown in GitHub (optional)
-    # name: Coverage Check
+    #   default:
+    #     # Fail the build if the coverage decreases by more than 1%
+    #     threshold: 1%
+    #     # Set a minimum coverage percentage that must be met
+    #     target: 80%
+    #     # The status context shown in GitHub (optional)
+    #     name: Coverage Check
 # comment:
-#   layout: "reach, diff, flags, files"
-#   behavior: new
+#  layout: "reach, diff, flags, files"
+#  behavior: default
