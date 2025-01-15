@@ -2,15 +2,12 @@ coverage:
   status:
     project:
       default:
-        # temp disable coverage as more PRs still need to test and confirm
-        if_ci_failed: success #success, error
         # Fail the build if the coverage decreases by more than 1%
-        threshold: 1%
+        # threshold: 1%
         # Set a minimum coverage percentage that must be met
         target: auto
         # The status context shown in GitHub (optional)
         name: Coverage Check
-      patch: false # PR comment for Git diff only
 
 comment:
   layout: "reach, diff, flags, files"
