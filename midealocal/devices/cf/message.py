@@ -95,12 +95,22 @@ class CFMessageBody(MessageBody):
     def __init__(self, body: bytearray, data_offset: int = 0) -> None:
         """Initialize CF message body."""
         super().__init__(body)
-        self.power = (body[data_offset + 0] & 0x01) > 0
-        self.aux_heating = (body[data_offset + 0] & 0x02) > 0
-        self.silent = (body[data_offset + 0] & 0x04) > 0
-        self.mode = body[data_offset + 3]
-        self.target_temperature = body[data_offset + 4]
-        self.current_temperature = body[data_offset + 5]
+        self.power = (body[data_offset + 0] & 0x01) > 0  # power_state
+        self.aux_heating = (body[data_offset + 0] & 0x02) > 0  # pre_heat
+        self.silent = (body[data_offset + 0] & 0x04) > 0  # silence_set_state
+        self.heat = (body[data_offset + 1] & 0x01) > 0  # heat_enable
+        self.cool = (body[data_offset + 1] & 0x02) > 0  # cool_enable
+        self.temp_type = (body[data_offset + 1] & 0x04) > 0  # temp_type
+        self.room_temp_ctrl = (body[data_offset + 1] & 0x08) > 0  # room_temp_ctrl
+        self.room_temp_set = (body[data_offset + 1] & 0x10) > 0  # room_temp_set
+        self.comp = (body[data_offset + 2] & 0x01) > 0  # comp_state
+        self.warn = (body[data_offset + 2] & 0x10) > 0  # warn_state
+        self.defrost = (body[data_offset + 2] & 0x20) > 0  # defrost_state
+        self.freeze = (body[data_offset + 2] & 0x40) > 0  # freeze_state
+        self.holiday = (body[data_offset + 2] & 0x80) > 0  # holiday_state
+        self.mode = body[data_offset + 3]  # run_mode
+        self.target_temperature = body[data_offset + 4]  # temp_set
+        self.current_temperature = body[data_offset + 5]  # cur_temp
         if self.mode == CFMode.COOL:
             self.max_temperature = body[data_offset + 8]
             self.min_temperature = body[data_offset + 9]
