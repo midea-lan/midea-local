@@ -55,6 +55,55 @@ class MessageQuery(MessageB3Base):
         return bytearray([])
 
 
+class B3MessageBody00(MessageBody):
+    """B3 message body 001."""
+
+    def __init__(self, body: bytearray) -> None:
+        """Initialize B3 message body 00."""
+        super().__init__(body)
+        # top
+        self.top_compartment_status = body[1]
+        self.top_compartment_mode = body[2]
+        self.top_compartment_temperature = body[3]
+        _top_hour = body[4] * 60 if body[4] != MAX_BYTE_VALUE else 0  # minutes
+        _top_minutes = body[5] if body[5] != MAX_BYTE_VALUE else 0
+        _top_seconds = body[6] / 60 if body[6] != MAX_BYTE_VALUE else 0  # minutes
+        self.top_compartment_remaining = _top_hour + _top_minutes + _top_seconds
+        # bottom
+        self.bottom_compartment_status = body[10]
+        self.bottom_compartment_mode = body[11]
+        self.bottom_compartment_temperature = body[12]
+        _bottom_hour = body[13] * 60 if body[13] != MAX_BYTE_VALUE else 0  # minutes
+        _bottom_minutes = body[14] if body[14] != MAX_BYTE_VALUE else 0
+        _bottom_seconds = body[15] / 60 if body[15] != MAX_BYTE_VALUE else 0  # minutes
+        self.bottom_compartment_remaining = (
+            _bottom_hour + _bottom_minutes + _bottom_seconds
+        )
+        # middle
+        self.middle_compartment_status = body[19]
+        self.middle_compartment_mode = body[20]
+        self.middle_compartment_temperature = body[21]
+        _middle_hour = body[22] * 60 if body[22] != MAX_BYTE_VALUE else 0  # minutes
+        _middle_minutes = body[23] if body[23] != MAX_BYTE_VALUE else 0
+        _middle_seconds = body[24] / 60 if body[24] != MAX_BYTE_VALUE else 0  # minutes
+        self.middle_compartment_remaining = (
+            _middle_hour + _middle_minutes + _middle_seconds
+        )
+        # lock
+        self.lock = body[30] & 0x01 > 0  # locked
+        self.bottom_compartment_door = body[30] & 0x02 > 0  # door_middlestair
+        self.top_compartment_door = body[30] & 0x04 > 0  # door_upstair
+        self.middle_compartment_door = body[30] & 0x08 > 0  # door_middlestair
+        # preheat
+        self.bottom_compartment_preheating = body[31] & 0x01 > 0
+        self.top_compartment_preheating = body[31] & 0x02 > 0
+        self.middle_compartment_preheating = body[31] & 0x10 > 0
+        # cooling
+        self.bottom_compartment_cooling = body[31] & 0x04 > 0
+        self.top_compartment_cooling = body[31] & 0x08 > 0
+        self.middle_compartment_cooling = body[31] & 0x20 > 0
+
+
 class B3MessageBody31(MessageBody):
     """B3 message body 31."""
 
@@ -216,6 +265,7 @@ class MessageB3Response(MessageResponse):
     def __init__(self, message: bytes) -> None:
         """Initialize B3 message response."""
         super().__init__(bytearray(message))
+        # body_type X31/X41
         if (
             self.message_type == MessageType.query
             and self.body_type == ListTypes.X31
@@ -223,6 +273,14 @@ class MessageB3Response(MessageResponse):
             and self.body_type == ListTypes.X41
         ):
             self.set_body(B3MessageBody31(super().body))
+        # body_type X00
+        elif (
+            self.message_type == MessageType.query
+            and self.body_type == ListTypes.X00
+            or self.message_type == MessageType.notify1
+            and self.body_type == ListTypes.X00
+        ):
+            self.set_body(B3MessageBody00(super().body))
         elif (
             self.message_type == MessageType.set
             and self.body_type == ListTypes.X21
