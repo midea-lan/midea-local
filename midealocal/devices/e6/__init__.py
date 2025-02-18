@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any
+from typing import Any, ClassVar
 
 from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
@@ -25,10 +25,23 @@ class DeviceAttributes(StrEnum):
     bathing_temperature = "bathing_temperature"
     heating_leaving_temperature = "heating_leaving_temperature"
     bathing_leaving_temperature = "bathing_leaving_temperature"
+    cold_water_single = "cold_water_single"
+    cold_water_dot = "cold_water_dot"
+    heating_modes = "heating_modes"
+
+
+
 
 
 class MideaE6Device(MideaDevice):
     """Midea E6 device."""
+
+    heating_modes: ClassVar[list[str]] = [
+        "normal_mode",
+        "out_mode",
+        "home_mode",
+        "sleep_mode",
+    ]
 
     def __init__(
         self,
@@ -66,6 +79,9 @@ class MideaE6Device(MideaDevice):
                 DeviceAttributes.bathing_temperature: 40,
                 DeviceAttributes.heating_leaving_temperature: None,
                 DeviceAttributes.bathing_leaving_temperature: None,
+                DeviceAttributes.cold_water_single: None,
+                DeviceAttributes.cold_water_dot: None,
+                DeviceAttributes.heating_modes: None,
             },
         )
 
@@ -91,6 +107,9 @@ class MideaE6Device(MideaDevice):
             DeviceAttributes.heating_power,
             DeviceAttributes.heating_temperature,
             DeviceAttributes.bathing_temperature,
+            DeviceAttributes.heating_modes,
+            DeviceAttributes.cold_water_single,
+            DeviceAttributes.cold_water_dot,
         ]:
             message = MessageSet(self._message_protocol_version)
             setattr(message, str(attr), value)
