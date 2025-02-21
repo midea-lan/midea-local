@@ -68,7 +68,6 @@ class MessageSet(MessageE6Base):
         self.cold_water_single: bool | None = None
         self.cold_water_dot: bool | None = None
 
-
     @property
     def _body(self) -> bytearray:
         body: list[int] = []
@@ -120,10 +119,14 @@ class E6GeneralMessageBody(MessageBody):
         self.cold_water_single = (body[25] & 0x01) > 0
         self.cold_water_dot = (body[25] & 0x02) > 0
         self.heating_modes = (
-            "out_mode" if (body[4] & 0x08)
-            else "normal_mode" if (body[4] & 0x04)
-            else "home_mode" if (body[4] & 0x10)
-            else "sleep_mode" if (body[4] & 0x20)
+            "out_mode"
+            if (body[4] & 0x08)
+            else "normal_mode"
+            if (body[4] & 0x04)
+            else "home_mode"
+            if (body[4] & 0x10)
+            else "sleep_mode"
+            if (body[4] & 0x20)
             else "normal_mode"
         )
 

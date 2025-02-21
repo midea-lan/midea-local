@@ -36,7 +36,7 @@ class DeviceAttributes(StrEnum):
 class MideaE6Device(MideaDevice):
     """Midea E6 device."""
 
-    heating_modes: ClassVar[list[str]] = [
+    _heating_modes: ClassVar[list[str]] = [
         "normal_mode",
         "out_mode",
         "home_mode",
@@ -114,6 +114,11 @@ class MideaE6Device(MideaDevice):
             message = MessageSet(self._message_protocol_version)
             setattr(message, str(attr), value)
             self.build_send(message)
+
+    @property
+    def heating_modes(self) -> list[str]:
+        """Return available heating modes."""
+        return self._heating_modes
 
 
 class MideaAppliance(MideaE6Device):
