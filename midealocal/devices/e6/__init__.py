@@ -30,9 +30,6 @@ class DeviceAttributes(StrEnum):
     heating_modes = "heating_modes"
 
 
-
-
-
 class MideaE6Device(MideaDevice):
     """Midea E6 device."""
 
