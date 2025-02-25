@@ -119,7 +119,7 @@ class TestMideaC3Device:
     def test_build_query(self) -> None:
         """Test build query."""
         queries = self.device.build_query()
-        assert len(queries) == 7
+        assert len(queries) == 4
         assert isinstance(queries[0], MessageQueryBasic)
         assert isinstance(queries[1], MessageQueryDisinfect)
         assert isinstance(queries[2], MessageQuerySilence)
