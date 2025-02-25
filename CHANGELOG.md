@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.2.0](https://github.com/midea-lan/midea-local/compare/v6.1.0...v6.2.0) (2025-02-25)
+
+
+### Features
+
+* **b3:** support new X00 body for B3 device ([#350](https://github.com/midea-lan/midea-local/issues/350)) ([702aaf0](https://github.com/midea-lan/midea-local/commit/702aaf0dc36d4c3b07bc2607a42a24efee2f13b3))
+* **cf:** add defrost and freeze for CF device ([#351](https://github.com/midea-lan/midea-local/issues/351)) ([0762e79](https://github.com/midea-lan/midea-local/commit/0762e7948068e0d5dab236c84f444fbc6ef5f1d0))
+
 ## [6.1.0](https://github.com/midea-lan/midea-local/compare/v6.0.3...v6.1.0) (2025-01-15)
 
 
