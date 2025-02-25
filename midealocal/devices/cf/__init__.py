@@ -23,6 +23,8 @@ class DeviceAttributes(StrEnum):
     current_temperature = "current_temperature"
     max_temperature = "max_temperature"
     min_temperature = "min_temperature"
+    defrost = "defrost"
+    freeze = "freeze"
 
 
 class MideaCFDevice(MideaDevice):
@@ -56,6 +58,8 @@ class MideaCFDevice(MideaDevice):
             attributes={
                 DeviceAttributes.power: False,
                 DeviceAttributes.mode: 0,
+                DeviceAttributes.defrost: False,
+                DeviceAttributes.freeze: False,
                 DeviceAttributes.target_temperature: None,
                 DeviceAttributes.aux_heating: False,
                 DeviceAttributes.current_temperature: 0,
