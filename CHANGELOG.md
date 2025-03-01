@@ -1,5 +1,29 @@
 # Changelog
 
+## [6.1.0](https://github.com/midea-lan/midea-local/compare/v6.0.3...v6.1.0) (2025-01-15)
+
+
+### Features
+
+* **c3:** add disinfect and fix tbh set error ([#340](https://github.com/midea-lan/midea-local/issues/340)) ([5f5224b](https://github.com/midea-lan/midea-local/commit/5f5224bbe30f2c02de0ee0ea8d67f5132a4993ab))
+* **cd:** add water_level and temperature option with customize lua_protocol ([#345](https://github.com/midea-lan/midea-local/issues/345)) ([db2fdf0](https://github.com/midea-lan/midea-local/commit/db2fdf0bb4aa9d6a9e4ed47c876fd57f57f30c9f))
+* **cloud:** add plugin download for meiju and smarthome ([#336](https://github.com/midea-lan/midea-local/issues/336)) ([30de473](https://github.com/midea-lan/midea-local/commit/30de473cd351ff4f7a918452061caf2b5806d876))
+* **db:** add new attributes for db device ([#329](https://github.com/midea-lan/midea-local/issues/329)) ([da38007](https://github.com/midea-lan/midea-local/commit/da3800744ed202ca3f4f9ca45f6f784f5e847830))
+* **dc:** add new attributes for exist dc device ([#330](https://github.com/midea-lan/midea-local/issues/330)) ([10c15b6](https://github.com/midea-lan/midea-local/commit/10c15b63479f729d421c99341adf3f4f913bdf02))
+* **e1:** add new attributes for e1 device ([#337](https://github.com/midea-lan/midea-local/issues/337)) ([9afa160](https://github.com/midea-lan/midea-local/commit/9afa160eccca4641f1a220bdfad2cd611a1cb57b))
+* **ed:** add all query msg for 0xED device ([#328](https://github.com/midea-lan/midea-local/issues/328)) ([30ba082](https://github.com/midea-lan/midea-local/commit/30ba082cea0a19a97fd80df3b355236f44d8bcfe))
+
+
+### Bug Fixes
+
+* fix:  ([db2fdf0](https://github.com/midea-lan/midea-local/commit/db2fdf0bb4aa9d6a9e4ed47c876fd57f57f30c9f))
+* **device:** no supported protocol caused high cpu usage ([#346](https://github.com/midea-lan/midea-local/issues/346)) ([013aee4](https://github.com/midea-lan/midea-local/commit/013aee4465480ac2d8cf0f0d047785b6fb6ffeec))
+
+
+### Documentation
+
+* add collected lua scripts ([#331](https://github.com/midea-lan/midea-local/issues/331)) ([e1a3855](https://github.com/midea-lan/midea-local/commit/e1a385559aec6b1526b10a595ea9a7568a69163c))
+
 ## [6.0.3](https://github.com/rokam/midea-local/compare/v6.0.2...v6.0.3) (2024-10-15)
 
 

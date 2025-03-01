@@ -9,6 +9,8 @@ from midealocal.devices.c3.message import (
     MessageC3Response,
     MessageQuery,
     MessageQueryBasic,
+    MessageQueryDisinfect,
+    MessageQueryECO,
     MessageQuerySilence,
     MessageSet,
     MessageSetECO,
@@ -40,8 +42,16 @@ class TestC3MessageQuery:
         expected_body = bytearray([0x1])
         assert msg.body == expected_body
 
+        msg = MessageQueryDisinfect(protocol_version=ProtocolVersion.V1)
+        expected_body = bytearray([0x9])
+        assert msg.body == expected_body
+
         msg = MessageQuerySilence(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray([0x5])
+        assert msg.body == expected_body
+
+        msg = MessageQueryECO(protocol_version=ProtocolVersion.V1)
+        expected_body = bytearray([0x7])
         assert msg.body == expected_body
 
 
@@ -60,9 +70,8 @@ class TestC3MessageSet:
         msg.room_target_temp = 24.0
         msg.zone1_curve = True
         msg.zone2_curve = True
-        msg.disinfect = True
-        msg.fast_dhw = True
         msg.tbh = True
+        msg.fast_dhw = True
 
         expected_body = bytearray(
             [
@@ -169,6 +178,7 @@ class TestMessageC3Response:
                 34,  # BYTE 21: dhw_temp_min
                 44,  # BYTE 22: tank_actual_temperature
                 0x0,  # BYTE 23; error_code
+                0x0,  # BYTE 24; tbh_control
                 0x0,  # CRC
             ],
         )
@@ -193,8 +203,6 @@ class TestMessageC3Response:
             assert response.zone1_curve is True
             assert hasattr(response, "zone2_curve")
             assert response.zone2_curve is False
-            assert hasattr(response, "disinfect")
-            assert response.disinfect is True
             assert hasattr(response, "tbh")
             assert response.tbh is True
             assert hasattr(response, "fast_dhw")
@@ -251,7 +259,11 @@ class TestMessageC3Response:
                 22,  # BYTE 7: total_produced_energy
                 42,  # BYTE 8: total_produced_energy
                 45,  # BYTE 9: total_produced_energy
-                30,  # BYTE 10: outdoor_temperature
+                30,  # BYTE 10: outdoor_temperature is  t4
+                40,  # BYTE 12: zone1_temp_set
+                50,  # BYTE 13: zone2_temp_set
+                45,  # BYTE 14: t5s
+                55,  # BYTE 15: tas
                 0x0,  # CRC
             ],
         )
@@ -271,6 +283,14 @@ class TestMessageC3Response:
         assert response.total_produced_energy == 90195765805
         assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == 30
+        assert hasattr(response, "zone1_temp_set")
+        assert response.zone1_temp_set == 40
+        assert hasattr(response, "zone2_temp_set")
+        assert response.zone2_temp_set == 50
+        assert hasattr(response, "t5s")
+        assert response.t5s == 45
+        assert hasattr(response, "tas")
+        assert response.tas == 55
 
         body[10] = 253
         response = MessageC3Response(self.header + body)

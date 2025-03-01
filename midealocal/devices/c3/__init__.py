@@ -12,8 +12,11 @@ from .message import (
     MessageC3Response,
     MessageQuery,
     MessageQueryBasic,
+    MessageQueryDisinfect,
+    MessageQueryECO,
     MessageQuerySilence,
     MessageSet,
+    MessageSetDisinfect,
     MessageSetECO,
     MessageSetSilent,
 )
@@ -117,7 +120,9 @@ class MideaC3Device(MideaDevice):
         """Midea C3 device build query."""
         return [
             MessageQueryBasic(self._message_protocol_version),
+            MessageQueryDisinfect(self._message_protocol_version),
             MessageQuerySilence(self._message_protocol_version),
+            MessageQueryECO(self._message_protocol_version),
         ]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
@@ -221,29 +226,32 @@ class MideaC3Device(MideaDevice):
         message.room_target_temp = self._attributes[DeviceAttributes.room_target_temp]
         message.zone1_curve = self._attributes[DeviceAttributes.zone1_curve]
         message.zone2_curve = self._attributes[DeviceAttributes.zone2_curve]
-        message.disinfect = self._attributes[DeviceAttributes.disinfect]
         message.tbh = self._attributes[DeviceAttributes.tbh]
         message.fast_dhw = self._attributes[DeviceAttributes.fast_dhw]
         return message
 
     def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea C3 device set attribute."""
-        message: MessageSet | MessageSetECO | MessageSetSilent | None = None
+        message: (
+            MessageSet | MessageSetECO | MessageSetSilent | MessageSetDisinfect | None
+        ) = None
         if attr in [
             DeviceAttributes.zone1_power,
             DeviceAttributes.zone2_power,
             DeviceAttributes.dhw_power,
             DeviceAttributes.zone1_curve,
             DeviceAttributes.zone2_curve,
-            DeviceAttributes.disinfect,
+            DeviceAttributes.tbh,
             DeviceAttributes.fast_dhw,
             DeviceAttributes.dhw_target_temp,
-            DeviceAttributes.tbh,
         ]:
             message = self.make_message_set()
             setattr(message, str(attr), value)
         elif attr == DeviceAttributes.eco_mode:
             message = MessageSetECO(self._message_protocol_version)
+            setattr(message, str(attr), value)
+        elif attr == DeviceAttributes.disinfect:
+            message = MessageSetDisinfect(self._message_protocol_version)
             setattr(message, str(attr), value)
         elif attr in [
             DeviceAttributes.silent_mode.value,
