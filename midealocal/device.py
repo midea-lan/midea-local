@@ -15,6 +15,7 @@ from .exceptions import SocketException
 from .message import (
     MessageApplianceResponse,
     MessageQueryAppliance,
+    MessageQueryToshibaIolife,
     MessageQuestCustom,
     MessageRequest,
     MessageType,

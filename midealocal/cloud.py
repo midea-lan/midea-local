@@ -75,7 +75,7 @@ SUPPORTED_CLOUDS = {
         "class_name": "ToshibaIOLife",
         "app_id": "1203",
         "app_key": "09c4d09f0da1513bb62dc7b6b0af9c11",
-        "api_url": "https://toshiba-app.smartmidea.net",  # codespell:ignore
+        "api_url": "https://app.iolife.toshiba-lifestyle.com",  # codespell:ignore
     },
 }
 
@@ -774,7 +774,7 @@ class SmartHomeCloud(MideaCloud):
         data = self._make_general_data()
         data.update(
             {
-                "applianceMFCode": manufacturer_code,
+                "applianceMFCode": "0008",
                 "applianceType": hex(device_type),
                 "applianceSn": self._security.aes_encrypt_with_fixed_key(
                     sn.encode("ascii"),
@@ -1046,7 +1046,6 @@ class ToshibaIOLife(MideaAirCloud):
             return appliances
         return None
 
-
     # FIXME: this isn't working:
     async def download_lua(
         self,
@@ -1054,7 +1053,7 @@ class ToshibaIOLife(MideaAirCloud):
         device_type: int,
         sn: str,
         model_number: str | None = None,
-        manufacturer_code: str = "0000",
+        manufacturer_code: str = "0008",
     ) -> str | None:
         """Download lua integration."""
         data = self._make_general_data()
@@ -1072,7 +1071,7 @@ class ToshibaIOLife(MideaAirCloud):
             data["modelNumber"] = model_number
         fnm = None
         if response := await self._api_request(
-            endpoint="/v1/appliance/protocol/lua/luaGet", # FIXME: Wrong URL?
+            endpoint="/v2/open/sdk/product/encrptedLuaGet", # FIXME: Wrong URL?
             data=data,
         ):
             res = await self._session.get(response["url"])
