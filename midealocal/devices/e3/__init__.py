@@ -74,12 +74,20 @@ class MideaE3Device(MideaDevice):
         self._old_subtypes = [32, 33, 34, 35, 36, 37, 40, 43, 48, 49, 80]
         self._precision_halves: bool | None = None
         self._default_precision_halves = False
+        # target_temperature step
+        self._temperature_step: float | None = None
+        self._default_temperature_step = 1
         self.set_customize(customize)
 
     @property
     def precision_halves(self) -> bool | None:
         """Midea E3 device precision halves."""
         return self._precision_halves
+
+    @property
+    def target_temperature_step(self) -> float | None:
+        """Midea E3 device target temperature step."""
+        return self._temperature_step
 
     def build_query(self) -> list[MessageQuery]:
         """Midea E3 device build query."""
@@ -115,7 +123,7 @@ class MideaE3Device(MideaDevice):
         ]
         return message
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea E3 device set attribute."""
         message: MessagePower | MessageSet | MessageNewProtocolSet | None = None
         if attr not in [
@@ -124,6 +132,7 @@ class MideaE3Device(MideaDevice):
             DeviceAttributes.protection,
         ]:
             if self._precision_halves and attr == DeviceAttributes.target_temperature:
+                # convert input float target_temperature to int for message byte
                 value = int(value * 2)
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._message_protocol_version)
@@ -140,14 +149,22 @@ class MideaE3Device(MideaDevice):
     def set_customize(self, customize: str) -> None:
         """Midea E3 device set customize."""
         self._precision_halves = self._default_precision_halves
+        self._temperature_step = self._default_temperature_step
         if customize and len(customize) > 0:
             try:
                 params = json.loads(customize)
+                if params and "temperature_step" in params:
+                    self._temperature_step = params.get("temperature_step")
                 if params and "precision_halves" in params:
                     self._precision_halves = params.get("precision_halves")
             except Exception:
                 _LOGGER.exception("[%s] Set customize error", self.device_id)
-            self.update_all({"precision_halves": self._precision_halves})
+            self.update_all(
+                {
+                    "temperature_step": self._temperature_step,
+                    "precision_halves": self._precision_halves,
+                },
+            )
 
 
 class MideaAppliance(MideaE3Device):
