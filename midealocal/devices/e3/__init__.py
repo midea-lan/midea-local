@@ -85,7 +85,7 @@ class MideaE3Device(MideaDevice):
         return self._precision_halves
 
     @property
-    def target_temperature_step(self) -> float | None:
+    def temperature_step(self) -> float | None:
         """Midea E3 device target temperature step."""
         return self._temperature_step
 
