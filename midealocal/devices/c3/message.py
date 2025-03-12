@@ -277,6 +277,8 @@ class C3BasicBody(MessageBody):
         self.tank_actual_temperature = body[data_offset + 21]
         self.error_code = body[data_offset + 22]
         self.tbh_control = body[data_offset + 23] & 0x80 > 0
+        self.SysEnergyAnaEN = body[data_offset + 23] & 0x20 > 0
+        self.HMIEnergyAnaSetEN = body[data_offset + 23] & 0x40 > 0
 
 
 class C3EnergyBody(MessageBody):
@@ -345,6 +347,16 @@ class C3SilenceBody(MessageBody):
         # silence_timer2_startmin: Byte 7
         # silence_timer2_endhour: Byte 8
         # silence_timer2_endmin: Byte 9
+
+
+class C3ECOBody(MessageBody):
+    """C3 ECO message body."""
+
+    def __init__(self, body: bytearray, data_offset: int = 0) -> None:
+        """Initialize C3 ECO message body."""
+        super().__init__(body)
+        self.eco_function_state = body[data_offset] & 0x01 > 0
+        self.eco_timer_state = body[data_offset] & 0x02 > 0
 
 
 class C3DisinfectBody(MessageBody):
@@ -462,6 +474,8 @@ class MessageC3Response(MessageResponse):
             self.set_body(C3EnergyBody(super().body, data_offset=1))
         elif self.message_type == MessageType.query and self.body_type == ListTypes.X05:
             self.set_body(C3SilenceBody(super().body, data_offset=1))
+        elif self.body_type == ListTypes.X07:
+            self.set_body(C3ECOBody(super().body, data_offset=1))
         elif self.body_type == ListTypes.X09:
             self.set_body(C3DisinfectBody(super().body, data_offset=1))
         elif self.body_type == ListTypes.X10:

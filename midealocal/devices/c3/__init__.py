@@ -14,10 +14,7 @@ from .message import (
     MessageQueryBasic,
     MessageQueryDisinfect,
     MessageQueryECO,
-    MessageQueryHMIPara,
-    MessageQueryInstall,
     MessageQuerySilence,
-    MessageQueryUnitPara,
     MessageSet,
     MessageSetDisinfect,
     MessageSetECO,
@@ -126,9 +123,6 @@ class MideaC3Device(MideaDevice):
             MessageQueryDisinfect(self._message_protocol_version),
             MessageQuerySilence(self._message_protocol_version),
             MessageQueryECO(self._message_protocol_version),
-            MessageQueryUnitPara(self._message_protocol_version),
-            MessageQueryHMIPara(self._message_protocol_version),
-            MessageQueryInstall(self._message_protocol_version),
         ]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
