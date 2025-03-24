@@ -64,6 +64,9 @@ class MessageSet(MessageE6Base):
         self.heating_temperature: int | None = None
         self.bathing_temperature: int | None = None
         self.heating_power: bool | None = None
+        self.heating_modes: str | None = None
+        self.cold_water_single: bool | None = None
+        self.cold_water_dot: bool | None = None
 
     @property
     def _body(self) -> bytearray:
@@ -78,6 +81,21 @@ class MessageSet(MessageE6Base):
         elif self.heating_power is not None:
             heating_power = 0x01 if self.heating_power else 0x02
             body = [0x04, 0x01, heating_power]
+        elif self.cold_water_single is not None:
+            cold_water_single = 0x01 if self.cold_water_single else 0x00
+            body = [0x04, 0x1A, cold_water_single]
+        elif self.cold_water_dot is not None:
+            cold_water_dot = 0x01 if self.cold_water_dot else 0x00
+            body = [0x04, 0x1B, cold_water_dot]
+        elif self.heating_modes is not None:
+            if self.heating_modes == "normal_mode":
+                body = [0x04, 0x02, 0x01]
+            if self.heating_modes == "out_mode":
+                body = [0x04, 0x02, 0x02]
+            if self.heating_modes == "home_mode":
+                body = [0x04, 0x02, 0x04]
+            if self.heating_modes == "sleep_mode":
+                body = [0x04, 0x02, 0x08]
         body_len = len(body)
         return bytearray(body + [0] * (30 - body_len))
 
@@ -98,6 +116,19 @@ class E6GeneralMessageBody(MessageBody):
         self.bathing_temperature = body[12]
         self.heating_leaving_temperature = body[14]
         self.bathing_leaving_temperature = body[8]
+        self.cold_water_single = (body[25] & 0x01) > 0
+        self.cold_water_dot = (body[25] & 0x02) > 0
+        self.heating_modes = (
+            "out_mode"
+            if (body[4] & 0x08)
+            else "normal_mode"
+            if (body[4] & 0x04)
+            else "home_mode"
+            if (body[4] & 0x10)
+            else "sleep_mode"
+            if (body[4] & 0x20)
+            else "normal_mode"
+        )
 
 
 class MessageE6Response(MessageResponse):
