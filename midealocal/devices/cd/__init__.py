@@ -56,6 +56,14 @@ class MideaCDDevice(MideaDevice):
         0x05: "Vacation",
     }
 
+    @classmethod
+    def get_key_by_value(cls, value: str) -> int:
+        """Get _modes key by value."""
+        for key, val in cls._modes.items():
+            if val == value:
+                return key
+        return 0  # if not found, return 0:None
+
     def __init__(
         self,
         name: str,
@@ -83,7 +91,7 @@ class MideaCDDevice(MideaDevice):
             subtype=subtype,
             attributes={
                 DeviceAttributes.power: False,
-                DeviceAttributes.mode: 0,
+                DeviceAttributes.mode: None,
                 DeviceAttributes.max_temperature: 65,
                 DeviceAttributes.min_temperature: 35,
                 DeviceAttributes.target_temperature: 40,
@@ -199,15 +207,18 @@ class MideaCDDevice(MideaDevice):
         ]:
             message = MessageSet(self._message_protocol_version)
             message.fields = self._fields
-            message.mode = self._attributes[DeviceAttributes.mode]
+            # get mode key value with mode value from _modes dict
+            message.mode = MideaCDDevice.get_key_by_value(
+                str(self._attributes[DeviceAttributes.mode]),
+            )
             message.power = self._attributes[DeviceAttributes.power]
             message.target_temperature = self._attributes[
                 DeviceAttributes.target_temperature
             ]
-            # process modes value to str
+            # process mode attr name to str
             if attr == DeviceAttributes.mode:
-                value = int(value)
-                setattr(message, str(attr), MideaCDDevice._modes.get(value, value))
+                # get mode key value with mode value from _modes dict
+                setattr(message, str(attr), MideaCDDevice.get_key_by_value(str(value)))
             # process target temperature to data value
             elif attr == DeviceAttributes.target_temperature:
                 setattr(message, str(attr), self._temperature_to_value(float(value)))

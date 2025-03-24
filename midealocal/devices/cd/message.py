@@ -62,11 +62,11 @@ class MessageSet(MessageCDBase):
             message_type=MessageType.set,
             body_type=ListTypes.X01,
         )
-        self.power = False
-        self.target_temperature = 0
-        self.aux_heating = False
+        self.power: bool = False
+        self.target_temperature: float = 0
+        self.aux_heating: bool = False
         self.fields: dict[Any, Any] = {}
-        self.mode = 1
+        self.mode: int = 1
 
     def read_field(self, field: str) -> int:
         """CD message set read field."""
