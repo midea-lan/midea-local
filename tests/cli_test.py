@@ -13,7 +13,7 @@ from midealocal.cli import (
     MideaCLI,
     get_config_file_path,
 )
-from midealocal.cloud import SmartHomeCloud
+from midealocal.cloud import MideaAirCloud, SmartHomeCloud
 from midealocal.const import ProtocolVersion
 from midealocal.device import AuthException, NoSupportedProtocol
 from midealocal.exceptions import SocketException
@@ -56,9 +56,10 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         assert cloud._password == self.namespace.password
         assert cloud._session == mock_session_instance
 
+        # test default cloud
         self.namespace.cloud_name = None
         cloud = await self.cli._get_cloud()
-        assert isinstance(cloud, SmartHomeCloud)
+        assert isinstance(cloud, MideaAirCloud)
         assert cloud._session == mock_session_instance
 
     async def test_get_keys(self) -> None:
