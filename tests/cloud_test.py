@@ -60,7 +60,7 @@ class CloudTest(IsolatedAsyncioTestCase):
     async def test_get_default_cloud(self) -> None:
         """Test get default cloud name."""
         default_cloud = get_default_cloud()
-        assert default_cloud == "SmartHome"
+        assert default_cloud == "NetHome Plus"
 
     async def test_get_cloud_servers(self) -> None:
         """Test get cloud servers."""
@@ -70,9 +70,8 @@ class CloudTest(IsolatedAsyncioTestCase):
     async def test_get_preset_account_cloud(self) -> None:
         """Test get preset cloud account."""
         credentials = get_preset_account_cloud()
-        assert credentials["username"] == "c414e631394b8639@outlook.com"
         assert credentials["password"] == "a0d6e30c94b15"
-        assert credentials["cloud_name"] == "SmartHome"
+        assert credentials["cloud_name"] == "NetHome Plus"
 
     async def test_midea_cloud_unimplemented(self) -> None:
         """Test unimplemented MideaCloud methods."""

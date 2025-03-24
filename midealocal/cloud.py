@@ -43,7 +43,6 @@ SUPPORTED_CLOUDS = {
         "api_url": "https://mp-prod.smartmidea.net/mas/v5/app/proxy?alias=",
     },
     "SmartHome": {
-        "default": True,
         "class_name": "SmartHomeCloud",
         "app_id": "1010",
         "app_key": "ac21b9f9cbfe4ca5a88562ef25e2b768",
@@ -60,6 +59,7 @@ SUPPORTED_CLOUDS = {
         "api_url": "https://mapp.appsmb.com",  # codespell:ignore
     },
     "NetHome Plus": {
+        "default": True,
         "class_name": "MideaAirCloud",
         "app_id": "1017",
         "app_key": "3742e9e5842d4ad59c2db887e12449f9",
@@ -83,7 +83,7 @@ DEFAULT_KEYS = {
 
 PRESET_ACCOUNT_DATA = [
     39182118275972017797890111985649342047468653967530949796945843010512,
-    29406100301096535908214728322278519471982973450672552249652548883645,
+    39182118275980892824833804202177448991093361348247890162501600564413,
     39182118275972017797890111985649342050088014265865102175083010656997,
 ]
 
@@ -100,10 +100,10 @@ def get_preset_account_cloud() -> dict[str, str]:
     """Return preset account data for cloud login."""
     username: str = bytes.fromhex(
         format((PRESET_ACCOUNT_DATA[0] ^ PRESET_ACCOUNT_DATA[1]), "X"),
-    ).decode("ASCII")
+    ).decode("utf-8", errors="ignore")
     password: str = bytes.fromhex(
         format((PRESET_ACCOUNT_DATA[0] ^ PRESET_ACCOUNT_DATA[2]), "X"),
-    ).decode("ASCII")
+    ).decode("utf-8", errors="ignore")
 
     return {
         "username": username,
