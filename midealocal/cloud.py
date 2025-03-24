@@ -83,7 +83,7 @@ DEFAULT_KEYS = {
 
 PRESET_ACCOUNT_DATA = [
     39182118275972017797890111985649342047468653967530949796945843010512,
-    31845298206154645013606382739815191713578899113473062752925712789965,
+    39182118275980892824833804202177448991093361348247890162501600564413,
     39182118275972017797890111985649342050088014265865102175083010656997,
 ]
 
@@ -100,10 +100,10 @@ def get_preset_account_cloud() -> dict[str, str]:
     """Return preset account data for cloud login."""
     username: str = bytes.fromhex(
         format((PRESET_ACCOUNT_DATA[0] ^ PRESET_ACCOUNT_DATA[1]), "X"),
-    ).decode("ASCII")
+    ).decode("utf-8", errors="ignore")
     password: str = bytes.fromhex(
         format((PRESET_ACCOUNT_DATA[0] ^ PRESET_ACCOUNT_DATA[2]), "X"),
-    ).decode("ASCII")
+    ).decode("utf-8", errors="ignore")
 
     return {
         "username": username,
