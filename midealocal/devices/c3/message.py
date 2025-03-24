@@ -123,7 +123,7 @@ class MessageSet(MessageC3Base):
         self.dhw_power = False
         self.mode = 0
         self.zone_target_temp = [25.0, 25.0]
-        self.dhw_target_temp = 40
+        self.dhw_target_temp = 40.0
         self.room_target_temp = 25.0
         self.zone1_curve = False
         self.zone2_curve = False

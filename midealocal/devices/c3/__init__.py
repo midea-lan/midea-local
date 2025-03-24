@@ -77,21 +77,21 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.tbh: False,
                 DeviceAttributes.mode: 1,
                 DeviceAttributes.mode_auto: 1,
-                DeviceAttributes.zone_target_temp: [25, 25],
-                DeviceAttributes.dhw_target_temp: 25,
-                DeviceAttributes.room_target_temp: 30,
-                DeviceAttributes.zone_heating_temp_max: [55, 55],
-                DeviceAttributes.zone_heating_temp_min: [25, 25],
-                DeviceAttributes.zone_cooling_temp_max: [25, 25],
-                DeviceAttributes.zone_cooling_temp_min: [5, 5],
-                DeviceAttributes.room_temp_max: 60,
-                DeviceAttributes.room_temp_min: 34,
-                DeviceAttributes.dhw_temp_max: 60,
-                DeviceAttributes.dhw_temp_min: 20,
+                DeviceAttributes.zone_target_temp: [25.0, 25.0],
+                DeviceAttributes.dhw_target_temp: 25.0,
+                DeviceAttributes.room_target_temp: 30.0,
+                DeviceAttributes.zone_heating_temp_max: [55.0, 55.0],
+                DeviceAttributes.zone_heating_temp_min: [25.0, 25.0],
+                DeviceAttributes.zone_cooling_temp_max: [25.0, 25.0],
+                DeviceAttributes.zone_cooling_temp_min: [5.0, 5.0],
+                DeviceAttributes.room_temp_max: 60.0,
+                DeviceAttributes.room_temp_min: 34.0,
+                DeviceAttributes.dhw_temp_max: 60.0,
+                DeviceAttributes.dhw_temp_min: 20.0,
                 DeviceAttributes.tank_actual_temperature: None,
-                DeviceAttributes.target_temperature: [25, 25],
-                DeviceAttributes.temperature_max: [0, 0],
-                DeviceAttributes.temperature_min: [0, 0],
+                DeviceAttributes.target_temperature: [25.0, 25.0],
+                DeviceAttributes.temperature_max: [0.0, 0.0],
+                DeviceAttributes.temperature_min: [0.0, 0.0],
                 DeviceAttributes.total_energy_consumption: None,
                 DeviceAttributes.status_heating: None,
                 DeviceAttributes.status_dhw: None,
@@ -230,7 +230,7 @@ class MideaC3Device(MideaDevice):
         message.fast_dhw = self._attributes[DeviceAttributes.fast_dhw]
         return message
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea C3 device set attribute."""
         message: (
             MessageSet | MessageSetECO | MessageSetSilent | MessageSetDisinfect | None
@@ -245,6 +245,9 @@ class MideaC3Device(MideaDevice):
             DeviceAttributes.fast_dhw,
             DeviceAttributes.dhw_target_temp,
         ]:
+            # convert input float dhw_target_temp to int for message byte
+            if attr == DeviceAttributes.dhw_target_temp:
+                value = int(value)
             message = self.make_message_set()
             setattr(message, str(attr), value)
         elif attr == DeviceAttributes.eco_mode:
@@ -295,9 +298,11 @@ class MideaC3Device(MideaDevice):
 
         message = self.make_message_set()
         if self._attributes[DeviceAttributes.zone_temp_type][zone]:
-            message.zone_target_temp[zone] = target_temperature
+            # convert float target_temperature to int
+            message.zone_target_temp[zone] = int(target_temperature)
         else:
-            message.room_target_temp = target_temperature
+            # convert float target_temperature to int
+            message.room_target_temp = int(target_temperature)
         if mode is not None:
             if zone == 0:
                 message.zone1_power = True
