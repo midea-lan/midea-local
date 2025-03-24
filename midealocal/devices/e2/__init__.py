@@ -96,7 +96,15 @@ class MideaE2Device(MideaDevice):
         )
         self._default_old_protocol = OldProtocol.auto
         self._old_protocol = self._default_old_protocol
+        # target_temperature step
+        self._temperature_step: float | None = None
+        self._default_temperature_step = 1
         self.set_customize(customize)
+
+    @property
+    def temperature_step(self) -> float | None:
+        """Midea E3 device target temperature step."""
+        return self._temperature_step
 
     def _normalize_old_protocol(self, value: str | bool | int) -> OldProtocol:
         if isinstance(value, str):
@@ -139,7 +147,7 @@ class MideaE2Device(MideaDevice):
         message.variable_heating = self._attributes[DeviceAttributes.variable_heating]
         return message
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea E2 device set attribute."""
         message: MessagePower | MessageSet | MessageNewProtocolSet | None = None
         if attr not in [
@@ -148,6 +156,9 @@ class MideaE2Device(MideaDevice):
             DeviceAttributes.current_temperature,
         ]:
             old_protocol = self._normalize_old_protocol(self._old_protocol)
+            # convert input float target_temperature to int for message byte
+            if attr == DeviceAttributes.target_temperature:
+                value = int(value * 2)
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._message_protocol_version)
                 message.power = bool(value)
@@ -169,9 +180,16 @@ class MideaE2Device(MideaDevice):
                     self._old_protocol = self._normalize_old_protocol(
                         params["old_protocol"],
                     )
+                if params and "temperature_step" in params:
+                    self._temperature_step = params.get("temperature_step")
             except Exception:
                 _LOGGER.exception("[%s] Set customize error", self.device_id)
-            self.update_all({"old_protocol": self._old_protocol})
+            self.update_all(
+                {
+                    "temperature_step": self._temperature_step,
+                    "old_protocol": self._old_protocol,
+                },
+            )
 
 
 class MideaAppliance(MideaE2Device):
