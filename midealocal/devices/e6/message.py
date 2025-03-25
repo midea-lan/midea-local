@@ -61,8 +61,8 @@ class MessageSet(MessageE6Base):
             message_type=MessageType.set,
         )
         self.main_power: bool | None = None
-        self.heating_temperature: int | None = None
-        self.bathing_temperature: int | None = None
+        self.heating_temperature: float | None = None
+        self.bathing_temperature: float | None = None
         self.heating_power: bool | None = None
         self.heating_modes: str | None = None
         self.cold_water_single: bool | None = None
@@ -75,9 +75,9 @@ class MessageSet(MessageE6Base):
             main_power = 0x01 if self.main_power else 0x02
             body = [main_power, 0x01]
         elif self.heating_temperature is not None:
-            body = [0x04, 0x13, self.heating_temperature]
+            body = [0x04, 0x13, int(self.heating_temperature)]
         elif self.bathing_temperature is not None:
-            body = [0x04, 0x12, self.bathing_temperature]
+            body = [0x04, 0x12, int(self.bathing_temperature)]
         elif self.heating_power is not None:
             heating_power = 0x01 if self.heating_power else 0x02
             body = [0x04, 0x01, heating_power]
