@@ -1,5 +1,6 @@
 """Midea local E6 device."""
 
+import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar
@@ -51,7 +52,7 @@ class MideaE6Device(MideaDevice):
         device_protocol: ProtocolVersion,
         model: str,
         subtype: int,
-        customize: str,  # noqa: ARG002
+        customize: str,
     ) -> None:
         """Initialize Midea E6 device."""
         super().__init__(
@@ -70,10 +71,10 @@ class MideaE6Device(MideaDevice):
                 DeviceAttributes.heating_power: True,
                 DeviceAttributes.heating_working: None,
                 DeviceAttributes.bathing_working: None,
-                DeviceAttributes.min_temperature: [30, 35],
-                DeviceAttributes.max_temperature: [80, 60],
-                DeviceAttributes.heating_temperature: 50,
-                DeviceAttributes.bathing_temperature: 40,
+                DeviceAttributes.min_temperature: [30.0, 35.0],
+                DeviceAttributes.max_temperature: [80.0, 60.0],
+                DeviceAttributes.heating_temperature: 50.0,
+                DeviceAttributes.bathing_temperature: 40.0,
                 DeviceAttributes.heating_leaving_temperature: None,
                 DeviceAttributes.bathing_leaving_temperature: None,
                 DeviceAttributes.cold_water_single: None,
@@ -81,6 +82,15 @@ class MideaE6Device(MideaDevice):
                 DeviceAttributes.heating_modes: None,
             },
         )
+        # target_temperature step
+        self._temperature_step: float | None = None
+        self._default_temperature_step = 1
+        self.set_customize(customize)
+
+    @property
+    def temperature_step(self) -> float | None:
+        """Midea E6 device temperature step."""
+        return self._temperature_step
 
     def build_query(self) -> list[MessageQuery]:
         """Midea E6 device build query."""
@@ -97,7 +107,7 @@ class MideaE6Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea E6 device set attribute."""
         if attr in [
             DeviceAttributes.main_power,
@@ -116,6 +126,21 @@ class MideaE6Device(MideaDevice):
     def heating_modes(self) -> list[str]:
         """Return available heating modes."""
         return self._heating_modes
+
+    def set_customize(self, customize: str) -> None:
+        """Midea E2 device set customize."""
+        if customize and len(customize) > 0:
+            try:
+                params = json.loads(customize)
+                if params and "temperature_step" in params:
+                    self._temperature_step = params.get("temperature_step")
+            except Exception:
+                _LOGGER.exception("[%s] Set customize error", self.device_id)
+            self.update_all(
+                {
+                    "temperature_step": self._temperature_step,
+                },
+            )
 
 
 class MideaAppliance(MideaE6Device):
