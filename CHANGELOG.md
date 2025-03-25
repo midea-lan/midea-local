@@ -1,5 +1,24 @@
 # Changelog
 
+## [6.2.0](https://github.com/midea-lan/midea-local/compare/v6.1.0...v6.2.0) (2025-03-25)
+
+
+### Features
+
+* **ad:** add ad device support ([#362](https://github.com/midea-lan/midea-local/issues/362)) ([77e1baa](https://github.com/midea-lan/midea-local/commit/77e1baaf865a6002d6cbea1a6a02c9d345eba866))
+* **b3:** support new X00 body for B3 device ([#350](https://github.com/midea-lan/midea-local/issues/350)) ([702aaf0](https://github.com/midea-lan/midea-local/commit/702aaf0dc36d4c3b07bc2607a42a24efee2f13b3))
+* **cf:** add defrost and freeze for CF device ([#351](https://github.com/midea-lan/midea-local/issues/351)) ([0762e79](https://github.com/midea-lan/midea-local/commit/0762e7948068e0d5dab236c84f444fbc6ef5f1d0))
+* **e6:** add cold water and climate compensation features ([#353](https://github.com/midea-lan/midea-local/issues/353)) ([88b78d0](https://github.com/midea-lan/midea-local/commit/88b78d04d9984bd20dd50c8a3bcced18168f30be))
+
+
+### Bug Fixes
+
+* **cd:** fix cd device mode key and value error ([#357](https://github.com/midea-lan/midea-local/issues/357)) ([beaf7e0](https://github.com/midea-lan/midea-local/commit/beaf7e0f3492c1348bf21cfffa86f54095824e9b))
+* **cloud:** switch default cloud from SmartHome to Nethome Plus ([#360](https://github.com/midea-lan/midea-local/issues/360)) ([ae34281](https://github.com/midea-lan/midea-local/commit/ae342818231b2f6eda92ee35ceb604766575387b))
+* **e2:** input target_temperature should be float ([#358](https://github.com/midea-lan/midea-local/issues/358)) ([316afce](https://github.com/midea-lan/midea-local/commit/316afce6a81c202112c6a530057e2e86b9b59904))
+* **e3:** input target_temperature should be float ([#359](https://github.com/midea-lan/midea-local/issues/359)) ([377ded9](https://github.com/midea-lan/midea-local/commit/377ded9e90e7debbc0f0cc669b6820c6073df8b6))
+* **e6:** input temperature should be float ([#363](https://github.com/midea-lan/midea-local/issues/363)) ([3763412](https://github.com/midea-lan/midea-local/commit/3763412f2fe30d7d5d7d531a8b2965bf9b7a4c62))
+
 ## [6.1.0](https://github.com/midea-lan/midea-local/compare/v6.0.3...v6.1.0) (2025-01-15)
 
 
