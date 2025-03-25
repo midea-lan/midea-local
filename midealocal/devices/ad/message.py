@@ -10,6 +10,8 @@ from midealocal.message import (
 )
 
 MAX_MSG_SERIAL_NUM =254
+EXCEPTION_VALUE = 0xFF
+COMPENSATE_VALUE =0x0D
 
 class MessageADBase(MessageRequest):
     """AD message base."""
@@ -55,7 +57,7 @@ class Message21Query(MessageADBase):
             message_type=MessageType.query,
             body_type=ListTypes.X21,
         )
-    
+
     @property
     def _body(self) -> bytearray:
         return bytearray(
@@ -74,31 +76,32 @@ class Message31Query(MessageADBase):
             message_type=MessageType.query,
             body_type=ListTypes.X31,
         )
-    
+
     @property
+
     def _body(self) -> bytearray:
         return bytearray(
             [
                 0x01,
             ],
         )
-
+    
 class X31MessageBody(MessageBody):
     """AD X31 message general body."""
 
     def __init__(self, body: bytearray) -> None:
         """Initialize AD X31 message general body."""
         super().__init__(body)
-        self.screen_status = body[2] > 0 if body[2] != 0xFF else None
-        self.led_status = body[3] > 0 if body[3] != 0xFF else None
-        self.arofene_link = body[4] > 0 if body[4] != 0xFF else None
-        self.header_exist = body[5] > 0 if body[5] != 0xFF else None
-        self.radar_exist = body[6] > 0 if body[6] != 0xFF else None
-        self.header_led_status = body[7] > 0 if body[7] != 0xFF else None
-        self.temperature_raw = (body[8] << 8) + body[9] if body[8] !=0xFF else None
-        self.humidity_raw = (body[10] << 8) + body[11] if body[10] !=0xFF else None
-        self.temperature_compensate = (body[12] << 8) + body[13] if body[1] > 0x0D else None
-        self.humidity_compensate = (body[14] << 8) + body[15] if body[1] > 0x0D else None
+        self.screen_status = body[2] > 0 if body[2] != EXCEPTION_VALUE else None
+        self.led_status = body[3] > 0 if body[3] != EXCEPTION_VALUE else None
+        self.arofene_link = body[4] > 0 if body[4] != EXCEPTION_VALUE else None
+        self.header_exist = body[5] > 0 if body[5] != EXCEPTION_VALUE else None
+        self.radar_exist = body[6] > 0 if body[6] != EXCEPTION_VALUE else None
+        self.header_led_status = body[7] > 0 if body[7] != EXCEPTION_VALUE else None
+        self.temperature_raw = (body[8] << 8) + body[9] if body[8] !=EXCEPTION_VALUE else None
+        self.humidity_raw = (body[10] << 8) + body[11] if body[10] !=EXCEPTION_VALUE else None
+        self.temperature_compensate = (body[12] << 8) + body[13] if body[1] > COMPENSATE_VALUE else None
+        self.humidity_compensate = (body[14] << 8) + body[15] if body[1] > COMPENSATE_VALUE else None
 
 class X21MessageBody(MessageBody):
     """AD X21 message general body."""
@@ -108,7 +111,7 @@ class X21MessageBody(MessageBody):
         super().__init__(body)
         self.portable_sense = (body[2] > 0)
         self.night_mode = (body[3] > 0)
-        self.screen_extinction_timeout = body[4] if (body[4] != 0xFF) else None
+        self.screen_extinction_timeout = body[4] if (body[4] != EXCEPTION_VALUE) else None
 
 class ADNotifyMessageBody(MessageBody):
     """AD message notify body."""
@@ -118,13 +121,13 @@ class ADNotifyMessageBody(MessageBody):
         super().__init__(body)
         if body[1] == 0x01:
             self.temperature = ((((body[3] << 8) + body[4]) - 65535) - 1) / 100  if body[3] >= 128 else ((body[3] << 8) + body[4]) / 100
-            self.humidity =  ((body[5] << 8) + body[6]) / 100 if body[5] !=0xFF else None
-            self.tvoc =  ((body[7] << 8) + body[8]) if body[7] !=0xFF else None
-            self.pm25 =  ((body[9] << 8) + body[10]) if body[9] !=0xFF else None
-            self.co2 =  ((body[11] << 8) + body[12]) if body[11] !=0xFF else None
-            self.hcho =  ((body[13] << 8) + body[14]) / 0.1 if body[13] !=0xFF else None
-            self.arofene_link = ((body[16] & 0x01) > 0) if body[16] !=0xFF else None
-            self.radar_exist = ((body[16] & 0x02) > 0) if body[16] !=0xFF else None
+            self.humidity =  ((body[5] << 8) + body[6]) / 100 if body[5] !=EXCEPTION_VALUE else None
+            self.tvoc =  ((body[7] << 8) + body[8]) if body[7] !=EXCEPTION_VALUE else None
+            self.pm25 =  ((body[9] << 8) + body[10]) if body[9] !=EXCEPTION_VALUE else None
+            self.co2 =  ((body[11] << 8) + body[12]) if body[11] !=EXCEPTION_VALUE else None
+            self.hcho =  ((body[13] << 8) + body[14]) / 0.1 if body[13] !=EXCEPTION_VALUE else None
+            self.arofene_link = ((body[16] & 0x01) > 0) if body[16] !=EXCEPTION_VALUE else None
+            self.radar_exist = ((body[16] & 0x02) > 0) if body[16] !=EXCEPTION_VALUE else None
         elif body[1] == 0x04:
             if body[3] == 0x01:
                 self.presets_function = body[4] == 0x01  

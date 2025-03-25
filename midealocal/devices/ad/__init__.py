@@ -1,14 +1,13 @@
 """Midea local AD device."""
 
-import json
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar
+from typing import Any
 
 from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
 
-from .message import MessageADResponse, Message21Query, Message31Query
+from .message import Message21Query, Message31Query, MessageADResponse
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,7 +54,7 @@ class MideaADDevice(MideaDevice):
         device_protocol: ProtocolVersion,
         model: str,
         subtype: int,
-        customize: str,
+        customize: str,  # noqa: ARG002
     ) -> None:
         """Initialize Midea AD device."""
         super().__init__(
@@ -90,11 +89,11 @@ class MideaADDevice(MideaDevice):
                 DeviceAttributes.temperature_raw: None,
                 DeviceAttributes.humidity_raw: None,
                 DeviceAttributes.temperature_compensate: None,
-                DeviceAttributes.humidity_compensate: None,     
+                DeviceAttributes.humidity_compensate: None,
             },
         )
 
-    def build_query(self):
+    def build_query(self) -> list[Message21Query, Message31Query]:
         """Midea AD device build query."""
         return [
             Message21Query(self._message_protocol_version),
@@ -115,11 +114,9 @@ class MideaADDevice(MideaDevice):
 
     def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea AD device set attribute."""
-        pass
 
     def set_customize(self, customize: str) -> None:
         """Midea AD device set customize."""
-        pass
 
 
 class MideaAppliance(MideaADDevice):
