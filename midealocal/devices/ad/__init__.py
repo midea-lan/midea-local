@@ -93,7 +93,7 @@ class MideaADDevice(MideaDevice):
             },
         )
 
-    def build_query(self) -> list[Message21Query, Message31Query]:
+    def build_query(self) -> list[Message21Query | Message31Query]:
         """Midea AD device build query."""
         return [
             Message21Query(self._message_protocol_version),
