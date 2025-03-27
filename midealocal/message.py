@@ -556,6 +556,51 @@ class MessageQueryAppliance(MessageRequest):
         return bytearray([0x00] * 19)
 
 
+class MessageConverter:
+    """Lua message converter."""
+
+    def __init__(self) -> None:
+        """Initialize lua message converter."""
+
+    def data_to_json(self, json_str: str) -> str | None:
+        """Convert data to json."""
+        raise NotImplementedError
+
+    def json_to_data(self, json_str: str) -> str | None:
+        """Convert json to data."""
+        raise NotImplementedError
+
+class MessageQueryToshibaIolife(MessageRequest):
+    """Message query Toshiba IoLife."""
+    _converter: MessageConverter
+
+    def __init__(self, device_type: DeviceType, converter: MessageConverter) -> None:
+        """Initialize message query Toshiba IoLife."""
+        super().__init__(
+            device_type=device_type,
+            protocol_version=0,
+            message_type=MessageType.query,
+            body_type=ListTypes.X00,
+        )
+        self._converter = converter
+
+    @property
+    def header(self) -> bytearray:
+        """Message header. Not used."""
+        return bytearray([])
+
+    @property
+    def _body(self) -> bytearray:
+        """Message body. Not used."""
+        return bytearray([])
+
+    def serialize(self) -> bytearray:
+        """Serialize message."""
+        hex_str = self._converter.json_to_data('{"deviceinfo": {"deviceType": "' + self.device_type.name + '", "deviceSubType": "2100"}, "query": {}}')  # noqa: E501
+        if hex_str is None:
+            return bytearray()
+        return bytearray.fromhex(hex_str)
+
 T = TypeVar("T")
 E = TypeVar("E", bound="IntEnum")
 
