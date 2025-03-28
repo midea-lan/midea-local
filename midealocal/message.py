@@ -727,6 +727,93 @@ class MessageBody:
         for parse in self.parser_list:
             setattr(self, parse.name, parse.get_value(self._data))
 
+    @staticmethod
+    def get_bit(body: bytearray, byte_index: int, bit_index: int) -> int:
+        """Retrieve the value of a specific bit in a byte within a byte array.
+
+        Args:
+            body: The array of bytes to process.
+            byte_index: The index of the byte in the array.
+            bit_index: The index of the bit in the byte (0 to 7).
+
+        Returns:
+            The value of the specified bit (0 or 1).
+
+        """
+        byte = body[byte_index]
+        return (byte >> bit_index) & 1
+
+    @staticmethod
+    def set_bit(
+        body: bytearray,
+        byte_index: int,
+        bit_index: int,
+        value: int,
+    ) -> None:
+        """Set the value of a specific bit in a byte within a byte array.
+
+        Args:
+            body: The array of bytes to process.
+            byte_index: The index of the byte in the array.
+            bit_index: The index of the bit in the byte (0 to 7).
+            value: The value to set for the bit (0 or 1).
+
+        """
+        if value == 1:
+            body[byte_index] |= 1 << bit_index  # Set the bit to 1
+        else:
+            body[byte_index] &= ~(1 << bit_index)  # Set the bit to 0
+
+    @staticmethod
+    def get_bits(
+        body: bytearray,
+        byte_index: int,
+        start_index: int,
+        end_index: int,
+    ) -> int:
+        """Retrieve the value of a specific range of bits within a byte.
+
+        Args:
+            body: The array of bytes to process.
+            byte_index: The index of the byte in the array.
+            start_index: The starting bit index (lower bit).
+            end_index: The ending bit index (higher bit).
+
+        Returns:
+            The integer value of the specified bit range.
+
+        """
+        byte = body[byte_index]
+        mask = (
+            1 << (end_index - start_index + 1)
+        ) - 1  # Create a bitmask for the range
+        return (byte >> start_index) & mask
+
+    @staticmethod
+    def set_bits(
+        body: bytearray,
+        byte_index: int,
+        start_index: int,
+        end_index: int,
+        value: int,
+    ) -> None:
+        """Set the value of a specific range of bits within a byte.
+
+        Args:
+            body: The array of bytes to process.
+            byte_index: The index of the byte in the array.
+            start_index: The starting bit index (lower bit).
+            end_index: The ending bit index (higher bit).
+            value: The value to set for the bit range.
+
+        """
+        mask = (
+            1 << (end_index - start_index + 1)
+        ) - 1  # Create a bitmask for the range
+        value &= mask  # Ensure value fits within the range
+        body[byte_index] &= ~(mask << start_index)  # Clear the range
+        body[byte_index] |= value << start_index  # Set the range
+
 
 class NewProtocolPackLength(IntEnum):
     """New Protocol Pack Length."""
