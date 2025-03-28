@@ -86,7 +86,7 @@ class MideaE2Device(MideaDevice):
                 DeviceAttributes.keep_warm: False,
                 DeviceAttributes.protection: False,
                 DeviceAttributes.current_temperature: None,
-                DeviceAttributes.target_temperature: 40,
+                DeviceAttributes.target_temperature: 40.0,
                 DeviceAttributes.whole_tank_heating: False,
                 DeviceAttributes.variable_heating: False,
                 DeviceAttributes.heating_time_remaining: 0,
@@ -98,7 +98,7 @@ class MideaE2Device(MideaDevice):
         self._old_protocol = self._default_old_protocol
         # target_temperature step
         self._temperature_step: float | None = None
-        self._default_temperature_step = 1
+        self._default_temperature_step = 1.0
         self.set_customize(customize)
 
     @property
@@ -156,9 +156,8 @@ class MideaE2Device(MideaDevice):
             DeviceAttributes.current_temperature,
         ]:
             old_protocol = self._normalize_old_protocol(self._old_protocol)
-            # convert input float target_temperature to int for message byte
             if attr == DeviceAttributes.target_temperature:
-                value = int(value * 2)
+                value = value * 2
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._message_protocol_version)
                 message.power = bool(value)
