@@ -68,7 +68,7 @@ class MideaE3Device(MideaDevice):
                 DeviceAttributes.zero_cold_pulse: False,
                 DeviceAttributes.smart_volume: False,
                 DeviceAttributes.current_temperature: None,
-                DeviceAttributes.target_temperature: 40,
+                DeviceAttributes.target_temperature: 40.0,
             },
         )
         self._old_subtypes = [32, 33, 34, 35, 36, 37, 40, 43, 48, 49, 80]
@@ -76,7 +76,7 @@ class MideaE3Device(MideaDevice):
         self._default_precision_halves = False
         # target_temperature step
         self._temperature_step: float | None = None
-        self._default_temperature_step = 1
+        self._default_temperature_step: float = 1.0
         self.set_customize(customize)
 
     @property
@@ -132,8 +132,7 @@ class MideaE3Device(MideaDevice):
             DeviceAttributes.protection,
         ]:
             if self._precision_halves and attr == DeviceAttributes.target_temperature:
-                # convert input float target_temperature to int for message byte
-                value = int(value * 2)
+                value = value * 2
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._message_protocol_version)
                 message.power = bool(value)
@@ -154,7 +153,7 @@ class MideaE3Device(MideaDevice):
             try:
                 params = json.loads(customize)
                 if params and "temperature_step" in params:
-                    self._temperature_step = params.get("temperature_step")
+                    self._temperature_step = float(params.get("temperature_step"))
                 if params and "precision_halves" in params:
                     self._precision_halves = params.get("precision_halves")
             except Exception:
