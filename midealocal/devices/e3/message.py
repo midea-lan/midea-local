@@ -108,7 +108,12 @@ class MessageSet(MessageE3Base):
         zero_cold_pulse = 0x10 if self.zero_cold_pulse else 0x00
         smart_volume = 0x20 if self.smart_volume else 0x00
         # Byte 5 target_temperature
-        target_temperature = int(self.target_temperature) & 0xFF
+        # convert float temperature to int
+        if not isinstance(self.target_temperature, int | float):
+            raise TypeError(
+                f"Invalid value for target_temperature: {self.target_temperature}",
+            )
+        target_temperature = max(0, min(255, int(self.target_temperature))) & 0xFF
 
         return bytearray(
             [
@@ -148,7 +153,9 @@ class MessageNewProtocolSet(MessageE3Base):
         key = NEW_PROTOCOL_PARAMS[self.key]
         if self.key == "target_temperature":
             # convert float temperature to int
-            value = int(self.value)
+            if not isinstance(self.value, int | float):
+                raise TypeError(f"Invalid value for target_temperature: {self.value}")
+            value = max(0, min(255, int(self.value)))
         else:
             value = 0x01 if self.value else 0x00
         return bytearray(

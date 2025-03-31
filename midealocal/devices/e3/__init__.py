@@ -126,6 +126,13 @@ class MideaE3Device(MideaDevice):
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea E3 device set attribute."""
         message: MessagePower | MessageSet | MessageNewProtocolSet | None = None
+        _LOGGER.debug(
+            "[%s] attr: %s, value %s, type %s",
+            self.device_id,
+            attr,
+            value,
+            type(value),
+        )
         if attr not in [
             DeviceAttributes.burning_state,
             DeviceAttributes.current_temperature,
