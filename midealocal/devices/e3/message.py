@@ -109,11 +109,7 @@ class MessageSet(MessageE3Base):
         smart_volume = 0x20 if self.smart_volume else 0x00
         # Byte 5 target_temperature
         # convert float temperature to int
-        if not isinstance(self.target_temperature, int | float):
-            raise TypeError(
-                f"Invalid value for target_temperature: {self.target_temperature}",
-            )
-        target_temperature = max(0, min(255, int(self.target_temperature))) & 0xFF
+        target_temperature = int(self.target_temperature) & 0xFF
 
         return bytearray(
             [
@@ -153,9 +149,7 @@ class MessageNewProtocolSet(MessageE3Base):
         key = NEW_PROTOCOL_PARAMS[self.key]
         if self.key == "target_temperature":
             # convert float temperature to int
-            if not isinstance(self.value, int | float):
-                raise TypeError(f"Invalid value for target_temperature: {self.value}")
-            value = max(0, min(255, int(self.value)))
+            value = int(self.value)
         else:
             value = 0x01 if self.value else 0x00
         return bytearray(
@@ -192,8 +186,8 @@ class E3GeneralMessageBody(MessageBody):
         self.power = (body[2] & 0x01) > 0
         self.burning_state = (body[2] & 0x02) > 0
         self.zero_cold_water = (body[2] & 0x04) > 0
-        self.current_temperature = body[5]
-        self.target_temperature = body[6]
+        self.current_temperature = float(body[5])
+        self.target_temperature = float(body[6])
         self.protection = (body[8] & 0x08) > 0
         self.zero_cold_pulse = (
             (body[20] & 0x01) > 0 if len(body) > ADDITIONAL_BYTE else False
