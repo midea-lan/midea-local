@@ -84,7 +84,7 @@ class MideaE6Device(MideaDevice):
         )
         # target_temperature step
         self._temperature_step: float | None = None
-        self._default_temperature_step = 1
+        self._default_temperature_step: float = 1.0
         self.set_customize(customize)
 
     @property
@@ -133,7 +133,7 @@ class MideaE6Device(MideaDevice):
             try:
                 params = json.loads(customize)
                 if params and "temperature_step" in params:
-                    self._temperature_step = params.get("temperature_step")
+                    self._temperature_step = float(params.get("temperature_step"))
             except Exception:
                 _LOGGER.exception("[%s] Set customize error", self.device_id)
             self.update_all(
