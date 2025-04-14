@@ -11,7 +11,8 @@ from midealocal.message import (
     MessageType,
 )
 
-OLD_BODY_LENGTH = 29
+OLD_BODY_LENGTH = 29  # T_0000_CD_3.lua body length 29
+NEW_BODY_LENGTH = 34  # T_0000_CD_000K86A2_3 body length 34
 
 
 class MessageCDBase(MessageRequest):
@@ -167,27 +168,27 @@ class CDGeneralMessageBody(MessageBody):
         # hotWater
         self.water_level = body[34] if len(body) > OLD_BODY_LENGTH else None
         # vacationMode
-        if len(body) > OLD_BODY_LENGTH and (body[35] & 0x01) > 0:
+        if len(body) > NEW_BODY_LENGTH and (body[35] & 0x01) > 0:
             self.mode = 0x05
         # smartGrid
         self.smart_grid = (
-            ((body[35] & 0x01) > 0) if len(body) > OLD_BODY_LENGTH else False
+            ((body[35] & 0x01) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
         # multiTerminal
         self.multi_terminal = (
-            ((body[35] & 0x40) > 0) if len(body) > OLD_BODY_LENGTH else False
+            ((body[35] & 0x40) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
         # fahrenheitEffect
         self.fahrenheit = (
-            ((body[35] & 0x80) > 0) if len(body) > OLD_BODY_LENGTH else False
+            ((body[35] & 0x80) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
         # mute_effect
         self.mute_effect = (
-            ((body[39] & 0x40) > 0) if len(body) > OLD_BODY_LENGTH else False
+            ((body[39] & 0x40) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
         # mute_status
         self.mute_status = (
-            ((body[39] & 0x880) > 0) if len(body) > OLD_BODY_LENGTH else False
+            ((body[39] & 0x880) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
 
 
