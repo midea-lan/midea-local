@@ -92,9 +92,9 @@ class MideaCDDevice(MideaDevice):
             attributes={
                 DeviceAttributes.power: False,
                 DeviceAttributes.mode: None,
-                DeviceAttributes.max_temperature: 65,
-                DeviceAttributes.min_temperature: 35,
-                DeviceAttributes.target_temperature: 40,
+                DeviceAttributes.max_temperature: 65.0,
+                DeviceAttributes.min_temperature: 35.0,
+                DeviceAttributes.target_temperature: 40.0,
                 DeviceAttributes.current_temperature: None,
                 DeviceAttributes.outdoor_temperature: None,
                 DeviceAttributes.condenser_temperature: None,
@@ -106,7 +106,7 @@ class MideaCDDevice(MideaDevice):
         )
         self._fields: dict[Any, Any] = {}
         self._temperature_step: float | None = None
-        self._default_temperature_step = 1
+        self._default_temperature_step: float = 1.0
         # customize lua_protocol
         self._default_lua_protocol = LuaProtocol.auto
         self._lua_protocol = self._default_lua_protocol
@@ -117,11 +117,11 @@ class MideaCDDevice(MideaDevice):
     def _value_to_temperature(self, value: float) -> float:
         # fahrenheit to celsius
         if self._fahrenheit:
-            return (value - 32) * 5.0 / 9.0
+            return (value - 32.0) * 5.0 / 9.0
         # celsius
         # old protocol
         if self._lua_protocol == LuaProtocol.old:
-            return round((value - 30) / 2)
+            return round((value - 30.0) / 2)
         # new protocol
         return value
 
@@ -132,7 +132,7 @@ class MideaCDDevice(MideaDevice):
         # celsius
         # old protocol
         if self._lua_protocol == LuaProtocol.old:
-            return round(value * 2 + 30)
+            return round(value * 2 + 30.0)
         # new protocol
         return value
 
