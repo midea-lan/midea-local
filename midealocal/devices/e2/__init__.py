@@ -86,7 +86,7 @@ class MideaE2Device(MideaDevice):
                 DeviceAttributes.keep_warm: False,
                 DeviceAttributes.protection: False,
                 DeviceAttributes.current_temperature: None,
-                DeviceAttributes.target_temperature: 40,
+                DeviceAttributes.target_temperature: 40.0,
                 DeviceAttributes.whole_tank_heating: False,
                 DeviceAttributes.variable_heating: False,
                 DeviceAttributes.heating_time_remaining: 0,
@@ -98,12 +98,19 @@ class MideaE2Device(MideaDevice):
         self._old_protocol = self._default_old_protocol
         # target_temperature step
         self._temperature_step: float | None = None
-        self._default_temperature_step = 1
+        self._default_temperature_step = 1.0
+        self._precision_halves: bool | None = None
+        self._default_precision_halves = False
         self.set_customize(customize)
 
     @property
+    def precision_halves(self) -> bool | None:
+        """Midea E2 device precision halves."""
+        return self._precision_halves
+
+    @property
     def temperature_step(self) -> float | None:
-        """Midea E3 device target temperature step."""
+        """Midea E2 device target temperature step."""
         return self._temperature_step
 
     def _normalize_old_protocol(self, value: str | bool | int) -> OldProtocol:
@@ -156,9 +163,8 @@ class MideaE2Device(MideaDevice):
             DeviceAttributes.current_temperature,
         ]:
             old_protocol = self._normalize_old_protocol(self._old_protocol)
-            # convert input float target_temperature to int for message byte
             if attr == DeviceAttributes.target_temperature:
-                value = int(value * 2)
+                value = value if self._precision_halves else value * 2
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._message_protocol_version)
                 message.power = bool(value)
@@ -173,6 +179,8 @@ class MideaE2Device(MideaDevice):
     def set_customize(self, customize: str) -> None:
         """Midea E2 device set customize."""
         self._old_protocol = self._default_old_protocol
+        self._temperature_step = self._default_temperature_step
+        self._precision_halves = self._default_precision_halves
         if customize and len(customize) > 0:
             try:
                 params = json.loads(customize)
@@ -181,13 +189,16 @@ class MideaE2Device(MideaDevice):
                         params["old_protocol"],
                     )
                 if params and "temperature_step" in params:
-                    self._temperature_step = params.get("temperature_step")
+                    self._temperature_step = float(params.get("temperature_step"))
+                if params and "precision_halves" in params:
+                    self._precision_halves = params.get("precision_halves")
             except Exception:
                 _LOGGER.exception("[%s] Set customize error", self.device_id)
             self.update_all(
                 {
                     "temperature_step": self._temperature_step,
                     "old_protocol": self._old_protocol,
+                    "precision_halves": self._precision_halves,
                 },
             )
 
