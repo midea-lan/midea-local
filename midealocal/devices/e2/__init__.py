@@ -180,7 +180,7 @@ class MideaE2Device(MideaDevice):
                         params["old_protocol"],
                     )
                 if params and "temperature_step" in params:
-                    self._temperature_step = params.get("temperature_step")
+                    self._temperature_step = float(params.get("temperature_step"))
             except Exception:
                 _LOGGER.exception("[%s] Set customize error", self.device_id)
             self.update_all(
