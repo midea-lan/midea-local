@@ -207,21 +207,12 @@ class MideaCDDevice(MideaDevice):
         ]:
             message = MessageSet(self._message_protocol_version)
             message.fields = self._fields
-            # get mode key value with mode value from _modes dict
-            message.mode = MideaCDDevice.get_key_by_value(
-                str(self._attributes[DeviceAttributes.mode]),
-            )
-            message.power = self._attributes[DeviceAttributes.power]
-            message.target_temperature = self._attributes[
-                DeviceAttributes.target_temperature
-            ]
-            # process mode attr name to str
+            # process mode attr name
             if attr == DeviceAttributes.mode:
-                # get mode key value with mode value from _modes dict
-                setattr(message, str(attr), MideaCDDevice.get_key_by_value(str(value)))
-            # process target temperature to data value
-            elif attr == DeviceAttributes.target_temperature:
-                setattr(message, str(attr), self._temperature_to_value(float(value)))
+                # get mode key from mode value
+                message.mode = MideaCDDevice.get_key_by_value(
+                    str(self._attributes[DeviceAttributes.mode]),
+                )
             else:
                 setattr(message, str(attr), value)
             self.build_send(message)

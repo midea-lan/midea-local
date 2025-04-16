@@ -12,7 +12,7 @@ from midealocal.message import (
 )
 
 OLD_BODY_LENGTH = 29  # T_0000_CD_3.lua body length 29
-NEW_BODY_LENGTH = 34  # T_0000_CD_000K86A2_3 body length 34
+NEW_BODY_LENGTH = 35  # T_0000_CD_000K86A2_3 body length 34
 
 
 class MessageCDBase(MessageRequest):
@@ -67,7 +67,7 @@ class MessageSet(MessageCDBase):
         self.target_temperature: float = 0
         self.aux_heating: bool = False
         self.fields: dict[Any, Any] = {}
-        self.mode: int = 1
+        self.mode: int = 0
 
     def read_field(self, field: str) -> int:
         """CD message set read field."""
@@ -77,17 +77,17 @@ class MessageSet(MessageCDBase):
     @property
     def _body(self) -> bytearray:
         power = 0x01 if self.power else 0x00
-        mode = self.mode + 1
+        mode = self.mode
         target_temperature = round(self.target_temperature * 2 + 30)
         return bytearray(
             [
-                0x01,
-                power,
-                mode,
-                int(target_temperature),
-                self.read_field("trValue"),
-                self.read_field("openPTC"),
-                self.read_field("ptcTemp"),
+                0x01,  # byte1
+                power,  # byte2
+                mode,  # byte3
+                int(target_temperature),  # byte4
+                self.read_field("trValue"),  # byte5
+                self.read_field("openPTC"),  # byte6
+                self.read_field("ptcTemp"),  # byte7
                 0,  # self.read_field("byte8")
             ],
         )
