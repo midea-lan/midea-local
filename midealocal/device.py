@@ -6,7 +6,7 @@ import threading
 import time
 from collections.abc import Callable
 from enum import IntEnum, StrEnum
-from typing import Any
+from typing import Any, ClassVar
 
 from typing_extensions import deprecated
 
@@ -109,6 +109,55 @@ class MideaDevice(threading.Thread):
         self._previous_refresh = 0.0
         self._previous_heartbeat = 0.0
         self.name = self._device_name
+
+    _fahrenheit_default: ClassVar[bool] = False
+
+    @classmethod
+    def get_dict_key_by_value(
+        cls: type["MideaDevice"],
+        dict_name: str,
+        value: str,
+    ) -> Any:  # noqa: ANN401
+        """Get key by value from a specified class dictionary."""
+        if hasattr(cls, dict_name) and isinstance(getattr(cls, dict_name), dict):
+            target_dict: dict[Any, str] = getattr(cls, dict_name)
+            for key, val in target_dict.items():
+                if val == value:
+                    return key
+            return None  # if not found, return None
+        raise ValueError(
+            f"Class '{cls.__name__}' does not have a dict named '{dict_name}'.",
+        )
+
+    def celsius_to_fahrenheit(
+        self,
+        celsius: float,
+        is_fahrenheit: bool | None = None,
+    ) -> float:
+        """Convert Celsius to Fahrenheit."""
+        should_convert = (
+            is_fahrenheit
+            if is_fahrenheit is not None
+            else getattr(self, "_fahrenheit", self._fahrenheit_default)
+        )
+        if should_convert:
+            return celsius * 9.0 / 5.0 + 32
+        return celsius  # Return Celsius if not converting
+
+    def fahrenheit_to_celsius(
+        self,
+        fahrenheit: float,
+        is_fahrenheit: bool | None = None,
+    ) -> float:
+        """Convert Fahrenheit to Celsius."""
+        should_convert = (
+            is_fahrenheit
+            if is_fahrenheit is not None
+            else getattr(self, "_fahrenheit", self._fahrenheit_default)
+        )
+        if should_convert:
+            return (fahrenheit - 32.0) * 5.0 / 9.0
+        return fahrenheit  # Return Fahrenheit if not converting
 
     @property
     def available(self) -> bool:
