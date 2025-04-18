@@ -56,14 +56,6 @@ class MideaCDDevice(MideaDevice):
         0x05: "Vacation",
     }
 
-    @classmethod
-    def get_key_by_value(cls, value: str) -> int:
-        """Get _modes key by value."""
-        for key, val in cls._modes.items():
-            if val == value:
-                return key
-        return 0  # if not found, return 0:None
-
     def __init__(
         self,
         name: str,
@@ -117,7 +109,7 @@ class MideaCDDevice(MideaDevice):
     def _value_to_temperature(self, value: float) -> float:
         # fahrenheit to celsius
         if self._fahrenheit:
-            return (value - 32.0) * 5.0 / 9.0
+            return self.fahrenheit_to_celsius(value)
         # celsius
         # old protocol
         if self._lua_protocol == LuaProtocol.old:
@@ -126,9 +118,9 @@ class MideaCDDevice(MideaDevice):
         return value
 
     def _temperature_to_value(self, value: float) -> float:
-        # fahrenheit to celsius
+        # celsius to fahrenheit
         if self._fahrenheit:
-            return value * 9.0 / 5.0 + 32
+            return self.celsius_to_fahrenheit(value)
         # celsius
         # old protocol
         if self._lua_protocol == LuaProtocol.old:
@@ -210,7 +202,8 @@ class MideaCDDevice(MideaDevice):
             # process mode attr name
             if attr == DeviceAttributes.mode:
                 # get mode key from mode value
-                message.mode = MideaCDDevice.get_key_by_value(
+                message.mode = MideaCDDevice.get_dict_key_by_value(
+                    "_modes",
                     str(self._attributes[DeviceAttributes.mode]),
                 )
             else:
