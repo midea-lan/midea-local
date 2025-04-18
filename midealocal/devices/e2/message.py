@@ -83,7 +83,7 @@ class MessageNewProtocolSet(MessageE2Base):
             message_type=MessageType.set,
             body_type=ListTypes.X14,
         )
-        self.target_temperature: int | None = None
+        self.target_temperature: float | None = None
         self.variable_heating: bool | None = None
         self.whole_tank_heating: bool | None = None
 
@@ -113,7 +113,7 @@ class MessageSet(MessageE2Base):
             message_type=MessageType.set,
             body_type=ListTypes.X04,
         )
-        self.target_temperature = 0
+        self.target_temperature: float = 0.0
         self.variable_heating = False
         self.whole_tank_heating = False
         self.protection = False
@@ -124,7 +124,7 @@ class MessageSet(MessageE2Base):
         protection = 0x04 if self.protection else 0x00
         whole_tank_heating = 0x02 if self.whole_tank_heating else 0x01
         # Byte 5 target_temperature
-        target_temperature = self.target_temperature & 0xFF
+        target_temperature = int(self.target_temperature) & 0xFF
         # Byte 9 variable_heating
         variable_heating = 0x10 if self.variable_heating else 0x00
         return bytearray(
