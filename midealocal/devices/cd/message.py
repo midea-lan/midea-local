@@ -83,7 +83,7 @@ class MessageSet(MessageCDBase):
                 0x01,
                 power,
                 mode,
-                target_temperature,
+                int(target_temperature),
                 self.read_field("trValue"),
                 self.read_field("openPTC"),
                 self.read_field("ptcTemp"),
@@ -115,23 +115,23 @@ class CDGeneralMessageBody(MessageBody):
         # eco
         self.eco = body[2] & 0x40
         # tsValue
-        self.target_temperature = body[3]
+        self.target_temperature = float(body[3])
         # washBoxTemp
-        self.current_temperature = body[4]
+        self.current_temperature = float(body[4])
         # boxTopTemp
-        self.top_temperature = body[5]
+        self.top_temperature = float(body[5])
         # boxBottomTemp
-        self.bottom_temperature = body[6]
+        self.bottom_temperature = float(body[6])
         # t3Value
-        self.condenser_temperature = body[7]
+        self.condenser_temperature = float(body[7])
         # t4Value
-        self.outdoor_temperature = body[8]
+        self.outdoor_temperature = float(body[8])
         # compressorTopTemp
-        self.compressor_temperature = body[9]
+        self.compressor_temperature = float(body[9])
         # tsMaxValue
-        self.max_temperature = body[10]
+        self.max_temperature = float(body[10])
         # tsMinValue
-        self.min_temperature = body[11]
+        self.min_temperature = float(body[11])
         # errorCode
         self.error_code = body[20]
         # bottomElecHeat
@@ -200,7 +200,7 @@ class CD01MessageBody(MessageBody):
         self.fields = {}
         self.power = (body[2] & 0x01) > 0
         self.mode = body[3]
-        self.target_temperature = body[4]
+        self.target_temperature = float(body[4])
         self.fields["trValue"] = body[5]
         self.fields["openPTC"] = body[5]
         self.fields["ptcTemp"] = body[7]
