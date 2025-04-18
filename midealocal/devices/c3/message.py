@@ -262,19 +262,34 @@ class C3BasicBody(MessageBody):
         self.mode = body[data_offset + 3]
         self.mode_auto = body[data_offset + 4]
         # zone1, zone2
-        self.zone_target_temp = [body[data_offset + 5], body[data_offset + 6]]
-        self.dhw_target_temp = body[data_offset + 7]
-        self.room_target_temp = body[data_offset + 8] / 2
+        self.zone_target_temp = [
+            float(body[data_offset + 5]),
+            float(body[data_offset + 6]),
+        ]
+        self.dhw_target_temp = float(body[data_offset + 7])
+        self.room_target_temp = float(body[data_offset + 8] / 2)
         # zone1, zone2
-        self.zone_heating_temp_max = [body[data_offset + 9], body[data_offset + 13]]
-        self.zone_heating_temp_min = [body[data_offset + 10], body[data_offset + 14]]
-        self.zone_cooling_temp_max = [body[data_offset + 11], body[data_offset + 15]]
-        self.zone_cooling_temp_min = [body[data_offset + 12], body[data_offset + 16]]
-        self.room_temp_max = body[data_offset + 17] / 2
-        self.room_temp_min = body[data_offset + 18] / 2
-        self.dhw_temp_max = body[data_offset + 19]
-        self.dhw_temp_min = body[data_offset + 20]
-        self.tank_actual_temperature = body[data_offset + 21]
+        self.zone_heating_temp_max = [
+            float(body[data_offset + 9]),
+            float(body[data_offset + 13]),
+        ]
+        self.zone_heating_temp_min = [
+            float(body[data_offset + 10]),
+            float(body[data_offset + 14]),
+        ]
+        self.zone_cooling_temp_max = [
+            float(body[data_offset + 11]),
+            float(body[data_offset + 15]),
+        ]
+        self.zone_cooling_temp_min = [
+            float(body[data_offset + 12]),
+            float(body[data_offset + 16]),
+        ]
+        self.room_temp_max = float(body[data_offset + 17] / 2)
+        self.room_temp_min = float(body[data_offset + 18] / 2)
+        self.dhw_temp_max = float(body[data_offset + 19])
+        self.dhw_temp_min = float(body[data_offset + 20])
+        self.tank_actual_temperature = float(body[data_offset + 21])
         self.error_code = body[data_offset + 22]
         self.tbh_control = body[data_offset + 23] & 0x80 > 0
         self.SysEnergyAnaEN = body[data_offset + 23] & 0x20 > 0
@@ -313,11 +328,11 @@ class C3EnergyBody(MessageBody):
             + (body[data_offset + 8])
         )
         base_value = body[data_offset + 9]
-        self.outdoor_temperature = (
-            (base_value - 256) if base_value > TEMP_NEG_VALUE else base_value
+        self.outdoor_temperature = float(
+            (base_value - 256) if base_value > TEMP_NEG_VALUE else base_value,
         )  # outdoor_temperature is t4
-        self.zone1_temp_set = body[data_offset + 10]
-        self.zone2_temp_set = body[data_offset + 11]
+        self.zone1_temp_set = float(body[data_offset + 10])
+        self.zone2_temp_set = float(body[data_offset + 11])
         self.t5s = body[data_offset + 12]
         self.tas = body[data_offset + 13]
 

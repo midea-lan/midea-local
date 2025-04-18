@@ -245,9 +245,6 @@ class MideaC3Device(MideaDevice):
             DeviceAttributes.fast_dhw,
             DeviceAttributes.dhw_target_temp,
         ]:
-            # convert input float dhw_target_temp to int for message byte
-            if attr == DeviceAttributes.dhw_target_temp:
-                value = int(value)
             message = self.make_message_set()
             setattr(message, str(attr), value)
         elif attr == DeviceAttributes.eco_mode:
@@ -298,11 +295,9 @@ class MideaC3Device(MideaDevice):
 
         message = self.make_message_set()
         if self._attributes[DeviceAttributes.zone_temp_type][zone]:
-            # convert float target_temperature to int
-            message.zone_target_temp[zone] = int(target_temperature)
+            message.zone_target_temp[zone] = target_temperature
         else:
-            # convert float target_temperature to int
-            message.room_target_temp = int(target_temperature)
+            message.room_target_temp = target_temperature
         if mode is not None:
             if zone == 0:
                 message.zone1_power = True
