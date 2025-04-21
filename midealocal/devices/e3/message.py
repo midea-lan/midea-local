@@ -92,7 +92,7 @@ class MessageSet(MessageE3Base):
             body_type=ListTypes.X04,
         )
 
-        self.target_temperature = 0
+        self.target_temperature: float = 0.0
         self.zero_cold_water = False
         self.bathtub_volume = 0
         self.protection = False
@@ -108,7 +108,8 @@ class MessageSet(MessageE3Base):
         zero_cold_pulse = 0x10 if self.zero_cold_pulse else 0x00
         smart_volume = 0x20 if self.smart_volume else 0x00
         # Byte 5 target_temperature
-        target_temperature = self.target_temperature & 0xFF
+        # convert float temperature to int
+        target_temperature = int(self.target_temperature) & 0xFF
 
         return bytearray(
             [
@@ -147,7 +148,8 @@ class MessageNewProtocolSet(MessageE3Base):
     def _body(self) -> bytearray:
         key = NEW_PROTOCOL_PARAMS[self.key]
         if self.key == "target_temperature":
-            value = self.value
+            # convert float temperature to int
+            value = int(self.value)
         else:
             value = 0x01 if self.value else 0x00
         return bytearray(
@@ -184,8 +186,8 @@ class E3GeneralMessageBody(MessageBody):
         self.power = (body[2] & 0x01) > 0
         self.burning_state = (body[2] & 0x02) > 0
         self.zero_cold_water = (body[2] & 0x04) > 0
-        self.current_temperature = body[5]
-        self.target_temperature = body[6]
+        self.current_temperature = float(body[5])
+        self.target_temperature = float(body[6])
         self.protection = (body[8] & 0x08) > 0
         self.zero_cold_pulse = (
             (body[20] & 0x01) > 0 if len(body) > ADDITIONAL_BYTE else False

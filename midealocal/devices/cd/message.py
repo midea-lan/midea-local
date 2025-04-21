@@ -11,7 +11,8 @@ from midealocal.message import (
     MessageType,
 )
 
-OLD_BODY_LENGTH = 29
+OLD_BODY_LENGTH = 29  # T_0000_CD_3.lua body length 29
+NEW_BODY_LENGTH = 35  # T_0000_CD_000K86A2_3 body length 34
 
 
 class MessageCDBase(MessageRequest):
@@ -66,7 +67,7 @@ class MessageSet(MessageCDBase):
         self.target_temperature: float = 0
         self.aux_heating: bool = False
         self.fields: dict[Any, Any] = {}
-        self.mode: int = 1
+        self.mode: int = 0
 
     def read_field(self, field: str) -> int:
         """CD message set read field."""
@@ -76,17 +77,17 @@ class MessageSet(MessageCDBase):
     @property
     def _body(self) -> bytearray:
         power = 0x01 if self.power else 0x00
-        mode = self.mode + 1
+        mode = self.mode
         target_temperature = round(self.target_temperature * 2 + 30)
         return bytearray(
             [
-                0x01,
-                power,
-                mode,
-                target_temperature,
-                self.read_field("trValue"),
-                self.read_field("openPTC"),
-                self.read_field("ptcTemp"),
+                0x01,  # byte1
+                power,  # byte2
+                mode,  # byte3
+                int(target_temperature),  # byte4
+                self.read_field("trValue"),  # byte5
+                self.read_field("openPTC"),  # byte6
+                self.read_field("ptcTemp"),  # byte7
                 0,  # self.read_field("byte8")
             ],
         )
@@ -115,23 +116,23 @@ class CDGeneralMessageBody(MessageBody):
         # eco
         self.eco = body[2] & 0x40
         # tsValue
-        self.target_temperature = body[3]
+        self.target_temperature = float(body[3])
         # washBoxTemp
-        self.current_temperature = body[4]
+        self.current_temperature = float(body[4])
         # boxTopTemp
-        self.top_temperature = body[5]
+        self.top_temperature = float(body[5])
         # boxBottomTemp
-        self.bottom_temperature = body[6]
+        self.bottom_temperature = float(body[6])
         # t3Value
-        self.condenser_temperature = body[7]
+        self.condenser_temperature = float(body[7])
         # t4Value
-        self.outdoor_temperature = body[8]
+        self.outdoor_temperature = float(body[8])
         # compressorTopTemp
-        self.compressor_temperature = body[9]
+        self.compressor_temperature = float(body[9])
         # tsMaxValue
-        self.max_temperature = body[10]
+        self.max_temperature = float(body[10])
         # tsMinValue
-        self.min_temperature = body[11]
+        self.min_temperature = float(body[11])
         # errorCode
         self.error_code = body[20]
         # bottomElecHeat
@@ -167,27 +168,27 @@ class CDGeneralMessageBody(MessageBody):
         # hotWater
         self.water_level = body[34] if len(body) > OLD_BODY_LENGTH else None
         # vacationMode
-        if len(body) > OLD_BODY_LENGTH and (body[35] & 0x01) > 0:
+        if len(body) > NEW_BODY_LENGTH and (body[35] & 0x01) > 0:
             self.mode = 0x05
         # smartGrid
         self.smart_grid = (
-            ((body[35] & 0x01) > 0) if len(body) > OLD_BODY_LENGTH else False
+            ((body[35] & 0x01) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
         # multiTerminal
         self.multi_terminal = (
-            ((body[35] & 0x40) > 0) if len(body) > OLD_BODY_LENGTH else False
+            ((body[35] & 0x40) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
         # fahrenheitEffect
         self.fahrenheit = (
-            ((body[35] & 0x80) > 0) if len(body) > OLD_BODY_LENGTH else False
+            ((body[35] & 0x80) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
         # mute_effect
         self.mute_effect = (
-            ((body[39] & 0x40) > 0) if len(body) > OLD_BODY_LENGTH else False
+            ((body[39] & 0x40) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
         # mute_status
         self.mute_status = (
-            ((body[39] & 0x880) > 0) if len(body) > OLD_BODY_LENGTH else False
+            ((body[39] & 0x880) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
 
 
@@ -200,7 +201,7 @@ class CD01MessageBody(MessageBody):
         self.fields = {}
         self.power = (body[2] & 0x01) > 0
         self.mode = body[3]
-        self.target_temperature = body[4]
+        self.target_temperature = float(body[4])
         self.fields["trValue"] = body[5]
         self.fields["openPTC"] = body[5]
         self.fields["ptcTemp"] = body[7]
