@@ -3,6 +3,7 @@
 from midealocal.const import MAX_BYTE_VALUE, DeviceType
 from midealocal.message import (
     ListTypes,
+    MessageBit,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -371,21 +372,23 @@ class B0Message31Body(MessageBody):
             self.weight = 0 if body[15] == MAX_BYTE_VALUE else body[15] * 10
             self.people_number = 0 if body[15] == MAX_BYTE_VALUE else body[15]
             # lua b26, byte16, bit 0-7
-            self.child_lock = self.get_bit(body, 16, 0) > 0
-            self.door = self.get_bit(body, 16, 1) > 0
-            self.tank_ejected = self.get_bit(body, 16, 2) > 0  # water_box
-            self.water_shortage = self.get_bit(body, 16, 3) > 0  # water_state
-            self.water_change_reminder = self.get_bit(body, 16, 4) > 0  # change_water
+            self.child_lock = MessageBit.get_bit(body, 16, 0) > 0
+            self.door = MessageBit.get_bit(body, 16, 1) > 0
+            self.tank_ejected = MessageBit.get_bit(body, 16, 2) > 0  # water_box
+            self.water_shortage = MessageBit.get_bit(body, 16, 3) > 0  # water_state
+            self.water_change_reminder = (
+                MessageBit.get_bit(body, 16, 4) > 0
+            )  # change_water
             # preheat
-            preheat = self.get_bit(body, 16, 5)
-            preheat_end = self.get_bit(body, 16, 6)
+            preheat = MessageBit.get_bit(body, 16, 5)
+            preheat_end = MessageBit.get_bit(body, 16, 6)
             if preheat_end:
                 self.pre_heat = "End"
             elif preheat:
                 self.pre_heat = "Working"
             else:
                 self.pre_heat = "Off"
-            self.error_code = self.get_bit(body, 16, 7)
+            self.error_code = MessageBit.get_bit(body, 16, 7)
 
 
 class MessageB0Response(MessageResponse):
