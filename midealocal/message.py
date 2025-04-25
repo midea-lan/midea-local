@@ -727,6 +727,10 @@ class MessageBody:
         for parse in self.parser_list:
             setattr(self, parse.name, parse.get_value(self._data))
 
+
+class MessageBit:
+    """Message body."""
+
     @staticmethod
     def get_bit(body: bytearray, byte_index: int, bit_index: int) -> int:
         """Retrieve the value of a specific bit in a byte within a byte array.
