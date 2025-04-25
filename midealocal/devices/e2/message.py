@@ -223,21 +223,27 @@ class E2GeneralMessageBody(MessageBody):
         self.fast_wash = (body[7] & 0x02) > 0  # fast_wash
         self.half_heat = (body[7] & 0x04) > 0  # half_heat
         self.whole_tank_heating = (body[7] & 0x08) > 0  # whole_heat
-        self.summer = (body[7] & 0x10) > 0  # summer
-        self.winter = (body[7] & 0x20) > 0  # winter
-        self.efficient = (body[7] & 0x40) > 0  # efficient
-        self.night = (body[7] & 0x80) > 0  # night
-        self.screen_off = (body[8] & 0x08) > 0  # screen_off
-        self.sleep = (body[8] & 0x10) > 0  # sleeo
-        self.cloud = (body[8] & 0x20) > 0  # cloud
-        self.appoint_wash = (body[8] & 0x40) > 0  # appoint_wash
-        self.now_wash = (body[8] & 0x80) > 0  # now_wash
+        self.summer = (body[7] & 0x10) > 0
+        self.winter = (body[7] & 0x20) > 0
+        self.efficient = (body[7] & 0x40) > 0
+        self.night = (body[7] & 0x80) > 0
+        self.screen_off = (body[8] & 0x08) > 0
+        self.sleep = (body[8] & 0x10) > 0
+        self.cloud = (body[8] & 0x20) > 0
+        self.appoint_wash = (body[8] & 0x40) > 0
+        self.now_wash = (body[8] & 0x80) > 0
         # end_time_hour/end_time_minute
         self.heating_time_remaining = body[9] * 60 + body[10]
         self.target_temperature = float(body[11])
-        self.smart_sterilize = (body[12] & 0x20) > 0  # smart_sterilize
-        self.sterilize_high_temp = (body[12] & 0x40) > 0  # sterilize_high_temp
-        self.uv_sterilize = (body[12] & 0x80) > 0  # uv_sterilize
+        self.smart_sterilize = (body[12] & 0x20) > 0
+        self.sterilize_high_temp = (body[12] & 0x40) > 0
+        self.uv_sterilize = (body[12] & 0x80) > 0
+        self.discharge_status = body[13]
+        self.top_temp = body[14]
+        self.bottom_heat = (body[15] & 0x01) > 0
+        self.top_heat = (body[15] & 0x02) > 0
+        self.water_cyclic = (body[15] & 0x80) > 0
+        self.water_system = body[16]
         # in_temperature
         self.in_temperature = float(body[18]) if len(body) > PROTECTION_BYTE else None
         # protect
@@ -255,7 +261,7 @@ class E2GeneralMessageBody(MessageBody):
             self.volume = body[27]
         # rate
         if len(body) > HEATING_POWER_BYTE:
-            self.rate = body[28]
+            self.rate = body[28] * 100
         # cur_rate
         if len(body) > HEATING_POWER_BYTE:
             self.heating_power = body[34] * 100

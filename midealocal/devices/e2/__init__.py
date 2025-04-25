@@ -50,6 +50,35 @@ class DeviceAttributes(StrEnum):
     heating_time_remaining = "heating_time_remaining"
     water_consumption = "water_consumption"
     heating_power = "heating_power"
+    fast_hot_power = "fast_hot_power"
+    water_flow = "water_flow"
+    sterilization = "sterilization"
+    heat_water_level = "heat_water_level"
+    eplus = "eplus"
+    fast_wash = "fast_wash"
+    half_heat = "half_heat"
+    summer = "summer"
+    winter = "winter"
+    efficient = "efficient"
+    night = "night"
+    screen_off = "screen_off"
+    sleep = "sleep"
+    cloud = "cloud"
+    appoint_wash = "appoint_wash"
+    now_wash = "now_wash"
+    smart_sterilize = "smart_sterilize"
+    sterilize_high_temp = "sterilize_high_temp"
+    uv_sterilize = "uv_sterilize"
+    discharge_status = "discharge_status"
+    top_temp = "top_temp"
+    bottom_heat = "bottom_heat"
+    top_heat = "top_heat"
+    water_cyclic = "water_cyclic"
+    water_system = "water_system"
+    in_temperature = "in_temperature"
+    day_water_consumption = "day_water_consumption"
+    volume = "volume"
+    rate = "rate"
 
 
 class MideaE2Device(MideaDevice):
@@ -92,6 +121,35 @@ class MideaE2Device(MideaDevice):
                 DeviceAttributes.heating_time_remaining: 0,
                 DeviceAttributes.water_consumption: None,
                 DeviceAttributes.heating_power: None,
+                DeviceAttributes.fast_hot_power: None,
+                DeviceAttributes.water_flow: None,
+                DeviceAttributes.sterilization: None,
+                DeviceAttributes.heat_water_level: None,
+                DeviceAttributes.eplus: None,
+                DeviceAttributes.fast_wash: None,
+                DeviceAttributes.half_heat: None,
+                DeviceAttributes.summer: None,
+                DeviceAttributes.winter: None,
+                DeviceAttributes.efficient: None,
+                DeviceAttributes.night: None,
+                DeviceAttributes.screen_off: None,
+                DeviceAttributes.sleep: None,
+                DeviceAttributes.cloud: None,
+                DeviceAttributes.appoint_wash: None,
+                DeviceAttributes.now_wash: None,
+                DeviceAttributes.smart_sterilize: None,
+                DeviceAttributes.sterilize_high_temp: None,
+                DeviceAttributes.uv_sterilize: None,
+                DeviceAttributes.discharge_status: None,
+                DeviceAttributes.top_temp: None,
+                DeviceAttributes.bottom_heat: None,
+                DeviceAttributes.top_heat: None,
+                DeviceAttributes.water_cyclic: None,
+                DeviceAttributes.water_system: None,
+                DeviceAttributes.in_temperature: None,
+                DeviceAttributes.day_water_consumption: None,
+                DeviceAttributes.volume: None,
+                DeviceAttributes.rate: None,
             },
         )
         self._default_old_protocol = OldProtocol.auto
