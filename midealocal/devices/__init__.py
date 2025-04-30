@@ -22,7 +22,9 @@ def device_selector(
 ) -> MideaDevice:
     """Select and load device."""
     try:
-        if device_type < DeviceType.A0:
+        if model == '00000008':
+            device_path = f".{f'x0008{device_type:02x}'}"
+        elif device_type < DeviceType.A0:
             device_path = f".{f'x{device_type:02x}'}"
         else:
             device_path = f".{f'{device_type:02x}'}"
