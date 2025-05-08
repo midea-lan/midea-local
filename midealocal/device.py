@@ -449,8 +449,7 @@ class MideaDevice(threading.Thread):
             _LOGGER.debug("[%s] Appliance query Received: %s", self._device_id, message)
             self._message_protocol_version = message.protocol_version
             _LOGGER.debug(
-                "[%s] device model %s, subtype %s, \
-                device protocol %s, message protocol %s",
+                "[%s] device model %s subtype %s, device protocol %s, msg protocol %s",
                 self._device_id,
                 self._model,
                 self._subtype,
