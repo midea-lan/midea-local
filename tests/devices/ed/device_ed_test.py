@@ -9,11 +9,6 @@ from midealocal.devices.ed import DeviceAttributes, MideaEDDevice
 from midealocal.devices.ed.message import (
     MessageQuery,
     MessageQuery01,
-    MessageQuery03,
-    MessageQuery04,
-    MessageQuery05,
-    MessageQuery06,
-    MessageQuery07,
     MessageQueryFF,
 )
 
@@ -98,15 +93,10 @@ class TestMideaEDDevice:
     def test_build_query(self) -> None:
         """Test build query."""
         queries = self.device.build_query()
-        assert len(queries) == 8
+        assert len(queries) == 3
         assert isinstance(queries[0], MessageQuery)
         assert isinstance(queries[1], MessageQuery01)
-        assert isinstance(queries[2], MessageQuery03)
-        assert isinstance(queries[3], MessageQuery04)
-        assert isinstance(queries[4], MessageQuery05)
-        assert isinstance(queries[5], MessageQuery06)
-        assert isinstance(queries[6], MessageQuery07)
-        assert isinstance(queries[7], MessageQueryFF)
+        assert isinstance(queries[2], MessageQueryFF)
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
