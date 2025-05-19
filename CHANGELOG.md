@@ -1,5 +1,24 @@
 # Changelog
 
+## [6.3.0](https://github.com/midea-lan/midea-local/compare/v6.2.0...v6.3.0) (2025-05-19)
+
+
+### Features
+
+* **b0:** add b0 device feature ([#365](https://github.com/midea-lan/midea-local/issues/365)) ([1acfde7](https://github.com/midea-lan/midea-local/commit/1acfde75e84218130382cfa351cb5874b26d6160))
+
+
+### Bug Fixes
+
+* **c3:** temperature should be float ([#369](https://github.com/midea-lan/midea-local/issues/369)) ([f2d8695](https://github.com/midea-lan/midea-local/commit/f2d8695b4b6234d8a2615ea253d6150b03b31028))
+* **cd:** parse CD device message error ([#370](https://github.com/midea-lan/midea-local/issues/370)) ([db07d08](https://github.com/midea-lan/midea-local/commit/db07d083621730cb4d3de9cb7303693f7f31c665))
+* **cd:** temperature should be float ([#367](https://github.com/midea-lan/midea-local/issues/367)) ([54f16f6](https://github.com/midea-lan/midea-local/commit/54f16f69ca9b558170a03d842ef444143be469ea))
+* **e2:** fix e2 device full tank/temperature error ([#371](https://github.com/midea-lan/midea-local/issues/371)) ([182d508](https://github.com/midea-lan/midea-local/commit/182d508862ee9afc29f5d5bc9449ede57986620d))
+* **e2:** temperature should be float ([#364](https://github.com/midea-lan/midea-local/issues/364)) ([fec9adf](https://github.com/midea-lan/midea-local/commit/fec9adfbc8be6a3832f367eb8672b48a841c4bd8))
+* **e3:** temperature should be float ([#366](https://github.com/midea-lan/midea-local/issues/366)) ([5d27a44](https://github.com/midea-lan/midea-local/commit/5d27a44feb81cff83c7a7a2371cf2221ca85c92f))
+* **e6:** temperature should be float ([#368](https://github.com/midea-lan/midea-local/issues/368)) ([bebc217](https://github.com/midea-lan/midea-local/commit/bebc217debecb59cc362ad64663d07896f89cec1))
+* **ed:** fix ed device query result is 0 ([#379](https://github.com/midea-lan/midea-local/issues/379)) ([c83b7af](https://github.com/midea-lan/midea-local/commit/c83b7afa35c451842f4c76b1333a3022573b784e))
+
 ## [6.2.0](https://github.com/midea-lan/midea-local/compare/v6.1.0...v6.2.0) (2025-03-25)
 
 
