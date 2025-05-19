@@ -102,14 +102,36 @@ class MideaEDDevice(MideaDevice):
         | MessageQueryFF
     ]:
         """Midea ED device build query."""
+        # device can response for MessageQuery/MessageQuery01/MessageQuery03/etc
+        # and only MessageQuery01 can return non-zero value.
+        if self.subtype in [309, 310, 311, 313, 314, 315, 317, 330]:
+            return [
+                MessageQuery04(self._message_protocol_version),
+            ]
+        if self.subtype in [316, 318, 319, 320]:
+            return [
+                MessageQuery05(self._message_protocol_version),
+            ]
+        if self.subtype in [290, 331, 332, 340]:
+            return [
+                MessageQuery06(self._message_protocol_version),
+            ]
+        if self.subtype in [288, 307, 329, 349]:
+            return [
+                MessageQuery07(self._message_protocol_version),
+            ]
+        # for https://github.com/wuwentao/midea_ac_lan/issues/571
+        # subtype 775 only can got non-zero value with MessageQuery01
+        # more subtypes should using MessageQuery01, temp keep it in else
+        # remove MessageQuery03 as it return 0
+        # subtype 775
+        if self.subtype in [775]:
+            return [
+                MessageQuery01(self._message_protocol_version),
+            ]
         return [
             MessageQuery(self._message_protocol_version),
             MessageQuery01(self._message_protocol_version),
-            MessageQuery03(self._message_protocol_version),
-            MessageQuery04(self._message_protocol_version),
-            MessageQuery05(self._message_protocol_version),
-            MessageQuery06(self._message_protocol_version),
-            MessageQuery07(self._message_protocol_version),
             MessageQueryFF(self._message_protocol_version),
         ]
 
