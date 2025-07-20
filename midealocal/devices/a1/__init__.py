@@ -17,12 +17,9 @@ class DeviceAttributes(StrEnum):
 
     power = "power"
     prompt_tone = "prompt_tone"
-    child_lock = "child_lock"
     mode = "mode"
     fan_speed = "fan_speed"
-    swing = "swing"
     target_humidity = "target_humidity"
-    anion = "anion"
     tank = "tank"
     water_level_set = "water_level_set"
     tank_full = "tank_full"
@@ -33,20 +30,14 @@ class DeviceAttributes(StrEnum):
 class MideaA1Device(MideaDevice):
     """Midea A1 Device."""
 
-    _modes: ClassVar[list[str]] = [
-        "Manual",
-        "Continuous",
-        "Auto",
-        "Clothes-Dry",
-        "Shoes-Dry",
-    ]
+    _modes: ClassVar[dict[int, str]] = {
+        1: "Manual",
+        2: "Continuous",
+        4: "Max"
+    }
     _speeds: ClassVar[dict[int, str]] = {
-        1: "Lowest",
-        40: "Low",
-        60: "Medium",
-        80: "High",
-        102: "Auto",
-        127: "Off",
+        0: "Low",
+        127: "High",
     }
     _water_level_sets: ClassVar[list[str]] = ["25", "50", "75", "100"]
 
@@ -78,12 +69,9 @@ class MideaA1Device(MideaDevice):
             attributes={
                 DeviceAttributes.power: False,
                 DeviceAttributes.prompt_tone: True,
-                DeviceAttributes.child_lock: False,
                 DeviceAttributes.mode: None,
-                DeviceAttributes.fan_speed: "Medium",
-                DeviceAttributes.swing: False,
+                DeviceAttributes.fan_speed: "Low",
                 DeviceAttributes.target_humidity: 35,
-                DeviceAttributes.anion: False,
                 DeviceAttributes.tank: 0,
                 DeviceAttributes.water_level_set: 50,
                 DeviceAttributes.tank_full: None,
@@ -95,7 +83,7 @@ class MideaA1Device(MideaDevice):
     @property
     def modes(self) -> list[str]:
         """Midea A1 device modes."""
-        return MideaA1Device._modes
+        return list(MideaA1Device._modes.values())
 
     @property
     def fan_speeds(self) -> list[str]:
@@ -122,7 +110,7 @@ class MideaA1Device(MideaDevice):
                 value = getattr(message, str(status))
                 if status == DeviceAttributes.mode:
                     if value <= len(MideaA1Device._modes):
-                        self._attributes[status] = MideaA1Device._modes[value - 1]
+                        self._attributes[status] = MideaA1Device._modes.get(value)
                     else:
                         self._attributes[status] = None
                 elif status == DeviceAttributes.fan_speed:
@@ -162,15 +150,17 @@ class MideaA1Device(MideaDevice):
         message = MessageSet(self._message_protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
-        message.child_lock = self._attributes[DeviceAttributes.child_lock]
-        if self._attributes[DeviceAttributes.mode] in MideaA1Device._modes:
-            message.mode = (
-                MideaA1Device._modes.index(self._attributes[DeviceAttributes.mode]) + 1
-            )
-        else:
-            message.mode = 1
+        message.mode = (
+            1
+            if self._attributes[DeviceAttributes.mode] is None
+            else list(MideaA1Device._modes.keys())[
+                list(MideaA1Device._modes.values()).index(
+                    self._attributes[DeviceAttributes.mode],
+                )
+            ]
+        )
         message.fan_speed = (
-            40
+            0
             if self._attributes[DeviceAttributes.fan_speed] is None
             else list(MideaA1Device._speeds.keys())[
                 list(MideaA1Device._speeds.values()).index(
@@ -179,8 +169,6 @@ class MideaA1Device(MideaDevice):
             ]
         )
         message.target_humidity = self._attributes[DeviceAttributes.target_humidity]
-        message.swing = self._attributes[DeviceAttributes.swing]
-        message.anion = self._attributes[DeviceAttributes.anion]
         message.water_level_set = int(
             self._attributes[DeviceAttributes.water_level_set],
         )
@@ -195,7 +183,9 @@ class MideaA1Device(MideaDevice):
             message = self.make_message_set()
             if attr == DeviceAttributes.mode:
                 if value in MideaA1Device._modes:
-                    message.mode = MideaA1Device._modes.index(str(value)) + 1
+                    message.mode = list(MideaA1Device._modes.keys())[
+                        list(MideaA1Device._modes.values()).index(str(value))
+                    ]
             elif attr == DeviceAttributes.fan_speed:
                 if value in MideaA1Device._speeds.values():
                     message.fan_speed = list(MideaA1Device._speeds.keys())[

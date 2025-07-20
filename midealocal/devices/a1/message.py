@@ -131,10 +131,7 @@ class MessageSet(MessageA1Base):
         self.prompt_tone = False
         self.mode = 1
         self.fan_speed = 40
-        self.child_lock = False
         self.target_humidity = 40
-        self.swing = False
-        self.anion = False
         self.water_level_set = 50
 
     @property
@@ -148,12 +145,6 @@ class MessageSet(MessageA1Base):
         fan_speed = self.fan_speed
         # byte7 target_humidity
         target_humidity = self.target_humidity
-        # byte8 child_lock
-        child_lock = 0x80 if self.child_lock else 0x00
-        # byte9 anion
-        anion = 0x40 if self.anion else 0x00
-        # byte10 swing
-        swing = 0x08 if self.swing else 0x00
         # byte 13 water_level_set
         water_level_set = self.water_level_set
         return bytearray(
@@ -165,9 +156,9 @@ class MessageSet(MessageA1Base):
                 0x00,
                 0x00,
                 target_humidity,
-                child_lock,
-                anion,
-                swing,
+                0x00,
+                0x00,
+                0x00,
                 0x00,
                 0x00,
                 water_level_set,
