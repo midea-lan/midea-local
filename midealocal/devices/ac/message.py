@@ -1142,7 +1142,7 @@ class MessageACResponse(MessageResponse):
         ):
             self.set_body(XA1MessageBody(super().body))
         # dataType 0x05 and messageBytes[0] 0xB5
-        # dataType 0x02 and messageBytes[0] 0xB0
+        # dataType 0x02 and messageBytes[0] 0xB0 (set result Unidentified protocol)
         # dataType 0x03 and messageBytes[0] 0xB1
         elif self.message_type in [
             MessageType.query,

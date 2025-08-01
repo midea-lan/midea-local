@@ -845,25 +845,57 @@ class NewProtocolMessageBody(MessageBody):
             stream = bytearray([param & 0xFF, param >> 8, length]) + value
         else:
             stream = bytearray([param & 0xFF, param >> 8, 0x00, length]) + value
+        _LOGGER.debug(
+            "set new-protocol, len %s, param %s,value %s, result %s",
+            pack_len,
+            hex(param),
+            value.hex(),
+            stream.hex(),
+        )
         return stream
 
     def parse(self) -> dict[int, bytearray]:
         """Parse new protocol body."""
         result = {}
         try:
-            pos = 2
-            for _ in range(self.data[1]):
+            pos = 2  # # 跳过协议头(b1)和参数数量
+            param_count = self.data[1]  # 参数数量
+            for _ in range(param_count):
+                if pos + 2 > len(self.data):  # 防止越界
+                    break
                 param = self.data[pos] + (self.data[pos + 1] << 8)
+                pos += 2
                 if self._pack_len == NewProtocolPackLength.FIVE:
-                    pos += 1
-                length = self.data[pos + 2]
+                    if pos >= len(self.data):  # 防止越界
+                        break
+                    pos += 1  # 跳过固定字节0x00
+                if pos >= len(self.data):  # 防止越界
+                    break
+                length = self.data[pos]  # 读取param length
+                pos += 1
+                # length and value exist
                 if length > 0:
-                    value = self.data[pos + 3 : pos + 3 + length]
-                    result[param] = value
-                pos += 3 + length
+                    if pos + length > len(self.data):  # 防止越界
+                        break
+                    value = self.data[pos : pos + length]
+                    result[param] = bytearray(value)
+                    pos += length
+                # length is 0 and no value
+                else:
+                    pass  # 不添加任何键值对
         except IndexError:
             # Some device used non-standard new-protocol(美的乐享三代中央空调?)
             _LOGGER.debug("Non-standard new-protocol %s", self.data.hex())
+        # format result key to hex for debug log
+        hex_result = {hex(k): v for k, v in result.items()}
+        _LOGGER.debug(
+            "new-protocol %s, len %s, param_count %s, parsed result %s, len %s",
+            self.data.hex(),
+            self._pack_len,
+            param_count,
+            hex_result,
+            len(result),
+        )
         return result
 
 
