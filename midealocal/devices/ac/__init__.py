@@ -369,7 +369,8 @@ class MideaACDevice(MideaDevice):
         # indirect_wind, screen_display_alternate, breezeless
         else:
             setattr(message, str(attr), value)
-            message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
+        # read current prompt_tone for current set action
+        message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
 
         return message
 
