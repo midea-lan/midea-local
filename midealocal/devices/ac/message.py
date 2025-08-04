@@ -480,7 +480,7 @@ class MessageSubProtocolSet(MessageSubProtocol):
             mode = 2  # set Auto if invalid mode
         target_temperature = int(self.target_temperature * 2 + 30)
         water_model_temperature_set = int((self.target_temperature - 1) * 2 + 50)
-        fan_speed = self.fan_speed
+        fan_speed = int(self.fan_speed)
         eco = 0x40 if self.eco_mode else 0
 
         prompt_tone = 0x01 if self.prompt_tone else 0
@@ -567,7 +567,7 @@ class MessageGeneralSet(MessageACBase):
             0x10 if int(round(self.target_temperature * 2)) % 2 != 0 else 0
         )
         # Byte 3, fan_speed
-        fan_speed = self.fan_speed & 0x7F
+        fan_speed = int(self.fan_speed) & 0x7F
         # Byte 7, swing_mode
         swing_mode = (
             0x30
