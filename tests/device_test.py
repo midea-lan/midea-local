@@ -12,7 +12,6 @@ from midealocal.device import (
     MideaDevice,
     NoSupportedProtocol,
 )
-from midealocal.devices.ac.message import MessageCapabilitiesQuery
 from midealocal.exceptions import SocketException
 from midealocal.message import MessageType
 
@@ -191,19 +190,6 @@ class MideaDeviceTest:
             self.device._socket = None
             self.device._device_protocol_version = ProtocolVersion.V2
             self.device.send_message(bytearray([0x0] * 20))
-
-    def test_get_capabilities(self) -> None:
-        """Test get capabilities."""
-        self.device.get_capabilities()  # Empty capabilities
-        with (
-            patch.object(self.device, "build_send", return_value=None),
-            patch.object(
-                self.device,
-                "capabilities_query",
-                return_value=[MessageCapabilitiesQuery(ProtocolVersion.V2, False)],
-            ),
-        ):
-            self.device.get_capabilities()
 
     def test_refresh_status(self) -> None:
         """Test refresh status."""

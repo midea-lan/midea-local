@@ -7,7 +7,10 @@ import pytest
 from midealocal.const import ProtocolVersion
 from midealocal.devices.ac import DeviceAttributes, MideaACDevice
 from midealocal.devices.ac.message import (
+    MessageCapabilitiesAdditionalQuery,
     MessageCapabilitiesQuery,
+    MessageGroupZeroQuery,
+    MessageHumidityQuery,
     MessageNewProtocolQuery,
     MessagePowerQuery,
     MessageQuery,
@@ -113,13 +116,6 @@ class TestMideaACDevice:
             self.device.set_attribute(DeviceAttributes.fresh_air_mode.value, False)
             mock_build_send.assert_called()
 
-    def test_capabilities_query(self) -> None:
-        """Test capabilities query."""
-        queries = self.device.capabilities_query()
-        assert len(queries) == 2
-        assert isinstance(queries[0], MessageCapabilitiesQuery)
-        assert isinstance(queries[1], MessageCapabilitiesQuery)
-
     def test_build_query(self) -> None:
         """Test build query."""
         self.device._used_subprotocol = True
@@ -131,10 +127,14 @@ class TestMideaACDevice:
 
         self.device._used_subprotocol = False
         queries = self.device.build_query()
-        assert len(queries) == 3
+        assert len(queries) == 7
         assert isinstance(queries[0], MessageQuery)
         assert isinstance(queries[1], MessageNewProtocolQuery)
         assert isinstance(queries[2], MessagePowerQuery)
+        assert isinstance(queries[3], MessageHumidityQuery)
+        assert isinstance(queries[4], MessageGroupZeroQuery)
+        assert isinstance(queries[5], MessageCapabilitiesQuery)
+        assert isinstance(queries[6], MessageCapabilitiesAdditionalQuery)
 
     def test_process_message(self) -> None:
         """Test process message."""

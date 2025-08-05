@@ -186,7 +186,7 @@ class TestMessageNewProtocolQuery:
         expected_body = bytearray(
             [
                 0xB1,
-                0x06,
+                0x08,
                 NewProtocolTags.indirect_wind & 0xFF,
                 NewProtocolTags.indirect_wind >> 8,
                 NewProtocolTags.breezeless & 0xFF,
@@ -199,6 +199,10 @@ class TestMessageNewProtocolQuery:
                 NewProtocolTags.fresh_air_1 >> 8,
                 NewProtocolTags.fresh_air_2 & 0xFF,
                 NewProtocolTags.fresh_air_2 >> 8,
+                NewProtocolTags.wind_lr_angle & 0xFF,
+                NewProtocolTags.wind_lr_angle >> 8,
+                NewProtocolTags.wind_ud_angle & 0xFF,
+                NewProtocolTags.wind_ud_angle >> 8,
             ],
         )
         assert msg.body[:-2] == expected_body
@@ -383,7 +387,7 @@ class TestMessageACResponse:
             [
                 0xAA,
                 0x00,
-                0xA1,
+                0xAC,
                 0x00,
                 0x00,
                 0x00,
@@ -464,44 +468,39 @@ class TestMessageACResponse:
         body = bytearray(
             [
                 0xB5,
-                0x07,
-                0x12,
-                0x02,
-                0x01,
-                0x01,
-                0x13,
-                0x02,
-                0x01,
+                0x05,
+                0x15,  # indoor_humidity
                 0x00,
-                0x14,
-                0x02,
-                0x01,
+                0x01,  # length
+                0x00,  # value
+                0x17,  # screen_display_alternate
                 0x00,
-                0x15,
-                0x02,
-                0x01,
-                0x01,
-                0x16,
-                0x02,
-                0x01,
-                0x01,
-                0x17,
-                0x02,
-                0x01,
-                0x01,
-                0x1A,
-                0x02,
-                0x01,
+                0x01,  # length
+                0x00,  # value
+                0x18,  # breezeless
+                0x00,
+                0x01,  # length
+                0x00,  # value
+                0x09,  # wind_ud_angle
+                0x00,
+                0x01,  # length
+                0x00,  # value
+                0x0A,  # wind_lr_angle
+                0x00,
+                0x01,  # length
+                0x00,  # value
                 0x01,
                 0xD6,
             ],
         )
         response = MessageACResponse(self.header + body)
-        assert hasattr(response, "modes")
-        assert not response.modes["heat"]
-        assert response.modes["cool"]
-        assert response.modes["dry"]
-        assert response.modes["auto"]
+        # query message
+        assert hasattr(response, "indoor_humidity")
+        assert hasattr(response, "screen_display_alternate")
+        assert hasattr(response, "breezeless")
+        assert hasattr(response, "wind_ud_angle")
+        assert hasattr(response, "wind_lr_angle")
+        assert not hasattr(response, "indirect_wind")
 
     def test_message_notify2_b0(self) -> None:
         """Test Message parse notify2 B0."""
