@@ -270,7 +270,9 @@ class MideaACDevice(MideaDevice):
         ):
             self._attributes[DeviceAttributes.indirect_wind] = False
             new_status[DeviceAttributes.indirect_wind.value] = False
-        if not self._attributes[DeviceAttributes.power]:
+        if not self._attributes[DeviceAttributes.power] and (
+            DeviceAttributes.screen_display in new_status
+        ):
             self._attributes[DeviceAttributes.screen_display] = False
             new_status[DeviceAttributes.screen_display.value] = False
         if self._attributes[DeviceAttributes.fresh_air_1] is not None:
