@@ -1,5 +1,18 @@
 # Changelog
 
+## [6.4.0](https://github.com/midea-lan/midea-local/compare/v6.3.0...v6.4.0) (2025-08-06)
+
+
+### Features
+
+* **ac:** ac device support airflow direction control ([#385](https://github.com/midea-lan/midea-local/issues/385)) ([4bd148d](https://github.com/midea-lan/midea-local/commit/4bd148d0bbcb40a316dfe1c3b0eef03d9b7b47ac))
+
+
+### Bug Fixes
+
+* **ac:** ac device screen_display status error ([#388](https://github.com/midea-lan/midea-local/issues/388)) ([e13962e](https://github.com/midea-lan/midea-local/commit/e13962e8bb429d65aedaed5d15dfa9bc85c77e35))
+* **db:** rollback 0xdb progress attr and value ([#386](https://github.com/midea-lan/midea-local/issues/386)) ([ad46461](https://github.com/midea-lan/midea-local/commit/ad4646171144e62ac776a3e64edcc2e0c1e4db5c))
+
 ## [6.3.0](https://github.com/midea-lan/midea-local/compare/v6.2.0...v6.3.0) (2025-05-19)
 
 
