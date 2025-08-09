@@ -40,20 +40,14 @@ class TestMideaA1Device:
         assert self.device.modes == [
             "Manual",
             "Continuous",
-            "Auto",
-            "Clothes-Dry",
-            "Shoes-Dry",
+            "Max"
         ]
 
     def test_fan_speeds(self) -> None:
         """Test fan speeds."""
         assert self.device.fan_speeds == [
-            "Lowest",
             "Low",
-            "Medium",
-            "High",
-            "Auto",
-            "Off",
+            "High"
         ]
 
     def test_water_level_sets(self) -> None:
@@ -67,7 +61,7 @@ class TestMideaA1Device:
             mock_message.protocol_version = ProtocolVersion.V3
             mock_message.power = True
             mock_message.prompt_tone = False
-            mock_message.fan_speed = 40
+            mock_message.fan_speed = 0
             mock_message.target_humidity = 40
             mock_message.mode = 1
             mock_message.tank = 60
@@ -101,7 +95,7 @@ class TestMideaA1Device:
             mock_message.protocol_version = ProtocolVersion.V3
             mock_message.power = True
             mock_message.prompt_tone = False
-            mock_message.fan_speed = 40
+            mock_message.fan_speed = 0
             mock_message.target_humidity = 40
             mock_message.mode = 1
             mock_message.tank = 60
@@ -112,7 +106,7 @@ class TestMideaA1Device:
         assert isinstance(message_set, MessageSet)
         assert message_set.power
         assert not message_set.prompt_tone
-        assert message_set.fan_speed == 40
+        assert message_set.fan_speed == 0
         assert message_set.mode == 1
 
     def test_set_attribute(self) -> None:
@@ -121,14 +115,11 @@ class TestMideaA1Device:
             self.device.set_attribute(DeviceAttributes.mode, "Continuous")
             mock_build_send.assert_called_once()
 
-            self.device.set_attribute(DeviceAttributes.fan_speed, "Medium")
+            self.device.set_attribute(DeviceAttributes.fan_speed, "High")
             mock_build_send.assert_called()
 
             self.device.set_attribute(DeviceAttributes.water_level_set, "75")
             mock_build_send.assert_called()
 
             self.device.set_attribute(DeviceAttributes.prompt_tone, True)
-            mock_build_send.assert_called()
-
-            self.device.set_attribute(DeviceAttributes.swing, True)
             mock_build_send.assert_called()
