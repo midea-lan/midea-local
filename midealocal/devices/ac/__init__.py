@@ -97,7 +97,7 @@ class MideaACDevice(MideaDevice):
         1: "up",
         25: "up-mid",
         50: "middle",
-        75: "wown-mid",
+        75: "down-mid",
         100: "down",
     }
 
@@ -260,7 +260,7 @@ class MideaACDevice(MideaDevice):
                         break
                     self._attributes[DeviceAttributes.fresh_air_mode] = v
             else:
-                self._attributes[DeviceAttributes.fresh_air_mode] = "Off"
+                self._attributes[DeviceAttributes.fresh_air_mode] = "off"
             new_status[DeviceAttributes.fresh_air_mode.value] = self._attributes[
                 DeviceAttributes.fresh_air_mode
             ]
