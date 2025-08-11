@@ -202,18 +202,18 @@ class TestMideaACDevice:
             assert result[DeviceAttributes.current_energy_consumption.value] is None
             assert result[DeviceAttributes.realtime_power.value] is None
             assert result[DeviceAttributes.fresh_air_power.value]
-            assert result[DeviceAttributes.fresh_air_mode.value] == "Off"
+            assert result[DeviceAttributes.fresh_air_mode.value] == "off"
             assert result[DeviceAttributes.fresh_air_1.value] == 1
             assert result[DeviceAttributes.fresh_air_2.value] == 1
 
             mock_message.fresh_air_fan_speed = 55
             mock_message.fresh_air_1 = None
             result = self.device.process_message(bytearray())
-            assert result[DeviceAttributes.fresh_air_mode.value] == "Low"
+            assert result[DeviceAttributes.fresh_air_mode.value] == "low"
 
             mock_message.fresh_air_power = False
             result = self.device.process_message(bytearray())
-            assert result[DeviceAttributes.fresh_air_mode.value] == "Off"
+            assert result[DeviceAttributes.fresh_air_mode.value] == "off"
 
             mock_message.power = False
             result = self.device.process_message(bytearray())
