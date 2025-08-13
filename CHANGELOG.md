@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.5.0](https://github.com/midea-lan/midea-local/compare/v6.4.0...v6.5.0) (2025-08-13)
+
+
+### Features
+
+* **a1:** allow customization of default modes and speeds for dehumidifiers ([#389](https://github.com/midea-lan/midea-local/issues/389)) ([bb558a0](https://github.com/midea-lan/midea-local/commit/bb558a03fb31703f28b0d09772034ac8e74aa744))
+* **ac:** ac device fan_mode and airflow value support translate ([#390](https://github.com/midea-lan/midea-local/issues/390)) ([a8294cc](https://github.com/midea-lan/midea-local/commit/a8294cc2ddf9c777dd4e27bc09a4e55ba76e5047))
+
 ## [6.4.0](https://github.com/midea-lan/midea-local/compare/v6.3.0...v6.4.0) (2025-08-06)
 
 
