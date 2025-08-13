@@ -75,30 +75,30 @@ class MideaACDevice(MideaDevice):
     """Midea AC device."""
 
     _fresh_air_fan_speeds: ClassVar[dict[int, str]] = {
-        0: "Off",
-        20: "Silent",
-        40: "Low",
-        60: "Medium",
-        80: "High",
-        100: "Full",
+        0: "off",
+        20: "silent",
+        40: "low",
+        60: "medium",
+        80: "high",
+        100: "full",
     }
 
     _wind_lr_angles: ClassVar[dict[int, str]] = {
-        0: "Off",
-        1: "Left",
-        25: "Left-Mid",
-        50: "Middle",
-        75: "Right-Mid",
-        100: "Right",
+        0: "off",
+        1: "left",
+        25: "left-mid",
+        50: "middle",
+        75: "right-mid",
+        100: "right",
     }
 
     _wind_ud_angles: ClassVar[dict[int, str]] = {
-        0: "Off",
-        1: "Up",
-        25: "Up-Mid",
-        50: "Middle",
-        75: "Down-Mid",
-        100: "Down",
+        0: "off",
+        1: "up",
+        25: "up-mid",
+        50: "middle",
+        75: "down-mid",
+        100: "down",
     }
 
     def __init__(
@@ -260,7 +260,7 @@ class MideaACDevice(MideaDevice):
                         break
                     self._attributes[DeviceAttributes.fresh_air_mode] = v
             else:
-                self._attributes[DeviceAttributes.fresh_air_mode] = "Off"
+                self._attributes[DeviceAttributes.fresh_air_mode] = "off"
             new_status[DeviceAttributes.fresh_air_mode.value] = self._attributes[
                 DeviceAttributes.fresh_air_mode
             ]
