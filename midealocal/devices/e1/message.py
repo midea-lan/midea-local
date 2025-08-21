@@ -62,7 +62,7 @@ class MessageWork(MessageE1Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X08,
+            body_type=ListTypes.X08,
         )
         self.work_status = 0x3
         self.mode = 0
