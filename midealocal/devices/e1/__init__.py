@@ -4,6 +4,7 @@ import logging
 from enum import StrEnum
 from typing import Any
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
 from midealocal.exceptions import ValueWrongType
 
@@ -58,7 +59,7 @@ class MideaE1Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        device_protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
@@ -67,12 +68,12 @@ class MideaE1Device(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0xE1,
+            device_type=DeviceType.E1,
             ip_address=ip_address,
             port=port,
             token=token,
             key=key,
-            protocol=protocol,
+            device_protocol=device_protocol,
             model=model,
             subtype=subtype,
             attributes={
@@ -103,35 +104,42 @@ class MideaE1Device(MideaDevice):
             },
         )
         self._modes = {
-            0x0: "Neutral Gear",  # BYTE_MODE_NEUTRAL_GEAR
-            0x1: "Auto",  # BYTE_MODE_AUTO_WASH
-            0x2: "Heavy",  # BYTE_MODE_STRONG_WASH
-            0x3: "Normal",  # BYTE_MODE_STANDARD_WASH
-            0x4: "Energy Saving",  # BYTE_MODE_ECO_WASH
-            0x5: "Delicate",  # BYTE_MODE_GLASS_WASH
-            0x6: "Hour",  # BYTE_MODE_HOUR_WASH
-            0x7: "Quick",  # BYTE_MODE_FAST_WASH
-            0x8: "Rinse",  # BYTE_MODE_SOAK_WASH
-            0x9: "90min",  # BYTE_MODE_90MIN_WASH
-            0xA: "Self Clean",  # BYTE_MODE_SELF_CLEAN
-            0xB: "Fruit Wash",  # BYTE_MODE_FRUIT_WASH
-            0xC: "Self Define",  # BYTE_MODE_SELF_DEFINE
-            0xD: "Germ",  # BYTE_MODE_GERM ???
-            0xE: "Bowl Wash",  # BYTE_MODE_BOWL_WASH
-            0xF: "Kill Germ",  # BYTE_MODE_KILL_GERM
+            0x00: "Neutral Gear",  # BYTE_MODE_NEUTRAL_GEAR
+            0x01: "Auto Wash",  # BYTE_MODE_AUTO_WASH
+            0x02: "Strong Wash",  # BYTE_MODE_STRONG_WASH
+            0x03: "Standard Wash",  # BYTE_MODE_STANDARD_WASH
+            0x04: "ECO Wash",  # BYTE_MODE_ECO_WASH
+            0x05: "Glass Wash",  # BYTE_MODE_GLASS_WASH
+            0x06: "Hour Wash",  # BYTE_MODE_HOUR_WASH
+            0x07: "Fast Wash",  # BYTE_MODE_FAST_WASH
+            0x08: "Soak Wash",  # BYTE_MODE_SOAK_WASH
+            0x09: "90Min",  # BYTE_MODE_90MIN_WASH
+            0x0A: "Self Clean",  # BYTE_MODE_SELF_CLEAN
+            0x0B: "Fruit Wash",  # BYTE_MODE_FRUIT_WASH
+            0x0C: "Self Define",  # BYTE_MODE_SELF_DEFINE
+            0x0D: "Germ",  # BYTE_MODE_GERM ???
+            0x0E: "Bowl Wash",  # BYTE_MODE_BOWL_WASH
+            0x0F: "Kill Germ",  # BYTE_MODE_KILL_GERM
             0x10: "Sea Food Wash",  # BYTE_MODE_SEA_FOOD_WASH
             0x12: "Hot Pot Wash",  # BYTE_MODE_HOT_POT_WASH
-            0x13: "Quiet",  # BYTE_MODE_QUIET_NIGHT_WASH
+            0x13: "Quiet Night Wash",  # BYTE_MODE_QUIET_NIGHT_WASH
             0x14: "Less Wash",  # BYTE_MODE_LESS_WASH
             0x16: "Oil Net Wash",  # BYTE_MODE_OIL_NET_WASH
             0x19: "Cloud Wash",  # BYTE_MODE_CLOUD_WASH
         }
-        self._status = ["Off", "Idle", "Delay", "Running", "Error"]
+        self._status = {
+            0x00: "Power Off",
+            0x01: "Cancel",
+            0x02: "Delay",
+            0x03: "Running",
+            0x04: "Error",
+            0x05: "Soft Gear",
+        }
         self._progress = ["Idle", "Pre-wash", "Wash", "Rinse", "Dry", "Complete"]
 
     def build_query(self) -> list[MessageQuery]:
         """Midea E1 device build query."""
-        return [MessageQuery(self._protocol_version)]
+        return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea E1 device process message."""
@@ -140,21 +148,16 @@ class MideaE1Device(MideaDevice):
         new_status = {}
         for status in self._attributes:
             if hasattr(message, str(status)):
+                value = getattr(message, str(status))
                 if status == DeviceAttributes.status:
-                    v = getattr(message, str(status))
-                    if v < len(self._status):
-                        self._attributes[status] = self._status[v]
-                    else:
-                        self._attributes[status] = None
+                    self._attributes[status] = self._status.get(value)
                 elif status == DeviceAttributes.progress:
-                    v = getattr(message, str(status))
-                    if v < len(self._progress):
-                        self._attributes[status] = self._progress[v]
+                    if value < len(self._progress):
+                        self._attributes[status] = self._progress[value]
                     else:
                         self._attributes[status] = None
                 elif status == DeviceAttributes.mode:
-                    v = getattr(message, str(status))
-                    self._attributes[status] = self._modes[v]
+                    self._attributes[status] = self._modes.get(value)
                 else:
                     self._attributes[status] = getattr(message, str(status))
                 new_status[str(status)] = self._attributes[status]
@@ -166,15 +169,15 @@ class MideaE1Device(MideaDevice):
             raise ValueWrongType("[e1] Expected bool")
         message: MessagePower | MessageLock | MessageStorage | None = None
         if attr == DeviceAttributes.power:
-            message = MessagePower(self._protocol_version)
+            message = MessagePower(self._message_protocol_version)
             message.power = value
             self.build_send(message)
         elif attr == DeviceAttributes.child_lock:
-            message = MessageLock(self._protocol_version)
+            message = MessageLock(self._message_protocol_version)
             message.lock = value
             self.build_send(message)
         elif attr == DeviceAttributes.storage:
-            message = MessageStorage(self._protocol_version)
+            message = MessageStorage(self._message_protocol_version)
             message.storage = value
             self.build_send(message)
 

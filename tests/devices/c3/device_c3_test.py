@@ -4,12 +4,15 @@ from unittest.mock import patch
 
 import pytest
 
+from midealocal.const import ProtocolVersion
 from midealocal.devices.c3 import (
     MideaC3Device,
 )
 from midealocal.devices.c3.const import C3DeviceMode, C3SilentLevel, DeviceAttributes
 from midealocal.devices.c3.message import (
     MessageQueryBasic,
+    MessageQueryDisinfect,
+    MessageQueryECO,
     MessageQuerySilence,
 )
 
@@ -29,7 +32,7 @@ class TestMideaC3Device:
             port=12345,
             token="AA",
             key="BB",
-            protocol=1,
+            device_protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=1,
             customize='{"temperature_step": 1}',
@@ -116,9 +119,11 @@ class TestMideaC3Device:
     def test_build_query(self) -> None:
         """Test build query."""
         queries = self.device.build_query()
-        assert len(queries) == 2
+        assert len(queries) == 4
         assert isinstance(queries[0], MessageQueryBasic)
-        assert isinstance(queries[1], MessageQuerySilence)
+        assert isinstance(queries[1], MessageQueryDisinfect)
+        assert isinstance(queries[2], MessageQuerySilence)
+        assert isinstance(queries[3], MessageQueryECO)
 
     def test_process_message(self) -> None:
         """Test process message."""

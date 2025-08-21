@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+from midealocal.const import ProtocolVersion
 from midealocal.devices.x40 import DeviceAttributes, MideaX40Device
 
 
@@ -22,7 +23,7 @@ class TestMideaX40Device:
             port=6444,
             token="AA",
             key="BB",
-            protocol=3,
+            device_protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
             customize="",

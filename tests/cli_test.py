@@ -2,22 +2,20 @@
 
 import json
 import logging
-import subprocess  # noqa: S404
+import subprocess
 import sys
 from argparse import Namespace
 from pathlib import Path
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 from midealocal.cli import (
-    ElementMissing,
     MideaCLI,
     get_config_file_path,
 )
-from midealocal.cloud import MSmartHomeCloud
-from midealocal.device import AuthException, ProtocolVersion, RefreshFailed
+from midealocal.cloud import MideaAirCloud, SmartHomeCloud
+from midealocal.const import ProtocolVersion
+from midealocal.device import AuthException, NoSupportedProtocol
 from midealocal.exceptions import SocketException
 
 
@@ -28,7 +26,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         """Create namespace for testing."""
         self.cli = MideaCLI()
         self.namespace = Namespace(
-            cloud_name="MSmartHome",
+            cloud_name="SmartHome",
             username="user",
             password="pass",
             host="192.168.0.1",
@@ -37,6 +35,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             device_sn="",
             user=False,
             debug=True,
+            get_sn=False,
             attribute="power",
             value="0",
             attr_type="bool",
@@ -52,14 +51,16 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         ):
             cloud = await self.cli._get_cloud()
 
-        assert isinstance(cloud, MSmartHomeCloud)
+        assert isinstance(cloud, SmartHomeCloud)
         assert cloud._account == self.namespace.username
         assert cloud._password == self.namespace.password
         assert cloud._session == mock_session_instance
 
+        # test default cloud
         self.namespace.cloud_name = None
-        with pytest.raises(ElementMissing):
-            await self.cli._get_cloud()
+        cloud = await self.cli._get_cloud()
+        assert isinstance(cloud, MideaAirCloud)
+        assert cloud._session == mock_session_instance
 
     async def test_get_keys(self) -> None:
         """Test get keys."""
@@ -109,8 +110,8 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "type": "AC",
             "ip_address": "192.168.0.2",
             "port": 6444,
-            "model": "AC123",
-            "sn": "AC123",
+            "model": "AC123000",
+            "sn": "0000AC12300000000000000000000000",
         }
         mock_cloud_instance = AsyncMock()
         mock_device_instance = MagicMock()
@@ -136,7 +137,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             patch.object(
                 mock_device_instance,
                 "refresh_status",
-                side_effect=[None, None, RefreshFailed, None],
+                side_effect=[None, None, NoSupportedProtocol, None],
             ) as refresh_status_mock,
         ):
             mock_discover.return_value = {1: mock_device}
@@ -147,6 +148,14 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 99: {"token": "token", "key": "key"},
             }
 
+            # test V3 device get_sn
+            self.namespace.get_sn = True
+            await self.cli.discover()  # test V3 device get_sn
+            mock_discover.assert_called()
+            # set get_sn to default False after test done
+            self.namespace.get_sn = False
+
+            # test V3 device
             await self.cli.discover()  # V3 device
             authenticate_mock.assert_called()
             refresh_status_mock.assert_called_with(True)
@@ -159,7 +168,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             authenticate_mock.reset_mock()
 
             mock_device["protocol"] = ProtocolVersion.V2
-            await self.cli.discover()  # V2 device RefreshFailed
+            await self.cli.discover()  # V2 device NoSupportedProtocol
             authenticate_mock.assert_not_called()
             refresh_status_mock.assert_called_once()
 
@@ -187,7 +196,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 device_type=int(self.namespace.message[2]),
                 ip_address="192.168.192.168",
                 port=6664,
-                protocol=ProtocolVersion.V2,
+                device_protocol=ProtocolVersion.V2,
                 model="0000",
                 token="",
                 key="",
@@ -227,14 +236,18 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "type": 0xAC,
             "ip_address": "192.168.0.2",
             "port": 6444,
-            "model": "AC123",
-            "sn": "AC123",
+            "model": "ABCD1234",
+            "sn": "0000AC000ABCD1234000000000000000",
         }
         mock_cloud_instance = AsyncMock()
         with (
             patch(
                 "midealocal.cli.discover",
-                side_effect=[{}, {1: mock_device}, {1: mock_device}],
+                side_effect=[
+                    {},  # test no device
+                    {1: mock_device},  # test cloud login failed
+                    {1: mock_device},  # test download lua with host ip
+                ],
             ) as mock_discover,
             patch.object(
                 self.cli,
@@ -243,25 +256,94 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             ),
         ):
             await self.cli.download()  # No device found
+            # default is discover with host ip, test result is None
             mock_discover.assert_called_once_with(ip_address=self.namespace.host)
             mock_discover.reset_mock()
 
-            mock_cloud_instance.login.side_effect = [False, True]
+            mock_cloud_instance.login.side_effect = [
+                False,  # test cloud login failed
+                True,  # test download lua with host ip
+                True,  # test download lua with SN
+                True,  # test download lua with SN
+            ]
             await self.cli.download()  # Cloud login failed
+            # default is discover with host ip
             mock_discover.assert_called_once_with(ip_address=self.namespace.host)
             mock_discover.reset_mock()
+            # test cloud login failed
             mock_cloud_instance.login.assert_called_once()
             mock_cloud_instance.login.reset_mock()
 
+            # download lua with host (default is host)
             await self.cli.download()
+            # default is discover with host ip
             mock_discover.assert_called_once_with(ip_address=self.namespace.host)
+            mock_discover.reset_mock()
+            # cloud login pass
             mock_cloud_instance.login.assert_called_once()
+            mock_cloud_instance.login.reset_mock()
             mock_cloud_instance.download_lua.assert_called_once_with(
                 str(Path()),
                 mock_device["type"],
                 mock_device["sn"],
                 mock_device["model"],
             )
+            mock_cloud_instance.download_lua.reset_mock()
+            mock_cloud_instance.download_plugin.assert_called_once_with(
+                str(Path()),
+                mock_device["type"],
+                mock_device["sn"],
+            )
+            mock_cloud_instance.download_plugin.reset_mock()
+
+            # download lua with SN (set host to None and match elif)
+            self.namespace.host = None
+            self.namespace.device_sn = mock_device["sn"]
+            await self.cli.download()
+            # skip discover and cloud login pass
+            mock_cloud_instance.login.assert_called_once()
+            mock_cloud_instance.login.reset_mock()
+            mock_cloud_instance.download_lua.assert_called_once_with(
+                str(Path()),
+                mock_device["type"],
+                mock_device["sn"],
+                mock_device["model"],
+            )
+            mock_cloud_instance.download_lua.reset_mock()
+            mock_cloud_instance.download_plugin.assert_called_once_with(
+                str(Path()),
+                mock_device["type"],
+                mock_device["sn"],
+            )
+            mock_cloud_instance.download_plugin.reset_mock()
+
+            # download lua with SN and device_type
+            self.namespace.host = None
+            self.namespace.device_sn = mock_device["sn"]
+            self.namespace.device_type = bytes.fromhex("AC")
+            await self.cli.download()
+            # skip discover and cloud login pass
+            mock_cloud_instance.login.assert_called_once()
+            mock_cloud_instance.login.reset_mock()
+            mock_cloud_instance.download_lua.assert_called_once_with(
+                str(Path()),
+                mock_device["type"],
+                mock_device["sn"],
+                mock_device["model"],
+            )
+            mock_cloud_instance.download_lua.reset_mock()
+            mock_cloud_instance.download_plugin.assert_called_once_with(
+                str(Path()),
+                mock_device["type"],
+                mock_device["sn"],
+            )
+            mock_cloud_instance.download_plugin.reset_mock()
+
+            # test no host and no device_sn
+            self.namespace.host = None
+            self.namespace.device_sn = None
+            # result is None
+            await self.cli.download()
 
     async def test_set_attribute(self) -> None:
         """Test set attribute."""

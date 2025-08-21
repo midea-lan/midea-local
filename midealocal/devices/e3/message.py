@@ -2,7 +2,14 @@
 
 from typing import Any
 
-from midealocal.message import MessageBody, MessageRequest, MessageResponse, MessageType
+from midealocal.const import DeviceType
+from midealocal.message import (
+    ListTypes,
+    MessageBody,
+    MessageRequest,
+    MessageResponse,
+    MessageType,
+)
 
 NEW_PROTOCOL_PARAMS = {
     "none": 0x00,
@@ -21,12 +28,12 @@ class MessageE3Base(MessageRequest):
     def __init__(
         self,
         protocol_version: int,
-        message_type: int,
-        body_type: int,
+        message_type: MessageType,
+        body_type: ListTypes,
     ) -> None:
         """Initialize E3 message base."""
         super().__init__(
-            device_type=0xE3,
+            device_type=DeviceType.E3,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -45,7 +52,7 @@ class MessageQuery(MessageE3Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x01,
+            body_type=ListTypes.X01,
         )
 
     @property
@@ -61,16 +68,16 @@ class MessagePower(MessageE3Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x02,
+            body_type=ListTypes.X02,
         )
         self.power = False
 
     @property
     def _body(self) -> bytearray:
         if self.power:
-            self.body_type = 0x01
+            self.body_type = ListTypes.X01
         else:
-            self.body_type = 0x02
+            self.body_type = ListTypes.X02
         return bytearray([0x01])
 
 
@@ -82,10 +89,10 @@ class MessageSet(MessageE3Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x04,
+            body_type=ListTypes.X04,
         )
 
-        self.target_temperature = 0
+        self.target_temperature: float = 0.0
         self.zero_cold_water = False
         self.bathtub_volume = 0
         self.protection = False
@@ -101,7 +108,8 @@ class MessageSet(MessageE3Base):
         zero_cold_pulse = 0x10 if self.zero_cold_pulse else 0x00
         smart_volume = 0x20 if self.smart_volume else 0x00
         # Byte 5 target_temperature
-        target_temperature = self.target_temperature & 0xFF
+        # convert float temperature to int
+        target_temperature = int(self.target_temperature) & 0xFF
 
         return bytearray(
             [
@@ -131,7 +139,7 @@ class MessageNewProtocolSet(MessageE3Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x14,
+            body_type=ListTypes.X14,
         )
         self.key = "none"
         self.value: Any = None
@@ -140,7 +148,8 @@ class MessageNewProtocolSet(MessageE3Base):
     def _body(self) -> bytearray:
         key = NEW_PROTOCOL_PARAMS[self.key]
         if self.key == "target_temperature":
-            value = self.value
+            # convert float temperature to int
+            value = int(self.value)
         else:
             value = 0x01 if self.value else 0x00
         return bytearray(
@@ -177,8 +186,8 @@ class E3GeneralMessageBody(MessageBody):
         self.power = (body[2] & 0x01) > 0
         self.burning_state = (body[2] & 0x02) > 0
         self.zero_cold_water = (body[2] & 0x04) > 0
-        self.current_temperature = body[5]
-        self.target_temperature = body[6]
+        self.current_temperature = float(body[5])
+        self.target_temperature = float(body[6])
         self.protection = (body[8] & 0x08) > 0
         self.zero_cold_pulse = (
             (body[20] & 0x01) > 0 if len(body) > ADDITIONAL_BYTE else False

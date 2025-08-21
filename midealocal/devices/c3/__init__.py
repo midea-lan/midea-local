@@ -4,15 +4,19 @@ import json
 import logging
 from typing import Any, ClassVar
 
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
-from midealocal.devices.c3.const import C3DeviceMode, C3SilentLevel, DeviceAttributes
 
+from .const import C3DeviceMode, C3SilentLevel, DeviceAttributes
 from .message import (
     MessageC3Response,
     MessageQuery,
     MessageQueryBasic,
+    MessageQueryDisinfect,
+    MessageQueryECO,
     MessageQuerySilence,
     MessageSet,
+    MessageSetDisinfect,
     MessageSetECO,
     MessageSetSilent,
 )
@@ -37,7 +41,7 @@ class MideaC3Device(MideaDevice):
         port: int,
         token: str,
         key: str,
-        protocol: int,
+        device_protocol: ProtocolVersion,
         model: str,
         subtype: int,
         customize: str,
@@ -46,12 +50,12 @@ class MideaC3Device(MideaDevice):
         super().__init__(
             name=name,
             device_id=device_id,
-            device_type=0xC3,
+            device_type=DeviceType.C3,
             ip_address=ip_address,
             port=port,
             token=token,
             key=key,
-            protocol=protocol,
+            device_protocol=device_protocol,
             model=model,
             subtype=subtype,
             attributes={
@@ -73,21 +77,21 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.tbh: False,
                 DeviceAttributes.mode: 1,
                 DeviceAttributes.mode_auto: 1,
-                DeviceAttributes.zone_target_temp: [25, 25],
-                DeviceAttributes.dhw_target_temp: 25,
-                DeviceAttributes.room_target_temp: 30,
-                DeviceAttributes.zone_heating_temp_max: [55, 55],
-                DeviceAttributes.zone_heating_temp_min: [25, 25],
-                DeviceAttributes.zone_cooling_temp_max: [25, 25],
-                DeviceAttributes.zone_cooling_temp_min: [5, 5],
-                DeviceAttributes.room_temp_max: 60,
-                DeviceAttributes.room_temp_min: 34,
-                DeviceAttributes.dhw_temp_max: 60,
-                DeviceAttributes.dhw_temp_min: 20,
+                DeviceAttributes.zone_target_temp: [25.0, 25.0],
+                DeviceAttributes.dhw_target_temp: 25.0,
+                DeviceAttributes.room_target_temp: 30.0,
+                DeviceAttributes.zone_heating_temp_max: [55.0, 55.0],
+                DeviceAttributes.zone_heating_temp_min: [25.0, 25.0],
+                DeviceAttributes.zone_cooling_temp_max: [25.0, 25.0],
+                DeviceAttributes.zone_cooling_temp_min: [5.0, 5.0],
+                DeviceAttributes.room_temp_max: 60.0,
+                DeviceAttributes.room_temp_min: 34.0,
+                DeviceAttributes.dhw_temp_max: 60.0,
+                DeviceAttributes.dhw_temp_min: 20.0,
                 DeviceAttributes.tank_actual_temperature: None,
-                DeviceAttributes.target_temperature: [25, 25],
-                DeviceAttributes.temperature_max: [0, 0],
-                DeviceAttributes.temperature_min: [0, 0],
+                DeviceAttributes.target_temperature: [25.0, 25.0],
+                DeviceAttributes.temperature_max: [0.0, 0.0],
+                DeviceAttributes.temperature_min: [0.0, 0.0],
                 DeviceAttributes.total_energy_consumption: None,
                 DeviceAttributes.status_heating: None,
                 DeviceAttributes.status_dhw: None,
@@ -115,8 +119,10 @@ class MideaC3Device(MideaDevice):
     def build_query(self) -> list[MessageQuery]:
         """Midea C3 device build query."""
         return [
-            MessageQueryBasic(self._protocol_version),
-            MessageQuerySilence(self._protocol_version),
+            MessageQueryBasic(self._message_protocol_version),
+            MessageQueryDisinfect(self._message_protocol_version),
+            MessageQuerySilence(self._message_protocol_version),
+            MessageQueryECO(self._message_protocol_version),
         ]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
@@ -210,7 +216,7 @@ class MideaC3Device(MideaDevice):
 
     def make_message_set(self) -> MessageSet:
         """Midea C3 device make message set."""
-        message = MessageSet(self._protocol_version)
+        message = MessageSet(self._message_protocol_version)
         message.zone1_power = self._attributes[DeviceAttributes.zone1_power]
         message.zone2_power = self._attributes[DeviceAttributes.zone2_power]
         message.dhw_power = self._attributes[DeviceAttributes.dhw_power]
@@ -220,35 +226,38 @@ class MideaC3Device(MideaDevice):
         message.room_target_temp = self._attributes[DeviceAttributes.room_target_temp]
         message.zone1_curve = self._attributes[DeviceAttributes.zone1_curve]
         message.zone2_curve = self._attributes[DeviceAttributes.zone2_curve]
-        message.disinfect = self._attributes[DeviceAttributes.disinfect]
         message.tbh = self._attributes[DeviceAttributes.tbh]
         message.fast_dhw = self._attributes[DeviceAttributes.fast_dhw]
         return message
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea C3 device set attribute."""
-        message: MessageSet | MessageSetECO | MessageSetSilent | None = None
+        message: (
+            MessageSet | MessageSetECO | MessageSetSilent | MessageSetDisinfect | None
+        ) = None
         if attr in [
             DeviceAttributes.zone1_power,
             DeviceAttributes.zone2_power,
             DeviceAttributes.dhw_power,
             DeviceAttributes.zone1_curve,
             DeviceAttributes.zone2_curve,
-            DeviceAttributes.disinfect,
+            DeviceAttributes.tbh,
             DeviceAttributes.fast_dhw,
             DeviceAttributes.dhw_target_temp,
-            DeviceAttributes.tbh,
         ]:
             message = self.make_message_set()
             setattr(message, str(attr), value)
         elif attr == DeviceAttributes.eco_mode:
-            message = MessageSetECO(self._protocol_version)
+            message = MessageSetECO(self._message_protocol_version)
+            setattr(message, str(attr), value)
+        elif attr == DeviceAttributes.disinfect:
+            message = MessageSetDisinfect(self._message_protocol_version)
             setattr(message, str(attr), value)
         elif attr in [
             DeviceAttributes.silent_mode.value,
             DeviceAttributes.SILENT_LEVEL.value,
         ]:
-            message = MessageSetSilent(self._protocol_version)
+            message = MessageSetSilent(self._message_protocol_version)
             if attr == DeviceAttributes.silent_mode.value and isinstance(value, bool):
                 message.silent_mode = bool(value)
                 message.silent_level = (

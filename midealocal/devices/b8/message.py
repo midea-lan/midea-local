@@ -1,6 +1,18 @@
 """Midea local B8 message."""
 
-from midealocal.devices.b8.const import (
+from midealocal.const import DeviceType
+from midealocal.message import (
+    BoolParser,
+    IntEnumParser,
+    IntParser,
+    ListTypes,
+    MessageBody,
+    MessageRequest,
+    MessageResponse,
+    MessageType,
+)
+
+from .const import (
     B8CleanMode,
     B8ControlType,
     B8DeviceAttributes,
@@ -18,16 +30,6 @@ from midealocal.devices.b8.const import (
     B8WorkMode,
     B8WorkStatus,
 )
-from midealocal.message import (
-    BodyType,
-    BoolParser,
-    IntEnumParser,
-    IntParser,
-    MessageBody,
-    MessageRequest,
-    MessageResponse,
-    MessageType,
-)
 
 
 class MessageB8Base(MessageRequest):
@@ -36,12 +38,12 @@ class MessageB8Base(MessageRequest):
     def __init__(
         self,
         protocol_version: int,
-        message_type: int,
-        body_type: int,
+        message_type: MessageType,
+        body_type: ListTypes,
     ) -> None:
         """Initialize B8 message base."""
         super().__init__(
-            device_type=0xB8,
+            device_type=DeviceType.B8,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -60,7 +62,7 @@ class MessageQuery(MessageB8Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=BodyType.X32,
+            body_type=ListTypes.X32,
         )
 
     @property
@@ -76,7 +78,7 @@ class MessageSet(MessageB8Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X22,
+            body_type=ListTypes.X22,
         )
         self.clean_mode = B8CleanMode.AUTO
         self.fan_level = B8FanLevel.NORMAL
@@ -103,12 +105,16 @@ class MessageSet(MessageB8Base):
 class MessageSetCommand(MessageB8Base):
     """B8 message set command."""
 
-    def __init__(self, protocol_version: int, work_mode: B8WorkMode) -> None:
+    def __init__(
+        self,
+        protocol_version: int,
+        work_mode: B8WorkMode,
+    ) -> None:
         """Initialize B8 message set command."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=BodyType.X22,
+            body_type=ListTypes.X22,
         )
         self.work_mode = work_mode
 
@@ -273,10 +279,10 @@ class MessageB8Response(MessageResponse):
         status_type = body[1]
         if (
             message_type == MessageType.query
-            and body_type == BodyType.X32
+            and body_type == ListTypes.X32
             and status_type == B8StatusType.X01
         ):
             return MessageB8WorkStatusBody(body)
-        if message_type == MessageType.notify1 and body_type == BodyType.X42:
+        if message_type == MessageType.notify1 and body_type == ListTypes.X42:
             return MessageB8NotifyBody(body)
         return None

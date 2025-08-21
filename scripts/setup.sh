@@ -5,3 +5,6 @@
 set -e
 
 pre-commit install
+pre-commit install --hook-type commit-msg
+cd
+npm install --no-fund @commitlint/config-conventional

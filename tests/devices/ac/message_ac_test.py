@@ -2,6 +2,7 @@
 
 import pytest
 
+from midealocal.const import ProtocolVersion
 from midealocal.devices.ac.message import (
     MessageACBase,
     MessageACResponse,
@@ -15,6 +16,7 @@ from midealocal.devices.ac.message import (
     MessageToggleDisplay,
     NewProtocolTags,
 )
+from midealocal.message import ListTypes, MessageType
 
 
 class TestMessageACBase:
@@ -22,17 +24,33 @@ class TestMessageACBase:
 
     def test_message_id_increment(self) -> None:
         """Test message Id Increment."""
-        msg = MessageACBase(protocol_version=1, message_type=1, body_type=1)
-        msg2 = MessageACBase(protocol_version=1, message_type=1, body_type=1)
+        msg = MessageACBase(
+            protocol_version=ProtocolVersion.V1,
+            message_type=MessageType.query,
+            body_type=ListTypes.X01,
+        )
+        msg2 = MessageACBase(
+            protocol_version=ProtocolVersion.V1,
+            message_type=MessageType.query,
+            body_type=ListTypes.X01,
+        )
         assert msg2._message_id == msg._message_id + 1
         # test reset
         for _ in range(254 - msg2._message_id):
-            msg = MessageACBase(protocol_version=1, message_type=1, body_type=1)
+            msg = MessageACBase(
+                protocol_version=ProtocolVersion.V1,
+                message_type=MessageType.query,
+                body_type=ListTypes.X01,
+            )
         assert msg._message_id == 1
 
     def test_body_not_implemented(self) -> None:
         """Test body not implemented."""
-        msg = MessageACBase(protocol_version=1, message_type=1, body_type=1)
+        msg = MessageACBase(
+            protocol_version=ProtocolVersion.V1,
+            message_type=MessageType.query,
+            body_type=ListTypes.X01,
+        )
         with pytest.raises(NotImplementedError):
             _ = msg.body
 
@@ -42,7 +60,7 @@ class TestMessageQuery:
 
     def test_query_body(self) -> None:
         """Test query body."""
-        msg = MessageQuery(protocol_version=1)
+        msg = MessageQuery(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray(
             [
                 0x41,
@@ -75,7 +93,7 @@ class TestMessageCapabilitiesQuery:
 
     def test_capabilities_query_body(self) -> None:
         """Test capabilities query body."""
-        msg = MessageCapabilitiesQuery(1, False)
+        msg = MessageCapabilitiesQuery(ProtocolVersion.V1, False)
         expected_body = bytearray(
             [0xB5, 0x01, 0x00],
         )
@@ -83,7 +101,7 @@ class TestMessageCapabilitiesQuery:
 
     def test_capabilities_query_body_additional(self) -> None:
         """Test capabilities query body."""
-        msg = MessageCapabilitiesQuery(1, True)
+        msg = MessageCapabilitiesQuery(ProtocolVersion.V1, True)
         expected_body = bytearray(
             [0xB5, 0x01, 0x01, 0x01],
         )
@@ -95,7 +113,7 @@ class TestMessagePowerQuery:
 
     def test_power_query_body(self) -> None:
         """Test power query body."""
-        msg = MessagePowerQuery(protocol_version=1)
+        msg = MessagePowerQuery(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray([0x41, 0x21, 0x01, 0x44, 0x00, 0x01])
         assert msg.body[:-1] == expected_body
 
@@ -105,7 +123,7 @@ class TestMessageToggleDisplay:
 
     def test_toggle_disply_body(self) -> None:
         """Test toggle display body."""
-        msg = MessageToggleDisplay(protocol_version=1)
+        msg = MessageToggleDisplay(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray(
             [
                 0x41,
@@ -164,11 +182,11 @@ class TestMessageNewProtocolQuery:
 
     def test_new_protocol_query_body(self) -> None:
         """Test new protocol query body."""
-        msg = MessageNewProtocolQuery(protocol_version=1)
+        msg = MessageNewProtocolQuery(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray(
             [
                 0xB1,
-                0x06,
+                0x08,
                 NewProtocolTags.indirect_wind & 0xFF,
                 NewProtocolTags.indirect_wind >> 8,
                 NewProtocolTags.breezeless & 0xFF,
@@ -181,6 +199,10 @@ class TestMessageNewProtocolQuery:
                 NewProtocolTags.fresh_air_1 >> 8,
                 NewProtocolTags.fresh_air_2 & 0xFF,
                 NewProtocolTags.fresh_air_2 >> 8,
+                NewProtocolTags.wind_lr_angle & 0xFF,
+                NewProtocolTags.wind_lr_angle >> 8,
+                NewProtocolTags.wind_ud_angle & 0xFF,
+                NewProtocolTags.wind_ud_angle >> 8,
             ],
         )
         assert msg.body[:-2] == expected_body
@@ -192,8 +214,8 @@ class TestMessageSubProtocol:
     def test_sub_protocol_body(self) -> None:
         """Test sub protocol body."""
         msg = MessageSubProtocol(
-            protocol_version=1,
-            message_type=0xBB,
+            protocol_version=ProtocolVersion.V1,
+            message_type=MessageType.query,
             subprotocol_query_type=0xCC,
         )
         expected_body = bytearray(
@@ -214,7 +236,7 @@ class TestMessageSubProtocolSet:
 
     def test_sub_protocol_set_body(self) -> None:
         """Test sub protocol set body."""
-        msg = MessageSubProtocolSet(protocol_version=1)
+        msg = MessageSubProtocolSet(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray(
             [
                 0xAA,
@@ -294,7 +316,7 @@ class TestMessageGeneralSet:
 
     def test_general_set_body(self) -> None:
         """Test general set body."""
-        msg = MessageGeneralSet(protocol_version=1)
+        msg = MessageGeneralSet(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray(
             [
                 0x40,
@@ -365,7 +387,7 @@ class TestMessageACResponse:
             [
                 0xAA,
                 0x00,
-                0xA1,
+                0xAC,
                 0x00,
                 0x00,
                 0x00,
@@ -446,44 +468,39 @@ class TestMessageACResponse:
         body = bytearray(
             [
                 0xB5,
-                0x07,
-                0x12,
-                0x02,
-                0x01,
-                0x01,
-                0x13,
-                0x02,
-                0x01,
+                0x05,
+                0x15,  # indoor_humidity
                 0x00,
-                0x14,
-                0x02,
-                0x01,
+                0x01,  # length
+                0x00,  # value
+                0x17,  # screen_display_alternate
                 0x00,
-                0x15,
-                0x02,
-                0x01,
-                0x01,
-                0x16,
-                0x02,
-                0x01,
-                0x01,
-                0x17,
-                0x02,
-                0x01,
-                0x01,
-                0x1A,
-                0x02,
-                0x01,
+                0x01,  # length
+                0x00,  # value
+                0x18,  # breezeless
+                0x00,
+                0x01,  # length
+                0x00,  # value
+                0x09,  # wind_ud_angle
+                0x00,
+                0x01,  # length
+                0x00,  # value
+                0x0A,  # wind_lr_angle
+                0x00,
+                0x01,  # length
+                0x00,  # value
                 0x01,
                 0xD6,
             ],
         )
         response = MessageACResponse(self.header + body)
-        assert hasattr(response, "modes")
-        assert not response.modes["heat"]
-        assert response.modes["cool"]
-        assert response.modes["dry"]
-        assert response.modes["auto"]
+        # query message
+        assert hasattr(response, "indoor_humidity")
+        assert hasattr(response, "screen_display_alternate")
+        assert hasattr(response, "breezeless")
+        assert hasattr(response, "wind_ud_angle")
+        assert hasattr(response, "wind_lr_angle")
+        assert not hasattr(response, "indirect_wind")
 
     def test_message_notify2_b0(self) -> None:
         """Test Message parse notify2 B0."""

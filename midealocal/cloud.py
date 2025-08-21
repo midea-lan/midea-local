@@ -42,9 +42,8 @@ SUPPORTED_CLOUDS = {
         ).decode(),
         "api_url": "https://mp-prod.smartmidea.net/mas/v5/app/proxy?alias=",
     },
-    "MSmartHome": {
-        "default": True,
-        "class_name": "MSmartHomeCloud",
+    "SmartHome": {
+        "class_name": "SmartHomeCloud",
         "app_id": "1010",
         "app_key": "ac21b9f9cbfe4ca5a88562ef25e2b768",
         "iot_key": bytes.fromhex(format(7882822598523843940, "x")).decode(),
@@ -60,6 +59,7 @@ SUPPORTED_CLOUDS = {
         "api_url": "https://mapp.appsmb.com",  # codespell:ignore
     },
     "NetHome Plus": {
+        "default": True,
         "class_name": "MideaAirCloud",
         "app_id": "1017",
         "app_key": "3742e9e5842d4ad59c2db887e12449f9",
@@ -83,7 +83,7 @@ DEFAULT_KEYS = {
 
 PRESET_ACCOUNT_DATA = [
     39182118275972017797890111985649342047468653967530949796945843010512,
-    29406100301096535908214728322278519471982973450672552249652548883645,
+    39182118275980892824833804202177448991093361348247890162501600564413,
     39182118275972017797890111985649342050088014265865102175083010656997,
 ]
 
@@ -100,10 +100,10 @@ def get_preset_account_cloud() -> dict[str, str]:
     """Return preset account data for cloud login."""
     username: str = bytes.fromhex(
         format((PRESET_ACCOUNT_DATA[0] ^ PRESET_ACCOUNT_DATA[1]), "X"),
-    ).decode("ASCII")
+    ).decode("utf-8", errors="ignore")
     password: str = bytes.fromhex(
         format((PRESET_ACCOUNT_DATA[0] ^ PRESET_ACCOUNT_DATA[2]), "X"),
-    ).decode("ASCII")
+    ).decode("utf-8", errors="ignore")
 
     return {
         "username": username,
@@ -112,7 +112,7 @@ def get_preset_account_cloud() -> dict[str, str]:
     }
 
 
-block = "\u2588"
+block = "*"
 
 
 def _redact_data(data: str) -> str:
@@ -132,8 +132,10 @@ def _redact_data(data: str) -> str:
         if len(item) == 0:
             break
         m = len(item)
-        elm = r"\b" + item + r"\b"
-        data = re.sub(elm, block * m, data)
+        visible = item[:5]  # Keep up to the first 5 characters
+        redacted = visible + block * (m - len(visible))  # Use block for masking
+        elm = re.escape(item)  # Escape regex metacharacters
+        data = re.sub(elm, redacted, data)
     return data
 
 
@@ -209,7 +211,7 @@ class MideaCloud:
                     )
                     raw = await r.read()
                     _LOGGER.debug(
-                        "Midea cloud API url: %s, data: %s, response: %s",
+                        "Midea cloud API url: %s, \n data: %s, \n response: %s",
                         url,
                         _redact_data(str(data)),
                         _redact_data(str(raw)),
@@ -306,6 +308,15 @@ class MideaCloud:
         """Download lua integration."""
         raise NotImplementedError
 
+    async def download_plugin(
+        self,
+        path: str,
+        device_type: int,
+        sn: str,
+    ) -> str | None:
+        """Download lua integration."""
+        raise NotImplementedError
+
 
 class MeijuCloud(MideaCloud):
     """Meiju Cloud."""
@@ -332,6 +343,20 @@ class MeijuCloud(MideaCloud):
             password=password,
             api_url=cloud_data["api_url"],
         )
+
+    def _make_general_data(self) -> dict[str, Any]:
+        return {
+            "src": self._app_id,
+            "format": "2",
+            "stamp": datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S"),
+            "platformId": "1",
+            "deviceId": self._device_id,
+            "reqId": token_hex(16),
+            "uid": self._uid,
+            "clientType": "1",
+            "appId": self._app_id,
+            "language": "en_US",
+        }
 
     async def login(self) -> bool:
         """Authenticate to Meiju Cloud."""
@@ -515,7 +540,7 @@ class MeijuCloud(MideaCloud):
         """Download lua integration."""
         data = {
             "applianceSn": sn,
-            "applianceType": f".{f'x{device_type:02x}'}",
+            "applianceType": hex(device_type),
             "applianceMFCode": manufacturer_code,
             "version": "0",
             "iotAppId": self._app_id,
@@ -539,8 +564,48 @@ class MeijuCloud(MideaCloud):
                         await fp.write(stream)
         return str(fnm) if fnm else None
 
+    async def download_plugin(
+        self,
+        path: str,
+        device_type: int,
+        sn: str,
+    ) -> str | None:
+        """Download lua integration."""
+        data = self._make_general_data()
+        data.update(
+            {
+                "clientVersion": "201",
+                "match": "1",
+                "applianceList": [
+                    {
+                        "appModel": sn[9:17],
+                        "appType": hex(device_type),
+                        "modelNumber": "0",
+                    },
+                ],
+            },
+        )
+        fnm = None
+        if response := await self._api_request(
+            endpoint="/v1/plugin/update/getplugin",
+            data=data,
+        ):
+            # get file name from url
+            _LOGGER.debug("response: %s, type: %s", response, type(response))
+            file_name = response["list"][0]["url"].split("/")[-1]
+            # download plugin from url
+            res = await self._session.get(response["list"][0]["url"])
+            if res.status == HTTPStatus.OK:
+                # get the file content in binary mode
+                plugin = await res.read()
+                if plugin:
+                    fnm = f"{path}/{file_name}"
+                    async with aiofiles.open(fnm, "wb") as fp:
+                        await fp.write(plugin)
+        return str(fnm) if fnm else None
 
-class MSmartHomeCloud(MideaCloud):
+
+class SmartHomeCloud(MideaCloud):
     """MSmart Home Cloud."""
 
     def __init__(
@@ -582,6 +647,7 @@ class MSmartHomeCloud(MideaCloud):
             "uid": self._uid,
             "clientType": "1",
             "appId": self._app_id,
+            "language": "en_US",
         }
 
     async def _api_request(
@@ -650,7 +716,7 @@ class MSmartHomeCloud(MideaCloud):
                     response["randomData"],
                 )
                 return True
-        _LOGGER.warning("MSmartHome Cloud login failed for device %s", self._device_id)
+        _LOGGER.warning("SmartHome Cloud login failed for device %s", self._device_id)
         return False
 
     async def list_appliances(
@@ -699,20 +765,18 @@ class MSmartHomeCloud(MideaCloud):
         manufacturer_code: str = "0000",
     ) -> str | None:
         """Download lua integration."""
-        data = {
-            "clientType": "1",
-            "appId": self._app_id,
-            "format": "2",
-            "deviceId": self._device_id,
-            "iotAppId": self._app_id,
-            "applianceMFCode": manufacturer_code,
-            "applianceType": hex(device_type),
-            "applianceSn": self._security.aes_encrypt_with_fixed_key(
-                sn.encode("ascii"),
-            ).hex(),
-            "version": "0",
-            "encryptedType ": "2",
-        }
+        data = self._make_general_data()
+        data.update(
+            {
+                "applianceMFCode": manufacturer_code,
+                "applianceType": hex(device_type),
+                "applianceSn": self._security.aes_encrypt_with_fixed_key(
+                    sn.encode("ascii"),
+                ).hex(),
+                "version": "0",
+                "encryptedType ": "2",
+            },
+        )
         if model_number is not None:
             data["modelNumber"] = model_number
         fnm = None
@@ -732,6 +796,45 @@ class MSmartHomeCloud(MideaCloud):
                     fnm = f"{path}/{response['fileName']}"
                     async with aiofiles.open(fnm, "w") as fp:
                         await fp.write(stream)
+        return str(fnm) if fnm else None
+
+    async def download_plugin(
+        self,
+        path: str,
+        device_type: int,
+        sn: str,
+    ) -> str | None:
+        """Download lua integration."""
+        data = self._make_general_data()
+        data.update(
+            {
+                "clientVersion": "0",
+                "applianceList": [
+                    {
+                        "appModel": sn[9:17],
+                        "appType": hex(device_type),
+                        "modelNumber": "0",
+                    },
+                ],
+            },
+        )
+        fnm = None
+        if response := await self._api_request(
+            endpoint="/v1/plugin/update/overseas/get",
+            data=data,
+        ):
+            # get file name from url
+            _LOGGER.debug("response: %s, type: %s", response, type(response))
+            file_name = response["result"][0]["url"].split("/")[-1]
+            # download plugin from url
+            res = await self._session.get(response["result"][0]["url"])
+            if res.status == HTTPStatus.OK:
+                # get the file content in binary mode
+                plugin = await res.read()
+                if plugin:
+                    fnm = f"{path}/{file_name}"
+                    async with aiofiles.open(fnm, "wb") as fp:
+                        await fp.write(plugin)
         return str(fnm) if fnm else None
 
 

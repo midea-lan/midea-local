@@ -1,5 +1,173 @@
 # Changelog
 
+## [6.4.0](https://github.com/midea-lan/midea-local/compare/v6.3.0...v6.4.0) (2025-08-06)
+
+
+### Features
+
+* **ac:** ac device support airflow direction control ([#385](https://github.com/midea-lan/midea-local/issues/385)) ([4bd148d](https://github.com/midea-lan/midea-local/commit/4bd148d0bbcb40a316dfe1c3b0eef03d9b7b47ac))
+
+
+### Bug Fixes
+
+* **ac:** ac device screen_display status error ([#388](https://github.com/midea-lan/midea-local/issues/388)) ([e13962e](https://github.com/midea-lan/midea-local/commit/e13962e8bb429d65aedaed5d15dfa9bc85c77e35))
+* **db:** rollback 0xdb progress attr and value ([#386](https://github.com/midea-lan/midea-local/issues/386)) ([ad46461](https://github.com/midea-lan/midea-local/commit/ad4646171144e62ac776a3e64edcc2e0c1e4db5c))
+
+## [6.3.0](https://github.com/midea-lan/midea-local/compare/v6.2.0...v6.3.0) (2025-05-19)
+
+
+### Features
+
+* **b0:** add b0 device feature ([#365](https://github.com/midea-lan/midea-local/issues/365)) ([1acfde7](https://github.com/midea-lan/midea-local/commit/1acfde75e84218130382cfa351cb5874b26d6160))
+
+
+### Bug Fixes
+
+* **c3:** temperature should be float ([#369](https://github.com/midea-lan/midea-local/issues/369)) ([f2d8695](https://github.com/midea-lan/midea-local/commit/f2d8695b4b6234d8a2615ea253d6150b03b31028))
+* **cd:** parse CD device message error ([#370](https://github.com/midea-lan/midea-local/issues/370)) ([db07d08](https://github.com/midea-lan/midea-local/commit/db07d083621730cb4d3de9cb7303693f7f31c665))
+* **cd:** temperature should be float ([#367](https://github.com/midea-lan/midea-local/issues/367)) ([54f16f6](https://github.com/midea-lan/midea-local/commit/54f16f69ca9b558170a03d842ef444143be469ea))
+* **e2:** fix e2 device full tank/temperature error ([#371](https://github.com/midea-lan/midea-local/issues/371)) ([182d508](https://github.com/midea-lan/midea-local/commit/182d508862ee9afc29f5d5bc9449ede57986620d))
+* **e2:** temperature should be float ([#364](https://github.com/midea-lan/midea-local/issues/364)) ([fec9adf](https://github.com/midea-lan/midea-local/commit/fec9adfbc8be6a3832f367eb8672b48a841c4bd8))
+* **e3:** temperature should be float ([#366](https://github.com/midea-lan/midea-local/issues/366)) ([5d27a44](https://github.com/midea-lan/midea-local/commit/5d27a44feb81cff83c7a7a2371cf2221ca85c92f))
+* **e6:** temperature should be float ([#368](https://github.com/midea-lan/midea-local/issues/368)) ([bebc217](https://github.com/midea-lan/midea-local/commit/bebc217debecb59cc362ad64663d07896f89cec1))
+* **ed:** fix ed device query result is 0 ([#379](https://github.com/midea-lan/midea-local/issues/379)) ([c83b7af](https://github.com/midea-lan/midea-local/commit/c83b7afa35c451842f4c76b1333a3022573b784e))
+
+## [6.2.0](https://github.com/midea-lan/midea-local/compare/v6.1.0...v6.2.0) (2025-03-25)
+
+
+### Features
+
+* **ad:** add ad device support ([#362](https://github.com/midea-lan/midea-local/issues/362)) ([77e1baa](https://github.com/midea-lan/midea-local/commit/77e1baaf865a6002d6cbea1a6a02c9d345eba866))
+* **b3:** support new X00 body for B3 device ([#350](https://github.com/midea-lan/midea-local/issues/350)) ([702aaf0](https://github.com/midea-lan/midea-local/commit/702aaf0dc36d4c3b07bc2607a42a24efee2f13b3))
+* **cf:** add defrost and freeze for CF device ([#351](https://github.com/midea-lan/midea-local/issues/351)) ([0762e79](https://github.com/midea-lan/midea-local/commit/0762e7948068e0d5dab236c84f444fbc6ef5f1d0))
+* **e6:** add cold water and climate compensation features ([#353](https://github.com/midea-lan/midea-local/issues/353)) ([88b78d0](https://github.com/midea-lan/midea-local/commit/88b78d04d9984bd20dd50c8a3bcced18168f30be))
+
+
+### Bug Fixes
+
+* **cd:** fix cd device mode key and value error ([#357](https://github.com/midea-lan/midea-local/issues/357)) ([beaf7e0](https://github.com/midea-lan/midea-local/commit/beaf7e0f3492c1348bf21cfffa86f54095824e9b))
+* **cloud:** switch default cloud from SmartHome to Nethome Plus ([#360](https://github.com/midea-lan/midea-local/issues/360)) ([ae34281](https://github.com/midea-lan/midea-local/commit/ae342818231b2f6eda92ee35ceb604766575387b))
+* **e2:** input target_temperature should be float ([#358](https://github.com/midea-lan/midea-local/issues/358)) ([316afce](https://github.com/midea-lan/midea-local/commit/316afce6a81c202112c6a530057e2e86b9b59904))
+* **e3:** input target_temperature should be float ([#359](https://github.com/midea-lan/midea-local/issues/359)) ([377ded9](https://github.com/midea-lan/midea-local/commit/377ded9e90e7debbc0f0cc669b6820c6073df8b6))
+* **e6:** input temperature should be float ([#363](https://github.com/midea-lan/midea-local/issues/363)) ([3763412](https://github.com/midea-lan/midea-local/commit/3763412f2fe30d7d5d7d531a8b2965bf9b7a4c62))
+
+## [6.1.0](https://github.com/midea-lan/midea-local/compare/v6.0.3...v6.1.0) (2025-01-15)
+
+
+### Features
+
+* **c3:** add disinfect and fix tbh set error ([#340](https://github.com/midea-lan/midea-local/issues/340)) ([5f5224b](https://github.com/midea-lan/midea-local/commit/5f5224bbe30f2c02de0ee0ea8d67f5132a4993ab))
+* **cd:** add water_level and temperature option with customize lua_protocol ([#345](https://github.com/midea-lan/midea-local/issues/345)) ([db2fdf0](https://github.com/midea-lan/midea-local/commit/db2fdf0bb4aa9d6a9e4ed47c876fd57f57f30c9f))
+* **cloud:** add plugin download for meiju and smarthome ([#336](https://github.com/midea-lan/midea-local/issues/336)) ([30de473](https://github.com/midea-lan/midea-local/commit/30de473cd351ff4f7a918452061caf2b5806d876))
+* **db:** add new attributes for db device ([#329](https://github.com/midea-lan/midea-local/issues/329)) ([da38007](https://github.com/midea-lan/midea-local/commit/da3800744ed202ca3f4f9ca45f6f784f5e847830))
+* **dc:** add new attributes for exist dc device ([#330](https://github.com/midea-lan/midea-local/issues/330)) ([10c15b6](https://github.com/midea-lan/midea-local/commit/10c15b63479f729d421c99341adf3f4f913bdf02))
+* **e1:** add new attributes for e1 device ([#337](https://github.com/midea-lan/midea-local/issues/337)) ([9afa160](https://github.com/midea-lan/midea-local/commit/9afa160eccca4641f1a220bdfad2cd611a1cb57b))
+* **ed:** add all query msg for 0xED device ([#328](https://github.com/midea-lan/midea-local/issues/328)) ([30ba082](https://github.com/midea-lan/midea-local/commit/30ba082cea0a19a97fd80df3b355236f44d8bcfe))
+
+
+### Bug Fixes
+
+* fix:  ([db2fdf0](https://github.com/midea-lan/midea-local/commit/db2fdf0bb4aa9d6a9e4ed47c876fd57f57f30c9f))
+* **device:** no supported protocol caused high cpu usage ([#346](https://github.com/midea-lan/midea-local/issues/346)) ([013aee4](https://github.com/midea-lan/midea-local/commit/013aee4465480ac2d8cf0f0d047785b6fb6ffeec))
+
+
+### Documentation
+
+* add collected lua scripts ([#331](https://github.com/midea-lan/midea-local/issues/331)) ([e1a3855](https://github.com/midea-lan/midea-local/commit/e1a385559aec6b1526b10a595ea9a7568a69163c))
+
+## [6.0.3](https://github.com/rokam/midea-local/compare/v6.0.2...v6.0.3) (2024-10-15)
+
+
+### Bug Fixes
+
+* cleanup and complete body and subbody types lists ([#325](https://github.com/rokam/midea-local/issues/325)) ([914dcb8](https://github.com/rokam/midea-local/commit/914dcb8098efe50cc1583ad81fd22b49e9e2536b))
+
+## [6.0.2](https://github.com/rokam/midea-local/compare/v6.0.1...v6.0.2) (2024-10-08)
+
+
+### Bug Fixes
+
+* add more BodyType ([#321](https://github.com/rokam/midea-local/issues/321)) ([a1b4ac8](https://github.com/rokam/midea-local/commit/a1b4ac807e3b475f0a32f44c0f1d7af980d7a486))
+
+## [6.0.1](https://github.com/rokam/midea-local/compare/v6.0.0...v6.0.1) (2024-10-06)
+
+
+### Bug Fixes
+
+* add missing body_type "163" ([#317](https://github.com/rokam/midea-local/issues/317)) ([45f7bd2](https://github.com/rokam/midea-local/commit/45f7bd2432a04fb69c9fdb9b6204de7eac87aa2e))
+* message protocol version default ([#316](https://github.com/rokam/midea-local/issues/316)) ([2f4e5d1](https://github.com/rokam/midea-local/commit/2f4e5d1d1335696cc3a179a67cf287eef54b6864))
+* protocol check in B6 devices ([#320](https://github.com/rokam/midea-local/issues/320)) ([55659c1](https://github.com/rokam/midea-local/commit/55659c19a642fadfd37aee32fbeae76e48aed3dd))
+
+## [6.0.0](https://github.com/rokam/midea-local/compare/v5.0.0...v6.0.0) (2024-10-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **cloud:** rename MSmartHome ([#306](https://github.com/rokam/midea-local/issues/306))
+
+### Miscellaneous Chores
+
+* **cloud:** rename MSmartHome ([#306](https://github.com/rokam/midea-local/issues/306)) ([20c796e](https://github.com/rokam/midea-local/commit/20c796eb9f9728ff4042f3caf2e0ff11012e12f5)), closes [#286](https://github.com/rokam/midea-local/issues/286)
+
+## [5.0.0](https://github.com/rokam/midea-local/compare/v4.0.0...v5.0.0) (2024-10-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **device:** rollback and socket refresh_status ([#307](https://github.com/rokam/midea-local/issues/307))
+
+### Bug Fixes
+
+* **device:** rollback and socket refresh_status ([#307](https://github.com/rokam/midea-local/issues/307)) ([f65b6ac](https://github.com/rokam/midea-local/commit/f65b6ac8fcc8ff2ae7085068498b96066213b658))
+
+## [4.0.0](https://github.com/rokam/midea-local/compare/v3.0.1...v4.0.0) (2024-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* **device:** rollback and improve send/recv socket exception ([#304](https://github.com/rokam/midea-local/issues/304))
+
+### Bug Fixes
+
+* **device:** rollback and improve send/recv socket exception ([#304](https://github.com/rokam/midea-local/issues/304)) ([7083464](https://github.com/rokam/midea-local/commit/7083464bba91e2f341d09de3b90b6bc77ccac9cb))
+
+## [3.0.1](https://github.com/rokam/midea-local/compare/v3.0.0...v3.0.1) (2024-09-21)
+
+
+### Bug Fixes
+
+* **device:** prevent while true loop high cpu usage bug ([#298](https://github.com/rokam/midea-local/issues/298)) ([3bdec5c](https://github.com/rokam/midea-local/commit/3bdec5cbbad960d4fbc5b9a5520fa7c9219fe405))
+
+## [3.0.0](https://github.com/rokam/midea-local/compare/v2.7.1...v3.0.0) (2024-09-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **device:** socket exception and process rebuild ([#296](https://github.com/rokam/midea-local/issues/296))
+
+### Bug Fixes
+
+* **device:** socket exception and process rebuild ([#296](https://github.com/rokam/midea-local/issues/296)) ([7f2e572](https://github.com/rokam/midea-local/commit/7f2e57294802d6ecae64618d28d1659465077672))
+
+## [2.7.1](https://github.com/rokam/midea-local/compare/v2.7.0...v2.7.1) (2024-09-12)
+
+
+### Bug Fixes
+
+* ed device power/lock return message set and body_type 0x15 parse ([#284](https://github.com/rokam/midea-local/issues/284)) ([d9d4fac](https://github.com/rokam/midea-local/commit/d9d4faca3bf7a3096f1e12a53dd5953b79f2a422))
+
+## [2.7.0](https://github.com/rokam/midea-local/compare/v2.6.3...v2.7.0) (2024-08-21)
+
+
+### Features
+
+* **cli:** use of preset account if cloud info missing ([#278](https://github.com/rokam/midea-local/issues/278)) ([84293bf](https://github.com/rokam/midea-local/commit/84293bfd86b9bb55f59b6897ff5d356df51f7fdb))
+
+
+### Bug Fixes
+
+* **cloud:** meiju cloud download_lua appliance_type error ([#281](https://github.com/rokam/midea-local/issues/281)) ([54f1bf4](https://github.com/rokam/midea-local/commit/54f1bf4a812c44590d9e01e9cd91c4c0f1768948))
+
 ## [2.6.3](https://github.com/rokam/midea-local/compare/v2.6.2...v2.6.3) (2024-08-13)
 
 

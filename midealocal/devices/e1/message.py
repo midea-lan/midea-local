@@ -1,7 +1,8 @@
 """Midea local E1 message."""
 
+from midealocal.const import DeviceType
 from midealocal.message import (
-    BodyType,
+    ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
@@ -19,12 +20,12 @@ class MessageE1Base(MessageRequest):
     def __init__(
         self,
         protocol_version: int,
-        message_type: int,
-        body_type: int,
+        message_type: MessageType,
+        body_type: ListTypes,
     ) -> None:
         """Initialize E1 message base."""
         super().__init__(
-            device_type=0xE1,
+            device_type=DeviceType.E1,
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
@@ -43,7 +44,7 @@ class MessagePower(MessageE1Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x08,
+            body_type=ListTypes.X08,
         )
         self.power = False
 
@@ -79,7 +80,7 @@ class MessageLock(MessageE1Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x83,
+            body_type=ListTypes.X83,
         )
         self.lock = False
 
@@ -97,7 +98,7 @@ class MessageStorage(MessageE1Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.set,
-            body_type=0x81,
+            body_type=ListTypes.X81,
         )
         self.storage = False
 
@@ -119,7 +120,7 @@ class MessageQuery(MessageE1Base):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=0x00,
+            body_type=ListTypes.X00,
         )
 
     @property
@@ -140,26 +141,41 @@ class E1GeneralMessageBody(MessageBody):
         self.door = (body[5] & 0x01) == 0  # 0 - open, 1 - close
         self.rinse_aid = (body[5] & 0x02) > 0  # 0 - enough, 1 - shortage
         self.salt = (body[5] & 0x04) > 0  # 0 - enough, 1 - shortage
-        start_pause = (body[5] & 0x08) > 0
+        start_pause = (body[5] & 0x08) > 0  # operator
         if start_pause:
             self.start = True
         elif self.status in [2, 3]:
             self.start = False
+        self.lack_bright = (body[5] & 0x02) > 0
+        self.lack_softwater = (body[5] & 0x04) > 0
+        self.diyflag = (body[4] & 0x08) > 0
         self.child_lock = (body[5] & 0x10) > 0
         self.uv = (body[4] & 0x2) > 0
         self.dry = (body[4] & 0x10) > 0
         self.dry_status = (body[4] & 0x20) > 0
-        self.storage = (body[5] & 0x20) > 0
-        self.storage_status = (body[5] & 0x40) > 0
+        self.storage = (body[5] & 0x20) > 0  # airswitch
+        self.storage_status = (body[5] & 0x40) > 0  # airstatus
         self.time_remaining = body[6]
-        self.progress = body[9]
-        self.storage_remaining = (
+        if len(body) > HUMIDITY_BYTE:
+            _left_time_high = body[32]
+            if _left_time_high:
+                self.time_remaining = _left_time_high * 256 + self.time_remaining
+        self.progress = body[9]  # washStage
+        self.storage_set_time = (  # airSetTime    Hour
+            body[17] if len(body) > STORAGE_REMAINING_BYTE else False
+        )
+        self.storage_remaining = (  # airLeftTime    Hour
             body[18] if len(body) > STORAGE_REMAINING_BYTE else False
         )
         self.temperature = body[11]
         self.humidity = body[33] if len(body) > HUMIDITY_BYTE else None
-        self.waterswitch = (body[4] & 0x4) > 0
+        self.doorswitch = (body[5] & 0x01) > 0
+        self.dryswitch = (body[5] & 0x10) > 0
+        self.drystatus = (body[5] & 0x20) > 0
+        self.waterswitch = (body[4] & 0x04) > 0
         self.water_lack = (body[5] & 0x80) > 0
+        self.dry_step_switch = (body[4] & 0x01) > 0
+        self.uv_switch = (body[4] & 0x02) > 0
         self.error_code = body[10]
         self.softwater = body[13]
         self.wrong_operation = body[16]
@@ -173,7 +189,8 @@ class MessageE1Response(MessageResponse):
         """Initialize E1 message response."""
         super().__init__(bytearray(message))
         if (
-            self.message_type == MessageType.set and 0 <= self.body_type <= BodyType.X07
+            self.message_type == MessageType.set
+            and 0 <= self.body_type <= ListTypes.X07
         ) or (
             self.message_type in [MessageType.query, MessageType.notify1]
             and self.body_type == 0
