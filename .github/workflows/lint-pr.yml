@@ -18,6 +18,8 @@ jobs:
   label-pr:
     name: Add labels based on PR title
     runs-on: ubuntu-latest
+    # 跳过 fork PR（避免 "Resource not accessible by integration" 错误）
+    if: github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
       pull-requests: write
@@ -26,20 +28,39 @@ jobs:
         id: extract
         run: |
           title="${{ github.event.pull_request.title }}"
-          # 提取 PR 标题前缀（conventional commit type）
           type=$(echo "$title" | sed -E 's/^([a-zA-Z]+)(\(.+\))?:.*/\1/' | tr '[:upper:]' '[:lower:]')
           echo "type=$type" >> $GITHUB_OUTPUT
 
-      - name: Add labels
+      - name: Determine label to add
+        id: label
+        run: |
+          type="${{ steps.extract.outputs.type }}"
+          label=""
+          case "$type" in
+            fix) label="bug" ;;
+            docs) label="documentation" ;;
+            feat) label="enhancement" ;;
+            chore) label="misc" ;;
+            test) label="test" ;;
+            build|ci) label="configuration" ;;
+            refactor|style|performance) label="misc" ;;
+            breaking) label="breaking change" ;;
+          esac
+          echo "label=$label" >> $GITHUB_OUTPUT
+
+      - name: Check existing labels
+        id: check
+        run: |
+          labels=$(jq -r '.pull_request.labels[].name' <<< '${{ toJson(github.event) }}')
+          if echo "$labels" | grep -q "^${{ steps.label.outputs.label }}$"; then
+            echo "already_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "already_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Add label if not exists
+        if: steps.label.outputs.label != '' && steps.check.outputs.already_exists == 'false'
         uses: actions-ecosystem/action-add-labels@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          labels: |
-            ${{ steps.extract.outputs.type == 'fix' && 'bug' || '' }}
-            ${{ steps.extract.outputs.type == 'docs' && 'documentation' || '' }}
-            ${{ steps.extract.outputs.type == 'feat' && 'enhancement' || '' }}
-            ${{ steps.extract.outputs.type == 'chore' && 'misc' || '' }}
-            ${{ steps.extract.outputs.type == 'test' && 'test' || '' }}
-            ${{ (steps.extract.outputs.type == 'build' || steps.extract.outputs.type == 'ci') && 'configuration' || '' }}
-            ${{ (steps.extract.outputs.type == 'refactor' || steps.extract.outputs.type == 'style' || steps.extract.outputs.type == 'performance') && 'misc' || '' }}
-            ${{ steps.extract.outputs.type == 'breaking' && 'breaking change' || '' }}
+          labels: ${{ steps.label.outputs.label }}
