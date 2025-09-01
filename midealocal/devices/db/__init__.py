@@ -281,7 +281,7 @@ class MideaDBDevice(MideaDevice):
                         MideaDBDevice._temperature.get(value, value)
                     )
                 # parse progress
-                if attr == DeviceAttributes.progress:
+                elif attr == DeviceAttributes.progress:
                     self._attributes[attr] = MideaDBDevice._progress[value]
                 else:
                     self._attributes[attr] = value
