@@ -2,7 +2,7 @@ name: "Check PR"
 
 on:
   pull_request:
-    types: [opened, edited, reopened, labeled, unlabeled]
+    types: [opened, edited, reopened, labeled, unlabeled, synchronize]
 
 jobs:
   lint-pr-name:
@@ -14,13 +14,32 @@ jobs:
       - uses: amannn/action-semantic-pull-request@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   label-pr:
+    name: Add labels based on PR title
     runs-on: ubuntu-latest
-    if: "!contains( github.event.pull_request.labels.*.name, 'autorelease: pending') && !contains( github.event.pull_request.labels.*.name, 'autorelease: tagged')"
     permissions:
       contents: read
       pull-requests: write
     steps:
-      - uses: grafana/pr-labeler-action@v0.1.0
+      - name: Extract type from PR title
+        id: extract
+        run: |
+          title="${{ github.event.pull_request.title }}"
+          # 提取 PR 标题前缀（conventional commit type）
+          type=$(echo "$title" | sed -E 's/^([a-zA-Z]+)(\(.+\))?:.*/\1/' | tr '[:upper:]' '[:lower:]')
+          echo "type=$type" >> $GITHUB_OUTPUT
+
+      - name: Add labels
+        uses: actions-ecosystem/action-add-labels@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: |
+            ${{ steps.extract.outputs.type == 'fix' && 'bug' || '' }}
+            ${{ steps.extract.outputs.type == 'docs' && 'documentation' || '' }}
+            ${{ steps.extract.outputs.type == 'feat' && 'enhancement' || '' }}
+            ${{ steps.extract.outputs.type == 'chore' && 'misc' || '' }}
+            ${{ steps.extract.outputs.type == 'test' && 'test' || '' }}
+            ${{ (steps.extract.outputs.type == 'build' || steps.extract.outputs.type == 'ci') && 'configuration' || '' }}
+            ${{ (steps.extract.outputs.type == 'refactor' || steps.extract.outputs.type == 'style' || steps.extract.outputs.type == 'performance') && 'misc' || '' }}
+            ${{ steps.extract.outputs.type == 'breaking' && 'breaking change' || '' }}
