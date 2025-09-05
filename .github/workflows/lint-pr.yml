@@ -51,8 +51,7 @@ jobs:
       - name: Check existing labels
         id: check
         run: |
-          labels=$(jq -r '.pull_request.labels[].name' <<< '${{ toJson(github.event) }}')
-          if echo "$labels" | grep -q "^${{ steps.label.outputs.label }}$"; then
+          if [[ "${{ contains(join(github.event.pull_request.labels.*.name, ' '), steps.label.outputs.label) }}" == "true" ]]; then
             echo "already_exists=true" >> $GITHUB_OUTPUT
           else
             echo "already_exists=false" >> $GITHUB_OUTPUT
