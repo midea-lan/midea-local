@@ -37,6 +37,7 @@ class MideaDCDevice(MideaDevice):
     """Midea DC device."""
 
     _status: ClassVar[dict[int, str]] = {
+        0: "idle",
         1: "standby",
         2: "start",
         3: "pause",
