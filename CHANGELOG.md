@@ -1,5 +1,20 @@
 # Changelog
 
+## [6.5.0](https://github.com/midea-lan/midea-local/compare/v6.4.0...v6.5.0) (2025-09-09)
+
+
+### Features
+
+* **a1:** allow customization of default modes and speeds for dehumidifiers ([#389](https://github.com/midea-lan/midea-local/issues/389)) ([bb558a0](https://github.com/midea-lan/midea-local/commit/bb558a03fb31703f28b0d09772034ac8e74aa744))
+* **ac:** ac device fan_mode and airflow value support translate ([#390](https://github.com/midea-lan/midea-local/issues/390)) ([a8294cc](https://github.com/midea-lan/midea-local/commit/a8294cc2ddf9c777dd4e27bc09a4e55ba76e5047))
+* **dc:** Add idle status for dc ([#406](https://github.com/midea-lan/midea-local/issues/406)) ([5459300](https://github.com/midea-lan/midea-local/commit/5459300ef6927ee07a7b7fd5732541d85e77c9d1))
+* **e1:** change work mode ([#262](https://github.com/midea-lan/midea-local/issues/262)) ([b1cc880](https://github.com/midea-lan/midea-local/commit/b1cc880b89134efe79da455bcd605f2c94daca01))
+
+
+### Bug Fixes
+
+* **dc:** fix attributes parse error  ([#398](https://github.com/midea-lan/midea-local/issues/398)) ([c6f8a3a](https://github.com/midea-lan/midea-local/commit/c6f8a3ad52d3eb3a1f81ea7c32eecb3dd264a2fd))
+
 ## [6.4.0](https://github.com/midea-lan/midea-local/compare/v6.3.0...v6.4.0) (2025-08-06)
 
 
