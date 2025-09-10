@@ -752,7 +752,9 @@ class XA0MessageBody(MessageBody):
         self.comfort_sleep_switch = body[14] & 0x01  # comfortableSleepSwitch
         self.pmv = ((body[11] & 0xF0) >> 4) * 0.5 - 3.5  # pmv
         # screenDisplayNowValue
-        self.screen_display = ((body[11] & 0x07) > 0) and self.power
+        self.screen_display = (
+            (body[14] >> 4 & 0x7) != SCREEN_DISPLAY_BYTE_CHECK
+        ) and self.power
         self.smart_eye = (body[9] & 0x01) > 0
         self.dry = (body[9] & 0x04) > 0  # dryValue
         self.aux_heating = (body[9] & 0x08) > 0  # PTCValue
