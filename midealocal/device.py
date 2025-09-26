@@ -662,7 +662,7 @@ class MideaDevice(threading.Thread):
                 # sleep and reconnect loop until device online
                 time.sleep(sleep_time)
 
-    def run(self) -> None:  # noqa: PLR0915
+    def run(self) -> None:
         """Run loop brief description.
 
         1. first/init connection, self._socket is None
