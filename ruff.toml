@@ -54,3 +54,6 @@ lint.ignore = [
 
 [lint.mccabe]
 max-complexity = 18
+
+[lint.pylint]
+max-statements = 100
