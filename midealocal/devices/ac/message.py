@@ -111,6 +111,22 @@ class NewProtocolTags(IntEnum):
     fresh_air_parm = 0x0250
     rewarming_dry = 0x0068
     arom = 0x0069
+    # b5 device
+    b5_mode = 0x0214
+    b5_strong_wind = 0x021A
+    b5_wind_speed = 0x0210
+    b5_humidity = 0x021F
+    b5_temperature = 0x0225
+    b5_eco = 0x0212
+    b5_filter_remind = 0x0217
+    b5_filter_check = 0x0221
+    b5_fahrenheit = 0x0222
+    b5_electricity = 0x0216
+    b5_ptc = 0x0219
+    b5_wind_swing = 0x0215
+    b5_screen_display = 0x0224
+    b5_anion = 0x021E
+    b5_sound = 0x022C
 
 
 class MessageACBase(MessageRequest):
@@ -869,6 +885,41 @@ class XBXMessageBody(NewProtocolMessageBody):
             self.wind_ud_angle = params[NewProtocolTags.wind_ud_angle][0]
 
 
+class XB5MessageBody(NewProtocolMessageBody):
+    """AC B5 message body. body[0] b5, body[1] propertyNumber, cursor 2."""
+
+    def __init__(self, body: bytearray, bt: int) -> None:
+        """Initialize AC BX message body."""
+        super().__init__(body, bt)
+
+        params = self.parse()
+        # parse b5 protocol, github issue https://github.com/wuwentao/midea_ac_lan/issues/673
+        if NewProtocolTags.b5_mode in params:
+            self.b5_mode = params[NewProtocolTags.b5_mode][0]
+        if NewProtocolTags.b5_anion in params:
+            self.b5_anion = params[NewProtocolTags.b5_anion][0]
+        if NewProtocolTags.b5_filter_remind in params:
+            self.b5_filter_remind = params[NewProtocolTags.b5_filter_remind][0]
+        if NewProtocolTags.b5_strong_wind in params:
+            self.b5_strong_wind = params[NewProtocolTags.b5_strong_wind][0]
+        if NewProtocolTags.b5_wind_speed in params:
+            self.b5_wind_speed = params[NewProtocolTags.b5_wind_speed][0]
+        if NewProtocolTags.b5_temperature in params:
+            self.b5_temperature0 = params[NewProtocolTags.b5_temperature][0]
+            self.b5_temperature1 = params[NewProtocolTags.b5_temperature][1]
+            self.b5_temperature2 = params[NewProtocolTags.b5_temperature][2]
+            self.b5_temperature3 = params[NewProtocolTags.b5_temperature][3]
+            self.b5_temperature4 = params[NewProtocolTags.b5_temperature][4]
+            self.b5_temperature5 = params[NewProtocolTags.b5_temperature][5]
+            self.b5_temperature6 = params[NewProtocolTags.b5_temperature][6]
+        if NewProtocolTags.b5_screen_display in params:
+            self.b5_screen_display = params[NewProtocolTags.b5_screen_display][0]
+        if NewProtocolTags.b5_sound in params:
+            self.b5_sound = params[NewProtocolTags.b5_sound][0]
+        if NewProtocolTags.b5_humidity in params:
+            self.b5_humidity = params[NewProtocolTags.b5_humidity][0]
+
+
 class XC0MessageBody(MessageBody):
     """AC C0 message body."""
 
@@ -1143,6 +1194,10 @@ class MessageACResponse(MessageResponse):
             self.message_type == MessageType.notify1 and self.body_type == ListTypes.A1
         ):
             self.set_body(XA1MessageBody(super().body))
+        # parse MessageCapabilitiesQuery/MessageCapabilitiesAdditionalQuery response
+        # dataType 0x03 and messageBytes[0] 0xB5
+        elif self.message_type == MessageType.query and self.body_type == ListTypes.B5:
+            self.set_body(XB5MessageBody(super().body, self.body_type))
         # dataType 0x05 and messageBytes[0] 0xB5
         # dataType 0x02 and messageBytes[0] 0xB0 (set result Unidentified protocol)
         # dataType 0x03 and messageBytes[0] 0xB1
