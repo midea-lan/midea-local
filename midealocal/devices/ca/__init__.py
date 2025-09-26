@@ -33,6 +33,9 @@ class DeviceAttributes(StrEnum):
     freezer_door = "freezer_door"
     bar_door = "bar_door"
     flex_zone_door = "flex_zone_door"
+    microcrystal_fresh = "microcrystal_fresh"
+    electronic_smell = "electronic_smell"
+    humidity = "humidity"
 
 
 class MideaCADevice(MideaDevice):
@@ -81,6 +84,9 @@ class MideaCADevice(MideaDevice):
                 DeviceAttributes.freezer_door: False,
                 DeviceAttributes.bar_door: False,
                 DeviceAttributes.flex_zone_door: False,
+                DeviceAttributes.microcrystal_fresh: False,
+                DeviceAttributes.electronic_smell: None,
+                DeviceAttributes.humidity: None,
             },
         )
         self._modes = [""]
