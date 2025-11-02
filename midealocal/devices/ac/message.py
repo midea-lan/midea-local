@@ -46,6 +46,7 @@ class PowerFormats(IntEnum):
     BCD = 1
     BINARY = 2    # binary with energy in 0.1 kWh resolution
     MIXED = 3     # mixed/INT (byte = 0-99)
+    BINARY1 = 12  # binary
 
 
 class NewProtocolQuery(IntEnum):
@@ -1062,7 +1063,7 @@ class XC1MessageBody(MessageBody):
         """AC C1 message body parse value."""
         if analysis_method not in PowerFormats:
             return 0.0  # unknown method
-        analysis_function = self.power_analysis_methods[analysis_method]
+        analysis_function = self.power_analysis_methods[analysis_method % 10]
         value = 0
         for byte in databytes:
             value = analysis_function(byte, value)
@@ -1076,7 +1077,7 @@ class XC1MessageBody(MessageBody):
     @classmethod
     def parse_consumption(self, analysis_method: int, databytes: bytearray) -> float:
         """AC C1 message body parse consumption."""
-        # LSB = 0.01 kWh, except for binary format = 0.1 kWh
+        # LSB = 0.01 kWh, except for default binary format = 0.1 kWh
         divisor = 10 if analysis_method == PowerFormats.BINARY else 100
         return self.parse_value(analysis_method, databytes) / divisor
 
