@@ -809,13 +809,16 @@ class XMessageBody(MessageBody):
     """AC A1/C0 message body - common functions."""
 
     @staticmethod
-    def parse_temperature(integer: int, decimal: int) -> float:
+    def parse_temperature(integer: int, decimal: int) -> float | None:
+        """Decode special signed integer with BCD decimal temperature format."""
         if integer == MAX_BYTE_VALUE:
             return None
-        temp_integer = int((integer - 50) / 2)
+        temp_integer = (integer - 50) / 2
+        if decimal == 0:
+            return temp_integer
         if temp_integer < 0:
-            return temp_integer - decimal * 0.1
-        return temp_integer + decimal * 0.1
+            return int(temp_integer) - decimal * 0.1
+        return int(temp_integer) + decimal * 0.1
 
 
 class XA1MessageBody(XMessageBody):
