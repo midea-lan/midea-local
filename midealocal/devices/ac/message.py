@@ -1,7 +1,9 @@
 """Midea AC message."""
 
 import logging
+from collections.abc import Callable, Mapping
 from enum import IntEnum
+from types import MappingProxyType
 
 from midealocal.const import MAX_BYTE_VALUE, DeviceType
 from midealocal.crc8 import calculate
@@ -19,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 BB_AC_MODES = [0, 3, 1, 2, 4, 5]
 BB_MIN_BODY_LENGTH = 21
 CONFORT_MODE_MIN_LENGTH = 16
-CONFORT_MODE_MIN_LENGTH = 23
+CONFORT_MODE_MIN_LENGTH2 = 23
 SMART_DRY_MIN_LENGTH = 20
 SWING_LR_MIN_LENGTH = 21
 FRESH_AIR_C0_MIN_LENGTH = 29
@@ -44,8 +46,8 @@ class PowerFormats(IntEnum):
 
     # unless stated, consumption / energy is 0.01 kWh, and power in 0.1 W resolution
     BCD = 1
-    BINARY = 2    # binary with energy in 0.1 kWh resolution
-    MIXED = 3     # mixed/INT (byte = 0-99)
+    BINARY = 2  # binary with energy in 0.1 kWh resolution
+    MIXED = 3  # mixed/INT (byte = 0-99)
     BINARY1 = 12  # binary
 
 
@@ -432,17 +434,14 @@ class MessageSubProtocol(MessageACBase):
         _subprotocol_body = self._subprotocol_body
         _body = bytearray(
             [
-                6
-                + 2
-                + (len(_subprotocol_body) if _subprotocol_body is not None else 0),
+                6 + 2 + len(_subprotocol_body),
                 0x00,
                 0xFF,
                 0xFF,
                 self._subprotocol_query_type,
             ],
         )
-        if _subprotocol_body is not None:
-            _body.extend(_subprotocol_body)
+        _body.extend(_subprotocol_body)
         return _body
 
 
@@ -582,7 +581,7 @@ class MessageGeneralSet(MessageACBase):
         # Byte2, mode target_temperature
         mode = (self.mode << 5) & 0xE0
         target_temperature = (int(self.target_temperature) & 0xF) | (
-            0x10 if int(round(self.target_temperature * 2)) % 2 != 0 else 0
+            0x10 if round(self.target_temperature * 2) % 2 != 0 else 0
         )
         # Byte 3, fan_speed
         fan_speed = int(self.fan_speed) & 0x7F
@@ -981,7 +980,7 @@ class XC0MessageBody(MessageBody):
         )
         # comfortPowerSave
         self.comfort_mode = (
-            (body[22] & 0x1) > 0 if len(body) >= CONFORT_MODE_MIN_LENGTH else False
+            (body[22] & 0x1) > 0 if len(body) >= CONFORT_MODE_MIN_LENGTH2 else False
         )
         # smartDryValue
         self.smart_dry = (
@@ -1006,12 +1005,16 @@ class XC1MessageBody(MessageBody):
         """Initialize AC C1 message body."""
         super().__init__(body)
         if body[3] == XC1_SUBBODY_TYPE_44:
+
+            def parse_consumption(data: bytearray) -> float:
+                return self.parse_consumption(analysis_method, data)
+
             # total_power_consumption
-            self.total_energy_consumption = self.parse_consumption(analysis_method, body[4:8])
+            self.total_energy_consumption = parse_consumption(body[4:8])
             # total_operating_consumption
-            self.total_operating_consumption = self.parse_consumption(analysis_method, body[8:12])
+            self.total_operating_consumption = parse_consumption(body[8:12])
             # current_operating_consumption
-            self.current_energy_consumption = self.parse_consumption(analysis_method, body[12:16])
+            self.current_energy_consumption = parse_consumption(body[12:16])
             # current_time_power
             self.realtime_power = self.parse_power(analysis_method, body[16:19])
         elif body[3] == XC1_SUBBODY_TYPE_40:
@@ -1052,34 +1055,38 @@ class XC1MessageBody(MessageBody):
             # indoor humidity, it should be the same value as XBB/XA1 message
             self.indoor_humidity = body[4] if body[4] != 0 else None
 
-    power_analysis_methods = {
-        PowerFormats.BCD: lambda byte, value: (byte >> 4) * 10 + (byte & 0x0F) + value * 100,
-        PowerFormats.BINARY: lambda byte, value: byte + (value << 8),
-        PowerFormats.MIXED: lambda byte, value: byte + value * 100,
-    }
+    power_analysis_methods: Mapping[int, Callable[[int, int], int]] = MappingProxyType(
+        {
+            PowerFormats.BCD: lambda byte, value: (
+                (byte >> 4) * 10 + (byte & 0x0F) + value * 100
+            ),
+            PowerFormats.BINARY: lambda byte, value: byte + (value << 8),
+            PowerFormats.MIXED: lambda byte, value: byte + value * 100,
+        },
+    )
 
     @classmethod
-    def parse_value(self, analysis_method: int, databytes: bytearray) -> float:
+    def parse_value(cls, analysis_method: int, databytes: bytearray) -> float:
         """AC C1 message body parse value."""
         if analysis_method not in PowerFormats:
             return 0.0  # unknown method
-        analysis_function = self.power_analysis_methods[analysis_method % 10]
+        analysis_function = cls.power_analysis_methods[analysis_method % 10]
         value = 0
         for byte in databytes:
             value = analysis_function(byte, value)
         return float(value)
 
     @classmethod
-    def parse_power(self, analysis_method: int, databytes: bytearray) -> float:
+    def parse_power(cls, analysis_method: int, databytes: bytearray) -> float:
         """AC C1 message body parse power."""
-        return self.parse_value(analysis_method, databytes) / 10
+        return cls.parse_value(analysis_method, databytes) / 10
 
     @classmethod
-    def parse_consumption(self, analysis_method: int, databytes: bytearray) -> float:
+    def parse_consumption(cls, analysis_method: int, databytes: bytearray) -> float:
         """AC C1 message body parse consumption."""
         # LSB = 0.01 kWh, except for default binary format = 0.1 kWh
         divisor = 10 if analysis_method == PowerFormats.BINARY else 100
-        return self.parse_value(analysis_method, databytes) / divisor
+        return cls.parse_value(analysis_method, databytes) / divisor
 
 
 class XBBMessageBody(MessageBody):
