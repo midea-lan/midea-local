@@ -31,7 +31,6 @@ MAX_MSG_SERIAL_NUM = 254
 SCREEN_DISPLAY_BYTE_CHECK = 0x07
 SUB_PROTOCOL_BODY_TEMP_CHECK = 0x80
 TEMP_DECIMAL_MIN_BODY_LENGTH = 20
-TEMP_NEG_VALUE = 49
 TIMER_MIN_SUBPROTOCOL_LENGTH = 27
 XBB_SN8_BYTE_FLAG = 0x31
 XC1_SUBBODY_TYPE_44 = 0x44
@@ -806,7 +805,23 @@ class XA0MessageBody(MessageBody):
             self.fresh_filter_timeout = (body[13] & 0x40) >> 6
 
 
-class XA1MessageBody(MessageBody):
+class XMessageBody(MessageBody):
+    """AC A1/C0 message body - common functions."""
+
+    @staticmethod
+    def parse_temperature(integer: int, decimal: int) -> float | None:
+        """Decode special signed integer with BCD decimal temperature format."""
+        if integer == MAX_BYTE_VALUE:
+            return None
+        temp_integer = (integer - 50) / 2
+        if decimal == 0:
+            return temp_integer
+        if temp_integer < 0:
+            return int(temp_integer) - decimal * 0.1
+        return int(temp_integer) + decimal * 0.1
+
+
+class XA1MessageBody(XMessageBody):
     """AC A1 message body."""
 
     def __init__(self, body: bytearray) -> None:
@@ -818,32 +833,9 @@ class XA1MessageBody(MessageBody):
             + body[11] * 60
             + body[12]
         )
-        # indoorTemperatureValue
-        if body[13] != MAX_BYTE_VALUE:
-            temp_integer = int((body[13] - 50) / 2)
-            temp_decimal = (
-                ((body[18] & 0xF) * 0.1)
-                if len(body) > TEMP_DECIMAL_MIN_BODY_LENGTH
-                else 0
-            )
-            if body[13] > TEMP_NEG_VALUE:
-                self.indoor_temperature = temp_integer + temp_decimal
-            else:
-                self.indoor_temperature = temp_integer - temp_decimal
-        # outdoorTemperatureValue
-        if body[14] == MAX_BYTE_VALUE:
-            self.outdoor_temperature = None
-        else:
-            temp_integer = int((body[14] - 50) / 2)
-            temp_decimal = (
-                (((body[18] & 0xF0) >> 4) * 0.1)
-                if len(body) > TEMP_DECIMAL_MIN_BODY_LENGTH
-                else 0
-            )
-            if body[14] > TEMP_NEG_VALUE:
-                self.outdoor_temperature = temp_integer + temp_decimal
-            else:
-                self.outdoor_temperature = temp_integer - temp_decimal
+        decimal = body[18] if len(body) > TEMP_DECIMAL_MIN_BODY_LENGTH else 0
+        self.indoor_temperature = self.parse_temperature(body[13], decimal & 0x0F)
+        self.outdoor_temperature = self.parse_temperature(body[14], decimal >> 4)
         self.indoor_humidity = body[17] if body[17] != 0 else None
 
 
@@ -920,7 +912,7 @@ class XB5MessageBody(NewProtocolMessageBody):
             self.b5_humidity = params[NewProtocolTags.b5_humidity][0]
 
 
-class XC0MessageBody(MessageBody):
+class XC0MessageBody(XMessageBody):
     """AC C0 message body."""
 
     def __init__(self, body: bytearray) -> None:
@@ -948,24 +940,9 @@ class XC0MessageBody(MessageBody):
         self.purifier = body[9] & 0x20  # purifierValue
         self.temp_fahrenheit = (body[10] & 0x04) > 0
         self.sleep_mode = (body[10] & 0x01) > 0
-        if body[11] != MAX_BYTE_VALUE:
-            temp_integer = int((body[11] - 50) / 2)  # indoorTemperatureValue
-            temp_decimal = (body[15] & 0x0F) * 0.1  # smallIndoorTemperatureValue
-            if body[11] > TEMP_NEG_VALUE:
-                self.indoor_temperature = temp_integer + temp_decimal
-            else:
-                self.indoor_temperature = temp_integer - temp_decimal
-        if body[12] == MAX_BYTE_VALUE:
-            self.outdoor_temperature = None
-        else:
-            # outdoorTemperatureValue
-            temp_integer = int((body[12] - 50) / 2)
-            # smallOutdoorTemperatureValue
-            temp_decimal = ((body[15] & 0xF0) >> 4) * 0.1
-            if body[12] > TEMP_NEG_VALUE:
-                self.outdoor_temperature = temp_integer + temp_decimal
-            else:
-                self.outdoor_temperature = temp_integer - temp_decimal
+        decimal = body[15] if len(body) > TEMP_DECIMAL_MIN_BODY_LENGTH else 0
+        self.indoor_temperature = self.parse_temperature(body[11], decimal & 0x0F)
+        self.outdoor_temperature = self.parse_temperature(body[12], decimal >> 4)
         self.kick_quilt = (body[10] & 0x04) >> 2  # kickQuilt
         self.prevent_cold = (body[10] & 0x20) >> 5  # preventCold
         self.full_dust = ((body[13] & 0x20) >> 5) > 0  # dust_full_time
