@@ -7,7 +7,10 @@ import pytest
 from midealocal.const import ProtocolVersion
 from midealocal.devices.ac import DeviceAttributes, MideaACDevice
 from midealocal.devices.ac.message import (
+    MessageCapabilitiesAdditionalQuery,
     MessageCapabilitiesQuery,
+    MessageGroupZeroQuery,
+    MessageHumidityQuery,
     MessageNewProtocolQuery,
     MessagePowerQuery,
     MessageQuery,
@@ -113,13 +116,6 @@ class TestMideaACDevice:
             self.device.set_attribute(DeviceAttributes.fresh_air_mode.value, False)
             mock_build_send.assert_called()
 
-    def test_capabilities_query(self) -> None:
-        """Test capabilities query."""
-        queries = self.device.capabilities_query()
-        assert len(queries) == 2
-        assert isinstance(queries[0], MessageCapabilitiesQuery)
-        assert isinstance(queries[1], MessageCapabilitiesQuery)
-
     def test_build_query(self) -> None:
         """Test build query."""
         self.device._used_subprotocol = True
@@ -131,10 +127,14 @@ class TestMideaACDevice:
 
         self.device._used_subprotocol = False
         queries = self.device.build_query()
-        assert len(queries) == 3
+        assert len(queries) == 7
         assert isinstance(queries[0], MessageQuery)
         assert isinstance(queries[1], MessageNewProtocolQuery)
         assert isinstance(queries[2], MessagePowerQuery)
+        assert isinstance(queries[3], MessageHumidityQuery)
+        assert isinstance(queries[4], MessageGroupZeroQuery)
+        assert isinstance(queries[5], MessageCapabilitiesQuery)
+        assert isinstance(queries[6], MessageCapabilitiesAdditionalQuery)
 
     def test_process_message(self) -> None:
         """Test process message."""
@@ -202,18 +202,18 @@ class TestMideaACDevice:
             assert result[DeviceAttributes.current_energy_consumption.value] is None
             assert result[DeviceAttributes.realtime_power.value] is None
             assert result[DeviceAttributes.fresh_air_power.value]
-            assert result[DeviceAttributes.fresh_air_mode.value] == "Off"
+            assert result[DeviceAttributes.fresh_air_mode.value] == "off"
             assert result[DeviceAttributes.fresh_air_1.value] == 1
             assert result[DeviceAttributes.fresh_air_2.value] == 1
 
             mock_message.fresh_air_fan_speed = 55
             mock_message.fresh_air_1 = None
             result = self.device.process_message(bytearray())
-            assert result[DeviceAttributes.fresh_air_mode.value] == "Low"
+            assert result[DeviceAttributes.fresh_air_mode.value] == "low"
 
             mock_message.fresh_air_power = False
             result = self.device.process_message(bytearray())
-            assert result[DeviceAttributes.fresh_air_mode.value] == "Off"
+            assert result[DeviceAttributes.fresh_air_mode.value] == "off"
 
             mock_message.power = False
             result = self.device.process_message(bytearray())

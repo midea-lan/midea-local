@@ -37,6 +37,7 @@ class MideaDCDevice(MideaDevice):
     """Midea DC device."""
 
     _status: ClassVar[dict[int, str]] = {
+        0: "idle",
         1: "standby",
         2: "start",
         3: "pause",
@@ -171,9 +172,9 @@ class MideaDCDevice(MideaDevice):
                 if status == DeviceAttributes.progress:
                     # prevent value out of index range
                     if value in progress:
-                        self._attributes[DeviceAttributes.status] = progress[value]
+                        self._attributes[DeviceAttributes.progress] = progress[value]
                     else:
-                        self._attributes[DeviceAttributes.status] = None
+                        self._attributes[DeviceAttributes.progress] = None
                 # parse status
                 elif status == DeviceAttributes.status:
                     self._attributes[DeviceAttributes.status] = (
