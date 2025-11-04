@@ -1068,7 +1068,7 @@ class XC1MessageBody(MessageBody):
     @classmethod
     def parse_value(cls, analysis_method: int, databytes: bytearray) -> float:
         """AC C1 message body parse value."""
-        if analysis_method not in PowerFormats:
+        if analysis_method not in PowerFormats._value2member_map_:
             return 0.0  # unknown method
         analysis_function = cls.power_analysis_methods[analysis_method % 10]
         value = 0
