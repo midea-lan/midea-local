@@ -1,5 +1,19 @@
 # Changelog
 
+## [6.6.0](https://github.com/midea-lan/midea-local/compare/v6.5.0...v6.6.0) (2025-11-05)
+
+
+### Features
+
+* **doc:** add contributing guide docs ([#413](https://github.com/midea-lan/midea-local/issues/413)) ([3d7e1e8](https://github.com/midea-lan/midea-local/commit/3d7e1e8881a2ecb56f6a1e73ed7353a51432fd5c))
+
+
+### Bug Fixes
+
+* **ac:** allow half-degree integer temperatures ([#412](https://github.com/midea-lan/midea-local/issues/412)) ([95ba499](https://github.com/midea-lan/midea-local/commit/95ba499551ce794d5d99ddccef99c34deb5755ba))
+* **ac:** refactor to add new binary power format ([#411](https://github.com/midea-lan/midea-local/issues/411)) ([ba39f10](https://github.com/midea-lan/midea-local/commit/ba39f104d8cb33c856fcf8de6a74772e99772736))
+* **main:** fix default apt/pip mirror; removed deprecated pylint option ([#415](https://github.com/midea-lan/midea-local/issues/415)) ([37fdfcf](https://github.com/midea-lan/midea-local/commit/37fdfcf5bdc3f63a5acd8dcf7efe231124b97257))
+
 ## [6.5.0](https://github.com/midea-lan/midea-local/compare/v6.4.0...v6.5.0) (2025-09-26)
 
 
