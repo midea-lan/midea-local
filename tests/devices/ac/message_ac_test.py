@@ -652,12 +652,15 @@ class TestMessageACResponse:
         assert hasattr(response, "realtime_power")
         assert response.realtime_power == expected_realtime_power
 
-    def test_message_query_c1_method2(self) -> None:
-        """Test Message parse query C1 method2."""
+    def test_message_query_c1_method2(self, method: int = 2) -> None:
+        """Test Message parse query C1 method2 (and 12)."""
         self.header[9] = 0x03
         body = bytearray(20)
         body[0] = 0xC1  # Body type
         body[3] = 0x44  # Set the type to 0x44
+
+        # method 12 is like 2, but with 0.01kWh resolution instead of 0.1kWh
+        energy_divisor = 10 if method == 2 else 100
 
         # Total energy consumption bytes
         body[4] = 0x01
@@ -665,7 +668,7 @@ class TestMessageACResponse:
         body[6] = 0x45
         body[7] = 0x67
         expected_total_energy = (
-            float((0x01 << 32) + (0x23 << 16) + (0x45 << 8) + 0x67) / 10
+            float((0x01 << 24) + (0x23 << 16) + (0x45 << 8) + 0x67) / energy_divisor
         )
 
         # Current energy consumption bytes
@@ -674,7 +677,7 @@ class TestMessageACResponse:
         body[14] = 0xCD
         body[15] = 0xEF
         expected_current_energy = (
-            float((0x89 << 32) + (0xAB << 16) + (0xCD << 8) + 0xEF) / 10
+            float((0x89 << 24) + (0xAB << 16) + (0xCD << 8) + 0xEF) / energy_divisor
         )
 
         # Real-time power bytes
@@ -683,7 +686,7 @@ class TestMessageACResponse:
         body[18] = 0x56
         expected_realtime_power = float((0x12 << 16) + (0x34 << 8) + 0x56) / 10
 
-        response = MessageACResponse(self.header + body, 2)
+        response = MessageACResponse(self.header + body, method)
 
         assert hasattr(response, "total_energy_consumption")
         assert response.total_energy_consumption == expected_total_energy
@@ -691,6 +694,10 @@ class TestMessageACResponse:
         assert response.current_energy_consumption == expected_current_energy
         assert hasattr(response, "realtime_power")
         assert response.realtime_power == expected_realtime_power
+
+    def test_message_query_c1_method12(self) -> None:
+        """Test Message parse query C1 method12."""
+        self.test_message_query_c1_method2(12)
 
     def test_message_query_c1_method3(self) -> None:
         """Test Message parse query C1 method3."""
