@@ -15,6 +15,7 @@ from .message import (
     MessageQueryDisinfect,
     MessageQueryECO,
     MessageQuerySilence,
+    MessageQueryUnitPara,   
     MessageSet,
     MessageSetDisinfect,
     MessageSetECO,
@@ -99,6 +100,9 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.status_ibh: None,
                 DeviceAttributes.total_produced_energy: None,
                 DeviceAttributes.outdoor_temperature: None,
+                DeviceAttributes.temp_tw_in: None,
+                DeviceAttributes.temp_tw_out: None,
+                DeviceAttributes.instant_power0: None,
                 DeviceAttributes.error_code: 0,
             },
         )
@@ -123,6 +127,7 @@ class MideaC3Device(MideaDevice):
             MessageQueryDisinfect(self._message_protocol_version),
             MessageQuerySilence(self._message_protocol_version),
             MessageQueryECO(self._message_protocol_version),
+            MessageQueryUnitPara(self._message_protocol_version),
         ]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
