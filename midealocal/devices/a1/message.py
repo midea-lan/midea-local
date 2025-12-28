@@ -229,7 +229,7 @@ class A1GeneralMessageBody(MessageBody):
         self.swing = (body[19] & 0x20) > 0
         if self.fan_speed < MIN_FAN_SPEED:
             self.fan_speed = 1
-
+        self.filter_cleaning_reminder = (body[9] & 0x80) > 0
 
 class A1NewProtocolMessageBody(NewProtocolMessageBody):
     """A1 new protocol message body."""
