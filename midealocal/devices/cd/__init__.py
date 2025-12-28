@@ -106,13 +106,13 @@ class MideaCDDevice(MideaDevice):
         self._fahrenheit: bool = False
         self.set_customize(customize)
 
-    def _value_to_temperature(self, value: float) -> float:
+    def _value_to_temperature(self, value: float, force_fahrenheit: bool, force_old: bool) -> float:
         # fahrenheit to celsius
-        if self._fahrenheit:
-            return self.fahrenheit_to_celsius(value)
+        if self._fahrenheit or force_fahrenheit:
+            return self.fahrenheit_to_celsius(value, True if force_fahrenheit else None)
         # celsius
         # old protocol
-        if self._lua_protocol == LuaProtocol.old:
+        if self._lua_protocol == LuaProtocol.old or force_old:
             return round((value - 30.0) / 2)
         # new protocol
         return value
@@ -137,10 +137,13 @@ class MideaCDDevice(MideaDevice):
                 # new protocol, [subtype0, model RSJRAC01] [subtype186, model RSJ000CB]
                 # old protocol. current subtype is unknown, to be done.
                 check_device = (
-                    self.subtype == CDSubType.T186 or self.model == "RSJRAC01",
+                    self.subtype == CDSubType.T186
+                    or self.model == "RSJRAC01"
+                    or self.model == "RSJRAC06"
+                    or self.model == "RSJRAC07"
                 )
                 return_value = LuaProtocol.new if check_device else LuaProtocol.old
-        if isinstance(value, bool | int):
+        if isinstance(value, (bool, int)):
             return_value = LuaProtocol.new if value else LuaProtocol.old
         return return_value
 
@@ -184,7 +187,9 @@ class MideaCDDevice(MideaDevice):
                     DeviceAttributes.condenser_temperature,
                     DeviceAttributes.compressor_temperature,
                 ]:
-                    self._attributes[attr] = self._value_to_temperature(value)
+                    self._attributes[attr] = self._value_to_temperature(value,
+                                                                        force_fahrenheit=(self.model in ["RSJRAC06","RSJRAC07"] and attr == DeviceAttributes.outdoor_temperature),
+                                                                        force_old=(self.model in ["RSJRAC06","RSJRAC07"] and attr == DeviceAttributes.current_temperature))
                 else:
                     self._attributes[attr] = value
                 new_status[str(attr)] = self._attributes[attr]

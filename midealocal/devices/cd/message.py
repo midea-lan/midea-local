@@ -215,7 +215,7 @@ class MessageCDResponse(MessageResponse):
         """Initialize CD message response."""
         super().__init__(bytearray(message))
         # parse query/notify response message
-        if self.message_type in [MessageType.query, MessageType.notify2]:
+        if self.message_type in [MessageType.query, MessageType.notify2] and self.body_type == 0x01:
             self.set_body(CDGeneralMessageBody(super().body))
         # parse set message with body_type 0x01
         elif self.message_type == MessageType.set and self.body_type == 0x01:
