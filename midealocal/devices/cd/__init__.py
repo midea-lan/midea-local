@@ -42,6 +42,22 @@ class DeviceAttributes(StrEnum):
     compressor_status = "compressor_status"
     water_level = "water_level"
     fahrenheit = "fahrenheit"
+    elec_heat = "elec_heat"
+    top_elec_heat = "top_elec_heat"
+    bottom_elec_heat = "bottom_elec_heat"
+    water_pump = "water_pump"
+    four_way = "four_way"
+    back_water = "back_water"
+    sterilize = "sterilize"
+    top_temperature = "top_temperature"
+    bottom_temperature = "bottom_temperature"
+    wind = "wind"
+    smart_grid = "smart_grid"
+    multi_terminal = "multi_terminal"
+    mute_effect = "mute_effect"
+    mute_status = "mute_status"
+    error_code = "error_code"
+    typeinfo = "typeinfo"
 
 
 class MideaCDDevice(MideaDevice):
@@ -94,6 +110,22 @@ class MideaCDDevice(MideaDevice):
                 DeviceAttributes.compressor_status: None,
                 DeviceAttributes.water_level: None,
                 DeviceAttributes.fahrenheit: False,
+                DeviceAttributes.elec_heat: None,
+                DeviceAttributes.top_elec_heat: None,
+                DeviceAttributes.bottom_elec_heat: None,
+                DeviceAttributes.water_pump: None,
+                DeviceAttributes.four_way: None,
+                DeviceAttributes.back_water: None,
+                DeviceAttributes.sterilize: None,
+                DeviceAttributes.top_temperature: None,
+                DeviceAttributes.bottom_temperature: None,
+                DeviceAttributes.wind: None,
+                DeviceAttributes.smart_grid: None,
+                DeviceAttributes.multi_terminal: None,
+                DeviceAttributes.mute_effect: None,
+                DeviceAttributes.mute_status: None,
+                DeviceAttributes.error_code: None,
+                DeviceAttributes.typeinfo: None,
             },
         )
         self._fields: dict[Any, Any] = {}
