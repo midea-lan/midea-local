@@ -195,7 +195,7 @@ class CDGeneralMessageBody(MessageBody):
         )
         # mute_status
         self.mute_status = (
-            ((body[39] & 0x880) > 0) if len(body) > NEW_BODY_LENGTH else False
+            ((body[39] & 0x80) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
 
 
@@ -210,7 +210,7 @@ class CD01MessageBody(MessageBody):
         self.mode = body[3]
         self.target_temperature = float(body[4])
         self.fields["trValue"] = body[5]
-        self.fields["openPTC"] = body[5]
+        self.fields["openPTC"] = body[6]
         self.fields["ptcTemp"] = body[7]
         self.fields["byte8"] = body[8]
 
