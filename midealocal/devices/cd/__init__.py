@@ -204,6 +204,8 @@ class MideaCDDevice(MideaDevice):
         ]:
             message = MessageSet(self._message_protocol_version)
             message.fields = self._fields
+            # align temperature encoding with lua protocol selection
+            message.use_old_protocol = self._lua_protocol == LuaProtocol.old
             # process mode attr name
             if attr == DeviceAttributes.mode:
                 # get mode key from mode value

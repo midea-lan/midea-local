@@ -68,6 +68,8 @@ class MessageSet(MessageCDBase):
         self.aux_heating: bool = False
         self.fields: dict[Any, Any] = {}
         self.mode: int = 0
+        # default to old protocol scaling unless explicitly disabled
+        self.use_old_protocol: bool = True
 
     def read_field(self, field: str) -> int:
         """CD message set read field."""
@@ -78,7 +80,12 @@ class MessageSet(MessageCDBase):
     def _body(self) -> bytearray:
         power = 0x01 if self.power else 0x00
         mode = self.mode
-        target_temperature = round(self.target_temperature * 2 + 30)
+        # new protocol sends raw value, old protocol doubles and adds offset
+        target_temperature = (
+            round(self.target_temperature * 2 + 30)
+            if self.use_old_protocol
+            else round(self.target_temperature)
+        )
         return bytearray(
             [
                 0x01,  # byte1
