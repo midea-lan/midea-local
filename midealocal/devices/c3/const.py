@@ -46,7 +46,6 @@ class DeviceAttributes(StrEnum):
     temp_tw_out = "temp_tw_out"
     instant_power0 = "instant_power0"
     silent_mode = "silent_mode"
-    silent_mode = "silent_mode"
     SILENT_LEVEL = "silent_level"
     eco_mode = "eco_mode"
     tbh = "tbh"
