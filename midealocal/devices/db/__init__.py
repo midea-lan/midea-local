@@ -160,7 +160,13 @@ class MideaDBDevice(MideaDevice):
         0x69: "fresh_remove_wrinkle",
         0x6A: "steam_sterilize_wash",
         0x6B: "aromatherapy",
+        0x6C: "eco_40_60",
+        0x6D: "steam_care",
+        0x6E: "allergy_care",
         0x70: "sterilize_wash",
+        0x80: "wash_and_dry",
+        0x82: "time_dry",
+        0x73: "bulky",
         0xFE: "love",
         0xFF: "default",
     }
