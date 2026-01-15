@@ -15,7 +15,7 @@ from .message import (
     MessageQueryDisinfect,
     MessageQueryECO,
     MessageQuerySilence,
-    MessageQueryUnitPara,   
+    MessageQueryUnitPara,
     MessageSet,
     MessageSetDisinfect,
     MessageSetECO,
