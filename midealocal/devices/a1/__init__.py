@@ -29,6 +29,7 @@ class DeviceAttributes(StrEnum):
     tank_full = "tank_full"
     current_humidity = "current_humidity"
     current_temperature = "current_temperature"
+    filter_cleaning_reminder = "filter_cleaning_reminder"
 
 
 class MideaA1Device(MideaDevice):
@@ -90,6 +91,7 @@ class MideaA1Device(MideaDevice):
                 DeviceAttributes.tank_full: None,
                 DeviceAttributes.current_humidity: None,
                 DeviceAttributes.current_temperature: None,
+                DeviceAttributes.filter_cleaning_reminder: False,
             },
         )
         self._speeds = self._default_speeds
