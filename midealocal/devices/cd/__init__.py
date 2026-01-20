@@ -42,6 +42,27 @@ class DeviceAttributes(StrEnum):
     compressor_status = "compressor_status"
     water_level = "water_level"
     fahrenheit = "fahrenheit"
+    heat = "heat"
+    dual_heat = "dual_heat"
+    elec_heat = "elec_heat"
+    top_elec_heat = "top_elec_heat"
+    bottom_elec_heat = "bottom_elec_heat"
+    water_pump = "water_pump"
+    four_way = "four_way"
+    back_water = "back_water"
+    sterilize = "sterilize"
+    disinfect = "disinfect"
+    top_temperature = "top_temperature"
+    bottom_temperature = "bottom_temperature"
+    wind = "wind"
+    smart_grid = "smart_grid"
+    multi_terminal = "multi_terminal"
+    mute_effect = "mute_effect"
+    mute_status = "mute_status"
+    error_code = "error_code"
+    typeinfo = "typeinfo"
+    vacation_mode = "vacation_mode"
+    vacation_days = "vacation_days"
 
 
 class MideaCDDevice(MideaDevice):
@@ -94,6 +115,27 @@ class MideaCDDevice(MideaDevice):
                 DeviceAttributes.compressor_status: None,
                 DeviceAttributes.water_level: None,
                 DeviceAttributes.fahrenheit: False,
+                DeviceAttributes.heat: None,
+                DeviceAttributes.dual_heat: None,
+                DeviceAttributes.elec_heat: None,
+                DeviceAttributes.top_elec_heat: None,
+                DeviceAttributes.bottom_elec_heat: None,
+                DeviceAttributes.water_pump: None,
+                DeviceAttributes.four_way: None,
+                DeviceAttributes.back_water: None,
+                DeviceAttributes.sterilize: None,
+                DeviceAttributes.disinfect: None,
+                DeviceAttributes.top_temperature: None,
+                DeviceAttributes.bottom_temperature: None,
+                DeviceAttributes.wind: None,
+                DeviceAttributes.smart_grid: None,
+                DeviceAttributes.multi_terminal: None,
+                DeviceAttributes.mute_effect: None,
+                DeviceAttributes.mute_status: None,
+                DeviceAttributes.error_code: None,
+                DeviceAttributes.typeinfo: None,
+                DeviceAttributes.vacation_mode: False,
+                DeviceAttributes.vacation_days: 0,
             },
         )
         self._fields: dict[Any, Any] = {}
@@ -106,13 +148,18 @@ class MideaCDDevice(MideaDevice):
         self._fahrenheit: bool = False
         self.set_customize(customize)
 
-    def _value_to_temperature(self, value: float) -> float:
+    def _value_to_temperature(
+        self,
+        value: float,
+        force_fahrenheit: bool,
+        force_old: bool,
+    ) -> float:
         # fahrenheit to celsius
-        if self._fahrenheit:
-            return self.fahrenheit_to_celsius(value)
+        if self._fahrenheit or force_fahrenheit:
+            return self.fahrenheit_to_celsius(value, True if force_fahrenheit else None)
         # celsius
         # old protocol
-        if self._lua_protocol == LuaProtocol.old:
+        if self._lua_protocol == LuaProtocol.old or force_old:
             return round((value - 30.0) / 2)
         # new protocol
         return value
@@ -136,9 +183,11 @@ class MideaCDDevice(MideaDevice):
             if return_value == LuaProtocol.auto:
                 # new protocol, [subtype0, model RSJRAC01] [subtype186, model RSJ000CB]
                 # old protocol. current subtype is unknown, to be done.
-                check_device = (
-                    self.subtype == CDSubType.T186 or self.model == "RSJRAC01",
-                )
+                check_device = self.subtype == CDSubType.T186 or self.model in {
+                    "RSJRAC01",
+                    "RSJRAC06",
+                    "RSJRAC07",
+                }
                 return_value = LuaProtocol.new if check_device else LuaProtocol.old
         if isinstance(value, bool | int):
             return_value = LuaProtocol.new if value else LuaProtocol.old
@@ -170,12 +219,17 @@ class MideaCDDevice(MideaDevice):
             self._fahrenheit = getattr(message, DeviceAttributes.fahrenheit)
         for attr in self._attributes:
             if hasattr(message, str(attr)):
-                value = getattr(message, str(attr))
+                raw_value = getattr(message, str(attr))
                 # parse modes
                 if attr == DeviceAttributes.mode:
-                    self._attributes[attr] = MideaCDDevice._modes.get(value, value)
-                # process temperature
-                elif attr in [
+                    self._attributes[attr] = MideaCDDevice._modes.get(
+                        raw_value,
+                        raw_value,
+                    )
+                    new_status[str(attr)] = self._attributes[attr]
+                    continue
+                # process temperature family
+                if attr in [
                     DeviceAttributes.max_temperature,
                     DeviceAttributes.min_temperature,
                     DeviceAttributes.target_temperature,
@@ -184,9 +238,40 @@ class MideaCDDevice(MideaDevice):
                     DeviceAttributes.condenser_temperature,
                     DeviceAttributes.compressor_temperature,
                 ]:
-                    self._attributes[attr] = self._value_to_temperature(value)
-                else:
-                    self._attributes[attr] = value
+                    is_outdoor_temp = attr == DeviceAttributes.outdoor_temperature
+                    is_current_temp = attr == DeviceAttributes.current_temperature
+                    parsed = self._value_to_temperature(
+                        raw_value,
+                        force_fahrenheit=(
+                            self.model in ["RSJRAC06", "RSJRAC07"] and is_outdoor_temp
+                        ),
+                        force_old=(
+                            self.model in ["RSJRAC06", "RSJRAC07"] and is_current_temp
+                        ),
+                    )
+                    # Defensive: ignore invalid zeros for min/max/target/current
+                    # at startup
+                    if attr in [
+                        DeviceAttributes.max_temperature,
+                        DeviceAttributes.min_temperature,
+                        DeviceAttributes.target_temperature,
+                        DeviceAttributes.current_temperature,
+                    ]:
+                        try:
+                            pv = float(parsed) if parsed is not None else None
+                        except Exception:  # noqa: BLE001
+                            pv = None
+                        if pv is None or pv <= 0:
+                            # preserve existing non-zero value
+                            existing = self._attributes.get(attr)
+                            if isinstance(existing, int | float) and existing > 0:
+                                new_status[str(attr)] = existing
+                                continue
+                    self._attributes[attr] = parsed
+                    new_status[str(attr)] = self._attributes[attr]
+                    continue
+                # non-temperature attributes
+                self._attributes[attr] = raw_value
                 new_status[str(attr)] = self._attributes[attr]
         return new_status
 
@@ -196,18 +281,85 @@ class MideaCDDevice(MideaDevice):
             DeviceAttributes.mode,
             DeviceAttributes.power,
             DeviceAttributes.target_temperature,
+            DeviceAttributes.vacation_mode,
         ]:
             message = MessageSet(self._message_protocol_version)
-            message.fields = self._fields
-            # process mode attr name
+            message.fields = dict(self._fields) if self._fields else {}
+            # align temperature encoding with lua protocol selection
+            message.use_old_protocol = self._lua_protocol == LuaProtocol.old
+
+            # Get safe current values
+            current_power = self._attributes.get(DeviceAttributes.power, False)
+            current_temp = self._attributes.get(
+                DeviceAttributes.target_temperature,
+            )
+            current_mode = self._attributes.get(DeviceAttributes.mode)
+
+            # Initialize message with current device state
+            message.power = current_power
+
+            # Ensure temperature is valid (not None/0)
+            if isinstance(current_temp, int | float) and current_temp > 0:
+                message.target_temperature = float(current_temp)
+            else:
+                # Fallback to min_temperature or safe default
+                min_temp = self._attributes.get(
+                    DeviceAttributes.min_temperature,
+                    35.0,
+                )
+                if isinstance(min_temp, int | float) and min_temp > 0:
+                    message.target_temperature = float(min_temp)
+                else:
+                    message.target_temperature = 40.0
+
+            # Handle mode - safely get current mode, default to 0x00 if None
+            if current_mode is None or current_mode == "None":
+                message.mode = 0x00
+            else:
+                mode_key = MideaCDDevice.get_dict_key_by_value(
+                    "_modes",
+                    str(current_mode),
+                )
+                message.mode = mode_key if mode_key is not None else 0x00
+
+            # Update based on attribute being set
             if attr == DeviceAttributes.mode:
                 # get mode key from mode value
-                message.mode = MideaCDDevice.get_dict_key_by_value(
+                mode_key = MideaCDDevice.get_dict_key_by_value(
                     "_modes",
-                    str(self._attributes[DeviceAttributes.mode]),
+                    str(value),
                 )
-            else:
-                setattr(message, str(attr), value)
+                if mode_key is None:
+                    _LOGGER.warning(
+                        "[%s] Invalid mode value: %s, not sending command",
+                        self.device_id,
+                        value,
+                    )
+                    return  # Don't send invalid mode
+                message.mode = mode_key
+
+            elif attr == DeviceAttributes.power:
+                message.power = bool(value)
+
+            elif attr == DeviceAttributes.target_temperature:
+                message.target_temperature = float(value)
+
+            elif attr == DeviceAttributes.vacation_mode:
+                # Vacation mode setting
+                if bool(value):  # Enable vacation mode
+                    message.mode = 0x05
+                elif current_mode is None or current_mode == "None":
+                    # Disable vacation mode - revert to previous mode
+                    message.mode = 0x00
+                else:
+                    mode_key = MideaCDDevice.get_dict_key_by_value(
+                        "_modes",
+                        str(current_mode),
+                    )
+                    message.mode = mode_key if mode_key is not None else 0x00
+
+            # persist fields for subsequent calls
+            self._fields = dict(message.fields)
             self.build_send(message)
 
     def set_customize(self, customize: str) -> None:
