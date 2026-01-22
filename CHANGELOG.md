@@ -1,5 +1,22 @@
 # Changelog
 
+## [6.6.0](https://github.com/midea-lan/midea-local/compare/v6.5.0...v6.6.0) (2026-01-22)
+
+
+### Features
+
+* **c3:** add water inlet/outlet temperature and current power sensors ([#418](https://github.com/midea-lan/midea-local/issues/418)) ([8cef9f4](https://github.com/midea-lan/midea-local/commit/8cef9f4da6059f90cd0baec9f1ac647d18a1d53b)), closes [#510](https://github.com/midea-lan/midea-local/issues/510)
+* **doc:** add contributing guide docs ([#413](https://github.com/midea-lan/midea-local/issues/413)) ([3d7e1e8](https://github.com/midea-lan/midea-local/commit/3d7e1e8881a2ecb56f6a1e73ed7353a51432fd5c))
+
+
+### Bug Fixes
+
+* **ac:** allow half-degree integer temperatures ([#412](https://github.com/midea-lan/midea-local/issues/412)) ([95ba499](https://github.com/midea-lan/midea-local/commit/95ba499551ce794d5d99ddccef99c34deb5755ba))
+* **ac:** refactor to add new binary power format ([#411](https://github.com/midea-lan/midea-local/issues/411)) ([ba39f10](https://github.com/midea-lan/midea-local/commit/ba39f104d8cb33c856fcf8de6a74772e99772736))
+* **cd:** updating to inconsistent values and missing F to C conversion ([#420](https://github.com/midea-lan/midea-local/issues/420)) ([7ff2b3f](https://github.com/midea-lan/midea-local/commit/7ff2b3fb583b7fc0702e1cd77755a79bed400d62))
+* **db:** missing program mapping for Midea Washmachine MF2000D80WB ([#421](https://github.com/midea-lan/midea-local/issues/421)) ([b459bb3](https://github.com/midea-lan/midea-local/commit/b459bb3b7bd486f72bdcc41b5a8365b96dbbf106))
+* **main:** fix default apt/pip mirror; removed deprecated pylint option ([#415](https://github.com/midea-lan/midea-local/issues/415)) ([37fdfcf](https://github.com/midea-lan/midea-local/commit/37fdfcf5bdc3f63a5acd8dcf7efe231124b97257))
+
 ## [6.5.0](https://github.com/midea-lan/midea-local/compare/v6.4.0...v6.5.0) (2025-09-26)
 
 
