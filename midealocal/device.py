@@ -204,15 +204,16 @@ class MideaDevice(threading.Thread):
         """Connect to device."""
         connected = False
         try:
-            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._socket.settimeout(SOCKET_TIMEOUT)
+            device_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            device_socket.settimeout(SOCKET_TIMEOUT)
             _LOGGER.debug(
                 "[%s] Connecting to %s:%s",
                 self._device_id,
                 self._ip_address,
                 self._port,
             )
-            self._socket.connect((self._ip_address, self._port))
+            device_socket.connect((self._ip_address, self._port))
+            self._socket = device_socket
             _LOGGER.debug("[%s] Connected", self._device_id)
             if self._device_protocol_version == ProtocolVersion.V3:
                 self.authenticate()
@@ -223,15 +224,12 @@ class MideaDevice(threading.Thread):
             connected = True
         except TimeoutError:
             _LOGGER.debug("[%s] Connection timed out", self._device_id)
-            self._socket = None
         except OSError:  # refresh_status exception
             _LOGGER.debug("[%s] Connection error", self._device_id)
-            self._socket = None
         except AuthException:  # authenticate exception
             _LOGGER.debug("[%s] Authentication failed", self._device_id)
         except SocketException:  # refresh_status exception
             _LOGGER.debug("[%s] Connect socket exception", self._device_id)
-            self._socket = None
         except NoSupportedProtocol:  # refresh_status exception
             _LOGGER.debug("[%s] No supported query protocol", self._device_id)
         except Exception as e:
@@ -240,7 +238,10 @@ class MideaDevice(threading.Thread):
                 self._device_id,
                 exc_info=e,
             )
+        if not connected and self._socket:
+            device_socket = self._socket
             self._socket = None
+            device_socket.close()
         # enable/disable device in init connection
         if check_protocol:
             self.set_available(connected)
@@ -614,9 +615,11 @@ class MideaDevice(threading.Thread):
         self._buffer = b""
         if self._socket:
             try:
-                self._socket.shutdown(socket.SHUT_RDWR)
-                self._socket.close()
-                _LOGGER.debug("[%s] Socket closed", self._device_id)
+                try:
+                    self._socket.shutdown(socket.SHUT_RDWR)
+                finally:
+                    self._socket.close()
+                    _LOGGER.debug("[%s] Socket closed", self._device_id)
             except OSError as e:
                 _LOGGER.debug("[%s] Error while closing socket: %s", self._device_id, e)
             finally:
