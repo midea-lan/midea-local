@@ -26,6 +26,9 @@ from .message import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# AC mode constants
+DRY_MODE = 3
+
 
 class DeviceAttributes(StrEnum):
     """Midea AC device attributes."""
@@ -460,8 +463,8 @@ class MideaACDevice(MideaDevice):
                     # The dry flag (byte 9, bit 0x04) can block mode changes
                     # when transitioning from DRY mode to other modes
                     message.dry = False
-                    # Force fan_speed to AUTO when leaving DRY mode (mode 3)
-                    if self._attributes[DeviceAttributes.mode] == 3:
+                    # Force fan_speed to AUTO when leaving DRY mode
+                    if self._attributes[DeviceAttributes.mode] == DRY_MODE:
                         message.fan_speed = 102
         if message is not None:
             self.build_send(message)
