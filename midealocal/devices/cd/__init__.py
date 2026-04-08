@@ -182,7 +182,11 @@ class MideaCDDevice(MideaDevice):
             # auto mode, use model to set value as old or new
             if return_value == LuaProtocol.auto:
                 # new protocol: models RSJRAC01, RSJRAC06, RSJRAC07
-                # old protocol: RSJ18RD2 (subtype 186) and other unknown models
+                # old protocol: RSJ18RD2 (subtype 186) confirmed via real-device messages
+                # (raw body[3]=148 decodes to 59°C only with old protocol: (148-30)/2=59)
+                # Note: subtype 186 was previously (incorrectly) mapped to new protocol
+                # based on an unverified assumption about model RSJ000CB; removed as
+                # subtype alone cannot distinguish models with different protocol versions.
                 check_device = self.model in {
                     "RSJRAC01",
                     "RSJRAC06",
