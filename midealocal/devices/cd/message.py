@@ -205,6 +205,14 @@ class CDGeneralMessageBody(MessageBody):
         self.fahrenheit = (
             ((body[35] & 0x80) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
+        # maintain_warn_tag (messageBytes[38] bit 0x40) - requires body length > 38
+        self.maintain_warn_tag = (
+            ((body[38] & 0x40) > 0) if len(body) > 38 else False  # noqa: PLR2004
+        )
+        # maintain_warn (messageBytes[38] bit 0x80) - requires body length > 38
+        self.maintain_warn = (
+            ((body[38] & 0x80) > 0) if len(body) > 38 else False  # noqa: PLR2004
+        )
         # mute_effect (messageBytes[39]) - requires body length > 39
         self.mute_effect = (
             ((body[39] & 0x40) > 0) if len(body) > 39 else False  # noqa: PLR2004

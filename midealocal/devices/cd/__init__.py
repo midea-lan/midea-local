@@ -59,6 +59,8 @@ class DeviceAttributes(StrEnum):
     multi_terminal = "multi_terminal"
     mute_effect = "mute_effect"
     mute_status = "mute_status"
+    maintain_warn_tag = "maintain_warn_tag"
+    maintain_warn = "maintain_warn"
     error_code = "error_code"
     typeinfo = "typeinfo"
     vacation_mode = "vacation_mode"
@@ -132,6 +134,8 @@ class MideaCDDevice(MideaDevice):
                 DeviceAttributes.multi_terminal: None,
                 DeviceAttributes.mute_effect: None,
                 DeviceAttributes.mute_status: None,
+                DeviceAttributes.maintain_warn_tag: None,
+                DeviceAttributes.maintain_warn: None,
                 DeviceAttributes.error_code: None,
                 DeviceAttributes.typeinfo: None,
                 DeviceAttributes.vacation_mode: False,
