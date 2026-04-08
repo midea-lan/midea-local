@@ -184,26 +184,26 @@ class CDGeneralMessageBody(MessageBody):
             self.mode = 0x04
         # hotWater
         self.water_level = body[34] if len(body) > OLD_BODY_LENGTH else None
-        # vacationMode - bit 0 of byte 25 in body (full message byte 35)
+        # vacationMode - bit 0 of messageBytes[35] (body[35])
         self.vacation_mode = False
         self.vacation_days = 0
-        if len(body) > 25 and (body[25] & 0x01) > 0:  # noqa: PLR2004
+        if len(body) > NEW_BODY_LENGTH and (body[35] & 0x01) > 0:
             self.mode = 0x05
             self.vacation_mode = True
-            # vacation days are stored in bytes 26-27 (big-endian)
-            if len(body) > 27:  # noqa: PLR2004
-                self.vacation_days = (body[26] << 8) | body[27]
-        # smartGrid - bit 1 of byte 25 in body (full message byte 35)
+            # vacation days are stored in body[36:37] (big-endian)
+            if len(body) > 37:  # noqa: PLR2004
+                self.vacation_days = (body[36] << 8) | body[37]
+        # smartGrid - bit 1 of messageBytes[35] (body[35])
         self.smart_grid = (
-            ((body[25] & 0x02) > 0) if len(body) > 25 else False  # noqa: PLR2004
+            ((body[35] & 0x02) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
-        # multiTerminal
+        # multiTerminal - bit 2 of messageBytes[35] (body[35])
         self.multi_terminal = (
-            ((body[25] & 0x40) > 0) if len(body) > 25 else False  # noqa: PLR2004
+            ((body[35] & 0x04) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
-        # fahrenheitEffect
+        # fahrenheitEffect - bit 7 of messageBytes[35] (body[35])
         self.fahrenheit = (
-            ((body[25] & 0x80) > 0) if len(body) > 25 else False  # noqa: PLR2004
+            ((body[35] & 0x80) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
         # mute_effect
         self.mute_effect = (
