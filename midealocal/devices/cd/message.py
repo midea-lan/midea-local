@@ -205,13 +205,13 @@ class CDGeneralMessageBody(MessageBody):
         self.fahrenheit = (
             ((body[35] & 0x80) > 0) if len(body) > NEW_BODY_LENGTH else False
         )
-        # mute_effect
+        # mute_effect (messageBytes[39]) - requires body length > 39
         self.mute_effect = (
-            ((body[39] & 0x40) > 0) if len(body) > NEW_BODY_LENGTH else False
+            ((body[39] & 0x40) > 0) if len(body) > 39 else False  # noqa: PLR2004
         )
-        # mute_status
+        # mute_status (messageBytes[39]) - requires body length > 39
         self.mute_status = (
-            ((body[39] & 0x80) > 0) if len(body) > NEW_BODY_LENGTH else False
+            ((body[39] & 0x80) > 0) if len(body) > 39 else False  # noqa: PLR2004
         )
         # Disinfection set temperature (distinct from generic target)
         # Some firmwares encode disinfection setpoint near the tail with

@@ -179,11 +179,11 @@ class MideaCDDevice(MideaDevice):
         # current only have str
         if isinstance(value, str):
             return_value = LuaProtocol(value)
-            # auto mode, use subtype to set value as old or new
+            # auto mode, use model to set value as old or new
             if return_value == LuaProtocol.auto:
-                # new protocol, [subtype0, model RSJRAC01] [subtype186, model RSJ000CB]
-                # old protocol. current subtype is unknown, to be done.
-                check_device = self.subtype == CDSubType.T186 or self.model in {
+                # new protocol: models RSJRAC01, RSJRAC06, RSJRAC07
+                # old protocol: RSJ18RD2 (subtype 186) and other unknown models
+                check_device = self.model in {
                     "RSJRAC01",
                     "RSJRAC06",
                     "RSJRAC07",
@@ -377,12 +377,15 @@ class MideaCDDevice(MideaDevice):
                     )
             except Exception:
                 _LOGGER.exception("[%s] Set customize error", self.device_id)
-            self.update_all(
-                {
-                    "temperature_step": self._temperature_step,
-                    "lua_protocol": self._lua_protocol,
-                },
-            )
+        # Always resolve auto to old/new based on device model
+        if self._lua_protocol == LuaProtocol.auto:
+            self._lua_protocol = self._normalize_lua_protocol(LuaProtocol.auto)
+        self.update_all(
+            {
+                "temperature_step": self._temperature_step,
+                "lua_protocol": self._lua_protocol,
+            },
+        )
 
 
 class MideaAppliance(MideaCDDevice):
