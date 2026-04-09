@@ -13,6 +13,7 @@ from midealocal.message import (
 
 OLD_BODY_LENGTH = 29  # T_0000_CD_3.lua body length 29
 NEW_BODY_LENGTH = 35  # T_0000_CD_000K86A2_3 body length 34
+EXTENDED_BODY_LENGTH = 45  # T_0000_CD_RSJRAC01_2023070401.lua extended body (auto_sterilize)
 
 
 class MessageCDBase(MessageRequest):
@@ -125,7 +126,7 @@ class CDGeneralMessageBody(MessageBody):
         # dicaryonHeat
         self.dual_heat = body[2] & 0x20
         # eco
-        self.eco = body[2] & 0x40
+        self.eco = (body[2] & 0x40) > 0
         # tsValue (generic target)
         self.target_temperature = float(body[3])
         # washBoxTemp
@@ -167,6 +168,10 @@ class CDGeneralMessageBody(MessageBody):
         self.four_way = (body[27] & 0x20) > 0
         # elecHeatSupport
         self.elec_heat = (body[28] & 0x01) > 0
+        # order1Effect - 预约1是否生效 (reservation/schedule 1 active)
+        self.order1_effect = (body[28] & 0x08) > 0
+        # order2Effect - 预约2是否生效 (reservation/schedule 2 active)
+        self.order2_effect = (body[28] & 0x10) > 0
         # smartMode - standard flag
         smart_flag = (body[28] & 0x20) > 0
         if smart_flag:
@@ -220,6 +225,34 @@ class CDGeneralMessageBody(MessageBody):
         # mute_status (messageBytes[39]) - requires body length > 39
         self.mute_status = (
             ((body[39] & 0x80) > 0) if len(body) > 39 else False  # noqa: PLR2004
+        )
+        # autoSterilizeWeek (messageBytes[45]) - requires body length > 45
+        self.auto_sterilize_week = (
+            body[45] if len(body) > EXTENDED_BODY_LENGTH else None
+        )
+        # autoSterilizeHour (messageBytes[46]) - requires body length > 46
+        self.auto_sterilize_hour = (
+            body[46] if len(body) > 46 else None  # noqa: PLR2004
+        )
+        # autoSterilizeMinute (messageBytes[47]) - requires body length > 47
+        self.auto_sterilize_minute = (
+            body[47] if len(body) > 47 else None  # noqa: PLR2004
+        )
+        # vacadaysStartYearValue (messageBytes[48]) - requires body length > 48
+        self.vacation_start_year = (
+            body[48] if len(body) > 48 else None  # noqa: PLR2004
+        )
+        # vacadaysStartMonthValue (messageBytes[49]) - requires body length > 49
+        self.vacation_start_month = (
+            body[49] if len(body) > 49 else None  # noqa: PLR2004
+        )
+        # vacadaysStartDayValue (messageBytes[50]) - requires body length > 50
+        self.vacation_start_day = (
+            body[50] if len(body) > 50 else None  # noqa: PLR2004
+        )
+        # vacationTsValue (messageBytes[51]) - requires body length > 51
+        self.vacation_temperature = (
+            float(body[51]) if len(body) > 51 else None  # noqa: PLR2004
         )
         # Disinfection set temperature (distinct from generic target)
         # Some firmwares encode disinfection setpoint near the tail with

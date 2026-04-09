@@ -55,6 +55,7 @@ class DeviceAttributes(StrEnum):
     top_temperature = "top_temperature"
     bottom_temperature = "bottom_temperature"
     wind = "wind"
+    eco = "eco"
     smart_grid = "smart_grid"
     multi_terminal = "multi_terminal"
     mute_effect = "mute_effect"
@@ -65,6 +66,15 @@ class DeviceAttributes(StrEnum):
     typeinfo = "typeinfo"
     vacation_mode = "vacation_mode"
     vacation_days = "vacation_days"
+    vacation_temperature = "vacation_temperature"
+    vacation_start_year = "vacation_start_year"
+    vacation_start_month = "vacation_start_month"
+    vacation_start_day = "vacation_start_day"
+    order1_effect = "order1_effect"
+    order2_effect = "order2_effect"
+    auto_sterilize_week = "auto_sterilize_week"
+    auto_sterilize_hour = "auto_sterilize_hour"
+    auto_sterilize_minute = "auto_sterilize_minute"
 
 
 class MideaCDDevice(MideaDevice):
@@ -130,6 +140,7 @@ class MideaCDDevice(MideaDevice):
                 DeviceAttributes.top_temperature: None,
                 DeviceAttributes.bottom_temperature: None,
                 DeviceAttributes.wind: None,
+                DeviceAttributes.eco: None,
                 DeviceAttributes.smart_grid: None,
                 DeviceAttributes.multi_terminal: None,
                 DeviceAttributes.mute_effect: None,
@@ -140,6 +151,15 @@ class MideaCDDevice(MideaDevice):
                 DeviceAttributes.typeinfo: None,
                 DeviceAttributes.vacation_mode: False,
                 DeviceAttributes.vacation_days: 0,
+                DeviceAttributes.vacation_temperature: None,
+                DeviceAttributes.vacation_start_year: None,
+                DeviceAttributes.vacation_start_month: None,
+                DeviceAttributes.vacation_start_day: None,
+                DeviceAttributes.order1_effect: None,
+                DeviceAttributes.order2_effect: None,
+                DeviceAttributes.auto_sterilize_week: None,
+                DeviceAttributes.auto_sterilize_hour: None,
+                DeviceAttributes.auto_sterilize_minute: None,
             },
         )
         self._fields: dict[Any, Any] = {}
