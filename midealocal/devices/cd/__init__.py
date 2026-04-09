@@ -8,7 +8,13 @@ from typing import Any, ClassVar
 from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
 
-from .message import MessageCDResponse, MessageQuery, MessageSet
+from .message import (
+    MessageCDResponse,
+    MessageQuery,
+    MessageQueryDaily,
+    MessageQueryWeekly,
+    MessageSet,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -75,6 +81,9 @@ class DeviceAttributes(StrEnum):
     auto_sterilize_week = "auto_sterilize_week"
     auto_sterilize_hour = "auto_sterilize_hour"
     auto_sterilize_minute = "auto_sterilize_minute"
+    weekly_effects = "weekly_effects"
+    weekly_schedule = "weekly_schedule"
+    daily_timer_schedule = "daily_timer_schedule"
 
 
 class MideaCDDevice(MideaDevice):
@@ -160,6 +169,9 @@ class MideaCDDevice(MideaDevice):
                 DeviceAttributes.auto_sterilize_week: None,
                 DeviceAttributes.auto_sterilize_hour: None,
                 DeviceAttributes.auto_sterilize_minute: None,
+                DeviceAttributes.weekly_effects: None,
+                DeviceAttributes.weekly_schedule: None,
+                DeviceAttributes.daily_timer_schedule: None,
             },
         )
         self._fields: dict[Any, Any] = {}
@@ -233,7 +245,11 @@ class MideaCDDevice(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea CD device build query."""
-        return [MessageQuery(self._message_protocol_version)]
+        return [
+            MessageQuery(self._message_protocol_version),
+            MessageQueryWeekly(self._message_protocol_version),
+            MessageQueryDaily(self._message_protocol_version),
+        ]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea CD device process message."""
