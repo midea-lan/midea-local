@@ -14,6 +14,7 @@ from .message import (
     MessageQueryDaily,
     MessageQueryWeekly,
     MessageSet,
+    MessageSetSterilize,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -321,11 +322,29 @@ class MideaCDDevice(MideaDevice):
 
     def set_attribute(self, attr: str, value: str | float | bool) -> None:
         """Midea CD device set attribute."""
+        # --- Disinfect (sterilize): controlType=0x06, independent message ---
+        if attr == DeviceAttributes.disinfect:
+            message = MessageSetSterilize(self._message_protocol_version)
+            message.sterilize_on = bool(value)
+            message.week = int(
+                self._attributes.get(DeviceAttributes.auto_sterilize_week) or 0,
+            )
+            message.hour = int(
+                self._attributes.get(DeviceAttributes.auto_sterilize_hour) or 0,
+            )
+            message.minute = int(
+                self._attributes.get(DeviceAttributes.auto_sterilize_minute) or 0,
+            )
+            self.build_send(message)
+            return
+
+        # --- Power / mode / temperature / vacation: controlType=0x01 ---
         if attr in [
             DeviceAttributes.mode,
             DeviceAttributes.power,
             DeviceAttributes.target_temperature,
             DeviceAttributes.vacation_mode,
+            DeviceAttributes.vacation_days,
         ]:
             message = MessageSet(self._message_protocol_version)
             message.fields = dict(self._fields) if self._fields else {}
@@ -356,8 +375,15 @@ class MideaCDDevice(MideaDevice):
                 else:
                     message.target_temperature = 40.0
 
-            # Handle mode - safely get current mode, default to 0x00 if None
+            # Handle mode - safely get current mode, default to 0x00 if None.
+            # Note: when vacation is active the stored mode is "Vacation" (0x05)
+            # which is NOT a valid modeValue for the device.  We handle that
+            # explicitly in the vacation branches below.
             if current_mode is None or current_mode == "None":
+                message.mode = 0x00
+            elif current_mode == "Vacation":
+                # Don't send 0x05 as modeValue – the device doesn't support it.
+                # Fall back to 0x00 (no explicit operating mode).
                 message.mode = 0x00
             else:
                 mode_key = MideaCDDevice.get_dict_key_by_value(
@@ -389,18 +415,26 @@ class MideaCDDevice(MideaDevice):
                 message.target_temperature = float(value)
 
             elif attr == DeviceAttributes.vacation_mode:
-                # Vacation mode setting
-                if bool(value):  # Enable vacation mode
-                    message.mode = 0x05
-                elif current_mode is None or current_mode == "None":
-                    # Disable vacation mode - revert to previous mode
-                    message.mode = 0x00
-                else:
-                    mode_key = MideaCDDevice.get_dict_key_by_value(
-                        "_modes",
-                        str(current_mode),
+                if bool(value):
+                    # Enable vacation: set byte8 bit 0x10 + vacation days
+                    message.vacation_flag = True
+                    current_days = self._attributes.get(DeviceAttributes.vacation_days)
+                    message.vacation_days = (
+                        int(current_days)
+                        if isinstance(current_days, int | float) and current_days > 0
+                        else MessageSet.DEFAULT_VACATION_DAYS
                     )
-                    message.mode = mode_key if mode_key is not None else 0x00
+                else:
+                    # Disable vacation: clear byte8 bit 0x10 + send mode=0x00
+                    message.vacation_flag = False
+                    message.vacation_days = 0
+                    message.mode = 0x00
+
+            elif attr == DeviceAttributes.vacation_days:
+                # Set vacation days and (re)enable vacation mode
+                days = max(1, int(value))
+                message.vacation_flag = True
+                message.vacation_days = days
 
             # persist fields for subsequent calls
             self._fields = dict(message.fields)

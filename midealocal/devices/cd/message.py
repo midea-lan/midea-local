@@ -103,7 +103,25 @@ class MessageQueryDaily(MessageCDBase):
 
 
 class MessageSet(MessageCDBase):
-    """CD message set."""
+    """CD message set (controlType=0x01).
+
+    Builds a 22-byte body matching the Lua jsonToData controlType=0x01 layout:
+      bodyBytes[0]     = 0x01 (body_type, prepended by MessageRequest.body)
+      bodyBytes[1]     = 0x01 (constant, _body[0])
+      bodyBytes[2]     = powerValue
+      bodyBytes[3]     = modeValue  (0x01-0x04; vacation is NOT a mode value here)
+      bodyBytes[4]     = tsValue    (target temperature, encoded per protocol)
+      bodyBytes[5]     = trValue
+      bodyBytes[6]     = openPTC
+      bodyBytes[7]     = ptcTemp
+      bodyBytes[8]     = flags: bit 0x10=vacationMode, bit 0x08=mute, bit 0x80=fahrenheit, …
+      bodyBytes[9..10] = vacadaysValue high/low (vacation remaining days, big-endian)
+      bodyBytes[11..17]= date/time fields (sent as 0)
+      bodyBytes[18..20]= vacation start year/month/day (sent as 0)
+      bodyBytes[21]    = vacation temperature (sent as 0)
+    """
+
+    DEFAULT_VACATION_DAYS = 100
 
     def __init__(self, protocol_version: int) -> None:
         """Initialize CD message set."""
@@ -119,6 +137,10 @@ class MessageSet(MessageCDBase):
         self.mode: int = 0
         # default to old protocol scaling unless explicitly disabled
         self.use_old_protocol: bool = True
+        # vacation mode flag (bit 0x10 in bodyBytes[8])
+        self.vacation_flag: bool = False
+        # vacation remaining days (bodyBytes[9..10], big-endian)
+        self.vacation_days: int = 0
 
     def read_field(self, field: str) -> int:
         """CD message set read field."""
@@ -135,16 +157,76 @@ class MessageSet(MessageCDBase):
             if self.use_old_protocol
             else round(self.target_temperature)
         )
+        # Build byte8 flags: preserve stored bits, then set or clear vacation bit
+        byte8 = self.read_field("byte8")
+        if self.vacation_flag:
+            byte8 |= 0x10  # set vacation flag
+        else:
+            byte8 &= 0xEF  # clear vacation flag (0xFF & ~0x10)
+        vacation_high = (self.vacation_days >> 8) & 0xFF
+        vacation_low = self.vacation_days & 0xFF
         return bytearray(
             [
-                0x01,  # byte1
-                power,  # byte2
-                mode,  # byte3
-                int(target_temperature),  # byte4
-                self.read_field("trValue"),  # byte5
-                self.read_field("openPTC"),  # byte6
-                self.read_field("ptcTemp"),  # byte7
-                self.read_field("byte8"),  # byte8 (flags)
+                0x01,  # bodyBytes[1] constant
+                power,  # bodyBytes[2] powerValue
+                mode,  # bodyBytes[3] modeValue (0x01-0x04)
+                int(target_temperature),  # bodyBytes[4] tsValue
+                self.read_field("trValue"),  # bodyBytes[5]
+                self.read_field("openPTC"),  # bodyBytes[6]
+                self.read_field("ptcTemp"),  # bodyBytes[7]
+                byte8,  # bodyBytes[8] flags
+                vacation_high,  # bodyBytes[9] vacadaysValue high
+                vacation_low,  # bodyBytes[10] vacadaysValue low
+                0,  # bodyBytes[11] dateYearValue high
+                0,  # bodyBytes[12] dateYearValue low
+                0,  # bodyBytes[13] dateMonthValue
+                0,  # bodyBytes[14] dateDayValue
+                0,  # bodyBytes[15] dateWeekValue
+                0,  # bodyBytes[16] dateHourValue
+                0,  # bodyBytes[17] dateMinuteValue
+                0,  # bodyBytes[18] vacadaysStartYearValue
+                0,  # bodyBytes[19] vacadaysStartMonthValue
+                0,  # bodyBytes[20] vacadaysStartDayValue
+                0,  # bodyBytes[21] vacationTsValue
+            ],
+        )
+
+
+class MessageSetSterilize(MessageCDBase):
+    """CD message set sterilize (controlType=0x06).
+
+    Controls the sterilization/disinfect function.
+    Lua jsonToData controlType=0x06 layout:
+      bodyBytes[0] = 0x06 (body_type, prepended by MessageRequest.body)
+      bodyBytes[1] = 0x01 (constant, _body[0])
+      bodyBytes[2] = sterilizeEffect  (0x80=ON, 0x00=OFF)
+      bodyBytes[3] = autoSterilizeWeek
+      bodyBytes[4] = autoSterilizeHour
+      bodyBytes[5] = autoSterilizeMinute
+    """
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize CD message set sterilize."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.set,
+            body_type=ListTypes.X06,
+        )
+        self.sterilize_on: bool = False
+        self.week: int = 0
+        self.hour: int = 0
+        self.minute: int = 0
+
+    @property
+    def _body(self) -> bytearray:
+        sterilize_effect = 0x80 if self.sterilize_on else 0x00
+        return bytearray(
+            [
+                0x01,  # bodyBytes[1] constant
+                sterilize_effect,  # bodyBytes[2] sterilizeEffect
+                self.week,  # bodyBytes[3] autoSterilizeWeek
+                self.hour,  # bodyBytes[4] autoSterilizeHour
+                self.minute,  # bodyBytes[5] autoSterilizeMinute
             ],
         )
 
@@ -457,12 +539,12 @@ class CDDailyTimerBody(MessageBody):
 
 
 class CD01MessageBody(MessageBody):
-    """CD message set 01 body."""
+    """CD message set 01 body (controlType=0x01 SET response echo)."""
 
     def __init__(self, body: bytearray) -> None:
         """Initialize CD message set 01 body."""
         super().__init__(body)
-        self.fields = {}
+        self.fields: dict[Any, Any] = {}
         self.power = (body[2] & 0x01) > 0
         self.mode = body[3]
         self.target_temperature = float(body[4])
@@ -470,6 +552,36 @@ class CD01MessageBody(MessageBody):
         self.fields["openPTC"] = body[6]
         self.fields["ptcTemp"] = body[7]
         self.fields["byte8"] = body[8]
+        # vacation_mode: bit 0x10 of bodyBytes[8]
+        self.vacation_mode = (body[8] & 0x10) > 0
+        # vacation_days: bodyBytes[9..10] big-endian (present when extended body is echoed)
+        if len(body) > 10:  # noqa: PLR2004
+            self.vacation_days = (body[9] << 8) | body[10]
+        else:
+            self.vacation_days = 0
+
+
+class CDSterilizeSetBody(MessageBody):
+    """CD message set sterilize body (controlType=0x06 SET response echo).
+
+    Parsed when the device echoes back the sterilize SET command.
+    Layout (per Lua binToModel controlType=0x06):
+      body[2] bit 0x80 = sterilizeEffect (ON/OFF)
+      body[3]          = autoSterilizeWeek
+      body[4]          = autoSterilizeHour
+      body[5]          = autoSterilizeMinute
+    """
+
+    def __init__(self, body: bytearray) -> None:
+        """Initialize CD message set sterilize body."""
+        super().__init__(body)
+        sterilize_on = (body[2] & 0x80) > 0
+        # Map to both sterilize and disinfect attributes (same underlying feature)
+        self.sterilize = sterilize_on
+        self.disinfect = sterilize_on
+        self.auto_sterilize_week = body[3] if len(body) > 3 else None  # noqa: PLR2004
+        self.auto_sterilize_hour = body[4] if len(body) > 4 else None  # noqa: PLR2004
+        self.auto_sterilize_minute = body[5] if len(body) > 5 else None  # noqa: PLR2004
 
 
 class MessageCDResponse(MessageResponse):
@@ -488,7 +600,11 @@ class MessageCDResponse(MessageResponse):
             elif self.body_type == 0x03:
                 # daily timer query response (queryType=0x03)
                 self.set_body(CDDailyTimerBody(super().body))
-        # parse set message with body_type 0x01
-        elif self.message_type == MessageType.set and self.body_type == 0x01:
-            self.set_body(CD01MessageBody(super().body))
+        elif self.message_type == MessageType.set:
+            if self.body_type == 0x01:
+                # controlType=0x01 SET response echo
+                self.set_body(CD01MessageBody(super().body))
+            elif self.body_type == 0x06:
+                # controlType=0x06 sterilize SET response echo
+                self.set_body(CDSterilizeSetBody(super().body))
         self.set_attr()
