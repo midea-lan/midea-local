@@ -339,28 +339,11 @@ class MideaCDDevice(MideaDevice):
     def set_attribute(self, attr: str, value: str | float | bool) -> None:
         """Midea CD device set attribute."""
         # --- Disinfect (sterilize): controlType=0x06, independent message ---
-        if attr in [DeviceAttributes.disinfect, DeviceAttributes.disinfection_temperature]:
+        # disinfection_temperature is read-only (decoded from device echo); it cannot
+        # be set via the protocol (the Lua app also has no field for it in body[3]).
+        if attr == DeviceAttributes.disinfect:
             message = MessageSetSterilize(self._message_protocol_version)
-            # Determine sterilize on/off state
-            if attr == DeviceAttributes.disinfect:
-                message.sterilize_on = bool(value)
-            else:
-                # Setting temperature only; preserve current disinfect state
-                message.sterilize_on = bool(
-                    self._attributes.get(DeviceAttributes.disinfect),
-                )
-            # Carry stored disinfection temperature (or default) into the command
-            stored_dt = self._attributes.get(DeviceAttributes.disinfection_temperature)
-            if attr == DeviceAttributes.disinfection_temperature:
-                # Use the new value, clamped to the valid range
-                message.disinfection_temperature = max(
-                    MessageSetSterilize.DISINFECT_TEMP_MIN,
-                    min(MessageSetSterilize.DISINFECT_TEMP_MAX, float(value)),
-                )
-            elif isinstance(stored_dt, int | float):
-                message.disinfection_temperature = float(stored_dt)
-            else:
-                message.disinfection_temperature = MessageSetSterilize.DISINFECT_TEMP_DEFAULT
+            message.sterilize_on = bool(value)
             message.week = int(
                 self._attributes.get(DeviceAttributes.auto_sterilize_week) or 0,
             )
@@ -395,6 +378,18 @@ class MideaCDDevice(MideaDevice):
 
             # Initialize message with current device state
             message.power = current_power
+
+            # Fahrenheit mode flag (bodyBytes[8] bit 0x80)
+            message.fahrenheit = bool(
+                self._attributes.get(DeviceAttributes.fahrenheit, False)
+            )
+
+            # Vacation temperature (bodyBytes[21]) – must echo back the device's
+            # current vacation setpoint so the device does not reset it to 0.
+            vac_temp = self._attributes.get(DeviceAttributes.vacation_temperature)
+            message.vacation_temperature = (
+                float(vac_temp) if isinstance(vac_temp, int | float) else 0.0
+            )
 
             # Ensure temperature is valid (not None/0)
             if isinstance(current_temp, int | float) and current_temp > 0:

@@ -114,11 +114,12 @@ class MessageSet(MessageCDBase):
       bodyBytes[5]     = trValue
       bodyBytes[6]     = openPTC
       bodyBytes[7]     = ptcTemp
-      bodyBytes[8]     = flags: bit 0x10=vacationMode, bit 0x08=mute, bit 0x80=fahrenheit, …
+      bodyBytes[8]     = flags: bit 0x10=vacationMode, bit 0x80=fahrenheit, bit 0x08=mute
+                         (built from scratch per Lua L5621-5623; other bits are NOT sent)
       bodyBytes[9..10] = vacadaysValue high/low (vacation remaining days, big-endian)
       bodyBytes[11..17]= date/time fields (sent as 0)
       bodyBytes[18..20]= vacation start year/month/day (sent as 0)
-      bodyBytes[21]    = vacation temperature (sent as 0)
+      bodyBytes[21]    = vacationTsValue (vacation target temperature, raw)
     """
 
     DEFAULT_VACATION_DAYS = 100
@@ -141,6 +142,10 @@ class MessageSet(MessageCDBase):
         self.vacation_flag: bool = False
         # vacation remaining days (bodyBytes[9..10], big-endian)
         self.vacation_days: int = 0
+        # fahrenheit mode (bit 0x80 in bodyBytes[8])
+        self.fahrenheit: bool = False
+        # vacation target temperature (bodyBytes[21], raw device value)
+        self.vacation_temperature: float = 0
 
     def read_field(self, field: str) -> int:
         """CD message set read field."""
@@ -157,12 +162,16 @@ class MessageSet(MessageCDBase):
             if self.use_old_protocol
             else round(self.target_temperature)
         )
-        # Build byte8 flags: preserve stored bits, then set or clear vacation bit
-        byte8 = self.read_field("byte8")
+        # Build byte8 from scratch per Lua L5621-5623:
+        #   only vacationMode (0x10), fahrenheitEffect (0x80), mute (0x08)
+        # All other bits (waterPump, defrost, openPTCTemp, etc.) are NOT sent,
+        # matching the Lua app behaviour which also leaves them out.
+        byte8 = 0
         if self.vacation_flag:
-            byte8 |= 0x10  # set vacation flag
-        else:
-            byte8 &= 0xEF  # clear vacation flag (0xFF & ~0x10)
+            byte8 |= 0x10
+        if self.fahrenheit:
+            byte8 |= 0x80
+        byte8 |= self.read_field("byte8") & 0x08  # preserve mute bit only
         vacation_high = (self.vacation_days >> 8) & 0xFF
         vacation_low = self.vacation_days & 0xFF
         return bytearray(
@@ -174,7 +183,7 @@ class MessageSet(MessageCDBase):
                 self.read_field("trValue"),  # bodyBytes[5]
                 self.read_field("openPTC"),  # bodyBytes[6]
                 self.read_field("ptcTemp"),  # bodyBytes[7]
-                byte8,  # bodyBytes[8] flags
+                byte8,  # bodyBytes[8] flags (vacation|fahrenheit|mute only)
                 vacation_high,  # bodyBytes[9] vacadaysValue high
                 vacation_low,  # bodyBytes[10] vacadaysValue low
                 0,  # bodyBytes[11] dateYearValue high
@@ -187,7 +196,7 @@ class MessageSet(MessageCDBase):
                 0,  # bodyBytes[18] vacadaysStartYearValue
                 0,  # bodyBytes[19] vacadaysStartMonthValue
                 0,  # bodyBytes[20] vacadaysStartDayValue
-                0,  # bodyBytes[21] vacationTsValue
+                int(self.vacation_temperature),  # bodyBytes[21] vacationTsValue
             ],
         )
 
@@ -200,21 +209,18 @@ class MessageSetSterilize(MessageCDBase):
       bodyBytes[0] = 0x06 (body_type, prepended by MessageRequest.body)
       bodyBytes[1] = 0x01 (constant, _body[0])
       bodyBytes[2] = sterilizeEffect  (0x80=ON, 0x00=OFF)
-      bodyBytes[3] = autoSterilizeWeek / disinfection temperature (encoded as celsius×2)
+      bodyBytes[3] = autoSterilizeWeek  (weekday bitmap for auto-sterilize schedule)
       bodyBytes[4] = autoSterilizeHour
       bodyBytes[5] = autoSterilizeMinute
 
-    Note: some firmware versions use bodyBytes[3] as a disinfection temperature
-    encoded as celsius×2 (e.g. 67°C → 134).  When ``disinfection_temperature``
-    is set to a value in [60, 70] it takes priority over ``week``; otherwise
-    ``week`` is sent as-is (backward-compatible with devices that use this byte
-    as a weekday-bitmap schedule).
+    Note: the device echoes back the disinfection temperature (°C×2) in bodyBytes[3]
+    of the SET response, NOT the weekday bitmap we sent.  That echo value is decoded
+    read-only by ``CDSterilizeSetBody``.  We must always send the weekday bitmap here.
     """
 
-    # Valid range for disinfection temperature (°C)
+    # Valid range for disinfection temperature (°C) – used by echo decoders only
     DISINFECT_TEMP_MIN: float = 60.0
     DISINFECT_TEMP_MAX: float = 70.0
-    DISINFECT_TEMP_DEFAULT: float = 65.0
 
     def __init__(self, protocol_version: int) -> None:
         """Initialize CD message set sterilize."""
@@ -224,8 +230,6 @@ class MessageSetSterilize(MessageCDBase):
             body_type=ListTypes.X06,
         )
         self.sterilize_on: bool = False
-        # disinfection_temperature (°C) takes priority over week when set.
-        self.disinfection_temperature: float | None = None
         self.week: int = 0
         self.hour: int = 0
         self.minute: int = 0
@@ -233,24 +237,11 @@ class MessageSetSterilize(MessageCDBase):
     @property
     def _body(self) -> bytearray:
         sterilize_effect = 0x80 if self.sterilize_on else 0x00
-        if self.disinfection_temperature is not None:
-            # encode Celsius as raw×2 to match device protocol
-            week_byte = int(
-                round(
-                    max(
-                        self.DISINFECT_TEMP_MIN,
-                        min(self.DISINFECT_TEMP_MAX, self.disinfection_temperature),
-                    )
-                    * 2
-                )
-            )
-        else:
-            week_byte = self.week
         return bytearray(
             [
                 0x01,  # bodyBytes[1] constant
                 sterilize_effect,  # bodyBytes[2] sterilizeEffect
-                week_byte,  # bodyBytes[3] autoSterilizeWeek / disinfect temp (×2)
+                self.week,  # bodyBytes[3] autoSterilizeWeek (weekday bitmap)
                 self.hour,  # bodyBytes[4] autoSterilizeHour
                 self.minute,  # bodyBytes[5] autoSterilizeMinute
             ],
