@@ -583,23 +583,32 @@ class CDSterilizeSetBody(MessageBody):
         # Map to both sterilize and disinfect attributes (same underlying feature)
         self.sterilize = sterilize_on
         self.disinfect = sterilize_on
-        raw_week = body[3] if len(body) > 3 else None  # noqa: PLR2004
-        self.auto_sterilize_week = raw_week
+        raw_byte3 = body[3] if len(body) > 3 else None  # noqa: PLR2004
         self.auto_sterilize_hour = body[4] if len(body) > 4 else None  # noqa: PLR2004
         self.auto_sterilize_minute = body[5] if len(body) > 5 else None  # noqa: PLR2004
-        # Decode disinfection temperature: body[3] encodes celsius×2 when the
-        # device echoes back the disinfection setpoint (67 °C → 134).  Only
-        # store the decoded value when sterilize is ON and the Celsius result
-        # is within the app-selectable range [60, 70].
+        # body[3] is ambiguous: some firmwares echo the celsius×2 disinfection
+        # temperature (e.g. 132 → 66 °C), others echo the autoSterilizeWeek
+        # bitmap that was sent in the request.  Week bitmaps use 7 bits
+        # (days 0-6), so their value is always ≤ 127.  Any value > 127 is
+        # therefore unambiguously a celsius×2 temperature echo and must NOT
+        # be stored as the week bitmap (which would corrupt the schedule).
         self.disinfection_temperature: float | None = None
-        if sterilize_on and raw_week is not None:
-            decoded = raw_week / 2.0
-            if (
-                MessageSetSterilize.DISINFECT_TEMP_MIN
-                <= decoded
-                <= MessageSetSterilize.DISINFECT_TEMP_MAX
-            ):
-                self.disinfection_temperature = decoded
+        if raw_byte3 is not None and raw_byte3 > 127:  # noqa: PLR2004
+            # Unambiguous temperature echo: decode celsius×2 and validate range.
+            # Do NOT update auto_sterilize_week – the raw value is a temperature,
+            # not a schedule bitmap.
+            self.auto_sterilize_week: int | None = None
+            if sterilize_on:
+                decoded = raw_byte3 / 2.0
+                if (
+                    MessageSetSterilize.DISINFECT_TEMP_MIN
+                    <= decoded
+                    <= MessageSetSterilize.DISINFECT_TEMP_MAX
+                ):
+                    self.disinfection_temperature = decoded
+        else:
+            # Value ≤ 127: treat as autoSterilizeWeek bitmap (schedule).
+            self.auto_sterilize_week = raw_byte3
 
 
 class MessageCDResponse(MessageResponse):
