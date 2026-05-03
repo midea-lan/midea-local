@@ -339,20 +339,42 @@ class MideaCDDevice(MideaDevice):
     def set_attribute(self, attr: str, value: str | float | bool) -> None:
         """Midea CD device set attribute."""
         # --- Disinfect (sterilize): controlType=0x06, independent message ---
-        # disinfection_temperature is read-only (decoded from device echo); it cannot
-        # be set via the protocol (the Lua app also has no field for it in body[3]).
-        if attr == DeviceAttributes.disinfect:
+        if attr in [DeviceAttributes.disinfect, DeviceAttributes.disinfection_temperature]:
             message = MessageSetSterilize(self._message_protocol_version)
-            message.sterilize_on = bool(value)
-            message.week = int(
-                self._attributes.get(DeviceAttributes.auto_sterilize_week) or 0,
-            )
             message.hour = int(
                 self._attributes.get(DeviceAttributes.auto_sterilize_hour) or 0,
             )
             message.minute = int(
                 self._attributes.get(DeviceAttributes.auto_sterilize_minute) or 0,
             )
+
+            if attr == DeviceAttributes.disinfect:
+                message.sterilize_on = bool(value)
+                # Preserve the current disinfection temperature if known so the
+                # device does not reset it to a firmware default.
+                current_dt = self._attributes.get(DeviceAttributes.disinfection_temperature)
+                if isinstance(current_dt, int | float) and (
+                    MessageSetSterilize.DISINFECT_TEMP_MIN
+                    <= current_dt
+                    <= MessageSetSterilize.DISINFECT_TEMP_MAX
+                ):
+                    message.disinfection_temperature = float(current_dt)
+                else:
+                    # Fall back to week bitmap when no valid temperature is stored
+                    message.week = int(
+                        self._attributes.get(DeviceAttributes.auto_sterilize_week) or 0,
+                    )
+            else:
+                # Setting the disinfection temperature explicitly; preserve sterilize state.
+                current_sterilize = self._attributes.get(DeviceAttributes.disinfect, False)
+                message.sterilize_on = bool(current_sterilize)
+                # Clamp to the valid [60, 70] °C range before encoding.
+                clamped = max(
+                    MessageSetSterilize.DISINFECT_TEMP_MIN,
+                    min(MessageSetSterilize.DISINFECT_TEMP_MAX, float(value)),
+                )
+                message.disinfection_temperature = clamped
+
             self.build_send(message)
             return
 
@@ -363,6 +385,7 @@ class MideaCDDevice(MideaDevice):
             DeviceAttributes.target_temperature,
             DeviceAttributes.vacation_mode,
             DeviceAttributes.vacation_days,
+            DeviceAttributes.vacation_temperature,
         ]:
             message = MessageSet(self._message_protocol_version)
             message.fields = dict(self._fields) if self._fields else {}
@@ -474,6 +497,11 @@ class MideaCDDevice(MideaDevice):
                 days = max(1, min(360, int(value)))
                 message.vacation_flag = True
                 message.vacation_days = days
+
+            elif attr == DeviceAttributes.vacation_temperature:
+                # Set the Maximum Target Temperature (vacationTsValue, body[21]).
+                # The official app allows values in the range [65, 70] °C.
+                message.vacation_temperature = float(value)
 
             # persist fields for subsequent calls
             self._fields = dict(message.fields)

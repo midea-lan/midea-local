@@ -209,16 +209,24 @@ class MessageSetSterilize(MessageCDBase):
       bodyBytes[0] = 0x06 (body_type, prepended by MessageRequest.body)
       bodyBytes[1] = 0x01 (constant, _body[0])
       bodyBytes[2] = sterilizeEffect  (0x80=ON, 0x00=OFF)
-      bodyBytes[3] = autoSterilizeWeek  (weekday bitmap for auto-sterilize schedule)
+      bodyBytes[3] = autoSterilizeWeek OR disinfection temperature (°C×2)
       bodyBytes[4] = autoSterilizeHour
       bodyBytes[5] = autoSterilizeMinute
 
+    bodyBytes[3] is dual-use depending on firmware:
+    - Some firmwares treat it as a weekday bitmap (autoSterilizeWeek).
+    - Others treat it as a disinfection-temperature setpoint encoded as °C×2
+      (e.g. 67 °C → 134).  In that case the decoded value always exceeds 127
+      because the valid range is [60, 70] °C → [120, 140] raw.
+
+    When ``disinfection_temperature`` is set, bodyBytes[3] is encoded as
+    ``int(disinfection_temperature * 2)``; otherwise the ``week`` bitmap is sent.
+
     Note: the device echoes back the disinfection temperature (°C×2) in bodyBytes[3]
-    of the SET response, NOT the weekday bitmap we sent.  That echo value is decoded
-    read-only by ``CDSterilizeSetBody``.  We must always send the weekday bitmap here.
+    of the SET response.  That echo is decoded by ``CDSterilizeSetBody``.
     """
 
-    # Valid range for disinfection temperature (°C) – used by echo decoders only
+    # Valid range for disinfection temperature (°C)
     DISINFECT_TEMP_MIN: float = 60.0
     DISINFECT_TEMP_MAX: float = 70.0
 
@@ -233,15 +241,23 @@ class MessageSetSterilize(MessageCDBase):
         self.week: int = 0
         self.hour: int = 0
         self.minute: int = 0
+        # When set, overrides week in bodyBytes[3] with the celsius×2 encoding.
+        self.disinfection_temperature: float | None = None
 
     @property
     def _body(self) -> bytearray:
         sterilize_effect = 0x80 if self.sterilize_on else 0x00
+        # Use celsius×2 encoding when an explicit disinfection temperature is given;
+        # fall back to the autoSterilizeWeek bitmap otherwise.
+        if self.disinfection_temperature is not None:
+            byte3 = int(self.disinfection_temperature * 2)
+        else:
+            byte3 = self.week
         return bytearray(
             [
                 0x01,  # bodyBytes[1] constant
                 sterilize_effect,  # bodyBytes[2] sterilizeEffect
-                self.week,  # bodyBytes[3] autoSterilizeWeek (weekday bitmap)
+                byte3,  # bodyBytes[3] disinfection temp (°C×2) or weekday bitmap
                 self.hour,  # bodyBytes[4] autoSterilizeHour
                 self.minute,  # bodyBytes[5] autoSterilizeMinute
             ],

@@ -115,3 +115,66 @@ class TestCDSterilizeSetBody:
     def test_disinfect_temp_max_constant(self) -> None:
         """DISINFECT_TEMP_MAX is 70.0."""
         assert MessageSetSterilize.DISINFECT_TEMP_MAX == 70.0  # noqa: PLR2004
+
+
+class TestMessageSetSterilize:
+    """Test MessageSetSterilize body construction."""
+
+    def test_default_body_uses_week(self) -> None:
+        """Default construction uses week bitmap (0) in body[3] – no temperature set."""
+        msg = MessageSetSterilize(protocol_version=1)
+        body = msg.body
+        # body[0]=0x06 (body_type), body[1]=0x01, body[2]=0x00 (off), body[3]=0 (week), ...
+        assert body[0] == 0x06  # noqa: PLR2004 – body_type
+        assert body[1] == 0x01  # noqa: PLR2004 – constant
+        assert body[2] == 0x00  # noqa: PLR2004 – sterilize off
+        assert body[3] == 0x00  # noqa: PLR2004 – week bitmap = 0
+
+    def test_sterilize_on_sets_byte2(self) -> None:
+        """sterilize_on=True → body[2]=0x80."""
+        msg = MessageSetSterilize(protocol_version=1)
+        msg.sterilize_on = True
+        assert msg.body[2] == 0x80  # noqa: PLR2004
+
+    def test_week_bitmap_sent_when_no_temperature(self) -> None:
+        """week bitmap is placed in body[3] when disinfection_temperature is None."""
+        msg = MessageSetSterilize(protocol_version=1)
+        msg.week = 12
+        assert msg.body[3] == 12  # noqa: PLR2004
+
+    def test_disinfection_temperature_overrides_week(self) -> None:
+        """Setting disinfection_temperature encodes celsius×2 in body[3], overriding week."""
+        msg = MessageSetSterilize(protocol_version=1)
+        msg.week = 12
+        msg.disinfection_temperature = 67.0
+        # 67 × 2 = 134
+        assert msg.body[3] == 134  # noqa: PLR2004
+
+    def test_disinfection_temperature_60_encodes_120(self) -> None:
+        """60°C → body[3]=120."""
+        msg = MessageSetSterilize(protocol_version=1)
+        msg.disinfection_temperature = 60.0
+        assert msg.body[3] == 120  # noqa: PLR2004
+
+    def test_disinfection_temperature_70_encodes_140(self) -> None:
+        """70°C → body[3]=140."""
+        msg = MessageSetSterilize(protocol_version=1)
+        msg.disinfection_temperature = 70.0
+        assert msg.body[3] == 140  # noqa: PLR2004
+
+    def test_hour_minute_always_in_body(self) -> None:
+        """hour and minute are placed in body[4] and body[5]."""
+        msg = MessageSetSterilize(protocol_version=1)
+        msg.hour = 3
+        msg.minute = 30
+        assert msg.body[4] == 3  # noqa: PLR2004
+        assert msg.body[5] == 30  # noqa: PLR2004
+
+    def test_setting_none_disinfection_temperature_restores_week(self) -> None:
+        """Resetting disinfection_temperature to None sends week bitmap again."""
+        msg = MessageSetSterilize(protocol_version=1)
+        msg.week = 7
+        msg.disinfection_temperature = 65.0
+        assert msg.body[3] == 130  # 65×2  # noqa: PLR2004
+        msg.disinfection_temperature = None
+        assert msg.body[3] == 7  # week restored  # noqa: PLR2004

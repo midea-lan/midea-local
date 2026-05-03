@@ -142,3 +142,93 @@ class TestMideaCDDevice:
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
             assert msg.sterilize_on is False
+
+    def test_set_disinfect_true_echoes_known_disinfection_temperature(self) -> None:
+        """set_attribute('disinfect', True) preserves known disinfection_temperature in body[3]."""
+        self.device._attributes[DeviceAttributes.disinfection_temperature] = 67.0
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.disinfect.value, True)
+            mock_send.assert_called_once()
+            msg = mock_send.call_args[0][0]
+            assert msg.sterilize_on is True
+            assert msg.disinfection_temperature == 67.0
+
+    def test_set_disinfect_true_uses_week_fallback_when_no_temperature(self) -> None:
+        """set_attribute('disinfect', True) falls back to week bitmap when no temperature stored."""
+        self.device._attributes[DeviceAttributes.disinfection_temperature] = None
+        self.device._attributes[DeviceAttributes.auto_sterilize_week] = 5
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.disinfect.value, True)
+            mock_send.assert_called_once()
+            msg = mock_send.call_args[0][0]
+            assert msg.sterilize_on is True
+            assert msg.disinfection_temperature is None
+            assert msg.week == 5
+
+    # ------------------------------------------------------------------ #
+    # disinfection_temperature as settable attribute                       #
+    # ------------------------------------------------------------------ #
+
+    def test_set_disinfection_temperature_sends_sterilize_message(self) -> None:
+        """set_attribute('disinfection_temperature', 65) sends MessageSetSterilize."""
+        self.device._attributes[DeviceAttributes.disinfect] = True
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.disinfection_temperature.value, 65.0)
+            mock_send.assert_called_once()
+            msg = mock_send.call_args[0][0]
+            assert msg.disinfection_temperature == 65.0
+            assert msg.sterilize_on is True
+
+    def test_set_disinfection_temperature_preserves_sterilize_off(self) -> None:
+        """set_attribute('disinfection_temperature') keeps sterilize off if it was off."""
+        self.device._attributes[DeviceAttributes.disinfect] = False
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.disinfection_temperature.value, 67.0)
+            mock_send.assert_called_once()
+            msg = mock_send.call_args[0][0]
+            assert msg.disinfection_temperature == 67.0
+            assert msg.sterilize_on is False
+
+    def test_set_disinfection_temperature_clamps_below_min(self) -> None:
+        """set_attribute('disinfection_temperature', 50) is clamped to 60.0."""
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.disinfection_temperature.value, 50.0)
+            msg = mock_send.call_args[0][0]
+            assert msg.disinfection_temperature == 60.0
+
+    def test_set_disinfection_temperature_clamps_above_max(self) -> None:
+        """set_attribute('disinfection_temperature', 80) is clamped to 70.0."""
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.disinfection_temperature.value, 80.0)
+            msg = mock_send.call_args[0][0]
+            assert msg.disinfection_temperature == 70.0
+
+    # ------------------------------------------------------------------ #
+    # vacation_temperature (Maximum Target Temperature) as settable attr   #
+    # ------------------------------------------------------------------ #
+
+    def test_set_vacation_temperature_sends_message_set(self) -> None:
+        """set_attribute('vacation_temperature', 65) sends MessageSet with vacation_temperature=65."""
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.vacation_temperature.value, 65.0)
+            mock_send.assert_called_once()
+            msg = mock_send.call_args[0][0]
+            assert msg.vacation_temperature == 65.0
+
+    def test_set_vacation_temperature_70(self) -> None:
+        """set_attribute('vacation_temperature', 70) sends MessageSet with vacation_temperature=70."""
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.vacation_temperature.value, 70.0)
+            mock_send.assert_called_once()
+            msg = mock_send.call_args[0][0]
+            assert msg.vacation_temperature == 70.0
+
+    def test_set_vacation_temperature_does_not_change_vacation_flag(self) -> None:
+        """Setting vacation_temperature does not inadvertently toggle vacation_mode flag."""
+        self.device._attributes[DeviceAttributes.vacation_mode] = False
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.vacation_temperature.value, 65.0)
+            mock_send.assert_called_once()
+            msg = mock_send.call_args[0][0]
+            # vacation_flag should be False (not enabling vacation mode)
+            assert msg.vacation_flag is False
