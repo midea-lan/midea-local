@@ -200,10 +200,21 @@ class MessageSetSterilize(MessageCDBase):
       bodyBytes[0] = 0x06 (body_type, prepended by MessageRequest.body)
       bodyBytes[1] = 0x01 (constant, _body[0])
       bodyBytes[2] = sterilizeEffect  (0x80=ON, 0x00=OFF)
-      bodyBytes[3] = autoSterilizeWeek
+      bodyBytes[3] = autoSterilizeWeek / disinfection temperature (encoded as celsius×2)
       bodyBytes[4] = autoSterilizeHour
       bodyBytes[5] = autoSterilizeMinute
+
+    Note: some firmware versions use bodyBytes[3] as a disinfection temperature
+    encoded as celsius×2 (e.g. 67°C → 134).  When ``disinfection_temperature``
+    is set to a value in [60, 70] it takes priority over ``week``; otherwise
+    ``week`` is sent as-is (backward-compatible with devices that use this byte
+    as a weekday-bitmap schedule).
     """
+
+    # Valid range for disinfection temperature (°C)
+    DISINFECT_TEMP_MIN: float = 60.0
+    DISINFECT_TEMP_MAX: float = 70.0
+    DISINFECT_TEMP_DEFAULT: float = 65.0
 
     def __init__(self, protocol_version: int) -> None:
         """Initialize CD message set sterilize."""
@@ -213,6 +224,8 @@ class MessageSetSterilize(MessageCDBase):
             body_type=ListTypes.X06,
         )
         self.sterilize_on: bool = False
+        # disinfection_temperature (°C) takes priority over week when set.
+        self.disinfection_temperature: float | None = None
         self.week: int = 0
         self.hour: int = 0
         self.minute: int = 0
@@ -220,11 +233,24 @@ class MessageSetSterilize(MessageCDBase):
     @property
     def _body(self) -> bytearray:
         sterilize_effect = 0x80 if self.sterilize_on else 0x00
+        if self.disinfection_temperature is not None:
+            # encode Celsius as raw×2 to match device protocol
+            week_byte = int(
+                round(
+                    max(
+                        self.DISINFECT_TEMP_MIN,
+                        min(self.DISINFECT_TEMP_MAX, self.disinfection_temperature),
+                    )
+                    * 2
+                )
+            )
+        else:
+            week_byte = self.week
         return bytearray(
             [
                 0x01,  # bodyBytes[1] constant
                 sterilize_effect,  # bodyBytes[2] sterilizeEffect
-                self.week,  # bodyBytes[3] autoSterilizeWeek
+                week_byte,  # bodyBytes[3] autoSterilizeWeek / disinfect temp (×2)
                 self.hour,  # bodyBytes[4] autoSterilizeHour
                 self.minute,  # bodyBytes[5] autoSterilizeMinute
             ],
@@ -403,35 +429,20 @@ class CDGeneralMessageBody(MessageBody):
         self.vacation_temperature = (
             float(body[51]) if len(body) > 51 else None  # noqa: PLR2004
         )
-        # Disinfection set temperature (distinct from generic target)
-        # Some firmwares encode disinfection setpoint near the tail with
-        # marker 0x3c followed by Celsius value.
-        self.disinfection_set_temperature: float | None = None
-        disinfect_marker = 0x3C
-        min_temp = 25
-        max_temp = 90
-        try:
-            tail_flag_index = None
-            # Search backwards for marker 0x3c followed by a plausible
-            # Celsius value (25..90)
-            for i in range(len(body) - 2, max(len(body) - 10, 0), -1):
-                if body[i] == disinfect_marker:
-                    val = body[i + 1]
-                    if min_temp <= val <= max_temp:
-                        self.disinfection_set_temperature = float(val)
-                        # tail flag appears at i+2 in provided samples
-                        # (0x01 on, 0x00 off)
-                        if i + 2 < len(body):
-                            tail_flag_index = i + 2
-                        break
-            # Use tail flag to set disinfect when present
-            if tail_flag_index is not None:
-                tail_flag = body[tail_flag_index]
-                if tail_flag in (0x00, 0x01):
-                    self.disinfect = tail_flag == 0x01
-        except (IndexError, ValueError):
-            # Be conservative: leave None on any parsing issue
-            self.disinfection_set_temperature = None
+        # Disinfection temperature: body[45] encodes celsius×2 on firmwares
+        # that use this byte as a disinfection set-point rather than a weekday
+        # bitmap.  Only expose the decoded value when sterilize is active and
+        # the decoded Celsius value falls in the valid app range [60, 70].
+        self.disinfection_temperature: float | None = None
+        if self.sterilize and len(body) > EXTENDED_BODY_LENGTH:
+            raw_dt = body[45]
+            decoded_dt = raw_dt / 2.0
+            if (
+                MessageSetSterilize.DISINFECT_TEMP_MIN
+                <= decoded_dt
+                <= MessageSetSterilize.DISINFECT_TEMP_MAX
+            ):
+                self.disinfection_temperature = decoded_dt
 
 
 class CDWeeklyScheduleBody(MessageBody):
@@ -567,7 +578,9 @@ class CDSterilizeSetBody(MessageBody):
     Parsed when the device echoes back the sterilize SET command.
     Layout (per Lua binToModel controlType=0x06):
       body[2] bit 0x80 = sterilizeEffect (ON/OFF)
-      body[3]          = autoSterilizeWeek
+      body[3]          = autoSterilizeWeek (week-schedule bitmap on some
+                         firmwares; celsius×2 disinfection temperature on
+                         others – e.g. 134 → 67 °C)
       body[4]          = autoSterilizeHour
       body[5]          = autoSterilizeMinute
     """
@@ -579,9 +592,23 @@ class CDSterilizeSetBody(MessageBody):
         # Map to both sterilize and disinfect attributes (same underlying feature)
         self.sterilize = sterilize_on
         self.disinfect = sterilize_on
-        self.auto_sterilize_week = body[3] if len(body) > 3 else None  # noqa: PLR2004
+        raw_week = body[3] if len(body) > 3 else None  # noqa: PLR2004
+        self.auto_sterilize_week = raw_week
         self.auto_sterilize_hour = body[4] if len(body) > 4 else None  # noqa: PLR2004
         self.auto_sterilize_minute = body[5] if len(body) > 5 else None  # noqa: PLR2004
+        # Decode disinfection temperature: body[3] encodes celsius×2 when the
+        # device echoes back the disinfection setpoint (67 °C → 134).  Only
+        # store the decoded value when sterilize is ON and the Celsius result
+        # is within the app-selectable range [60, 70].
+        self.disinfection_temperature: float | None = None
+        if sterilize_on and raw_week is not None:
+            decoded = raw_week / 2.0
+            if (
+                MessageSetSterilize.DISINFECT_TEMP_MIN
+                <= decoded
+                <= MessageSetSterilize.DISINFECT_TEMP_MAX
+            ):
+                self.disinfection_temperature = decoded
 
 
 class MessageCDResponse(MessageResponse):

@@ -59,6 +59,7 @@ class DeviceAttributes(StrEnum):
     back_water = "back_water"
     sterilize = "sterilize"
     disinfect = "disinfect"
+    disinfection_temperature = "disinfection_temperature"
     top_temperature = "top_temperature"
     bottom_temperature = "bottom_temperature"
     wind = "wind"
@@ -147,6 +148,7 @@ class MideaCDDevice(MideaDevice):
                 DeviceAttributes.back_water: None,
                 DeviceAttributes.sterilize: None,
                 DeviceAttributes.disinfect: None,
+                DeviceAttributes.disinfection_temperature: None,
                 DeviceAttributes.top_temperature: None,
                 DeviceAttributes.bottom_temperature: None,
                 DeviceAttributes.wind: None,
@@ -267,11 +269,15 @@ class MideaCDDevice(MideaDevice):
                 raw_value = getattr(message, str(attr))
                 # parse modes
                 if attr == DeviceAttributes.mode:
-                    self._attributes[attr] = MideaCDDevice._modes.get(
-                        raw_value,
-                        raw_value,
-                    )
-                    new_status[str(attr)] = self._attributes[attr]
+                    mode_str = MideaCDDevice._modes.get(raw_value)
+                    if mode_str is not None:
+                        # Only update when the value is a recognised mode key
+                        # to prevent transient unrecognised values (e.g. 8)
+                        # from the SET-echo corrupting the displayed mode.
+                        self._attributes[attr] = mode_str
+                        new_status[str(attr)] = mode_str
+                    # else: skip – mode will be corrected by the next status
+                    #       notification from the device.
                     continue
                 # process temperature family
                 if attr in [
@@ -315,6 +321,16 @@ class MideaCDDevice(MideaDevice):
                     self._attributes[attr] = parsed
                     new_status[str(attr)] = self._attributes[attr]
                     continue
+                # disinfection_temperature is already decoded (°C) by the
+                # message body class; no protocol conversion needed.  Skip
+                # None values so that a previous valid reading is preserved
+                # (e.g. when sterilize is turned off the echo body sends an
+                # out-of-range value and the message class sets None).
+                if attr == DeviceAttributes.disinfection_temperature:
+                    if raw_value is not None:
+                        self._attributes[attr] = raw_value
+                        new_status[str(attr)] = raw_value
+                    continue
                 # non-temperature attributes
                 self._attributes[attr] = raw_value
                 new_status[str(attr)] = self._attributes[attr]
@@ -323,9 +339,28 @@ class MideaCDDevice(MideaDevice):
     def set_attribute(self, attr: str, value: str | float | bool) -> None:
         """Midea CD device set attribute."""
         # --- Disinfect (sterilize): controlType=0x06, independent message ---
-        if attr == DeviceAttributes.disinfect:
+        if attr in [DeviceAttributes.disinfect, DeviceAttributes.disinfection_temperature]:
             message = MessageSetSterilize(self._message_protocol_version)
-            message.sterilize_on = bool(value)
+            # Determine sterilize on/off state
+            if attr == DeviceAttributes.disinfect:
+                message.sterilize_on = bool(value)
+            else:
+                # Setting temperature only; preserve current disinfect state
+                message.sterilize_on = bool(
+                    self._attributes.get(DeviceAttributes.disinfect),
+                )
+            # Carry stored disinfection temperature (or default) into the command
+            stored_dt = self._attributes.get(DeviceAttributes.disinfection_temperature)
+            if attr == DeviceAttributes.disinfection_temperature:
+                # Use the new value, clamped to the valid range
+                message.disinfection_temperature = max(
+                    MessageSetSterilize.DISINFECT_TEMP_MIN,
+                    min(MessageSetSterilize.DISINFECT_TEMP_MAX, float(value)),
+                )
+            elif isinstance(stored_dt, int | float):
+                message.disinfection_temperature = float(stored_dt)
+            else:
+                message.disinfection_temperature = MessageSetSterilize.DISINFECT_TEMP_DEFAULT
             message.week = int(
                 self._attributes.get(DeviceAttributes.auto_sterilize_week) or 0,
             )
@@ -425,14 +460,18 @@ class MideaCDDevice(MideaDevice):
                         else MessageSet.DEFAULT_VACATION_DAYS
                     )
                 else:
-                    # Disable vacation: clear byte8 bit 0x10 + send mode=0x00
+                    # Disable vacation: clear byte8 bit 0x10.
+                    # Send Energy-save (0x01) as the exit mode so the device
+                    # has a valid non-vacation mode to transition to.  Sending
+                    # 0x00 ("no mode") is ignored by some firmware versions and
+                    # leaves the device in vacation mode.
                     message.vacation_flag = False
                     message.vacation_days = 0
-                    message.mode = 0x00
+                    message.mode = 0x01
 
             elif attr == DeviceAttributes.vacation_days:
-                # Set vacation days and (re)enable vacation mode
-                days = max(1, int(value))
+                # Set vacation days (1-360) and (re)enable vacation mode
+                days = max(1, min(360, int(value)))
                 message.vacation_flag = True
                 message.vacation_days = days
 
