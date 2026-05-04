@@ -1,9 +1,73 @@
 """Test CD message."""
 
 from midealocal.devices.cd.message import (
+    CDGeneralMessageBody,
     CDSterilizeSetBody,
     MessageSetSterilize,
 )
+
+
+class TestCDGeneralMessageBody:
+    """Test CDGeneralMessageBody parsing of real-device status bytes."""
+
+    # Real-device status bodies (body_type=0x01):
+    #   msg1: 70°C disinfection, sterilize ON
+    #   msg2: 65°C disinfection, sterilize ON
+    #   msg3: 60°C disinfection, sterilize OFF
+    MSG1_HEX = (
+        "010113279239391346134126090000002a1e2a1e008600000000000187040000000000"
+        "780000433f3f3f3f3f3f000c000000004200000101004641463c4601000000"
+    )
+    MSG2_HEX = (
+        "010113279239391346134126090000002a1e2a1e008600000000000187040000000000"
+        "780000433f3f3f3f3f3f000c000000004200000101004641463c4101000000"
+    )
+    MSG3_HEX = (
+        "010193279239391346134126090000002a1e2a1e008600000000000087040000000000"
+        "780000433f3f3f3f3f3f000c000000004200000101004641463c3c00000000"
+    )
+
+    def _parse(self, hex_str: str) -> CDGeneralMessageBody:
+        return CDGeneralMessageBody(bytearray.fromhex(hex_str))
+
+    def test_sterilize_on_70c(self) -> None:
+        """msg1: sterilize=True, disinfection_temperature=70.0 (body[62]=0x01, body[61]=0x46)."""
+        body = self._parse(self.MSG1_HEX)
+        assert body.sterilize is True
+        assert body.disinfect is True
+        assert body.disinfection_temperature == 70.0
+
+    def test_sterilize_on_65c(self) -> None:
+        """msg2: sterilize=True, disinfection_temperature=65.0 (body[62]=0x01, body[61]=0x41)."""
+        body = self._parse(self.MSG2_HEX)
+        assert body.sterilize is True
+        assert body.disinfect is True
+        assert body.disinfection_temperature == 65.0
+
+    def test_sterilize_off_60c(self) -> None:
+        """msg3: sterilize=False (body[62]=0x00) but disinfection_temperature=60.0 stored."""
+        body = self._parse(self.MSG3_HEX)
+        assert body.sterilize is False
+        assert body.disinfect is False
+        assert body.disinfection_temperature == 60.0
+
+    def test_max_temperature_all_messages(self) -> None:
+        """body[10]=0x41=65 → max_temperature=65 for all 3 messages."""
+        for hex_str in (self.MSG1_HEX, self.MSG2_HEX, self.MSG3_HEX):
+            body = self._parse(hex_str)
+            assert body.max_temperature == 65.0  # noqa: PLR2004
+
+    def test_vacation_temperature_all_messages(self) -> None:
+        """body[51]=0x42=66 → vacation_temperature=66.0 (read-only) for all 3 messages."""
+        for hex_str in (self.MSG1_HEX, self.MSG2_HEX, self.MSG3_HEX):
+            body = self._parse(hex_str)
+            assert body.vacation_temperature == 66.0  # noqa: PLR2004
+
+    def test_power_on_all_sterilize_on_messages(self) -> None:
+        """body[2] bit 0 = 1 → power=True for all 3 messages."""
+        for hex_str in (self.MSG1_HEX, self.MSG2_HEX, self.MSG3_HEX):
+            body = self._parse(hex_str)
+            assert body.power is True
 
 
 class TestCDSterilizeSetBody:

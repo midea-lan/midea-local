@@ -378,14 +378,14 @@ class MideaCDDevice(MideaDevice):
             self.build_send(message)
             return
 
-        # --- Power / mode / temperature / vacation: controlType=0x01 ---
+        # --- Power / mode / temperature / max_temperature / vacation: controlType=0x01 ---
         if attr in [
             DeviceAttributes.mode,
             DeviceAttributes.power,
             DeviceAttributes.target_temperature,
             DeviceAttributes.vacation_mode,
             DeviceAttributes.vacation_days,
-            DeviceAttributes.vacation_temperature,
+            DeviceAttributes.max_temperature,
         ]:
             message = MessageSet(self._message_protocol_version)
             message.fields = dict(self._fields) if self._fields else {}
@@ -407,11 +407,9 @@ class MideaCDDevice(MideaDevice):
                 self._attributes.get(DeviceAttributes.fahrenheit, False)
             )
 
-            # Vacation temperature (bodyBytes[21]) – must echo back the device's
-            # current vacation setpoint so the device does not reset it to 0.
-            # vacation_temperature (body[51]) represents the device's max target
-            # temperature setpoint; sending 0 would reset it on the device side.
-            # Fall back to max_temperature when vacation_temperature is absent or 0.
+            # Vacation temperature echo (bodyBytes[21]) – must always echo the
+            # device's current vacationTsValue so the device does not reset it.
+            # Falls back to max_temperature when vacation_temperature is absent or 0.
             vac_temp = self._attributes.get(DeviceAttributes.vacation_temperature)
             if not (isinstance(vac_temp, int | float) and vac_temp > 0):
                 vac_temp = self._attributes.get(DeviceAttributes.max_temperature)
@@ -498,10 +496,11 @@ class MideaCDDevice(MideaDevice):
                 message.vacation_flag = True
                 message.vacation_days = days
 
-            elif attr == DeviceAttributes.vacation_temperature:
-                # Set the Maximum Target Temperature (vacationTsValue, body[21]).
-                # The official app allows values in the range [65, 70] °C.
-                message.vacation_temperature = float(value)
+            elif attr == DeviceAttributes.max_temperature:
+                # Set the Maximum Target Temperature (vacationTsValue, bodyBytes[21]).
+                # Official app range: 65–70 °C.
+                clamped = max(65.0, min(70.0, float(value)))
+                message.vacation_temperature = clamped
 
             # persist fields for subsequent calls
             self._fields = dict(message.fields)

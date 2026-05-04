@@ -341,8 +341,11 @@ class CDGeneralMessageBody(MessageBody):
             self.mode = 0x04
         # backwaterEffect
         self.back_water = (body[28] & 0x40) > 0
-        # sterilizeEffect
-        self.sterilize = (body[28] & 0x80) > 0
+        # sterilizeEffect: body[62] bit 0 (real-device status analysis shows
+        # body[28] & 0x80 = 0x87 is constant across all messages regardless of
+        # sterilize state and therefore cannot be the sterilize indicator).
+        self.sterilize = (body[62] & 0x01) > 0 if len(body) > 62 else False  # noqa: PLR2004
+        self.disinfect = self.sterilize
         self.typeinfo = body[29]
         # Conservative fallback: if no other mode flags and typeinfo==0x04,
         # treat as Smart
@@ -436,20 +439,19 @@ class CDGeneralMessageBody(MessageBody):
         self.vacation_temperature = (
             float(body[51]) if len(body) > 51 else None  # noqa: PLR2004
         )
-        # Disinfection temperature: body[45] encodes celsius×2 on firmwares
-        # that use this byte as a disinfection set-point rather than a weekday
-        # bitmap.  Only expose the decoded value when sterilize is active and
-        # the decoded Celsius value falls in the valid app range [60, 70].
+        # Disinfection temperature: body[61] holds the sterilization setpoint in
+        # direct °C (real-device analysis: 0x46=70, 0x41=65, 0x3c=60).
+        # Stored regardless of whether sterilize is currently active so that the
+        # set-point is preserved even when the function is turned off.
         self.disinfection_temperature: float | None = None
-        if self.sterilize and len(body) > EXTENDED_BODY_LENGTH:
-            raw_dt = body[45]
-            decoded_dt = raw_dt / 2.0
+        if len(body) > 61:  # noqa: PLR2004
+            raw_dt = float(body[61])
             if (
                 MessageSetSterilize.DISINFECT_TEMP_MIN
-                <= decoded_dt
+                <= raw_dt
                 <= MessageSetSterilize.DISINFECT_TEMP_MAX
             ):
-                self.disinfection_temperature = decoded_dt
+                self.disinfection_temperature = raw_dt
 
 
 class CDWeeklyScheduleBody(MessageBody):

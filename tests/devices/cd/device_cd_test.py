@@ -204,31 +204,51 @@ class TestMideaCDDevice:
             assert msg.disinfection_temperature == 70.0
 
     # ------------------------------------------------------------------ #
-    # vacation_temperature (Maximum Target Temperature) as settable attr   #
+    # max_temperature as settable attribute (replaces vacation_temperature) #
     # ------------------------------------------------------------------ #
 
-    def test_set_vacation_temperature_sends_message_set(self) -> None:
-        """set_attribute('vacation_temperature', 65) sends MessageSet with vacation_temperature=65."""
+    def test_set_max_temperature_sends_message_set(self) -> None:
+        """set_attribute('max_temperature', 65) sends MessageSet with vacation_temperature=65."""
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.vacation_temperature.value, 65.0)
+            self.device.set_attribute(DeviceAttributes.max_temperature.value, 65.0)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
             assert msg.vacation_temperature == 65.0
 
-    def test_set_vacation_temperature_70(self) -> None:
-        """set_attribute('vacation_temperature', 70) sends MessageSet with vacation_temperature=70."""
+    def test_set_max_temperature_70(self) -> None:
+        """set_attribute('max_temperature', 70) sends MessageSet with vacation_temperature=70."""
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.vacation_temperature.value, 70.0)
+            self.device.set_attribute(DeviceAttributes.max_temperature.value, 70.0)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
             assert msg.vacation_temperature == 70.0
 
-    def test_set_vacation_temperature_does_not_change_vacation_flag(self) -> None:
-        """Setting vacation_temperature does not inadvertently toggle vacation_mode flag."""
+    def test_set_max_temperature_clamped_to_70(self) -> None:
+        """set_attribute('max_temperature', 80) is clamped to 70.0."""
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.max_temperature.value, 80.0)
+            msg = mock_send.call_args[0][0]
+            assert msg.vacation_temperature == 70.0
+
+    def test_set_max_temperature_clamped_to_65(self) -> None:
+        """set_attribute('max_temperature', 40) is clamped to 65.0."""
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.max_temperature.value, 40.0)
+            msg = mock_send.call_args[0][0]
+            assert msg.vacation_temperature == 65.0
+
+    def test_set_max_temperature_does_not_change_vacation_flag(self) -> None:
+        """Setting max_temperature does not inadvertently toggle vacation_mode flag."""
         self.device._attributes[DeviceAttributes.vacation_mode] = False
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.vacation_temperature.value, 65.0)
+            self.device.set_attribute(DeviceAttributes.max_temperature.value, 65.0)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
             # vacation_flag should be False (not enabling vacation mode)
             assert msg.vacation_flag is False
+
+    def test_set_vacation_temperature_is_not_settable(self) -> None:
+        """vacation_temperature is no longer a settable attribute; build_send must not be called."""
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.vacation_temperature.value, 65.0)
+            mock_send.assert_not_called()
