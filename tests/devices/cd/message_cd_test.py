@@ -26,6 +26,22 @@ class TestCDGeneralMessageBody:
         "010193279239391346134126090000002a1e2a1e008600000000000087040000000000"
         "780000433f3f3f3f3f3f000c000000004200000101004641463c3c00000000"
     )
+    # Real payloads reported from thermostat UI / official app:
+    #   malformed-ui: disinfection ON with invalid body[61]=0xF7 and body[45]=0x88
+    #   app-fix-60:   disinfection corrected to 60°C, week=4
+    #   app-fix-64:   disinfection set to 64°C, week=4
+    MALFORMED_UI_HEX = (
+        "010113388833340d44454126090000002a1e2a1e003000000000000887040000000000"
+        "780000433f3f3f3f3f3f880e050000004400000101014641463cf701000000"
+    )
+    APP_FIX_60_HEX = (
+        "010113388833340d44454126090000002a1e2a1e003000000000000887040000000000"
+        "780000433f3f3f3f3f3f040e050000004400000101014641463c3c01000000"
+    )
+    APP_FIX_64_HEX = (
+        "010113388a34350d44454126090000002a1e2a1e003000000000000887040000000000"
+        "780000433f3f3f3f3f3f040e050000004400000101014641463c4001000000"
+    )
 
     def _parse(self, hex_str: str) -> CDGeneralMessageBody:
         return CDGeneralMessageBody(bytearray.fromhex(hex_str))
@@ -69,6 +85,29 @@ class TestCDGeneralMessageBody:
         for hex_str in (self.MSG1_HEX, self.MSG2_HEX, self.MSG3_HEX):
             body = self._parse(hex_str)
             assert body.power is True
+
+    def test_malformed_ui_status_uses_temperature_fallback(self) -> None:
+        """Malformed frame: body[61]=0xF7, body[45]=0x88 → dt=68.0 via fallback, week ignored."""
+        body = self._parse(self.MALFORMED_UI_HEX)
+        assert body.sterilize is True
+        assert body.disinfection_temperature == 68.0
+        assert body.auto_sterilize_week is None
+        assert body.auto_sterilize_hour == 14
+        assert body.auto_sterilize_minute == 5
+
+    def test_app_corrected_status_60c(self) -> None:
+        """Correct app payload keeps week/day and 60°C setpoint."""
+        body = self._parse(self.APP_FIX_60_HEX)
+        assert body.sterilize is True
+        assert body.auto_sterilize_week == 4
+        assert body.disinfection_temperature == 60.0
+
+    def test_app_corrected_status_64c(self) -> None:
+        """Correct app payload keeps week/day and 64°C setpoint."""
+        body = self._parse(self.APP_FIX_64_HEX)
+        assert body.sterilize is True
+        assert body.auto_sterilize_week == 4
+        assert body.disinfection_temperature == 64.0
 
 
 class TestCDSterilizeSetBody:

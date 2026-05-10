@@ -462,9 +462,13 @@ class CDGeneralMessageBody(MessageBody):
             ((body[39] & 0x80) > 0) if len(body) > 39 else False  # noqa: PLR2004
         )
         # autoSterilizeWeek (messageBytes[45]) - requires body length > 45
-        self.auto_sterilize_week = (
-            body[45] if len(body) > EXTENDED_BODY_LENGTH else None
-        )
+        # Some thermostat UI frames are malformed and can carry encoded
+        # disinfection temperature in this byte (e.g. 0x88 for 68°C×2). Keep
+        # only sane week values here and let temperature parsing handle fallback.
+        self.auto_sterilize_week: int | None = None
+        raw_week = body[45] if len(body) > EXTENDED_BODY_LENGTH else None
+        if raw_week is not None and raw_week <= 127:  # noqa: PLR2004
+            self.auto_sterilize_week = raw_week
         # autoSterilizeHour (messageBytes[46]) - requires body length > 46
         self.auto_sterilize_hour = (
             body[46] if len(body) > 46 else None  # noqa: PLR2004
@@ -502,6 +506,18 @@ class CDGeneralMessageBody(MessageBody):
                 <= MessageSetSterilize.DISINFECT_TEMP_MAX
             ):
                 self.disinfection_temperature = raw_dt
+            # Defensive fallback for malformed status frames observed from
+            # thermostat UI toggles: body[61] can be out-of-range while body[45]
+            # carries a valid celsius×2 temperature (120..140 even).
+            elif (
+                raw_week is not None
+                and int(MessageSetSterilize.DISINFECT_TEMP_MIN * 2)
+                <= raw_week
+                <= int(MessageSetSterilize.DISINFECT_TEMP_MAX * 2)
+                and raw_week % 2 == 0
+            ):
+                self.disinfection_temperature = raw_week / 2.0
+                self.auto_sterilize_week = None
 
 
 class CDWeeklyScheduleBody(MessageBody):
