@@ -214,10 +214,9 @@ class MessageSetSterilize(MessageCDBase):
       bodyBytes[5] = autoSterilizeMinute
 
     bodyBytes[3] is dual-use depending on firmware:
-    - Some firmwares treat it as a weekday bitmap (autoSterilizeWeek).
+    - Some firmwares treat it as a weekday value/bitmap (autoSterilizeWeek).
     - Others treat it as a disinfection-temperature setpoint encoded as °C×2
-      (e.g. 67 °C → 134).  In that case the decoded value always exceeds 127
-      because the valid range is [60, 70] °C → [120, 140] raw.
+      (e.g. 67 °C → 134).
 
     When ``disinfection_temperature`` is set, bodyBytes[3] is encoded as
     ``int(disinfection_temperature * 2)``; otherwise the ``week`` bitmap is sent.
@@ -262,6 +261,55 @@ class MessageSetSterilize(MessageCDBase):
                 self.minute,  # bodyBytes[5] autoSterilizeMinute
             ],
         )
+
+
+class MessageSetWeekly(MessageCDBase):
+    """CD weekly control message (controlType=0x07).
+
+    Sends 7-day x 6-slot weekly schedule, plus day-0 high bits:
+      - bit 0x40: maintenance reminder tag
+      - bit 0x80: maintenance warning status (preserved)
+    """
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize CD message set weekly."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.set,
+            body_type=ListTypes.X07,
+        )
+        self.weekly_schedule: dict[int, list[dict[str, Any]]] | None = None
+        self.maintenance_reminder: bool = False
+        self.maintenance_warn: bool = False
+
+    @property
+    def _body(self) -> bytearray:
+        # bodyBytes[1] constant + bodyBytes[2..8] day effect bytes +
+        # bodyBytes[9..176] 7x6 slot data (opentime, closetime, temperature, mode)
+        body = bytearray([0x01] + [0x00] * 175)
+        _effect_masks = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20]
+        schedule = self.weekly_schedule or {}
+
+        for day in range(7):
+            slots = schedule.get(day, [])
+            effects = 0
+            for timer in range(6):
+                slot = slots[timer] if timer < len(slots) else {}
+                if slot.get("effect", False):
+                    effects |= _effect_masks[timer]
+                offset = 8 + day * 24 + timer * 4
+                body[offset] = int(slot.get("opentime", 0)) & 0xFF
+                body[offset + 1] = int(slot.get("closetime", 0)) & 0xFF
+                body[offset + 2] = int(slot.get("temperature", 0)) & 0xFF
+                body[offset + 3] = int(slot.get("mode", 0)) & 0xFF
+            if day == 0:
+                if self.maintenance_reminder:
+                    effects |= 0x40
+                if self.maintenance_warn:
+                    effects |= 0x80
+            body[1 + day] = effects
+
+        return body
 
 
 class CDGeneralMessageBody(MessageBody):
@@ -399,6 +447,8 @@ class CDGeneralMessageBody(MessageBody):
         self.maintain_warn_tag = (
             ((body[38] & 0x40) > 0) if len(body) > 38 else False  # noqa: PLR2004
         )
+        # Alias with official-app naming
+        self.maintenance_reminder = self.maintain_warn_tag
         # maintain_warn (messageBytes[38] bit 0x80) - requires body length > 38
         self.maintain_warn = (
             ((body[38] & 0x80) > 0) if len(body) > 38 else False  # noqa: PLR2004
@@ -588,8 +638,8 @@ class CDSterilizeSetBody(MessageBody):
     Layout (per Lua binToModel controlType=0x06):
       body[2] bit 0x80 = sterilizeEffect (ON/OFF)
       body[3]          = autoSterilizeWeek (week-schedule bitmap on some
-                         firmwares; celsius×2 disinfection temperature on
-                         others – e.g. 134 → 67 °C)
+                          firmwares; celsius×2 disinfection temperature on
+                          others – e.g. 134 → 67 °C)
       body[4]          = autoSterilizeHour
       body[5]          = autoSterilizeMinute
     """
@@ -604,28 +654,32 @@ class CDSterilizeSetBody(MessageBody):
         raw_byte3 = body[3] if len(body) > 3 else None  # noqa: PLR2004
         self.auto_sterilize_hour = body[4] if len(body) > 4 else None  # noqa: PLR2004
         self.auto_sterilize_minute = body[5] if len(body) > 5 else None  # noqa: PLR2004
-        # body[3] is ambiguous: some firmwares echo the celsius×2 disinfection
-        # temperature (e.g. 132 → 66 °C), others echo the autoSterilizeWeek
-        # bitmap that was sent in the request.  Week bitmaps use 7 bits
-        # (days 0-6), so their value is always ≤ 127.  Any value > 127 is
-        # therefore unambiguously a celsius×2 temperature echo and must NOT
-        # be stored as the week bitmap (which would corrupt the schedule).
+        # body[3] is ambiguous: some firmwares echo celsius×2 disinfection
+        # temperature, others echo autoSterilizeWeek.
+        #
+        # Real devices can encode temperature 60°C as 120 (<=127), so "value
+        # >127 means temperature" is incorrect. We treat body[3] as
+        # temperature when it lies in the exact encoded app range [120, 140]
+        # and is even (x2 encoding), otherwise as week.
         self.disinfection_temperature: float | None = None
-        if raw_byte3 is not None and raw_byte3 > 127:  # noqa: PLR2004
-            # Unambiguous temperature echo: decode celsius×2 and validate range.
-            # Do NOT update auto_sterilize_week – the raw value is a temperature,
-            # not a schedule bitmap.
+        temp_raw_min = int(MessageSetSterilize.DISINFECT_TEMP_MIN * 2)
+        temp_raw_max = int(MessageSetSterilize.DISINFECT_TEMP_MAX * 2)
+        if (
+            raw_byte3 is not None
+            and temp_raw_min <= raw_byte3 <= temp_raw_max
+            and raw_byte3 % 2 == 0
+        ):
+            # Temperature echo: decode celsius×2. Do NOT overwrite week.
             self.auto_sterilize_week: int | None = None
-            if sterilize_on:
-                decoded = raw_byte3 / 2.0
-                if (
-                    MessageSetSterilize.DISINFECT_TEMP_MIN
-                    <= decoded
-                    <= MessageSetSterilize.DISINFECT_TEMP_MAX
-                ):
-                    self.disinfection_temperature = decoded
+            decoded = raw_byte3 / 2.0
+            if (
+                MessageSetSterilize.DISINFECT_TEMP_MIN
+                <= decoded
+                <= MessageSetSterilize.DISINFECT_TEMP_MAX
+            ):
+                self.disinfection_temperature = decoded
         else:
-            # Value ≤ 127: treat as autoSterilizeWeek bitmap (schedule).
+            # Not an encoded temperature: treat as autoSterilizeWeek payload.
             self.auto_sterilize_week = raw_byte3
 
 

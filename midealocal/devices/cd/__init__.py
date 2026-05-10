@@ -15,6 +15,7 @@ from .message import (
     MessageQueryWeekly,
     MessageSet,
     MessageSetSterilize,
+    MessageSetWeekly,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -68,6 +69,7 @@ class DeviceAttributes(StrEnum):
     multi_terminal = "multi_terminal"
     mute_effect = "mute_effect"
     mute_status = "mute_status"
+    maintenance_reminder = "maintenance_reminder"
     maintain_warn_tag = "maintain_warn_tag"
     maintain_warn = "maintain_warn"
     error_code = "error_code"
@@ -157,6 +159,7 @@ class MideaCDDevice(MideaDevice):
                 DeviceAttributes.multi_terminal: None,
                 DeviceAttributes.mute_effect: None,
                 DeviceAttributes.mute_status: None,
+                DeviceAttributes.maintenance_reminder: None,
                 DeviceAttributes.maintain_warn_tag: None,
                 DeviceAttributes.maintain_warn: None,
                 DeviceAttributes.error_code: None,
@@ -331,6 +334,13 @@ class MideaCDDevice(MideaDevice):
                         self._attributes[attr] = raw_value
                         new_status[str(attr)] = raw_value
                     continue
+                # SET echoes may omit week when body[3] is a temperature echo.
+                # Preserve the previous week value in that case.
+                if attr == DeviceAttributes.auto_sterilize_week:
+                    if raw_value is not None:
+                        self._attributes[attr] = raw_value
+                        new_status[str(attr)] = raw_value
+                    continue
                 # non-temperature attributes
                 self._attributes[attr] = raw_value
                 new_status[str(attr)] = self._attributes[attr]
@@ -338,6 +348,24 @@ class MideaCDDevice(MideaDevice):
 
     def set_attribute(self, attr: str, value: str | float | bool) -> None:
         """Midea CD device set attribute."""
+        # --- Maintenance reminder: controlType=0x07 weekly payload ---
+        if attr in [DeviceAttributes.maintenance_reminder, DeviceAttributes.maintain_warn_tag]:
+            weekly = self._attributes.get(DeviceAttributes.weekly_schedule)
+            if not isinstance(weekly, dict):
+                _LOGGER.warning(
+                    "[%s] weekly_schedule not available, cannot set maintenance reminder",
+                    self.device_id,
+                )
+                return
+            message = MessageSetWeekly(self._message_protocol_version)
+            message.weekly_schedule = weekly
+            message.maintenance_reminder = bool(value)
+            message.maintenance_warn = bool(
+                self._attributes.get(DeviceAttributes.maintain_warn, False),
+            )
+            self.build_send(message)
+            return
+
         # --- Disinfect (sterilize): controlType=0x06, independent message ---
         if attr in [DeviceAttributes.disinfect, DeviceAttributes.disinfection_temperature]:
             message = MessageSetSterilize(self._message_protocol_version)
@@ -409,10 +437,11 @@ class MideaCDDevice(MideaDevice):
 
             # Vacation temperature echo (bodyBytes[21]) – must always echo the
             # device's current vacationTsValue so the device does not reset it.
-            # Falls back to max_temperature when vacation_temperature is absent or 0.
-            vac_temp = self._attributes.get(DeviceAttributes.vacation_temperature)
+            # Prefer max_temperature as the canonical local target; fall back to
+            # vacation_temperature when max_temperature is absent or invalid.
+            vac_temp = self._attributes.get(DeviceAttributes.max_temperature)
             if not (isinstance(vac_temp, int | float) and vac_temp > 0):
-                vac_temp = self._attributes.get(DeviceAttributes.max_temperature)
+                vac_temp = self._attributes.get(DeviceAttributes.vacation_temperature)
             message.vacation_temperature = (
                 float(vac_temp) if isinstance(vac_temp, int | float) and vac_temp > 0 else 0.0
             )

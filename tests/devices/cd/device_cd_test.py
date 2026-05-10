@@ -61,7 +61,7 @@ class TestMideaCDDevice:
             assert msg.vacation_temperature == 65.0
 
     def test_set_power_uses_vacation_temperature_when_set(self) -> None:
-        """vacation_temperature=60 → SET message uses vacation_temperature as vacationTsValue."""
+        """When max_temperature is valid, it is preferred over vacation_temperature for echo safety."""
         self.device._attributes[DeviceAttributes.max_temperature] = 65.0
         self.device._attributes[DeviceAttributes.vacation_temperature] = 60.0
 
@@ -69,7 +69,7 @@ class TestMideaCDDevice:
             self.device.set_attribute(DeviceAttributes.power.value, True)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
-            assert msg.vacation_temperature == 60.0
+            assert msg.vacation_temperature == 65.0
 
     def test_disable_vacation_uses_max_temperature_fallback(self) -> None:
         """Disabling vacation with vacation_temperature=None sends max_temperature as vacationTsValue."""
@@ -252,3 +252,36 @@ class TestMideaCDDevice:
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.vacation_temperature.value, 65.0)
             mock_send.assert_not_called()
+
+    # ------------------------------------------------------------------ #
+    # maintenance_reminder (official app naming)                         #
+    # ------------------------------------------------------------------ #
+
+    def test_set_maintenance_reminder_requires_weekly_schedule(self) -> None:
+        """Without weekly_schedule, setting maintenance_reminder must not send a command."""
+        self.device._attributes[DeviceAttributes.weekly_schedule] = None
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.maintenance_reminder.value, True)
+            mock_send.assert_not_called()
+
+    def test_set_maintenance_reminder_sends_weekly_message(self) -> None:
+        """maintenance_reminder ON sends controlType=0x07 with day0 bit 0x40 set."""
+        empty_slot = {
+            "effect": False,
+            "opentime": 0,
+            "closetime": 0,
+            "temperature": 0,
+            "mode": 0,
+        }
+        weekly_schedule = {day: [dict(empty_slot) for _ in range(6)] for day in range(7)}
+        self.device._attributes[DeviceAttributes.weekly_schedule] = weekly_schedule
+        self.device._attributes[DeviceAttributes.maintain_warn] = False
+
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.maintenance_reminder.value, True)
+            mock_send.assert_called_once()
+            msg = mock_send.call_args[0][0]
+            body = msg.body
+            assert body[0] == 0x07  # noqa: PLR2004
+            assert (body[2] & 0x40) == 0x40  # noqa: PLR2004
+            assert (body[2] & 0x80) == 0x00  # noqa: PLR2004

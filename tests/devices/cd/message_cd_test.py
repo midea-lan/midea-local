@@ -36,6 +36,7 @@ class TestCDGeneralMessageBody:
         assert body.sterilize is True
         assert body.disinfect is True
         assert body.disinfection_temperature == 70.0
+        assert body.maintenance_reminder is True
 
     def test_sterilize_on_65c(self) -> None:
         """msg2: sterilize=True, disinfection_temperature=65.0 (body[62]=0x01, body[61]=0x41)."""
@@ -94,7 +95,7 @@ class TestCDSterilizeSetBody:
             ],
         )
 
-    # --- temperature echo (body[3] > 127) ---
+    # --- temperature echo (body[3] encoded as °C×2 in [120,140], even) ---
 
     def test_temp_echo_on_sets_disinfection_temperature(self) -> None:
         """body[3]=132 (66°C×2, >127) when sterilize ON → disinfection_temperature=66.0."""
@@ -107,10 +108,10 @@ class TestCDSterilizeSetBody:
         # Must NOT be stored as week bitmap – 132 is not a valid 7-bit value
         assert parsed.auto_sterilize_week is None
 
-    def test_temp_echo_off_does_not_set_disinfection_temperature(self) -> None:
-        """body[3]=132 (>127) when sterilize OFF → disinfection_temperature stays None."""
+    def test_temp_echo_off_sets_disinfection_temperature(self) -> None:
+        """body[3]=132 when sterilize OFF still carries setpoint echo → disinfection_temperature=66.0."""
         parsed = CDSterilizeSetBody(self._make_body(sterilize_on=False, byte3=132))
-        assert parsed.disinfection_temperature is None
+        assert parsed.disinfection_temperature == 66.0
 
     def test_temp_echo_off_does_not_set_auto_sterilize_week(self) -> None:
         """body[3]=132 (>127) when sterilize OFF → auto_sterilize_week stays None."""
@@ -118,10 +119,10 @@ class TestCDSterilizeSetBody:
         assert parsed.auto_sterilize_week is None
 
     def test_temp_echo_out_of_range_high(self) -> None:
-        """body[3]=145 (72.5°C×2, >127 but above max 70°C) → disinfection_temperature=None."""
+        """body[3]=145 is outside encoded temperature range → treated as week value."""
         parsed = CDSterilizeSetBody(self._make_body(sterilize_on=True, byte3=145))
         assert parsed.disinfection_temperature is None
-        assert parsed.auto_sterilize_week is None
+        assert parsed.auto_sterilize_week == 145
 
     def test_temp_echo_boundary_min(self) -> None:
         """body[3]=128 (64°C×2, >127) → disinfection_temperature=64.0 (within [60,70])."""
@@ -133,6 +134,12 @@ class TestCDSterilizeSetBody:
         """body[3]=140 (70°C×2, >127) → disinfection_temperature=70.0 (at max)."""
         parsed = CDSterilizeSetBody(self._make_body(sterilize_on=True, byte3=140))
         assert parsed.disinfection_temperature == 70.0
+        assert parsed.auto_sterilize_week is None
+
+    def test_temp_echo_60_encodes_120_and_is_not_week(self) -> None:
+        """body[3]=120 (60°C×2, <=127) must still be parsed as temperature, not week."""
+        parsed = CDSterilizeSetBody(self._make_body(sterilize_on=True, byte3=120))
+        assert parsed.disinfection_temperature == 60.0
         assert parsed.auto_sterilize_week is None
 
     # --- week bitmap (body[3] ≤ 127) ---
