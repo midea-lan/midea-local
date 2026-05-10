@@ -695,8 +695,13 @@ class CDSterilizeSetBody(MessageBody):
             ):
                 self.disinfection_temperature = decoded
         else:
-            # Not an encoded temperature: treat as autoSterilizeWeek payload.
-            self.auto_sterilize_week = raw_byte3
+            # Not an encoded temperature: treat as autoSterilizeWeek payload
+            # only when within sane 7-bit range.
+            self.auto_sterilize_week = (
+                raw_byte3
+                if raw_byte3 is not None and raw_byte3 <= 127  # noqa: PLR2004
+                else None
+            )
 
 
 class MessageCDResponse(MessageResponse):

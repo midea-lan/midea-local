@@ -158,10 +158,10 @@ class TestCDSterilizeSetBody:
         assert parsed.auto_sterilize_week is None
 
     def test_temp_echo_out_of_range_high(self) -> None:
-        """body[3]=145 is outside encoded temperature range → treated as week value."""
+        """body[3]=145 is outside encoded temperature and invalid as week (>127) → ignored."""
         parsed = CDSterilizeSetBody(self._make_body(sterilize_on=True, byte3=145))
         assert parsed.disinfection_temperature is None
-        assert parsed.auto_sterilize_week == 145
+        assert parsed.auto_sterilize_week is None
 
     def test_temp_echo_boundary_min(self) -> None:
         """body[3]=128 (64°C×2, >127) → disinfection_temperature=64.0 (within [60,70])."""
