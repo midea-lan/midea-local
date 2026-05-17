@@ -9,6 +9,7 @@ from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
 
 from .message import (
+    MessageCDBase,
     MessageCDResponse,
     MessageQuery,
     MessageQueryDaily,
@@ -254,7 +255,7 @@ class MideaCDDevice(MideaDevice):
             if key != MideaCDDevice._vacation_mode_key
         ]
 
-    def build_query(self) -> list[MessageQuery]:
+    def build_query(self) -> list[MessageCDBase]:
         """Midea CD device build query."""
         return [
             MessageQuery(self._message_protocol_version),

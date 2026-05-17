@@ -80,12 +80,12 @@ class MessageQueryWeekly(MessageCDBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=ListTypes.X01,
+            body_type=ListTypes.X02,
         )
 
     @property
     def _body(self) -> bytearray:
-        return bytearray([0x02, 0x01])
+        return bytearray([0x01])
 
 
 class MessageQueryDaily(MessageCDBase):
@@ -101,12 +101,12 @@ class MessageQueryDaily(MessageCDBase):
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=ListTypes.X01,
+            body_type=ListTypes.X03,
         )
 
     @property
     def _body(self) -> bytearray:
-        return bytearray([0x03, 0x01])
+        return bytearray([0x01])
 
 
 class MessageSet(MessageCDBase):
