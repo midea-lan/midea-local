@@ -15,7 +15,6 @@ from .message import (
     MessageQueryWeekly,
     MessageSet,
     MessageSetSterilize,
-    MessageSetWeekly,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -101,6 +100,7 @@ class MideaCDDevice(MideaDevice):
         0x04: "Smart",
         0x05: "Vacation",
     }
+    _vacation_mode_key: ClassVar[int] = 0x05
 
     def __init__(
         self,
@@ -224,11 +224,12 @@ class MideaCDDevice(MideaDevice):
             # auto mode, use model to set value as old or new
             if return_value == LuaProtocol.auto:
                 # new protocol: models RSJRAC01, RSJRAC06, RSJRAC07
-                # old protocol: RSJ18RD2 (subtype 186) confirmed via real-device messages
-                # (raw body[3]=148 decodes to 59°C only with old protocol: (148-30)/2=59)
-                # Note: subtype 186 was previously (incorrectly) mapped to new protocol
-                # based on an unverified assumption about model RSJ000CB; removed as
-                # subtype alone cannot distinguish models with different protocol versions.
+                # old protocol: RSJ18RD2 (subtype 186), confirmed by
+                # real-device messages. Raw body[3]=148 decodes to 59C
+                # only with old protocol: (148-30)/2=59.
+                # subtype 186 was previously mapped to new protocol from
+                # an unverified RSJ000CB assumption; subtype alone cannot
+                # distinguish models with different protocol versions.
                 check_device = self.model in {
                     "RSJRAC01",
                     "RSJRAC06",
@@ -246,8 +247,12 @@ class MideaCDDevice(MideaDevice):
 
     @property
     def preset_modes(self) -> list[str]:
-        """Midea CD device preset modes."""
-        return list(MideaCDDevice._modes.values())
+        """Midea CD selectable preset modes."""
+        return [
+            mode
+            for key, mode in MideaCDDevice._modes.items()
+            if key != MideaCDDevice._vacation_mode_key
+        ]
 
     def build_query(self) -> list[MessageQuery]:
         """Midea CD device build query."""
@@ -257,7 +262,7 @@ class MideaCDDevice(MideaDevice):
             MessageQueryDaily(self._message_protocol_version),
         ]
 
-    def process_message(self, msg: bytes) -> dict[str, Any]:
+    def process_message(self, msg: bytes) -> dict[str, Any]:  # noqa: C901
         """Midea CD device process message."""
         message = MessageCDResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
@@ -279,8 +284,8 @@ class MideaCDDevice(MideaDevice):
                         # from the SET-echo corrupting the displayed mode.
                         self._attributes[attr] = mode_str
                         new_status[str(attr)] = mode_str
-                    # else: skip – mode will be corrected by the next status
-                    #       notification from the device.
+                    # Skip unknown values; the next device status notification
+                    # will correct the mode.
                     continue
                 # process temperature family
                 if attr in [
@@ -335,11 +340,38 @@ class MideaCDDevice(MideaDevice):
                         new_status[str(attr)] = raw_value
                     continue
                 # SET echoes may omit week when body[3] is a temperature echo.
-                # Preserve the previous week value in that case.
+                # Status frames can also carry impossible values in these
+                # positions; never expose those as HA state because later SET
+                # calls reuse the stored attributes.
                 if attr == DeviceAttributes.auto_sterilize_week:
                     if raw_value is not None:
-                        self._attributes[attr] = raw_value
-                        new_status[str(attr)] = raw_value
+                        value = int(raw_value)
+                        if value == MessageSetSterilize.clamp_week(value):
+                            self._attributes[attr] = value
+                            new_status[str(attr)] = value
+                        else:
+                            self._attributes[attr] = None
+                            new_status[str(attr)] = None
+                    continue
+                # Store only plausible schedule time values. Writes sanitize
+                # again, but HA state should not show impossible times.
+                if attr in [
+                    DeviceAttributes.auto_sterilize_hour,
+                    DeviceAttributes.auto_sterilize_minute,
+                ]:
+                    if raw_value is not None:
+                        value = int(raw_value)
+                        clamp = (
+                            MessageSetSterilize.clamp_hour
+                            if attr == DeviceAttributes.auto_sterilize_hour
+                            else MessageSetSterilize.clamp_minute
+                        )
+                        if value == clamp(value):
+                            self._attributes[attr] = value
+                            new_status[str(attr)] = value
+                        else:
+                            self._attributes[attr] = None
+                            new_status[str(attr)] = None
                     continue
                 # non-temperature attributes
                 self._attributes[attr] = raw_value
@@ -348,72 +380,34 @@ class MideaCDDevice(MideaDevice):
 
     def set_attribute(self, attr: str, value: str | float | bool) -> None:
         """Midea CD device set attribute."""
-        # --- Maintenance reminder: controlType=0x07 weekly payload ---
-        if attr in [DeviceAttributes.maintenance_reminder, DeviceAttributes.maintain_warn_tag]:
-            weekly = self._attributes.get(DeviceAttributes.weekly_schedule)
-            if not isinstance(weekly, dict):
-                _LOGGER.warning(
-                    "[%s] weekly_schedule not available, cannot set maintenance reminder",
-                    self.device_id,
-                )
-                return
-            message = MessageSetWeekly(self._message_protocol_version)
-            message.weekly_schedule = weekly
-            message.maintenance_reminder = bool(value)
-            message.maintenance_warn = bool(
-                self._attributes.get(DeviceAttributes.maintain_warn, False),
+        # Maintenance reminder is read-only until the weekly write payload is safe.
+        if attr in [
+            DeviceAttributes.maintenance_reminder,
+            DeviceAttributes.maintain_warn_tag,
+        ]:
+            _LOGGER.warning(
+                "[%s] maintenance reminder writes are disabled because the "
+                "weekly payload can disturb CD temperature values",
+                self.device_id,
             )
-            self.build_send(message)
             return
 
-        # --- Disinfect (sterilize): controlType=0x06, independent message ---
-        if attr in [DeviceAttributes.disinfect, DeviceAttributes.disinfection_temperature]:
-            message = MessageSetSterilize(self._message_protocol_version)
-            message.hour = int(
-                self._attributes.get(DeviceAttributes.auto_sterilize_hour) or 0,
+        # Disinfect is read-only until the exact app payload is known.
+        if attr == DeviceAttributes.disinfect:
+            _LOGGER.warning(
+                "[%s] immediate disinfection writes are disabled because the "
+                "known payload can corrupt the app disinfection temperature",
+                self.device_id,
             )
-            message.minute = int(
-                self._attributes.get(DeviceAttributes.auto_sterilize_minute) or 0,
-            )
-
-            if attr == DeviceAttributes.disinfect:
-                message.sterilize_on = bool(value)
-                # Preserve the current disinfection temperature if known so the
-                # device does not reset it to a firmware default.
-                current_dt = self._attributes.get(DeviceAttributes.disinfection_temperature)
-                if isinstance(current_dt, int | float) and (
-                    MessageSetSterilize.DISINFECT_TEMP_MIN
-                    <= current_dt
-                    <= MessageSetSterilize.DISINFECT_TEMP_MAX
-                ):
-                    message.disinfection_temperature = float(current_dt)
-                else:
-                    # Fall back to week bitmap when no valid temperature is stored
-                    message.week = int(
-                        self._attributes.get(DeviceAttributes.auto_sterilize_week) or 0,
-                    )
-            else:
-                # Setting the disinfection temperature explicitly; preserve sterilize state.
-                current_sterilize = self._attributes.get(DeviceAttributes.disinfect, False)
-                message.sterilize_on = bool(current_sterilize)
-                # Clamp to the valid [60, 70] °C range before encoding.
-                clamped = max(
-                    MessageSetSterilize.DISINFECT_TEMP_MIN,
-                    min(MessageSetSterilize.DISINFECT_TEMP_MAX, float(value)),
-                )
-                message.disinfection_temperature = clamped
-
-            self.build_send(message)
             return
 
-        # --- Power / mode / temperature / max_temperature / vacation: controlType=0x01 ---
+        # Power, mode, temperature, max_temperature, and vacation use controlType=0x01.
         if attr in [
             DeviceAttributes.mode,
             DeviceAttributes.power,
             DeviceAttributes.target_temperature,
             DeviceAttributes.vacation_mode,
             DeviceAttributes.vacation_days,
-            DeviceAttributes.max_temperature,
         ]:
             message = MessageSet(self._message_protocol_version)
             message.fields = dict(self._fields) if self._fields else {}
@@ -432,18 +426,17 @@ class MideaCDDevice(MideaDevice):
 
             # Fahrenheit mode flag (bodyBytes[8] bit 0x80)
             message.fahrenheit = bool(
-                self._attributes.get(DeviceAttributes.fahrenheit, False)
+                self._attributes.get(DeviceAttributes.fahrenheit, False),
             )
 
-            # Vacation temperature echo (bodyBytes[21]) – must always echo the
-            # device's current vacationTsValue so the device does not reset it.
-            # Prefer max_temperature as the canonical local target; fall back to
-            # vacation_temperature when max_temperature is absent or invalid.
+            # Maximum target temperature echo (bodyBytes[21]); this mirrors
+            # the Lua vacationTsValue byte but is exposed as max_temperature.
+            # max_temperature is the canonical exposed attribute for this value.
             vac_temp = self._attributes.get(DeviceAttributes.max_temperature)
-            if not (isinstance(vac_temp, int | float) and vac_temp > 0):
-                vac_temp = self._attributes.get(DeviceAttributes.vacation_temperature)
-            message.vacation_temperature = (
-                float(vac_temp) if isinstance(vac_temp, int | float) and vac_temp > 0 else 0.0
+            message.max_temperature = (
+                float(vac_temp)
+                if isinstance(vac_temp, int | float) and vac_temp > 0
+                else 0.0
             )
 
             # Ensure temperature is valid (not None/0)
@@ -467,7 +460,7 @@ class MideaCDDevice(MideaDevice):
             if current_mode is None or current_mode == "None":
                 message.mode = 0x00
             elif current_mode == "Vacation":
-                # Don't send 0x05 as modeValue – the device doesn't support it.
+                # Do not send 0x05 as modeValue; the device does not support it.
                 # Fall back to 0x00 (no explicit operating mode).
                 message.mode = 0x00
             else:
@@ -480,6 +473,13 @@ class MideaCDDevice(MideaDevice):
             # Update based on attribute being set
             if attr == DeviceAttributes.mode:
                 # get mode key from mode value
+                if value == MideaCDDevice._modes[MideaCDDevice._vacation_mode_key]:
+                    _LOGGER.warning(
+                        "[%s] Vacation mode cannot be selected directly; "
+                        "use vacation_days/vacation_mode instead",
+                        self.device_id,
+                    )
+                    return
                 mode_key = MideaCDDevice.get_dict_key_by_value(
                     "_modes",
                     str(value),
@@ -524,12 +524,6 @@ class MideaCDDevice(MideaDevice):
                 days = max(1, min(360, int(value)))
                 message.vacation_flag = True
                 message.vacation_days = days
-
-            elif attr == DeviceAttributes.max_temperature:
-                # Set the Maximum Target Temperature (vacationTsValue, bodyBytes[21]).
-                # Official app range: 65–70 °C.
-                clamped = max(65.0, min(70.0, float(value)))
-                message.vacation_temperature = clamped
 
             # persist fields for subsequent calls
             self._fields = dict(message.fields)

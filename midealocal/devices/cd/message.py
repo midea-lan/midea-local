@@ -13,13 +13,20 @@ from midealocal.message import (
 
 OLD_BODY_LENGTH = 29  # T_0000_CD_3.lua body length 29
 NEW_BODY_LENGTH = 35  # T_0000_CD_000K86A2_3 body length 34
-EXTENDED_BODY_LENGTH = 45  # T_0000_CD_RSJRAC01_2023070401.lua extended body (auto_sterilize)
+EXTENDED_BODY_LENGTH = (
+    45  # T_0000_CD_RSJRAC01_2023070401.lua extended body (auto_sterilize)
+)
 
 # Weekly schedule body: 7 days x 6 slots x 4 fields starting at body[9]
 # body[9..176]: slot layout is {opentime, closetime, settemperature, modevalue}
 WEEKLY_SCHEDULE_BODY_LENGTH = 176
-# Daily timer body: 6 slots x 6 fields starting at body[4] (2 control bytes + effects byte)
+# Daily timer body:
+# 6 slots x 6 fields starting at body[4] (2 control bytes + effects byte)
 DAILY_TIMER_BODY_LENGTH = 39
+BODY_TYPE_GENERAL = 0x01
+BODY_TYPE_WEEKLY = 0x02
+BODY_TYPE_DAILY = 0x03
+BODY_TYPE_STERILIZE = 0x06
 
 
 class MessageCDBase(MessageRequest):
@@ -114,8 +121,10 @@ class MessageSet(MessageCDBase):
       bodyBytes[5]     = trValue
       bodyBytes[6]     = openPTC
       bodyBytes[7]     = ptcTemp
-      bodyBytes[8]     = flags: bit 0x10=vacationMode, bit 0x80=fahrenheit, bit 0x08=mute
-                         (built from scratch per Lua L5621-5623; other bits are NOT sent)
+      bodyBytes[8]     = flags: bit 0x10=vacationMode,
+                         bit 0x80=fahrenheit, bit 0x08=mute.
+                         Built from scratch per Lua L5621-5623;
+                         other bits are NOT sent.
       bodyBytes[9..10] = vacadaysValue high/low (vacation remaining days, big-endian)
       bodyBytes[11..17]= date/time fields (sent as 0)
       bodyBytes[18..20]= vacation start year/month/day (sent as 0)
@@ -144,8 +153,8 @@ class MessageSet(MessageCDBase):
         self.vacation_days: int = 0
         # fahrenheit mode (bit 0x80 in bodyBytes[8])
         self.fahrenheit: bool = False
-        # vacation target temperature (bodyBytes[21], raw device value)
-        self.vacation_temperature: float = 0
+        # maximum target temperature (bodyBytes[21], raw device value)
+        self.max_temperature: float = 0
 
     def read_field(self, field: str) -> int:
         """CD message set read field."""
@@ -196,7 +205,7 @@ class MessageSet(MessageCDBase):
                 0,  # bodyBytes[18] vacadaysStartYearValue
                 0,  # bodyBytes[19] vacadaysStartMonthValue
                 0,  # bodyBytes[20] vacadaysStartDayValue
-                int(self.vacation_temperature),  # bodyBytes[21] vacationTsValue
+                int(self.max_temperature),  # bodyBytes[21] max_temperature
             ],
         )
 
@@ -209,25 +218,64 @@ class MessageSetSterilize(MessageCDBase):
       bodyBytes[0] = 0x06 (body_type, prepended by MessageRequest.body)
       bodyBytes[1] = 0x01 (constant, _body[0])
       bodyBytes[2] = sterilizeEffect  (0x80=ON, 0x00=OFF)
-      bodyBytes[3] = autoSterilizeWeek OR disinfection temperature (°C×2)
+      bodyBytes[3] = autoSterilizeWeek
       bodyBytes[4] = autoSterilizeHour
       bodyBytes[5] = autoSterilizeMinute
 
-    bodyBytes[3] is dual-use depending on firmware:
-    - Some firmwares treat it as a weekday value/bitmap (autoSterilizeWeek).
-    - Others treat it as a disinfection-temperature setpoint encoded as °C×2
-      (e.g. 67 °C → 134).
-
-    When ``disinfection_temperature`` is set, bodyBytes[3] is encoded as
-    ``int(disinfection_temperature * 2)``; otherwise the ``week`` bitmap is sent.
-
-    Note: the device echoes back the disinfection temperature (°C×2) in bodyBytes[3]
-    of the SET response.  That echo is decoded by ``CDSterilizeSetBody``.
+    The official Lua protocol names bodyBytes[3] autoSterilizeWeek, but the app
+    also displays the disinfection setpoint from nearby status bytes. Toggling
+    this command from HA has been observed to make the app show raw byte values
+    as temperatures, so callers must treat this command as read-only until the
+    exact immediate-disinfection write payload is known.
     """
 
     # Valid range for disinfection temperature (°C)
     DISINFECT_TEMP_MIN: float = 60.0
     DISINFECT_TEMP_MAX: float = 70.0
+    AUTO_STERILIZE_WEEK_MIN: int = 0
+    AUTO_STERILIZE_WEEK_MAX: int = 6
+    AUTO_STERILIZE_HOUR_MIN: int = 0
+    AUTO_STERILIZE_HOUR_MAX: int = 23
+    AUTO_STERILIZE_MINUTE_MIN: int = 0
+    AUTO_STERILIZE_MINUTE_MAX: int = 59
+    DEFAULT_AUTO_STERILIZE_WEEK: int = 4
+    DEFAULT_AUTO_STERILIZE_HOUR: int = 14
+    DEFAULT_AUTO_STERILIZE_MINUTE: int = 5
+
+    @staticmethod
+    def _clamp_int(value: object, min_value: int, max_value: int) -> int:
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            parsed = min_value
+        return max(min_value, min(max_value, parsed))
+
+    @classmethod
+    def clamp_week(cls, value: object) -> int:
+        """Clamp auto sterilize weekday for writes."""
+        return cls._clamp_int(
+            value,
+            cls.AUTO_STERILIZE_WEEK_MIN,
+            cls.AUTO_STERILIZE_WEEK_MAX,
+        )
+
+    @classmethod
+    def clamp_hour(cls, value: object) -> int:
+        """Clamp auto sterilize hour for writes."""
+        return cls._clamp_int(
+            value,
+            cls.AUTO_STERILIZE_HOUR_MIN,
+            cls.AUTO_STERILIZE_HOUR_MAX,
+        )
+
+    @classmethod
+    def clamp_minute(cls, value: object) -> int:
+        """Clamp auto sterilize minute for writes."""
+        return cls._clamp_int(
+            value,
+            cls.AUTO_STERILIZE_MINUTE_MIN,
+            cls.AUTO_STERILIZE_MINUTE_MAX,
+        )
 
     def __init__(self, protocol_version: int) -> None:
         """Initialize CD message set sterilize."""
@@ -240,25 +288,19 @@ class MessageSetSterilize(MessageCDBase):
         self.week: int = 0
         self.hour: int = 0
         self.minute: int = 0
-        # When set, overrides week in bodyBytes[3] with the celsius×2 encoding.
+        # Kept for read/diagnostic compatibility; not encoded in SET payloads.
         self.disinfection_temperature: float | None = None
 
     @property
     def _body(self) -> bytearray:
         sterilize_effect = 0x80 if self.sterilize_on else 0x00
-        # Use celsius×2 encoding when an explicit disinfection temperature is given;
-        # fall back to the autoSterilizeWeek bitmap otherwise.
-        if self.disinfection_temperature is not None:
-            byte3 = int(self.disinfection_temperature * 2)
-        else:
-            byte3 = self.week
         return bytearray(
             [
                 0x01,  # bodyBytes[1] constant
                 sterilize_effect,  # bodyBytes[2] sterilizeEffect
-                byte3,  # bodyBytes[3] disinfection temp (°C×2) or weekday bitmap
-                self.hour,  # bodyBytes[4] autoSterilizeHour
-                self.minute,  # bodyBytes[5] autoSterilizeMinute
+                self.clamp_week(self.week),  # bodyBytes[3] autoSterilizeWeek
+                self.clamp_hour(self.hour),  # bodyBytes[4] autoSterilizeHour
+                self.clamp_minute(self.minute),  # bodyBytes[5] autoSterilizeMinute
             ],
         )
 
@@ -436,10 +478,7 @@ class CDGeneralMessageBody(MessageBody):
         #       body[39] bits 0x40/0x80 are mute_effect/mute_status
         _effect_masks = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20]
         self.weekly_effects: dict | None = (
-            {
-                day: [(body[38 + day] & m) > 0 for m in _effect_masks]
-                for day in range(7)
-            }
+            {day: [(body[38 + day] & m) > 0 for m in _effect_masks] for day in range(7)}
             if len(body) > 44  # noqa: PLR2004
             else None
         )
@@ -461,22 +500,16 @@ class CDGeneralMessageBody(MessageBody):
         self.mute_status = (
             ((body[39] & 0x80) > 0) if len(body) > 39 else False  # noqa: PLR2004
         )
-        # autoSterilizeWeek (messageBytes[45]) - requires body length > 45
-        # Some thermostat UI frames are malformed and can carry encoded
-        # disinfection temperature in this byte (e.g. 0x88 for 68°C×2). Keep
-        # only sane week values here and let temperature parsing handle fallback.
-        self.auto_sterilize_week: int | None = None
+        # autoSterilizeWeek (messageBytes[45]) - requires body length > 45.
+        # Read exactly what the device reports; sanitize only when writing.
         raw_week = body[45] if len(body) > EXTENDED_BODY_LENGTH else None
-        if raw_week is not None and raw_week <= 127:  # noqa: PLR2004
-            self.auto_sterilize_week = raw_week
+        self.auto_sterilize_week: int | None = raw_week
         # autoSterilizeHour (messageBytes[46]) - requires body length > 46
-        self.auto_sterilize_hour = (
-            body[46] if len(body) > 46 else None  # noqa: PLR2004
-        )
+        raw_hour = body[46] if len(body) > 46 else None  # noqa: PLR2004
+        self.auto_sterilize_hour = raw_hour
         # autoSterilizeMinute (messageBytes[47]) - requires body length > 47
-        self.auto_sterilize_minute = (
-            body[47] if len(body) > 47 else None  # noqa: PLR2004
-        )
+        raw_minute = body[47] if len(body) > 47 else None  # noqa: PLR2004
+        self.auto_sterilize_minute = raw_minute
         # vacadaysStartYearValue (messageBytes[48]) - requires body length > 48
         self.vacation_start_year = (
             body[48] if len(body) > 48 else None  # noqa: PLR2004
@@ -489,7 +522,7 @@ class CDGeneralMessageBody(MessageBody):
         self.vacation_start_day = (
             body[50] if len(body) > 50 else None  # noqa: PLR2004
         )
-        # vacationTsValue (messageBytes[51]) - requires body length > 51
+        # vacationTsValue (messageBytes[51]) - read-only exposed diagnostic.
         self.vacation_temperature = (
             float(body[51]) if len(body) > 51 else None  # noqa: PLR2004
         )
@@ -508,7 +541,7 @@ class CDGeneralMessageBody(MessageBody):
                 self.disinfection_temperature = raw_dt
             # Defensive fallback for malformed status frames observed from
             # thermostat UI toggles: body[61] can be out-of-range while body[45]
-            # carries a valid celsius×2 temperature (120..140 even).
+            # carries a valid celsius x2 temperature (120..140 even).
             elif (
                 raw_week is not None
                 and int(MessageSetSterilize.DISINFECT_TEMP_MIN * 2)
@@ -517,7 +550,6 @@ class CDGeneralMessageBody(MessageBody):
                 and raw_week % 2 == 0
             ):
                 self.disinfection_temperature = raw_week / 2.0
-                self.auto_sterilize_week = None
 
 
 class CDWeeklyScheduleBody(MessageBody):
@@ -640,7 +672,8 @@ class CD01MessageBody(MessageBody):
         self.fields["byte8"] = body[8]
         # vacation_mode: bit 0x10 of bodyBytes[8]
         self.vacation_mode = (body[8] & 0x10) > 0
-        # vacation_days: bodyBytes[9..10] big-endian (present when extended body is echoed)
+        # vacation_days:
+        # bodyBytes[9..10] big-endian when an extended body is echoed.
         if len(body) > 10:  # noqa: PLR2004
             self.vacation_days = (body[9] << 8) | body[10]
         else:
@@ -653,9 +686,9 @@ class CDSterilizeSetBody(MessageBody):
     Parsed when the device echoes back the sterilize SET command.
     Layout (per Lua binToModel controlType=0x06):
       body[2] bit 0x80 = sterilizeEffect (ON/OFF)
-      body[3]          = autoSterilizeWeek (week-schedule bitmap on some
-                          firmwares; celsius×2 disinfection temperature on
-                          others – e.g. 134 → 67 °C)
+      body[3]          = autoSterilizeWeek (weekday on some
+                          firmwares; celsius x2 disinfection temperature on
+                          others - e.g. 134 -> 67 C)
       body[4]          = autoSterilizeHour
       body[5]          = autoSterilizeMinute
     """
@@ -668,9 +701,12 @@ class CDSterilizeSetBody(MessageBody):
         self.sterilize = sterilize_on
         self.disinfect = sterilize_on
         raw_byte3 = body[3] if len(body) > 3 else None  # noqa: PLR2004
-        self.auto_sterilize_hour = body[4] if len(body) > 4 else None  # noqa: PLR2004
-        self.auto_sterilize_minute = body[5] if len(body) > 5 else None  # noqa: PLR2004
-        # body[3] is ambiguous: some firmwares echo celsius×2 disinfection
+        raw_hour = body[4] if len(body) > 4 else None  # noqa: PLR2004
+        raw_minute = body[5] if len(body) > 5 else None  # noqa: PLR2004
+        self.auto_sterilize_week = raw_byte3
+        self.auto_sterilize_hour = raw_hour
+        self.auto_sterilize_minute = raw_minute
+        # body[3] is ambiguous: some firmwares echo celsius x2 disinfection
         # temperature, others echo autoSterilizeWeek.
         #
         # Real devices can encode temperature 60°C as 120 (<=127), so "value
@@ -685,8 +721,7 @@ class CDSterilizeSetBody(MessageBody):
             and temp_raw_min <= raw_byte3 <= temp_raw_max
             and raw_byte3 % 2 == 0
         ):
-            # Temperature echo: decode celsius×2. Do NOT overwrite week.
-            self.auto_sterilize_week: int | None = None
+            # Temperature echo: decode celsius x2. Keep auto_sterilize_week raw.
             decoded = raw_byte3 / 2.0
             if (
                 MessageSetSterilize.DISINFECT_TEMP_MIN
@@ -694,14 +729,6 @@ class CDSterilizeSetBody(MessageBody):
                 <= MessageSetSterilize.DISINFECT_TEMP_MAX
             ):
                 self.disinfection_temperature = decoded
-        else:
-            # Not an encoded temperature: treat as autoSterilizeWeek payload
-            # only when within sane 7-bit range.
-            self.auto_sterilize_week = (
-                raw_byte3
-                if raw_byte3 is not None and raw_byte3 <= 127  # noqa: PLR2004
-                else None
-            )
 
 
 class MessageCDResponse(MessageResponse):
@@ -712,19 +739,19 @@ class MessageCDResponse(MessageResponse):
         super().__init__(bytearray(message))
         # parse query/notify response message
         if self.message_type in [MessageType.query, MessageType.notify2]:
-            if self.body_type == 0x01:
+            if self.body_type == BODY_TYPE_GENERAL:
                 self.set_body(CDGeneralMessageBody(super().body))
-            elif self.body_type == 0x02:
+            elif self.body_type == BODY_TYPE_WEEKLY:
                 # weekly schedule query response (queryType=0x02)
                 self.set_body(CDWeeklyScheduleBody(super().body))
-            elif self.body_type == 0x03:
+            elif self.body_type == BODY_TYPE_DAILY:
                 # daily timer query response (queryType=0x03)
                 self.set_body(CDDailyTimerBody(super().body))
         elif self.message_type == MessageType.set:
-            if self.body_type == 0x01:
+            if self.body_type == BODY_TYPE_GENERAL:
                 # controlType=0x01 SET response echo
                 self.set_body(CD01MessageBody(super().body))
-            elif self.body_type == 0x06:
+            elif self.body_type == BODY_TYPE_STERILIZE:
                 # controlType=0x06 sterilize SET response echo
                 self.set_body(CDSterilizeSetBody(super().body))
         self.set_attr()
