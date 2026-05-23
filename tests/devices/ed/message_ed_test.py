@@ -431,7 +431,7 @@ class TestMessageEDResponse:
                 0x00,
             ],
         )
-        message = MessageEDResponse(header + body)
+        message = MessageEDResponse(bytes(header + body))
         assert hasattr(message, "body_type")
         assert message.body_type == 255
         assert hasattr(message, "power")

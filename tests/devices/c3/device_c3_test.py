@@ -167,7 +167,7 @@ class TestMideaC3Device:
             mock_message.outdoor_temperature = 18
             mock_message.error_code = 0
 
-            result = self.device.process_message(bytearray())
+            result = self.device.process_message(b"")
 
             assert result[DeviceAttributes.zone1_power.value] is True
             assert result[DeviceAttributes.zone2_power.value] is False
@@ -209,12 +209,12 @@ class TestMideaC3Device:
             mock_message.mode = C3DeviceMode.HEAT
             mock_message.mode_auto = C3DeviceMode.HEAT
 
-            result = self.device.process_message(bytearray())
+            result = self.device.process_message(b"")
 
             mock_message.zone1_power = False
             mock_message.zone2_power = False
 
-            result = self.device.process_message(bytearray())
+            result = self.device.process_message(b"")
 
             assert result[DeviceAttributes.mode.value] == 3
 
@@ -225,7 +225,7 @@ class TestMideaC3Device:
         with patch("midealocal.devices.c3.MessageC3Response") as mock_message_response:
             mock_message = mock_message_response.return_value
             mock_message.zone_temp_type = [True, False]
-            self.device.process_message(bytearray())
+            self.device.process_message(b"")
 
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_target_temperature(22.5, 1, 0)
