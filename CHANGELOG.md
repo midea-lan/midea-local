@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.6.2](https://github.com/midea-lan/midea-local/compare/v6.6.1...v6.6.2) (2026-05-23)
+
+
+### Bug Fixes
+
+* common_regex warning with python3.14 during HA restart ([#430](https://github.com/midea-lan/midea-local/issues/430)) ([13904a9](https://github.com/midea-lan/midea-local/commit/13904a9e7b37bb9750b677f0a4201975bf133f92))
+* mypy check bytes and bytearray error ([#432](https://github.com/midea-lan/midea-local/issues/432)) ([7dc5816](https://github.com/midea-lan/midea-local/commit/7dc5816fe830f58dc66ad5b908e8cf230ba9d201))
+
 ## [6.6.1](https://github.com/midea-lan/midea-local/compare/v6.6.0...v6.6.1) (2026-05-23)
 
 
