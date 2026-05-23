@@ -58,6 +58,8 @@ repos:
         additional_dependencies:
           - types-aiofiles
           - types-deprecated
+          - pycryptodome
+          - platformdirs
   - repo: local
     hooks:
       - id: pylint

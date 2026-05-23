@@ -154,7 +154,7 @@ class MideaEDDevice(MideaDevice):
         if self._use_new_set():
             if attr in [DeviceAttributes.power, DeviceAttributes.child_lock]:
                 message = MessageNewSet(self._message_protocol_version)
-        elif attr in []:
+        else:
             message = MessageOldSet(self._message_protocol_version)
         if message is not None:
             setattr(message, str(attr), value)

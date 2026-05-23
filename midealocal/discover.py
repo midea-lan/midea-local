@@ -277,7 +277,7 @@ def get_id_from_response(response: bytearray) -> int:
     return 0
 
 
-def bytes2port(value_bytes: bytes | None) -> int:
+def bytes2port(value_bytes: bytes | bytearray | None) -> int:
     """Bytes to port."""
     if value_bytes is None:
         return 0

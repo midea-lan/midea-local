@@ -180,7 +180,7 @@ class TestMideaB8Device:
                 0x0,  # CRC
             ],
         )
-        self.device.process_message(bytearray(header + body))
+        self.device.process_message(bytes(header + body))
         assert (
             self.device.attributes[B8DeviceAttributes.WORK_STATUS]
             == "charging_with_wire"
@@ -242,7 +242,7 @@ class TestMideaB8Device:
                 0x0,  # CRC
             ],
         )
-        self.device.process_message(bytearray(header + body))
+        self.device.process_message(bytes(header + body))
         assert self.device.attributes[B8DeviceAttributes.WORK_STATUS] == "work"
         assert (
             self.device.attributes[B8DeviceAttributes.FUNCTION_TYPE]
@@ -305,7 +305,7 @@ class TestMideaB8Device:
                 0x0,  # CRC
             ],
         )
-        self.device.process_message(bytearray(header + body))
+        self.device.process_message(bytes(header + body))
         assert self.device.attributes[B8DeviceAttributes.WORK_STATUS] == "updating"
         assert (
             self.device.attributes[B8DeviceAttributes.FUNCTION_TYPE]
@@ -372,7 +372,7 @@ class TestMideaB8Device:
                 0x0,  # CRC
             ],
         )
-        self.device.process_message(bytearray(header + body))
+        self.device.process_message(bytes(header + body))
         assert self.device.attributes[B8DeviceAttributes.WORK_STATUS] == "none"
         assert self.device.attributes[B8DeviceAttributes.FUNCTION_TYPE] == "none"
         assert self.device.attributes[B8DeviceAttributes.CONTROL_TYPE] == "none"
@@ -416,7 +416,7 @@ class TestMideaB8Device:
         )
 
         with patch("midealocal.message.MessageResponse.set_attr") as mock_set_attr:
-            self.device.process_message(bytearray(header + body))
+            self.device.process_message(bytes(header + body))
 
             body = bytearray(
                 [
@@ -425,10 +425,10 @@ class TestMideaB8Device:
                 ]
                 + [0x0] * 20,
             )
-            self.device.process_message(bytearray(header + body))
+            self.device.process_message(bytes(header + body))
             header[-1] = MessageType.notify1
             body = bytearray([0x32] + [0x0] * 20)
-            self.device.process_message(bytearray(header + body))
+            self.device.process_message(bytes(header + body))
             header[-1] = MessageType.set
-            self.device.process_message(bytearray(header + body))
+            self.device.process_message(bytes(header + body))
             mock_set_attr.assert_not_called()
