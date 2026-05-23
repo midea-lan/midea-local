@@ -1,5 +1,5 @@
-ARG VARIANT=3.12
-FROM mcr.microsoft.com/vscode/devcontainers/python:${VARIANT}-bullseye
+ARG VARIANT=3.14
+FROM mcr.microsoft.com/vscode/devcontainers/python:${VARIANT}-bookworm
 
 # define apt default source
 ARG APT_MIRROR_DOMAIN="deb.debian.org"
