@@ -417,7 +417,7 @@ class MessageSubProtocol(MessageACBase):
         self._subprotocol_query_type = subprotocol_query_type
 
     @property
-    def _subprotocol_body(self) -> bytes:
+    def _subprotocol_body(self) -> bytes | bytearray:
         return bytes([])
 
     @property
@@ -484,7 +484,7 @@ class MessageSubProtocolSet(MessageSubProtocol):
         self.prompt_tone = False
 
     @property
-    def _subprotocol_body(self) -> bytes:
+    def _subprotocol_body(self) -> bytearray:
         power = 0x01 if self.power else 0
         dry = 0x10 if self.power and self.dry else 0
         boost_mode = 0x20 if self.boost_mode else 0
