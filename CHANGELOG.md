@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.6.1](https://github.com/midea-lan/midea-local/compare/v6.6.0...v6.6.1) (2026-05-23)
+
+
+### Bug Fixes
+
+* make unregister update method public ([#433](https://github.com/midea-lan/midea-local/issues/433)) ([026cac3](https://github.com/midea-lan/midea-local/commit/026cac379edcb29548c5d8a4fb2097b3219c9c16))
+
 ## [6.6.0](https://github.com/midea-lan/midea-local/compare/v6.5.0...v6.6.0) (2026-02-18)
 
 
