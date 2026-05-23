@@ -574,6 +574,10 @@ class MideaDevice(threading.Thread):
         """Register update."""
         self._updates.append(update)
 
+    def unregister_update(self, update: Callable[[dict[str, Any]], None]) -> None:
+        """Unregister update."""
+        self._updates.remove(update)
+
     def update_all(self, status: dict[str, Any]) -> None:
         """Update all."""
         _LOGGER.debug("[%s] Status update: %s", self._device_id, status)
