@@ -576,7 +576,8 @@ class MideaDevice(threading.Thread):
 
     def unregister_update(self, update: Callable[[dict[str, Any]], None]) -> None:
         """Unregister update."""
-        self._updates.remove(update)
+        if update in self._updates:
+            self._updates.remove(update)
 
     def update_all(self, status: dict[str, Any]) -> None:
         """Update all."""

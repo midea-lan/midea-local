@@ -313,6 +313,34 @@ class MideaDeviceTest:
         self.device.update_all({"status": True})
         upd.assert_called()
 
+    def test_unregister_update(self) -> None:
+        """Test unregister update."""
+        upd = MagicMock()
+        other_upd = MagicMock()
+
+        # Unregistering a callback that was never registered is a no-op
+        self.device.unregister_update(upd)
+        assert len(self.device._updates) == 0
+
+        # Register two callbacks, then unregister one
+        self.device.register_update(upd)
+        self.device.register_update(other_upd)
+        assert len(self.device._updates) == 2
+
+        self.device.unregister_update(upd)
+        assert len(self.device._updates) == 1
+        assert upd not in self.device._updates
+        assert other_upd in self.device._updates
+
+        # Remaining callback is still called on update_all
+        self.device.update_all({"status": True})
+        upd.assert_not_called()
+        other_upd.assert_called_once_with({"status": True})
+
+        # Unregister the last callback
+        self.device.unregister_update(other_upd)
+        assert len(self.device._updates) == 0
+
     def test_open(self) -> None:
         """Test open."""
         with (
