@@ -38,7 +38,7 @@ setuptools.setup(
             "midealocal = midealocal.cli:main",
         ],
     },
-    python_requires=">=3.11",
+    python_requires=">=3.12",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
