@@ -16,6 +16,8 @@ jobs:
     name: Lint Commit Messages
     runs-on: ubuntu-latest
     if: github.event_name != 'release'
+    permissions:
+      pull-requests: read
     steps:
       - uses: actions/checkout@v6
       - uses: wagoid/commitlint-github-action@v6.2.1
@@ -24,7 +26,7 @@ jobs:
 
   build:
     needs: [commitlint]
-    if: ${{ !cancelled() && needs.commitlint.result != 'failure' }}
+    if: ${{ always() && !cancelled() && needs.commitlint.result != 'failure' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -48,7 +50,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.cache/pre-commit
-          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: pre-commit-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
       - name: Install pre-commit
         if: github.event_name != 'release'
         run: pip install pre-commit
