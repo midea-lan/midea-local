@@ -13,7 +13,7 @@ RUN if [ "${INSTALL_NODE}" = "true" ]; then su vscode -c "umask 0002 && . /usr/l
 
 # [Optional] Override APT mirror for China users:
 # Set in your local shell profile: export APT_MIRROR_DOMAIN="mirrors.tuna.tsinghua.edu.cn"
-RUN if [ "${APT_MIRROR_DOMAIN}" != "deb.debian.org" ]; then \
+RUN if [ -n "${APT_MIRROR_DOMAIN}" ] && [ "${APT_MIRROR_DOMAIN}" != "deb.debian.org" ]; then \
     cp /etc/apt/sources.list /etc/apt/sources.list.bak && \
     sed -i "s|deb.debian.org|${APT_MIRROR_DOMAIN}|g" /etc/apt/sources.list && \
     sed -i "s|security.debian.org|${APT_MIRROR_DOMAIN}|g" /etc/apt/sources.list && \
@@ -22,7 +22,7 @@ RUN if [ "${APT_MIRROR_DOMAIN}" != "deb.debian.org" ]; then \
 
 # [Optional] Override pip mirror for China users:
 # Set in your local shell profile: export PIP_MIRROR_DOMAIN="pypi.tuna.tsinghua.edu.cn"
-RUN if [ "${PIP_MIRROR_DOMAIN}" != "pypi.org" ]; then \
+RUN if [ -n "${PIP_MIRROR_DOMAIN}" ] && [ "${PIP_MIRROR_DOMAIN}" != "pypi.org" ]; then \
     echo "[global]" > /etc/pip.conf && \
     echo "index-url = https://${PIP_MIRROR_DOMAIN}/simple" >> /etc/pip.conf && \
     echo "trusted-host = ${PIP_MIRROR_DOMAIN}" >> /etc/pip.conf; \
