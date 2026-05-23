@@ -65,7 +65,10 @@ repos:
       - id: pylint
         name: pylint
         entry: pylint
-        language: system
+        language: python
+        additional_dependencies:
+          - pylint
+          - "."
         types: [python]
         args: [
             "-rn", # Only display messages
