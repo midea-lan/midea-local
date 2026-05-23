@@ -78,7 +78,7 @@ class MideaB1Device(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea B1 device process message."""
-        message = MessageB1Response(bytearray(msg))
+        message = MessageB1Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         for status in self._attributes:

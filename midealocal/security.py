@@ -276,9 +276,11 @@ class LocalSecurity:
         except ValueError:
             return bytearray(0)
 
-    def aes_encrypt(self, raw: bytes) -> bytes:
+    def aes_encrypt(self, raw: bytes | bytearray) -> bytes:
         """Encrypt AES."""
-        return AES.new(self.aes_key, AES.MODE_ECB).encrypt(bytearray(pad(raw, 16)))
+        return AES.new(self.aes_key, AES.MODE_ECB).encrypt(
+            bytearray(pad(bytes(raw), 16)),
+        )
 
     def aes_cbc_decrypt(self, raw: bytes, key: Buffer) -> bytes:
         """Decrypt AES with CBC."""
@@ -288,7 +290,7 @@ class LocalSecurity:
         """Encrypt AES with CBC."""
         return AES.new(key=key, mode=AES.MODE_CBC, iv=self.iv).encrypt(raw)
 
-    def encode32_data(self, raw: bytes) -> bytes:
+    def encode32_data(self, raw: bytes | bytearray) -> bytes:
         """Encode 32 data."""
         return md5(raw + self.salt).digest()
 
@@ -303,7 +305,7 @@ class LocalSecurity:
         plain = self.aes_cbc_decrypt(payload, key)
         if sha256(plain).digest() != sign:
             raise DataSignDoesntMatch
-        self._tcp_key = strxor(plain, key)
+        self._tcp_key = strxor(plain, bytes(key))
         self._request_count = 0
         self._response_count = 0
         return self._tcp_key
@@ -327,7 +329,7 @@ class LocalSecurity:
         if msgtype in (MSGTYPE_ENCRYPTED_RESPONSE, MSGTYPE_ENCRYPTED_REQUEST):
             sign = sha256(header + data).digest()
             data = self.aes_cbc_encrypt(raw=data, key=self._tcp_key) + sign
-        return header + data
+        return bytes(header + data)
 
     def decode_8370(self, data: bytes) -> tuple[list, bytes]:
         """Decode 8370 data."""
