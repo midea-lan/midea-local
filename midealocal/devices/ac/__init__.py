@@ -72,6 +72,7 @@ class DeviceAttributes(StrEnum):
     current_operating_time = "current_operating_time"
     wind_lr_angle = "wind_lr_angle"
     wind_ud_angle = "wind_ud_angle"
+    out_silent = "out_silent"
 
 
 class MideaACDevice(MideaDevice):
@@ -169,6 +170,7 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.fresh_air_2: None,
                 DeviceAttributes.wind_lr_angle: None,
                 DeviceAttributes.wind_ud_angle: None,
+                DeviceAttributes.out_silent: False,
             },
         )
         self._fresh_air_version: DeviceAttributes | None = None
@@ -439,6 +441,7 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.fresh_air_mode,
                 DeviceAttributes.wind_lr_angle,
                 DeviceAttributes.wind_ud_angle,
+                DeviceAttributes.out_silent,
             ]:
                 message = self.make_newprotocol_message_set(attr=attr, value=value)
             elif attr in self._attributes:

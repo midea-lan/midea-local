@@ -30,6 +30,7 @@ FRESH_AIR_LENGTH = 2
 FROST_PROTECT_MIN_LENGTH = 22
 INDIRECT_WIND_VALUE = 0x02
 MAX_MSG_SERIAL_NUM = 254
+OUT_SILENT_VALUE = 0x03
 SCREEN_DISPLAY_BYTE_CHECK = 0x07
 SUB_PROTOCOL_BODY_TEMP_CHECK = 0x80
 TEMP_DECIMAL_MIN_BODY_LENGTH = 20
@@ -130,6 +131,8 @@ class NewProtocolTags(IntEnum):
     b5_screen_display = 0x0224
     b5_anion = 0x021E
     b5_sound = 0x022C
+    # AC outdoor silent mode (PortaSplit)
+    out_silent = 0x00CD
 
 
 class MessageACBase(MessageRequest):
@@ -391,6 +394,7 @@ class MessageNewProtocolQuery(MessageACBase):
             NewProtocolTags.fresh_air_2,
             NewProtocolTags.wind_lr_angle,
             NewProtocolTags.wind_ud_angle,
+            NewProtocolTags.out_silent,
         ]
 
         _body = bytearray([len(query_params)])
@@ -654,6 +658,7 @@ class MessageNewProtocolSet(MessageACBase):
         self.fresh_air_2: bytes | None = None
         self.wind_lr_angle: bytes | None = None
         self.wind_ud_angle: bytes | None = None
+        self.out_silent: bool | None = None
 
     @property
     def _body(self) -> bytearray:
@@ -740,6 +745,16 @@ class MessageNewProtocolSet(MessageACBase):
                 NewProtocolMessageBody.pack(
                     param=NewProtocolTags.wind_ud_angle,
                     value=bytearray([wind_ud_angle if wind_ud_angle else 0x00]),
+                ),
+            )
+        if self.out_silent is not None:
+            pack_count += 1
+            payload.extend(
+                NewProtocolMessageBody.pack(
+                    param=NewProtocolTags.out_silent,
+                    # Device requires 0x03 to activate, 0x00 to deactivate
+                    # Sending 0x01 results in an error from the firmware
+                    value=bytearray([OUT_SILENT_VALUE if self.out_silent else 0x00]),
                 ),
             )
         payload[0] = pack_count
@@ -876,6 +891,8 @@ class XBXMessageBody(NewProtocolMessageBody):
             self.wind_lr_angle = params[NewProtocolTags.wind_lr_angle][0]
         if NewProtocolTags.wind_ud_angle in params:
             self.wind_ud_angle = params[NewProtocolTags.wind_ud_angle][0]
+        if NewProtocolTags.out_silent in params:
+            self.out_silent = params[NewProtocolTags.out_silent][0] == OUT_SILENT_VALUE
 
 
 class XB5MessageBody(NewProtocolMessageBody):
