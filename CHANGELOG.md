@@ -1,5 +1,17 @@
 # Changelog
 
+## [6.7.0](https://github.com/midea-lan/midea-local/compare/v6.6.2...v6.7.0) (2026-05-24)
+
+
+### Features
+
+* **ac:** add out_silent (outdoor silent mode) support for PortaSplit ([#441](https://github.com/midea-lan/midea-local/issues/441)) ([9af1ad9](https://github.com/midea-lan/midea-local/commit/9af1ad99a0c22e34d29a268e1d4d57d25d844a2c))
+
+
+### Bug Fixes
+
+* skip failed to decrypt device message ([#431](https://github.com/midea-lan/midea-local/issues/431)) ([2f464d0](https://github.com/midea-lan/midea-local/commit/2f464d00c14fc57039b17df724ec2643901d8ba1))
+
 ## [6.6.2](https://github.com/midea-lan/midea-local/compare/v6.6.1...v6.6.2) (2026-05-23)
 
 
