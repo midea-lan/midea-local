@@ -9,9 +9,9 @@ from .security import LocalSecurity
 class PacketBuilder:
     """Packet builder."""
 
-    def __init__(self, device_id: int, command: bytes) -> None:
+    def __init__(self, device_id: int, command: bytes | bytearray) -> None:
         """Initialize packet builder."""
-        self.command: bytes
+        self.command: bytes | bytearray
         self.security = LocalSecurity()
         # aa20ac00000000000003418100ff03ff000200000000000000000000000006f274
         # Init the packet with the header data.
@@ -71,7 +71,7 @@ class PacketBuilder:
         self.packet[20:28] = device_id.to_bytes(8, "little")
         self.command = command
 
-    def finalize(self, msg_type: int = 1) -> bytearray:
+    def finalize(self, msg_type: int = 1) -> bytes:
         """Finalize packet builder."""
         if msg_type != 1:
             self.packet[3] = 0x10
@@ -82,7 +82,7 @@ class PacketBuilder:
         self.packet[4:6] = (len(self.packet) + 16).to_bytes(2, "little")
         # Append a basic checksum data(16 bytes) to the packet
         self.packet.extend(self.encode32(self.packet))
-        return self.packet
+        return bytes(self.packet)
 
     def encode32(self, data: bytearray) -> bytes:
         """Encode 32."""

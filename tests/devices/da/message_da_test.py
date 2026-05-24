@@ -99,7 +99,7 @@ class TestMessageDAResponse:
         body[16] = 2 << 1  # Mock progress
         body[17] = 15  # Mock time_remaining lower byte
         body[18] = 1  # Mock time_remaining upper byte
-        response = MessageDAResponse(header + body)
+        response = MessageDAResponse(bytes(header + body))
         assert hasattr(response, "power")
         assert response.power
         assert hasattr(response, "start")

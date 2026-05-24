@@ -347,7 +347,7 @@ class MessageBase:
         self._message_protocol_version: int = 0
 
     @staticmethod
-    def checksum(data: bytes) -> SupportsIndex:
+    def checksum(data: bytes | bytearray) -> SupportsIndex:
         """Message checksum."""
         return cast(SupportsIndex, (~sum(data) + 1) & 0xFF)
 

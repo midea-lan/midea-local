@@ -13,7 +13,6 @@ from typing import Any, cast
 
 import aiofiles
 from aiohttp import ClientConnectionError, ClientSession, ClientTimeout
-from commonregex import CommonRegex
 
 from midealocal.exceptions import ElementMissing
 
@@ -115,27 +114,41 @@ def get_preset_account_cloud() -> dict[str, str]:
 block = "*"
 
 
+def _mask_token(token: str) -> str:
+    """Mask token but keep first 5 chars."""
+    if not token:
+        return token
+
+    visible = token[:5]
+    return visible + block * max(0, len(token) - len(visible))
+
+
 def _redact_data(data: str) -> str:
     """Redact sensitive data."""
-    cr = CommonRegex(data)
-    token_list = (
-        getattr(cr, "phones", [])
-        + getattr(cr, "emails", [])
-        + getattr(cr, "credit_cards", [])
-        + getattr(cr, "btc_addresses", [])
-        + getattr(cr, "street_addresses", [])
-    )
-    for token in token_list:
-        item = token
-        if len(item) > 0 and item[0] == "'":
-            item = item[1:]
-        if len(item) == 0:
-            break
-        m = len(item)
-        visible = item[:5]  # Keep up to the first 5 characters
-        redacted = visible + block * (m - len(visible))  # Use block for masking
-        elm = re.escape(item)  # Escape regex metacharacters
-        data = re.sub(elm, redacted, data)
+    patterns = [
+        # Email
+        r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
+        # Phone number
+        r"(?:\+?\d{1,3})?[-.\s]?(?:\(?\d{2,4}\)?[-.\s]?)?\d{3,4}[-.\s]?\d{4}",
+        # Credit card
+        r"\b(?:\d[ -]*?){13,19}\b",
+        # BTC address
+        r"\b(?:bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}\b",
+        # IPv4
+        r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
+        # Simple street address
+        r"\b\d{1,5}\s+[A-Za-z0-9\s]{3,40}"
+        r"(?:Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Way|Boulevard|Blvd)\b",
+    ]
+
+    for pattern in patterns:
+        data = re.sub(
+            pattern,
+            lambda m: _mask_token(m.group(0)),
+            data,
+            flags=re.IGNORECASE,
+        )
+
     return data
 
 
