@@ -9,6 +9,7 @@ from midealocal.devices.ac.message import (
     MessageCapabilitiesQuery,
     MessageGeneralSet,
     MessageNewProtocolQuery,
+    MessageNewProtocolSet,
     MessagePowerQuery,
     MessageQuery,
     MessageSubProtocol,
@@ -186,7 +187,7 @@ class TestMessageNewProtocolQuery:
         expected_body = bytearray(
             [
                 0xB1,
-                0x08,
+                0x09,
                 NewProtocolTags.indirect_wind & 0xFF,
                 NewProtocolTags.indirect_wind >> 8,
                 NewProtocolTags.breezeless & 0xFF,
@@ -203,9 +204,39 @@ class TestMessageNewProtocolQuery:
                 NewProtocolTags.wind_lr_angle >> 8,
                 NewProtocolTags.wind_ud_angle & 0xFF,
                 NewProtocolTags.wind_ud_angle >> 8,
+                NewProtocolTags.out_silent & 0xFF,
+                NewProtocolTags.out_silent >> 8,
             ],
         )
         assert msg.body[:-2] == expected_body
+
+
+class TestMessageNewProtocolSetOutSilent:
+    """Test Message New Protocol Set for out_silent."""
+
+    @pytest.mark.parametrize(
+        ("value", "expected_byte"),
+        [(True, 0x03), (False, 0x00)],
+    )
+    def test_out_silent_on_off(self, value: bool, expected_byte: int) -> None:
+        """Test out_silent set to on/off sends correct byte."""
+        msg = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
+        msg.out_silent = value
+        body = msg.body
+        assert body[0] == 0xB0
+        assert body[1] == 0x01  # 1 param packed
+        assert body[2] == NewProtocolTags.out_silent & 0xFF  # 0xCD
+        assert body[3] == NewProtocolTags.out_silent >> 8  # 0x00
+        assert body[4] == 0x01  # length byte
+        assert body[5] == expected_byte
+
+    def test_out_silent_none_not_packed(self) -> None:
+        """Test out_silent None does not add to payload."""
+        msg = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
+        # out_silent defaults to None, should not be packed
+        body = msg.body
+        assert body[0] == 0xB0
+        assert body[1] == 0x00  # 0 params packed
 
 
 class TestMessageSubProtocol:
@@ -554,6 +585,29 @@ class TestMessageACResponse:
         assert hasattr(response, "fresh_air_power")
         assert hasattr(response, "fresh_air_fan_speed")
         assert response.fresh_air_fan_speed == 20
+
+    @pytest.mark.parametrize(
+        ("raw_value", "expected"),
+        [(0x03, True), (0x00, False)],
+    )
+    def test_message_notify2_b0_out_silent(
+        self,
+        raw_value: int,
+        expected: bool,
+    ) -> None:
+        """Test Message parse notify2 B0 with out_silent."""
+        body = bytearray(10)
+        body[0] = 0xB0  # Body type
+        body[1] = 0x01  # Params count
+        body[2] = NewProtocolTags.out_silent & 0xFF  # Low byte 0xCD
+        body[3] = NewProtocolTags.out_silent >> 8  # High byte 0x00
+        body[4] = 0x00  # Padding
+        body[5] = 0x01  # Value length
+        body[6] = raw_value
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "out_silent")
+        assert response.out_silent is expected
 
     def test_message_query_c0(self) -> None:
         """Test Message parse query C0."""
