@@ -222,6 +222,7 @@ class A1GeneralMessageBody(MessageBody):
         self.target_humidity = max(body[7], MIN_TARGET_HUMIDITY)
         self.child_lock = (body[8] & 0x80) > 0
         self.anion = (body[9] & 0x40) > 0
+        self.pump = (body[9] & 0x08) > 0
         self.tank = body[10] & 0x7F
         self.water_level_set = body[15]
         self.current_humidity = body[16]

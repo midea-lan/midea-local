@@ -24,6 +24,7 @@ class DeviceAttributes(StrEnum):
     swing = "swing"
     target_humidity = "target_humidity"
     anion = "anion"
+    pump = "pump"
     tank = "tank"
     water_level_set = "water_level_set"
     tank_full = "tank_full"
@@ -86,6 +87,7 @@ class MideaA1Device(MideaDevice):
                 DeviceAttributes.swing: False,
                 DeviceAttributes.target_humidity: 35,
                 DeviceAttributes.anion: False,
+                DeviceAttributes.pump: False,
                 DeviceAttributes.tank: 0,
                 DeviceAttributes.water_level_set: 50,
                 DeviceAttributes.tank_full: None,

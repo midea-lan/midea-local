@@ -166,7 +166,7 @@ class TestMessageA1Response:
         body[3] = 0b00000100  # Fan speed (4)
         body[7] = 40  # Target humidity (40)
         body[8] = 0b10000000  # Child lock on (128)
-        body[9] = 0b01000000  # Anion on (64)
+        body[9] = 0b01001000  # Anion on (64), pump on (8)
         body[10] = 0b00111111  # Tank (63)
         body[15] = 50  # Water level set (50)
         body[16] = 45  # Current humidity (45)
@@ -182,6 +182,7 @@ class TestMessageA1Response:
         assert response.target_humidity == 40
         assert hasattr(response, "child_lock")
         assert hasattr(response, "anion")
+        assert hasattr(response, "pump")
         assert hasattr(response, "tank")
         assert response.tank == 63
         assert hasattr(response, "water_level_set")
@@ -242,7 +243,7 @@ class TestMessageA1Response:
         body[3] = 0b00000110  # Fan speed (6)
         body[7] = 40  # Target humidity (40)
         body[8] = 0b10000000  # Child lock on (128)
-        body[9] = 0b01000000  # Anion on (64)
+        body[9] = 0b01000000  # Anion on (64), pump off (0)
         body[10] = 0b00111111  # Tank (63)
         body[15] = 50  # Water level set (50)
         body[16] = 45  # Current humidity (45)
@@ -258,6 +259,7 @@ class TestMessageA1Response:
         assert response.target_humidity == 40
         assert hasattr(response, "child_lock")
         assert hasattr(response, "anion")
+        assert hasattr(response, "pump")
         assert hasattr(response, "tank")
         assert response.tank == 63
         assert hasattr(response, "water_level_set")

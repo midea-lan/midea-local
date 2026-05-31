@@ -34,6 +34,7 @@ class TestMideaA1Device:
         assert self.device.attributes[DeviceAttributes.prompt_tone]
         assert self.device.attributes[DeviceAttributes.fan_speed] == "Medium"
         assert self.device.attributes[DeviceAttributes.target_humidity] == 35
+        assert not self.device.attributes[DeviceAttributes.pump]
 
     def test_modes(self) -> None:
         """Test modes."""
@@ -70,6 +71,7 @@ class TestMideaA1Device:
             mock_message.fan_speed = 40
             mock_message.target_humidity = 40
             mock_message.mode = 1
+            mock_message.pump = True
             mock_message.tank = 60
             mock_message.water_level_set = "50"
             new_status = self.device.process_message(b"")
@@ -77,6 +79,7 @@ class TestMideaA1Device:
             assert not new_status[DeviceAttributes.prompt_tone.value]
             assert new_status[DeviceAttributes.fan_speed.value] == "Low"
             assert new_status[DeviceAttributes.target_humidity.value] == 40
+            assert new_status[DeviceAttributes.pump.value]
             assert new_status[DeviceAttributes.tank_full.value]
             assert new_status[DeviceAttributes.mode.value] == "Manual"
 
