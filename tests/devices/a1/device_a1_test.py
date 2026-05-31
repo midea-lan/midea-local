@@ -74,6 +74,7 @@ class TestMideaA1Device:
             mock_message.pump = True
             mock_message.tank = 60
             mock_message.water_level_set = "50"
+            mock_message.pump_enable = True
             new_status = self.device.process_message(b"")
             assert new_status[DeviceAttributes.power.value]
             assert not new_status[DeviceAttributes.prompt_tone.value]
@@ -107,6 +108,8 @@ class TestMideaA1Device:
             mock_message.fan_speed = 40
             mock_message.target_humidity = 40
             mock_message.mode = 1
+            mock_message.pump = True
+            mock_message.pump_enable = True
             mock_message.tank = 60
             mock_message.water_level_set = "50"
             self.device.process_message(b"")
@@ -117,6 +120,8 @@ class TestMideaA1Device:
         assert not message_set.prompt_tone
         assert message_set.fan_speed == 40
         assert message_set.mode == 1
+        assert message_set.pump
+        assert message_set.pump_enable
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
@@ -134,4 +139,7 @@ class TestMideaA1Device:
             mock_build_send.assert_called()
 
             self.device.set_attribute(DeviceAttributes.swing, True)
+            mock_build_send.assert_called()
+
+            self.device.set_attribute(DeviceAttributes.pump, True)
             mock_build_send.assert_called()

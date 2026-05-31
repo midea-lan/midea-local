@@ -96,6 +96,7 @@ class MideaA1Device(MideaDevice):
                 DeviceAttributes.filter_cleaning_reminder: False,
             },
         )
+        self._pump_enable = False
         self._speeds = self._default_speeds
         self._modes = self._default_modes
         self.set_customize(customize)
@@ -123,6 +124,9 @@ class MideaA1Device(MideaDevice):
         """Midea A1 device process message."""
         message = MessageA1Response(bytearray(msg))
         self._message_protocol_version = message.protocol_version
+        # Preserve the hidden pump capability bit for future set packets.
+        if hasattr(message, "pump_enable"):
+            self._pump_enable = message.pump_enable
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         for status in self._attributes:
@@ -186,6 +190,8 @@ class MideaA1Device(MideaDevice):
         message.target_humidity = self._attributes[DeviceAttributes.target_humidity]
         message.swing = self._attributes[DeviceAttributes.swing]
         message.anion = self._attributes[DeviceAttributes.anion]
+        message.pump = self._attributes[DeviceAttributes.pump]
+        message.pump_enable = self._pump_enable
         message.water_level_set = int(
             self._attributes[DeviceAttributes.water_level_set],
         )
