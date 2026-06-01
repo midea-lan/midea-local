@@ -15,6 +15,7 @@ from midealocal.devices.ac.message import (
     MessagePowerQuery,
     MessageQuery,
     MessageSubProtocolQuery,
+    PowerFormats,
 )
 
 
@@ -51,6 +52,23 @@ class TestMideaACDevice:
         assert not self.device.attributes[DeviceAttributes.out_silent]
         assert self.device.temperature_step == 1
         assert self.device.fresh_air_fan_speeds is not None
+
+    def test_customize_accepts_bcd_energy_binary_power_format(self) -> None:
+        """Test customize can select BCD energy with binary realtime power."""
+        device = MideaACDevice(
+            name="Custom Power Format Device",
+            device_id=1,
+            ip_address="192.168.1.1",
+            port=12345,
+            token="AA",
+            key="BB",
+            device_protocol=ProtocolVersion.V1,
+            model="test_model",
+            subtype=1,
+            customize='{"power_analysis_method": 101}',
+        )
+
+        assert device._power_analysis_method == PowerFormats.BCD_ENERGY_BINARY_POWER
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
