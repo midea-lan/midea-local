@@ -395,6 +395,8 @@ class MessageNewProtocolQuery(MessageACBase):
             NewProtocolTags.wind_lr_angle,
             NewProtocolTags.wind_ud_angle,
             NewProtocolTags.out_silent,
+            NewProtocolTags.buzzer_all,
+            NewProtocolQuery.error_code_query,
         ]
 
         _body = bytearray([len(query_params)])
@@ -575,6 +577,7 @@ class MessageGeneralSet(MessageACBase):
         self.natural_wind = False
         self.frost_protect = False
         self.comfort_mode = False
+        self.anion = False
 
     @property
     def _body(self) -> bytearray:
@@ -601,6 +604,7 @@ class MessageGeneralSet(MessageACBase):
         dry = 0x04 if self.dry else 0
         aux_heating = 0x08 if self.aux_heating else 0
         eco_mode = 0x80 if self.eco_mode else 0
+        anion = 0x20 if self.anion else 0
         # Byte 10 temp_fahrenheit
         temp_fahrenheit = 0x04 if self.temp_fahrenheit else 0
         sleep_mode = 0x01 if self.sleep_mode else 0
@@ -622,7 +626,7 @@ class MessageGeneralSet(MessageACBase):
                 0x00,
                 swing_mode,
                 boost_mode,
-                smart_eye | dry | aux_heating | eco_mode,
+                smart_eye | dry | aux_heating | eco_mode | anion,
                 temp_fahrenheit | sleep_mode | boost_mode_1,
                 0x00,
                 0x00,
@@ -659,6 +663,8 @@ class MessageNewProtocolSet(MessageACBase):
         self.wind_lr_angle: bytes | None = None
         self.wind_ud_angle: bytes | None = None
         self.out_silent: bool | None = None
+        self.sound: bool | None = None
+        self.self_clean: bool | None = None
 
     @property
     def _body(self) -> bytearray:
@@ -757,6 +763,22 @@ class MessageNewProtocolSet(MessageACBase):
                     value=bytearray([OUT_SILENT_VALUE if self.out_silent else 0x00]),
                 ),
             )
+        if self.sound is not None:
+            pack_count += 1
+            payload.extend(
+                NewProtocolMessageBody.pack(
+                    param=NewProtocolTags.buzzer_all,
+                    value=bytearray([0x01 if self.sound else 0x00]),
+                ),
+            )
+        if self.self_clean is not None:
+            pack_count += 1
+            payload.extend(
+                NewProtocolMessageBody.pack(
+                    param=NewProtocolTags.self_clean,
+                    value=bytearray([0x01 if self.self_clean else 0x00]),
+                ),
+            )
         payload[0] = pack_count
         return payload
 
@@ -790,6 +812,7 @@ class XA0MessageBody(MessageBody):
         self.dry = (body[9] & 0x04) > 0  # dryValue
         self.aux_heating = (body[9] & 0x08) > 0  # PTCValue
         self.purifier = body[9] & 0x20  # purifierValue
+        self.anion = (body[9] & 0x20) > 0
         self.eco_mode = (body[9] & 0x10) > 0  # ecoValue
         self.sleep_mode = (body[10] & 0x01) > 0
         self.natural_wind = (body[10] & 0x40) > 0  # naturalWind
@@ -893,6 +916,10 @@ class XBXMessageBody(NewProtocolMessageBody):
             self.wind_ud_angle = params[NewProtocolTags.wind_ud_angle][0]
         if NewProtocolTags.out_silent in params:
             self.out_silent = params[NewProtocolTags.out_silent][0] == OUT_SILENT_VALUE
+        if NewProtocolTags.buzzer_all in params:
+            self.sound = params[NewProtocolTags.buzzer_all][0] > 0
+        if NewProtocolQuery.error_code_query in params:
+            self.error_code = params[NewProtocolQuery.error_code_query][0]
 
 
 class XB5MessageBody(NewProtocolMessageBody):
@@ -956,6 +983,7 @@ class XC0MessageBody(XMessageBody):
         self.eco_mode = (body[9] & 0x10) > 0  # ecoValue
         self.aux_heating = (body[9] & 0x08) > 0  # PTCValue
         self.purifier = body[9] & 0x20  # purifierValue
+        self.anion = (body[9] & 0x20) > 0
         self.temp_fahrenheit = (body[10] & 0x04) > 0
         self.sleep_mode = (body[10] & 0x01) > 0
         decimal = body[15] if len(body) > TEMP_DECIMAL_MIN_BODY_LENGTH else 0
