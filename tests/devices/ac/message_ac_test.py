@@ -17,6 +17,7 @@ from midealocal.devices.ac.message import (
     MessageToggleDisplay,
     NewProtocolQuery,
     NewProtocolTags,
+    PowerFormats,
 )
 from midealocal.message import ListTypes, MessageType
 
@@ -711,8 +712,8 @@ class TestMessageACResponse:
         assert hasattr(response, "realtime_power")
         assert response.realtime_power == expected_realtime_power
 
-    def test_message_query_c1_method2(self, method: int = 2) -> None:
-        """Test Message parse query C1 method2 (and 12)."""
+    def _assert_message_query_c1_method2(self, method: int) -> None:
+        """Assert Message parse query C1 method2 (and 12)."""
         self.header[9] = 0x03
         body = bytearray(20)
         body[0] = 0xC1  # Body type
@@ -754,9 +755,50 @@ class TestMessageACResponse:
         assert hasattr(response, "realtime_power")
         assert response.realtime_power == expected_realtime_power
 
+    def test_message_query_c1_method2(self) -> None:
+        """Test Message parse query C1 method2."""
+        self._assert_message_query_c1_method2(2)
+
     def test_message_query_c1_method12(self) -> None:
         """Test Message parse query C1 method12."""
-        self.test_message_query_c1_method2(12)
+        self._assert_message_query_c1_method2(12)
+
+    def test_message_query_c1_bcd_energy_binary_power(self) -> None:
+        """Test C1 format with BCD energy counters and binary realtime watts."""
+        self.header[9] = 0x03
+        samples = [
+            (
+                "c12101440000005800000000000000160016b700000001a9",
+                0.58,
+                0.16,
+                581.5,
+            ),
+            (
+                "c12101440000005900000000000000170016a30000000105",
+                0.59,
+                0.17,
+                579.5,
+            ),
+            (
+                "c12101440000005a000000000000001800162b0000000187",
+                0.60,
+                0.18,
+                567.5,
+            ),
+        ]
+
+        for payload, total_kwh, current_kwh, watts in samples:
+            response = MessageACResponse(
+                self.header + bytearray.fromhex(payload),
+                PowerFormats.BCD_ENERGY_BINARY_POWER,
+            )
+
+            assert hasattr(response, "total_energy_consumption")
+            assert response.total_energy_consumption == total_kwh
+            assert hasattr(response, "current_energy_consumption")
+            assert response.current_energy_consumption == current_kwh
+            assert hasattr(response, "realtime_power")
+            assert response.realtime_power == watts
 
     def test_message_query_c1_method3(self) -> None:
         """Test Message parse query C1 method3."""
