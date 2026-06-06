@@ -26,7 +26,13 @@ jobs:
 
   build:
     needs: [commitlint]
-    if: ${{ always() && !cancelled() && needs.commitlint.result != 'failure' }}
+    if: >-
+      always() &&
+      !cancelled() &&
+      (
+        (github.event_name != 'release' && needs.commitlint.result != 'failure') ||
+        (github.event_name == 'release')
+      )
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -74,7 +80,9 @@ jobs:
 
   deploy:
     needs: [build]
-    if: github.event_name == 'release'
+    if: >-
+      github.event_name == 'release' &&
+      needs.build.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
