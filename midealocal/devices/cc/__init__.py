@@ -134,6 +134,7 @@ class MideaCCDevice(MideaDevice):
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         if getattr(message, "is_fe_format", False):
             self._is_fe_format = True
+            _LOGGER.debug("[%s] _is_fe_format option True", self.device_id)
         new_status = {}
         fan_speed: int | None = None
         for status in self._attributes:
