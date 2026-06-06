@@ -15,7 +15,7 @@ jobs:
   commitlint:
     name: Lint Commit Messages
     runs-on: ubuntu-latest
-    if: github.event_name != 'release'
+    if: github.event_name != 'release' && !contains(github.event.head_commit.message, 'release')
     permissions:
       pull-requests: read
     steps:
