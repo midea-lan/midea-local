@@ -15,7 +15,7 @@ jobs:
   commitlint:
     name: Lint Commit Messages
     runs-on: ubuntu-latest
-    if: github.event_name != 'release' && !contains(github.event.head_commit.message, 'release')
+    if: github.event_name != 'release'
     permissions:
       pull-requests: read
     steps:
@@ -25,14 +25,6 @@ jobs:
           configFile: .commitlint.config.mjs
 
   build:
-    needs: [commitlint]
-    if: >-
-      always() &&
-      !cancelled() &&
-      (
-        (github.event_name != 'release' && needs.commitlint.result != 'failure') ||
-        (github.event_name == 'release')
-      )
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -80,9 +72,7 @@ jobs:
 
   deploy:
     needs: [build]
-    if: >-
-      github.event_name == 'release' &&
-      needs.build.result == 'success'
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
