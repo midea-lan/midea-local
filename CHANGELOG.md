@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.7.2](https://github.com/midea-lan/midea-local/compare/v6.7.1...v6.7.2) (2026-06-07)
+
+
+### Bug Fixes
+
+* **ci:** update release deploy job needs commitlint ([#462](https://github.com/midea-lan/midea-local/issues/462)) ([47e9984](https://github.com/midea-lan/midea-local/commit/47e9984959f26c1afca10ce58494fb3732a3ee32))
+
 ## [6.7.1](https://github.com/midea-lan/midea-local/compare/v6.7.0...v6.7.1) (2026-06-06)
 
 
