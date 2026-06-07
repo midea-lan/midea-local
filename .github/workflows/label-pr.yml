@@ -1,4 +1,5 @@
-name: "Check PR"
+# This workflow validates PR titles and automatically labels PRs based on their type.
+name: "Label PR"
 
 on:
   pull_request:

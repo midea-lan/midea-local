@@ -1,8 +1,8 @@
-name: Python build
+# This workflow runs on pull requests to the main branch and on published releases.
+# It checks commit messages, builds the Python package, runs tests, and deploys to PyPI for releases.
+name: PR and Python checks
 
 on:
-  push:
-    branches: ["main"]
   pull_request:
     branches: ["main"]
   release:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   commitlint:
-    name: Lint Commit Messages
+    name: PR Commit Messages Check
     runs-on: ubuntu-latest
     if: github.event_name != 'release'
     permissions:
@@ -25,6 +25,7 @@ jobs:
           configFile: .commitlint.config.mjs
 
   build:
+    name: Python Build and Test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -71,6 +72,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   deploy:
+    name: Deploy Release to PyPI
     needs: [build]
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
