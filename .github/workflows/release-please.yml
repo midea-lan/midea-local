@@ -1,3 +1,6 @@
+# This workflow uses the release-please GitHub Action to automate releases.
+# it only works on the main branch: PR mereged to main will trigger the release-please action
+# and PR will be created to update the version in the manifest file and create a release with the new version.
 on:
   push:
     branches:
