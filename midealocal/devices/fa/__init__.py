@@ -24,6 +24,9 @@ class DeviceAttributes(StrEnum):
     oscillation_angle = "oscillation_angle"
     tilting_angle = "tilting_angle"
     oscillation_mode = "oscillation_mode"
+    humidify = "humidify"
+    waterions = "waterions"
+    display_on_off = "display_on_off"
 
 
 class MideaFADevice(MideaDevice):
@@ -108,6 +111,9 @@ class MideaFADevice(MideaDevice):
                 DeviceAttributes.oscillate: False,
                 DeviceAttributes.oscillation_angle: None,
                 DeviceAttributes.tilting_angle: None,
+                DeviceAttributes.humidify: False,
+                DeviceAttributes.waterions: False,
+                DeviceAttributes.display_on_off: False,
                 DeviceAttributes.oscillation_mode: None,
             },
         )
