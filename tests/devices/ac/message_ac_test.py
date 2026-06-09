@@ -636,8 +636,8 @@ class TestMessageACResponse:
         body += bytearray(
             [
                 NewProtocolTags.b5_self_clean_active & 0xFF,  # tag low 0xE2
-                NewProtocolTags.b5_self_clean_active >> 8,    # tag high 0x00
-                len(payload),                                  # length 39
+                NewProtocolTags.b5_self_clean_active >> 8,  # tag high 0x00
+                len(payload),  # length 39
             ],
         )
         body += payload
