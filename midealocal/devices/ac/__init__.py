@@ -292,6 +292,10 @@ class MideaACDevice(MideaDevice):
             self._fresh_air_version = DeviceAttributes.fresh_air_1
         elif self._attributes[DeviceAttributes.fresh_air_2] is not None:
             self._fresh_air_version = DeviceAttributes.fresh_air_2
+        if hasattr(message, "self_clean_active"):
+            active = message.self_clean_active
+            self._attributes[DeviceAttributes.self_clean] = active
+            new_status[DeviceAttributes.self_clean.value] = active
         return new_status
 
     def make_message_set(self) -> MessageGeneralSet:

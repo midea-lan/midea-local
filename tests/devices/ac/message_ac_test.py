@@ -189,7 +189,7 @@ class TestMessageNewProtocolQuery:
         expected_body = bytearray(
             [
                 0xB1,
-                0x0B,
+                0x0C,
                 NewProtocolTags.indirect_wind & 0xFF,
                 NewProtocolTags.indirect_wind >> 8,
                 NewProtocolTags.breezeless & 0xFF,
@@ -212,6 +212,8 @@ class TestMessageNewProtocolQuery:
                 NewProtocolTags.buzzer_all >> 8,
                 NewProtocolQuery.error_code_query & 0xFF,
                 NewProtocolQuery.error_code_query >> 8,
+                NewProtocolTags.b5_self_clean_active & 0xFF,
+                NewProtocolTags.b5_self_clean_active >> 8,
             ],
         )
         assert msg.body[:-2] == expected_body
@@ -614,6 +616,36 @@ class TestMessageACResponse:
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "out_silent")
         assert response.out_silent is expected
+
+    @pytest.mark.parametrize(
+        ("byte12", "expected"),
+        [(0x3C, True), (0x00, False)],
+    )
+    def test_message_notify2_b5_self_clean_active(
+        self,
+        byte12: int,
+        expected: bool,
+    ) -> None:
+        """Test Message parse notify2 B5 with self_clean_active."""
+        # B5 push body: body_type(1) + count(1) + tag(2) + length(1) + value(39)
+        payload = bytearray(39)
+        payload[12] = byte12
+        body = bytearray(2)
+        body[0] = 0xB5  # Body type
+        body[1] = 0x01  # Params count
+        body += bytearray(
+            [
+                NewProtocolTags.b5_self_clean_active & 0xFF,  # tag low 0xE2
+                NewProtocolTags.b5_self_clean_active >> 8,  # tag high 0x00
+                len(payload),  # length 39
+            ],
+        )
+        body += payload
+        body += bytearray(1)  # trailing checksum byte (stripped by MessageResponse)
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "self_clean_active")
+        assert response.self_clean_active is expected
 
     def test_message_query_c0(self) -> None:
         """Test Message parse query C0."""
