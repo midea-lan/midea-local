@@ -31,6 +31,7 @@ FROST_PROTECT_MIN_LENGTH = 22
 INDIRECT_WIND_VALUE = 0x02
 MAX_MSG_SERIAL_NUM = 254
 OUT_SILENT_VALUE = 0x03
+SELF_CLEAN_ACTIVE_STATUS_BYTE = 12
 SCREEN_DISPLAY_BYTE_CHECK = 0x07
 SUB_PROTOCOL_BODY_TEMP_CHECK = 0x80
 TEMP_DECIMAL_MIN_BODY_LENGTH = 20
@@ -134,6 +135,7 @@ class NewProtocolTags(IntEnum):
     b5_sound = 0x022C
     # AC outdoor silent mode (PortaSplit)
     out_silent = 0x00CD
+    b5_self_clean_active = 0x00E2
 
 
 class MessageACBase(MessageRequest):
@@ -398,6 +400,7 @@ class MessageNewProtocolQuery(MessageACBase):
             NewProtocolTags.out_silent,
             NewProtocolTags.buzzer_all,
             NewProtocolQuery.error_code_query,
+            NewProtocolTags.b5_self_clean_active,
         ]
 
         _body = bytearray([len(query_params)])
@@ -921,6 +924,12 @@ class XBXMessageBody(NewProtocolMessageBody):
             self.sound = params[NewProtocolTags.buzzer_all][0] > 0
         if NewProtocolQuery.error_code_query in params:
             self.error_code = params[NewProtocolQuery.error_code_query][0]
+        if NewProtocolTags.b5_self_clean_active in params:
+            data = params[NewProtocolTags.b5_self_clean_active]
+            self.self_clean_active: bool = (
+                len(data) > SELF_CLEAN_ACTIVE_STATUS_BYTE
+                and data[SELF_CLEAN_ACTIVE_STATUS_BYTE] != 0
+            )
 
 
 class XB5MessageBody(NewProtocolMessageBody):

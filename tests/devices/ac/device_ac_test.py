@@ -265,6 +265,34 @@ class TestMideaACDevice:
             self.device.set_swing(True, False)
             mock_build_send.assert_called()
 
+    def test_self_clean_syncs_from_self_clean_active(self) -> None:
+        """Test that self_clean attribute tracks self_clean_active status reports."""
+        with patch("midealocal.devices.ac.MessageACResponse") as mock_message_response:
+            mock_message = mock_message_response.return_value
+            mock_message.used_subprotocol = False
+            mock_message.power = False
+            mock_message.fresh_air_power = False
+            mock_message.fresh_air_fan_speed = 0
+            mock_message.fresh_air_1 = None
+            mock_message.fresh_air_2 = None
+            mock_message.swing_vertical = False
+            mock_message.indoor_temperature = None
+            mock_message.outdoor_temperature = None
+            mock_message.indoor_humidity = None
+            mock_message.total_energy_consumption = None
+            mock_message.current_energy_consumption = None
+            mock_message.realtime_power = None
+
+            mock_message.self_clean_active = True
+            result = self.device.process_message(b"")
+            assert result[DeviceAttributes.self_clean.value] is True
+            assert self.device.attributes[DeviceAttributes.self_clean] is True
+
+            mock_message.self_clean_active = False
+            result = self.device.process_message(b"")
+            assert result[DeviceAttributes.self_clean.value] is False
+            assert self.device.attributes[DeviceAttributes.self_clean] is False
+
     def test_invalid_customize_format(self) -> None:
         """Test invalid customize format."""
         self.device.set_customize("{")
