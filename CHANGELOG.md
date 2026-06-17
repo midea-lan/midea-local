@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.8.0](https://github.com/midea-lan/midea-local/compare/v6.7.2...v6.8.0) (2026-06-16)
+
+
+### Features
+
+* **ac:** reflect self-clean running state from device report ([#467](https://github.com/midea-lan/midea-local/issues/467)) ([d77be26](https://github.com/midea-lan/midea-local/commit/d77be2686e09792d94dcaa06200ddf616f5232be))
+
 ## [6.7.2](https://github.com/midea-lan/midea-local/compare/v6.7.1...v6.7.2) (2026-06-07)
 
 
