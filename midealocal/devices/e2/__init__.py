@@ -2,6 +2,7 @@
 
 import json
 import logging
+import math
 from enum import IntEnum, StrEnum
 from typing import Any
 
@@ -203,7 +204,7 @@ class MideaE2Device(MideaDevice):
                     and value is not None
                     and self._heating_power_multiplier != 1.0
                 ):
-                    value *= self._heating_power_multiplier
+                    value = round(value * self._heating_power_multiplier)
                 self._attributes[status] = value
                 new_status[str(status)] = value
         return new_status
@@ -261,9 +262,11 @@ class MideaE2Device(MideaDevice):
                 if params and "precision_halves" in params:
                     self._precision_halves = params.get("precision_halves")
                 if params and "heating_power_multiplier" in params:
-                    self._heating_power_multiplier = float(
+                    heating_power_multiplier = float(
                         params.get("heating_power_multiplier"),
                     )
+                    if math.isfinite(heating_power_multiplier):
+                        self._heating_power_multiplier = heating_power_multiplier
             except Exception:
                 _LOGGER.exception("[%s] Set customize error", self.device_id)
             self.update_all(

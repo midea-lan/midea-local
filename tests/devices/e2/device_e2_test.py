@@ -51,4 +51,34 @@ class TestMideaE2Device:
             status = device.process_message(b"")
 
         assert status[DeviceAttributes.heating_power.value] == expected_power
+        assert isinstance(status[DeviceAttributes.heating_power.value], int)
         assert device.attributes[DeviceAttributes.heating_power] == expected_power
+
+    @pytest.mark.parametrize(
+        "customize",
+        [
+            '{"heating_power_multiplier": "nan"}',
+            '{"heating_power_multiplier": "inf"}',
+            '{"heating_power_multiplier": "-inf"}',
+        ],
+    )
+    def test_process_message_ignores_non_finite_heating_power_multiplier(
+        self,
+        customize: str,
+    ) -> None:
+        """Non-finite multipliers are ignored to keep published values valid."""
+
+        class FakeMessage:
+            heating_power = 2000
+
+        device = self._device(customize)
+
+        with patch(
+            "midealocal.devices.e2.MessageE2Response",
+            return_value=FakeMessage(),
+        ):
+            status = device.process_message(b"")
+
+        assert status[DeviceAttributes.heating_power.value] == 2000
+        assert isinstance(status[DeviceAttributes.heating_power.value], int)
+        assert device.attributes[DeviceAttributes.heating_power] == 2000
