@@ -14,6 +14,7 @@ from .message import (
     MessagePower,
     MessageQuery,
     MessageStorage,
+    MessageWork,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -137,9 +138,65 @@ class MideaE1Device(MideaDevice):
         }
         self._progress = ["Idle", "Pre-wash", "Wash", "Rinse", "Dry", "Complete"]
 
+    @property
+    def modes(self) -> dict[int, str]:
+        """Return supported work modes.
+
+        Returns
+        -------
+        Mapping of mode codes to names.
+
+        """
+        return self._modes.copy()
+
     def build_query(self) -> list[MessageQuery]:
         """Midea E1 device build query."""
         return [MessageQuery(self._message_protocol_version)]
+
+    def set_work_mode(self, mode: int) -> None:
+        """Set the dishwasher work mode and start the selected program.
+
+        Raises
+        ------
+        ValueError
+            If the mode code is not supported.
+
+        """
+        if mode not in self._modes:
+            msg = f"[e1] Unsupported work mode: {mode}"
+            raise ValueError(msg)
+
+        message = MessageWork(self._message_protocol_version)
+        message.mode = mode
+        self.build_send(message)
+
+    def start_work(self) -> None:
+        """Start the dishwasher using its currently selected work mode.
+
+        Raises
+        ------
+        ValueError
+            If there is no selected work mode.
+        TypeError
+            If the stored work mode is not a name.
+
+        """
+        mode_name = self.get_attribute(DeviceAttributes.mode)
+        if mode_name is None or mode_name == 0:
+            msg = "[e1] No work mode selected"
+            raise ValueError(msg)
+        if not isinstance(mode_name, str):
+            msg = "[e1] Invalid work mode"
+            raise TypeError(msg)
+
+        mode = next(
+            (code for code, name in self._modes.items() if name == mode_name),
+            None,
+        )
+        if mode is None or mode == 0:
+            msg = "[e1] No work mode selected"
+            raise ValueError(msg)
+        self.set_work_mode(mode)
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea E1 device process message."""
