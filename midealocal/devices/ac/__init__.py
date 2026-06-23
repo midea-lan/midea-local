@@ -305,9 +305,7 @@ class MideaACDevice(MideaDevice):
             active = message.self_clean_active
             self._attributes[DeviceAttributes.self_clean] = active
             new_status[DeviceAttributes.self_clean.value] = active
-        if hasattr(message, "temperature_limits"):
-            self._temperature_limits = message.temperature_limits
-        new_status.update(self._refresh_temperature_limits())
+        new_status.update(self._refresh_temperature_limits(message))
         return new_status
 
     def _b5_temperature_limits(self) -> tuple[float, float] | None:
@@ -320,12 +318,17 @@ class MideaACDevice(MideaDevice):
         mode = self._attributes[DeviceAttributes.mode]
         return self._temperature_limits.get(mode, self._temperature_limits[2])
 
-    def _refresh_temperature_limits(self) -> dict[str, Any]:
+    def _refresh_temperature_limits(
+        self,
+        message: MessageACResponse | None = None,
+    ) -> dict[str, Any]:
         """Resolve min/max setpoint limits.
 
         Priority: customize option > B5 capability > None (the consumer then
         falls back to its own default range).
         """
+        if message is not None and hasattr(message, "temperature_limits"):
+            self._temperature_limits = message.temperature_limits
         b5 = self._b5_temperature_limits()
         minimum = self._customize_min_temperature
         if minimum is None and b5 is not None:
