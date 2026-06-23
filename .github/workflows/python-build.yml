@@ -46,7 +46,7 @@ jobs:
         shell: bash
       - name: Cache pre-commit environments
         if: github.event_name != 'release'
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
