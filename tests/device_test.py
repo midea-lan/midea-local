@@ -72,6 +72,10 @@ class MideaDeviceTest:
         with patch("socket.socket.connect", side_effect=exc):
             assert self.device.connect() is result
             assert self.device.available is result
+            if not result:
+                assert self.device._socket is None
+            else:
+                assert self.device._socket is not None
 
     def test_connect_generic_exception(self) -> None:
         """Test connect with generic exception."""
@@ -80,6 +84,7 @@ class MideaDeviceTest:
 
             assert self.device.connect() is False
             assert self.device.available is False
+            assert self.device._socket is None
 
     def test_authenticate(self) -> None:
         """Test authenticate."""

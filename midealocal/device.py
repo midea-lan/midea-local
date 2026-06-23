@@ -100,7 +100,7 @@ class MideaDevice(threading.Thread):
         self._message_protocol_version: int = 0
         self._updates: list[Callable[[dict[str, Any]], None]] = []
         self._unsupported_protocol: list[str] = []
-        self._is_run = False
+        self._is_run: bool = False
         self._available = False
         self._appliance_query = True
         self._refresh_interval = 30
@@ -223,24 +223,26 @@ class MideaDevice(threading.Thread):
             connected = True
         except TimeoutError:
             _LOGGER.debug("[%s] Connection timed out", self._device_id)
-            self._socket = None
+            self.close_socket()
         except OSError:  # refresh_status exception
             _LOGGER.debug("[%s] Connection error", self._device_id)
-            self._socket = None
+            self.close_socket()
         except AuthException:  # authenticate exception
             _LOGGER.debug("[%s] Authentication failed", self._device_id)
+            self.close_socket()
         except SocketException:  # refresh_status exception
             _LOGGER.debug("[%s] Connect socket exception", self._device_id)
-            self._socket = None
+            self.close_socket()
         except NoSupportedProtocol:  # refresh_status exception
             _LOGGER.debug("[%s] No supported query protocol", self._device_id)
+            self.close_socket()
         except Exception as e:
             _LOGGER.exception(
                 "[%s] Unknown error during connect device",
                 self._device_id,
                 exc_info=e,
             )
-            self._socket = None
+            self.close_socket()
         # enable/disable device in init connection
         if check_protocol:
             self.set_available(connected)
@@ -619,7 +621,14 @@ class MideaDevice(threading.Thread):
         self._buffer = b""
         if self._socket:
             try:
-                self._socket.shutdown(socket.SHUT_RDWR)
+                try:
+                    self._socket.shutdown(socket.SHUT_RDWR)
+                except OSError as e:
+                    _LOGGER.debug(
+                        "[%s] Error while shutting down socket: %s",
+                        self._device_id,
+                        e,
+                    )
                 self._socket.close()
                 _LOGGER.debug("[%s] Socket closed", self._device_id)
             except OSError as e:
@@ -652,7 +661,7 @@ class MideaDevice(threading.Thread):
         """Connect loop until device online."""
         # connect loop until online
         connection_retries = 0
-        while self._socket is None:
+        while self._socket is None and self._is_run:
             _LOGGER.debug("[%s] Socket is None, try to connect", self._device_id)
             if self.connect(check_protocol=True) is False:
                 self.close_socket()
@@ -665,7 +674,10 @@ class MideaDevice(threading.Thread):
                     sleep_time,
                 )
                 # sleep and reconnect loop until device online
-                time.sleep(sleep_time)
+                for _ in range(sleep_time):
+                    if not self._is_run:
+                        break  # type: ignore[unreachable]
+                    time.sleep(1)
 
     def run(self) -> None:
         """Run loop brief description.
@@ -697,6 +709,8 @@ class MideaDevice(threading.Thread):
         while self._is_run:
             # connect loop until device online
             self._connect_loop()
+            if not self._is_run:
+                break  # type: ignore[unreachable]
             # socket recv msg timeout counter
             timeout_counter = 0
             start = time.time()
