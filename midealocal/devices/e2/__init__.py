@@ -55,6 +55,7 @@ class DeviceAttributes(StrEnum):
     sterilization = "sterilization"
     heat_water_level = "heat_water_level"
     eplus = "eplus"
+    memory = "memory"
     fast_wash = "fast_wash"
     half_heat = "half_heat"
     summer = "summer"
@@ -126,6 +127,7 @@ class MideaE2Device(MideaDevice):
                 DeviceAttributes.sterilization: None,
                 DeviceAttributes.heat_water_level: None,
                 DeviceAttributes.eplus: None,
+                DeviceAttributes.memory: None,
                 DeviceAttributes.fast_wash: None,
                 DeviceAttributes.half_heat: None,
                 DeviceAttributes.summer: None,
