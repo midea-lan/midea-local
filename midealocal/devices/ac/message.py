@@ -959,6 +959,14 @@ class XB5MessageBody(NewProtocolMessageBody):
             self.b5_temperature4 = params[NewProtocolTags.b5_temperature][4]
             self.b5_temperature5 = params[NewProtocolTags.b5_temperature][5]
             self.b5_temperature6 = params[NewProtocolTags.b5_temperature][6]
+            # per-mode setpoint limits in 0.5 C units. raw layout:
+            # [cool_min, cool_max, auto_min, auto_max, heat_min, heat_max, flag]
+            # keyed by mode value: 1 auto, 2 cool, 3 dry, 4 heat, 5 fan
+            # (dry/fan reuse the cool range)
+            cool = (self.b5_temperature0 / 2, self.b5_temperature1 / 2)
+            auto = (self.b5_temperature2 / 2, self.b5_temperature3 / 2)
+            heat = (self.b5_temperature4 / 2, self.b5_temperature5 / 2)
+            self.temperature_limits = {1: auto, 2: cool, 3: cool, 4: heat, 5: cool}
         if NewProtocolTags.b5_screen_display in params:
             self.b5_screen_display = params[NewProtocolTags.b5_screen_display][0]
         if NewProtocolTags.b5_sound in params:
