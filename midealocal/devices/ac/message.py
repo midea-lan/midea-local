@@ -52,6 +52,8 @@ B5_LOW_VALUE_MAX = 2  # value < 2 -> vertical swing / cool turbo available
 B5_FAN_LOW_HIGH_VALUES = frozenset({3, 4, 5, 6, 7})
 B5_FAN_MEDIUM_VALUES = frozenset({5, 6, 7})
 B5_FAN_AUTO_VALUES = frozenset({4, 5, 6})
+B5_FAN_SILENT_VALUE = 6
+B5_FAN_CUSTOM_VALUE = 1
 B5_ECO_VALUES = frozenset({1, 2})
 B5_ANION_ON_VALUE = 1
 B5_TURBO_HEAT_VALUES = frozenset({1, 3})
@@ -1011,10 +1013,12 @@ class XB5MessageBody(NewProtocolMessageBody):
             caps["swing_vertical"] = value < B5_LOW_VALUE_MAX
         if NewProtocolTags.b5_wind_speed in params:
             value = params[NewProtocolTags.b5_wind_speed][0]
+            caps["fan_silent"] = value == B5_FAN_SILENT_VALUE
             caps["fan_low"] = value in B5_FAN_LOW_HIGH_VALUES
             caps["fan_medium"] = value in B5_FAN_MEDIUM_VALUES
             caps["fan_high"] = value in B5_FAN_LOW_HIGH_VALUES
             caps["fan_auto"] = value in B5_FAN_AUTO_VALUES
+            caps["fan_custom"] = value == B5_FAN_CUSTOM_VALUE
         if NewProtocolTags.b5_eco in params:
             caps["eco"] = params[NewProtocolTags.b5_eco][0] in B5_ECO_VALUES
         if NewProtocolTags.b5_anion in params:
