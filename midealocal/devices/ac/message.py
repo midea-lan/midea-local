@@ -41,6 +41,22 @@ XC1_SUBBODY_TYPE_44 = 0x44
 XC1_SUBBODY_TYPE_40 = 0x40
 XC1_SUBBODY_TYPE_45 = 0x45
 
+# B5 capability value semantics (reverse-engineered; see _parse_capabilities).
+# The raw byte of each capability is not a 0/1 flag; each has its own value set.
+B5_HEAT_MODE_VALUES = frozenset({1, 2, 4, 6, 7, 9, 10, 11, 12, 13})
+B5_NO_COOL_MODE_VALUES = frozenset({2, 10, 12})
+B5_DRY_MODE_VALUES = frozenset({0, 1, 5, 6, 9, 11, 13})
+B5_AUTO_MODE_VALUES = frozenset({0, 1, 2, 7, 8, 9, 13})
+B5_SWING_HORIZONTAL_VALUES = frozenset({1, 3})
+B5_LOW_VALUE_MAX = 2  # value < 2 -> vertical swing / cool turbo available
+B5_FAN_LOW_HIGH_VALUES = frozenset({3, 4, 5, 6, 7})
+B5_FAN_MEDIUM_VALUES = frozenset({5, 6, 7})
+B5_FAN_AUTO_VALUES = frozenset({4, 5, 6})
+B5_ECO_VALUES = frozenset({1, 2})
+B5_ANION_ON_VALUE = 1
+B5_TURBO_HEAT_VALUES = frozenset({1, 3})
+B5_DISPLAY_VALUES = frozenset({1, 2, 100})
+
 
 class PowerFormats(IntEnum):
     """AC Power/Energy analysis formats."""
@@ -973,6 +989,44 @@ class XB5MessageBody(NewProtocolMessageBody):
             self.b5_sound = params[NewProtocolTags.b5_sound][0]
         if NewProtocolTags.b5_humidity in params:
             self.b5_humidity = params[NewProtocolTags.b5_humidity][0]
+        self._parse_capabilities(params)
+
+    def _parse_capabilities(self, params: dict[int, bytearray]) -> None:
+        """Decode B5 capability values into feature flags.
+
+        The raw byte of each capability is not a simple 0/1 flag; each one has
+        its own value semantics (reverse-engineered, matching the msmart
+        project). Only capabilities actually reported are added.
+        """
+        caps: dict[str, bool] = {}
+        if NewProtocolTags.b5_mode in params:
+            value = params[NewProtocolTags.b5_mode][0]
+            caps["heat_mode"] = value in B5_HEAT_MODE_VALUES
+            caps["cool_mode"] = value not in B5_NO_COOL_MODE_VALUES
+            caps["dry_mode"] = value in B5_DRY_MODE_VALUES
+            caps["auto_mode"] = value in B5_AUTO_MODE_VALUES
+        if NewProtocolTags.b5_wind_swing in params:
+            value = params[NewProtocolTags.b5_wind_swing][0]
+            caps["swing_horizontal"] = value in B5_SWING_HORIZONTAL_VALUES
+            caps["swing_vertical"] = value < B5_LOW_VALUE_MAX
+        if NewProtocolTags.b5_wind_speed in params:
+            value = params[NewProtocolTags.b5_wind_speed][0]
+            caps["fan_low"] = value in B5_FAN_LOW_HIGH_VALUES
+            caps["fan_medium"] = value in B5_FAN_MEDIUM_VALUES
+            caps["fan_high"] = value in B5_FAN_LOW_HIGH_VALUES
+            caps["fan_auto"] = value in B5_FAN_AUTO_VALUES
+        if NewProtocolTags.b5_eco in params:
+            caps["eco"] = params[NewProtocolTags.b5_eco][0] in B5_ECO_VALUES
+        if NewProtocolTags.b5_anion in params:
+            caps["anion"] = params[NewProtocolTags.b5_anion][0] == B5_ANION_ON_VALUE
+        if NewProtocolTags.b5_strong_wind in params:
+            value = params[NewProtocolTags.b5_strong_wind][0]
+            caps["turbo_cool"] = value < B5_LOW_VALUE_MAX
+            caps["turbo_heat"] = value in B5_TURBO_HEAT_VALUES
+        if NewProtocolTags.b5_screen_display in params:
+            value = params[NewProtocolTags.b5_screen_display][0]
+            caps["display_control"] = value in B5_DISPLAY_VALUES
+        self.capabilities = caps
 
 
 class XC0MessageBody(XMessageBody):
