@@ -1,5 +1,19 @@
 # Changelog
 
+## [6.9.0](https://github.com/midea-lan/midea-local/compare/v6.8.0...v6.9.0) (2026-06-25)
+
+
+### Features
+
+* **ac:** expose per-mode min/max temperature from B5 capability ([#478](https://github.com/midea-lan/midea-local/issues/478)) ([a558dcd](https://github.com/midea-lan/midea-local/commit/a558dcdcc53e9b7b42b49149c808b4c080894074))
+* **e2:** add memory (Memo U) attribute support ([#477](https://github.com/midea-lan/midea-local/issues/477)) ([d9c1f14](https://github.com/midea-lan/midea-local/commit/d9c1f14710d8949d3e8d79dff3462c24774c9818))
+* **e2:** support heating power multiplier ([#473](https://github.com/midea-lan/midea-local/issues/473)) ([b732b5a](https://github.com/midea-lan/midea-local/commit/b732b5a5b77a09244bbecc55c9fd000d103c2a5d))
+
+
+### Bug Fixes
+
+* use asyncio.Lock() instead of threading.Lock() ([#482](https://github.com/midea-lan/midea-local/issues/482)) ([eb4fd26](https://github.com/midea-lan/midea-local/commit/eb4fd26f94a8173f1e29775179234b8079acbe02))
+
 ## [6.8.0](https://github.com/midea-lan/midea-local/compare/v6.7.2...v6.8.0) (2026-06-16)
 
 
