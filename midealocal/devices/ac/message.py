@@ -30,6 +30,8 @@ FRESH_AIR_LENGTH = 2
 FROST_PROTECT_MIN_LENGTH = 22
 INDIRECT_WIND_VALUE = 0x02
 MAX_MSG_SERIAL_NUM = 254
+OUT_SILENT_VALUE = 0x03
+SELF_CLEAN_ACTIVE_STATUS_BYTE = 12
 SCREEN_DISPLAY_BYTE_CHECK = 0x07
 SUB_PROTOCOL_BODY_TEMP_CHECK = 0x80
 TEMP_DECIMAL_MIN_BODY_LENGTH = 20
@@ -48,6 +50,7 @@ class PowerFormats(IntEnum):
     BINARY = 2  # binary with energy in 0.1 kWh resolution
     MIXED = 3  # mixed/INT (byte = 0-99)
     BINARY1 = 12  # binary
+    BCD_ENERGY_BINARY_POWER = 101
 
 
 class NewProtocolQuery(IntEnum):
@@ -130,6 +133,9 @@ class NewProtocolTags(IntEnum):
     b5_screen_display = 0x0224
     b5_anion = 0x021E
     b5_sound = 0x022C
+    # AC outdoor silent mode (PortaSplit)
+    out_silent = 0x00CD
+    b5_self_clean_active = 0x00E2
 
 
 class MessageACBase(MessageRequest):
@@ -391,6 +397,10 @@ class MessageNewProtocolQuery(MessageACBase):
             NewProtocolTags.fresh_air_2,
             NewProtocolTags.wind_lr_angle,
             NewProtocolTags.wind_ud_angle,
+            NewProtocolTags.out_silent,
+            NewProtocolTags.buzzer_all,
+            NewProtocolQuery.error_code_query,
+            NewProtocolTags.b5_self_clean_active,
         ]
 
         _body = bytearray([len(query_params)])
@@ -571,6 +581,7 @@ class MessageGeneralSet(MessageACBase):
         self.natural_wind = False
         self.frost_protect = False
         self.comfort_mode = False
+        self.anion = False
 
     @property
     def _body(self) -> bytearray:
@@ -597,6 +608,7 @@ class MessageGeneralSet(MessageACBase):
         dry = 0x04 if self.dry else 0
         aux_heating = 0x08 if self.aux_heating else 0
         eco_mode = 0x80 if self.eco_mode else 0
+        anion = 0x20 if self.anion else 0
         # Byte 10 temp_fahrenheit
         temp_fahrenheit = 0x04 if self.temp_fahrenheit else 0
         sleep_mode = 0x01 if self.sleep_mode else 0
@@ -618,7 +630,7 @@ class MessageGeneralSet(MessageACBase):
                 0x00,
                 swing_mode,
                 boost_mode,
-                smart_eye | dry | aux_heating | eco_mode,
+                smart_eye | dry | aux_heating | eco_mode | anion,
                 temp_fahrenheit | sleep_mode | boost_mode_1,
                 0x00,
                 0x00,
@@ -654,6 +666,9 @@ class MessageNewProtocolSet(MessageACBase):
         self.fresh_air_2: bytes | None = None
         self.wind_lr_angle: bytes | None = None
         self.wind_ud_angle: bytes | None = None
+        self.out_silent: bool | None = None
+        self.sound: bool | None = None
+        self.self_clean: bool | None = None
 
     @property
     def _body(self) -> bytearray:
@@ -742,6 +757,32 @@ class MessageNewProtocolSet(MessageACBase):
                     value=bytearray([wind_ud_angle if wind_ud_angle else 0x00]),
                 ),
             )
+        if self.out_silent is not None:
+            pack_count += 1
+            payload.extend(
+                NewProtocolMessageBody.pack(
+                    param=NewProtocolTags.out_silent,
+                    # Device requires 0x03 to activate, 0x00 to deactivate
+                    # Sending 0x01 results in an error from the firmware
+                    value=bytearray([OUT_SILENT_VALUE if self.out_silent else 0x00]),
+                ),
+            )
+        if self.sound is not None:
+            pack_count += 1
+            payload.extend(
+                NewProtocolMessageBody.pack(
+                    param=NewProtocolTags.buzzer_all,
+                    value=bytearray([0x01 if self.sound else 0x00]),
+                ),
+            )
+        if self.self_clean is not None:
+            pack_count += 1
+            payload.extend(
+                NewProtocolMessageBody.pack(
+                    param=NewProtocolTags.self_clean,
+                    value=bytearray([0x01 if self.self_clean else 0x00]),
+                ),
+            )
         payload[0] = pack_count
         return payload
 
@@ -775,6 +816,7 @@ class XA0MessageBody(MessageBody):
         self.dry = (body[9] & 0x04) > 0  # dryValue
         self.aux_heating = (body[9] & 0x08) > 0  # PTCValue
         self.purifier = body[9] & 0x20  # purifierValue
+        self.anion = (body[9] & 0x20) > 0
         self.eco_mode = (body[9] & 0x10) > 0  # ecoValue
         self.sleep_mode = (body[10] & 0x01) > 0
         self.natural_wind = (body[10] & 0x40) > 0  # naturalWind
@@ -876,6 +918,18 @@ class XBXMessageBody(NewProtocolMessageBody):
             self.wind_lr_angle = params[NewProtocolTags.wind_lr_angle][0]
         if NewProtocolTags.wind_ud_angle in params:
             self.wind_ud_angle = params[NewProtocolTags.wind_ud_angle][0]
+        if NewProtocolTags.out_silent in params:
+            self.out_silent = params[NewProtocolTags.out_silent][0] == OUT_SILENT_VALUE
+        if NewProtocolTags.buzzer_all in params:
+            self.sound = params[NewProtocolTags.buzzer_all][0] > 0
+        if NewProtocolQuery.error_code_query in params:
+            self.error_code = params[NewProtocolQuery.error_code_query][0]
+        if NewProtocolTags.b5_self_clean_active in params:
+            data = params[NewProtocolTags.b5_self_clean_active]
+            self.self_clean_active: bool = (
+                len(data) > SELF_CLEAN_ACTIVE_STATUS_BYTE
+                and data[SELF_CLEAN_ACTIVE_STATUS_BYTE] != 0
+            )
 
 
 class XB5MessageBody(NewProtocolMessageBody):
@@ -905,6 +959,14 @@ class XB5MessageBody(NewProtocolMessageBody):
             self.b5_temperature4 = params[NewProtocolTags.b5_temperature][4]
             self.b5_temperature5 = params[NewProtocolTags.b5_temperature][5]
             self.b5_temperature6 = params[NewProtocolTags.b5_temperature][6]
+            # per-mode setpoint limits in 0.5 C units. the six raw bytes are
+            # cool then auto then heat, each a min then a max, plus a flag byte.
+            # keyed by mode value: auto is 1, cool 2, dry 3, heat 4, fan 5
+            # (dry and fan reuse the cool range).
+            cool = (self.b5_temperature0 / 2, self.b5_temperature1 / 2)
+            auto = (self.b5_temperature2 / 2, self.b5_temperature3 / 2)
+            heat = (self.b5_temperature4 / 2, self.b5_temperature5 / 2)
+            self.temperature_limits = {1: auto, 2: cool, 3: cool, 4: heat, 5: cool}
         if NewProtocolTags.b5_screen_display in params:
             self.b5_screen_display = params[NewProtocolTags.b5_screen_display][0]
         if NewProtocolTags.b5_sound in params:
@@ -939,6 +1001,7 @@ class XC0MessageBody(XMessageBody):
         self.eco_mode = (body[9] & 0x10) > 0  # ecoValue
         self.aux_heating = (body[9] & 0x08) > 0  # PTCValue
         self.purifier = body[9] & 0x20  # purifierValue
+        self.anion = (body[9] & 0x20) > 0
         self.temp_fahrenheit = (body[10] & 0x04) > 0
         self.sleep_mode = (body[10] & 0x01) > 0
         decimal = body[15] if len(body) > TEMP_DECIMAL_MIN_BODY_LENGTH else 0
@@ -1056,11 +1119,15 @@ class XC1MessageBody(MessageBody):
     @classmethod
     def parse_power(cls, analysis_method: int, databytes: bytearray) -> float:
         """AC C1 message body parse power."""
+        if analysis_method == PowerFormats.BCD_ENERGY_BINARY_POWER:
+            return cls.parse_value(PowerFormats.BINARY, databytes) / 10
         return cls.parse_value(analysis_method, databytes) / 10
 
     @classmethod
     def parse_consumption(cls, analysis_method: int, databytes: bytearray) -> float:
         """AC C1 message body parse consumption."""
+        if analysis_method == PowerFormats.BCD_ENERGY_BINARY_POWER:
+            return cls.parse_value(PowerFormats.BCD, databytes) / 100
         # LSB = 0.01 kWh, except for default binary format = 0.1 kWh
         divisor = 10 if analysis_method == PowerFormats.BINARY else 100
         return cls.parse_value(analysis_method, databytes) / divisor

@@ -15,6 +15,7 @@ from midealocal.devices.ac.message import (
     MessagePowerQuery,
     MessageQuery,
     MessageSubProtocolQuery,
+    PowerFormats,
 )
 
 
@@ -48,8 +49,26 @@ class TestMideaACDevice:
         assert self.device.attributes[DeviceAttributes.fan_speed] == 102
         assert not self.device.attributes[DeviceAttributes.swing_vertical]
         assert not self.device.attributes[DeviceAttributes.swing_horizontal]
+        assert not self.device.attributes[DeviceAttributes.out_silent]
         assert self.device.temperature_step == 1
         assert self.device.fresh_air_fan_speeds is not None
+
+    def test_customize_accepts_bcd_energy_binary_power_format(self) -> None:
+        """Test customize can select BCD energy with binary realtime power."""
+        device = MideaACDevice(
+            name="Custom Power Format Device",
+            device_id=1,
+            ip_address="192.168.1.1",
+            port=12345,
+            token="AA",
+            key="BB",
+            device_protocol=ProtocolVersion.V1,
+            model="test_model",
+            subtype=1,
+            customize='{"power_analysis_method": 101}',
+        )
+
+        assert device._power_analysis_method == PowerFormats.BCD_ENERGY_BINARY_POWER
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
@@ -116,6 +135,12 @@ class TestMideaACDevice:
             self.device.set_attribute(DeviceAttributes.fresh_air_mode.value, False)
             mock_build_send.assert_called()
 
+            self.device.set_attribute(DeviceAttributes.out_silent.value, True)
+            mock_build_send.assert_called()
+
+            self.device.set_attribute(DeviceAttributes.out_silent.value, False)
+            mock_build_send.assert_called()
+
     def test_build_query(self) -> None:
         """Test build query."""
         self.device._used_subprotocol = True
@@ -172,6 +197,7 @@ class TestMideaACDevice:
             mock_message.fresh_air_fan_speed = 0
             mock_message.fresh_air_1 = 1
             mock_message.fresh_air_2 = 1
+            mock_message.out_silent = True
 
             result = self.device.process_message(b"")
             assert result[DeviceAttributes.power.value]
@@ -205,6 +231,7 @@ class TestMideaACDevice:
             assert result[DeviceAttributes.fresh_air_mode.value] == "off"
             assert result[DeviceAttributes.fresh_air_1.value] == 1
             assert result[DeviceAttributes.fresh_air_2.value] == 1
+            assert result[DeviceAttributes.out_silent.value]
 
             mock_message.fresh_air_fan_speed = 55
             mock_message.fresh_air_1 = None
@@ -237,6 +264,34 @@ class TestMideaACDevice:
         with patch.object(self.device, "send_message_v2") as mock_build_send:
             self.device.set_swing(True, False)
             mock_build_send.assert_called()
+
+    def test_self_clean_syncs_from_self_clean_active(self) -> None:
+        """Test that self_clean attribute tracks self_clean_active status reports."""
+        with patch("midealocal.devices.ac.MessageACResponse") as mock_message_response:
+            mock_message = mock_message_response.return_value
+            mock_message.used_subprotocol = False
+            mock_message.power = False
+            mock_message.fresh_air_power = False
+            mock_message.fresh_air_fan_speed = 0
+            mock_message.fresh_air_1 = None
+            mock_message.fresh_air_2 = None
+            mock_message.swing_vertical = False
+            mock_message.indoor_temperature = None
+            mock_message.outdoor_temperature = None
+            mock_message.indoor_humidity = None
+            mock_message.total_energy_consumption = None
+            mock_message.current_energy_consumption = None
+            mock_message.realtime_power = None
+
+            mock_message.self_clean_active = True
+            result = self.device.process_message(b"")
+            assert result[DeviceAttributes.self_clean.value] is True
+            assert self.device.attributes[DeviceAttributes.self_clean] is True
+
+            mock_message.self_clean_active = False
+            result = self.device.process_message(b"")
+            assert result[DeviceAttributes.self_clean.value] is False
+            assert self.device.attributes[DeviceAttributes.self_clean] is False
 
     def test_invalid_customize_format(self) -> None:
         """Test invalid customize format."""

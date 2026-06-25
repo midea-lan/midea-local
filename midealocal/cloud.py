@@ -266,7 +266,11 @@ class MideaCloud:
         for method in [1, 2]:
             udp_id = self._security.get_udp_id(appliance_id, method)
             data = self._make_general_data()
-            data.update({"udpid": udp_id})
+            # The MSmartHome ("SmartHome") cloud rejects getToken with
+            # 3004 "value is illegal" unless the appliance id is also sent as
+            # `applianceCodes`; the official app includes it. Harmless on other
+            # clouds, which ignore the extra field.
+            data.update({"udpid": udp_id, "applianceCodes": str(appliance_id)})
             response = await self._api_request(
                 endpoint="/v1/iot/secure/getToken",
                 data=data,

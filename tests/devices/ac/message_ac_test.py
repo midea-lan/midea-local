@@ -9,12 +9,15 @@ from midealocal.devices.ac.message import (
     MessageCapabilitiesQuery,
     MessageGeneralSet,
     MessageNewProtocolQuery,
+    MessageNewProtocolSet,
     MessagePowerQuery,
     MessageQuery,
     MessageSubProtocol,
     MessageSubProtocolSet,
     MessageToggleDisplay,
+    NewProtocolQuery,
     NewProtocolTags,
+    PowerFormats,
 )
 from midealocal.message import ListTypes, MessageType
 
@@ -186,7 +189,7 @@ class TestMessageNewProtocolQuery:
         expected_body = bytearray(
             [
                 0xB1,
-                0x08,
+                0x0C,
                 NewProtocolTags.indirect_wind & 0xFF,
                 NewProtocolTags.indirect_wind >> 8,
                 NewProtocolTags.breezeless & 0xFF,
@@ -203,9 +206,45 @@ class TestMessageNewProtocolQuery:
                 NewProtocolTags.wind_lr_angle >> 8,
                 NewProtocolTags.wind_ud_angle & 0xFF,
                 NewProtocolTags.wind_ud_angle >> 8,
+                NewProtocolTags.out_silent & 0xFF,
+                NewProtocolTags.out_silent >> 8,
+                NewProtocolTags.buzzer_all & 0xFF,
+                NewProtocolTags.buzzer_all >> 8,
+                NewProtocolQuery.error_code_query & 0xFF,
+                NewProtocolQuery.error_code_query >> 8,
+                NewProtocolTags.b5_self_clean_active & 0xFF,
+                NewProtocolTags.b5_self_clean_active >> 8,
             ],
         )
         assert msg.body[:-2] == expected_body
+
+
+class TestMessageNewProtocolSetOutSilent:
+    """Test Message New Protocol Set for out_silent."""
+
+    @pytest.mark.parametrize(
+        ("value", "expected_byte"),
+        [(True, 0x03), (False, 0x00)],
+    )
+    def test_out_silent_on_off(self, value: bool, expected_byte: int) -> None:
+        """Test out_silent set to on/off sends correct byte."""
+        msg = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
+        msg.out_silent = value
+        body = msg.body
+        assert body[0] == 0xB0
+        assert body[1] == 0x01  # 1 param packed
+        assert body[2] == NewProtocolTags.out_silent & 0xFF  # 0xCD
+        assert body[3] == NewProtocolTags.out_silent >> 8  # 0x00
+        assert body[4] == 0x01  # length byte
+        assert body[5] == expected_byte
+
+    def test_out_silent_none_not_packed(self) -> None:
+        """Test out_silent None does not add to payload."""
+        msg = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
+        # out_silent defaults to None, should not be packed
+        body = msg.body
+        assert body[0] == 0xB0
+        assert body[1] == 0x00  # 0 params packed
 
 
 class TestMessageSubProtocol:
@@ -555,6 +594,59 @@ class TestMessageACResponse:
         assert hasattr(response, "fresh_air_fan_speed")
         assert response.fresh_air_fan_speed == 20
 
+    @pytest.mark.parametrize(
+        ("raw_value", "expected"),
+        [(0x03, True), (0x00, False)],
+    )
+    def test_message_notify2_b0_out_silent(
+        self,
+        raw_value: int,
+        expected: bool,
+    ) -> None:
+        """Test Message parse notify2 B0 with out_silent."""
+        body = bytearray(10)
+        body[0] = 0xB0  # Body type
+        body[1] = 0x01  # Params count
+        body[2] = NewProtocolTags.out_silent & 0xFF  # Low byte 0xCD
+        body[3] = NewProtocolTags.out_silent >> 8  # High byte 0x00
+        body[4] = 0x00  # Padding
+        body[5] = 0x01  # Value length
+        body[6] = raw_value
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "out_silent")
+        assert response.out_silent is expected
+
+    @pytest.mark.parametrize(
+        ("byte12", "expected"),
+        [(0x3C, True), (0x00, False)],
+    )
+    def test_message_notify2_b5_self_clean_active(
+        self,
+        byte12: int,
+        expected: bool,
+    ) -> None:
+        """Test Message parse notify2 B5 with self_clean_active."""
+        # B5 push body: body_type(1) + count(1) + tag(2) + length(1) + value(39)
+        payload = bytearray(39)
+        payload[12] = byte12
+        body = bytearray(2)
+        body[0] = 0xB5  # Body type
+        body[1] = 0x01  # Params count
+        body += bytearray(
+            [
+                NewProtocolTags.b5_self_clean_active & 0xFF,  # tag low 0xE2
+                NewProtocolTags.b5_self_clean_active >> 8,  # tag high 0x00
+                len(payload),  # length 39
+            ],
+        )
+        body += payload
+        body += bytearray(1)  # trailing checksum byte (stripped by MessageResponse)
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "self_clean_active")
+        assert response.self_clean_active is expected
+
     def test_message_query_c0(self) -> None:
         """Test Message parse query C0."""
         self.header[9] = 0x03
@@ -652,8 +744,8 @@ class TestMessageACResponse:
         assert hasattr(response, "realtime_power")
         assert response.realtime_power == expected_realtime_power
 
-    def test_message_query_c1_method2(self, method: int = 2) -> None:
-        """Test Message parse query C1 method2 (and 12)."""
+    def _assert_message_query_c1_method2(self, method: int) -> None:
+        """Assert Message parse query C1 method2 (and 12)."""
         self.header[9] = 0x03
         body = bytearray(20)
         body[0] = 0xC1  # Body type
@@ -695,9 +787,50 @@ class TestMessageACResponse:
         assert hasattr(response, "realtime_power")
         assert response.realtime_power == expected_realtime_power
 
+    def test_message_query_c1_method2(self) -> None:
+        """Test Message parse query C1 method2."""
+        self._assert_message_query_c1_method2(2)
+
     def test_message_query_c1_method12(self) -> None:
         """Test Message parse query C1 method12."""
-        self.test_message_query_c1_method2(12)
+        self._assert_message_query_c1_method2(12)
+
+    def test_message_query_c1_bcd_energy_binary_power(self) -> None:
+        """Test C1 format with BCD energy counters and binary realtime watts."""
+        self.header[9] = 0x03
+        samples = [
+            (
+                "c12101440000005800000000000000160016b700000001a9",
+                0.58,
+                0.16,
+                581.5,
+            ),
+            (
+                "c12101440000005900000000000000170016a30000000105",
+                0.59,
+                0.17,
+                579.5,
+            ),
+            (
+                "c12101440000005a000000000000001800162b0000000187",
+                0.60,
+                0.18,
+                567.5,
+            ),
+        ]
+
+        for payload, total_kwh, current_kwh, watts in samples:
+            response = MessageACResponse(
+                self.header + bytearray.fromhex(payload),
+                PowerFormats.BCD_ENERGY_BINARY_POWER,
+            )
+
+            assert hasattr(response, "total_energy_consumption")
+            assert response.total_energy_consumption == total_kwh
+            assert hasattr(response, "current_energy_consumption")
+            assert response.current_energy_consumption == current_kwh
+            assert hasattr(response, "realtime_power")
+            assert response.realtime_power == watts
 
     def test_message_query_c1_method3(self) -> None:
         """Test Message parse query C1 method3."""
@@ -831,3 +964,118 @@ class TestMessageACResponse:
         body[5] = 0x13
         response = MessageACResponse(self.header + body)
         assert not hasattr(response, "power")
+
+    def test_message_query_c0_anion(self) -> None:
+        """Test anion parsed from C0 body (purifier bit 0x20 in byte 9)."""
+        self.header[9] = 0x03
+        body = bytearray(24)
+        body[0] = 0xC0
+        body[9] = 0x20  # purifier/anion bit set
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "anion")
+        assert response.anion is True
+
+        body[9] = 0x00
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "anion")
+        assert response.anion is False
+
+    def test_message_query_c0_pmv(self) -> None:
+        """Test PMV parsed from C0 body (low nibble of byte 14)."""
+        self.header[9] = 0x03
+        body = bytearray(24)
+        body[0] = 0xC0
+        body[14] = 0x07  # PMV nibble = 7 → 7*0.5 - 3.5 = 0.0
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "pmv")
+        assert response.pmv == 0.0
+
+        body[14] = 0x00  # PMV nibble = 0 → 0*0.5 - 3.5 = -3.5
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "pmv")
+        assert response.pmv == -3.5
+
+    def test_message_b1_error_code(self) -> None:
+        """Test error_code parsed from B1 response."""
+        self.header[9] = 0x03
+        body = bytearray(10)
+        body[0] = 0xB1
+        body[1] = 0x01  # 1 param
+        body[2] = NewProtocolQuery.error_code_query & 0xFF
+        body[3] = NewProtocolQuery.error_code_query >> 8
+        body[4] = 0x00  # padding
+        body[5] = 0x01  # length
+        body[6] = 0x05  # error code 5
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "error_code")
+        assert response.error_code == 5
+
+    def test_message_b1_sound(self) -> None:
+        """Test sound parsed from B1 response (buzzer_all tag)."""
+        self.header[9] = 0x03
+        body = bytearray(10)
+        body[0] = 0xB1
+        body[1] = 0x01
+        body[2] = NewProtocolTags.buzzer_all & 0xFF
+        body[3] = NewProtocolTags.buzzer_all >> 8
+        body[4] = 0x00
+        body[5] = 0x01
+        body[6] = 0x01  # sound on
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "sound")
+        assert response.sound is True
+
+        body[6] = 0x00
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "sound")
+        assert response.sound is False
+
+
+class TestMessageNewProtocolSetNewFeatures:
+    """Test MessageNewProtocolSet for sound and self_clean."""
+
+    @pytest.mark.parametrize(
+        ("value", "expected_byte"),
+        [(True, 0x01), (False, 0x00)],
+    )
+    def test_sound_on_off(self, value: bool, expected_byte: int) -> None:
+        """Test sound set to on/off sends correct byte."""
+        msg = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
+        msg.sound = value
+        body = msg.body
+        assert body[0] == 0xB0
+        assert body[1] == 0x01
+        assert body[2] == NewProtocolTags.buzzer_all & 0xFF
+        assert body[3] == NewProtocolTags.buzzer_all >> 8
+        assert body[4] == 0x01
+        assert body[5] == expected_byte
+
+    @pytest.mark.parametrize(
+        ("value", "expected_byte"),
+        [(True, 0x01), (False, 0x00)],
+    )
+    def test_self_clean_on_off(self, value: bool, expected_byte: int) -> None:
+        """Test self_clean set to on/off sends correct byte."""
+        msg = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
+        msg.self_clean = value
+        body = msg.body
+        assert body[0] == 0xB0
+        assert body[1] == 0x01
+        assert body[2] == NewProtocolTags.self_clean & 0xFF
+        assert body[3] == NewProtocolTags.self_clean >> 8
+        assert body[4] == 0x01
+        assert body[5] == expected_byte
+
+
+class TestMessageGeneralSetAnion:
+    """Test MessageGeneralSet anion (purifier) bit."""
+
+    @pytest.mark.parametrize(
+        ("value", "expected_bit"),
+        [(True, 0x20), (False, 0x00)],
+    )
+    def test_anion_bit_in_body(self, value: bool, expected_bit: int) -> None:
+        """Test anion sets bit 0x20 in body byte index 8."""
+        msg = MessageGeneralSet(protocol_version=ProtocolVersion.V1)
+        msg.anion = value
+        assert msg._body[8] & 0x20 == expected_bit
