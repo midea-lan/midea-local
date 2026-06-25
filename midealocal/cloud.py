@@ -5,10 +5,10 @@ import json
 import logging
 import re
 import time
+from asyncio import Lock
 from datetime import UTC, datetime
 from http import HTTPStatus
 from secrets import token_hex
-from threading import Lock
 from typing import Any, cast
 
 import aiofiles
@@ -214,7 +214,7 @@ class MideaCloud:
         response: dict = {"code": -1}
         for _ in range(3):
             try:
-                with self._api_lock:
+                async with self._api_lock:
                     r = await self._session.request(
                         "POST",
                         url,
@@ -906,7 +906,7 @@ class MideaAirCloud(MideaCloud):
         response: dict = {"errorCode": -1}
         for _ in range(3):
             try:
-                with self._api_lock:
+                async with self._api_lock:
                     r = await self._session.request(
                         "POST",
                         url,
