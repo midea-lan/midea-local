@@ -308,9 +308,13 @@ class MideaACDevice(MideaDevice):
             self._attributes[DeviceAttributes.self_clean] = active
             new_status[DeviceAttributes.self_clean.value] = active
         new_status.update(self._refresh_temperature_limits(message))
-        if hasattr(message, "capabilities") and message.capabilities:
-            self._capabilities.update(message.capabilities)
+        self._update_capabilities(message)
         return new_status
+
+    def _update_capabilities(self, message: MessageACResponse) -> None:
+        """Accumulate decoded B5 capability flags from a B5 response."""
+        if hasattr(message, "capabilities"):
+            self._capabilities.update(message.capabilities)
 
     @property
     def capabilities(self) -> dict[str, bool]:
