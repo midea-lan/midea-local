@@ -27,7 +27,7 @@ SN8_MIN_SERIAL_LENGTH = 17
 
 _LOGGER = logging.getLogger(__name__)
 
-SUPPORTED_CLOUDS = {
+SUPPORTED_CLOUDS: dict[str, Any] = {
     "美的美居": {
         "class_name": "MeijuCloud",
         "app_id": "900",
@@ -90,7 +90,7 @@ PRESET_ACCOUNT_DATA = [
 def get_default_cloud() -> str:
     """Return default cloud."""
     for key, value in SUPPORTED_CLOUDS.items():
-        if cast(dict, value).get("default"):
+        if value.get("default"):
             return key
     raise ElementMissing
 
@@ -346,7 +346,7 @@ class MeijuCloud(MideaCloud):
         password: str,
     ) -> None:
         """Initialize Meiju Cloud."""
-        cloud_data = cast(dict[str, Any], SUPPORTED_CLOUDS[cloud_name])
+        cloud_data = SUPPORTED_CLOUDS[cloud_name]
         super().__init__(
             session=session,
             security=MeijuCloudSecurity(
