@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any
+from typing import Any, ClassVar
 
 from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
@@ -33,10 +33,31 @@ class DeviceAttributes(StrEnum):
     freezer_door = "freezer_door"
     bar_door = "bar_door"
     flex_zone_door = "flex_zone_door"
+    microcrystal_fresh = "microcrystal_fresh"
+    electronic_smell = "electronic_smell"
+    humidity = "humidity"
+    variable_mode = "variable_mode"
 
 
 class MideaCADevice(MideaDevice):
     """Midea CA device."""
+
+    _variable_mode: ClassVar[dict[int, str]] = {
+        0x00: "none",
+        0x01: "soft_freezing",
+        0x02: "zero_fresh",
+        0x03: "cold_drink",
+        0x04: "fresh_product",
+        0x05: "partial_freezing",
+        0x06: "dry_zone",
+        0x07: "freeze_warm",
+        0x08: "partial_freezing",
+    }
+
+    _humidity: ClassVar[dict[int, str]] = {
+        0x10: "high",
+        0x20: "low",
+    }
 
     def __init__(
         self,
@@ -81,6 +102,10 @@ class MideaCADevice(MideaDevice):
                 DeviceAttributes.freezer_door: False,
                 DeviceAttributes.bar_door: False,
                 DeviceAttributes.flex_zone_door: False,
+                DeviceAttributes.microcrystal_fresh: False,
+                DeviceAttributes.electronic_smell: False,
+                DeviceAttributes.humidity: None,
+                DeviceAttributes.variable_mode: None,
             },
         )
         self._modes = [""]
@@ -94,10 +119,18 @@ class MideaCADevice(MideaDevice):
         message = MessageCAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                self._attributes[status] = getattr(message, str(status))
-                new_status[str(status)] = getattr(message, str(status))
+        for attr in self._attributes:
+            if hasattr(message, str(attr)):
+                value = getattr(message, str(attr))
+                # variable_mode
+                if attr == DeviceAttributes.variable_mode:
+                    self._attributes[attr] = MideaCADevice._variable_mode.get(value)
+                # humidity
+                elif attr == DeviceAttributes.humidity:
+                    self._attributes[attr] = MideaCADevice._humidity.get(value)
+                else:
+                    self._attributes[attr] = value
+                new_status[str(attr)] = getattr(message, str(attr))
         return new_status
 
     def set_attribute(self, attr: str, value: bool | int | str) -> None:

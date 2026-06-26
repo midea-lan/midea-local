@@ -190,7 +190,7 @@ class TestMessageC3Response:
             MessageType.notify2,
         ):
             self.header[-1] = message_type
-            response = MessageC3Response(self.header + body)
+            response = MessageC3Response(bytes(self.header + body))
 
             assert response.body_type == ListTypes.X01
             assert hasattr(response, "zone1_power")
@@ -267,7 +267,7 @@ class TestMessageC3Response:
                 0x0,  # CRC
             ],
         )
-        response = MessageC3Response(self.header + body)
+        response = MessageC3Response(bytes(self.header + body))
         assert response.body_type == ListTypes.X04
         assert hasattr(response, "status_tbh")
         assert response.status_tbh is False
@@ -293,7 +293,7 @@ class TestMessageC3Response:
         assert response.tas == 55
 
         body[10] = 253
-        response = MessageC3Response(self.header + body)
+        response = MessageC3Response(bytes(self.header + body))
         assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == -3
 
@@ -315,28 +315,28 @@ class TestMessageC3Response:
                 0x00,
             ],
         )
-        response = MessageC3Response(self.header + body)
+        response = MessageC3Response(bytes(self.header + body))
         assert hasattr(response, "silent_mode")
         assert response.silent_mode is False
         assert hasattr(response, "silent_level")
         assert response.silent_level == C3SilentLevel.OFF.name
 
         body[1] = 0x1
-        response = MessageC3Response(self.header + body)
+        response = MessageC3Response(bytes(self.header + body))
         assert hasattr(response, "silent_mode")
         assert response.silent_mode is True
         assert hasattr(response, "silent_level")
         assert response.silent_level == C3SilentLevel.SILENT.name
 
         body[1] = 0x8
-        response = MessageC3Response(self.header + body)
+        response = MessageC3Response(bytes(self.header + body))
         assert hasattr(response, "silent_mode")
         assert response.silent_mode is False
         assert hasattr(response, "silent_level")
         assert response.silent_level == C3SilentLevel.OFF.name
 
         body[1] = 0x9
-        response = MessageC3Response(self.header + body)
+        response = MessageC3Response(bytes(self.header + body))
         assert hasattr(response, "silent_mode")
         assert response.silent_mode is True
         assert hasattr(response, "silent_level")

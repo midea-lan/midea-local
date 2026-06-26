@@ -1,3 +1,6 @@
+# This workflow uses the release-please GitHub Action to automate releases.
+# it only works on the main branch: PR mereged to main will trigger the release-please action
+# and PR will be created to update the version in the manifest file and create a release with the new version.
 on:
   push:
     branches:
@@ -13,7 +16,8 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         with:
           token: ${{ secrets.MIDEA_GITHUB_PAT }}
           release-type: python
+          manifest-file: .release-please-manifest.json

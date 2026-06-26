@@ -13,7 +13,7 @@ This library is part of https://github.com/georgezhao2010/midea_ac_lan code. It 
 
 ### Finding your device
 
-```python
+```python3
 from midealocal.discover import discover
 # Without knowing the ip address
 discover()
@@ -25,7 +25,7 @@ type_code = hex(list(discover().values())[0]['type'])[2:]
 
 ### Getting data from device
 
-```python
+```python3
 from midealocal.discover import discover
 from midealocal.devices import device_selector
 
@@ -43,7 +43,7 @@ ac = device_selector(
   port=d['port'],
   token=token,
   key=key,
-  protocol=d['protocol'],
+  device_protocol=d['protocol'],
   model=d['model'],
   subtype=0,
   customize="",
@@ -59,3 +59,14 @@ ac.set_target_temperature(23.0, None)
 # Setting the swing
 ac.set_swing(False, False)
 ```
+
+### command line tool
+
+```python3
+python3 -m midealocal.cli -h
+```
+
+## Contributing Guide
+
+[CONTRIBUTING](.github/CONTRIBUTING.md)
+[中文版CONTRIBUTING](.github/CONTRIBUTING.zh.md)

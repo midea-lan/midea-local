@@ -156,6 +156,7 @@ DISCOVERY_MIN_RESPONSE_LENGTH = 104
 MAX_NETWORK_PREFIX_LENGHT = 32
 SERIAL_TYPE1_LENGTH = 32
 SERIAL_TYPE2_LENGTH = 22
+DISCOVERY_MIN_REPLY_LENGTH = 41
 
 
 def _parse_discover_response(
@@ -185,12 +186,24 @@ def _parse_discover_response(
             return 0, None
         encrypt_data = data[40:-16]
         reply = security.aes_decrypt(encrypt_data)
-        _LOGGER.debug("Declassified reply: %s", reply.hex())
-        ssid = reply[41 : 41 + reply[40]].decode("utf-8")
-        device_type = ssid.split("_")[1]
-        port = bytes2port(reply[4:8])
-        model = reply[17:25].decode("utf-8")
-        sn = reply[8:40].decode("utf-8")
+        if len(reply) > DISCOVERY_MIN_REPLY_LENGTH and reply[
+            40
+        ] + DISCOVERY_MIN_REPLY_LENGTH <= len(reply):
+            _LOGGER.debug("Declassified reply: %s", reply.hex())
+            ssid = reply[
+                DISCOVERY_MIN_REPLY_LENGTH : DISCOVERY_MIN_REPLY_LENGTH + reply[40]
+            ].decode("utf-8")
+            device_type = ssid.split("_")[1]
+            port = bytes2port(reply[4:8])
+            model = reply[17:25].decode("utf-8")
+            sn = reply[8:40].decode("utf-8")
+        else:
+            _LOGGER.warning(
+                "Failed to decrypt the encrypt_data: %s from %s. Maybe not support.",
+                encrypt_data.hex(),
+                ip,
+            )
+            return 0, None
     elif data[:6].hex() == "3c3f786d6c20":
         protocol = 1
         root = ElementTree.fromstring(
@@ -277,7 +290,7 @@ def get_id_from_response(response: bytearray) -> int:
     return 0
 
 
-def bytes2port(value_bytes: bytes | None) -> int:
+def bytes2port(value_bytes: bytes | bytearray | None) -> int:
     """Bytes to port."""
     if value_bytes is None:
         return 0

@@ -135,6 +135,8 @@ class MessageSet(MessageA1Base):
         self.target_humidity = 40
         self.swing = False
         self.anion = False
+        self.pump = False
+        self.pump_enable = False
         self.water_level_set = 50
 
     @property
@@ -150,8 +152,10 @@ class MessageSet(MessageA1Base):
         target_humidity = self.target_humidity
         # byte8 child_lock
         child_lock = 0x80 if self.child_lock else 0x00
-        # byte9 anion
+        # byte9 anion, pump, pump enable
         anion = 0x40 if self.anion else 0x00
+        pump = 0x08 if self.pump else 0x00
+        pump_enable = 0x10 if self.pump_enable else 0x00
         # byte10 swing
         swing = 0x08 if self.swing else 0x00
         # byte 13 water_level_set
@@ -166,7 +170,7 @@ class MessageSet(MessageA1Base):
                 0x00,
                 target_humidity,
                 child_lock,
-                anion,
+                anion | pump | pump_enable,
                 swing,
                 0x00,
                 0x00,
@@ -222,6 +226,8 @@ class A1GeneralMessageBody(MessageBody):
         self.target_humidity = max(body[7], MIN_TARGET_HUMIDITY)
         self.child_lock = (body[8] & 0x80) > 0
         self.anion = (body[9] & 0x40) > 0
+        self.pump = (body[9] & 0x08) > 0
+        self.pump_enable = (body[9] & 0x10) > 0
         self.tank = body[10] & 0x7F
         self.water_level_set = body[15]
         self.current_humidity = body[16]
@@ -229,6 +235,9 @@ class A1GeneralMessageBody(MessageBody):
         self.swing = (body[19] & 0x20) > 0
         if self.fan_speed < MIN_FAN_SPEED:
             self.fan_speed = 1
+
+        # add filter cleaning reminder attribute
+        self.filter_cleaning_reminder = (body[9] & 0x80) > 0
 
 
 class A1NewProtocolMessageBody(NewProtocolMessageBody):

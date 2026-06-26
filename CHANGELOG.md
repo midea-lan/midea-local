@@ -1,5 +1,138 @@
 # Changelog
 
+## [6.9.0](https://github.com/midea-lan/midea-local/compare/v6.8.0...v6.9.0) (2026-06-25)
+
+
+### Features
+
+* **ac:** expose per-mode min/max temperature from B5 capability ([#478](https://github.com/midea-lan/midea-local/issues/478)) ([a558dcd](https://github.com/midea-lan/midea-local/commit/a558dcdcc53e9b7b42b49149c808b4c080894074))
+* **e2:** add memory (Memo U) attribute support ([#477](https://github.com/midea-lan/midea-local/issues/477)) ([d9c1f14](https://github.com/midea-lan/midea-local/commit/d9c1f14710d8949d3e8d79dff3462c24774c9818))
+* **e2:** support heating power multiplier ([#473](https://github.com/midea-lan/midea-local/issues/473)) ([b732b5a](https://github.com/midea-lan/midea-local/commit/b732b5a5b77a09244bbecc55c9fd000d103c2a5d))
+
+
+### Bug Fixes
+
+* use asyncio.Lock() instead of threading.Lock() ([#482](https://github.com/midea-lan/midea-local/issues/482)) ([eb4fd26](https://github.com/midea-lan/midea-local/commit/eb4fd26f94a8173f1e29775179234b8079acbe02))
+
+## [6.8.0](https://github.com/midea-lan/midea-local/compare/v6.7.2...v6.8.0) (2026-06-16)
+
+
+### Features
+
+* **ac:** reflect self-clean running state from device report ([#467](https://github.com/midea-lan/midea-local/issues/467)) ([d77be26](https://github.com/midea-lan/midea-local/commit/d77be2686e09792d94dcaa06200ddf616f5232be))
+
+## [6.7.2](https://github.com/midea-lan/midea-local/compare/v6.7.1...v6.7.2) (2026-06-07)
+
+
+### Bug Fixes
+
+* **ci:** update release deploy job needs commitlint ([#462](https://github.com/midea-lan/midea-local/issues/462)) ([47e9984](https://github.com/midea-lan/midea-local/commit/47e9984959f26c1afca10ce58494fb3732a3ee32))
+
+## [6.7.1](https://github.com/midea-lan/midea-local/compare/v6.7.0...v6.7.1) (2026-06-06)
+
+
+## [6.7.0](https://github.com/midea-lan/midea-local/compare/v6.6.2...v6.7.0) (2026-06-06)
+
+
+### Features
+
+* **a1:** add dehumidifier pump state and control ([#446](https://github.com/midea-lan/midea-local/issues/446)) ([91c3dde](https://github.com/midea-lan/midea-local/commit/91c3dde22f1c06bda808f413273ca9fff2c97f78)), closes [#445](https://github.com/midea-lan/midea-local/issues/445)
+* **ac:** add anion, sound, self_clean, pmv and error_code support ([#444](https://github.com/midea-lan/midea-local/issues/444)) ([e763077](https://github.com/midea-lan/midea-local/commit/e763077bec37afe158c3efb67c43accbf8e9a5c6))
+* **ac:** add out_silent (outdoor silent mode) support for PortaSplit ([#441](https://github.com/midea-lan/midea-local/issues/441)) ([9af1ad9](https://github.com/midea-lan/midea-local/commit/9af1ad99a0c22e34d29a268e1d4d57d25d844a2c))
+* **ac:** support mixed C1 power analysis ([#447](https://github.com/midea-lan/midea-local/issues/447)) ([5824a68](https://github.com/midea-lan/midea-local/commit/5824a689d083fdbb18e733811634ae902fe16f6d))
+* **cc:** support 0xFE VRF panel protocol (171PNL01/171PANEL) ([#448](https://github.com/midea-lan/midea-local/issues/448)) ([c77aeef](https://github.com/midea-lan/midea-local/commit/c77aeefe188e4d7523bf133b7ee94a64d24a6262))
+* **cd:** add vacation mode/sterilize/schedule and avoid corrupted body/max_temp issue ([#429](https://github.com/midea-lan/midea-local/issues/429)) ([fb30bd6](https://github.com/midea-lan/midea-local/commit/fb30bd6ba0724a6b407f4215dd0cec750e526954))
+
+
+### Bug Fixes
+
+* skip failed to decrypt device message ([#431](https://github.com/midea-lan/midea-local/issues/431)) ([2f464d0](https://github.com/midea-lan/midea-local/commit/2f464d00c14fc57039b17df724ec2643901d8ba1))
+
+## [6.6.2](https://github.com/midea-lan/midea-local/compare/v6.6.1...v6.6.2) (2026-05-23)
+
+
+### Bug Fixes
+
+* common_regex warning with python3.14 during HA restart ([#430](https://github.com/midea-lan/midea-local/issues/430)) ([13904a9](https://github.com/midea-lan/midea-local/commit/13904a9e7b37bb9750b677f0a4201975bf133f92))
+* mypy check bytes and bytearray error ([#432](https://github.com/midea-lan/midea-local/issues/432)) ([7dc5816](https://github.com/midea-lan/midea-local/commit/7dc5816fe830f58dc66ad5b908e8cf230ba9d201))
+
+## [6.6.1](https://github.com/midea-lan/midea-local/compare/v6.6.0...v6.6.1) (2026-05-23)
+
+
+### Bug Fixes
+
+* make unregister update method public ([#433](https://github.com/midea-lan/midea-local/issues/433)) ([026cac3](https://github.com/midea-lan/midea-local/commit/026cac379edcb29548c5d8a4fb2097b3219c9c16))
+
+## [6.6.0](https://github.com/midea-lan/midea-local/compare/v6.5.0...v6.6.0) (2026-02-18)
+
+
+### Features
+
+* **a1:** add filter cleaning reminder attribute ([#419](https://github.com/midea-lan/midea-local/issues/419)) ([648febb](https://github.com/midea-lan/midea-local/commit/648febb138f66978e61a40150929dfc21d63676c))
+* add dehumidifier (A1) filter cleaning reminder attribute to ([648febb](https://github.com/midea-lan/midea-local/commit/648febb138f66978e61a40150929dfc21d63676c))
+* **c3:** add water inlet/outlet temperature and current power sensors ([#418](https://github.com/midea-lan/midea-local/issues/418)) ([8cef9f4](https://github.com/midea-lan/midea-local/commit/8cef9f4da6059f90cd0baec9f1ac647d18a1d53b)), closes [#510](https://github.com/midea-lan/midea-local/issues/510)
+* **doc:** add contributing guide docs ([#413](https://github.com/midea-lan/midea-local/issues/413)) ([3d7e1e8](https://github.com/midea-lan/midea-local/commit/3d7e1e8881a2ecb56f6a1e73ed7353a51432fd5c))
+
+
+### Bug Fixes
+
+* **ac:** allow half-degree integer temperatures ([#412](https://github.com/midea-lan/midea-local/issues/412)) ([95ba499](https://github.com/midea-lan/midea-local/commit/95ba499551ce794d5d99ddccef99c34deb5755ba))
+* **ac:** refactor to add new binary power format ([#411](https://github.com/midea-lan/midea-local/issues/411)) ([ba39f10](https://github.com/midea-lan/midea-local/commit/ba39f104d8cb33c856fcf8de6a74772e99772736))
+* **ac:** resolve mode change failure when transitioning from DRY mode ([#422](https://github.com/midea-lan/midea-local/issues/422)) ([e31e46f](https://github.com/midea-lan/midea-local/commit/e31e46f68b02823d82ce75d5bb4b4fe36ab4642a))
+* **cd:** updating to inconsistent values and missing F to C conversion ([#420](https://github.com/midea-lan/midea-local/issues/420)) ([7ff2b3f](https://github.com/midea-lan/midea-local/commit/7ff2b3fb583b7fc0702e1cd77755a79bed400d62))
+* **db:** missing program mapping for Midea Washmachine MF2000D80WB ([#421](https://github.com/midea-lan/midea-local/issues/421)) ([b459bb3](https://github.com/midea-lan/midea-local/commit/b459bb3b7bd486f72bdcc41b5a8365b96dbbf106))
+* **main:** fix default apt/pip mirror; removed deprecated pylint option ([#415](https://github.com/midea-lan/midea-local/issues/415)) ([37fdfcf](https://github.com/midea-lan/midea-local/commit/37fdfcf5bdc3f63a5acd8dcf7efe231124b97257))
+
+## [6.5.0](https://github.com/midea-lan/midea-local/compare/v6.4.0...v6.5.0) (2025-09-26)
+
+
+### Features
+
+* **a1:** allow customization of default modes and speeds for dehumidifiers ([#389](https://github.com/midea-lan/midea-local/issues/389)) ([bb558a0](https://github.com/midea-lan/midea-local/commit/bb558a03fb31703f28b0d09772034ac8e74aa744))
+* **ac:** ac device fan_mode and airflow value support translate ([#390](https://github.com/midea-lan/midea-local/issues/390)) ([a8294cc](https://github.com/midea-lan/midea-local/commit/a8294cc2ddf9c777dd4e27bc09a4e55ba76e5047))
+* **ac:** parse capability query respone b5 message ([#407](https://github.com/midea-lan/midea-local/issues/407)) ([def97c2](https://github.com/midea-lan/midea-local/commit/def97c214ef1851ecd78fd88e3929cf8e06c6876))
+* **ca:** add new 0xCA device attrs ([#408](https://github.com/midea-lan/midea-local/issues/408)) ([1a87ee6](https://github.com/midea-lan/midea-local/commit/1a87ee6360c0983bbc35e73ace953075ee6ffd01))
+* **dc:** Add idle status for dc ([#406](https://github.com/midea-lan/midea-local/issues/406)) ([5459300](https://github.com/midea-lan/midea-local/commit/5459300ef6927ee07a7b7fd5732541d85e77c9d1))
+* **e1:** change work mode ([#262](https://github.com/midea-lan/midea-local/issues/262)) ([b1cc880](https://github.com/midea-lan/midea-local/commit/b1cc880b89134efe79da455bcd605f2c94daca01))
+
+
+### Bug Fixes
+
+* **ac:** fix ac device screen display on and off every 15 mins ([#404](https://github.com/midea-lan/midea-local/issues/404)) ([a6cbea3](https://github.com/midea-lan/midea-local/commit/a6cbea36ff51f52cf755e0b641580ad26041f2ca))
+* **dc:** fix attributes parse error  ([#398](https://github.com/midea-lan/midea-local/issues/398)) ([c6f8a3a](https://github.com/midea-lan/midea-local/commit/c6f8a3ad52d3eb3a1f81ea7c32eecb3dd264a2fd))
+
+## [6.4.0](https://github.com/midea-lan/midea-local/compare/v6.3.0...v6.4.0) (2025-08-06)
+
+
+### Features
+
+* **ac:** ac device support airflow direction control ([#385](https://github.com/midea-lan/midea-local/issues/385)) ([4bd148d](https://github.com/midea-lan/midea-local/commit/4bd148d0bbcb40a316dfe1c3b0eef03d9b7b47ac))
+
+
+### Bug Fixes
+
+* **ac:** ac device screen_display status error ([#388](https://github.com/midea-lan/midea-local/issues/388)) ([e13962e](https://github.com/midea-lan/midea-local/commit/e13962e8bb429d65aedaed5d15dfa9bc85c77e35))
+* **db:** rollback 0xdb progress attr and value ([#386](https://github.com/midea-lan/midea-local/issues/386)) ([ad46461](https://github.com/midea-lan/midea-local/commit/ad4646171144e62ac776a3e64edcc2e0c1e4db5c))
+
+## [6.3.0](https://github.com/midea-lan/midea-local/compare/v6.2.0...v6.3.0) (2025-05-19)
+
+
+### Features
+
+* **b0:** add b0 device feature ([#365](https://github.com/midea-lan/midea-local/issues/365)) ([1acfde7](https://github.com/midea-lan/midea-local/commit/1acfde75e84218130382cfa351cb5874b26d6160))
+
+
+### Bug Fixes
+
+* **c3:** temperature should be float ([#369](https://github.com/midea-lan/midea-local/issues/369)) ([f2d8695](https://github.com/midea-lan/midea-local/commit/f2d8695b4b6234d8a2615ea253d6150b03b31028))
+* **cd:** parse CD device message error ([#370](https://github.com/midea-lan/midea-local/issues/370)) ([db07d08](https://github.com/midea-lan/midea-local/commit/db07d083621730cb4d3de9cb7303693f7f31c665))
+* **cd:** temperature should be float ([#367](https://github.com/midea-lan/midea-local/issues/367)) ([54f16f6](https://github.com/midea-lan/midea-local/commit/54f16f69ca9b558170a03d842ef444143be469ea))
+* **e2:** fix e2 device full tank/temperature error ([#371](https://github.com/midea-lan/midea-local/issues/371)) ([182d508](https://github.com/midea-lan/midea-local/commit/182d508862ee9afc29f5d5bc9449ede57986620d))
+* **e2:** temperature should be float ([#364](https://github.com/midea-lan/midea-local/issues/364)) ([fec9adf](https://github.com/midea-lan/midea-local/commit/fec9adfbc8be6a3832f367eb8672b48a841c4bd8))
+* **e3:** temperature should be float ([#366](https://github.com/midea-lan/midea-local/issues/366)) ([5d27a44](https://github.com/midea-lan/midea-local/commit/5d27a44feb81cff83c7a7a2371cf2221ca85c92f))
+* **e6:** temperature should be float ([#368](https://github.com/midea-lan/midea-local/issues/368)) ([bebc217](https://github.com/midea-lan/midea-local/commit/bebc217debecb59cc362ad64663d07896f89cec1))
+* **ed:** fix ed device query result is 0 ([#379](https://github.com/midea-lan/midea-local/issues/379)) ([c83b7af](https://github.com/midea-lan/midea-local/commit/c83b7afa35c451842f4c76b1333a3022573b784e))
+
 ## [6.2.0](https://github.com/midea-lan/midea-local/compare/v6.1.0...v6.2.0) (2025-03-25)
 
 

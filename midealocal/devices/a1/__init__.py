@@ -1,5 +1,6 @@
 """Midea local A1 device."""
 
+import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar
@@ -23,24 +24,26 @@ class DeviceAttributes(StrEnum):
     swing = "swing"
     target_humidity = "target_humidity"
     anion = "anion"
+    pump = "pump"
     tank = "tank"
     water_level_set = "water_level_set"
     tank_full = "tank_full"
     current_humidity = "current_humidity"
     current_temperature = "current_temperature"
+    filter_cleaning_reminder = "filter_cleaning_reminder"
 
 
 class MideaA1Device(MideaDevice):
     """Midea A1 Device."""
 
-    _modes: ClassVar[list[str]] = [
-        "Manual",
-        "Continuous",
-        "Auto",
-        "Clothes-Dry",
-        "Shoes-Dry",
-    ]
-    _speeds: ClassVar[dict[int, str]] = {
+    _default_modes: ClassVar[dict[int, str]] = {
+        1: "Manual",
+        2: "Continuous",
+        3: "Auto",
+        4: "Clothes-Dry",
+        5: "Shoes-Dry",
+    }
+    _default_speeds: ClassVar[dict[int, str]] = {
         1: "Lowest",
         40: "Low",
         60: "Medium",
@@ -61,7 +64,7 @@ class MideaA1Device(MideaDevice):
         device_protocol: ProtocolVersion,
         model: str,
         subtype: int,
-        customize: str,  # noqa: ARG002
+        customize: str,
     ) -> None:
         """Initialize Midea A1 device."""
         super().__init__(
@@ -84,23 +87,29 @@ class MideaA1Device(MideaDevice):
                 DeviceAttributes.swing: False,
                 DeviceAttributes.target_humidity: 35,
                 DeviceAttributes.anion: False,
+                DeviceAttributes.pump: False,
                 DeviceAttributes.tank: 0,
                 DeviceAttributes.water_level_set: 50,
                 DeviceAttributes.tank_full: None,
                 DeviceAttributes.current_humidity: None,
                 DeviceAttributes.current_temperature: None,
+                DeviceAttributes.filter_cleaning_reminder: False,
             },
         )
+        self._pump_enable = False
+        self._speeds = self._default_speeds
+        self._modes = self._default_modes
+        self.set_customize(customize)
 
     @property
     def modes(self) -> list[str]:
         """Midea A1 device modes."""
-        return MideaA1Device._modes
+        return list(self._modes.values())
 
     @property
     def fan_speeds(self) -> list[str]:
         """Midea A1 device fan speeds."""
-        return list(MideaA1Device._speeds.values())
+        return list(self._speeds.values())
 
     @property
     def water_level_sets(self) -> list[str]:
@@ -115,19 +124,22 @@ class MideaA1Device(MideaDevice):
         """Midea A1 device process message."""
         message = MessageA1Response(bytearray(msg))
         self._message_protocol_version = message.protocol_version
+        # Preserve the hidden pump capability bit for future set packets.
+        if hasattr(message, "pump_enable"):
+            self._pump_enable = message.pump_enable
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         for status in self._attributes:
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))
                 if status == DeviceAttributes.mode:
-                    if value <= len(MideaA1Device._modes):
-                        self._attributes[status] = MideaA1Device._modes[value - 1]
+                    if value in self._modes:
+                        self._attributes[status] = self._modes.get(value)
                     else:
                         self._attributes[status] = None
                 elif status == DeviceAttributes.fan_speed:
-                    if value in MideaA1Device._speeds:
-                        self._attributes[status] = MideaA1Device._speeds.get(value)
+                    if value in self._speeds:
+                        self._attributes[status] = self._speeds.get(value)
                     else:
                         self._attributes[status] = None
                 elif status == DeviceAttributes.water_level_set:
@@ -163,24 +175,23 @@ class MideaA1Device(MideaDevice):
         message.power = self._attributes[DeviceAttributes.power]
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
         message.child_lock = self._attributes[DeviceAttributes.child_lock]
-        if self._attributes[DeviceAttributes.mode] in MideaA1Device._modes:
-            message.mode = (
-                MideaA1Device._modes.index(self._attributes[DeviceAttributes.mode]) + 1
-            )
+        if self._attributes[DeviceAttributes.mode] in self._modes.values():
+            message.mode = {v: k for k, v in self._modes.items()}[
+                self._attributes[DeviceAttributes.mode]
+            ]
         else:
             message.mode = 1
-        message.fan_speed = (
-            40
-            if self._attributes[DeviceAttributes.fan_speed] is None
-            else list(MideaA1Device._speeds.keys())[
-                list(MideaA1Device._speeds.values()).index(
-                    self._attributes[DeviceAttributes.fan_speed],
-                )
+        if self._attributes[DeviceAttributes.fan_speed] in self._speeds.values():
+            message.fan_speed = {v: k for k, v in self._speeds.items()}[
+                self._attributes[DeviceAttributes.fan_speed]
             ]
-        )
+        else:
+            message.fan_speed = 40
         message.target_humidity = self._attributes[DeviceAttributes.target_humidity]
         message.swing = self._attributes[DeviceAttributes.swing]
         message.anion = self._attributes[DeviceAttributes.anion]
+        message.pump = self._attributes[DeviceAttributes.pump]
+        message.pump_enable = self._pump_enable
         message.water_level_set = int(
             self._attributes[DeviceAttributes.water_level_set],
         )
@@ -194,12 +205,12 @@ class MideaA1Device(MideaDevice):
         else:
             message = self.make_message_set()
             if attr == DeviceAttributes.mode:
-                if value in MideaA1Device._modes:
-                    message.mode = MideaA1Device._modes.index(str(value)) + 1
+                if value in self._modes.values():
+                    message.mode = {v: k for k, v in self._modes.items()}[str(value)]
             elif attr == DeviceAttributes.fan_speed:
-                if value in MideaA1Device._speeds.values():
-                    message.fan_speed = list(MideaA1Device._speeds.keys())[
-                        list(MideaA1Device._speeds.values()).index(str(value))
+                if value in self._speeds.values():
+                    message.fan_speed = {v: k for k, v in self._speeds.items()}[
+                        str(value)
                     ]
             elif attr == DeviceAttributes.water_level_set:
                 if value in MideaA1Device._water_level_sets:
@@ -207,6 +218,41 @@ class MideaA1Device(MideaDevice):
             else:
                 setattr(message, str(attr), value)
             self.build_send(message)
+
+    def set_customize(self, customize: str) -> None:
+        """Midea A1 Device set customize."""
+        self._speeds = self._default_speeds
+        if customize and len(customize) > 0:
+            try:
+                params = json.loads(customize)
+                if params:
+                    to_update = {}
+                    if "speeds" in params:
+                        self._speeds = {}
+                        speeds = {}
+                        for k, v in params.get("speeds").items():
+                            speeds[int(k)] = v
+                        keys = sorted(speeds.keys())
+                        for k in keys:
+                            self._speeds[k] = speeds[k]
+                        to_update["speeds"] = self._speeds
+                    if "modes" in params:
+                        self._modes = {}
+                        modes = {}
+                        for k, v in params.get("modes").items():
+                            modes[int(k)] = v
+                        keys = sorted(modes.keys())
+                        for k in keys:
+                            self._modes[k] = modes[k]
+                        to_update["modes"] = self._modes
+                    if to_update:
+                        self.update_all(to_update)
+            except Exception:
+                _LOGGER.exception(
+                    "[%s] Set customize error - %s",
+                    self.device_id,
+                    customize,
+                )
 
 
 class MideaAppliance(MideaA1Device):

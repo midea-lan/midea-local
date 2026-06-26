@@ -1,34 +1,42 @@
-name: Python build
+# This workflow runs on pull requests to the main branch and on published releases.
+# It checks commit messages, builds the Python package, runs tests, and deploys to PyPI for releases.
+name: PR and Python checks
 
 on:
-  push:
-    branches: ["main"]
   pull_request:
     branches: ["main"]
+  release:
+    types: [published]
+
+permissions:
+  contents: read
 
 jobs:
   commitlint:
-    name: Lint Commit Messages
+    name: PR Commit Messages Check
     runs-on: ubuntu-latest
+    if: github.event_name != 'release'
+    permissions:
+      pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: wagoid/commitlint-github-action@v6.2.1
         with:
           configFile: .commitlint.config.mjs
+
   build:
-    needs:
-      - commitlint
+    name: Python Build and Test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.12", "3.13", "3.14"]
         os: ["windows-latest", "ubuntu-latest", "macos-latest"]
     env:
       SKIP: no-commit-to-branch
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -36,16 +44,56 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-all.txt
         shell: bash
-      - name: Pre-commit
-        uses: pre-commit/action@v3.0.1
+      - name: Cache pre-commit environments
+        if: github.event_name != 'release'
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Install pre-commit
+        if: github.event_name != 'release'
+        run: pip install pre-commit
+        shell: bash
+      - name: Run pre-commit
+        if: github.event_name != 'release'
+        run: pre-commit run --show-diff-on-failure --color=always --all-files
+        shell: bash
       - name: Build midea-local
-        run: |
-          python -m build
+        run: python -m build
+        shell: bash
       - name: Test with pytest
         run: |
           python -m pytest --rootdir . --cov=midealocal --cov-report html --cov-report xml --junitxml=reports/junit/junit.xml ./tests/
           mv htmlcov reports/coverage
+        shell: bash
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  deploy:
+    name: Deploy Release to PyPI
+    needs: [build]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/midea-local
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+        shell: bash
+      - name: Build package
+        run: python -m build
+        shell: bash
+      - name: Publish package
+        uses: pypa/gh-action-pypi-publish@release/v1

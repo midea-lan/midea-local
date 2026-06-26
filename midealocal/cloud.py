@@ -5,15 +5,14 @@ import json
 import logging
 import re
 import time
+from asyncio import Lock
 from datetime import UTC, datetime
 from http import HTTPStatus
 from secrets import token_hex
-from threading import Lock
 from typing import Any, cast
 
 import aiofiles
 from aiohttp import ClientConnectionError, ClientSession, ClientTimeout
-from commonregex import CommonRegex
 
 from midealocal.exceptions import ElementMissing
 
@@ -28,7 +27,7 @@ SN8_MIN_SERIAL_LENGTH = 17
 
 _LOGGER = logging.getLogger(__name__)
 
-SUPPORTED_CLOUDS = {
+SUPPORTED_CLOUDS: dict[str, Any] = {
     "美的美居": {
         "class_name": "MeijuCloud",
         "app_id": "900",
@@ -91,7 +90,7 @@ PRESET_ACCOUNT_DATA = [
 def get_default_cloud() -> str:
     """Return default cloud."""
     for key, value in SUPPORTED_CLOUDS.items():
-        if cast(dict, value).get("default"):
+        if value.get("default"):
             return key
     raise ElementMissing
 
@@ -115,27 +114,41 @@ def get_preset_account_cloud() -> dict[str, str]:
 block = "*"
 
 
+def _mask_token(token: str) -> str:
+    """Mask token but keep first 5 chars."""
+    if not token:
+        return token
+
+    visible = token[:5]
+    return visible + block * max(0, len(token) - len(visible))
+
+
 def _redact_data(data: str) -> str:
     """Redact sensitive data."""
-    cr = CommonRegex(data)
-    token_list = (
-        getattr(cr, "phones", [])
-        + getattr(cr, "emails", [])
-        + getattr(cr, "credit_cards", [])
-        + getattr(cr, "btc_addresses", [])
-        + getattr(cr, "street_addresses", [])
-    )
-    for token in token_list:
-        item = token
-        if len(item) > 0 and item[0] == "'":
-            item = item[1:]
-        if len(item) == 0:
-            break
-        m = len(item)
-        visible = item[:5]  # Keep up to the first 5 characters
-        redacted = visible + block * (m - len(visible))  # Use block for masking
-        elm = re.escape(item)  # Escape regex metacharacters
-        data = re.sub(elm, redacted, data)
+    patterns = [
+        # Email
+        r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
+        # Phone number
+        r"(?:\+?\d{1,3})?[-.\s]?(?:\(?\d{2,4}\)?[-.\s]?)?\d{3,4}[-.\s]?\d{4}",
+        # Credit card
+        r"\b(?:\d[ -]*?){13,19}\b",
+        # BTC address
+        r"\b(?:bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}\b",
+        # IPv4
+        r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
+        # Simple street address
+        r"\b\d{1,5}\s+[A-Za-z0-9\s]{3,40}"
+        r"(?:Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Way|Boulevard|Blvd)\b",
+    ]
+
+    for pattern in patterns:
+        data = re.sub(
+            pattern,
+            lambda m: _mask_token(m.group(0)),
+            data,
+            flags=re.IGNORECASE,
+        )
+
     return data
 
 
@@ -201,7 +214,7 @@ class MideaCloud:
         response: dict = {"code": -1}
         for _ in range(3):
             try:
-                with self._api_lock:
+                async with self._api_lock:
                     r = await self._session.request(
                         "POST",
                         url,
@@ -253,7 +266,11 @@ class MideaCloud:
         for method in [1, 2]:
             udp_id = self._security.get_udp_id(appliance_id, method)
             data = self._make_general_data()
-            data.update({"udpid": udp_id})
+            # The MSmartHome ("SmartHome") cloud rejects getToken with
+            # 3004 "value is illegal" unless the appliance id is also sent as
+            # `applianceCodes`; the official app includes it. Harmless on other
+            # clouds, which ignore the extra field.
+            data.update({"udpid": udp_id, "applianceCodes": str(appliance_id)})
             response = await self._api_request(
                 endpoint="/v1/iot/secure/getToken",
                 data=data,
@@ -329,7 +346,7 @@ class MeijuCloud(MideaCloud):
         password: str,
     ) -> None:
         """Initialize Meiju Cloud."""
-        cloud_data = cast(dict[str, Any], SUPPORTED_CLOUDS[cloud_name])
+        cloud_data = SUPPORTED_CLOUDS[cloud_name]
         super().__init__(
             session=session,
             security=MeijuCloudSecurity(
@@ -893,7 +910,7 @@ class MideaAirCloud(MideaCloud):
         response: dict = {"errorCode": -1}
         for _ in range(3):
             try:
-                with self._api_lock:
+                async with self._api_lock:
                     r = await self._session.request(
                         "POST",
                         url,

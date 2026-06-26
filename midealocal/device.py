@@ -220,7 +220,6 @@ class MideaDevice(threading.Thread):
             # 2. init connection, check_protocol
             if check_protocol:
                 self.refresh_status(check_protocol=check_protocol)
-                self.get_capabilities()
             connected = True
         except TimeoutError:
             _LOGGER.debug("[%s] Connection timed out", self._device_id)
@@ -349,12 +348,6 @@ class MideaDevice(threading.Thread):
         msg = PacketBuilder(self._device_id, data).finalize()
         self.send_message(msg, query=query)
 
-    def get_capabilities(self) -> None:
-        """Get device capabilities."""
-        cmds: list = self.capabilities_query()
-        for cmd in cmds:
-            self.build_send(cmd)
-
     def refresh_status(self, check_protocol: bool = False) -> None:
         """Refresh device status."""
         cmds: list = self.build_query()
@@ -449,8 +442,7 @@ class MideaDevice(threading.Thread):
             _LOGGER.debug("[%s] Appliance query Received: %s", self._device_id, message)
             self._message_protocol_version = message.protocol_version
             _LOGGER.debug(
-                "[%s] device model %s, subtype %s, \
-                device protocol %s, message protocol %s",
+                "[%s] device model %s subtype %s, device protocol %s, msg protocol %s",
                 self._device_id,
                 self._model,
                 self._subtype,
@@ -550,10 +542,6 @@ class MideaDevice(threading.Thread):
         """Build query."""
         raise NotImplementedError
 
-    def capabilities_query(self) -> list:
-        """Capabilities query."""
-        return []
-
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Process message."""
         raise NotImplementedError
@@ -570,8 +558,7 @@ class MideaDevice(threading.Thread):
             self.build_send(cmd)
         except OSError as e:
             _LOGGER.debug(
-                "[{%s] Interface send_command failure, %s, "
-                "cmd_type: %s, cmd_body: %s",
+                "[{%s] Interface send_command failure, %s, cmd_type: %s, cmd_body: %s",
                 self._device_id,
                 repr(e),
                 cmd_type,
@@ -586,6 +573,11 @@ class MideaDevice(threading.Thread):
     def register_update(self, update: Callable[[dict[str, Any]], None]) -> None:
         """Register update."""
         self._updates.append(update)
+
+    def unregister_update(self, update: Callable[[dict[str, Any]], None]) -> None:
+        """Unregister update."""
+        if update in self._updates:
+            self._updates.remove(update)
 
     def update_all(self, status: dict[str, Any]) -> None:
         """Update all."""
@@ -675,7 +667,7 @@ class MideaDevice(threading.Thread):
                 # sleep and reconnect loop until device online
                 time.sleep(sleep_time)
 
-    def run(self) -> None:  # noqa: PLR0915
+    def run(self) -> None:
         """Run loop brief description.
 
         1. first/init connection, self._socket is None
@@ -685,7 +677,6 @@ class MideaDevice(threading.Thread):
                 1.3.1 set socket timeout to QUERY_TIMEOUT before send query
                 1.3.2 get response and add timeout query cmd to not supported
                 1.3.1 parse recv response/status for supported protocol
-            1.4 get_capabilities()
         2. after socket/device connected, check for heartbeat/refresh_status
         3. job1: check refresh_interval
             3.1 socket/device connection should exist

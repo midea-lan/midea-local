@@ -12,18 +12,17 @@ from midealocal.device import (
     MideaDevice,
     NoSupportedProtocol,
 )
-from midealocal.devices.ac.message import MessageCapabilitiesQuery
 from midealocal.exceptions import SocketException
 from midealocal.message import MessageType
 
 
 def test_fetch_v2_message() -> None:
     """Test fetch v2 message."""
-    assert MideaDevice.fetch_v2_message(bytearray([])) == ([], bytearray([]))
-    assert MideaDevice.fetch_v2_message(bytearray([0x1])) == ([], bytearray([0x1]))
-    assert MideaDevice.fetch_v2_message(bytearray([0x1] * 5 + [0x0] + [0x1] * 7)) == (
-        [bytearray([0x1])],
-        bytearray([0x1] * 4 + [0x0] + [0x1] * 7),
+    assert MideaDevice.fetch_v2_message(bytes([])) == ([], bytes([]))
+    assert MideaDevice.fetch_v2_message(bytes([0x1])) == ([], bytes([0x1]))
+    assert MideaDevice.fetch_v2_message(bytes([0x1] * 5 + [0x0] + [0x1] * 7)) == (
+        [bytes([0x1])],
+        bytes([0x1] * 4 + [0x0] + [0x1] * 7),
     )
 
 
@@ -187,23 +186,10 @@ class MideaDeviceTest:
         ):
             self.device._socket = socket_mock
             self.device.authenticate()
-            self.device.send_message(bytearray([0x0] * 20))
+            self.device.send_message(bytes([0x0] * 20))
             self.device._socket = None
             self.device._device_protocol_version = ProtocolVersion.V2
-            self.device.send_message(bytearray([0x0] * 20))
-
-    def test_get_capabilities(self) -> None:
-        """Test get capabilities."""
-        self.device.get_capabilities()  # Empty capabilities
-        with (
-            patch.object(self.device, "build_send", return_value=None),
-            patch.object(
-                self.device,
-                "capabilities_query",
-                return_value=[MessageCapabilitiesQuery(ProtocolVersion.V2, False)],
-            ),
-        ):
-            self.device.get_capabilities()
+            self.device.send_message(bytes([0x0] * 20))
 
     def test_refresh_status(self) -> None:
         """Test refresh status."""
@@ -281,15 +267,15 @@ class MideaDeviceTest:
                 ],
             ),
         ):
-            assert self.device.parse_message(bytearray([])) == MessageResult.PADDING
+            assert self.device.parse_message(bytes([])) == MessageResult.PADDING
             self.device._device_protocol_version = ProtocolVersion.V2
-            assert self.device.parse_message(bytearray([])) == MessageResult.ERROR
+            assert self.device.parse_message(bytes([])) == MessageResult.ERROR
             with patch.object(
                 self.device,
                 "process_message",
                 side_effect=[{"power": True}, {}, NotImplementedError()],
             ):
-                assert self.device.parse_message(bytearray([])) == MessageResult.SUCCESS
+                assert self.device.parse_message(bytes([])) == MessageResult.SUCCESS
 
     def test_pre_process_message(self) -> None:
         """Test pre process message."""
@@ -305,7 +291,7 @@ class MideaDeviceTest:
     def test_process_message(self) -> None:
         """Test process message."""
         with pytest.raises(NotImplementedError):
-            self.device.process_message(bytearray([]))
+            self.device.process_message(bytes([]))
 
     def test_send_command(self) -> None:
         """Test send command."""
@@ -326,6 +312,34 @@ class MideaDeviceTest:
         assert len(self.device._updates) == 1
         self.device.update_all({"status": True})
         upd.assert_called()
+
+    def test_unregister_update(self) -> None:
+        """Test unregister update."""
+        upd = MagicMock()
+        other_upd = MagicMock()
+
+        # Unregistering a callback that was never registered is a no-op
+        self.device.unregister_update(upd)
+        assert len(self.device._updates) == 0
+
+        # Register two callbacks, then unregister one
+        self.device.register_update(upd)
+        self.device.register_update(other_upd)
+        assert len(self.device._updates) == 2
+
+        self.device.unregister_update(upd)
+        assert len(self.device._updates) == 1
+        assert upd not in self.device._updates
+        assert other_upd in self.device._updates
+
+        # Remaining callback is still called on update_all
+        self.device.update_all({"status": True})
+        upd.assert_not_called()
+        other_upd.assert_called_once_with({"status": True})
+
+        # Unregister the last callback
+        self.device.unregister_update(other_upd)
+        assert len(self.device._updates) == 0
 
     def test_open(self) -> None:
         """Test open."""
