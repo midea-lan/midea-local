@@ -19,7 +19,7 @@ jobs:
     permissions:
       pull-requests: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: wagoid/commitlint-github-action@v6.2.1
         with:
           configFile: .commitlint.config.mjs
@@ -34,7 +34,7 @@ jobs:
     env:
       SKIP: no-commit-to-branch
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
@@ -46,7 +46,7 @@ jobs:
         shell: bash
       - name: Cache pre-commit environments
         if: github.event_name != 'release'
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -76,8 +76,13 @@ jobs:
     needs: [build]
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/midea-local
+    permissions:
+      id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -91,7 +96,4 @@ jobs:
         run: python -m build
         shell: bash
       - name: Publish package
-        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
+        uses: pypa/gh-action-pypi-publish@release/v1
