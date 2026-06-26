@@ -12,6 +12,7 @@ from midealocal.message import (
 HEATING_POWER_BYTE = 34
 PROTECTION_BYTE = 22
 WATER_CONSUMPTION_BYTE = 25
+MEMORY_BYTE = 23
 
 
 class MessageE2Base(MessageRequest):
@@ -97,11 +98,16 @@ class MessageNewProtocolSet(MessageE2Base):
         self.always_fell: bool | None = None
         self.smart_sterilize: bool | None = None
         self.uv_sterilize: bool | None = None
+        self.memory: bool | None = None
 
     @property
     def _body(self) -> bytearray:
         byte12 = 0x00
         byte13 = 0x00
+        # memory (Memo U): "mode" command 0x03, flag on the 4th body byte (0x80)
+        if self.memory is not None:
+            value = 0x80 if self.memory else 0x00
+            return bytearray([0x03, 0x00, 0x00, value, 0x00, 0x00, 0x00, 0x00, 0x00])
         if self.target_temperature is not None:
             byte12 = 0x07
             byte13 = int(self.target_temperature) & 0xFF
@@ -250,6 +256,8 @@ class E2GeneralMessageBody(MessageBody):
         self.protection = (
             ((body[22] & 0x02) > 0) if len(body) > PROTECTION_BYTE else False
         )
+        # memory (Memo U): smart memory boost mode
+        self.memory = (body[23] & 0x08) > 0 if len(body) > MEMORY_BYTE else None
         # waterday_lowbyte/waterday_highbyte
         if len(body) > WATER_CONSUMPTION_BYTE:
             self.day_water_consumption = body[20] + (body[21] << 8)

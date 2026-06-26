@@ -31,6 +31,7 @@ FROST_PROTECT_MIN_LENGTH = 22
 INDIRECT_WIND_VALUE = 0x02
 MAX_MSG_SERIAL_NUM = 254
 OUT_SILENT_VALUE = 0x03
+SELF_CLEAN_ACTIVE_STATUS_BYTE = 12
 SCREEN_DISPLAY_BYTE_CHECK = 0x07
 SUB_PROTOCOL_BODY_TEMP_CHECK = 0x80
 TEMP_DECIMAL_MIN_BODY_LENGTH = 20
@@ -134,6 +135,7 @@ class NewProtocolTags(IntEnum):
     b5_sound = 0x022C
     # AC outdoor silent mode (PortaSplit)
     out_silent = 0x00CD
+    b5_self_clean_active = 0x00E2
 
 
 class MessageACBase(MessageRequest):
@@ -398,6 +400,7 @@ class MessageNewProtocolQuery(MessageACBase):
             NewProtocolTags.out_silent,
             NewProtocolTags.buzzer_all,
             NewProtocolQuery.error_code_query,
+            NewProtocolTags.b5_self_clean_active,
         ]
 
         _body = bytearray([len(query_params)])
@@ -921,6 +924,12 @@ class XBXMessageBody(NewProtocolMessageBody):
             self.sound = params[NewProtocolTags.buzzer_all][0] > 0
         if NewProtocolQuery.error_code_query in params:
             self.error_code = params[NewProtocolQuery.error_code_query][0]
+        if NewProtocolTags.b5_self_clean_active in params:
+            data = params[NewProtocolTags.b5_self_clean_active]
+            self.self_clean_active: bool = (
+                len(data) > SELF_CLEAN_ACTIVE_STATUS_BYTE
+                and data[SELF_CLEAN_ACTIVE_STATUS_BYTE] != 0
+            )
 
 
 class XB5MessageBody(NewProtocolMessageBody):
@@ -950,6 +959,14 @@ class XB5MessageBody(NewProtocolMessageBody):
             self.b5_temperature4 = params[NewProtocolTags.b5_temperature][4]
             self.b5_temperature5 = params[NewProtocolTags.b5_temperature][5]
             self.b5_temperature6 = params[NewProtocolTags.b5_temperature][6]
+            # per-mode setpoint limits in 0.5 C units. the six raw bytes are
+            # cool then auto then heat, each a min then a max, plus a flag byte.
+            # keyed by mode value: auto is 1, cool 2, dry 3, heat 4, fan 5
+            # (dry and fan reuse the cool range).
+            cool = (self.b5_temperature0 / 2, self.b5_temperature1 / 2)
+            auto = (self.b5_temperature2 / 2, self.b5_temperature3 / 2)
+            heat = (self.b5_temperature4 / 2, self.b5_temperature5 / 2)
+            self.temperature_limits = {1: auto, 2: cool, 3: cool, 4: heat, 5: cool}
         if NewProtocolTags.b5_screen_display in params:
             self.b5_screen_display = params[NewProtocolTags.b5_screen_display][0]
         if NewProtocolTags.b5_sound in params:
