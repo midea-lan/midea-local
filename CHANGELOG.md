@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.10.0](https://github.com/midea-lan/midea-local/compare/v6.9.0...v6.10.0) (2026-06-27)
+
+
+### Features
+
+* **ac:** decode B5 capabilities into feature flags ([#481](https://github.com/midea-lan/midea-local/issues/481)) ([f6b2650](https://github.com/midea-lan/midea-local/commit/f6b26501fbf272c3dda6b6a2e3ff597571b42b2c))
+
 ## [6.9.0](https://github.com/midea-lan/midea-local/compare/v6.8.0...v6.9.0) (2026-06-25)
 
 
