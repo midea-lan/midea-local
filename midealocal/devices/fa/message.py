@@ -75,6 +75,9 @@ class MessageSet(MessageFABase):
         self.oscillation_angle: int | None = None
         self.oscillation_mode: int | None = None
         self.tilting_angle: int | None = None
+        self.humidify: bool | None = None
+        self.waterions: bool | None = None
+        self.display_on_off: bool | None = None
 
     @property
     def _body(self) -> bytearray:
@@ -189,6 +192,21 @@ class MessageSet(MessageFABase):
             and len(_body_return) > TILTING_ANGLE_SET_BYTE
         ):
             _body_return[24] = self.tilting_angle
+        if self.humidify is not None:
+            if self.humidify:
+                _body_return[8] = (_body_return[8] & 0x0F) | 0x20
+            else:
+                _body_return[8] = (_body_return[8] & 0x0F) | 0x10
+        if self.waterions is not None:
+            if self.waterions:
+                _body_return[33] = (_body_return[33] & 0xFC) | 0x01
+            else:
+                _body_return[33] = (_body_return[33] & 0xFC) | 0x02
+        if self.display_on_off is not None:
+            if self.display_on_off:
+                _body_return[18] = (_body_return[18] & 0x3F) | 0x40
+            else:
+                _body_return[18] = (_body_return[18] & 0x3F) | 0x80
         return _body_return
 
 
@@ -216,6 +234,9 @@ class FAGeneralMessageBody(MessageBody):
         self.oscillation_angle = (body[8] & 0x70) >> 4
         self.oscillation_mode = (body[8] & 0x0E) >> 1
         self.tilting_angle = body[25] if len(body) > TILTING_ANGLE_GET_BYTE else 0
+        self.humidify = ((body[9] & 0xF0) >> 4) == 2
+        self.waterions = ((body[34] & 0x03) >> 0) == 1
+        self.display_on_off = ((body[19] & 0xC0) >> 6) == 1
 
 
 class MessageFAResponse(MessageResponse):
