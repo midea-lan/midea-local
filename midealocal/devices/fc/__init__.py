@@ -67,6 +67,7 @@ class MideaFCDevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
+        mac: str | None = None,
     ) -> None:
         """Initialize Midea FC device."""
         super().__init__(
@@ -80,6 +81,7 @@ class MideaFCDevice(MideaDevice):
             device_protocol=device_protocol,
             model=model,
             subtype=subtype,
+            mac=mac,
             attributes={
                 DeviceAttributes.power: False,
                 DeviceAttributes.mode: None,

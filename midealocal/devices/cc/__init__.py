@@ -83,6 +83,7 @@ class MideaCCDevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
+        mac: str | None = None,
     ) -> None:
         """Initialize Midea CC device."""
         super().__init__(
@@ -96,6 +97,7 @@ class MideaCCDevice(MideaDevice):
             device_protocol=device_protocol,
             model=model,
             subtype=subtype,
+            mac=mac,
             attributes={
                 DeviceAttributes.power: False,
                 DeviceAttributes.mode: 1,

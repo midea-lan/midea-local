@@ -47,6 +47,7 @@ class MideaB8Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
+        mac: str | None = None,
     ) -> None:
         """Initialize Midea B8 device."""
         super().__init__(
@@ -60,6 +61,7 @@ class MideaB8Device(MideaDevice):
             device_protocol=device_protocol,
             model=model,
             subtype=subtype,
+            mac=mac,
             attributes={
                 B8DeviceAttributes.WORK_STATUS: B8WorkStatus.NONE.name.lower(),
                 B8DeviceAttributes.FUNCTION_TYPE: B8FunctionType.NONE.name.lower(),

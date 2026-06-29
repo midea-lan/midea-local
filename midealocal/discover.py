@@ -1,6 +1,7 @@
 """Midea local discover."""
 
 import logging
+import re
 import socket
 from ipaddress import IPv4Network
 from typing import Any
@@ -159,6 +160,29 @@ SERIAL_TYPE2_LENGTH = 22
 DISCOVERY_MIN_REPLY_LENGTH = 41
 
 
+def _extract_mac(reply: bytes | bytearray, ssid_len: int, sn: str) -> str | None:
+    """Return the MAC address or None if not available.
+
+    Extracts the MAC address from the v3 discover reply and returns it as a
+    hexadecimal string without internal separators.
+    If the reply does not provide the MAC address, the MAC is extracted from
+    the serial number, which also may contain the MAC address.
+    Otherwise return None.
+    """
+    # Based on https://github.com/nbogojevic/midea-beautiful-air/blob/db3622e784891af0a522d70a626fb54e5c3e5e6f/midea_beautiful/lan.py#L264  # noqa: E501
+    mac = None
+    mac_start = 63 + ssid_len
+    mac_ends = mac_start + 6
+    if len(reply) >= mac_ends:
+        mac = reply[mac_start:mac_ends].hex()
+    elif len(sn) >= SERIAL_TYPE1_LENGTH:
+        mac = sn[16:28]
+    if mac and not re.fullmatch(r"[0-9A-Fa-f]{12}", mac):
+        _LOGGER.warning("Invalid MAC address %s", mac)
+        mac = None
+    return mac
+
+
 def _parse_discover_response(
     sock: socket.socket,
     found_devices: dict[int, dict[str, Any]],
@@ -190,13 +214,15 @@ def _parse_discover_response(
             40
         ] + DISCOVERY_MIN_REPLY_LENGTH <= len(reply):
             _LOGGER.debug("Declassified reply: %s", reply.hex())
+            ssid_len = reply[40]
             ssid = reply[
-                DISCOVERY_MIN_REPLY_LENGTH : DISCOVERY_MIN_REPLY_LENGTH + reply[40]
-            ].decode("utf-8")
+                DISCOVERY_MIN_REPLY_LENGTH : DISCOVERY_MIN_REPLY_LENGTH + ssid_len
+            ].decode("ascii")
             device_type = ssid.split("_")[1]
             port = bytes2port(reply[4:8])
-            model = reply[17:25].decode("utf-8")
-            sn = reply[8:40].decode("utf-8")
+            model = reply[17:25].decode("ascii")
+            sn = reply[8:40].decode("ascii")
+            mac = _extract_mac(reply, ssid_len, sn)
         else:
             _LOGGER.warning(
                 "Failed to decrypt the encrypt_data: %s from %s. Maybe not support.",
@@ -226,6 +252,8 @@ def _parse_discover_response(
             model = sn[3:11]
         else:
             model = ""
+        # No mac available as far as I know, examples may be welcome to confirm this.
+        mac = None
     else:
         return 0, None
     return device_id, {
@@ -236,6 +264,7 @@ def _parse_discover_response(
         "model": model,
         "sn": sn,
         "protocol": protocol,
+        "mac": mac,
     }
 
 

@@ -120,6 +120,7 @@ class MideaCLI:
                     model=device["model"],
                     subtype=0,
                     customize="",
+                    mac=device["mac"],
                 )
                 _LOGGER.debug("Opening socket for device.")
                 if dev.connect():

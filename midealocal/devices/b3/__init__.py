@@ -62,6 +62,7 @@ class MideaB3Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
+        mac: str | None = None,
     ) -> None:
         """Initialize Midea local B3 device."""
         super().__init__(
@@ -75,6 +76,7 @@ class MideaB3Device(MideaDevice):
             device_protocol=device_protocol,
             model=model,
             subtype=subtype,
+            mac=mac,
             attributes={
                 DeviceAttributes.top_compartment_status: None,
                 DeviceAttributes.top_compartment_mode: None,
