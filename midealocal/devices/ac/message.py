@@ -151,6 +151,7 @@ class NewProtocolTags(IntEnum):
     b5_screen_display = 0x0224
     b5_anion = 0x021E
     b5_sound = 0x022C
+    rate_select = 0x0048
     # AC outdoor silent mode (PortaSplit)
     out_silent = 0x00CD
     b5_self_clean_active = 0x00E2
@@ -415,6 +416,7 @@ class MessageNewProtocolQuery(MessageACBase):
             NewProtocolTags.fresh_air_2,
             NewProtocolTags.wind_lr_angle,
             NewProtocolTags.wind_ud_angle,
+            NewProtocolTags.rate_select,
             NewProtocolTags.out_silent,
             NewProtocolTags.buzzer_all,
             NewProtocolQuery.error_code_query,
@@ -684,6 +686,7 @@ class MessageNewProtocolSet(MessageACBase):
         self.fresh_air_2: bytes | None = None
         self.wind_lr_angle: bytes | None = None
         self.wind_ud_angle: bytes | None = None
+        self.rate_select: int | None = None
         self.out_silent: bool | None = None
         self.sound: bool | None = None
         self.self_clean: bool | None = None
@@ -799,6 +802,14 @@ class MessageNewProtocolSet(MessageACBase):
                 NewProtocolMessageBody.pack(
                     param=NewProtocolTags.self_clean,
                     value=bytearray([0x01 if self.self_clean else 0x00]),
+                ),
+            )
+        if self.rate_select is not None:
+            pack_count += 1
+            payload.extend(
+                NewProtocolMessageBody.pack(
+                    param=NewProtocolTags.rate_select,
+                    value=bytearray([int(self.rate_select)]),
                 ),
             )
         payload[0] = pack_count
@@ -936,6 +947,8 @@ class XBXMessageBody(NewProtocolMessageBody):
             self.wind_lr_angle = params[NewProtocolTags.wind_lr_angle][0]
         if NewProtocolTags.wind_ud_angle in params:
             self.wind_ud_angle = params[NewProtocolTags.wind_ud_angle][0]
+        if NewProtocolTags.rate_select in params:
+            self.rate_select = params[NewProtocolTags.rate_select][0]
         if NewProtocolTags.out_silent in params:
             self.out_silent = params[NewProtocolTags.out_silent][0] == OUT_SILENT_VALUE
         if NewProtocolTags.buzzer_all in params:
