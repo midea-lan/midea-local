@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.10.1](https://github.com/midea-lan/midea-local/compare/v6.10.0...v6.10.1) (2026-07-02)
+
+
+### Documentation
+
+* add AGENTS.md as canonical AI agent instructions ([#489](https://github.com/midea-lan/midea-local/issues/489)) ([bb3370e](https://github.com/midea-lan/midea-local/commit/bb3370eff7298fc2d36242f269decb2f6df5d436))
+
 ## [6.10.0](https://github.com/midea-lan/midea-local/compare/v6.9.0...v6.10.0) (2026-06-27)
 
 
