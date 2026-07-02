@@ -4,10 +4,10 @@ import json
 import logging
 import math
 from enum import StrEnum
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Unpack
 
-from midealocal.const import DeviceType, ProtocolVersion
-from midealocal.device import MideaDevice
+from midealocal.const import DeviceType
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import MessageQuery, MessageSet, MessageX40Response
 
@@ -36,29 +36,14 @@ class MideaX40Device(MideaDevice):
 
     def __init__(
         self,
-        name: str,
-        device_id: int,
-        ip_address: str,
-        port: int,
-        token: str,
-        key: str,
-        device_protocol: ProtocolVersion,
-        model: str,
-        subtype: int,
+        *,
         customize: str,
+        **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea x40 Device."""
         super().__init__(
-            name=name,
-            device_id=device_id,
             device_type=DeviceType.X40,
-            ip_address=ip_address,
-            port=port,
-            token=token,
-            key=key,
-            device_protocol=device_protocol,
-            model=model,
-            subtype=subtype,
+            **kwargs,
             attributes={
                 DeviceAttributes.light: False,
                 DeviceAttributes.fan_speed: 0,

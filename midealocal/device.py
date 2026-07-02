@@ -6,7 +6,7 @@ import threading
 import time
 from collections.abc import Callable
 from enum import IntEnum, StrEnum
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypedDict
 
 from typing_extensions import deprecated
 
@@ -62,6 +62,27 @@ class MessageResult(IntEnum):
     UNEXPECTED = 97
     TIMEOUT = 98
     ERROR = 99
+
+
+class MideaDeviceInitKwargs(TypedDict):
+    """Connection/identity kwargs forwarded by device subclasses to MideaDevice.
+
+    Every device subclass's ``__init__`` accepts these via ``**kwargs`` and
+    forwards them unchanged to ``MideaDevice.__init__``. Keeping them in one
+    place means adding a field here (e.g. ``mac``, ``serial_number``) is
+    enough for every subclass to accept and forward it, with no per-subclass
+    signature changes required.
+    """
+
+    name: str
+    device_id: int
+    ip_address: str
+    port: int
+    token: str
+    key: str
+    device_protocol: ProtocolVersion
+    model: str
+    subtype: int
 
 
 class MideaDevice(threading.Thread):
