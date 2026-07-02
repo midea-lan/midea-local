@@ -175,7 +175,7 @@ def _extract_mac(reply: bytes | bytearray, ssid_len: int, sn: str) -> str | None
     mac_ends = mac_start + 6
     if len(reply) >= mac_ends:
         mac = reply[mac_start:mac_ends].hex()
-    elif len(sn) >= SERIAL_TYPE1_LENGTH:
+    elif len(sn) >= 28:  # Minimum length for sn[16:28] slice
         mac = sn[16:28]
     if mac and not re.fullmatch(r"[0-9A-Fa-f]{12}", mac):
         _LOGGER.warning("Invalid MAC address %s", mac)
