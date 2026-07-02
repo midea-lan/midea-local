@@ -123,21 +123,25 @@ class MideaCLI:
                 )
                 _LOGGER.debug("Opening socket for device.")
                 if dev.connect():
+                    success = False
                     try:
                         if device["protocol"] == ProtocolVersion.V3:
                             _LOGGER.debug("Trying to connect with key: %s", key)
                             dev.authenticate()
                         _LOGGER.debug("Trying to retrieve device attributes.")
                         dev.refresh_status(True)
+                        _LOGGER.info("Found device:\n%s", dev.attributes)
+                        device_list.append(dev)
+                        success = True
                     except AuthException:
                         _LOGGER.debug("Unable to connect with key: %s", key)
                     except SocketException:
                         _LOGGER.exception("Device socket closed.")
                     except NoSupportedProtocol:
                         _LOGGER.exception("Unable to retrieve device attributes.")
-                    else:
-                        _LOGGER.info("Found device:\n%s", dev.attributes)
-                        device_list.append(dev)
+                    finally:
+                        if not success:
+                            dev.close_socket()
         return device_list
 
     def message(self) -> None:
@@ -229,22 +233,26 @@ class MideaCLI:
     async def set_attribute(self) -> None:
         """Set attribute for device."""
         device_list = await self.discover()
-        if len(device_list) != 1:
-            return
+        try:
+            if len(device_list) != 1:
+                return
 
-        _LOGGER.info(
-            "Setting attribute %s for %s [%s]",
-            self.namespace.attribute,
-            device_list[0].device_id,
-            device_list[0].device_type,
-        )
-        device_list[0].set_attribute(
-            self.namespace.attribute,
-            self._cast_attr_value(),
-        )
-        await asyncio.sleep(2)
-        device_list[0].refresh_status(True)
-        _LOGGER.info("New device status:\n%s", device_list[0].attributes)
+            _LOGGER.info(
+                "Setting attribute %s for %s [%s]",
+                self.namespace.attribute,
+                device_list[0].device_id,
+                device_list[0].device_type,
+            )
+            device_list[0].set_attribute(
+                self.namespace.attribute,
+                self._cast_attr_value(),
+            )
+            await asyncio.sleep(2)
+            device_list[0].refresh_status(True)
+            _LOGGER.info("New device status:\n%s", device_list[0].attributes)
+        finally:
+            for dev in device_list:
+                dev.close_socket()
 
     def _cast_attr_value(self) -> int | bool | str:
         if self.namespace.attr_type == "bool":
