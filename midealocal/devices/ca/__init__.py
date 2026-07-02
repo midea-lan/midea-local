@@ -71,6 +71,7 @@ class MideaCADevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
+        mac: str | None = None,
     ) -> None:
         """Initialize Midea CA device."""
         super().__init__(
@@ -84,6 +85,7 @@ class MideaCADevice(MideaDevice):
             device_protocol=device_protocol,
             model=model,
             subtype=subtype,
+            mac=mac,
             attributes={
                 DeviceAttributes.energy_consumption: None,
                 DeviceAttributes.refrigerator_actual_temp: None,

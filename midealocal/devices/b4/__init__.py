@@ -48,6 +48,7 @@ class MideaB4Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
+        mac: str | None = None,
     ) -> None:
         """Initialize Midea B4 device."""
         super().__init__(
@@ -61,6 +62,7 @@ class MideaB4Device(MideaDevice):
             device_protocol=device_protocol,
             model=model,
             subtype=subtype,
+            mac=mac,
             attributes={
                 DeviceAttributes.door: False,
                 DeviceAttributes.status: None,

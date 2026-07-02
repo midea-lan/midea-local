@@ -72,6 +72,7 @@ class MideaFDDevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
+        mac: str | None = None,
     ) -> None:
         """Initialize Midea FD device."""
         super().__init__(
@@ -85,6 +86,7 @@ class MideaFDDevice(MideaDevice):
             device_protocol=device_protocol,
             model=model,
             subtype=subtype,
+            mac=mac,
             attributes={
                 DeviceAttributes.power: False,
                 DeviceAttributes.fan_speed: None,

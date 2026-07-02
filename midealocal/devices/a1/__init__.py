@@ -65,6 +65,7 @@ class MideaA1Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
+        mac: str | None = None,
     ) -> None:
         """Initialize Midea A1 device."""
         super().__init__(
@@ -78,6 +79,7 @@ class MideaA1Device(MideaDevice):
             device_protocol=device_protocol,
             model=model,
             subtype=subtype,
+            mac=mac,
             attributes={
                 DeviceAttributes.power: False,
                 DeviceAttributes.prompt_tone: True,

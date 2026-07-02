@@ -46,6 +46,7 @@ class MideaC3Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
+        mac: str | None = None,
     ) -> None:
         """Initialize Midea C3 device."""
         super().__init__(
@@ -59,6 +60,7 @@ class MideaC3Device(MideaDevice):
             device_protocol=device_protocol,
             model=model,
             subtype=subtype,
+            mac=mac,
             attributes={
                 DeviceAttributes.zone1_power: False,
                 DeviceAttributes.zone2_power: False,

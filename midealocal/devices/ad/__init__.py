@@ -55,6 +55,7 @@ class MideaADDevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
+        mac: str | None = None,
     ) -> None:
         """Initialize Midea AD device."""
         super().__init__(
@@ -68,6 +69,7 @@ class MideaADDevice(MideaDevice):
             device_protocol=device_protocol,
             model=model,
             subtype=subtype,
+            mac=mac,
             attributes={
                 DeviceAttributes.temperature: None,
                 DeviceAttributes.humidity: None,

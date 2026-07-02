@@ -144,6 +144,7 @@ class MideaEADevice(MideaDevice):
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
+        mac: str | None = None,
     ) -> None:
         """Initialize Midea EA device."""
         super().__init__(
@@ -157,6 +158,7 @@ class MideaEADevice(MideaDevice):
             device_protocol=device_protocol,
             model=model,
             subtype=subtype,
+            mac=mac,
             attributes={
                 DeviceAttributes.cooking: False,
                 DeviceAttributes.keep_warm: False,

@@ -63,6 +63,7 @@ class Midea26Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,  # noqa: ARG002
+        mac: str | None = None,
     ) -> None:
         """Initialize Midea x26 device."""
         super().__init__(
@@ -76,6 +77,7 @@ class Midea26Device(MideaDevice):
             device_protocol=device_protocol,
             model=model,
             subtype=subtype,
+            mac=mac,
             attributes={
                 DeviceAttributes.main_light: False,
                 DeviceAttributes.night_light: False,

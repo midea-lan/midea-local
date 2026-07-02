@@ -46,6 +46,7 @@ class MideaX40Device(MideaDevice):
         model: str,
         subtype: int,
         customize: str,
+        mac: str | None = None,
     ) -> None:
         """Initialize Midea x40 Device."""
         super().__init__(
@@ -59,6 +60,7 @@ class MideaX40Device(MideaDevice):
             device_protocol=device_protocol,
             model=model,
             subtype=subtype,
+            mac=mac,
             attributes={
                 DeviceAttributes.light: False,
                 DeviceAttributes.fan_speed: 0,

@@ -16,6 +16,7 @@ from midealocal.cli import (
 from midealocal.cloud import MideaAirCloud, SmartHomeCloud
 from midealocal.const import ProtocolVersion
 from midealocal.device import AuthException, NoSupportedProtocol
+from midealocal.discover import _extract_mac
 from midealocal.exceptions import SocketException
 
 
@@ -102,6 +103,24 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             mock_default_keys.assert_called_once()
             mock_cloud_keys.assert_not_called()
 
+    def test_extract_mac(self) -> None:
+        """Test _extract_mac."""
+        expected_mac = "1234567890ab"
+        mac = _extract_mac(
+            reply=b"",
+            ssid_len=0,
+            sn="a" * 16 + expected_mac + "1234",
+        )
+        assert mac == expected_mac
+        mac2 = _extract_mac(
+            reply=b"a" * 63 + b"bb" + b"\x12\x34\x56\x78\x90\xab",
+            ssid_len=2,
+            sn="a" * 16 + expected_mac + "1234",
+        )
+        assert mac2 == expected_mac
+        mac3 = _extract_mac(b"", 1, "shortsn")
+        assert mac3 is None
+
     async def test_discover(self) -> None:
         """Test discover."""
         mock_device = {
@@ -111,7 +130,8 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "ip_address": "192.168.0.2",
             "port": 6444,
             "model": "AC123000",
-            "sn": "0000AC12300000000000000000000000",
+            "sn": "0000AC12300000001234567890ABCDEF",
+            "mac": "1234567890AB",
         }
         mock_cloud_instance = AsyncMock()
         mock_device_instance = MagicMock()
