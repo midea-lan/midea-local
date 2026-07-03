@@ -12,6 +12,7 @@ from midealocal.message import (
 MAX_FAN_SPEED = 26
 TILTING_ANGLE_GET_BYTE = 25
 TILTING_ANGLE_SET_BYTE = 24
+HUMIDIFY_ON_VALUE = 2
 
 
 class MessageFABase(MessageRequest):
@@ -80,7 +81,7 @@ class MessageSet(MessageFABase):
         self.display_on_off: bool | None = None
 
     @property
-    def _body(self) -> bytearray:
+    def _body(self) -> bytearray:  # noqa: C901
         if 1 <= self._subtype <= ListTypes.X0A or self._subtype == ListTypes.A1:
             _body_return = bytearray(
                 [
@@ -234,7 +235,7 @@ class FAGeneralMessageBody(MessageBody):
         self.oscillation_angle = (body[8] & 0x70) >> 4
         self.oscillation_mode = (body[8] & 0x0E) >> 1
         self.tilting_angle = body[25] if len(body) > TILTING_ANGLE_GET_BYTE else 0
-        self.humidify = ((body[9] & 0xF0) >> 4) == 2
+        self.humidify = ((body[9] & 0xF0) >> 4) == HUMIDIFY_ON_VALUE
         self.waterions = ((body[34] & 0x03) >> 0) == 1
         self.display_on_off = ((body[19] & 0xC0) >> 6) == 1
 
