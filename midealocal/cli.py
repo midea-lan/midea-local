@@ -124,9 +124,8 @@ class MideaCLI:
                 _LOGGER.debug("Opening socket for device.")
                 if dev.connect():
                     try:
-                        if device["protocol"] == ProtocolVersion.V3:
-                            _LOGGER.debug("Trying to connect with key: %s", key)
-                            dev.authenticate()
+                        # connect() already authenticates V3 devices, so there
+                        # is no need to call authenticate() again here.
                         _LOGGER.debug("Trying to retrieve device attributes.")
                         dev.refresh_status(True)
                     except AuthException:

@@ -131,13 +131,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             ),
             patch.object(
                 mock_device_instance,
-                "authenticate",
-                side_effect=[None, None, AuthException, SocketException],
-            ) as authenticate_mock,
-            patch.object(
-                mock_device_instance,
                 "refresh_status",
-                side_effect=[None, None, NoSupportedProtocol, None],
             ) as refresh_status_mock,
         ):
             mock_discover.return_value = {1: mock_device}
@@ -155,22 +149,28 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             # set get_sn to default False after test done
             self.namespace.get_sn = False
 
-            # test V3 device
+            # test V3 device: connect() already authenticated, discover only
+            # calls refresh_status (once per candidate key).
+            refresh_status_mock.side_effect = None
             await self.cli.discover()  # V3 device
-            authenticate_mock.assert_called()
             refresh_status_mock.assert_called_with(True)
-            authenticate_mock.reset_mock()
             refresh_status_mock.reset_mock()
 
-            await self.cli.discover()  # V3 device AuthException
-            refresh_status_mock.assert_not_called()
-            authenticate_mock.assert_called()
-            authenticate_mock.reset_mock()
+            # V3 device where refresh_status raises: each failure is caught and
+            # the device is simply not added to the list.
+            refresh_status_mock.side_effect = [AuthException, NoSupportedProtocol]
+            assert await self.cli.discover() == []
+            refresh_status_mock.reset_mock()
+
+            refresh_status_mock.side_effect = [SocketException, None]
+            await self.cli.discover()  # V3 device SocketException on first key
+            refresh_status_mock.reset_mock()
 
             mock_device["protocol"] = ProtocolVersion.V2
-            await self.cli.discover()  # V2 device NoSupportedProtocol
-            authenticate_mock.assert_not_called()
-            refresh_status_mock.assert_called_once()
+            refresh_status_mock.side_effect = None
+            await self.cli.discover()  # V2 device
+            refresh_status_mock.assert_called_with(True)
+            refresh_status_mock.reset_mock()
 
             mock_device_instance.connect.return_value = False
             await self.cli.discover()  # connect failed
