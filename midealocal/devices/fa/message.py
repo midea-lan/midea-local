@@ -13,6 +13,11 @@ MAX_FAN_SPEED = 26
 TILTING_ANGLE_GET_BYTE = 25
 TILTING_ANGLE_SET_BYTE = 24
 HUMIDIFY_ON_VALUE = 2
+HUMIDIFY_GET_BYTE = 9
+DISPLAY_SET_BYTE = 18
+DISPLAY_GET_BYTE = 19
+WATERIONS_SET_BYTE = 33
+WATERIONS_GET_BYTE = 34
 
 
 class MessageFABase(MessageRequest):
@@ -198,12 +203,12 @@ class MessageSet(MessageFABase):
                 _body_return[8] = (_body_return[8] & 0x0F) | 0x20
             else:
                 _body_return[8] = (_body_return[8] & 0x0F) | 0x10
-        if self.waterions is not None:
+        if self.waterions is not None and len(_body_return) > WATERIONS_SET_BYTE:
             if self.waterions:
                 _body_return[33] = (_body_return[33] & 0xFC) | 0x01
             else:
                 _body_return[33] = (_body_return[33] & 0xFC) | 0x02
-        if self.display_on_off is not None:
+        if self.display_on_off is not None and len(_body_return) > DISPLAY_SET_BYTE:
             if self.display_on_off:
                 _body_return[18] = (_body_return[18] & 0x3F) | 0x40
             else:
@@ -235,9 +240,17 @@ class FAGeneralMessageBody(MessageBody):
         self.oscillation_angle = (body[8] & 0x70) >> 4
         self.oscillation_mode = (body[8] & 0x0E) >> 1
         self.tilting_angle = body[25] if len(body) > TILTING_ANGLE_GET_BYTE else 0
-        self.humidify = ((body[9] & 0xF0) >> 4) == HUMIDIFY_ON_VALUE
-        self.waterions = ((body[34] & 0x03) >> 0) == 1
-        self.display_on_off = ((body[19] & 0xC0) >> 6) == 1
+        self.humidify = (
+            ((body[9] & 0xF0) >> 4) == HUMIDIFY_ON_VALUE
+            if len(body) > HUMIDIFY_GET_BYTE
+            else False
+        )
+        self.waterions = (
+            ((body[34] & 0x03) >> 0) == 1 if len(body) > WATERIONS_GET_BYTE else False
+        )
+        self.display_on_off = (
+            ((body[19] & 0xC0) >> 6) == 1 if len(body) > DISPLAY_GET_BYTE else False
+        )
 
 
 class MessageFAResponse(MessageResponse):
