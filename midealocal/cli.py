@@ -139,6 +139,11 @@ class MideaCLI:
                         _LOGGER.exception("Device socket closed.")
                     except NoSupportedProtocol:
                         _LOGGER.exception("Unable to retrieve device attributes.")
+                    except OSError:
+                        # OSError covers TimeoutError/ConnectionResetError raised
+                        # by authenticate()/refresh_status(); catch it so one
+                        # unreachable device doesn't abort the whole scan.
+                        _LOGGER.exception("Connection error during device query.")
                     finally:
                         if not success:
                             dev.close_socket()

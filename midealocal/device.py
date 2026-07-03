@@ -223,26 +223,25 @@ class MideaDevice(threading.Thread):
             connected = True
         except TimeoutError:
             _LOGGER.debug("[%s] Connection timed out", self._device_id)
-            self.close_socket()
         except OSError:  # refresh_status exception
             _LOGGER.debug("[%s] Connection error", self._device_id)
-            self.close_socket()
         except AuthException:  # authenticate exception
             _LOGGER.debug("[%s] Authentication failed", self._device_id)
-            self.close_socket()
         except SocketException:  # refresh_status exception
             _LOGGER.debug("[%s] Connect socket exception", self._device_id)
-            self.close_socket()
         except NoSupportedProtocol:  # refresh_status exception
             _LOGGER.debug("[%s] No supported query protocol", self._device_id)
-            self.close_socket()
         except Exception as e:
             _LOGGER.exception(
                 "[%s] Unknown error during connect device",
                 self._device_id,
                 exc_info=e,
             )
-            self.close_socket()
+        finally:
+            # Any failure path leaves connected False; release the socket once
+            # here instead of repeating close_socket() in every handler.
+            if not connected:
+                self.close_socket()
         # enable/disable device in init connection
         if check_protocol:
             self.set_available(connected)
@@ -615,20 +614,32 @@ class MideaDevice(threading.Thread):
             self._is_run = False
             self.close_socket()
 
+    def _should_run(self) -> bool:
+        """Return whether the service loop should keep running.
+
+        ``_is_run`` is flipped to False from another thread by ``close()``.
+        Reading it through this method (instead of the bare attribute) keeps
+        the loop-exit checks reachable to static analysis, which would
+        otherwise narrow the attribute to True inside the loop.
+        """
+        return self._is_run
+
     def close_socket(self) -> None:
         """Close socket."""
         self._unsupported_protocol = []
         self._buffer = b""
         if self._socket:
             try:
-                try:
-                    self._socket.shutdown(socket.SHUT_RDWR)
-                except OSError as e:
-                    _LOGGER.debug(
-                        "[%s] Error while shutting down socket: %s",
-                        self._device_id,
-                        e,
-                    )
+                self._socket.shutdown(socket.SHUT_RDWR)
+            except OSError as e:
+                # shutdown() raises ENOTCONN if the peer already went away;
+                # that's fine, we still close() below.
+                _LOGGER.debug(
+                    "[%s] Error while shutting down socket: %s",
+                    self._device_id,
+                    e,
+                )
+            try:
                 self._socket.close()
                 _LOGGER.debug("[%s] Socket closed", self._device_id)
             except OSError as e:
@@ -675,8 +686,8 @@ class MideaDevice(threading.Thread):
                 )
                 # sleep and reconnect loop until device online
                 for _ in range(sleep_time):
-                    if not self._is_run:
-                        break  # type: ignore[unreachable]
+                    if not self._should_run():
+                        break
                     time.sleep(1)
 
     def run(self) -> None:
@@ -709,8 +720,8 @@ class MideaDevice(threading.Thread):
         while self._is_run:
             # connect loop until device online
             self._connect_loop()
-            if not self._is_run:
-                break  # type: ignore[unreachable]
+            if not self._should_run():
+                break
             # socket recv msg timeout counter
             timeout_counter = 0
             start = time.time()
