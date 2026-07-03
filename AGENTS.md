@@ -10,14 +10,18 @@ message encoding/decoding. Python ≥ 3.12 (CI tests 3.12–3.14).
 
 ## Build, test, lint
 
-Install everything (runtime + dev + types) with `pip install -r requirements-all.txt`.
+The dev environment uses [uv](https://docs.astral.sh/uv/). Bootstrap it with
+`./scripts/setup.sh` (Linux/macOS/WSL2) or `scripts\setup.ps1` (Windows), which creates a
+`.venv`, installs everything (runtime + dev + types) from `requirements-all.txt`, and
+installs the pre-commit hooks. Prefix commands with `uv run` to use that environment.
 
-- Run all tests: `python -m pytest ./tests/`
-- Run one test file: `python -m pytest tests/devices/ac/message_ac_test.py`
-- Run one test: `python -m pytest tests/devices/ac/message_ac_test.py::TestACMessage::test_message_query -v`
-- Coverage (as CI does): `python -m pytest --cov=midealocal --cov-report xml ./tests/`
-- Lint/format/type-check all at once via `pre-commit run --all-files`. Individually:
-  `ruff check .`, `ruff format .`, `mypy midealocal`, `pylint --rcfile=pylintrc midealocal`.
+- Run all tests: `uv run python -m pytest ./tests/`
+- Run one test file: `uv run python -m pytest tests/devices/ac/message_ac_test.py`
+- Run one test: `uv run python -m pytest tests/devices/ac/message_ac_test.py::TestACMessage::test_message_query -v`
+- Coverage (as CI does): `uv run python -m pytest --cov=midealocal --cov-report xml ./tests/`
+- Lint/format/type-check all at once via `uv run pre-commit run --all-files`. Individually:
+  `uv run ruff check .`, `uv run ruff format .`, `uv run mypy midealocal`,
+  `uv run pylint --rcfile=pylintrc midealocal`.
 
 `ruff` uses `lint.select = ["ALL"]` with curated ignores in `ruff.toml`; `mypy` runs in
 strict mode (`mypy.ini`). Fix all reported issues before committing — CI runs the full
@@ -42,7 +46,7 @@ across all three:
 Entry points: `discover.py` finds devices on the LAN; `devices/__init__.py`
 `device_selector()` dynamically `import_module`s the right `devices/<type>` package and
 instantiates its `MideaAppliance`. `cloud.py` retrieves token/key from Midea cloud
-accounts. `cli.py` (`python -m midealocal.cli` / `midealocal`) and `library_test.py` are
+accounts. `cli.py` (`python3 -m midealocal.cli` / `midealocal`) and `library_test.py` are
 user-facing harnesses.
 
 ## Conventions specific to this codebase
@@ -65,5 +69,5 @@ user-facing harnesses.
 - **Commits** must follow Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`,
   `refactor:`, `test:`); commitlint/commitizen enforce this and CI validates PR messages.
   Do not commit directly to `main` (pre-commit `no-commit-to-branch`).
-- Recommended dev environment is **VS Code + Dev Container** (`.devcontainer/`); see
-  `.github/CONTRIBUTING.md`.
+- Recommended dev environment is **uv + a local `.venv`** (`./scripts/setup.sh` or
+  `scripts\setup.ps1`); see `.github/CONTRIBUTING.md`.
