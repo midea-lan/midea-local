@@ -158,13 +158,13 @@ class MideaE1Device(MideaDevice):
 
         Raises
         ------
-        ValueError
+        ValueWrongType
             If the mode code is not supported.
 
         """
         if mode not in self._modes:
             msg = f"[e1] Unsupported work mode: {mode}"
-            raise ValueError(msg)
+            raise ValueWrongType(msg)
 
         message = MessageWork(self._message_protocol_version)
         message.mode = mode
@@ -175,19 +175,18 @@ class MideaE1Device(MideaDevice):
 
         Raises
         ------
-        ValueError
-            If there is no selected work mode.
-        TypeError
-            If the stored work mode is not a name.
+        ValueWrongType
+            If there is no selected work mode, or the stored work mode is
+            not a valid name.
 
         """
         mode_name = self.get_attribute(DeviceAttributes.mode)
         if mode_name is None or mode_name == 0:
             msg = "[e1] No work mode selected"
-            raise ValueError(msg)
+            raise ValueWrongType(msg)
         if not isinstance(mode_name, str):
             msg = "[e1] Invalid work mode"
-            raise TypeError(msg)
+            raise ValueWrongType(msg)
 
         mode = next(
             (code for code, name in self._modes.items() if name == mode_name),
@@ -195,7 +194,7 @@ class MideaE1Device(MideaDevice):
         )
         if mode is None or mode == 0:
             msg = "[e1] No work mode selected"
-            raise ValueError(msg)
+            raise ValueWrongType(msg)
         self.set_work_mode(mode)
 
     def process_message(self, msg: bytes) -> dict[str, Any]:

@@ -7,6 +7,7 @@ import pytest
 from midealocal.const import ProtocolVersion
 from midealocal.devices.e1 import DeviceAttributes, MideaE1Device
 from midealocal.devices.e1.message import MessageQuery, MessageWork
+from midealocal.exceptions import ValueWrongType
 
 
 class TestMideaE1Device:
@@ -54,7 +55,7 @@ class TestMideaE1Device:
 
     def test_set_work_mode_rejects_unknown_mode(self) -> None:
         """Test setting an unknown work mode."""
-        with pytest.raises(ValueError, match="Unsupported work mode"):
+        with pytest.raises(ValueWrongType, match="Unsupported work mode"):
             self.device.set_work_mode(0x11)
 
     def test_start_work(self) -> None:
@@ -71,11 +72,11 @@ class TestMideaE1Device:
     def test_start_work_requires_selected_mode(self, mode: str | int | None) -> None:
         """Test starting requires a non-neutral selected mode."""
         self.device._attributes[DeviceAttributes.mode] = mode
-        with pytest.raises(ValueError, match="No work mode selected"):
+        with pytest.raises(ValueWrongType, match="No work mode selected"):
             self.device.start_work()
 
     def test_start_work_rejects_invalid_mode_type(self) -> None:
         """Test starting rejects an invalid stored mode."""
         self.device._attributes[DeviceAttributes.mode] = 4
-        with pytest.raises(TypeError, match="Invalid work mode"):
+        with pytest.raises(ValueWrongType, match="Invalid work mode"):
             self.device.start_work()
