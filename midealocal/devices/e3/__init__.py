@@ -3,10 +3,10 @@
 import json
 import logging
 from enum import StrEnum
-from typing import Any
+from typing import Any, Unpack
 
-from midealocal.const import DeviceType, ProtocolVersion
-from midealocal.device import MideaDevice
+from midealocal.const import DeviceType
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import (
     MessageE3Response,
@@ -37,29 +37,14 @@ class MideaE3Device(MideaDevice):
 
     def __init__(
         self,
-        name: str,
-        device_id: int,
-        ip_address: str,
-        port: int,
-        token: str,
-        key: str,
-        device_protocol: ProtocolVersion,
-        model: str,
-        subtype: int,
+        *,
         customize: str,
+        **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea E3 device."""
         super().__init__(
-            name=name,
-            device_id=device_id,
             device_type=DeviceType.E3,
-            ip_address=ip_address,
-            port=port,
-            token=token,
-            key=key,
-            device_protocol=device_protocol,
-            model=model,
-            subtype=subtype,
+            **kwargs,
             attributes={
                 DeviceAttributes.power: False,
                 DeviceAttributes.burning_state: False,

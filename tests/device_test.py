@@ -46,6 +46,7 @@ class MideaDeviceTest:
             model="test_model",
             subtype=1,
             attributes={},
+            mac="1234567890ab",
         )
 
     def test_initial_attributes(self) -> None:
@@ -365,3 +366,9 @@ class MideaDeviceTest:
             self.device.set_ip_address("10.0.0.1")
             socket_mock.close.assert_called()
             assert self.device._ip_address == "10.0.0.1"
+
+    def test_set_mac(self) -> None:
+        """Test set mac."""
+        assert self.device._mac == "1234567890ab"
+        self.device.set_mac("9234567890ab")
+        assert self.device._mac == "9234567890ab"

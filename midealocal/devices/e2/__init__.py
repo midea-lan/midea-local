@@ -2,11 +2,12 @@
 
 import json
 import logging
+import math
 from enum import IntEnum, StrEnum
-from typing import Any
+from typing import Any, Unpack
 
-from midealocal.const import DeviceType, ProtocolVersion
-from midealocal.device import MideaDevice
+from midealocal.const import DeviceType
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import (
     MessageE2Response,
@@ -87,29 +88,14 @@ class MideaE2Device(MideaDevice):
 
     def __init__(
         self,
-        name: str,
-        device_id: int,
-        ip_address: str,
-        port: int,
-        token: str,
-        key: str,
-        device_protocol: ProtocolVersion,
-        model: str,
-        subtype: int,
+        *,
         customize: str,
+        **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea E2 device."""
         super().__init__(
-            name=name,
-            device_id=device_id,
             device_type=DeviceType.E2,
-            ip_address=ip_address,
-            port=port,
-            token=token,
-            key=key,
-            device_protocol=device_protocol,
-            model=model,
-            subtype=subtype,
+            **kwargs,
             attributes={
                 DeviceAttributes.power: False,
                 DeviceAttributes.heating: False,
@@ -161,6 +147,8 @@ class MideaE2Device(MideaDevice):
         self._default_temperature_step = 1.0
         self._precision_halves: bool | None = None
         self._default_precision_halves = False
+        self._default_heating_power_multiplier = 1.0
+        self._heating_power_multiplier = self._default_heating_power_multiplier
         self.set_customize(customize)
 
     @property
@@ -197,8 +185,15 @@ class MideaE2Device(MideaDevice):
         new_status = {}
         for status in self._attributes:
             if hasattr(message, str(status)):
-                self._attributes[status] = getattr(message, str(status))
-                new_status[str(status)] = getattr(message, str(status))
+                value = getattr(message, str(status))
+                if (
+                    status == DeviceAttributes.heating_power
+                    and value is not None
+                    and self._heating_power_multiplier != 1.0
+                ):
+                    value = round(value * self._heating_power_multiplier)
+                self._attributes[status] = value
+                new_status[str(status)] = value
         return new_status
 
     def make_message_set(self) -> MessageSet:
@@ -241,6 +236,7 @@ class MideaE2Device(MideaDevice):
         self._old_protocol = self._default_old_protocol
         self._temperature_step = self._default_temperature_step
         self._precision_halves = self._default_precision_halves
+        self._heating_power_multiplier = self._default_heating_power_multiplier
         if customize and len(customize) > 0:
             try:
                 params = json.loads(customize)
@@ -252,6 +248,12 @@ class MideaE2Device(MideaDevice):
                     self._temperature_step = float(params.get("temperature_step"))
                 if params and "precision_halves" in params:
                     self._precision_halves = params.get("precision_halves")
+                if params and "heating_power_multiplier" in params:
+                    heating_power_multiplier = float(
+                        params.get("heating_power_multiplier"),
+                    )
+                    if math.isfinite(heating_power_multiplier):
+                        self._heating_power_multiplier = heating_power_multiplier
             except Exception:
                 _LOGGER.exception("[%s] Set customize error", self.device_id)
             self.update_all(
@@ -259,6 +261,7 @@ class MideaE2Device(MideaDevice):
                     "temperature_step": self._temperature_step,
                     "old_protocol": self._old_protocol,
                     "precision_halves": self._precision_halves,
+                    "heating_power_multiplier": self._heating_power_multiplier,
                 },
             )
 

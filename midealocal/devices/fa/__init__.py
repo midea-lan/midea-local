@@ -3,10 +3,10 @@
 import json
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Unpack
 
-from midealocal.const import DeviceType, ProtocolVersion
-from midealocal.device import MideaDevice
+from midealocal.const import DeviceType
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import MessageFAResponse, MessageQuery, MessageSet
 
@@ -24,6 +24,9 @@ class DeviceAttributes(StrEnum):
     oscillation_angle = "oscillation_angle"
     tilting_angle = "tilting_angle"
     oscillation_mode = "oscillation_mode"
+    humidify = "humidify"
+    waterions = "waterions"
+    display_on_off = "display_on_off"
 
 
 class MideaFADevice(MideaDevice):
@@ -77,29 +80,14 @@ class MideaFADevice(MideaDevice):
 
     def __init__(
         self,
-        name: str,
-        device_id: int,
-        ip_address: str,
-        port: int,
-        token: str,
-        key: str,
-        device_protocol: ProtocolVersion,
-        model: str,
-        subtype: int,
+        *,
         customize: str,
+        **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea FA device."""
         super().__init__(
-            name=name,
-            device_id=device_id,
             device_type=DeviceType.FA,
-            ip_address=ip_address,
-            port=port,
-            token=token,
-            key=key,
-            device_protocol=device_protocol,
-            model=model,
-            subtype=subtype,
+            **kwargs,
             attributes={
                 DeviceAttributes.power: False,
                 DeviceAttributes.child_lock: False,
@@ -108,6 +96,9 @@ class MideaFADevice(MideaDevice):
                 DeviceAttributes.oscillate: False,
                 DeviceAttributes.oscillation_angle: None,
                 DeviceAttributes.tilting_angle: None,
+                DeviceAttributes.humidify: False,
+                DeviceAttributes.waterions: False,
+                DeviceAttributes.display_on_off: False,
                 DeviceAttributes.oscillation_mode: None,
             },
         )

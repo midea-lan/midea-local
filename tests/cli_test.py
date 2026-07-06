@@ -16,6 +16,7 @@ from midealocal.cli import (
 from midealocal.cloud import MideaAirCloud, SmartHomeCloud
 from midealocal.const import ProtocolVersion
 from midealocal.device import AuthException, NoSupportedProtocol
+from midealocal.discover import _extract_mac
 from midealocal.exceptions import SocketException
 
 
@@ -102,6 +103,24 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             mock_default_keys.assert_called_once()
             mock_cloud_keys.assert_not_called()
 
+    def test_extract_mac(self) -> None:
+        """Test _extract_mac."""
+        expected_mac = "1234567890ab"
+        mac = _extract_mac(
+            reply=b"",
+            ssid_len=0,
+            sn="a" * 16 + expected_mac + "1234",
+        )
+        assert mac == expected_mac
+        mac2 = _extract_mac(
+            reply=b"a" * 63 + b"bb" + b"\x12\x34\x56\x78\x90\xab",
+            ssid_len=2,
+            sn="a" * 16 + expected_mac + "1234",
+        )
+        assert mac2 == expected_mac
+        mac3 = _extract_mac(b"", 1, "shortsn")
+        assert mac3 is None
+
     async def test_discover(self) -> None:
         """Test discover."""
         mock_device = {
@@ -111,7 +130,8 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "ip_address": "192.168.0.2",
             "port": 6444,
             "model": "AC123000",
-            "sn": "0000AC12300000000000000000000000",
+            "sn": "0000AC12300000001234567890ABCDEF",
+            "mac": "1234567890AB",
         }
         mock_cloud_instance = AsyncMock()
         mock_device_instance = MagicMock()
@@ -131,13 +151,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             ),
             patch.object(
                 mock_device_instance,
-                "authenticate",
-                side_effect=[None, None, AuthException, SocketException],
-            ) as authenticate_mock,
-            patch.object(
-                mock_device_instance,
                 "refresh_status",
-                side_effect=[None, None, NoSupportedProtocol, None],
             ) as refresh_status_mock,
         ):
             mock_discover.return_value = {1: mock_device}
@@ -155,22 +169,28 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             # set get_sn to default False after test done
             self.namespace.get_sn = False
 
-            # test V3 device
+            # test V3 device: connect() already authenticated, discover only
+            # calls refresh_status (once per candidate key).
+            refresh_status_mock.side_effect = None
             await self.cli.discover()  # V3 device
-            authenticate_mock.assert_called()
             refresh_status_mock.assert_called_with(True)
-            authenticate_mock.reset_mock()
             refresh_status_mock.reset_mock()
 
-            await self.cli.discover()  # V3 device AuthException
-            refresh_status_mock.assert_not_called()
-            authenticate_mock.assert_called()
-            authenticate_mock.reset_mock()
+            # V3 device where refresh_status raises: each failure is caught and
+            # the device is simply not added to the list.
+            refresh_status_mock.side_effect = [AuthException, NoSupportedProtocol]
+            assert await self.cli.discover() == []
+            refresh_status_mock.reset_mock()
+
+            refresh_status_mock.side_effect = [SocketException, None]
+            await self.cli.discover()  # V3 device SocketException on first key
+            refresh_status_mock.reset_mock()
 
             mock_device["protocol"] = ProtocolVersion.V2
-            await self.cli.discover()  # V2 device NoSupportedProtocol
-            authenticate_mock.assert_not_called()
-            refresh_status_mock.assert_called_once()
+            refresh_status_mock.side_effect = None
+            await self.cli.discover()  # V2 device
+            refresh_status_mock.assert_called_with(True)
+            refresh_status_mock.reset_mock()
 
             mock_device_instance.connect.return_value = False
             await self.cli.discover()  # connect failed
