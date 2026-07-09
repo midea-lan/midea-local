@@ -31,8 +31,10 @@ MIN_MSG_LENGTH = 56
 MIN_V2_FACTUAL_MSG_LENGTH = 6
 RESPONSE_TIMEOUT = 12  # main loop socket recv timeout, 12 * 10s = 120s
 SOCKET_TIMEOUT = 10  # socket connection default timeout
-QUERY_TIMEOUT = 2  # query response in 1s, 0xAC have more queries, set to 2s
-
+# fix https://github.com/wuwentao/midea_ac_lan/issues/658#issuecomment-4555804288
+QUERY_TIMEOUT = (
+    5  # default is 1s, 0xAC have more queries, set to 2s, latest: increase to 5s
+)
 
 _LOGGER = logging.getLogger(__name__)
 
