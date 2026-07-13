@@ -526,20 +526,29 @@ class MideaCDDevice(MideaDevice):
                 message.vacation_days = days
 
             # persist only safe fields; SET echoes often return openPTC=1 / bad Tr
-            fields = dict(message.fields)
-            for key in ("openPTC", "ptcTemp", "byte8"):
-                fields.pop(key, None)
-            tr = fields.get("trValue")
-            try:
-                tr_i = int(tr) if tr is not None else 0
-            except (TypeError, ValueError):
-                tr_i = 0
-            if tr_i < MessageSet.TR_VALUE_MIN or tr_i > MessageSet.TR_VALUE_MAX:
-                fields.pop("trValue", None)
+            self._fields = self._sanitize_set_fields(message.fields)
             # Avoid replaying SET-echo junk into the next control frame
-            message.fields = {k: v for k, v in fields.items() if k == "trValue"}
-            self._fields = fields
+            message.fields = dict(self._fields)
             self.build_send(message)
+
+    @staticmethod
+    def _sanitize_set_fields(fields: dict[Any, Any]) -> dict[Any, Any]:
+        """Strip SET-echo junk so it is not replayed into the next frame.
+
+        Drops openPTC/ptcTemp/byte8 (openPTC is forced 0 by MessageSet) and
+        removes an out-of-range trValue so only a valid Tr survives.
+        """
+        clean = dict(fields)
+        for key in ("openPTC", "ptcTemp", "byte8"):
+            clean.pop(key, None)
+        tr = clean.get("trValue")
+        try:
+            tr_i = int(tr) if tr is not None else 0
+        except (TypeError, ValueError):
+            tr_i = 0
+        if tr_i < MessageSet.TR_VALUE_MIN or tr_i > MessageSet.TR_VALUE_MAX:
+            clean.pop("trValue", None)
+        return {k: v for k, v in clean.items() if k == "trValue"}
 
     def set_customize(self, customize: str) -> None:
         """Midea CD device set customize."""

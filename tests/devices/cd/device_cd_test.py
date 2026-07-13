@@ -61,8 +61,7 @@ class TestMideaCDDevice:
 
     def test_set_target_temperature_body_length_and_ts_max(self) -> None:
         """set_temperature builds 25-byte body with non-zero tsMax."""
-        # RSJRAC07 uses new (raw °C) Lua protocol — matches issue #468 device.
-        self.device.model = "RSJRAC07"
+        # RSJRAC07 uses the new (raw °C) Lua protocol — matches issue #468.
         self.device.set_customize('{"lua_protocol": "new"}')
         self.device._attributes[DeviceAttributes.max_temperature] = 65.0
         self.device._attributes[DeviceAttributes.target_temperature] = 60.0

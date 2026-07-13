@@ -3,6 +3,7 @@
 from midealocal.devices.cd.message import (
     CDGeneralMessageBody,
     CDSterilizeSetBody,
+    MessageSet,
     MessageSetSterilize,
 )
 
@@ -355,8 +356,6 @@ class TestMessageSetRsjracBody:
 
     def test_body_length_is_25_with_type(self) -> None:
         """MessageSet.body is body_type + 24-byte payload."""
-        from midealocal.devices.cd.message import MessageSet
-
         msg = MessageSet(protocol_version=8)
         msg.power = True
         msg.mode = 0x02
@@ -371,9 +370,7 @@ class TestMessageSetRsjracBody:
         assert body[24] == 0
 
     def test_ts_max_zero_falls_back(self) -> None:
-        """tsMax must never be emitted as 0."""
-        from midealocal.devices.cd.message import MessageSet
-
+        """Zero tsMax falls back to the default (never emitted as 0)."""
         msg = MessageSet(protocol_version=8)
         msg.power = True
         msg.mode = 0x01
@@ -384,8 +381,6 @@ class TestMessageSetRsjracBody:
 
     def test_tr_clamped(self) -> None:
         """Out-of-range Tr is clamped to default 5."""
-        from midealocal.devices.cd.message import MessageSet
-
         msg = MessageSet(protocol_version=8)
         msg.power = True
         msg.mode = 0x01
@@ -397,8 +392,6 @@ class TestMessageSetRsjracBody:
 
     def test_open_ptc_forced_zero(self) -> None:
         """Normal sets force openPTC=0 even if fields claim otherwise."""
-        from midealocal.devices.cd.message import MessageSet
-
         msg = MessageSet(protocol_version=8)
         msg.power = True
         msg.mode = 0x02
@@ -410,8 +403,6 @@ class TestMessageSetRsjracBody:
 
     def test_vacation_days_in_body(self) -> None:
         """Vacation SET encodes days in full[9..10]."""
-        from midealocal.devices.cd.message import MessageSet
-
         msg = MessageSet(protocol_version=8)
         msg.power = True
         msg.mode = 0x01
