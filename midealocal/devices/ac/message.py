@@ -31,6 +31,7 @@ FROST_PROTECT_MIN_LENGTH = 22
 INDIRECT_WIND_VALUE = 0x02
 MAX_MSG_SERIAL_NUM = 254
 OUT_SILENT_VALUE = 0x03
+POWER_SAVING_VALUE = 0x08
 SELF_CLEAN_ACTIVE_STATUS_BYTE = 12
 SCREEN_DISPLAY_BYTE_CHECK = 0x07
 SUB_PROTOCOL_BODY_TEMP_CHECK = 0x80
@@ -592,6 +593,7 @@ class MessageGeneralSet(MessageACBase):
         self.swing_vertical = False
         self.swing_horizontal = False
         self.boost_mode = False
+        self.power_saving = False
         self.smart_eye = False
         self.dry = False
         self.aux_heating = False
@@ -621,8 +623,9 @@ class MessageGeneralSet(MessageACBase):
             | (0x0C if self.swing_vertical else 0)
             | (0x03 if self.swing_horizontal else 0)
         )
-        # Byte 8, turbo
+        # Byte 8, turbo, power saving
         boost_mode = 0x20 if self.boost_mode else 0
+        power_saving = POWER_SAVING_VALUE if self.power_saving else 0
         # Byte 9 aux_heating eco_mode
         smart_eye = 0x01 if self.smart_eye else 0
         dry = 0x04 if self.dry else 0
@@ -649,7 +652,7 @@ class MessageGeneralSet(MessageACBase):
                 0x00,
                 0x00,
                 swing_mode,
-                boost_mode,
+                boost_mode | power_saving,
                 smart_eye | dry | aux_heating | eco_mode | anion,
                 temp_fahrenheit | sleep_mode | boost_mode_1,
                 0x00,
@@ -833,7 +836,7 @@ class XA0MessageBody(MessageBody):
         self.swing_horizontal = (body[7] & 0x3) > 0  # swingUDValue
         # strongWindValue
         self.boost_mode = ((body[8] & 0x20) > 0) or ((body[10] & 0x2) > 0)
-        self.power_saving = body[8] & 0x08  # power_saving
+        self.power_saving = (body[8] & POWER_SAVING_VALUE) > 0
         self.comfort_sleep = body[8] & 0x03  # comfortableSleepValue
         self.comfort_sleep_switch = body[14] & 0x01  # comfortableSleepSwitch
         self.pmv = ((body[11] & 0xF0) >> 4) * 0.5 - 3.5  # pmv
@@ -1062,7 +1065,7 @@ class XC0MessageBody(XMessageBody):
         self.swing_horizontal = (body[7] & 0x03) > 0  # swingLRValue
         # strongWindValue
         self.boost_mode = ((body[8] & 0x20) > 0) or ((body[10] & 0x2) > 0)
-        self.power_saving = body[8] & 0x08  # power_saving
+        self.power_saving = (body[8] & POWER_SAVING_VALUE) > 0
         self.comfort_sleep = body[8] & 0x03  # comfortableSleepValue
         self.comfort_sleep_switch = body[9] & 0x40  # comfortableSleepSwitch
         self.pmv = (body[14] & 0x0F) * 0.5 - 3.5  # pmv
