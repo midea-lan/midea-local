@@ -961,6 +961,19 @@ class XBXMessageBody(NewProtocolMessageBody):
                 len(data) > SELF_CLEAN_ACTIVE_STATUS_BYTE
                 and data[SELF_CLEAN_ACTIVE_STATUS_BYTE] != 0
             )
+        # AC subtype 8 (e.g. model 22013279) reports temperatures in the
+        # 0x7e new-protocol tag; the standard C0 frame is stale for it.
+        # https://github.com/wuwentao/midea_ac_lan  (synced-sample analysis)
+        if 0x7E in params:
+            _t = params[0x7E]
+            if len(_t) > 41:
+                self.target_temperature = (_t[3] - 50) / 2
+                self.indoor_temperature = round(
+                    (_t[40] - 50) / 2 + _t[41] * 0.1, 1
+                )
+                # outdoor not available locally on this model (app shows
+                # a cloud/weather value); avoid the bogus C0-derived value
+                self.outdoor_temperature = None
 
 
 class XB5MessageBody(NewProtocolMessageBody):
