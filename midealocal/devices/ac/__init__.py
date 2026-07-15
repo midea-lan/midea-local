@@ -533,7 +533,7 @@ class MideaACDevice(MideaDevice):
             ]:
                 message = self.make_newprotocol_message_set(attr=attr, value=value)
             elif attr == DeviceAttributes.power_saving and self._used_subprotocol:
-                _LOGGER.warning(
+                _LOGGER.debug(
                     "[%s] Power saving is unsupported by the AC subprotocol",
                     self.device_id,
                 )
