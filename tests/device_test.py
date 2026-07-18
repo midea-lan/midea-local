@@ -7,6 +7,7 @@ import pytest
 from midealocal.cloud import DEFAULT_KEYS
 from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import (
+    MESSAGE_TYPE_INDEX,
     AuthException,
     MessageResult,
     MideaDevice,
@@ -24,6 +25,30 @@ def test_fetch_v2_message() -> None:
         [bytes([0x1])],
         bytes([0x1] * 4 + [0x0] + [0x1] * 7),
     )
+
+
+def test_pre_process_message_short_message() -> None:
+    """Test pre process message ignores messages shorter than the header."""
+    # Some devices answer a query with fewer bytes than the 10-byte header
+    # (observed: a 4-byte `01000000` from a 0xFA tower fan). Indexing the
+    # message-type byte blindly raises IndexError, which aborts the whole
+    # status parse, so short messages must be ignored instead.
+    device = MideaDevice(
+        name="Test Device",
+        device_id=1,
+        device_type=DeviceType.AC,
+        ip_address="192.168.1.100",
+        port=6444,
+        token=DEFAULT_KEYS[99]["token"],
+        key=DEFAULT_KEYS[99]["key"],
+        device_protocol=ProtocolVersion.V3,
+        model="test_model",
+        subtype=1,
+        attributes={},
+        mac="1234567890ab",
+    )
+    for length in range(MESSAGE_TYPE_INDEX + 1):
+        assert device.pre_process_message(bytearray([0x0] * length)) is True
 
 
 class MideaDeviceTest:
