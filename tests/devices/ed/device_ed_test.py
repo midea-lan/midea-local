@@ -9,6 +9,7 @@ from midealocal.devices.ed import DeviceAttributes, MideaEDDevice
 from midealocal.devices.ed.message import (
     MessageQuery,
     MessageQuery01,
+    MessageQuery09,
     MessageQueryFF,
 )
 
@@ -106,3 +107,86 @@ class TestMideaEDDevice:
 
             self.device.set_attribute(DeviceAttributes.child_lock, True)
             mock_build_send.assert_called()
+
+
+class TestMideaEDDeviceSoftWater:
+    """Test Midea ED Device soft water machine (subtype 703)."""
+
+    device: MideaEDDevice
+
+    @pytest.fixture(autouse=True)
+    def _setup_device(self) -> None:
+        """Midea soft water device setup (subtype 703)."""
+        self.device = MideaEDDevice(
+            name="Soft Water",
+            device_id=2,
+            ip_address="192.168.1.101",
+            port=6444,
+            token="AA",
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="6360000A",
+            subtype=703,
+            customize="",
+        )
+
+    def test_initial_soft_water_attributes(self) -> None:
+        """Test initial soft water machine attributes."""
+        attrs = self.device.attributes
+        assert attrs[DeviceAttributes.velocity] is None
+        assert attrs[DeviceAttributes.soft_available] is None
+        assert attrs[DeviceAttributes.left_salt] is None
+        assert attrs[DeviceAttributes.leak_water_protection_value] is None
+        assert attrs[DeviceAttributes.remaining_days] is None
+        assert attrs[DeviceAttributes.water_hardness] is None
+        assert attrs[DeviceAttributes.flushing_days] is None
+        assert attrs[DeviceAttributes.timing_regeneration_hour] is None
+        assert attrs[DeviceAttributes.timing_regeneration_min] is None
+        assert attrs[DeviceAttributes.regeneration_left_seconds] is None
+        assert attrs[DeviceAttributes.use_days] is None
+        assert attrs[DeviceAttributes.salt_setting] is None
+        assert attrs[DeviceAttributes.soften] is False
+        assert attrs[DeviceAttributes.cl_sterilization] is False
+        assert attrs[DeviceAttributes.leak_water_protection] is False
+        assert attrs[DeviceAttributes.water_way] is False
+        assert attrs[DeviceAttributes.regeneration] is False
+        assert attrs[DeviceAttributes.error] is None
+
+    def test_build_query_uses_message_query09(self) -> None:
+        """Test subtype 703 uses MessageQuery09."""
+        queries = self.device.build_query()
+        assert len(queries) == 1
+        assert isinstance(queries[0], MessageQuery09)
+
+    def test_set_attribute_soften(self) -> None:
+        """Test setting soften switch."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.soften, True)
+            mock_build_send.assert_called_once()
+
+    def test_set_attribute_water_hardness(self) -> None:
+        """Test setting water_hardness number."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.water_hardness, 150)
+            mock_build_send.assert_called_once()
+
+    def test_set_attribute_timing_regeneration_hour_couples_min(self) -> None:
+        """Test setting hour also sends current min value (coupled write)."""
+        # Set current min value in attributes
+        self.device._attributes[DeviceAttributes.timing_regeneration_min] = 30
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.timing_regeneration_hour, 2)
+            mock_build_send.assert_called_once()
+            sent_message = mock_build_send.call_args[0][0]
+            assert sent_message.timing_regeneration_hour == 2
+            assert sent_message.timing_regeneration_min == 30
+
+    def test_set_attribute_leak_water_protection_value_couples_switch(self) -> None:
+        """Test setting leak_water_protection_value also sends current switch state."""
+        self.device._attributes[DeviceAttributes.leak_water_protection] = True
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.leak_water_protection_value, 400)
+            mock_build_send.assert_called_once()
+            sent_message = mock_build_send.call_args[0][0]
+            assert sent_message.leak_water_protection_value == 400
+            assert sent_message.leak_water_protection is True

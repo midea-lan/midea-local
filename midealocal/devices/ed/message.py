@@ -19,6 +19,29 @@ class Attributes(IntEnum):
     LIFE = 0x10
     TDS = 0x013
     WATER_CONSUMPTION = 0x011
+    # Soft water machine attributes for FF body
+    VELOCITY = 0x020
+    SOFT_AVAILABLE = 0x021
+    LEFT_SALT = 0x022
+    LEAK_WATER_PROTECTION_VALUE = 0x023
+    REMAINING_DAYS = 0x024
+    WATER_HARDNESS = 0x025
+    FLUSHING_DAYS = 0x026
+    TIMING_REGENERATION = 0x027
+    REGENERATION_LEFT_SECONDS = 0x028
+    USE_DAYS = 0x029
+    SALT_SETTING = 0x030
+    SOFT_AVAILABLE_BIG = 0x031
+    WATER_CONSUMPTION_BIG = 0x032
+    WATER_CONSUMPTION_AVERAGE = 0x033
+    SOFTEN_SWITCH = 0x040
+    CL_STERILIZATION_SWITCH = 0x041
+    LEAK_WATER_PROTECTION_SWITCH = 0x042
+    LEAK_WATER_STATUS = 0x043
+    WATER_WAY_SWITCH = 0x044
+    RSJ_STAND_BY = 0x045
+    REGENERATION_SWITCH = 0x047
+    ERROR = 0x048
 
 
 class NewSetTags(IntEnum):
@@ -26,6 +49,19 @@ class NewSetTags(IntEnum):
 
     power = 0x0100
     lock = 0x0201
+    # Soft water machine new set tags (matching Lua setbytes commands)
+    # pack() generates [param&0xFF, param>>8, value, add&0xFF, add>>8]
+    # which maps to setbytes(item1, item2, item3, item4, item5)
+    # so param = (item2 << 8) | item1
+    water_hardness = 0x0100  # setbytes(0x00, 0x01, ...)
+    flushing_days = 0x0101  # setbytes(0x01, 0x01, ...)
+    timing_regeneration = 0x0102  # setbytes(0x02, 0x01, ...)
+    regeneration = 0x0103  # setbytes(0x03, 0x01, ...)
+    salt_setting = 0x0104  # setbytes(0x04, 0x01, ...)
+    soften = 0x0108  # setbytes(0x08, 0x01, ...)
+    cl_sterilization = 0x0109  # setbytes(0x09, 0x01, ...)
+    leak_water_protection = 0x010A  # setbytes(0x0A, 0x01, ...)
+    water_way = 0x0200  # setbytes(0x00, 0x02, ...)
 
 
 class EDNewSetParamPack:
@@ -34,6 +70,10 @@ class EDNewSetParamPack:
     @staticmethod
     def pack(param: int, value: int, addition: int = 0) -> bytearray:
         """Pack parameter."""
+        # Ensure int type for bitwise operations (callers may pass float from HA)
+        param = int(param)
+        value = int(value)
+        addition = int(addition)
         return bytearray(
             [param & 0xFF, param >> 8, value, addition & 0xFF, addition >> 8],
         )
@@ -201,6 +241,26 @@ class MessageQuery07(MessageEDBase):
         return bytearray([0x01])
 
 
+class MessageQuery09(MessageEDBase):
+    """ED message query09 (soft water machine)."""
+
+    def __init__(
+        self,
+        protocol_version: int,
+        body_type: ListTypes = ListTypes.X09,
+    ) -> None:
+        """Initialize ED message query09."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.query,
+            body_type=body_type,
+        )
+
+    @property
+    def _body(self) -> bytearray:
+        return bytearray([0x01])
+
+
 class MessageQueryFF(MessageEDBase):
     """ED message queryFF."""
 
@@ -233,6 +293,18 @@ class MessageNewSet(MessageEDBase):
         )
         self.power: bool | None = None
         self.lock: bool | None = None
+        # Soft water machine controls
+        self.water_hardness: int | None = None
+        self.flushing_days: int | None = None
+        self.timing_regeneration_hour: int | None = None
+        self.timing_regeneration_min: int | None = None
+        self.regeneration: bool | None = None
+        self.salt_setting: int | None = None
+        self.soften: bool | None = None
+        self.cl_sterilization: bool | None = None
+        self.leak_water_protection: bool | None = None
+        self.leak_water_protection_value: int | None = None
+        self.water_way: bool | None = None
 
     @property
     def _body(self) -> bytearray:
@@ -242,7 +314,7 @@ class MessageNewSet(MessageEDBase):
             pack_count += 1
             payload.extend(
                 EDNewSetParamPack.pack(
-                    param=NewSetTags.power,  # power
+                    param=NewSetTags.power,
                     value=0x01 if self.power else 0x00,
                 ),
             )
@@ -250,8 +322,98 @@ class MessageNewSet(MessageEDBase):
             pack_count += 1
             payload.extend(
                 EDNewSetParamPack.pack(
-                    param=NewSetTags.lock,  # lock
+                    param=NewSetTags.lock,
                     value=0x01 if self.lock else 0x00,
+                ),
+            )
+        # Soft water machine controls
+        if self.water_hardness is not None:
+            pack_count += 1
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.water_hardness,
+                    value=0x00,
+                    addition=self.water_hardness,
+                ),
+            )
+        if self.flushing_days is not None:
+            pack_count += 1
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.flushing_days,
+                    value=0x00,
+                    addition=self.flushing_days,
+                ),
+            )
+        if self.timing_regeneration_hour is not None:
+            pack_count += 1
+            # Lua setbytes(0x02, 0x01, 0x00, hour, min): addition = (min << 8) | hour
+            hour = self.timing_regeneration_hour
+            minute = (
+                self.timing_regeneration_min
+                if self.timing_regeneration_min is not None
+                else 0
+            )
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.timing_regeneration,
+                    value=0x00,
+                    addition=(minute << 8) | hour,
+                ),
+            )
+        if self.regeneration is not None:
+            pack_count += 1
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.regeneration,
+                    value=0x01 if self.regeneration else 0x00,
+                ),
+            )
+        if self.salt_setting is not None:
+            pack_count += 1
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.salt_setting,
+                    value=0x00,
+                    addition=self.salt_setting,
+                ),
+            )
+        if self.soften is not None:
+            pack_count += 1
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.soften,
+                    value=0x01 if self.soften else 0x00,
+                ),
+            )
+        if self.cl_sterilization is not None:
+            pack_count += 1
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.cl_sterilization,
+                    value=0x01 if self.cl_sterilization else 0x00,
+                ),
+            )
+        if self.leak_water_protection is not None:
+            pack_count += 1
+            addition = (
+                self.leak_water_protection_value // 10
+                if self.leak_water_protection_value is not None
+                else 0
+            )
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.leak_water_protection,
+                    value=0x01 if self.leak_water_protection else 0x00,
+                    addition=addition,
+                ),
+            )
+        if self.water_way is not None:
+            pack_count += 1
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.water_way,
+                    value=0x01 if self.water_way else 0x00,
                 ),
             )
         payload[1] = pack_count
@@ -346,6 +508,89 @@ class EDMessageBody07(MessageBody):
         self.child_lock = (body[51] & 0x08) > 0
 
 
+class EDMessageBody09(MessageBody):
+    """ED message body 09 (soft water machine)."""
+
+    # Byte offsets in body (after protocol header removal)
+    # Based on Lua T_0000_ED_6360000A_2023080201.formatted.lua
+    OFFSET_VELOCITY = 2
+    OFFSET_SOFT_AVAILABLE = 3  # 2-byte: byte3+byte4 (little-endian)
+    OFFSET_WATER_CONSUMPTION = 5  # 2-byte: byte5+byte6 (little-endian)
+    OFFSET_LEFT_SALT = 7
+    OFFSET_LEAK_WATER_PROTECTION_VALUE = 8
+    OFFSET_REMAINING_DAYS = 9  # 2-byte: byte9+byte10 (little-endian)
+    OFFSET_WATER_HARDNESS = 11  # 2-byte: byte11+byte12 (little-endian)
+    OFFSET_FLUSHING_DAYS = 13
+    OFFSET_TIMING_REGENERATION_HOUR = 14
+    OFFSET_TIMING_REGENERATION_MIN = 15
+    OFFSET_REGENERATION_LEFT_SECONDS = 16  # 2-byte: byte16+byte17 (little-endian)
+    OFFSET_USE_DAYS = 18  # 2-byte: byte18+byte19 (little-endian)
+    OFFSET_SALT_SETTING = 20
+    OFFSET_SOFT_AVAILABLE_BIG = 21  # 4-byte: byte31-byte34 (little-endian)
+    OFFSET_WATER_CONSUMPTION_BIG = 25  # 4-byte: byte35-byte38 (little-endian)
+    OFFSET_WATER_CONSUMPTION_AVERAGE = 33  # 2-byte: byte43+byte44 (little-endian)
+    OFFSET_SWITCH_BYTE = 51  # byte61 in Lua = body[51] (byte flags)
+    OFFSET_ERROR = 52  # byte62 in Lua = body[52]
+
+    @staticmethod
+    def _read_u16(body: bytearray, offset: int) -> int:
+        """Read 2-byte little-endian unsigned int at offset."""
+        return body[offset] + (body[offset + 1] << 8)
+
+    @staticmethod
+    def _read_u32(body: bytearray, offset: int) -> int:
+        """Read 4-byte little-endian unsigned int at offset."""
+        return (
+            body[offset]
+            + (body[offset + 1] << 8)
+            + (body[offset + 2] << 16)
+            + (body[offset + 3] << 24)
+        )
+
+    def __init__(self, body: bytearray) -> None:
+        """Initialize ED message body 09 (soft water machine)."""
+        super().__init__(body)
+        self.velocity = body[self.OFFSET_VELOCITY]
+        self.soft_available = self._read_u16(body, self.OFFSET_SOFT_AVAILABLE)
+        self.water_consumption = self._read_u16(body, self.OFFSET_WATER_CONSUMPTION)
+        self.left_salt = body[self.OFFSET_LEFT_SALT]
+        self.leak_water_protection_value = (
+            body[self.OFFSET_LEAK_WATER_PROTECTION_VALUE] * 10
+        )
+        self.remaining_days = self._read_u16(body, self.OFFSET_REMAINING_DAYS)
+        self.water_hardness = self._read_u16(body, self.OFFSET_WATER_HARDNESS)
+        self.flushing_days = body[self.OFFSET_FLUSHING_DAYS]
+        self.timing_regeneration_hour = body[self.OFFSET_TIMING_REGENERATION_HOUR]
+        self.timing_regeneration_min = body[self.OFFSET_TIMING_REGENERATION_MIN]
+        self.regeneration_left_seconds = self._read_u16(
+            body,
+            self.OFFSET_REGENERATION_LEFT_SECONDS,
+        )
+        self.use_days = self._read_u16(body, self.OFFSET_USE_DAYS)
+        self.salt_setting = body[self.OFFSET_SALT_SETTING]
+        self.soft_available_big = self._read_u32(
+            body,
+            self.OFFSET_SOFT_AVAILABLE_BIG,
+        )
+        self.water_consumption_big = (
+            self._read_u32(body, self.OFFSET_WATER_CONSUMPTION_BIG) / 100
+        )
+        self.water_consumption_average = self._read_u16(
+            body,
+            self.OFFSET_WATER_CONSUMPTION_AVERAGE,
+        )
+        # Switch byte flags (byte61 in Lua mapping)
+        switch_byte = body[self.OFFSET_SWITCH_BYTE]
+        self.soften = (switch_byte & 0x01) > 0
+        self.cl_sterilization = (switch_byte & 0x02) > 0
+        self.leak_water_protection = (switch_byte & 0x04) > 0
+        self.leak_water = (switch_byte & 0x08) > 0
+        self.water_way = (switch_byte & 0x10) > 0
+        self.rsj_stand_by = (switch_byte & 0x20) > 0
+        self.regeneration = (switch_byte & 0x80) > 0
+        self.error = body[self.OFFSET_ERROR]
+
+
 class EDMessageBodyFF(MessageBody):
     """ED message body FF."""
 
@@ -394,7 +639,7 @@ class MessageEDResponse(MessageResponse):
             MessageType.notify1,
         ]:
             self.device_class = self._body_type
-            if self._body_type in [ListTypes.X00, ListTypes.X15, ListTypes.FF]:
+            if self._body_type in [ListTypes.X00, ListTypes.FF]:
                 self.set_body(EDMessageBodyFF(super().body))
             if self.body_type == ListTypes.X01:
                 self.set_body(EDMessageBody01(super().body))
@@ -406,4 +651,6 @@ class MessageEDResponse(MessageResponse):
                 self.set_body(EDMessageBody06(super().body))
             elif self.body_type == ListTypes.X07:
                 self.set_body(EDMessageBody07(super().body))
+            elif self.body_type == ListTypes.X09:
+                self.set_body(EDMessageBody09(super().body))
         self.set_attr()
