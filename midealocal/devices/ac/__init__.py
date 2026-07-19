@@ -13,6 +13,9 @@ from .message import (
     MessageCapabilitiesAdditionalQuery,
     MessageCapabilitiesQuery,
     MessageGeneralSet,
+    MessageGroupOneQuery,
+    MessageGroupSevenQuery,
+    MessageGroupTwoQuery,
     MessageGroupZeroQuery,
     MessageHumidityQuery,
     MessageNewProtocolQuery,
@@ -81,6 +84,22 @@ class DeviceAttributes(StrEnum):
     self_clean = "self_clean"
     pmv = "pmv"
     error_code = "error_code"
+    # group 1: compressor and refrigerant circuit
+    compressor_frequency = "compressor_frequency"
+    target_compressor_frequency = "target_compressor_frequency"
+    compressor_current = "compressor_current"
+    compressor_voltage = "compressor_voltage"
+    indoor_coil_temperature = "indoor_coil_temperature"  # T1
+    evaporator_temperature = "evaporator_temperature"  # T2
+    condenser_temperature = "condenser_temperature"  # T3
+    outdoor_ambient_temperature = "outdoor_ambient_temperature"  # T4
+    discharge_pipe_temperature = "discharge_pipe_temperature"  # TP
+    # group 2: indoor fan and condensate pump
+    indoor_fan_speed = "indoor_fan_speed"
+    target_indoor_fan_speed = "target_indoor_fan_speed"
+    water_pump_running = "water_pump_running"
+    # group 7: real time compressor power
+    compressor_power = "compressor_power"
 
 
 class MideaACDevice(MideaDevice):
@@ -181,6 +200,19 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.self_clean: False,
                 DeviceAttributes.pmv: None,
                 DeviceAttributes.error_code: 0,
+                DeviceAttributes.compressor_frequency: None,
+                DeviceAttributes.target_compressor_frequency: None,
+                DeviceAttributes.compressor_current: None,
+                DeviceAttributes.compressor_voltage: None,
+                DeviceAttributes.indoor_coil_temperature: None,
+                DeviceAttributes.evaporator_temperature: None,
+                DeviceAttributes.condenser_temperature: None,
+                DeviceAttributes.outdoor_ambient_temperature: None,
+                DeviceAttributes.discharge_pipe_temperature: None,
+                DeviceAttributes.indoor_fan_speed: None,
+                DeviceAttributes.target_indoor_fan_speed: None,
+                DeviceAttributes.water_pump_running: None,
+                DeviceAttributes.compressor_power: None,
             },
         )
         self._fresh_air_version: DeviceAttributes | None = None
@@ -234,6 +266,9 @@ class MideaACDevice(MideaDevice):
         | MessagePowerQuery
         | MessageHumidityQuery
         | MessageGroupZeroQuery
+        | MessageGroupOneQuery
+        | MessageGroupTwoQuery
+        | MessageGroupSevenQuery
         | MessageCapabilitiesQuery
         | MessageCapabilitiesAdditionalQuery
     ]:
@@ -250,6 +285,11 @@ class MideaACDevice(MideaDevice):
             MessagePowerQuery(self._message_protocol_version),
             MessageHumidityQuery(self._message_protocol_version),
             MessageGroupZeroQuery(self._message_protocol_version),
+            # Devices that do not answer a group query are detected during the
+            # initial protocol check and the query is skipped from then on.
+            MessageGroupOneQuery(self._message_protocol_version),
+            MessageGroupTwoQuery(self._message_protocol_version),
+            MessageGroupSevenQuery(self._message_protocol_version),
             MessageCapabilitiesQuery(self._message_protocol_version),
             MessageCapabilitiesAdditionalQuery(self._message_protocol_version),
         ]
@@ -507,6 +547,19 @@ class MideaACDevice(MideaDevice):
             DeviceAttributes.total_energy_consumption,
             DeviceAttributes.current_energy_consumption,
             DeviceAttributes.realtime_power,
+            DeviceAttributes.compressor_frequency,
+            DeviceAttributes.target_compressor_frequency,
+            DeviceAttributes.compressor_current,
+            DeviceAttributes.compressor_voltage,
+            DeviceAttributes.indoor_coil_temperature,
+            DeviceAttributes.evaporator_temperature,
+            DeviceAttributes.condenser_temperature,
+            DeviceAttributes.outdoor_ambient_temperature,
+            DeviceAttributes.discharge_pipe_temperature,
+            DeviceAttributes.indoor_fan_speed,
+            DeviceAttributes.target_indoor_fan_speed,
+            DeviceAttributes.water_pump_running,
+            DeviceAttributes.compressor_power,
         ]:
             if attr == DeviceAttributes.prompt_tone:
                 self._attributes[DeviceAttributes.prompt_tone] = value

@@ -37,9 +37,28 @@ SUB_PROTOCOL_BODY_TEMP_CHECK = 0x80
 TEMP_DECIMAL_MIN_BODY_LENGTH = 20
 TIMER_MIN_SUBPROTOCOL_LENGTH = 27
 XBB_SN8_BYTE_FLAG = 0x31
-XC1_SUBBODY_TYPE_44 = 0x44
 XC1_SUBBODY_TYPE_40 = 0x40
+XC1_SUBBODY_TYPE_41 = 0x41
+XC1_SUBBODY_TYPE_42 = 0x42
+XC1_SUBBODY_TYPE_44 = 0x44
 XC1_SUBBODY_TYPE_45 = 0x45
+XC1_SUBBODY_TYPE_47 = 0x47
+
+# Group data query: the third payload byte selects the group, 0x40 | group number.
+XC1_GROUP_QUERY_BASE = 0x40
+# Minimum body length required to parse each group data response.
+XC1_GROUP_ONE_MIN_LENGTH = 15
+XC1_GROUP_TWO_MIN_LENGTH = 9
+XC1_GROUP_SEVEN_MIN_LENGTH = 12
+# Refrigerant circuit temperatures are reported as half degrees with an offset:
+# T1/T2 (indoor coil / evaporator) use 30, T3/T4 (condenser / outdoor) use 50.
+XC1_TEMP_INDOOR_OFFSET = 30
+XC1_TEMP_OUTDOOR_OFFSET = 50
+XC1_TEMP_DIVISOR = 2
+# Indoor fan speed is reported in units of 8 RPM.
+XC1_FAN_SPEED_FACTOR = 8
+# Bit 4 of group 2 byte 8 indicates the condensate water pump is running.
+XC1_WATER_PUMP_MASK = 0x10
 
 # B5 capability value semantics (reverse-engineered; see _parse_capabilities).
 # The raw byte of each capability is not a 0/1 flag; each has its own value set.
@@ -285,73 +304,67 @@ class MessageCapabilitiesAdditionalQuery(MessageCapabilitiesQuery):
         )
 
 
-class MessageGroupZeroQuery(MessageACBase):
+class MessageGroupDataQuery(MessageACBase):
+    """AC message group data query(queryType == "group_data_<group>")."""
+
+    _group = 0
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize AC message group data query."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.query,
+            body_type=ListTypes.X41,
+        )
+
+    @property
+    def _body(self) -> bytearray:
+        return bytearray(
+            [0x21, 0x01, XC1_GROUP_QUERY_BASE | self._group, 0x00, 0x01],
+        )
+
+    @property
+    def body(self) -> bytearray:
+        """AC message group data query body."""
+        body = bytearray([self.body_type]) + self._body
+        body.append(calculate(body))
+        return body
+
+
+class MessageGroupZeroQuery(MessageGroupDataQuery):
     """AC message power query(queryType == "group_data_zero")."""
 
-    def __init__(self, protocol_version: int) -> None:
-        """Initialize AC message power query."""
-        super().__init__(
-            protocol_version=protocol_version,
-            message_type=MessageType.query,
-            body_type=ListTypes.X41,
-        )
-
-    @property
-    def _body(self) -> bytearray:
-        return bytearray([0x21, 0x01, 0x40, 0x00, 0x01])
-
-    @property
-    def body(self) -> bytearray:
-        """AC message power query body."""
-        body = bytearray([self.body_type]) + self._body
-        body.append(calculate(body))
-        return body
+    _group = 0
 
 
-class MessagePowerQuery(MessageACBase):
+class MessageGroupOneQuery(MessageGroupDataQuery):
+    """AC message compressor query(queryType == "group_data_one")."""
+
+    _group = 1
+
+
+class MessageGroupTwoQuery(MessageGroupDataQuery):
+    """AC message indoor fan query(queryType == "group_data_two")."""
+
+    _group = 2
+
+
+class MessagePowerQuery(MessageGroupDataQuery):
     """AC message power query(queryType == "group_data_four")."""
 
-    def __init__(self, protocol_version: int) -> None:
-        """Initialize AC message power query."""
-        super().__init__(
-            protocol_version=protocol_version,
-            message_type=MessageType.query,
-            body_type=ListTypes.X41,
-        )
-
-    @property
-    def _body(self) -> bytearray:
-        return bytearray([0x21, 0x01, 0x44, 0x00, 0x01])
-
-    @property
-    def body(self) -> bytearray:
-        """AC message power query body."""
-        body = bytearray([self.body_type]) + self._body
-        body.append(calculate(body))
-        return body
+    _group = 4
 
 
-class MessageHumidityQuery(MessageACBase):
+class MessageHumidityQuery(MessageGroupDataQuery):
     """AC message query indoor humidity(queryType == "group_data_five")."""
 
-    def __init__(self, protocol_version: int) -> None:
-        """Initialize AC message power query."""
-        super().__init__(
-            protocol_version=protocol_version,
-            message_type=MessageType.query,
-            body_type=ListTypes.X41,
-        )
+    _group = 5
 
-    @property
-    def _body(self) -> bytearray:
-        return bytearray([0x21, 0x01, 0x45, 0x00, 0x01])
 
-    @property
-    def body(self) -> bytearray:
-        """AC message power query body."""
-        body = bytearray([self.body_type]) + self._body
-        body.append(calculate(body))
-        return body
+class MessageGroupSevenQuery(MessageGroupDataQuery):
+    """AC message compressor power query(queryType == "group_data_seven")."""
+
+    _group = 7
 
 
 class MessageToggleDisplay(MessageACBase):
@@ -1128,6 +1141,12 @@ class XC1MessageBody(MessageBody):
             self.current_energy_consumption = parse_consumption(body[12:16])
             # current_time_power
             self.realtime_power = self.parse_power(analysis_method, body[16:19])
+        elif body[3] == XC1_SUBBODY_TYPE_41:
+            self._parse_group_one(body)
+        elif body[3] == XC1_SUBBODY_TYPE_42:
+            self._parse_group_two(body)
+        elif body[3] == XC1_SUBBODY_TYPE_47:
+            self._parse_group_seven(body)
         elif body[3] == XC1_SUBBODY_TYPE_40:
             self.electrify_time_day = body[5] | (body[4] << 8)
             self.electrify_time_hour = body[6]
@@ -1165,6 +1184,51 @@ class XC1MessageBody(MessageBody):
         elif body[3] == XC1_SUBBODY_TYPE_45:
             # indoor humidity, it should be the same value as XBB/XA1 message
             self.indoor_humidity = body[4] if body[4] != 0 else None
+
+    def _parse_group_one(self, body: bytearray) -> None:
+        """Parse group 1 data: compressor and refrigerant circuit.
+
+        This is service/engineering data that the Midea app does not display,
+        so it is not covered by any B5 capability and is simply absent on
+        devices that do not answer the group 1 query.
+        """
+        if len(body) < XC1_GROUP_ONE_MIN_LENGTH:
+            return
+        self.compressor_frequency = body[4]
+        self.target_compressor_frequency = body[5]
+        self.compressor_current = body[7]
+        self.compressor_voltage = body[8]
+        # T1: indoor coil, T2: evaporator outlet
+        self.indoor_coil_temperature = (
+            body[10] - XC1_TEMP_INDOOR_OFFSET
+        ) / XC1_TEMP_DIVISOR
+        self.evaporator_temperature = (
+            body[11] - XC1_TEMP_INDOOR_OFFSET
+        ) / XC1_TEMP_DIVISOR
+        # T3: condenser, T4: outdoor ambient
+        self.condenser_temperature = (
+            body[12] - XC1_TEMP_OUTDOOR_OFFSET
+        ) / XC1_TEMP_DIVISOR
+        self.outdoor_ambient_temperature = (
+            body[13] - XC1_TEMP_OUTDOOR_OFFSET
+        ) / XC1_TEMP_DIVISOR
+        # TP: compressor discharge pipe, reported directly in degrees
+        self.discharge_pipe_temperature = body[14]
+
+    def _parse_group_two(self, body: bytearray) -> None:
+        """Parse group 2 data: indoor fan and condensate pump."""
+        if len(body) < XC1_GROUP_TWO_MIN_LENGTH:
+            return
+        self.target_indoor_fan_speed = body[4] * XC1_FAN_SPEED_FACTOR
+        self.indoor_fan_speed = body[5] * XC1_FAN_SPEED_FACTOR
+        # Could also be the float switch (tank full) that triggers the pump.
+        self.water_pump_running = bool(body[8] & XC1_WATER_PUMP_MASK)
+
+    def _parse_group_seven(self, body: bytearray) -> None:
+        """Parse group 7 data: real time compressor power."""
+        if len(body) < XC1_GROUP_SEVEN_MIN_LENGTH:
+            return
+        self.compressor_power = body[10] + (body[11] << 8)
 
     power_analysis_methods: Mapping[int, Callable[[int, int], int]] = MappingProxyType(
         {
