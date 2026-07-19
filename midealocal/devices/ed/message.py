@@ -639,7 +639,7 @@ class MessageEDResponse(MessageResponse):
             MessageType.notify1,
         ]:
             self.device_class = self._body_type
-            if self._body_type in [ListTypes.X00, ListTypes.FF]:
+            if self._body_type in [ListTypes.X00, ListTypes.X15, ListTypes.FF]:
                 self.set_body(EDMessageBodyFF(super().body))
             if self.body_type == ListTypes.X01:
                 self.set_body(EDMessageBody01(super().body))
