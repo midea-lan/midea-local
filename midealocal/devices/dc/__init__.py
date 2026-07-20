@@ -156,7 +156,7 @@ class MideaDCDevice(MideaDevice):
                 # parse progress
                 if status == DeviceAttributes.progress:
                     # prevent value out of index range
-                    if value in progress:
+                    if 0 <= value < len(progress):
                         self._attributes[DeviceAttributes.progress] = progress[value]
                     else:
                         self._attributes[DeviceAttributes.progress] = None
