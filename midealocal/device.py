@@ -470,7 +470,7 @@ class MideaDevice(threading.Thread):
                 self._device_id,
                 msg.hex(),
             )
-            return True
+            return False
         if msg[MESSAGE_TYPE_INDEX] == MessageType.query_appliance:
             message = MessageApplianceResponse(msg)
             self._appliance_query = False
