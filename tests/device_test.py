@@ -26,7 +26,7 @@ def test_fetch_v2_message() -> None:
     )
 
 
-class MideaDeviceTest:
+class TestMideaDevice:
     """Midea device test case."""
 
     device: MideaDevice
@@ -70,8 +70,12 @@ class MideaDeviceTest:
     )
     def test_connect(self, exc: Exception, result: bool) -> None:
         """Test connect."""
-        with patch("socket.socket.connect", side_effect=exc):
-            assert self.device.connect() is result
+        with (
+            patch("socket.socket.connect", side_effect=exc),
+            patch.object(self.device, "authenticate"),
+            patch.object(self.device, "refresh_status"),
+        ):
+            assert self.device.connect(check_protocol=True) is result
             assert self.device.available is result
 
     def test_connect_generic_exception(self) -> None:
@@ -188,7 +192,6 @@ class MideaDeviceTest:
             self.device._socket = socket_mock
             self.device.authenticate()
             self.device.send_message(bytes([0x0] * 20))
-            self.device._socket = None
             self.device._device_protocol_version = ProtocolVersion.V2
             self.device.send_message(bytes([0x0] * 20))
 
@@ -208,6 +211,7 @@ class MideaDeviceTest:
                     bytearray([0x0]),
                     bytearray([0x0]),
                     bytearray([0x0]),
+                    bytearray([0x0]),
                     TimeoutError(),
                 ],
             ),
@@ -218,6 +222,7 @@ class MideaDeviceTest:
                 side_effect=[
                     MessageResult.SUCCESS,
                     MessageResult.PADDING,
+                    MessageResult.SUCCESS,
                     MessageResult.ERROR,
                 ],
             ),
@@ -227,7 +232,7 @@ class MideaDeviceTest:
                 self.device.refresh_status(True)
 
             self.device._socket = socket_mock
-            with pytest.raises(OSError, match="Empty message received."):
+            with pytest.raises(OSError, match=r"Connection closed by peer\."):
                 self.device.refresh_status(True)
 
             self.device.refresh_status(True)  # SUCCESS
