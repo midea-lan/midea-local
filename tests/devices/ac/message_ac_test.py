@@ -9,7 +9,12 @@ from midealocal.devices.ac.message import (
     MessageACResponse,
     MessageCapabilitiesQuery,
     MessageGeneralSet,
+    MessageGroupDataQuery,
     MessageGroupOneQuery,
+    MessageGroupSevenQuery,
+    MessageGroupTwoQuery,
+    MessageGroupZeroQuery,
+    MessageHumidityQuery,
     MessageNewProtocolQuery,
     MessageNewProtocolSet,
     MessagePowerQuery,
@@ -1002,24 +1007,116 @@ class TestMessageACResponse:
         assert not hasattr(response, "realtime_power")
 
     def test_message_query_c1_0x41(self) -> None:
-        """Test Message parse query C1 compressor frequencies."""
+        """Test Message parse query C1 0x41, compressor group data."""
         self.header[9] = 0x03
-        body = bytearray(10)
-        body[0] = 0xC1
-        body[3] = 0x41
-        body[4] = 47
-        body[5] = 49
-        body[6] = 3
-        body[7] = 4
-        body[8] = 229
+        body = bytearray(20)
+        body[0] = 0xC1  # Body type
+        body[3] = 0x41  # group 1
+        body[4] = 28  # compressor frequency
+        body[5] = 25  # target compressor frequency
+        body[7] = 1  # compressor current
+        body[8] = 232  # compressor voltage
+        body[10] = 71  # T1: (71 - 30) / 2 = 20.5
+        body[11] = 38  # T2: (38 - 30) / 2 = 4.0
+        body[12] = 102  # T3: (102 - 50) / 2 = 26.0
+        body[13] = 88  # T4: (88 - 50) / 2 = 19.0
+        body[14] = 36  # TP: 36
 
         response = MessageACResponse(self.header + body)
+        assert hasattr(response, "compressor_frequency")
+        assert response.compressor_frequency == 28
+        assert hasattr(response, "target_compressor_frequency")
+        assert response.target_compressor_frequency == 25
+        assert hasattr(response, "compressor_current")
+        assert response.compressor_current == 1
+        assert hasattr(response, "compressor_voltage")
+        assert response.compressor_voltage == 232
+        assert hasattr(response, "indoor_coil_temperature")
+        assert response.indoor_coil_temperature == 20.5
+        assert hasattr(response, "evaporator_temperature")
+        assert response.evaporator_temperature == 4.0
+        assert hasattr(response, "condenser_temperature")
+        assert response.condenser_temperature == 26.0
+        assert hasattr(response, "outdoor_ambient_temperature")
+        assert response.outdoor_ambient_temperature == 19.0
+        assert hasattr(response, "discharge_pipe_temperature")
+        assert response.discharge_pipe_temperature == 36
 
-        assert response.compressor_frequency == 47
-        assert response.compressor_target_frequency == 49
-        assert response.compressor_current == 3
-        assert response.outdoor_unit_total_current == 4
-        assert response.outdoor_unit_voltage == 229
+    def test_message_query_c1_0x41_short_body(self) -> None:
+        """Test Message parse query C1 0x41 with a truncated body."""
+        self.header[9] = 0x03
+        body = bytearray(10)
+        body[0] = 0xC1  # Body type
+        body[3] = 0x41  # group 1
+
+        response = MessageACResponse(self.header + body)
+        assert not hasattr(response, "compressor_frequency")
+        assert not hasattr(response, "discharge_pipe_temperature")
+
+    def test_message_query_c1_0x42(self) -> None:
+        """Test Message parse query C1 0x42, indoor fan group data."""
+        self.header[9] = 0x03
+        body = bytearray(20)
+        body[0] = 0xC1  # Body type
+        body[3] = 0x42  # group 2
+        body[4] = 52  # target indoor fan speed: 52 * 8 = 416
+        body[5] = 53  # indoor fan speed: 53 * 8 = 424
+        body[8] = 0x10  # water pump running
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "target_indoor_fan_speed")
+        assert response.target_indoor_fan_speed == 416
+        assert hasattr(response, "indoor_fan_speed")
+        assert response.indoor_fan_speed == 424
+        assert hasattr(response, "water_pump_running")
+        assert response.water_pump_running is True
+
+    def test_message_query_c1_0x42_idle(self) -> None:
+        """Test Message parse query C1 0x42 with fan and pump stopped."""
+        self.header[9] = 0x03
+        body = bytearray(20)
+        body[0] = 0xC1  # Body type
+        body[3] = 0x42  # group 2
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "indoor_fan_speed")
+        assert response.indoor_fan_speed == 0
+        assert hasattr(response, "water_pump_running")
+        assert response.water_pump_running is False
+
+    def test_message_query_c1_0x42_short_body(self) -> None:
+        """Test Message parse query C1 0x42 with a truncated body."""
+        self.header[9] = 0x03
+        body = bytearray(9)
+        body[0] = 0xC1  # Body type
+        body[3] = 0x42  # group 2
+
+        response = MessageACResponse(self.header + body)
+        assert not hasattr(response, "indoor_fan_speed")
+        assert not hasattr(response, "water_pump_running")
+
+    def test_message_query_c1_0x47(self) -> None:
+        """Test Message parse query C1 0x47, compressor power group data."""
+        self.header[9] = 0x03
+        body = bytearray(20)
+        body[0] = 0xC1  # Body type
+        body[3] = 0x47  # group 7
+        body[10] = 13  # 13 + (1 << 8) = 269 W
+        body[11] = 1
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "compressor_power")
+        assert response.compressor_power == 269
+
+    def test_message_query_c1_0x47_short_body(self) -> None:
+        """Test Message parse query C1 0x47 with a truncated body."""
+        self.header[9] = 0x03
+        body = bytearray(10)
+        body[0] = 0xC1  # Body type
+        body[3] = 0x47  # group 7
+
+        response = MessageACResponse(self.header + body)
+        assert not hasattr(response, "compressor_power")
 
     def test_captured_c1_0x41_response(self) -> None:
         """Test a complete response captured from model 22390001 subtype 8."""
@@ -1030,19 +1127,22 @@ class TestMessageACResponse:
 
         response = MessageACResponse(frame)
 
+        assert hasattr(response, "compressor_frequency")
         assert response.compressor_frequency == 43
-        assert response.compressor_target_frequency == 43
-        assert response.compressor_current == 4
-        assert response.outdoor_unit_total_current == 3
-        assert response.outdoor_unit_voltage == 214
+        assert hasattr(response, "target_compressor_frequency")
+        assert response.target_compressor_frequency == 43
+        assert hasattr(response, "compressor_current")
+        assert response.compressor_current == 3
+        assert hasattr(response, "compressor_voltage")
+        assert response.compressor_voltage == 214
 
     def test_short_c1_response_does_not_raise(self) -> None:
         """Test short C1 response ignores a missing group type."""
         self.header[9] = 0x03
 
-        MessageACResponse(self.header + bytearray([0xC1, 0, 0, 0, 0]))
+        MessageACResponse(self.header + bytearray([0xC1, 0, 0]))
 
-    @pytest.mark.parametrize("group_type", [0x40, 0x41, 0x44, 0x45])
+    @pytest.mark.parametrize("group_type", [0x40, 0x41, 0x42, 0x44, 0x45, 0x47])
     def test_recognized_short_c1_response_does_not_raise(
         self,
         group_type: int,
@@ -1097,9 +1197,13 @@ class TestMessageACResponse:
 
         response = MessageACResponse(self.header + body)
 
+        assert hasattr(response, "bb_fresh_air_power")
         assert response.bb_fresh_air_power is True
+        assert hasattr(response, "bb_fresh_air_fan_speed")
         assert response.bb_fresh_air_fan_speed == 60
+        assert hasattr(response, "bb_fresh_air_exhaust_power")
         assert response.bb_fresh_air_exhaust_power is True
+        assert hasattr(response, "bb_fresh_air_exhaust_speed")
         assert response.bb_fresh_air_exhaust_speed == 100
 
     def test_captured_bb_0x11_fresh_air_response(self) -> None:
@@ -1112,9 +1216,13 @@ class TestMessageACResponse:
 
         response = MessageACResponse(frame)
 
+        assert hasattr(response, "bb_fresh_air_power")
         assert response.bb_fresh_air_power is True
+        assert hasattr(response, "bb_fresh_air_fan_speed")
         assert response.bb_fresh_air_fan_speed == 60
+        assert hasattr(response, "bb_fresh_air_exhaust_power")
         assert response.bb_fresh_air_exhaust_power is False
+        assert hasattr(response, "bb_fresh_air_exhaust_speed")
         assert response.bb_fresh_air_exhaust_speed == 100
 
     def test_message_query_bb_0x10(self) -> None:
@@ -1153,8 +1261,11 @@ class TestMessageACResponse:
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == 328.02
-        assert response.compressor_target_frequency == 49
+        assert hasattr(response, "target_compressor_frequency")
+        assert response.target_compressor_frequency == 49
+        assert hasattr(response, "compressor_frequency")
         assert response.compressor_frequency == 47
+        assert hasattr(response, "power_factor")
         assert response.power_factor == 93
 
         body[12] = 0x65  # Outdoor temperature byte 2
@@ -1179,7 +1290,9 @@ class TestMessageACResponse:
 
         response = MessageACResponse(frame)
 
-        assert response.compressor_target_frequency == 49
+        assert hasattr(response, "target_compressor_frequency")
+        assert response.target_compressor_frequency == 49
+        assert hasattr(response, "compressor_frequency")
         assert response.compressor_frequency == 49
 
     @pytest.mark.parametrize("data_type", [0x10, 0x30])

@@ -57,15 +57,27 @@ XC1_SUBBODY_TYPE_41 = 0x41
 XC1_SUBBODY_TYPE_42 = 0x42
 XC1_SUBBODY_TYPE_44 = 0x44
 XC1_SUBBODY_TYPE_45 = 0x45
-XC1_SUBBODY_TYPE_41 = 0x41
+XC1_SUBBODY_TYPE_47 = 0x47
 XC1_SUBBODY_TYPE_INDEX = 3
 XC1_HUMIDITY_INDEX = 4
-XC1_COMPRESSOR_TARGET_FREQUENCY_INDEX = 5
-XC1_COMPRESSOR_CURRENT_INDEX = 6
-XC1_OUTDOOR_UNIT_TOTAL_CURRENT_INDEX = 7
-XC1_OUTDOOR_UNIT_VOLTAGE_INDEX = 8
 XC1_CONSUMPTION_MIN_LENGTH = 19
 XC1_OPERATING_TIME_MIN_LENGTH = 19
+
+# Group data query: the third payload byte selects the group, 0x40 | group number.
+XC1_GROUP_QUERY_BASE = 0x40
+# Minimum body length required to parse each group data response.
+XC1_GROUP_ONE_MIN_LENGTH = 15
+XC1_GROUP_TWO_MIN_LENGTH = 9
+XC1_GROUP_SEVEN_MIN_LENGTH = 12
+# Refrigerant circuit temperatures are reported as half degrees with an offset:
+# T1/T2 (indoor coil / evaporator) use 30, T3/T4 (condenser / outdoor) use 50.
+XC1_TEMP_INDOOR_OFFSET = 30
+XC1_TEMP_OUTDOOR_OFFSET = 50
+XC1_TEMP_DIVISOR = 2
+# Indoor fan speed is reported in units of 8 RPM.
+XC1_FAN_SPEED_FACTOR = 8
+# Bit 4 of group 2 byte 8 indicates the condensate water pump is running.
+XC1_WATER_PUMP_MASK = 0x10
 
 BB_FRESH_AIR_CONTROL_BODY_LENGTH = 96
 BB_FRESH_AIR_CONTROL_CURSOR = 15
@@ -74,6 +86,19 @@ BB_FRESH_AIR_EXHAUST_SWITCH_MASK = 0x08
 BB_FRESH_AIR_INTAKE_CONTROL_SPEED_INDEX = 55
 BB_FRESH_AIR_EXHAUST_CONTROL_SPEED_INDEX = 56
 BB_FRESH_AIR_SPEED_FLAG = 0x80
+
+# AC subtype 8 (e.g. model 22013279) reports temperatures in this
+# new-protocol tag instead of the standard C0 frame.
+SUBTYPE8_TEMPERATURE_TAG = 0x7E
+SUBTYPE8_TEMPERATURE_MIN_LENGTH = 40
+SUBTYPE8_SETPOINT_OFFSET = 11.5
+SUBTYPE8_SETPOINT_MASK = 0x3F
+SUBTYPE8_SETPOINT_HALF_DEGREE_BIT = 0x40
+SUBTYPE8_MIN_VALID_TEMPERATURE = 10
+SUBTYPE8_MAX_VALID_TEMPERATURE = 40
+SUBTYPE8_LEGACY_SETPOINT_BYTE = 3
+SUBTYPE8_INDOOR_TEMPERATURE_BYTE = 39
+SUBTYPE8_INDOOR_TEMPERATURE_DECIMAL_BYTE = 40
 
 # B5 capability value semantics (reverse-engineered; see _parse_capabilities).
 # The raw byte of each capability is not a 0/1 flag; each has its own value set.
@@ -352,30 +377,19 @@ class MessageGroupZeroQuery(MessageGroupDataQuery):
     _group = 0
 
 
-class MessageGroupOneQuery(MessageACBase):
-    """AC compressor frequency query(queryType == "group_data_one")."""
+class MessageGroupOneQuery(MessageGroupDataQuery):
+    """AC message compressor query(queryType == "group_data_one")."""
 
-    def __init__(self, protocol_version: int) -> None:
-        """Initialize AC compressor frequency query."""
-        super().__init__(
-            protocol_version=protocol_version,
-            message_type=MessageType.query,
-            body_type=ListTypes.X41,
-        )
-
-    @property
-    def _body(self) -> bytearray:
-        return bytearray([0x21, 0x01, XC1_SUBBODY_TYPE_41, 0x00, 0x01])
-
-    @property
-    def body(self) -> bytearray:
-        """AC compressor frequency query body."""
-        body = bytearray([self.body_type]) + self._body
-        body.append(calculate(body))
-        return body
+    _group = 1
 
 
-class MessagePowerQuery(MessageACBase):
+class MessageGroupTwoQuery(MessageGroupDataQuery):
+    """AC message indoor fan query(queryType == "group_data_two")."""
+
+    _group = 2
+
+
+class MessagePowerQuery(MessageGroupDataQuery):
     """AC message power query(queryType == "group_data_four")."""
 
     _group = 4
@@ -661,6 +675,8 @@ class MessageSubProtocolFreshAirSet(MessageSubProtocol):
     @property
     def _subprotocol_body(self) -> bytearray:
         body = bytearray(BB_FRESH_AIR_CONTROL_BODY_LENGTH)
+        # BB fresh-air controls are sparse C0/02 payloads. The switch bytes are
+        # relative to the control cursor; speed bytes are offsets in that block.
         body[1] = 0x01
         body[2] = 0x01
         body[11] = 0x01
@@ -1291,6 +1307,12 @@ class XC1MessageBody(MessageBody):
             self.current_energy_consumption = parse_consumption(body[12:16])
             # current_time_power
             self.realtime_power = self.parse_power(analysis_method, body[16:19])
+        elif group_type == XC1_SUBBODY_TYPE_41:
+            self._parse_group_one(body)
+        elif group_type == XC1_SUBBODY_TYPE_42:
+            self._parse_group_two(body)
+        elif group_type == XC1_SUBBODY_TYPE_47:
+            self._parse_group_seven(body)
         elif group_type == XC1_SUBBODY_TYPE_40:
             if len(body) < XC1_OPERATING_TIME_MIN_LENGTH:
                 return
@@ -1332,17 +1354,6 @@ class XC1MessageBody(MessageBody):
                 return
             # indoor humidity, it should be the same value as XBB/XA1 message
             self.indoor_humidity = body[4] if body[4] != 0 else None
-        elif group_type == XC1_SUBBODY_TYPE_41:
-            if len(body) <= XC1_COMPRESSOR_TARGET_FREQUENCY_INDEX:
-                return
-            self.compressor_frequency = body[4]
-            self.compressor_target_frequency = body[5]
-            if len(body) > XC1_OUTDOOR_UNIT_VOLTAGE_INDEX:
-                self.compressor_current = body[XC1_COMPRESSOR_CURRENT_INDEX]
-                self.outdoor_unit_total_current = body[
-                    XC1_OUTDOOR_UNIT_TOTAL_CURRENT_INDEX
-                ]
-                self.outdoor_unit_voltage = body[XC1_OUTDOOR_UNIT_VOLTAGE_INDEX]
 
     def _parse_group_one(self, body: bytearray) -> None:
         """Parse group 1 data: compressor and refrigerant circuit.
@@ -1462,6 +1473,8 @@ class XBBMessageBody(MessageBody):
                 if subprotocol_body_len > ECO_MODE_MIN_SUBPROTOCOL_LENGTH
                 else False
             )
+            # These offsets are known for the verified BB fresh-air model; the
+            # device layer gates public attributes and controls to that model.
             if subprotocol_body_len > BB_FRESH_AIR_EXHAUST_SPEED_INDEX:
                 fresh_air_switches = subprotocol_body[BB_FRESH_AIR_SWITCH_INDEX]
                 self.bb_fresh_air_power = bool(
@@ -1507,7 +1520,7 @@ class XBBMessageBody(MessageBody):
                         subprotocol_body[5] + subprotocol_body[6] * 256
                     ) / 100
             if subprotocol_body_len > BB_COMPRESSOR_FREQUENCY_INDEX:
-                self.compressor_target_frequency = subprotocol_body[
+                self.target_compressor_frequency = subprotocol_body[
                     BB_COMPRESSOR_TARGET_FREQUENCY_INDEX
                 ]
                 self.compressor_frequency = subprotocol_body[

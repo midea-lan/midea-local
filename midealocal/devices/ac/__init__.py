@@ -16,6 +16,8 @@ from .message import (
     MessageCapabilitiesQuery,
     MessageGeneralSet,
     MessageGroupOneQuery,
+    MessageGroupSevenQuery,
+    MessageGroupTwoQuery,
     MessageGroupZeroQuery,
     MessageHumidityQuery,
     MessageNewProtocolQuery,
@@ -41,6 +43,8 @@ ACQuery = (
     | MessageHumidityQuery
     | MessageGroupZeroQuery
     | MessageGroupOneQuery
+    | MessageGroupTwoQuery
+    | MessageGroupSevenQuery
     | MessageCapabilitiesQuery
     | MessageCapabilitiesAdditionalQuery
 )
@@ -88,11 +92,6 @@ class DeviceAttributes(StrEnum):
     fresh_air_exhaust_power = "fresh_air_exhaust_power"
     fresh_air_exhaust_speed = "fresh_air_exhaust_speed"
     fresh_air_exhaust_mode = "fresh_air_exhaust_mode"
-    compressor_frequency = "compressor_frequency"
-    compressor_target_frequency = "compressor_target_frequency"
-    compressor_current = "compressor_current"
-    outdoor_unit_total_current = "outdoor_unit_total_current"
-    outdoor_unit_voltage = "outdoor_unit_voltage"
     power_factor = "power_factor"
     total_energy_consumption = "total_energy_consumption"
     total_operating_consumption = "total_operating_consumption"
@@ -128,11 +127,10 @@ class DeviceAttributes(StrEnum):
     compressor_power = "compressor_power"
 
 
-STALE_C0_TEMPERATURE_ATTRIBUTES = (
-    DeviceAttributes.target_temperature,
-    DeviceAttributes.indoor_temperature,
-    DeviceAttributes.outdoor_temperature,
-)
+BB_FRESH_AIR_DEFAULT_SPEED = 60
+# The BB exhaust preset map has no "medium" (60) entry; use the first
+# advertised non-silent exhaust mode when a power-on command has no prior speed.
+BB_FRESH_AIR_EXHAUST_DEFAULT_SPEED = 80
 
 
 @dataclass(frozen=True)
@@ -142,15 +140,16 @@ class ACModelCapabilities:
     attributes: frozenset[DeviceAttributes] = frozenset()
     uses_bb_protocol: bool = False
     has_bb_fresh_air: bool = False
-    has_c1_diagnostics: bool = False
 
 
 DEFAULT_AC_MODEL_CAPABILITIES = ACModelCapabilities()
+# These BB fields use model-specific offsets and command payloads observed on
+# exact model/subtype pairs. Keep unrelated devices hidden from attributes and
+# commands whose bytes may have a different meaning on other firmware.
 AC_MODEL_CAPABILITIES = {
     ("23096725", 1): ACModelCapabilities(
         attributes=frozenset(
             {
-                DeviceAttributes.compressor_frequency,
                 DeviceAttributes.power_factor,
             },
         ),
@@ -158,8 +157,6 @@ AC_MODEL_CAPABILITIES = {
     ("23096633", 1): ACModelCapabilities(
         attributes=frozenset(
             {
-                DeviceAttributes.compressor_frequency,
-                DeviceAttributes.compressor_target_frequency,
                 DeviceAttributes.fresh_air_exhaust_power,
                 DeviceAttributes.fresh_air_exhaust_speed,
                 DeviceAttributes.fresh_air_exhaust_mode,
@@ -168,31 +165,13 @@ AC_MODEL_CAPABILITIES = {
         uses_bb_protocol=True,
         has_bb_fresh_air=True,
     ),
-    ("22390001", 8): ACModelCapabilities(
-        attributes=frozenset(
-            {
-                DeviceAttributes.compressor_frequency,
-                DeviceAttributes.compressor_target_frequency,
-                DeviceAttributes.compressor_current,
-                DeviceAttributes.outdoor_unit_total_current,
-                DeviceAttributes.outdoor_unit_voltage,
-            },
-        ),
-        has_c1_diagnostics=True,
-    ),
-    ("22390003", 8): ACModelCapabilities(
-        attributes=frozenset(
-            {
-                DeviceAttributes.compressor_frequency,
-                DeviceAttributes.compressor_target_frequency,
-                DeviceAttributes.compressor_current,
-                DeviceAttributes.outdoor_unit_total_current,
-                DeviceAttributes.outdoor_unit_voltage,
-            },
-        ),
-        has_c1_diagnostics=True,
-    ),
 }
+
+STALE_C0_TEMPERATURE_ATTRIBUTES = (
+    DeviceAttributes.target_temperature,
+    DeviceAttributes.indoor_temperature,
+    DeviceAttributes.outdoor_temperature,
+)
 
 
 class MideaACDevice(MideaDevice):
@@ -389,6 +368,9 @@ class MideaACDevice(MideaDevice):
     def build_query(self) -> list[ACQuery]:
         """Midea AC device build query."""
         if self._used_subprotocol:
+            # BB responses are independent status groups. Query each group with
+            # its own identity so an unsupported response for one group does not
+            # suppress later status groups.
             return [
                 MessageSubProtocolQuery10(self._message_protocol_version),
                 MessageSubProtocolQuery11(self._message_protocol_version),
@@ -408,8 +390,6 @@ class MideaACDevice(MideaDevice):
             MessageCapabilitiesQuery(self._message_protocol_version),
             MessageCapabilitiesAdditionalQuery(self._message_protocol_version),
         ]
-        if self._model_capabilities.has_c1_diagnostics:
-            queries.append(MessageGroupOneQuery(self._message_protocol_version))
         return queries
 
     def process_message(self, msg: bytes) -> dict[str, Any]:  # noqa: C901
@@ -730,7 +710,16 @@ class MideaACDevice(MideaDevice):
             if exhaust
             else DeviceAttributes.fresh_air_mode
         )
-        current_speed = int(self._attributes[speed_attribute] or 60)
+        current_speed = int(
+            self._attributes[speed_attribute]
+            or (
+                # Intake can safely fall back to "medium"; exhaust must use a
+                # speed present in _bb_fresh_air_exhaust_speeds.
+                BB_FRESH_AIR_EXHAUST_DEFAULT_SPEED
+                if exhaust
+                else BB_FRESH_AIR_DEFAULT_SPEED
+            ),
+        )
         power = bool(self._attributes[power_attribute])
         speed = current_speed
         if attr == power_attribute:
@@ -785,10 +774,18 @@ class MideaACDevice(MideaDevice):
             DeviceAttributes.current_energy_consumption,
             DeviceAttributes.realtime_power,
             DeviceAttributes.compressor_frequency,
-            DeviceAttributes.compressor_target_frequency,
+            DeviceAttributes.target_compressor_frequency,
             DeviceAttributes.compressor_current,
-            DeviceAttributes.outdoor_unit_total_current,
-            DeviceAttributes.outdoor_unit_voltage,
+            DeviceAttributes.compressor_voltage,
+            DeviceAttributes.indoor_coil_temperature,
+            DeviceAttributes.evaporator_temperature,
+            DeviceAttributes.condenser_temperature,
+            DeviceAttributes.outdoor_ambient_temperature,
+            DeviceAttributes.discharge_pipe_temperature,
+            DeviceAttributes.indoor_fan_speed,
+            DeviceAttributes.target_indoor_fan_speed,
+            DeviceAttributes.water_pump_running,
+            DeviceAttributes.compressor_power,
             DeviceAttributes.power_factor,
         ]:
             if attr == DeviceAttributes.prompt_tone:

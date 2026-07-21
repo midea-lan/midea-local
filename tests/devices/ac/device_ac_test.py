@@ -11,6 +11,8 @@ from midealocal.devices.ac.message import (
     MessageCapabilitiesAdditionalQuery,
     MessageCapabilitiesQuery,
     MessageGroupOneQuery,
+    MessageGroupSevenQuery,
+    MessageGroupTwoQuery,
     MessageGroupZeroQuery,
     MessageHumidityQuery,
     MessageNewProtocolQuery,
@@ -23,7 +25,7 @@ from midealocal.devices.ac.message import (
     MessageSubProtocolQuery30,
     PowerFormats,
 )
-from midealocal.message import MessageBase
+from midealocal.message import ListTypes, MessageBase
 
 
 class TestMideaACDevice:
@@ -60,7 +62,8 @@ class TestMideaACDevice:
         assert not self.device.attributes[DeviceAttributes.out_silent]
         assert self.device.temperature_step == 1
         assert self.device.fresh_air_fan_speeds is not None
-        assert DeviceAttributes.compressor_frequency not in self.device.attributes
+        assert DeviceAttributes.compressor_frequency in self.device.attributes
+        assert DeviceAttributes.power_factor not in self.device.attributes
         assert not self.device.fresh_air_exhaust_fan_speeds
 
     @staticmethod
@@ -214,7 +217,7 @@ class TestMideaACDevice:
             MessageSubProtocolQuery30,
         ]
         assert DeviceAttributes.compressor_frequency in device.attributes
-        assert DeviceAttributes.compressor_target_frequency in device.attributes
+        assert DeviceAttributes.target_compressor_frequency in device.attributes
         assert DeviceAttributes.fresh_air_exhaust_power in device.attributes
         assert device.fresh_air_fan_speeds == [
             "off",
@@ -230,20 +233,6 @@ class TestMideaACDevice:
             "full",
         ]
 
-    @pytest.mark.parametrize("model", ["22390001", "22390003"])
-    def test_c1_diagnostics_model_adds_group_query(self, model: str) -> None:
-        """Test verified multi-split models query C1 group 0x41."""
-        device = self._make_device(model, 8)
-
-        queries = device.build_query()
-
-        assert isinstance(queries[-1], MessageGroupOneQuery)
-        assert DeviceAttributes.compressor_frequency in device.attributes
-        assert DeviceAttributes.compressor_target_frequency in device.attributes
-        assert DeviceAttributes.compressor_current in device.attributes
-        assert DeviceAttributes.outdoor_unit_total_current in device.attributes
-        assert DeviceAttributes.outdoor_unit_voltage in device.attributes
-
     @pytest.mark.parametrize(
         ("model", "subtype"),
         [("unknown", 1), ("23096633", 8), ("22390001", 1)],
@@ -252,19 +241,16 @@ class TestMideaACDevice:
         """Test diagnostics and commands require an exact model/subtype pair."""
         device = self._make_device(model, subtype)
 
-        assert DeviceAttributes.compressor_frequency not in device.attributes
+        assert DeviceAttributes.power_factor not in device.attributes
         assert DeviceAttributes.fresh_air_exhaust_power not in device.attributes
         queries = device.build_query()
         assert isinstance(queries[0], MessageQuery)
         assert not any(
             isinstance(
                 query,
-                (
-                    MessageGroupOneQuery,
-                    MessageSubProtocolQuery10,
-                    MessageSubProtocolQuery11,
-                    MessageSubProtocolQuery30,
-                ),
+                MessageSubProtocolQuery10
+                | MessageSubProtocolQuery11
+                | MessageSubProtocolQuery30,
             )
             for query in queries
         )
@@ -281,9 +267,7 @@ class TestMideaACDevice:
 
         assert DeviceAttributes.compressor_frequency in actual_only.attributes
         assert DeviceAttributes.power_factor in actual_only.attributes
-        assert (
-            DeviceAttributes.compressor_target_frequency not in actual_only.attributes
-        )
+        assert DeviceAttributes.target_compressor_frequency in actual_only.attributes
 
     def test_process_bb_airflow_and_frequency(self) -> None:
         """Test verified BB model publishes airflow and compressor frequency."""
@@ -308,7 +292,7 @@ class TestMideaACDevice:
         assert airflow[DeviceAttributes.fresh_air_exhaust_speed] == 100
         assert airflow[DeviceAttributes.fresh_air_exhaust_mode] == "off"
         assert frequency[DeviceAttributes.compressor_frequency] == 47
-        assert frequency[DeviceAttributes.compressor_target_frequency] == 49
+        assert frequency[DeviceAttributes.target_compressor_frequency] == 49
 
     def test_process_bb_power_factor(self) -> None:
         """Test the verified BB model publishes its reported power factor."""
@@ -326,15 +310,20 @@ class TestMideaACDevice:
     def test_process_c1_frequency(self) -> None:
         """Test verified C1 model publishes compressor frequency."""
         device = self._make_device("22390001", 8)
-        body = bytearray([0xC1, 0, 0, 0x41, 47, 49, 3, 4, 229, 0])
+        body = bytearray(15)
+        body[0] = 0xC1
+        body[3] = 0x41
+        body[4] = 47
+        body[5] = 49
+        body[7] = 3
+        body[8] = 229
 
         status = device.process_message(self._response(body))
 
         assert status[DeviceAttributes.compressor_frequency] == 47
-        assert status[DeviceAttributes.compressor_target_frequency] == 49
+        assert status[DeviceAttributes.target_compressor_frequency] == 49
         assert status[DeviceAttributes.compressor_current] == 3
-        assert status[DeviceAttributes.outdoor_unit_total_current] == 4
-        assert status[DeviceAttributes.outdoor_unit_voltage] == 229
+        assert status[DeviceAttributes.compressor_voltage] == 229
 
     def test_bb_fresh_air_set_attribute(self) -> None:
         """Test BB model sends intake and exhaust single-control commands."""
@@ -358,6 +347,19 @@ class TestMideaACDevice:
             exhaust_off = build_send.call_args.args[0]
             assert exhaust_off.power is False
             assert exhaust_off.exhaust is True
+
+    def test_bb_fresh_air_exhaust_power_defaults_to_advertised_speed(self) -> None:
+        """Test exhaust power-on uses a speed exposed by the preset list."""
+        device = self._make_device("23096633", 1)
+
+        with patch.object(device, "build_send") as build_send:
+            device.set_attribute(DeviceAttributes.fresh_air_exhaust_power, True)
+
+        message = build_send.call_args.args[0]
+        assert isinstance(message, MessageSubProtocolFreshAirSet)
+        assert message.power is True
+        assert message.speed == 80
+        assert message.exhaust is True
 
     def test_process_message(self) -> None:
         """Test process message."""
