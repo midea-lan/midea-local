@@ -1,7 +1,9 @@
 # Midea-local python lib
 
-[![Python build](https://github.com/rokam/midea-local/actions/workflows/python-build.yml/badge.svg)](https://github.com/rokam/midea-local/actions/workflows/python-build.yml)
-[![codecov](https://codecov.io/github/rokam/midea-local/graph/badge.svg?token=8V0C1T2GJA)](https://codecov.io/github/rokam/midea-local)
+[![Python build](https://github.com/midea-lan/midea-local/actions/workflows/python-build.yml/badge.svg)](https://github.com/midea-lan/midea-local/actions/workflows/python-build.yml)
+[![codecov](https://codecov.io/github/midea-lan/midea-local/graph/badge.svg?token=8V0C1T2GJA)](https://codecov.io/github/midea-lan/midea-local)
+
+> [中文版 / Chinese README](./README_hans.md)
 
 Control your Midea M-Smart appliances via local area network.
 
@@ -65,6 +67,21 @@ ac.set_swing(False, False)
 ```python3
 python3 -m midealocal.cli -h
 ```
+
+## Development
+
+This project uses [uv](https://docs.astral.sh/uv/) for its development environment.
+After [installing uv](https://docs.astral.sh/uv/getting-started/installation/):
+
+```bash
+git clone https://github.com/midea-lan/midea-local.git
+cd midea-local
+./scripts/setup.sh          # Linux / macOS / WSL2  (Windows: scripts\setup.ps1)
+```
+
+This creates a `.venv`, installs all dependencies, and sets up the pre-commit hooks.
+Run tools with `uv run`, e.g. `uv run python -m pytest ./tests/`. See the contributing
+guide for the full workflow and per-OS uv install instructions.
 
 ## Contributing Guide
 

@@ -1,172 +1,198 @@
 # 贡献指南（中文版）
 
-> [English Version](./CONTRIBUTING.md)
+> [English Version / 英文版点这里](./CONTRIBUTING.md)
 
-感谢你愿意为本项目贡献代码与想法！
-本文档介绍如何使用 **VS Code + Dev Container** 构建开发环境、在 Windows（WSL2）下配置环境、如何提交代码以及规范要求。
+感谢你为本项目做出贡献！
+本指南介绍如何使用 **[uv](https://docs.astral.sh/uv/)** 和本地虚拟环境搭建开发环境，以及如何遵循我们的工作流与代码规范进行贡献。
 
-GitHub 文件路径：`.github/CONTRIBUTING.zh.md`
+GitHub 路径：`.github/CONTRIBUTING.zh.md`
 
 ---
 
 ## 目录
 
-1. [开发环境概述](#一-开发环境概述)
-2. [系统与工具要求](#二-系统与工具要求)
-3. [推荐方式：在容器卷中克隆仓库](#三-推荐方式在容器卷中克隆仓库)
-4. [备用方式：本地克隆后再在容器中打开（不推荐）](#四-备用方式本地克隆后再在容器中打开不推荐)
-5. [Windows 用户指南（WSL2 必须）](#五-windows-用户指南wsl2-必须)
-6. [中国大陆网络镜像配置](#六-中国大陆网络镜像配置)
-7. [Dev Container 命令与问题排查](#七-dev-container-命令与问题排查)
-8. [代码提交流程](#八-代码提交流程)
-9. [代码风格与测试规范](#九-代码风格与测试规范)
-10. [问题反馈与社区守则](#十-问题反馈与社区守则)
+1. [概述](#1-概述)
+2. [系统要求](#2-系统要求)
+3. [安装 uv](#3-安装-uv)
+4. [快速开始](#4-快速开始)
+5. [Windows 用户](#5-windows-用户)
+6. [中国大陆网络镜像](#6-中国大陆网络镜像)
+7. [常用命令](#7-常用命令)
+8. [提交与 Pull Request 工作流](#8-提交与-pull-request-工作流)
+9. [代码风格、Pre-commit 与测试](#9-代码风格pre-commit-与测试)
+10. [问题反馈与社区行为规范](#10-问题反馈与社区行为规范)
 
 ---
 
-## 一、开发环境概述
+## 1. 概述
 
-本项目采用 **VS Code + Dev Container** 容器化开发环境，保证跨平台一致性。
+本项目使用 **uv** 管理 Python 工具链和本地 `.venv` 虚拟环境。uv 会自动为你安装合适的
+Python 版本（支持 3.12–3.14），速度快，并且在 Linux、macOS、Windows 和 WSL2 上表现一致，
+无需 Docker。
 
-> ✅ 推荐方式：在 VS Code 命令面板中执行 **“Dev Containers: Clone Repository in Container Volume...”**
-> 所有依赖、权限与配置均在容器中完成。
-
----
-
-## 二、系统与工具要求
-
-- **操作系统**：Linux / macOS / Windows（需启用 WSL2）
-- **Python**：最低版本 `3.12`（容器内已自动安装）
-- **VS Code 插件**：
-  - Dev Containers
-  - Remote - WSL（仅 Windows 用户）
-- **Docker**：Docker Desktop（启用 WSL2 backend）或原生 Docker
-- **配置参考**：可查看 `.devcontainer/Dockerfile` 了解镜像构建逻辑
-
-> ⚠️ Windows 用户 **无需** 在 WSL 中手动安装 Python、venv 或 pip，容器会自动配置完整环境。
+> ✅ 推荐：克隆仓库后运行一次 `./scripts/setup.sh`（Windows 上使用 `scripts\setup.ps1`），
+> 它会创建 `.venv`、安装所有依赖并配置 pre-commit 钩子。
 
 ---
 
-## 三、推荐方式：在容器卷中克隆仓库
+## 2. 系统要求
 
-1. 打开 **VS Code**。
-2. 打开命令面板：
-   - **Windows/Linux**：`Ctrl + Shift + P`
-   - **macOS**：`Cmd + Shift + P`
-3. 输入 `Dev Containers: Clone Repository in Container Volume...`，按回车执行。
-4. 输入仓库地址（如 `https://github.com/<org>/<repo>.git`）。
-5. VS Code 将自动构建并打开容器化开发环境。
-
-**优点：**
-
-- 避免权限冲突；
-- 环境与依赖完全由容器管理；
-- 无需本地安装任何 Python 工具。
+- **操作系统：** Linux / macOS / Windows / Windows + WSL2
+- **[uv](https://docs.astral.sh/uv/)：** 管理 Python 与依赖（见[第 3 节](#3-安装-uv)）
+- **Python：** ≥ 3.12 —— 你**无需**自行安装，uv 会按需下载
+- **Git**
+- **Node.js（可选）：** 仅用于 `commitlint` 提交信息钩子
+- **编辑器：** 任意。使用 VS Code 时，工作区已预配置（`.vscode/`）指向 `.venv`；
+  推荐扩展为 `charliermarsh.ruff` 和 `ms-python.python`。
 
 ---
 
-## 四、备用方式：本地克隆后再在容器中打开（不推荐）
+## 3. 安装 uv
+
+**macOS / Linux / WSL2：**
 
 ```bash
-git clone <仓库地址>
-cd <仓库目录>
-code .
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-然后执行命令：**Dev Containers: Open Folder in Container**
+**Windows（PowerShell）：**
 
-> ⚠️ 可能出现文件权限或 UID/GID 不一致问题，请自行调整或避免此方式。
+```powershell
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
 
----
+**其他方式：** `brew install uv`（macOS）、`pipx install uv`，或
+`winget install --id=astral-sh.uv`（Windows）。更多方式见
+[官方安装文档](https://docs.astral.sh/uv/getting-started/installation/)。
 
-## 五、Windows 用户指南（WSL2 必须）
-
-1. 启用 WSL2：
-   ```powershell
-   wsl --install -d Ubuntu
-   wsl --set-default-version 2
-   ```
-2. 无需在 Ubuntu 中安装 Python 或开发工具。
-   只需确保 **Docker Desktop**（WSL2 backend）与 **VS Code Dev Containers** 插件已启用。
-3. 推荐仓库存放路径：
-   - `/home/<用户名>/<repo>`
-   - 避免放在 `C:\` 驱动器下（性能差且易出权限问题）
+用 `uv --version` 验证是否安装成功。
 
 ---
 
-## 六、中国大陆网络镜像配置
-
-构建容器前可设置镜像变量：
+## 4. 快速开始
 
 ```bash
-export APT_MIRROR_DOMAIN="mirrors.tuna.tsinghua.edu.cn"
-export PIP_MIRROR_DOMAIN="pypi.tuna.tsinghua.edu.cn"
+git clone https://github.com/midea-lan/midea-local.git
+cd midea-local
+./scripts/setup.sh          # Windows：scripts\setup.ps1
 ```
 
-这些变量在 `.devcontainer/Dockerfile` 中已支持。
+该脚本会：
+
+1. 用 Python 3.12 创建 `.venv`（`uv venv --python 3.12`），
+2. 安装运行时 + 开发 + 类型声明依赖（`uv pip install -r requirements-all.txt`），
+3. 安装 pre-commit 钩子（commit 与 commit-msg 阶段）。
+
+**手动搭建**（与脚本等效）：
+
+```bash
+uv venv --python 3.12
+uv pip install -r requirements-all.txt
+uv run pre-commit install
+uv run pre-commit install --hook-type commit-msg
+```
+
+之后可以激活环境（`source .venv/bin/activate`），或在命令前加 `uv run`
+（例如 `uv run python -m pytest ./tests/`）。
 
 ---
 
-## 七、Dev Container 命令与问题排查
+## 5. Windows 用户
 
-| 命令                                     | 说明                 |
-| ---------------------------------------- | -------------------- |
-| **Reopen in Container**                  | 在容器中打开当前项目 |
-| **Rebuild Container**                    | 重建开发容器         |
-| **Clone Repository in Container Volume** | 推荐方式             |
-| **Show Container Log**                   | 查看容器构建日志     |
+原生 Windows 已完整支持 —— 安装 uv（见[第 3 节](#3-安装-uv)）后，在 PowerShell 中运行
+`scripts\setup.ps1` 即可。**WSL2 是可选的，并非必需。**
 
-> 构建错误可在命令面板执行：**Dev Containers: Show Container Log**
+如果你更倾向于使用 WSL2：
+
+1. 启用：`wsl --install -d Ubuntu`，然后 `wsl --set-default-version 2`。
+2. 在 WSL **内部**使用 macOS/Linux 的命令安装 uv。
+3. 将仓库克隆到 WSL 的 Linux 文件系统内（例如 `/home/<user>/midea-local`），
+   不要放在 `C:\` 下，以避免性能和权限问题。
 
 ---
 
-## 八、代码提交流程
+## 6. 中国大陆网络镜像
 
-1. 新建分支：
+如果 PyPI 或 Python 下载较慢，可在运行 setup 脚本**之前**将 uv 指向镜像：
+
+```bash
+# PyPI 包镜像（以清华源为例）
+export UV_DEFAULT_INDEX="https://pypi.tuna.tsinghua.edu.cn/simple"
+# Python 解释器下载镜像
+export UV_PYTHON_INSTALL_MIRROR="https://mirror.nju.edu.cn/github-release/astral-sh/python-build-standalone/"
+```
+
+在 Windows PowerShell 中使用 `$env:UV_DEFAULT_INDEX = "..."` 代替 `export`。
+你也可以将它们写入 shell 配置文件长期生效。
+
+---
+
+## 7. 常用命令
+
+| 任务                     | 命令                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| 运行全部测试             | `uv run python -m pytest ./tests/`                                            |
+| 运行单个测试文件         | `uv run python -m pytest tests/devices/ac/message_ac_test.py`                 |
+| 覆盖率报告               | `uv run python -m pytest --cov=midealocal --cov-report term-missing ./tests/` |
+| 代码检查 / 格式化 / 类型 | `uv run pre-commit run --all-files`                                           |
+| 仅运行 Ruff              | `uv run ruff check .` / `uv run ruff format .`                                |
+| 构建软件包               | `uv run python -m build`                                                      |
+| 新增依赖                 | 编辑 `requirements*.txt`，再执行 `uv pip install -r requirements-all.txt`     |
+
+---
+
+## 8. 提交与 Pull Request 工作流
+
+1. 创建分支：
 
    ```bash
-   git checkout -b feat/功能描述
+   git checkout -b feat/add-feature
    ```
 
-2. 提交信息需遵循 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
-   - `feat:` 新功能
-   - `fix:` 修复问题
-   - `chore:` 工具/配置调整（如 CI/CD、pre-commit 等）
-   - `docs:` 文档修改
-   - `refactor:` 重构代码
-   - `test:` 测试相关修改
+2. 遵循 [Conventional Commits](https://www.conventionalcommits.org/) 提交信息规范：
+   - `feat:` → 新功能
+   - `fix:` → 修复 Bug
+   - `chore:` → 工具、配置或非功能性更新
+   - `docs:` → 仅文档
+   - `refactor:` → 代码重构
+   - `test:` → 仅测试
 
 3. 示例：
 
    ```bash
-   feat: 增加登录接口
-   chore: 更新 pre-commit 配置
-   fix: 修复配置路径错误
+   feat: add user authentication
+   chore: update pre-commit hooks
+   fix: correct API endpoint error
    ```
 
-4. 推送并创建 Pull Request。
-   GitHub Actions 会自动验证 commit message 格式。
+4. 推送并发起 Pull Request。
+   GitHub Actions 会自动校验你的提交信息。
+   请勿直接向 `main` 提交（`no-commit-to-branch` 钩子会阻止）。
 
 ---
 
-## 九、代码风格与测试规范
+## 9. 代码风格、Pre-commit 与测试
 
-- 容器内已预装 **pre-commit**，提交时会自动运行以下工具：
-  - `ruff`：代码检查
-  - `mypy`：类型检查
-- 若 pre-commit 报错，请根据提示修复后重新提交。
-- 测试推荐使用 `pytest`。
+- **Pre-commit** 由 setup 脚本安装，并在每次提交时运行，包含：
+  - `ruff` → 代码检查与格式化
+  - `mypy` → 类型检查（严格模式）
+  - `pylint` → 额外的静态分析
+- 随时可用 `uv run pre-commit run --all-files` 运行完整套件，提交前请修复所有报告的问题。
+- 测试使用 `pytest`。CI 会在 Python 3.12/3.13/3.14 × Linux/macOS/Windows 矩阵上运行完整的
+  pre-commit 套件与测试，失败则阻止合并。
 
 ---
 
-## 十、问题反馈与社区守则
+## 10. 问题反馈与社区行为规范
 
-- 提交 Issue 时请附带：重现步骤、环境说明、日志。
-- 保持尊重、清晰、建设性的沟通。
+提交 Issue 时：
+
+- 请包含复现步骤、日志和你的环境信息。
+- 请保持尊重、简洁，并遵守社区准则。
 
 ---
 
 **文件路径：**
 
-- 中文版：`.github/CONTRIBUTING.zh.md`
-- 英文版：`.github/CONTRIBUTING.md`
+- 英文：`.github/CONTRIBUTING.md`
+- 中文：`.github/CONTRIBUTING.zh.md`
