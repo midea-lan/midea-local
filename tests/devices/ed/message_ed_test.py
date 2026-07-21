@@ -234,6 +234,14 @@ class TestMessageNewSet:
         assert body[2] == 0x01  # pack_count
         assert body[3:8] == bytearray([0x02, 0x01, 0x00, 0x02, 0x1E])
 
+    def test_message_newset_timing_regeneration_min_only(self) -> None:
+        """Test minute-only timing_regeneration still packs the command."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.timing_regeneration_min = 30
+        body = new_set.body
+        assert body[2] == 0x01  # pack_count
+        assert body[3:8] == bytearray([0x02, 0x01, 0x00, 0x00, 0x1E])
+
     def test_message_newset_water_way(self) -> None:
         """Test MessageNewSet with water_way switch."""
         new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)

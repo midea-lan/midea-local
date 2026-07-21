@@ -345,10 +345,17 @@ class MessageNewSet(MessageEDBase):
                     addition=self.flushing_days,
                 ),
             )
-        if self.timing_regeneration_hour is not None:
+        if (
+            self.timing_regeneration_hour is not None
+            or self.timing_regeneration_min is not None
+        ):
             pack_count += 1
             # Lua setbytes(0x02, 0x01, 0x00, hour, min): addition = (min << 8) | hour
-            hour = self.timing_regeneration_hour
+            hour = (
+                self.timing_regeneration_hour
+                if self.timing_regeneration_hour is not None
+                else 0
+            )
             minute = (
                 self.timing_regeneration_min
                 if self.timing_regeneration_min is not None
