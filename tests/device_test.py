@@ -7,6 +7,7 @@ import pytest
 from midealocal.cloud import DEFAULT_KEYS
 from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import (
+    MESSAGE_TYPE_INDEX,
     AuthException,
     MessageResult,
     MideaDevice,
@@ -26,7 +27,69 @@ def test_fetch_v2_message() -> None:
     )
 
 
-class TestMideaDevice:
+def test_pre_process_message_short_message() -> None:
+    """Test pre process message ignores messages shorter than the header."""
+    # Some devices answer a query with fewer bytes than the 10-byte header
+    # (observed: a 4-byte `01000000` from a 0xFA tower fan). Indexing the
+    # message-type byte blindly raises IndexError, which aborts the whole
+    # status parse, so short messages must be ignored instead.
+    device = MideaDevice(
+        name="Test Device",
+        device_id=1,
+        device_type=DeviceType.AC,
+        ip_address="192.168.1.100",
+        port=6444,
+        token=DEFAULT_KEYS[99]["token"],
+        key=DEFAULT_KEYS[99]["key"],
+        device_protocol=ProtocolVersion.V3,
+        model="test_model",
+        subtype=1,
+        attributes={},
+        mac="1234567890ab",
+    )
+    for length in range(MESSAGE_TYPE_INDEX + 1):
+        assert device.pre_process_message(bytearray([0x0] * length)) is False
+        assert device._appliance_query is True
+
+
+def test_parse_message_short_appliance_query_message_skips_process_message() -> None:
+    """Test short appliance query messages are not processed as device status."""
+    device = MideaDevice(
+        name="Test Device",
+        device_id=1,
+        device_type=DeviceType.AC,
+        ip_address="192.168.1.100",
+        port=6444,
+        token=DEFAULT_KEYS[99]["token"],
+        key=DEFAULT_KEYS[99]["key"],
+        device_protocol=ProtocolVersion.V3,
+        model="test_model",
+        subtype=1,
+        attributes={},
+        mac="1234567890ab",
+    )
+    encrypted_message = bytearray([0x0] * 72)
+    encrypted_message[4] = 72
+    with (
+        patch.object(
+            device._security,
+            "decode_8370",
+            return_value=([encrypted_message], b""),
+        ),
+        patch.object(
+            device._security,
+            "aes_decrypt",
+            return_value=bytearray([0x01, 0x00, 0x00, 0x00]),
+        ),
+        patch.object(device, "process_message") as process_message_mock,
+    ):
+        assert device.parse_message(bytes([])) == MessageResult.SUCCESS
+
+    process_message_mock.assert_not_called()
+    assert device._appliance_query is True
+
+
+class MideaDeviceTest:
     """Midea device test case."""
 
     device: MideaDevice

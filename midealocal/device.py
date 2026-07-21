@@ -28,6 +28,7 @@ from .security import (
 
 MIN_AUTH_RESPONSE = 20
 MIN_MSG_LENGTH = 56
+MESSAGE_TYPE_INDEX = 9  # offset of the message-type byte in the 10-byte header
 MIN_V2_FACTUAL_MSG_LENGTH = 6
 RESPONSE_TIMEOUT = 12  # main loop socket recv timeout, 12 * 10s = 120s
 SOCKET_TIMEOUT = 10  # socket connection default timeout
@@ -470,7 +471,18 @@ class MideaDevice(threading.Thread):
 
     def pre_process_message(self, msg: bytearray) -> bool:
         """Pre process message."""
-        if msg[9] == MessageType.query_appliance:
+        if len(msg) <= MESSAGE_TYPE_INDEX:
+            # Some devices answer a query with a payload shorter than the
+            # header (observed: a 4-byte `01000000` from a 0xFA tower fan).
+            # Indexing blindly raises IndexError, which aborts the whole status
+            # parse and leaves every entity stuck at its last value.
+            _LOGGER.debug(
+                "[%s] Ignoring short message: %s",
+                self._device_id,
+                msg.hex(),
+            )
+            return False
+        if msg[MESSAGE_TYPE_INDEX] == MessageType.query_appliance:
             message = MessageApplianceResponse(msg)
             self._appliance_query = False
             _LOGGER.debug("[%s] Appliance query Received: %s", self._device_id, message)
