@@ -19,6 +19,7 @@ from .message import (
     MessageQuery05,
     MessageQuery06,
     MessageQuery07,
+    MessageQuery09,
     MessageQueryFF,
 )
 
@@ -39,6 +40,30 @@ class DeviceAttributes(StrEnum):
     life2 = "life2"
     life3 = "life3"
     child_lock = "child_lock"
+    # Soft water machine (water softener) attributes
+    velocity = "velocity"
+    soft_available = "soft_available"
+    left_salt = "left_salt"
+    leak_water_protection_value = "leak_water_protection_value"
+    remaining_days = "remaining_days"
+    water_hardness = "water_hardness"
+    flushing_days = "flushing_days"
+    timing_regeneration_hour = "timing_regeneration_hour"
+    timing_regeneration_min = "timing_regeneration_min"
+    regeneration_left_seconds = "regeneration_left_seconds"
+    use_days = "use_days"
+    salt_setting = "salt_setting"
+    soft_available_big = "soft_available_big"
+    water_consumption_big = "water_consumption_big"
+    water_consumption_average = "water_consumption_average"
+    soften = "soften"
+    cl_sterilization = "cl_sterilization"
+    leak_water_protection = "leak_water_protection"
+    leak_water = "leak_water"
+    water_way = "water_way"
+    rsj_stand_by = "rsj_stand_by"
+    regeneration = "regeneration"
+    error = "error"
 
 
 class MideaEDDevice(MideaDevice):
@@ -66,6 +91,30 @@ class MideaEDDevice(MideaDevice):
                 DeviceAttributes.life2: None,
                 DeviceAttributes.life3: None,
                 DeviceAttributes.child_lock: False,
+                # Soft water machine (water softener) attributes
+                DeviceAttributes.velocity: None,
+                DeviceAttributes.soft_available: None,
+                DeviceAttributes.left_salt: None,
+                DeviceAttributes.leak_water_protection_value: None,
+                DeviceAttributes.remaining_days: None,
+                DeviceAttributes.water_hardness: None,
+                DeviceAttributes.flushing_days: None,
+                DeviceAttributes.timing_regeneration_hour: None,
+                DeviceAttributes.timing_regeneration_min: None,
+                DeviceAttributes.regeneration_left_seconds: None,
+                DeviceAttributes.use_days: None,
+                DeviceAttributes.salt_setting: None,
+                DeviceAttributes.soft_available_big: None,
+                DeviceAttributes.water_consumption_big: None,
+                DeviceAttributes.water_consumption_average: None,
+                DeviceAttributes.soften: False,
+                DeviceAttributes.cl_sterilization: False,
+                DeviceAttributes.leak_water_protection: False,
+                DeviceAttributes.leak_water: False,
+                DeviceAttributes.water_way: False,
+                DeviceAttributes.rsj_stand_by: False,
+                DeviceAttributes.regeneration: False,
+                DeviceAttributes.error: None,
             },
         )
         self._device_class = ListTypes.X00
@@ -84,40 +133,40 @@ class MideaEDDevice(MideaDevice):
         | MessageQuery05
         | MessageQuery06
         | MessageQuery07
+        | MessageQuery09
         | MessageQueryFF
     ]:
         """Midea ED device build query."""
         # device can response for MessageQuery/MessageQuery01/MessageQuery03/etc
         # and only MessageQuery01 can return non-zero value.
-        if self.subtype in [309, 310, 311, 313, 314, 315, 317, 330]:
-            return [
-                MessageQuery04(self._message_protocol_version),
-            ]
-        if self.subtype in [316, 318, 319, 320]:
-            return [
-                MessageQuery05(self._message_protocol_version),
-            ]
-        if self.subtype in [290, 331, 332, 340]:
-            return [
-                MessageQuery06(self._message_protocol_version),
-            ]
-        if self.subtype in [288, 307, 329, 349]:
-            return [
-                MessageQuery07(self._message_protocol_version),
-            ]
-        # for https://github.com/wuwentao/midea_ac_lan/issues/571
-        # subtype 775 only can got non-zero value with MessageQuery01
-        # more subtypes should using MessageQuery01, temp keep it in else
-        # remove MessageQuery03 as it return 0
-        # subtype 775
-        if self.subtype in [775]:
-            return [
-                MessageQuery01(self._message_protocol_version),
-            ]
+        pv = self._message_protocol_version
+        # Build single-message query for known subtypes; fall back to
+        # the multi-message query set for unknown subtypes.
+        # Subtype -> query message class mapping (single-message subtypes)
+        subtype_query: dict[int, Any] = {
+            **dict.fromkeys(
+                [309, 310, 311, 313, 314, 315, 317, 330],
+                MessageQuery04,
+            ),
+            **dict.fromkeys([316, 318, 319, 320], MessageQuery05),
+            **dict.fromkeys([290, 331, 332, 340], MessageQuery06),
+            **dict.fromkeys([288, 307, 329, 349], MessageQuery07),
+            # Soft water machine (water softener) subtypes
+            # subtype 703: model 6360000A, confirmed from cloud API modelNumber
+            703: MessageQuery09,
+            # for https://github.com/wuwentao/midea_ac_lan/issues/571
+            # subtype 775 only can got non-zero value with MessageQuery01
+            # more subtypes should using MessageQuery01, temp keep it in else
+            # remove MessageQuery03 as it return 0
+            775: MessageQuery01,
+        }
+        query_cls = subtype_query.get(self.subtype)
+        if query_cls is not None:
+            return [query_cls(pv)]
         return [
-            MessageQuery(self._message_protocol_version),
-            MessageQuery01(self._message_protocol_version),
-            MessageQueryFF(self._message_protocol_version),
+            MessageQuery(pv),
+            MessageQuery01(pv),
+            MessageQueryFF(pv),
         ]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
@@ -137,12 +186,57 @@ class MideaEDDevice(MideaDevice):
         """Midea ED device set attribute."""
         message: MessageNewSet | MessageOldSet | None = None
         if self._use_new_set():
-            if attr in [DeviceAttributes.power, DeviceAttributes.child_lock]:
+            if attr in [
+                DeviceAttributes.power,
+                DeviceAttributes.child_lock,
+                DeviceAttributes.soften,
+                DeviceAttributes.cl_sterilization,
+                DeviceAttributes.leak_water_protection,
+                DeviceAttributes.water_way,
+                DeviceAttributes.regeneration,
+                DeviceAttributes.water_hardness,
+                DeviceAttributes.flushing_days,
+                DeviceAttributes.timing_regeneration_hour,
+                DeviceAttributes.timing_regeneration_min,
+                DeviceAttributes.salt_setting,
+                DeviceAttributes.leak_water_protection_value,
+            ]:
                 message = MessageNewSet(self._message_protocol_version)
         else:
             message = MessageOldSet(self._message_protocol_version)
         if message is not None:
+            self._attributes[attr] = value
             setattr(message, str(attr), value)
+            if attr == DeviceAttributes.leak_water_protection_value:
+                current_protection = self._attributes.get(
+                    DeviceAttributes.leak_water_protection,
+                )
+                if current_protection is not None:
+                    setattr(
+                        message,
+                        str(DeviceAttributes.leak_water_protection),
+                        current_protection,
+                    )
+            if attr == DeviceAttributes.timing_regeneration_hour:
+                current_min = self._attributes.get(
+                    DeviceAttributes.timing_regeneration_min,
+                )
+                if current_min is not None:
+                    setattr(
+                        message,
+                        str(DeviceAttributes.timing_regeneration_min),
+                        current_min,
+                    )
+            if attr == DeviceAttributes.timing_regeneration_min:
+                current_hour = self._attributes.get(
+                    DeviceAttributes.timing_regeneration_hour,
+                )
+                if current_hour is not None:
+                    setattr(
+                        message,
+                        str(DeviceAttributes.timing_regeneration_hour),
+                        current_hour,
+                    )
             self.build_send(message)
 
 

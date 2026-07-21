@@ -9,6 +9,7 @@ from midealocal.devices.ed.message import (
     EDMessageBody05,
     EDMessageBody06,
     EDMessageBody07,
+    EDMessageBody09,
     EDMessageBodyFF,
     MessageEDBase,
     MessageEDResponse,
@@ -20,6 +21,7 @@ from midealocal.devices.ed.message import (
     MessageQuery05,
     MessageQuery06,
     MessageQuery07,
+    MessageQuery09,
     MessageQueryFF,
 )
 from midealocal.message import ListTypes, MessageType
@@ -123,6 +125,25 @@ class TestMessageQuery07:
         assert query.body == expected_body
 
 
+class TestMessageQuery09:
+    """Test Message Query09 (soft water machine)."""
+
+    def test_query_body(self) -> None:
+        """Test query body."""
+        query = MessageQuery09(
+            protocol_version=ProtocolVersion.V1,
+        )
+        expected_body = bytearray([ListTypes.X09, 0x01])
+        assert query.body == expected_body
+
+    def test_default_body_type(self) -> None:
+        """Test default body_type is X09."""
+        query = MessageQuery09(
+            protocol_version=ProtocolVersion.V1,
+        )
+        assert query.body_type == ListTypes.X09
+
+
 class TestMessageQueryFF:
     """Test Message QueryFF."""
 
@@ -168,6 +189,67 @@ class TestMessageNewSet:
         new_set.power = None
         expected_body = bytearray([0x15, 0x01, 0x01, 0x01, 0x02, 0x01, 0x00, 0x00])
         assert new_set.body == expected_body
+
+    def test_message_newset_soften(self) -> None:
+        """Test MessageNewSet with soften (soft water machine)."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.soften = True
+        body = new_set.body
+        # Expected body layout:
+        #   [body_type=0x15, _body[0]=0x01, pack_count=0x01, packed_params...]
+        # pack(param=0x0108, value=0x01) yields bytes [0x08, 0x01, 0x01, 0x00, 0x00]
+        assert body[2] == 0x01  # pack_count
+        assert body[3:8] == bytearray([0x08, 0x01, 0x01, 0x00, 0x00])
+
+    def test_message_newset_water_hardness(self) -> None:
+        """Test MessageNewSet with water_hardness (addition param)."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.water_hardness = 100
+        body = new_set.body
+        # pack(param=0x0100, value=0x00, addition=100) -> [0x00, 0x01, 0x00, 0x64, 0x00]
+        assert body[2] == 0x01  # pack_count
+        assert body[3:8] == bytearray([0x00, 0x01, 0x00, 0x64, 0x00])
+
+    def test_message_newset_leak_water_protection_with_value(self) -> None:
+        """Test MessageNewSet with leak_water_protection + value (//10 division)."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.leak_water_protection = True
+        new_set.leak_water_protection_value = 400  # 400 / 10 = 40
+        body = new_set.body
+        # pack(param=0x010A, value=0x01, addition=40) -> [0x0A, 0x01, 0x01, 0x28, 0x00]
+        assert body[2] == 0x01  # pack_count
+        assert body[3:8] == bytearray([0x0A, 0x01, 0x01, 0x28, 0x00])
+
+    def test_message_newset_timing_regeneration(self) -> None:
+        """Test MessageNewSet with timing_regeneration hour/min.
+
+        Packed as (min<<8)|hour.
+        """
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.timing_regeneration_hour = 2
+        new_set.timing_regeneration_min = 30
+        body = new_set.body
+        # pack(param=0x0102, value=0x00, addition=(30<<8)|2 = 0x1E02)
+        # -> [0x02, 0x01, 0x00, 0x02, 0x1E]
+        assert body[2] == 0x01  # pack_count
+        assert body[3:8] == bytearray([0x02, 0x01, 0x00, 0x02, 0x1E])
+
+    def test_message_newset_timing_regeneration_min_only(self) -> None:
+        """Test minute-only timing_regeneration still packs the command."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.timing_regeneration_min = 30
+        body = new_set.body
+        assert body[2] == 0x01  # pack_count
+        assert body[3:8] == bytearray([0x02, 0x01, 0x00, 0x00, 0x1E])
+
+    def test_message_newset_water_way(self) -> None:
+        """Test MessageNewSet with water_way switch."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.water_way = True
+        body = new_set.body
+        # pack(param=0x0200, value=0x01) -> [0x00, 0x02, 0x01, 0x00, 0x00]
+        assert body[2] == 0x01  # pack_count
+        assert body[3:8] == bytearray([0x00, 0x02, 0x01, 0x00, 0x00])
 
 
 class TestEDMessageBody01:
@@ -320,6 +402,168 @@ class TestEDMessageBody07:
         assert message.water_consumption == 770
         assert hasattr(message, "child_lock")
         assert not message.child_lock
+
+
+class TestEDMessageBody09:
+    """Test EDMessageBody09 (soft water machine)."""
+
+    def _make_body(self, length: int = 60) -> bytearray:
+        """Create a body for EDMessageBody09 with given length."""
+        body = bytearray(length)
+        body[0] = 0x09  # body_type
+        return body
+
+    def test_body_type(self) -> None:
+        """Test body_type is 9."""
+        body = self._make_body()
+        msg = EDMessageBody09(body=body)
+        assert msg.body_type == 9
+
+    def test_velocity(self) -> None:
+        """Test velocity parsing from byte 2."""
+        body = self._make_body()
+        body[2] = 5
+        msg = EDMessageBody09(body=body)
+        assert msg.velocity == 5
+
+    def test_soft_available_little_endian(self) -> None:
+        """Test soft_available 2-byte little-endian parsing."""
+        body = self._make_body()
+        body[3] = 0x34
+        body[4] = 0x12
+        msg = EDMessageBody09(body=body)
+        assert msg.soft_available == 0x1234
+
+    def test_water_consumption_little_endian(self) -> None:
+        """Test water_consumption 2-byte little-endian parsing."""
+        body = self._make_body()
+        body[5] = 0x78
+        body[6] = 0x56
+        msg = EDMessageBody09(body=body)
+        assert msg.water_consumption == 0x5678
+
+    def test_left_salt(self) -> None:
+        """Test left_salt parsing."""
+        body = self._make_body()
+        body[7] = 53
+        msg = EDMessageBody09(body=body)
+        assert msg.left_salt == 53
+
+    def test_leak_water_protection_value_x10(self) -> None:
+        """Test leak_water_protection_value is multiplied by 10."""
+        body = self._make_body()
+        body[8] = 40  # 40 * 10 = 400
+        msg = EDMessageBody09(body=body)
+        assert msg.leak_water_protection_value == 400
+
+    def test_remaining_days_little_endian(self) -> None:
+        """Test remaining_days 2-byte little-endian."""
+        body = self._make_body()
+        body[9] = 0x10
+        body[10] = 0x00
+        msg = EDMessageBody09(body=body)
+        assert msg.remaining_days == 0x10
+
+    def test_water_hardness_little_endian(self) -> None:
+        """Test water_hardness 2-byte little-endian."""
+        body = self._make_body()
+        body[11] = 0x64
+        body[12] = 0x00
+        msg = EDMessageBody09(body=body)
+        assert msg.water_hardness == 100
+
+    def test_flushing_days(self) -> None:
+        """Test flushing_days single byte."""
+        body = self._make_body()
+        body[13] = 7
+        msg = EDMessageBody09(body=body)
+        assert msg.flushing_days == 7
+
+    def test_timing_regeneration_hour_min(self) -> None:
+        """Test timing_regeneration_hour and _min parsing."""
+        body = self._make_body()
+        body[14] = 2  # hour
+        body[15] = 30  # min
+        msg = EDMessageBody09(body=body)
+        assert msg.timing_regeneration_hour == 2
+        assert msg.timing_regeneration_min == 30
+
+    def test_regeneration_left_seconds_little_endian(self) -> None:
+        """Test regeneration_left_seconds 2-byte little-endian."""
+        body = self._make_body()
+        body[16] = 0x34
+        body[17] = 0x12
+        msg = EDMessageBody09(body=body)
+        assert msg.regeneration_left_seconds == 0x1234
+
+    def test_use_days_little_endian(self) -> None:
+        """Test use_days 2-byte little-endian."""
+        body = self._make_body()
+        body[18] = 0x78
+        body[19] = 0x56
+        msg = EDMessageBody09(body=body)
+        assert msg.use_days == 0x5678
+
+    def test_salt_setting(self) -> None:
+        """Test salt_setting single byte."""
+        body = self._make_body()
+        body[20] = 10
+        msg = EDMessageBody09(body=body)
+        assert msg.salt_setting == 10
+
+    def test_soft_available_big_4byte_little_endian(self) -> None:
+        """Test soft_available_big 4-byte little-endian."""
+        body = self._make_body(length=60)
+        body[21] = 0x78
+        body[22] = 0x56
+        body[23] = 0x34
+        body[24] = 0x12
+        msg = EDMessageBody09(body=body)
+        assert msg.soft_available_big == 0x12345678
+
+    def test_water_consumption_big_divided_by_100(self) -> None:
+        """Test water_consumption_big is divided by 100."""
+        body = self._make_body(length=60)
+        # 0x00017A82 = 96898, /100 = 968.98 (little-endian)
+        body[25] = 0x82
+        body[26] = 0x7A
+        body[27] = 0x01
+        body[28] = 0x00
+        msg = EDMessageBody09(body=body)
+        assert msg.water_consumption_big == 968.98
+
+    def test_water_consumption_average_little_endian(self) -> None:
+        """Test water_consumption_average 2-byte little-endian."""
+        body = self._make_body(length=60)
+        body[33] = 0x34
+        body[34] = 0x12
+        msg = EDMessageBody09(body=body)
+        assert msg.water_consumption_average == 0x1234
+
+    def test_switch_byte_flags(self) -> None:
+        """Test switch byte flags (byte 51)."""
+        body = self._make_body(length=60)
+        # Bit flags in switch byte (byte 51):
+        #   0x01=soften, 0x02=cl_sterilization, 0x04=leak_water_protection,
+        #   0x08=leak_water, 0x10=water_way, 0x20=rsj_stand_by, 0x80=regeneration
+        # 0x97 sets soften, cl_sterilization, leak_water_protection, water_way,
+        # and regeneration
+        body[51] = 0x97
+        msg = EDMessageBody09(body=body)
+        assert msg.soften is True
+        assert msg.cl_sterilization is True
+        assert msg.leak_water_protection is True
+        assert msg.leak_water is False
+        assert msg.water_way is True
+        assert msg.rsj_stand_by is False
+        assert msg.regeneration is True
+
+    def test_error_byte(self) -> None:
+        """Test error byte parsing."""
+        body = self._make_body(length=60)
+        body[52] = 1  # E1 error
+        msg = EDMessageBody09(body=body)
+        assert msg.error == 1
 
 
 class TestEDMessageBodyFF:
