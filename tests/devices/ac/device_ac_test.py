@@ -1,5 +1,6 @@
 """Test AC Device."""
 
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -17,6 +18,7 @@ from midealocal.devices.ac.message import (
     MessageSubProtocolQuery,
     PowerFormats,
 )
+from midealocal.message import ListTypes
 
 
 class TestMideaACDevice:
@@ -264,6 +266,40 @@ class TestMideaACDevice:
             assert message.power
             self.device._used_subprotocol = True
             self.device.set_target_temperature(22.5, 1)
+
+    def test_process_message_ignores_stale_c0_temperatures_after_new_protocol(
+        self,
+    ) -> None:
+        """After 0x7e temperatures are seen, stale C0 temperatures are ignored."""
+        new_protocol_msg = SimpleNamespace(
+            body_type=ListTypes.B5,
+            has_subtype8_temperature=True,
+            power=True,
+            target_temperature=27.0,
+            indoor_temperature=28.8,
+            outdoor_temperature=None,
+        )
+        stale_c0_msg = SimpleNamespace(
+            body_type=ListTypes.C0,
+            power=True,
+            target_temperature=16.0,
+            indoor_temperature=4.2,
+            outdoor_temperature=None,
+        )
+
+        with patch(
+            "midealocal.devices.ac.MessageACResponse",
+            side_effect=[new_protocol_msg, stale_c0_msg],
+        ):
+            first = self.device.process_message(b"")
+            assert first[DeviceAttributes.target_temperature.value] == 27.0
+            assert first[DeviceAttributes.indoor_temperature.value] == 28.8
+
+            second = self.device.process_message(b"")
+            assert DeviceAttributes.target_temperature.value not in second
+            assert DeviceAttributes.indoor_temperature.value not in second
+            assert self.device.attributes[DeviceAttributes.target_temperature] == 27.0
+            assert self.device.attributes[DeviceAttributes.indoor_temperature] == 28.8
 
     def test_power_saving_control(self) -> None:
         """Test power saving control and preset exclusivity."""
