@@ -29,7 +29,7 @@ class DeviceAttributes(StrEnum):
     link_to_ac = "link_to_ac"
     sleep_mode = "sleep_mode"
     eco_mode = "eco_mode"
-    aux_heating = "aux_heating'"
+    aux_heating = "aux_heating"
     powerful_purify = "powerful_purify"
     filter_cleaning_reminder = "filter_cleaning_reminder"
     filter_change_reminder = "filter_change_reminder"

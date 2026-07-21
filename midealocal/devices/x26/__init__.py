@@ -112,7 +112,10 @@ class Midea26Device(MideaDevice):
         message = Message26Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
-        self._fields = message.fields
+        # Message26Response only populates `.fields` for body_type 0x01;
+        # for any other body type, keep the last known fields instead of
+        # raising AttributeError.
+        self._fields = getattr(message, "fields", self._fields)
         for status in self._attributes:
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))

@@ -242,7 +242,7 @@ def _parse_discover_response(
             data.decode(encoding="utf-8", errors="replace"),
         )
         child = root.find("body/device")
-        if not child:
+        if child is None:
             raise ElementMissing
         m = child.attrib
         port, sn, device_type = (
@@ -317,7 +317,7 @@ def get_id_from_response(response: bytearray) -> int:
         xml = response[64:-16]
         root = ElementTree.fromstring(xml.decode(encoding="utf-8", errors="replace"))
         child = root.find("smartDevice")
-        if not child:
+        if child is None:
             raise ElementMissing
         m = child.attrib
         return int.from_bytes(bytearray.fromhex(m["devId"]), "little")
