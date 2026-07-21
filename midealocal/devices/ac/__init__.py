@@ -160,7 +160,6 @@ AC_MODEL_CAPABILITIES = {
             {
                 DeviceAttributes.compressor_frequency,
                 DeviceAttributes.compressor_target_frequency,
-                DeviceAttributes.power_factor,
                 DeviceAttributes.fresh_air_exhaust_power,
                 DeviceAttributes.fresh_air_exhaust_speed,
                 DeviceAttributes.fresh_air_exhaust_mode,

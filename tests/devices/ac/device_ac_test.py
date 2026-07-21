@@ -215,7 +215,6 @@ class TestMideaACDevice:
         ]
         assert DeviceAttributes.compressor_frequency in device.attributes
         assert DeviceAttributes.compressor_target_frequency in device.attributes
-        assert DeviceAttributes.power_factor in device.attributes
         assert DeviceAttributes.fresh_air_exhaust_power in device.attributes
         assert device.fresh_air_fan_speeds == [
             "off",
@@ -298,7 +297,6 @@ class TestMideaACDevice:
         outdoor_body[:6] = bytearray([0xBB, 0, 0, 0, 0, 0x30])
         outdoor_body[16] = 49
         outdoor_body[17] = 47
-        outdoor_body[38] = 93
 
         airflow = device.process_message(self._response(basic_body))
         frequency = device.process_message(self._response(outdoor_body))
@@ -311,7 +309,19 @@ class TestMideaACDevice:
         assert airflow[DeviceAttributes.fresh_air_exhaust_mode] == "off"
         assert frequency[DeviceAttributes.compressor_frequency] == 47
         assert frequency[DeviceAttributes.compressor_target_frequency] == 49
-        assert frequency[DeviceAttributes.power_factor] == 93
+
+    def test_process_bb_power_factor(self) -> None:
+        """Test the verified BB model publishes its reported power factor."""
+        device = self._make_device("23096725", 1)
+        outdoor_body = bytearray(40)
+        outdoor_body[:6] = bytearray([0xBB, 0, 0, 0, 0, 0x30])
+        outdoor_body[17] = 47
+        outdoor_body[38] = 93
+
+        status = device.process_message(self._response(outdoor_body))
+
+        assert status[DeviceAttributes.compressor_frequency] == 47
+        assert status[DeviceAttributes.power_factor] == 93
 
     def test_process_c1_frequency(self) -> None:
         """Test verified C1 model publishes compressor frequency."""

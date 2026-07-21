@@ -1181,7 +1181,6 @@ class TestMessageACResponse:
 
         assert response.compressor_target_frequency == 49
         assert response.compressor_frequency == 49
-        assert response.power_factor == 99
 
     @pytest.mark.parametrize("data_type", [0x10, 0x30])
     def test_short_bb_response_does_not_raise(
