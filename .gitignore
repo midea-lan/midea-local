@@ -111,6 +111,11 @@ ENV/
 env.bak/
 venv.bak/
 
+# Node.js (commitlint config for the commit-msg hook)
+node_modules/
+package.json
+package-lock.json
+
 # Spyder project settings
 .spyderproject
 .spyproject

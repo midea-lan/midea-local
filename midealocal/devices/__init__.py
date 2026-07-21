@@ -20,6 +20,7 @@ def device_selector(
     subtype: int,
     customize: str,
     mac: str | None = None,
+    serial_number: str | None = None,
 ) -> MideaDevice:
     """Select and load device."""
     try:
@@ -40,6 +41,7 @@ def device_selector(
             subtype=subtype,
             customize=customize,
             mac=mac,
+            serial_number=serial_number,
         )
     except ModuleNotFoundError:
         device = None

@@ -30,7 +30,7 @@ class TestMideaCDDevice:
         )
 
     # ------------------------------------------------------------------ #
-    # max_temperature echo for bodyBytes[21]                              #
+    # MessageSet 25-byte body / tsMax (issue #468)                        #
     # ------------------------------------------------------------------ #
 
     def test_preset_modes_excludes_vacation_from_selectable_modes(self) -> None:
@@ -44,18 +44,42 @@ class TestMideaCDDevice:
             self.device.set_attribute(DeviceAttributes.mode.value, "Vacation")
             mock_send.assert_not_called()
 
-    def test_set_power_uses_max_temperature_for_body_21_echo(self) -> None:
-        """SET message uses max_temperature as the internal body[21] echo."""
-        self.device._attributes[DeviceAttributes.max_temperature] = 65.0
+    def test_set_power_uses_ts_max_at_body_23(self) -> None:
+        """Plain SET uses device max_temperature as full[23] tsMax (#468)."""
+        self.device._attributes[DeviceAttributes.max_temperature] = 70.0
+        self.device._attributes[DeviceAttributes.vacation_temperature] = 65.0
 
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.power.value, True)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
-            assert msg.max_temperature == 65.0
+            assert msg.ts_max == 70
+            assert len(msg.body) == 25
+            assert msg.body[23] == 70  # tsMax
+            assert msg.body[21] == 0  # vacationTs left 0 on plain set
+            assert msg.body[4] != 0  # target present
 
-    def test_disable_vacation_uses_max_temperature_fallback(self) -> None:
-        """Disabling vacation sends max_temperature as the internal body[21] echo."""
+    def test_set_target_temperature_body_length_and_ts_max(self) -> None:
+        """set_temperature builds 25-byte body with non-zero tsMax."""
+        # RSJRAC07 uses the new (raw °C) Lua protocol — matches issue #468.
+        self.device.set_customize('{"lua_protocol": "new"}')
+        self.device._attributes[DeviceAttributes.max_temperature] = 65.0
+        self.device._attributes[DeviceAttributes.target_temperature] = 60.0
+        self.device._attributes[DeviceAttributes.power] = True
+        self.device._attributes[DeviceAttributes.mode] = "Standard"
+
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.target_temperature.value, 63.0)
+            mock_send.assert_called_once()
+            msg = mock_send.call_args[0][0]
+            assert msg.target_temperature == 63.0
+            assert msg.use_old_protocol is False
+            assert len(msg.body) == 25
+            assert msg.body[4] == 63
+            assert msg.body[23] == 65
+
+    def test_disable_vacation_sets_flag_and_mode(self) -> None:
+        """Disabling vacation clears flag and forces Energy-save mode."""
         self.device._attributes[DeviceAttributes.max_temperature] = 65.0
         self.device._attributes[DeviceAttributes.vacation_mode] = True
 
@@ -63,31 +87,33 @@ class TestMideaCDDevice:
             self.device.set_attribute(DeviceAttributes.vacation_mode.value, False)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
-            assert msg.max_temperature == 65.0
             assert msg.vacation_flag is False
             assert msg.vacation_days == 0
+            assert msg.mode == 0x01
+            assert msg.body[23] == 65
 
-    def test_set_vacation_days_uses_max_temperature_fallback(self) -> None:
-        """Setting vacation_days sends max_temperature as the internal body[21] echo."""
+    def test_set_vacation_days_encodes_days(self) -> None:
+        """vacation_days SET keeps tsMax and marks vacation flag."""
         self.device._attributes[DeviceAttributes.max_temperature] = 65.0
 
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.vacation_days.value, 30)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
-            assert msg.max_temperature == 65.0
             assert msg.vacation_flag is True
             assert msg.vacation_days == 30
+            assert msg.body[10] == 30  # vacation days low
+            assert msg.body[23] == 65
 
-    def test_max_temperature_fallback_zero_when_absent(self) -> None:
-        """max_temperature=None gives internal body[21] echo 0.0."""
+    def test_ts_max_falls_back_when_max_missing(self) -> None:
+        """Missing max_temperature still yields non-zero tsMax via MessageSet."""
         self.device._attributes[DeviceAttributes.max_temperature] = None
 
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.power.value, True)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
-            assert msg.max_temperature == 0.0
+            assert msg.body[23] != 0
 
     # ------------------------------------------------------------------ #
     # disinfect set_attribute                                              #

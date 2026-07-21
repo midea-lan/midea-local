@@ -5,7 +5,8 @@
     "context": "..",
     "args": {
       "APT_MIRROR_DOMAIN": "${localEnv:APT_MIRROR_DOMAIN:deb.debian.org}",
-      "PIP_MIRROR_DOMAIN": "${localEnv:PIP_MIRROR_DOMAIN:pypi.org}"
+      "UV_DEFAULT_INDEX": "${localEnv:UV_DEFAULT_INDEX:}",
+      "UV_PYTHON_INSTALL_MIRROR": "${localEnv:UV_PYTHON_INSTALL_MIRROR:}"
     }
   },
   "postCreateCommand": "scripts/setup.sh",
@@ -17,13 +18,14 @@
     "vscode": {
       "extensions": [
         "charliermarsh.ruff",
-        "ms-python.pylint",
+        "ms-python.python",
         "ms-python.vscode-pylance",
         "redhat.vscode-yaml",
         "esbenp.prettier-vscode",
         "GitHub.vscode-pull-request-github"
       ],
       "settings": {
+        "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
         "python.experiments.optOutFrom": ["pythonTestAdapter"],
         "python.terminal.activateEnvInCurrentTerminal": true,
         "python.testing.pytestArgs": ["--no-cov"],
