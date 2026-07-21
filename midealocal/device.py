@@ -86,6 +86,7 @@ class MideaDeviceInitKwargs(TypedDict):
     model: str
     subtype: int
     mac: NotRequired[str | None]
+    serial_number: NotRequired[str | None]
 
 
 class MideaDevice(threading.Thread):
@@ -127,6 +128,10 @@ class MideaDevice(threading.Thread):
         self._previous_heartbeat = 0.0
         self.name = self._device_name
         self.set_mac(kwargs.get("mac"))
+        # Discovery may report a fixed-width serial padded with NUL bytes or an
+        # empty ``apc_sn`` attribute; normalize these to None (mirrors set_mac).
+        sn = kwargs.get("serial_number")
+        self._serial_number = (sn.strip("\x00").strip() or None) if sn else None
 
     _fahrenheit_default: ClassVar[bool] = False
 
@@ -206,6 +211,11 @@ class MideaDevice(threading.Thread):
     def mac(self) -> str | None:
         """Device MAC address."""
         return self._mac
+
+    @property
+    def serial_number(self) -> str | None:
+        """Device serial number."""
+        return self._serial_number
 
     @staticmethod
     def fetch_v2_message(msg: bytes) -> tuple[list, bytes]:

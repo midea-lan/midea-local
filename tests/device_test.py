@@ -47,6 +47,7 @@ class TestMideaDevice:
             subtype=1,
             attributes={},
             mac="1234567890ab",
+            serial_number="test_serial",
         )
 
     def test_initial_attributes(self) -> None:
@@ -57,6 +58,8 @@ class TestMideaDevice:
         assert self.device.device_type == 0xAC
         assert self.device.model == "test_model"
         assert self.device.subtype == 1
+        assert self.device.mac == "1234567890ab"
+        assert self.device.serial_number == "test_serial"
 
     @pytest.mark.parametrize(
         ("exc", "result", "socket_is_none"),
@@ -392,3 +395,30 @@ class TestMideaDevice:
         assert self.device._mac == "1234567890ab"
         self.device.set_mac("9234567890ab")
         assert self.device._mac == "9234567890ab"
+
+    @staticmethod
+    def _make_device(serial_number: str | None) -> MideaDevice:
+        return MideaDevice(
+            name="Test Device",
+            device_id=1,
+            device_type=DeviceType.AC,
+            ip_address="192.168.1.100",
+            port=6444,
+            token=DEFAULT_KEYS[99]["token"],
+            key=DEFAULT_KEYS[99]["key"],
+            device_protocol=ProtocolVersion.V3,
+            model="test_model",
+            subtype=1,
+            attributes={},
+            mac="1234567890ab",
+            serial_number=serial_number,
+        )
+
+    def test_serial_number_normalization(self) -> None:
+        """Test serial_number normalization in __init__."""
+        assert self._make_device("another_serial").serial_number == "another_serial"
+        # Empty, NUL-padded or None serials normalize to None (mirrors mac).
+        assert self._make_device("").serial_number is None
+        assert self._make_device("\x00" * 32).serial_number is None
+        assert self._make_device(None).serial_number is None
+        assert self._make_device("ABC123\x00\x00").serial_number == "ABC123"

@@ -121,6 +121,7 @@ class MideaCLI:
                     subtype=0,
                     customize="",
                     mac=device["mac"],
+                    serial_number=device["sn"],
                 )
                 _LOGGER.debug("Opening socket for device.")
                 if dev.connect():
