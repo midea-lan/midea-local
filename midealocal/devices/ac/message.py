@@ -27,6 +27,7 @@ BB_FRESH_AIR_INTAKE_SPEED_INDEX = 46
 BB_FRESH_AIR_EXHAUST_SPEED_INDEX = 47
 BB_COMPRESSOR_TARGET_FREQUENCY_INDEX = 10
 BB_COMPRESSOR_FREQUENCY_INDEX = 11
+BB_POWER_FACTOR_INDEX = 32
 BB_BASIC_FAN_SPEED_INDEX = 7
 BB_INDOOR_TEMPERATURE_HIGH_INDEX = 8
 BB_INDOOR_HUMIDITY_INDEX = 30
@@ -59,6 +60,9 @@ XC1_SUBBODY_TYPE_41 = 0x41
 XC1_SUBBODY_TYPE_INDEX = 3
 XC1_HUMIDITY_INDEX = 4
 XC1_COMPRESSOR_TARGET_FREQUENCY_INDEX = 5
+XC1_COMPRESSOR_CURRENT_INDEX = 6
+XC1_OUTDOOR_UNIT_TOTAL_CURRENT_INDEX = 7
+XC1_OUTDOOR_UNIT_VOLTAGE_INDEX = 8
 XC1_CONSUMPTION_MIN_LENGTH = 19
 XC1_OPERATING_TIME_MIN_LENGTH = 19
 
@@ -1327,12 +1331,17 @@ class XC1MessageBody(MessageBody):
                 return
             # indoor humidity, it should be the same value as XBB/XA1 message
             self.indoor_humidity = body[4] if body[4] != 0 else None
-        elif (
-            group_type == XC1_SUBBODY_TYPE_41
-            and len(body) > XC1_COMPRESSOR_TARGET_FREQUENCY_INDEX
-        ):
+        elif group_type == XC1_SUBBODY_TYPE_41:
+            if len(body) <= XC1_COMPRESSOR_TARGET_FREQUENCY_INDEX:
+                return
             self.compressor_frequency = body[4]
             self.compressor_target_frequency = body[5]
+            if len(body) > XC1_OUTDOOR_UNIT_VOLTAGE_INDEX:
+                self.compressor_current = body[XC1_COMPRESSOR_CURRENT_INDEX]
+                self.outdoor_unit_total_current = body[
+                    XC1_OUTDOOR_UNIT_TOTAL_CURRENT_INDEX
+                ]
+                self.outdoor_unit_voltage = body[XC1_OUTDOOR_UNIT_VOLTAGE_INDEX]
 
     def _parse_group_one(self, body: bytearray) -> None:
         """Parse group 1 data: compressor and refrigerant circuit.
@@ -1503,6 +1512,8 @@ class XBBMessageBody(MessageBody):
                 self.compressor_frequency = subprotocol_body[
                     BB_COMPRESSOR_FREQUENCY_INDEX
                 ]
+            if subprotocol_body_len > BB_POWER_FACTOR_INDEX:
+                self.power_factor = subprotocol_body[BB_POWER_FACTOR_INDEX]
         elif data_type in (ListTypes.X13, ListTypes.X21):
             pass
 

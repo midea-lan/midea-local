@@ -1004,16 +1004,22 @@ class TestMessageACResponse:
     def test_message_query_c1_0x41(self) -> None:
         """Test Message parse query C1 compressor frequencies."""
         self.header[9] = 0x03
-        body = bytearray(7)
+        body = bytearray(10)
         body[0] = 0xC1
         body[3] = 0x41
         body[4] = 47
         body[5] = 49
+        body[6] = 3
+        body[7] = 4
+        body[8] = 229
 
         response = MessageACResponse(self.header + body)
 
         assert response.compressor_frequency == 47
         assert response.compressor_target_frequency == 49
+        assert response.compressor_current == 3
+        assert response.outdoor_unit_total_current == 4
+        assert response.outdoor_unit_voltage == 229
 
     def test_captured_c1_0x41_response(self) -> None:
         """Test a complete response captured from model 22390001 subtype 8."""
@@ -1026,6 +1032,9 @@ class TestMessageACResponse:
 
         assert response.compressor_frequency == 43
         assert response.compressor_target_frequency == 43
+        assert response.compressor_current == 4
+        assert response.outdoor_unit_total_current == 3
+        assert response.outdoor_unit_voltage == 214
 
     def test_short_c1_response_does_not_raise(self) -> None:
         """Test short C1 response ignores a missing group type."""
@@ -1139,12 +1148,14 @@ class TestMessageACResponse:
         body[12] = 0x80  # Outdoor temperature byte 2
         body[16] = 49  # Compressor target frequency
         body[17] = 47  # Compressor actual frequency
+        body[38] = 93  # Power factor
 
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == 328.02
         assert response.compressor_target_frequency == 49
         assert response.compressor_frequency == 47
+        assert response.power_factor == 93
 
         body[12] = 0x65  # Outdoor temperature byte 2
 
@@ -1170,6 +1181,7 @@ class TestMessageACResponse:
 
         assert response.compressor_target_frequency == 49
         assert response.compressor_frequency == 49
+        assert response.power_factor == 99
 
     @pytest.mark.parametrize("data_type", [0x10, 0x30])
     def test_short_bb_response_does_not_raise(

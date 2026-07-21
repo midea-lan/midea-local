@@ -90,6 +90,10 @@ class DeviceAttributes(StrEnum):
     fresh_air_exhaust_mode = "fresh_air_exhaust_mode"
     compressor_frequency = "compressor_frequency"
     compressor_target_frequency = "compressor_target_frequency"
+    compressor_current = "compressor_current"
+    outdoor_unit_total_current = "outdoor_unit_total_current"
+    outdoor_unit_voltage = "outdoor_unit_voltage"
+    power_factor = "power_factor"
     total_energy_consumption = "total_energy_consumption"
     total_operating_consumption = "total_operating_consumption"
     current_energy_consumption = "current_energy_consumption"
@@ -138,19 +142,25 @@ class ACModelCapabilities:
     attributes: frozenset[DeviceAttributes] = frozenset()
     uses_bb_protocol: bool = False
     has_bb_fresh_air: bool = False
-    has_c1_frequency: bool = False
+    has_c1_diagnostics: bool = False
 
 
 DEFAULT_AC_MODEL_CAPABILITIES = ACModelCapabilities()
 AC_MODEL_CAPABILITIES = {
     ("23096725", 1): ACModelCapabilities(
-        attributes=frozenset({DeviceAttributes.compressor_frequency}),
+        attributes=frozenset(
+            {
+                DeviceAttributes.compressor_frequency,
+                DeviceAttributes.power_factor,
+            },
+        ),
     ),
     ("23096633", 1): ACModelCapabilities(
         attributes=frozenset(
             {
                 DeviceAttributes.compressor_frequency,
                 DeviceAttributes.compressor_target_frequency,
+                DeviceAttributes.power_factor,
                 DeviceAttributes.fresh_air_exhaust_power,
                 DeviceAttributes.fresh_air_exhaust_speed,
                 DeviceAttributes.fresh_air_exhaust_mode,
@@ -164,18 +174,24 @@ AC_MODEL_CAPABILITIES = {
             {
                 DeviceAttributes.compressor_frequency,
                 DeviceAttributes.compressor_target_frequency,
+                DeviceAttributes.compressor_current,
+                DeviceAttributes.outdoor_unit_total_current,
+                DeviceAttributes.outdoor_unit_voltage,
             },
         ),
-        has_c1_frequency=True,
+        has_c1_diagnostics=True,
     ),
     ("22390003", 8): ACModelCapabilities(
         attributes=frozenset(
             {
                 DeviceAttributes.compressor_frequency,
                 DeviceAttributes.compressor_target_frequency,
+                DeviceAttributes.compressor_current,
+                DeviceAttributes.outdoor_unit_total_current,
+                DeviceAttributes.outdoor_unit_voltage,
             },
         ),
-        has_c1_frequency=True,
+        has_c1_diagnostics=True,
     ),
 }
 
@@ -393,7 +409,7 @@ class MideaACDevice(MideaDevice):
             MessageCapabilitiesQuery(self._message_protocol_version),
             MessageCapabilitiesAdditionalQuery(self._message_protocol_version),
         ]
-        if self._model_capabilities.has_c1_frequency:
+        if self._model_capabilities.has_c1_diagnostics:
             queries.append(MessageGroupOneQuery(self._message_protocol_version))
         return queries
 
@@ -771,6 +787,10 @@ class MideaACDevice(MideaDevice):
             DeviceAttributes.realtime_power,
             DeviceAttributes.compressor_frequency,
             DeviceAttributes.compressor_target_frequency,
+            DeviceAttributes.compressor_current,
+            DeviceAttributes.outdoor_unit_total_current,
+            DeviceAttributes.outdoor_unit_voltage,
+            DeviceAttributes.power_factor,
         ]:
             if attr == DeviceAttributes.prompt_tone:
                 self._attributes[DeviceAttributes.prompt_tone] = value

@@ -215,6 +215,7 @@ class TestMideaACDevice:
         ]
         assert DeviceAttributes.compressor_frequency in device.attributes
         assert DeviceAttributes.compressor_target_frequency in device.attributes
+        assert DeviceAttributes.power_factor in device.attributes
         assert DeviceAttributes.fresh_air_exhaust_power in device.attributes
         assert device.fresh_air_fan_speeds == [
             "off",
@@ -231,7 +232,7 @@ class TestMideaACDevice:
         ]
 
     @pytest.mark.parametrize("model", ["22390001", "22390003"])
-    def test_c1_frequency_model_adds_group_query(self, model: str) -> None:
+    def test_c1_diagnostics_model_adds_group_query(self, model: str) -> None:
         """Test verified multi-split models query C1 group 0x41."""
         device = self._make_device(model, 8)
 
@@ -240,6 +241,9 @@ class TestMideaACDevice:
         assert isinstance(queries[-1], MessageGroupOneQuery)
         assert DeviceAttributes.compressor_frequency in device.attributes
         assert DeviceAttributes.compressor_target_frequency in device.attributes
+        assert DeviceAttributes.compressor_current in device.attributes
+        assert DeviceAttributes.outdoor_unit_total_current in device.attributes
+        assert DeviceAttributes.outdoor_unit_voltage in device.attributes
 
     @pytest.mark.parametrize(
         ("model", "subtype"),
@@ -277,6 +281,7 @@ class TestMideaACDevice:
         actual_only = self._make_device("23096725", 1)
 
         assert DeviceAttributes.compressor_frequency in actual_only.attributes
+        assert DeviceAttributes.power_factor in actual_only.attributes
         assert (
             DeviceAttributes.compressor_target_frequency not in actual_only.attributes
         )
@@ -293,6 +298,7 @@ class TestMideaACDevice:
         outdoor_body[:6] = bytearray([0xBB, 0, 0, 0, 0, 0x30])
         outdoor_body[16] = 49
         outdoor_body[17] = 47
+        outdoor_body[38] = 93
 
         airflow = device.process_message(self._response(basic_body))
         frequency = device.process_message(self._response(outdoor_body))
@@ -305,16 +311,20 @@ class TestMideaACDevice:
         assert airflow[DeviceAttributes.fresh_air_exhaust_mode] == "off"
         assert frequency[DeviceAttributes.compressor_frequency] == 47
         assert frequency[DeviceAttributes.compressor_target_frequency] == 49
+        assert frequency[DeviceAttributes.power_factor] == 93
 
     def test_process_c1_frequency(self) -> None:
         """Test verified C1 model publishes compressor frequency."""
         device = self._make_device("22390001", 8)
-        body = bytearray([0xC1, 0, 0, 0x41, 47, 49, 0])
+        body = bytearray([0xC1, 0, 0, 0x41, 47, 49, 3, 4, 229, 0])
 
         status = device.process_message(self._response(body))
 
         assert status[DeviceAttributes.compressor_frequency] == 47
         assert status[DeviceAttributes.compressor_target_frequency] == 49
+        assert status[DeviceAttributes.compressor_current] == 3
+        assert status[DeviceAttributes.outdoor_unit_total_current] == 4
+        assert status[DeviceAttributes.outdoor_unit_voltage] == 229
 
     def test_bb_fresh_air_set_attribute(self) -> None:
         """Test BB model sends intake and exhaust single-control commands."""
