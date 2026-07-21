@@ -27,7 +27,7 @@ setuptools.setup(
     license="MIT",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/rokam/midea-local",
+    url="https://github.com/midea-lan/midea-local",
     install_requires=requires,
     packages=setuptools.find_packages(
         include=["midealocal", "midealocal.*"],

@@ -1,5 +1,8 @@
 [MAIN]
 
+# Minimum supported Python version (matches setup.py python_requires and CI floor).
+py-version=3.12
+
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use, and will cap the count on Windows to
 # avoid hangs.
