@@ -242,7 +242,7 @@ def _parse_discover_response(
             data.decode(encoding="utf-8", errors="replace"),
         )
         child = root.find("body/device")
-        if not child:
+        if child is None:
             raise ElementMissing
         m = child.attrib
         port, sn, device_type = (
@@ -281,33 +281,33 @@ def discover(
     if discover_type is None:
         discover_type = []
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    sock.settimeout(5)
     found_devices: dict[int, dict[str, Any]] = {}
     addrs = enum_all_broadcast() if ip_address is None else [ip_address]
 
     _LOGGER.debug("All addresses for broadcast: %s", addrs)
-    for addr in addrs:
-        try:
-            sock.sendto(BROADCAST_MSG, (addr, 6445))
-            sock.sendto(BROADCAST_MSG, (addr, 20086))
-        except OSError as e:
-            _LOGGER.warning("Can't access network %s: %s", addrs, repr(e))
-    while True:
-        try:
-            device_id, device = _parse_discover_response(sock, found_devices)
-            if device is None:
-                continue
-            if len(discover_type) == 0 or device.get("type") in discover_type:
-                found_devices[device_id] = device
-                _LOGGER.debug("Found a supported device: %s", device)
-            else:
-                _LOGGER.debug("Found a unsupported device: %s", device)
-        except TimeoutError:
-            break
-        except OSError:
-            _LOGGER.exception("Socket error")
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.settimeout(5)
+        for addr in addrs:
+            try:
+                sock.sendto(BROADCAST_MSG, (addr, 6445))
+                sock.sendto(BROADCAST_MSG, (addr, 20086))
+            except OSError as e:
+                _LOGGER.warning("Can't access network %s: %s", addrs, repr(e))
+        while True:
+            try:
+                device_id, device = _parse_discover_response(sock, found_devices)
+                if device is None:
+                    continue
+                if len(discover_type) == 0 or device.get("type") in discover_type:
+                    found_devices[device_id] = device
+                    _LOGGER.debug("Found a supported device: %s", device)
+                else:
+                    _LOGGER.debug("Found a unsupported device: %s", device)
+            except TimeoutError:
+                break
+            except OSError:
+                _LOGGER.exception("Socket error")
     return found_devices
 
 
@@ -317,7 +317,7 @@ def get_id_from_response(response: bytearray) -> int:
         xml = response[64:-16]
         root = ElementTree.fromstring(xml.decode(encoding="utf-8", errors="replace"))
         child = root.find("smartDevice")
-        if not child:
+        if child is None:
             raise ElementMissing
         m = child.attrib
         return int.from_bytes(bytearray.fromhex(m["devId"]), "little")

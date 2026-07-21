@@ -2,21 +2,21 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Install requirements.txt",
+      "label": "Install requirements",
       "type": "shell",
-      "command": "pip3 install --user -r requirements.txt",
+      "command": "uv pip install -r requirements-all.txt",
       "problemMatcher": []
     },
     {
       "label": "Build and install midealocal lib",
       "type": "shell",
-      "command": "rm -rf dist/ && python3 -m build && pip3 install dist/midea_local*.whl",
+      "command": "rm -rf dist/ && uv run python -m build && uv pip install dist/midea_local*.whl",
       "problemMatcher": []
     },
     {
       "label": "Generate code coverage report",
       "type": "shell",
-      "command": "python3 -m pytest --rootdir . --cov=midealocal --cov-report term-missing ./tests/",
+      "command": "uv run python -m pytest --rootdir . --cov=midealocal --cov-report term-missing ./tests/",
       "problemMatcher": []
     }
   ]
