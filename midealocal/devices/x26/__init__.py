@@ -3,10 +3,10 @@
 import logging
 import math
 from enum import StrEnum
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Unpack
 
-from midealocal.const import DeviceType, ProtocolVersion
-from midealocal.device import MideaDevice
+from midealocal.const import DeviceType
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import Message26Response, MessageQuery, MessageSet
 
@@ -53,29 +53,14 @@ class Midea26Device(MideaDevice):
 
     def __init__(
         self,
-        name: str,
-        device_id: int,
-        ip_address: str,
-        port: int,
-        token: str,
-        key: str,
-        device_protocol: ProtocolVersion,
-        model: str,
-        subtype: int,
+        *,
         customize: str,  # noqa: ARG002
+        **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea x26 device."""
         super().__init__(
-            name=name,
-            device_id=device_id,
             device_type=DeviceType.X26,
-            ip_address=ip_address,
-            port=port,
-            token=token,
-            key=key,
-            device_protocol=device_protocol,
-            model=model,
-            subtype=subtype,
+            **kwargs,
             attributes={
                 DeviceAttributes.main_light: False,
                 DeviceAttributes.night_light: False,
@@ -127,7 +112,10 @@ class Midea26Device(MideaDevice):
         message = Message26Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
-        self._fields = message.fields
+        # Message26Response only populates `.fields` for body_type 0x01;
+        # for any other body type, keep the last known fields instead of
+        # raising AttributeError.
+        self._fields = getattr(message, "fields", self._fields)
         for status in self._attributes:
             if hasattr(message, str(status)):
                 value = getattr(message, str(status))

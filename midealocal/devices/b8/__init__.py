@@ -2,10 +2,10 @@
 
 import logging
 from enum import IntEnum
-from typing import Any
+from typing import Any, Unpack
 
-from midealocal.const import DeviceType, ProtocolVersion
-from midealocal.device import MideaDevice
+from midealocal.const import DeviceType
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .const import (
     B8CleanMode,
@@ -37,29 +37,14 @@ class MideaB8Device(MideaDevice):
 
     def __init__(
         self,
-        name: str,
-        device_id: int,
-        ip_address: str,
-        port: int,
-        token: str,
-        key: str,
-        device_protocol: ProtocolVersion,
-        model: str,
-        subtype: int,
+        *,
         customize: str,  # noqa: ARG002
+        **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea B8 device."""
         super().__init__(
-            name=name,
-            device_id=device_id,
             device_type=DeviceType.B8,
-            ip_address=ip_address,
-            port=port,
-            token=token,
-            key=key,
-            device_protocol=device_protocol,
-            model=model,
-            subtype=subtype,
+            **kwargs,
             attributes={
                 B8DeviceAttributes.WORK_STATUS: B8WorkStatus.NONE.name.lower(),
                 B8DeviceAttributes.FUNCTION_TYPE: B8FunctionType.NONE.name.lower(),

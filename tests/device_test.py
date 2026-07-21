@@ -26,7 +26,7 @@ def test_fetch_v2_message() -> None:
     )
 
 
-class MideaDeviceTest:
+class TestMideaDevice:
     """Midea device test case."""
 
     device: MideaDevice
@@ -46,6 +46,7 @@ class MideaDeviceTest:
             model="test_model",
             subtype=1,
             attributes={},
+            mac="1234567890ab",
         )
 
     def test_initial_attributes(self) -> None:
@@ -77,8 +78,12 @@ class MideaDeviceTest:
         # Pre-populate buffer to confirm the failure path runs close_socket(),
         # which clears it (the old code only nulled _socket).
         self.device._buffer = b"stale"
-        with patch("socket.socket.connect", side_effect=exc):
-            assert self.device.connect() is result
+        with (
+            patch("socket.socket.connect", side_effect=exc),
+            patch.object(self.device, "authenticate"),
+            patch.object(self.device, "refresh_status"),
+        ):
+            assert self.device.connect(check_protocol=True) is result
             assert self.device.available is result
             assert (self.device._socket is None) is socket_is_none
             if socket_is_none:
@@ -202,7 +207,6 @@ class MideaDeviceTest:
             self.device._socket = socket_mock
             self.device.authenticate()
             self.device.send_message(bytes([0x0] * 20))
-            self.device._socket = None
             self.device._device_protocol_version = ProtocolVersion.V2
             self.device.send_message(bytes([0x0] * 20))
 
@@ -222,6 +226,7 @@ class MideaDeviceTest:
                     bytearray([0x0]),
                     bytearray([0x0]),
                     bytearray([0x0]),
+                    bytearray([0x0]),
                     TimeoutError(),
                 ],
             ),
@@ -232,6 +237,7 @@ class MideaDeviceTest:
                 side_effect=[
                     MessageResult.SUCCESS,
                     MessageResult.PADDING,
+                    MessageResult.SUCCESS,
                     MessageResult.ERROR,
                 ],
             ),
@@ -241,7 +247,7 @@ class MideaDeviceTest:
                 self.device.refresh_status(True)
 
             self.device._socket = socket_mock
-            with pytest.raises(OSError, match="Empty message received."):
+            with pytest.raises(OSError, match=r"Connection closed by peer\."):
                 self.device.refresh_status(True)
 
             self.device.refresh_status(True)  # SUCCESS
@@ -380,3 +386,9 @@ class MideaDeviceTest:
             self.device.set_ip_address("10.0.0.1")
             socket_mock.close.assert_called()
             assert self.device._ip_address == "10.0.0.1"
+
+    def test_set_mac(self) -> None:
+        """Test set mac."""
+        assert self.device._mac == "1234567890ab"
+        self.device.set_mac("9234567890ab")
+        assert self.device._mac == "9234567890ab"

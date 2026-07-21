@@ -3,10 +3,10 @@
 import json
 import logging
 from enum import IntEnum, StrEnum
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Unpack
 
-from midealocal.const import DeviceType, ProtocolVersion
-from midealocal.device import MideaDevice
+from midealocal.const import DeviceType
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import (
     MessageCDBase,
@@ -105,29 +105,14 @@ class MideaCDDevice(MideaDevice):
 
     def __init__(
         self,
-        name: str,
-        device_id: int,
-        ip_address: str,
-        port: int,
-        token: str,
-        key: str,
-        device_protocol: ProtocolVersion,
-        model: str,
-        subtype: int,
+        *,
         customize: str,
+        **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea CD device."""
         super().__init__(
-            name=name,
-            device_id=device_id,
             device_type=DeviceType.CD,
-            ip_address=ip_address,
-            port=port,
-            token=token,
-            key=key,
-            device_protocol=device_protocol,
-            model=model,
-            subtype=subtype,
+            **kwargs,
             attributes={
                 DeviceAttributes.power: False,
                 DeviceAttributes.mode: None,
@@ -430,15 +415,29 @@ class MideaCDDevice(MideaDevice):
                 self._attributes.get(DeviceAttributes.fahrenheit, False),
             )
 
-            # Maximum target temperature echo (bodyBytes[21]); this mirrors
-            # the Lua vacationTsValue byte but is exposed as max_temperature.
-            # max_temperature is the canonical exposed attribute for this value.
-            vac_temp = self._attributes.get(DeviceAttributes.max_temperature)
-            message.max_temperature = (
-                float(vac_temp)
-                if isinstance(vac_temp, int | float) and vac_temp > 0
-                else 0.0
-            )
+            # full[21] vacationTsValue — not max temperature.
+            # full[23] tsMax — must be the device max (issue #468); 0 clamps SP.
+            if attr in (
+                DeviceAttributes.target_temperature,
+                DeviceAttributes.mode,
+                DeviceAttributes.power,
+            ):
+                # Plain control: leave vacationTs at 0 (Lua default).
+                message.vacation_temperature = 0.0
+            else:
+                vac_temp = self._attributes.get(DeviceAttributes.vacation_temperature)
+                message.vacation_temperature = (
+                    float(vac_temp)
+                    if isinstance(vac_temp, int | float) and vac_temp > 0
+                    else 0.0
+                )
+            mx = self._attributes.get(DeviceAttributes.max_temperature)
+            try:
+                message.ts_max = (
+                    int(mx) if isinstance(mx, int | float) and mx > 0 else 0
+                )
+            except (TypeError, ValueError):
+                message.ts_max = 0
 
             # Ensure temperature is valid (not None/0)
             if isinstance(current_temp, int | float) and current_temp > 0:
@@ -526,9 +525,30 @@ class MideaCDDevice(MideaDevice):
                 message.vacation_flag = True
                 message.vacation_days = days
 
-            # persist fields for subsequent calls
-            self._fields = dict(message.fields)
+            # persist only safe fields; SET echoes often return openPTC=1 / bad Tr
+            self._fields = self._sanitize_set_fields(message.fields)
+            # Avoid replaying SET-echo junk into the next control frame
+            message.fields = dict(self._fields)
             self.build_send(message)
+
+    @staticmethod
+    def _sanitize_set_fields(fields: dict[Any, Any]) -> dict[Any, Any]:
+        """Strip SET-echo junk so it is not replayed into the next frame.
+
+        Drops openPTC/ptcTemp/byte8 (openPTC is forced 0 by MessageSet) and
+        removes an out-of-range trValue so only a valid Tr survives.
+        """
+        clean = dict(fields)
+        for key in ("openPTC", "ptcTemp", "byte8"):
+            clean.pop(key, None)
+        tr = clean.get("trValue")
+        try:
+            tr_i = int(tr) if tr is not None else 0
+        except (TypeError, ValueError):
+            tr_i = 0
+        if tr_i < MessageSet.TR_VALUE_MIN or tr_i > MessageSet.TR_VALUE_MAX:
+            clean.pop("trValue", None)
+        return {k: v for k, v in clean.items() if k == "trValue"}
 
     def set_customize(self, customize: str) -> None:
         """Midea CD device set customize."""

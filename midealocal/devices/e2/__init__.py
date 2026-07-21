@@ -4,10 +4,10 @@ import json
 import logging
 import math
 from enum import IntEnum, StrEnum
-from typing import Any
+from typing import Any, Unpack
 
-from midealocal.const import DeviceType, ProtocolVersion
-from midealocal.device import MideaDevice
+from midealocal.const import DeviceType
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import (
     MessageE2Response,
@@ -88,29 +88,14 @@ class MideaE2Device(MideaDevice):
 
     def __init__(
         self,
-        name: str,
-        device_id: int,
-        ip_address: str,
-        port: int,
-        token: str,
-        key: str,
-        device_protocol: ProtocolVersion,
-        model: str,
-        subtype: int,
+        *,
         customize: str,
+        **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea E2 device."""
         super().__init__(
-            name=name,
-            device_id=device_id,
             device_type=DeviceType.E2,
-            ip_address=ip_address,
-            port=port,
-            token=token,
-            key=key,
-            device_protocol=device_protocol,
-            model=model,
-            subtype=subtype,
+            **kwargs,
             attributes={
                 DeviceAttributes.power: False,
                 DeviceAttributes.heating: False,
@@ -180,10 +165,10 @@ class MideaE2Device(MideaDevice):
         if isinstance(value, str):
             return_value = OldProtocol(value)
             if return_value == OldProtocol.auto:
-                result = (
-                    self.subtype <= E2SubType.T82
-                    or self.subtype in [E2SubType.T85, E2SubType.T36353],
-                )
+                result = self.subtype <= E2SubType.T82 or self.subtype in [
+                    E2SubType.T85,
+                    E2SubType.T36353,
+                ]
                 return_value = OldProtocol.true if result else OldProtocol.false
         if isinstance(value, bool | int):
             return_value = OldProtocol.true if value else OldProtocol.false

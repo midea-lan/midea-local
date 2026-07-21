@@ -2,10 +2,10 @@
 
 import logging
 from enum import StrEnum
-from typing import ClassVar
+from typing import ClassVar, Unpack
 
-from midealocal.const import DeviceType, ProtocolVersion
-from midealocal.device import MideaDevice
+from midealocal.const import DeviceType
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import (
     MessageB0Response,
@@ -155,29 +155,14 @@ class MideaB0Device(MideaDevice):
 
     def __init__(
         self,
-        name: str,
-        device_id: int,
-        ip_address: str,
-        port: int,
-        token: str,
-        key: str,
-        device_protocol: ProtocolVersion,
-        model: str,
-        subtype: int,
+        *,
         customize: str,  # noqa: ARG002
+        **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize B0 Midea device."""
         super().__init__(
-            name=name,
-            device_id=device_id,
             device_type=DeviceType.B0,
-            ip_address=ip_address,
-            port=port,
-            token=token,
-            key=key,
-            device_protocol=device_protocol,
-            model=model,
-            subtype=subtype,
+            **kwargs,
             attributes={
                 DeviceAttributes.door: False,
                 DeviceAttributes.status: None,

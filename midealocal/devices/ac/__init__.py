@@ -3,10 +3,10 @@
 import json
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Unpack
 
-from midealocal.const import DeviceType, ProtocolVersion
-from midealocal.device import MideaDevice
+from midealocal.const import DeviceType
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import (
     MessageACResponse,
@@ -74,6 +74,7 @@ class DeviceAttributes(StrEnum):
     current_operating_time = "current_operating_time"
     wind_lr_angle = "wind_lr_angle"
     wind_ud_angle = "wind_ud_angle"
+    rate_select = "rate_select"
     out_silent = "out_silent"
     anion = "anion"
     sound = "sound"
@@ -112,31 +113,25 @@ class MideaACDevice(MideaDevice):
         100: "down",
     }
 
+    _rate_selects: ClassVar[dict[int, str]] = {
+        1: "1",
+        20: "20",
+        40: "40",
+        60: "60",
+        80: "80",
+        100: "100",
+    }
+
     def __init__(
         self,
-        name: str,
-        device_id: int,
-        ip_address: str,
-        port: int,
-        token: str,
-        key: str,
-        device_protocol: ProtocolVersion,
-        model: str,
-        subtype: int,
+        *,
         customize: str,
+        **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea AC device."""
         super().__init__(
-            name=name,
-            device_id=device_id,
             device_type=DeviceType.AC,
-            ip_address=ip_address,
-            port=port,
-            token=token,
-            key=key,
-            device_protocol=device_protocol,
-            model=model,
-            subtype=subtype,
+            **kwargs,
             attributes={
                 DeviceAttributes.prompt_tone: True,
                 DeviceAttributes.power: False,
@@ -179,6 +174,7 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.fresh_air_2: None,
                 DeviceAttributes.wind_lr_angle: None,
                 DeviceAttributes.wind_ud_angle: None,
+                DeviceAttributes.rate_select: None,
                 DeviceAttributes.out_silent: False,
                 DeviceAttributes.anion: False,
                 DeviceAttributes.sound: True,
@@ -195,6 +191,8 @@ class MideaACDevice(MideaDevice):
         self._bb_timer: bool = False
         # per-mode setpoint limits from the B5 capability, keyed by mode value
         self._temperature_limits: dict[int, tuple[float, float]] | None = None
+        # decoded B5 capability flags (accumulated across B5 frames)
+        self._capabilities: dict[str, bool] = {}
         # manual setpoint limits from customize (highest priority)
         self._customize_min_temperature: float | None = None
         self._customize_max_temperature: float | None = None
@@ -221,6 +219,11 @@ class MideaACDevice(MideaDevice):
     def wind_ud_angles(self) -> list[str]:
         """Midea AC device wind_ud_angle."""
         return list(MideaACDevice._wind_ud_angles.values())
+
+    @property
+    def rate_selects(self) -> list[str]:
+        """Midea AC device rate_select options."""
+        return list(MideaACDevice._rate_selects.values())
 
     def build_query(
         self,
@@ -251,7 +254,7 @@ class MideaACDevice(MideaDevice):
             MessageCapabilitiesAdditionalQuery(self._message_protocol_version),
         ]
 
-    def process_message(self, msg: bytes) -> dict[str, Any]:
+    def process_message(self, msg: bytes) -> dict[str, Any]:  # noqa: C901
         """Midea AC device process message."""
         message = MessageACResponse(bytearray(msg), self._power_analysis_method)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
@@ -274,6 +277,8 @@ class MideaACDevice(MideaDevice):
                 # wind_ud_angle
                 elif attr == DeviceAttributes.wind_ud_angle:
                     self._attributes[attr] = MideaACDevice._wind_ud_angles.get(value)
+                elif attr == DeviceAttributes.rate_select:
+                    self._attributes[attr] = MideaACDevice._rate_selects.get(value)
                 else:
                     self._attributes[attr] = value
                 new_status[str(attr)] = self._attributes[attr]
@@ -306,7 +311,18 @@ class MideaACDevice(MideaDevice):
             self._attributes[DeviceAttributes.self_clean] = active
             new_status[DeviceAttributes.self_clean.value] = active
         new_status.update(self._refresh_temperature_limits(message))
+        self._update_capabilities(message)
         return new_status
+
+    def _update_capabilities(self, message: MessageACResponse) -> None:
+        """Accumulate decoded B5 capability flags from a B5 response."""
+        if hasattr(message, "capabilities"):
+            self._capabilities.update(message.capabilities)
+
+    @property
+    def capabilities(self) -> dict[str, bool]:
+        """Return the decoded B5 capability flags reported by the device."""
+        return self._capabilities
 
     def _b5_temperature_limits(self) -> tuple[float, float] | None:
         """Return the B5 setpoint limits for the current mode, if any.
@@ -431,6 +447,12 @@ class MideaACDevice(MideaDevice):
                     ]
                 )
                 setattr(message, str(self._fresh_air_version), fresh_air)
+        # rate_select
+        elif attr == DeviceAttributes.rate_select:
+            message.rate_select = MideaACDevice.get_dict_key_by_value(
+                "_rate_selects",
+                str(value),
+            )
         # indirect_wind, screen_display_alternate, breezeless
         else:
             setattr(message, str(attr), value)
@@ -501,6 +523,7 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.fresh_air_mode,
                 DeviceAttributes.wind_lr_angle,
                 DeviceAttributes.wind_ud_angle,
+                DeviceAttributes.rate_select,
                 DeviceAttributes.out_silent,
                 DeviceAttributes.sound,
                 DeviceAttributes.self_clean,

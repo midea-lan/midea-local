@@ -3,6 +3,7 @@
 from midealocal.devices.cd.message import (
     CDGeneralMessageBody,
     CDSterilizeSetBody,
+    MessageSet,
     MessageSetSterilize,
 )
 
@@ -348,3 +349,71 @@ class TestMessageSetSterilize:
         assert msg.body[3] == 4
         msg.disinfection_temperature = None
         assert msg.body[3] == 4  # week restored
+
+
+class TestMessageSetRsjracBody:
+    """Regression tests for CD controlType=0x01 25-byte SET body (#468)."""
+
+    def test_body_length_is_25_with_type(self) -> None:
+        """MessageSet.body is body_type + 24-byte payload."""
+        msg = MessageSet(protocol_version=8)
+        msg.power = True
+        msg.mode = 0x02
+        msg.target_temperature = 63
+        msg.use_old_protocol = False
+        msg.ts_max = 65
+        body = msg.body
+        assert len(body) == 25
+        assert body[0] == 0x01
+        assert body[4] == 63
+        assert body[23] == 65
+        assert body[24] == 0
+
+    def test_ts_max_zero_falls_back(self) -> None:
+        """Zero tsMax falls back to the default (never emitted as 0)."""
+        msg = MessageSet(protocol_version=8)
+        msg.power = True
+        msg.mode = 0x01
+        msg.target_temperature = 60
+        msg.use_old_protocol = False
+        msg.ts_max = 0
+        assert msg.body[23] == MessageSet.DEFAULT_TS_MAX
+
+    def test_tr_clamped(self) -> None:
+        """Out-of-range Tr is clamped to default 5."""
+        msg = MessageSet(protocol_version=8)
+        msg.power = True
+        msg.mode = 0x01
+        msg.target_temperature = 60
+        msg.use_old_protocol = False
+        msg.ts_max = 65
+        msg.fields = {"trValue": 13}
+        assert msg.body[5] == 5
+
+    def test_open_ptc_forced_zero(self) -> None:
+        """Normal sets force openPTC=0 even if fields claim otherwise."""
+        msg = MessageSet(protocol_version=8)
+        msg.power = True
+        msg.mode = 0x02
+        msg.target_temperature = 63
+        msg.use_old_protocol = False
+        msg.ts_max = 65
+        msg.fields = {"openPTC": 1, "trValue": 5}
+        assert msg.body[6] == 0
+
+    def test_vacation_days_in_body(self) -> None:
+        """Vacation SET encodes days in full[9..10]."""
+        msg = MessageSet(protocol_version=8)
+        msg.power = True
+        msg.mode = 0x01
+        msg.target_temperature = 50
+        msg.use_old_protocol = False
+        msg.ts_max = 65
+        msg.vacation_flag = True
+        msg.vacation_days = 30
+        msg.vacation_temperature = 50
+        body = msg.body
+        assert body[9] == 0
+        assert body[10] == 30
+        assert body[21] == 50
+        assert body[23] == 65
