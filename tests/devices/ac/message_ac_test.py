@@ -991,6 +991,17 @@ class TestMessageACResponse:
         assert hasattr(response, "water_pump_running")
         assert response.water_pump_running is False
 
+    def test_message_query_c1_0x42_short_body(self) -> None:
+        """Test Message parse query C1 0x42 with a truncated body."""
+        self.header[9] = 0x03
+        body = bytearray(9)
+        body[0] = 0xC1  # Body type
+        body[3] = 0x42  # group 2
+
+        response = MessageACResponse(self.header + body)
+        assert not hasattr(response, "indoor_fan_speed")
+        assert not hasattr(response, "water_pump_running")
+
     def test_message_query_c1_0x47(self) -> None:
         """Test Message parse query C1 0x47, compressor power group data."""
         self.header[9] = 0x03
