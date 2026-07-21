@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: wagoid/commitlint-github-action@v6.2.1
         with:
-          configFile: .commitlint.config.mjs
+          configFile: commitlint.config.mjs
 
   build:
     name: Python Build and Test
