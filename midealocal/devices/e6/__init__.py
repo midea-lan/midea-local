@@ -20,8 +20,8 @@ class DeviceAttributes(StrEnum):
     heating_power = "heating_power"
     heating_working = "heating_working"
     bathing_working = "bathing_working"
-    min_temperature = "temperature_min"
-    max_temperature = "temperature_max"
+    temperature_min = "temperature_min"
+    temperature_max = "temperature_max"
     heating_temperature = "heating_temperature"
     bathing_temperature = "bathing_temperature"
     heating_leaving_temperature = "heating_leaving_temperature"
@@ -56,8 +56,8 @@ class MideaE6Device(MideaDevice):
                 DeviceAttributes.heating_power: True,
                 DeviceAttributes.heating_working: None,
                 DeviceAttributes.bathing_working: None,
-                DeviceAttributes.min_temperature: [30.0, 35.0],
-                DeviceAttributes.max_temperature: [80.0, 60.0],
+                DeviceAttributes.temperature_min: [30.0, 35.0],
+                DeviceAttributes.temperature_max: [80.0, 60.0],
                 DeviceAttributes.heating_temperature: 50.0,
                 DeviceAttributes.bathing_temperature: 40.0,
                 DeviceAttributes.heating_leaving_temperature: None,
