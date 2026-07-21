@@ -1,5 +1,6 @@
 """Test AC Device."""
 
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -20,6 +21,7 @@ from midealocal.devices.ac.message import (
     MessageSubProtocolQuery,
     PowerFormats,
 )
+from midealocal.message import ListTypes
 
 
 class TestMideaACDevice:
@@ -52,6 +54,7 @@ class TestMideaACDevice:
         assert self.device.attributes[DeviceAttributes.fan_speed] == 102
         assert not self.device.attributes[DeviceAttributes.swing_vertical]
         assert not self.device.attributes[DeviceAttributes.swing_horizontal]
+        assert not self.device.attributes[DeviceAttributes.power_saving]
         assert not self.device.attributes[DeviceAttributes.out_silent]
         assert self.device.temperature_step == 1
         assert self.device.fresh_air_fan_speeds is not None
@@ -135,6 +138,9 @@ class TestMideaACDevice:
             self.device.set_attribute(DeviceAttributes.comfort_mode.value, True)
             mock_build_send.assert_called()
 
+            self.device.set_attribute(DeviceAttributes.power_saving.value, True)
+            mock_build_send.assert_called()
+
             self.device.set_attribute(DeviceAttributes.fresh_air_mode.value, False)
             mock_build_send.assert_called()
 
@@ -183,6 +189,7 @@ class TestMideaACDevice:
             mock_message.dry = True
             mock_message.aux_heating = True
             mock_message.boost_mode = True
+            mock_message.power_saving = True
             mock_message.sleep_mode = True
             mock_message.frost_protect = True
             mock_message.comfort_mode = True
@@ -217,6 +224,7 @@ class TestMideaACDevice:
             assert result[DeviceAttributes.dry.value]
             assert result[DeviceAttributes.aux_heating.value]
             assert result[DeviceAttributes.boost_mode.value]
+            assert result[DeviceAttributes.power_saving.value]
             assert result[DeviceAttributes.sleep_mode.value]
             assert result[DeviceAttributes.frost_protect.value]
             assert result[DeviceAttributes.comfort_mode.value]
@@ -329,6 +337,69 @@ class TestMideaACDevice:
             assert message.power
             self.device._used_subprotocol = True
             self.device.set_target_temperature(22.5, 1)
+
+    def test_process_message_ignores_stale_c0_temperatures_after_new_protocol(
+        self,
+    ) -> None:
+        """After 0x7e temperatures are seen, stale C0 temperatures are ignored."""
+        new_protocol_msg = SimpleNamespace(
+            body_type=ListTypes.B5,
+            has_subtype8_temperature=True,
+            power=True,
+            target_temperature=27.0,
+            indoor_temperature=28.8,
+            outdoor_temperature=None,
+        )
+        stale_c0_msg = SimpleNamespace(
+            body_type=ListTypes.C0,
+            power=True,
+            target_temperature=16.0,
+            indoor_temperature=4.2,
+            outdoor_temperature=None,
+        )
+
+        with patch(
+            "midealocal.devices.ac.MessageACResponse",
+            side_effect=[new_protocol_msg, stale_c0_msg],
+        ):
+            first = self.device.process_message(b"")
+            assert first[DeviceAttributes.target_temperature.value] == 27.0
+            assert first[DeviceAttributes.indoor_temperature.value] == 28.8
+
+            second = self.device.process_message(b"")
+            assert DeviceAttributes.target_temperature.value not in second
+            assert DeviceAttributes.indoor_temperature.value not in second
+            assert self.device.attributes[DeviceAttributes.target_temperature] == 27.0
+            assert self.device.attributes[DeviceAttributes.indoor_temperature] == 28.8
+
+    def test_power_saving_control(self) -> None:
+        """Test power saving control and preset exclusivity."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.power_saving, True)
+            message = mock_build_send.call_args[0][0]
+            assert message.power_saving
+            assert not message.boost_mode
+            assert not message.sleep_mode
+            assert not message.eco_mode
+            assert not message.comfort_mode
+            assert not message.frost_protect
+
+            self.device._attributes[DeviceAttributes.power_saving] = True
+            self.device.set_target_temperature(22.5, None)
+            message = mock_build_send.call_args[0][0]
+            assert message.power_saving
+
+            self.device.set_attribute(DeviceAttributes.boost_mode, True)
+            message = mock_build_send.call_args[0][0]
+            assert message.boost_mode
+            assert not message.power_saving
+
+    def test_power_saving_unsupported_for_subprotocol(self) -> None:
+        """Test power saving is not sent with the unsupported subprotocol."""
+        self.device._used_subprotocol = True
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.power_saving, True)
+            mock_build_send.assert_not_called()
 
     def test_set_swing(self) -> None:
         """Test set swing."""
