@@ -110,8 +110,8 @@ class E6GeneralMessageBody(MessageBody):
         self.heating_working = (body[2] & 0x10) > 0
         self.bathing_working = (body[2] & 0x20) > 0
         self.heating_power = (body[4] & 0x01) > 0
-        self.min_temperature = [float(body[16]), float(body[11])]
-        self.max_temperature = [float(body[15]), float(body[10])]
+        self.temperature_min = [float(body[16]), float(body[11])]
+        self.temperature_max = [float(body[15]), float(body[10])]
         self.heating_temperature = float(body[17])
         self.bathing_temperature = float(body[12])
         self.heating_leaving_temperature = float(body[14])
