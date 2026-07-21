@@ -10,6 +10,9 @@ from midealocal.devices.ac import DeviceAttributes, MideaACDevice
 from midealocal.devices.ac.message import (
     MessageCapabilitiesAdditionalQuery,
     MessageCapabilitiesQuery,
+    MessageGroupOneQuery,
+    MessageGroupSevenQuery,
+    MessageGroupTwoQuery,
     MessageGroupZeroQuery,
     MessageHumidityQuery,
     MessageNewProtocolQuery,
@@ -158,14 +161,17 @@ class TestMideaACDevice:
 
         self.device._used_subprotocol = False
         queries = self.device.build_query()
-        assert len(queries) == 7
+        assert len(queries) == 10
         assert isinstance(queries[0], MessageQuery)
         assert isinstance(queries[1], MessageNewProtocolQuery)
         assert isinstance(queries[2], MessagePowerQuery)
         assert isinstance(queries[3], MessageHumidityQuery)
         assert isinstance(queries[4], MessageGroupZeroQuery)
-        assert isinstance(queries[5], MessageCapabilitiesQuery)
-        assert isinstance(queries[6], MessageCapabilitiesAdditionalQuery)
+        assert isinstance(queries[5], MessageGroupOneQuery)
+        assert isinstance(queries[6], MessageGroupTwoQuery)
+        assert isinstance(queries[7], MessageGroupSevenQuery)
+        assert isinstance(queries[8], MessageCapabilitiesQuery)
+        assert isinstance(queries[9], MessageCapabilitiesAdditionalQuery)
 
     def test_process_message(self) -> None:
         """Test process message."""
@@ -254,6 +260,71 @@ class TestMideaACDevice:
             result = self.device.process_message(b"")
             assert not result[DeviceAttributes.screen_display.value]
             assert not self.device.attributes[DeviceAttributes.screen_display]
+
+    def test_process_message_group_data(self) -> None:
+        """Test that group 1/2/7 data is stored in the device attributes."""
+        with patch("midealocal.devices.ac.MessageACResponse") as mock_message_response:
+            mock_message = mock_message_response.return_value
+            mock_message.used_subprotocol = False
+            mock_message.power = True
+            mock_message.fresh_air_power = False
+            mock_message.fresh_air_fan_speed = 0
+            mock_message.fresh_air_1 = None
+            mock_message.fresh_air_2 = None
+            mock_message.swing_vertical = False
+            # group 1
+            mock_message.compressor_frequency = 28
+            mock_message.target_compressor_frequency = 25
+            mock_message.compressor_current = 1
+            mock_message.compressor_voltage = 232
+            mock_message.indoor_coil_temperature = 20.5
+            mock_message.evaporator_temperature = 4.0
+            mock_message.condenser_temperature = 26.0
+            mock_message.outdoor_ambient_temperature = 19.0
+            mock_message.discharge_pipe_temperature = 36
+            # group 2
+            mock_message.indoor_fan_speed = 424
+            mock_message.target_indoor_fan_speed = 416
+            mock_message.water_pump_running = False
+            # group 7
+            mock_message.compressor_power = 269
+
+            result = self.device.process_message(b"")
+
+            assert result[DeviceAttributes.compressor_frequency.value] == 28
+            assert result[DeviceAttributes.target_compressor_frequency.value] == 25
+            assert result[DeviceAttributes.compressor_current.value] == 1
+            assert result[DeviceAttributes.compressor_voltage.value] == 232
+            assert result[DeviceAttributes.indoor_coil_temperature.value] == 20.5
+            assert result[DeviceAttributes.evaporator_temperature.value] == 4.0
+            assert result[DeviceAttributes.condenser_temperature.value] == 26.0
+            assert result[DeviceAttributes.outdoor_ambient_temperature.value] == 19.0
+            assert result[DeviceAttributes.discharge_pipe_temperature.value] == 36
+            assert result[DeviceAttributes.indoor_fan_speed.value] == 424
+            assert result[DeviceAttributes.target_indoor_fan_speed.value] == 416
+            assert result[DeviceAttributes.water_pump_running.value] is False
+            assert result[DeviceAttributes.compressor_power.value] == 269
+
+    def test_set_attribute_group_data_is_read_only(self) -> None:
+        """Test that group data attributes never send a set message."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            for attr in [
+                DeviceAttributes.compressor_frequency,
+                DeviceAttributes.target_compressor_frequency,
+                DeviceAttributes.compressor_current,
+                DeviceAttributes.compressor_voltage,
+                DeviceAttributes.indoor_coil_temperature,
+                DeviceAttributes.evaporator_temperature,
+                DeviceAttributes.condenser_temperature,
+                DeviceAttributes.outdoor_ambient_temperature,
+                DeviceAttributes.discharge_pipe_temperature,
+                DeviceAttributes.indoor_fan_speed,
+                DeviceAttributes.target_indoor_fan_speed,
+                DeviceAttributes.water_pump_running,
+                DeviceAttributes.compressor_power,
+            ]:
+                self.device.set_attribute(attr.value, 1)
+            mock_build_send.assert_not_called()
 
     def test_set_target_temperature(self) -> None:
         """Test set target temperature."""
