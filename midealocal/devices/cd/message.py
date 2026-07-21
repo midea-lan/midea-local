@@ -448,7 +448,10 @@ class CDGeneralMessageBody(MessageBody):
         ):
             self.mode = 0x04
         # hotWater
-        self.water_level = body[34] if len(body) > OLD_BODY_LENGTH else None
+        # Gate on the actual index read (body[34]) rather than
+        # OLD_BODY_LENGTH (29), which previously allowed bodies of length
+        # 30-34 through and raised IndexError.
+        self.water_level = body[34] if len(body) > 34 else None  # noqa: PLR2004
         # vacationMode - bit 0 of messageBytes[35] (body[35])
         self.vacation_mode = False
         self.vacation_days = 0
