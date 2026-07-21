@@ -7,6 +7,7 @@ from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.message import ListTypes
 
 from .message import (
     MessageACResponse,
@@ -43,6 +44,7 @@ class DeviceAttributes(StrEnum):
     swing_vertical = "swing_vertical"
     swing_horizontal = "swing_horizontal"
     boost_mode = "boost_mode"
+    power_saving = "power_saving"
     smart_eye = "smart_eye"
     dry = "dry"
     eco_mode = "eco_mode"
@@ -81,6 +83,13 @@ class DeviceAttributes(StrEnum):
     self_clean = "self_clean"
     pmv = "pmv"
     error_code = "error_code"
+
+
+STALE_C0_TEMPERATURE_ATTRIBUTES = (
+    DeviceAttributes.target_temperature,
+    DeviceAttributes.indoor_temperature,
+    DeviceAttributes.outdoor_temperature,
+)
 
 
 class MideaACDevice(MideaDevice):
@@ -146,6 +155,7 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.dry: False,
                 DeviceAttributes.aux_heating: False,
                 DeviceAttributes.boost_mode: False,
+                DeviceAttributes.power_saving: False,
                 DeviceAttributes.sleep_mode: False,
                 DeviceAttributes.frost_protect: False,
                 DeviceAttributes.comfort_mode: False,
@@ -198,6 +208,9 @@ class MideaACDevice(MideaDevice):
         self._customize_max_temperature: float | None = None
         self._power_analysis_method: int = 1
         self._default_power_analysis_method: int = 1
+        # Once 0x7e-derived temperatures are seen, ignore stale C0 temperature
+        # fields to avoid brief UI flicker caused by query ordering.
+        self._prefer_new_protocol_temperature: bool = False
         self.set_customize(customize)
 
     @property
@@ -260,6 +273,15 @@ class MideaACDevice(MideaDevice):
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         has_fresh_air = False
+        body_type = getattr(message, "body_type", None)
+
+        if getattr(message, "has_subtype8_temperature", False):
+            self._prefer_new_protocol_temperature = True
+
+        is_stale_c0_temperature = (
+            self._prefer_new_protocol_temperature and body_type == ListTypes.C0
+        )
+
         if hasattr(message, "used_subprotocol"):
             self._used_subprotocol = True
             if hasattr(message, "sn8_flag"):
@@ -268,6 +290,8 @@ class MideaACDevice(MideaDevice):
                 self._bb_timer = message.timer
         for attr in self._attributes:
             if hasattr(message, str(attr)):
+                if is_stale_c0_temperature and attr in STALE_C0_TEMPERATURE_ATTRIBUTES:
+                    continue
                 value = getattr(message, str(attr))
                 if attr == DeviceAttributes.fresh_air_power:
                     has_fresh_air = True
@@ -372,6 +396,7 @@ class MideaACDevice(MideaDevice):
         message.swing_vertical = self._attributes[DeviceAttributes.swing_vertical]
         message.swing_horizontal = self._attributes[DeviceAttributes.swing_horizontal]
         message.boost_mode = self._attributes[DeviceAttributes.boost_mode]
+        message.power_saving = self._attributes[DeviceAttributes.power_saving]
         message.smart_eye = self._attributes[DeviceAttributes.smart_eye]
         message.dry = self._attributes[DeviceAttributes.dry]
         message.eco_mode = self._attributes[DeviceAttributes.eco_mode]
@@ -529,16 +554,24 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.self_clean,
             ]:
                 message = self.make_newprotocol_message_set(attr=attr, value=value)
+            elif attr == DeviceAttributes.power_saving and self._used_subprotocol:
+                _LOGGER.debug(
+                    "[%s] Power saving is unsupported by the AC subprotocol",
+                    self.device_id,
+                )
             elif attr in self._attributes:
                 message = self.make_message_uniq_set()
                 if attr in [
                     DeviceAttributes.boost_mode,
+                    DeviceAttributes.power_saving,
                     DeviceAttributes.sleep_mode,
                     DeviceAttributes.frost_protect,
                     DeviceAttributes.comfort_mode,
                     DeviceAttributes.eco_mode,
                 ]:
                     message.boost_mode = False
+                    if isinstance(message, MessageGeneralSet):
+                        message.power_saving = False
                     message.sleep_mode = False
                     message.eco_mode = False
                     if not isinstance(message, MessageSubProtocolSet):

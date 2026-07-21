@@ -394,6 +394,7 @@ class TestMessageGeneralSet:
         msg.swing_vertical = True
         msg.swing_horizontal = True
         msg.boost_mode = True
+        msg.power_saving = True
         msg.smart_eye = True
         msg.dry = True
         msg.aux_heating = True
@@ -409,7 +410,7 @@ class TestMessageGeneralSet:
         )
         expected_body[3] = 92 & 0x7F
         expected_body[7] = 0x30 | 0x0C | 0x03
-        expected_body[8] = 0x20
+        expected_body[8] = 0x20 | 0x08
         expected_body[9] = 0x01 | 0x04 | 0x08 | 0x80
         expected_body[10] = 0x04 | 0x01 | 0x02
         expected_body[17] = 0x40
@@ -447,7 +448,7 @@ class TestMessageACResponse:
         body[2] = 0b11100000  # Mode
         body[3] = 0b01111111  # Fan speed
         body[7] = 0b00001111  # Swing vertical and horizontal
-        body[8] = 0b00100000  # Boost mode
+        body[8] = 0b00101000  # Boost mode, power saving
         body[9] = 0b00011101  # Smart eye, dry, aux heating, eco mode
         body[10] = 0b01000011  # Sleep mode, natural wind
         body[13] = 0b00100000  # Full dust
@@ -464,6 +465,8 @@ class TestMessageACResponse:
         assert hasattr(response, "swing_vertical")
         assert hasattr(response, "swing_horizontal")
         assert hasattr(response, "boost_mode")
+        assert hasattr(response, "power_saving")
+        assert response.power_saving is True
         assert hasattr(response, "smart_eye")
         assert hasattr(response, "dry")
         assert hasattr(response, "aux_heating")
@@ -658,7 +661,7 @@ class TestMessageACResponse:
         body[2] = 0b10101110  # Mode (5), target temperature (14), 0.5 increment
         body[3] = 0b01111111  # Fan speed
         body[7] = 0b00001111  # Swing vertical and horizontal
-        body[8] = 0b01100000  # Boost mode, smart eye
+        body[8] = 0b01101000  # Boost mode, smart eye, power saving
         body[9] = 0b00011110  # Natural wind, dry, eco mode, aux heating
         body[10] = 0b01000111  # Sleep mode, temp Fahrenheit, boost mode (alternative)
         body[11] = 0x64  # Indoor temperature byte
@@ -680,6 +683,8 @@ class TestMessageACResponse:
         assert hasattr(response, "swing_vertical")
         assert hasattr(response, "swing_horizontal")
         assert hasattr(response, "boost_mode")
+        assert hasattr(response, "power_saving")
+        assert response.power_saving is True
         assert hasattr(response, "smart_eye")
         assert hasattr(response, "natural_wind")
         assert hasattr(response, "dry")
@@ -1031,6 +1036,163 @@ class TestMessageACResponse:
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "sound")
         assert response.sound is False
+
+    def test_message_b5_notify2_0x7e_temperature_parse(self) -> None:
+        """Test 0x7e tag parsing for subtype-8 style setpoint and indoor temp."""
+        self.header[9] = 0x05
+        body = bytearray(62)
+        body[0] = 0xB5
+        body[1] = 0x01
+        body[2] = 0x7E
+        body[3] = 0x00
+        body[4] = 0x38
+
+        # 0x7e payload (56 bytes)
+        payload = bytearray(
+            [
+                0xA0,
+                0x1D,  # (_t[1] & 0x3F)/2 + 11.5 -> 26.0
+                0x41,
+                0x66,
+                0x7F,
+                0x7F,
+                0x00,
+                0x00,
+                0x00,
+                0x04,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x78,
+                0x00,
+                0x4C,
+                0x00,
+                0xC0,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x64,
+                0x00,
+                0x64,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x6A,
+                0x08,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x05,
+                0x00,
+            ],
+        )
+        body[5 : 5 + len(payload)] = payload
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "has_subtype8_temperature")
+        assert response.has_subtype8_temperature is True
+        assert hasattr(response, "target_temperature")
+        assert response.target_temperature == 26.0
+        assert hasattr(response, "indoor_temperature")
+        assert response.indoor_temperature == 28.8
+        assert hasattr(response, "outdoor_temperature")
+        assert response.outdoor_temperature is None
+
+    def test_message_b5_notify2_0x7e_temperature_parse_fallback(self) -> None:
+        """Fallback to legacy byte-3 mapping when byte-1 decoding is out of range."""
+        self.header[9] = 0x05
+        body = bytearray(62)
+        body[0] = 0xB5
+        body[1] = 0x01
+        body[2] = 0x7E
+        body[3] = 0x00
+        body[4] = 0x38
+
+        payload = bytearray(
+            [
+                0xA0,
+                0x7F,  # byte-1 mapping would exceed sane range (>40)
+                0x41,
+                0x64,  # fallback byte-3 mapping -> (100 - 50) / 2 = 25.0
+                0x7F,
+                0x7F,
+                0x00,
+                0x00,
+                0x00,
+                0x04,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x78,
+                0x00,
+                0x4C,
+                0x00,
+                0xC0,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x64,
+                0x00,
+                0x64,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x6A,
+                0x08,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x05,
+                0x00,
+            ],
+        )
+        body[5 : 5 + len(payload)] = payload
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "target_temperature")
+        assert response.target_temperature == 25.0
 
 
 class TestMessageNewProtocolSetNewFeatures:
