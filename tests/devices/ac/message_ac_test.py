@@ -1256,7 +1256,6 @@ class TestMessageACResponse:
         body[12] = 0x80  # Outdoor temperature byte 2
         body[16] = 49  # Compressor target frequency
         body[17] = 47  # Compressor actual frequency
-        body[38] = 93  # Power factor
 
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "outdoor_temperature")
@@ -1265,8 +1264,6 @@ class TestMessageACResponse:
         assert response.target_compressor_frequency == 49
         assert hasattr(response, "compressor_frequency")
         assert response.compressor_frequency == 47
-        assert hasattr(response, "power_factor")
-        assert response.power_factor == 93
 
         body[12] = 0x65  # Outdoor temperature byte 2
 

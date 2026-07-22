@@ -63,7 +63,6 @@ class TestMideaACDevice:
         assert self.device.temperature_step == 1
         assert self.device.fresh_air_fan_speeds is not None
         assert DeviceAttributes.compressor_frequency in self.device.attributes
-        assert DeviceAttributes.power_factor not in self.device.attributes
         assert not self.device.fresh_air_exhaust_fan_speeds
 
     @staticmethod
@@ -241,7 +240,6 @@ class TestMideaACDevice:
         """Test diagnostics and commands require an exact model/subtype pair."""
         device = self._make_device(model, subtype)
 
-        assert DeviceAttributes.power_factor not in device.attributes
         assert DeviceAttributes.fresh_air_exhaust_power not in device.attributes
         queries = device.build_query()
         assert isinstance(queries[0], MessageQuery)
@@ -266,7 +264,6 @@ class TestMideaACDevice:
         actual_only = self._make_device("23096725", 1)
 
         assert DeviceAttributes.compressor_frequency in actual_only.attributes
-        assert DeviceAttributes.power_factor in actual_only.attributes
         assert DeviceAttributes.target_compressor_frequency in actual_only.attributes
 
     def test_process_bb_airflow_and_frequency(self) -> None:
@@ -293,19 +290,6 @@ class TestMideaACDevice:
         assert airflow[DeviceAttributes.fresh_air_exhaust_mode] == "off"
         assert frequency[DeviceAttributes.compressor_frequency] == 47
         assert frequency[DeviceAttributes.target_compressor_frequency] == 49
-
-    def test_process_bb_power_factor(self) -> None:
-        """Test the verified BB model publishes its reported power factor."""
-        device = self._make_device("23096725", 1)
-        outdoor_body = bytearray(40)
-        outdoor_body[:6] = bytearray([0xBB, 0, 0, 0, 0, 0x30])
-        outdoor_body[17] = 47
-        outdoor_body[38] = 93
-
-        status = device.process_message(self._response(outdoor_body))
-
-        assert status[DeviceAttributes.compressor_frequency] == 47
-        assert status[DeviceAttributes.power_factor] == 93
 
     def test_process_c1_frequency(self) -> None:
         """Test verified C1 model publishes compressor frequency."""

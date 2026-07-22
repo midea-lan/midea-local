@@ -27,8 +27,6 @@ BB_FRESH_AIR_INTAKE_SPEED_INDEX = 46
 BB_FRESH_AIR_EXHAUST_SPEED_INDEX = 47
 BB_COMPRESSOR_TARGET_FREQUENCY_INDEX = 10
 BB_COMPRESSOR_FREQUENCY_INDEX = 11
-# Device-level capabilities expose this offset only for the verified model.
-BB_POWER_FACTOR_INDEX = 32
 BB_BASIC_FAN_SPEED_INDEX = 7
 BB_INDOOR_TEMPERATURE_HIGH_INDEX = 8
 BB_INDOOR_HUMIDITY_INDEX = 30
@@ -1526,8 +1524,6 @@ class XBBMessageBody(MessageBody):
                 self.compressor_frequency = subprotocol_body[
                     BB_COMPRESSOR_FREQUENCY_INDEX
                 ]
-            if subprotocol_body_len > BB_POWER_FACTOR_INDEX:
-                self.power_factor = subprotocol_body[BB_POWER_FACTOR_INDEX]
         elif data_type in (ListTypes.X13, ListTypes.X21):
             pass
 

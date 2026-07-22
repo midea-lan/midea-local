@@ -92,7 +92,6 @@ class DeviceAttributes(StrEnum):
     fresh_air_exhaust_power = "fresh_air_exhaust_power"
     fresh_air_exhaust_speed = "fresh_air_exhaust_speed"
     fresh_air_exhaust_mode = "fresh_air_exhaust_mode"
-    power_factor = "power_factor"
     total_energy_consumption = "total_energy_consumption"
     total_operating_consumption = "total_operating_consumption"
     current_energy_consumption = "current_energy_consumption"
@@ -147,13 +146,6 @@ DEFAULT_AC_MODEL_CAPABILITIES = ACModelCapabilities()
 # exact model/subtype pairs. Keep unrelated devices hidden from attributes and
 # commands whose bytes may have a different meaning on other firmware.
 AC_MODEL_CAPABILITIES = {
-    ("23096725", 1): ACModelCapabilities(
-        attributes=frozenset(
-            {
-                DeviceAttributes.power_factor,
-            },
-        ),
-    ),
     ("23096633", 1): ACModelCapabilities(
         attributes=frozenset(
             {
@@ -786,7 +778,6 @@ class MideaACDevice(MideaDevice):
             DeviceAttributes.target_indoor_fan_speed,
             DeviceAttributes.water_pump_running,
             DeviceAttributes.compressor_power,
-            DeviceAttributes.power_factor,
         ]:
             if attr == DeviceAttributes.prompt_tone:
                 self._attributes[DeviceAttributes.prompt_tone] = value
