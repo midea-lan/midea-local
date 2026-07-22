@@ -1,5 +1,41 @@
 # Changelog
 
+## [6.11.0](https://github.com/midea-lan/midea-local/compare/v6.10.0...v6.11.0) (2026-07-22)
+
+
+### Features
+
+* **ac:** add group data ([#507](https://github.com/midea-lan/midea-local/issues/507)) ([c8a5a27](https://github.com/midea-lan/midea-local/commit/c8a5a2735a7284ac9eeab7d4e102a8cc1fc03000))
+* **ac:** add model-specific airflow and diagnostics ([#502](https://github.com/midea-lan/midea-local/issues/502)) ([c8d1e33](https://github.com/midea-lan/midea-local/commit/c8d1e33eeb54c3d24caeb8ba9caad735776b52d9))
+* **ac:** add power saving mode ([#500](https://github.com/midea-lan/midea-local/issues/500)) ([c40b39a](https://github.com/midea-lan/midea-local/commit/c40b39acacd2e8ab129126c6818111ae8f14f81a))
+* **ac:** add rate_select (power rate limit / Gen mode) support ([#469](https://github.com/midea-lan/midea-local/issues/469)) ([3e4322d](https://github.com/midea-lan/midea-local/commit/3e4322dfd49ff9cc870e088b4b7a73b467367fdf))
+* **e1:** add dishwasher work controls ([#475](https://github.com/midea-lan/midea-local/issues/475)) ([d46f857](https://github.com/midea-lan/midea-local/commit/d46f857722c5b1588fa7ff56545b40d84289b93b))
+* **ed:** add soft water machine (subtype 703) support ([#505](https://github.com/midea-lan/midea-local/issues/505)) ([9c11612](https://github.com/midea-lan/midea-local/commit/9c11612a6a13f88c98b560e6ebf3254150e9919f))
+* **fa:** add humidify, waterions, display_on_off (AAF10MR, subtype 0) ([#466](https://github.com/midea-lan/midea-local/issues/466)) ([80d67f6](https://github.com/midea-lan/midea-local/commit/80d67f67bc51626f93ce30223263caf04419b072))
+* report MAC address ([#488](https://github.com/midea-lan/midea-local/issues/488)) ([cd862d3](https://github.com/midea-lan/midea-local/commit/cd862d39df0dee3a8cb32f9a8d1ec182d86a2840))
+* report serial number ([#493](https://github.com/midea-lan/midea-local/issues/493)) ([bef1082](https://github.com/midea-lan/midea-local/commit/bef1082822a5d51b5e5924fc1f26fa089f5ff972))
+
+
+### Bug Fixes
+
+* **ac:** decode subtype-8 0x7e setpoint and ignore stale C0 temperatures ([#501](https://github.com/midea-lan/midea-local/issues/501)) ([5e8941f](https://github.com/midea-lan/midea-local/commit/5e8941f4869e5603b19d498511e37ecc9e90e1ec))
+* **cd:** correct length body ([#509](https://github.com/midea-lan/midea-local/issues/509)) ([9fe2dae](https://github.com/midea-lan/midea-local/commit/9fe2dae1d5f12ec5d7a57013abb7e8d3afa3bf6a))
+* **cd:** use 25-byte RSJRAC SET body with tsMax ([#468](https://github.com/midea-lan/midea-local/issues/468)) ([#497](https://github.com/midea-lan/midea-local/issues/497)) ([54f253d](https://github.com/midea-lan/midea-local/commit/54f253d18c5c53dccda76796cbb7d2bfb3f51435))
+* **ce:** remove the quote from the attribute definition ([#508](https://github.com/midea-lan/midea-local/issues/508)) ([dc741e8](https://github.com/midea-lan/midea-local/commit/dc741e82a2cb31eeb7a6bc85a42130f03ecb68b9))
+* **dc:** correct progress value comparison ([#515](https://github.com/midea-lan/midea-local/issues/515)) ([aa3cdfe](https://github.com/midea-lan/midea-local/commit/aa3cdfecb6ac819203ace6bb4a1870ae2e4090a5))
+* **discovery:** deprecation for XML Element ([#513](https://github.com/midea-lan/midea-local/issues/513)) ([e996a98](https://github.com/midea-lan/midea-local/commit/e996a98447bdd7e695f2edbc748fb6dfc73694a6))
+* **e2:** removed trailing comma ([#512](https://github.com/midea-lan/midea-local/issues/512)) ([ae7fd06](https://github.com/midea-lan/midea-local/commit/ae7fd067577ec1c6345671e8d35b680103b891e4))
+* **e6:** renamed temperature wrong attributes ([#511](https://github.com/midea-lan/midea-local/issues/511)) ([54ee680](https://github.com/midea-lan/midea-local/commit/54ee6803ad859e3a7777f873528b62cdfc165fc6))
+* ignore messages shorter than the header in pre_process_message ([#503](https://github.com/midea-lan/midea-local/issues/503)) ([cf3b106](https://github.com/midea-lan/midea-local/commit/cf3b10671b2134261b0a181ac2f9f2d256b54594))
+* increase device query command response timeout value ([#496](https://github.com/midea-lan/midea-local/issues/496)) ([2d3dd6e](https://github.com/midea-lan/midea-local/commit/2d3dd6e91d3cc857d03b733d2f89687743c9e446))
+* resolve TCP/UDP socket leaks and improve thread loop termination  ([#476](https://github.com/midea-lan/midea-local/issues/476)) ([8983598](https://github.com/midea-lan/midea-local/commit/89835989e62fb7d442a1eebb7ede222367f458cb))
+* **x26:** handle missing fields in some body_types ([#510](https://github.com/midea-lan/midea-local/issues/510)) ([a817a87](https://github.com/midea-lan/midea-local/commit/a817a87ec432bdd9c823dd46300a90829b12f4e5))
+
+
+### Documentation
+
+* add AGENTS.md as canonical AI agent instructions ([#489](https://github.com/midea-lan/midea-local/issues/489)) ([bb3370e](https://github.com/midea-lan/midea-local/commit/bb3370eff7298fc2d36242f269decb2f6df5d436))
+
 ## [6.10.0](https://github.com/midea-lan/midea-local/compare/v6.9.0...v6.10.0) (2026-06-27)
 
 
