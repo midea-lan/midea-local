@@ -2,8 +2,9 @@
 
 import json
 import logging
+from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, cast
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
@@ -23,12 +24,30 @@ from .message import (
     MessageNewProtocolSet,
     MessagePowerQuery,
     MessageQuery,
+    MessageSubProtocolFreshAirSet,
     MessageSubProtocolQuery,
+    MessageSubProtocolQuery10,
+    MessageSubProtocolQuery11,
+    MessageSubProtocolQuery30,
     MessageSubProtocolSet,
     MessageToggleDisplay,
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+ACQuery = (
+    MessageSubProtocolQuery
+    | MessageQuery
+    | MessageNewProtocolQuery
+    | MessagePowerQuery
+    | MessageHumidityQuery
+    | MessageGroupZeroQuery
+    | MessageGroupOneQuery
+    | MessageGroupTwoQuery
+    | MessageGroupSevenQuery
+    | MessageCapabilitiesQuery
+    | MessageCapabilitiesAdditionalQuery
+)
 
 # AC mode constants
 DRY_MODE = 3
@@ -70,6 +89,9 @@ class DeviceAttributes(StrEnum):
     fresh_air_mode = "fresh_air_mode"
     fresh_air_1 = "fresh_air_1"
     fresh_air_2 = "fresh_air_2"
+    fresh_air_exhaust_power = "fresh_air_exhaust_power"
+    fresh_air_exhaust_speed = "fresh_air_exhaust_speed"
+    fresh_air_exhaust_mode = "fresh_air_exhaust_mode"
     total_energy_consumption = "total_energy_consumption"
     total_operating_consumption = "total_operating_consumption"
     current_energy_consumption = "current_energy_consumption"
@@ -104,6 +126,39 @@ class DeviceAttributes(StrEnum):
     compressor_power = "compressor_power"
 
 
+BB_FRESH_AIR_DEFAULT_SPEED = 60
+# The BB exhaust preset map has no "medium" (60) entry; use the first
+# advertised non-silent exhaust mode when a power-on command has no prior speed.
+BB_FRESH_AIR_EXHAUST_DEFAULT_SPEED = 80
+
+
+@dataclass(frozen=True)
+class ACModelCapabilities:
+    """Capabilities verified for an exact AC model and subtype."""
+
+    attributes: frozenset[DeviceAttributes] = frozenset()
+    uses_bb_protocol: bool = False
+    has_bb_fresh_air: bool = False
+
+
+DEFAULT_AC_MODEL_CAPABILITIES = ACModelCapabilities()
+# These BB fields use model-specific offsets and command payloads observed on
+# exact model/subtype pairs. Keep unrelated devices hidden from attributes and
+# commands whose bytes may have a different meaning on other firmware.
+AC_MODEL_CAPABILITIES = {
+    ("23096633", 1): ACModelCapabilities(
+        attributes=frozenset(
+            {
+                DeviceAttributes.fresh_air_exhaust_power,
+                DeviceAttributes.fresh_air_exhaust_speed,
+                DeviceAttributes.fresh_air_exhaust_mode,
+            },
+        ),
+        uses_bb_protocol=True,
+        has_bb_fresh_air=True,
+    ),
+}
+
 STALE_C0_TEMPERATURE_ATTRIBUTES = (
     DeviceAttributes.target_temperature,
     DeviceAttributes.indoor_temperature,
@@ -119,6 +174,21 @@ class MideaACDevice(MideaDevice):
         20: "silent",
         40: "low",
         60: "medium",
+        80: "high",
+        100: "full",
+    }
+
+    _bb_fresh_air_fan_speeds: ClassVar[dict[int, str]] = {
+        0: "off",
+        40: "low",
+        60: "medium",
+        80: "high",
+        100: "full",
+    }
+
+    _bb_fresh_air_exhaust_speeds: ClassVar[dict[int, str]] = {
+        0: "off",
+        20: "silent",
         80: "high",
         100: "full",
     }
@@ -225,10 +295,18 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.compressor_power: None,
             },
         )
+        self._model_key = (str(self.model), int(self.subtype))
+        self._model_capabilities = AC_MODEL_CAPABILITIES.get(
+            self._model_key,
+            DEFAULT_AC_MODEL_CAPABILITIES,
+        )
+        self._attributes.update(
+            dict.fromkeys(self._model_capabilities.attributes),
+        )
         self._fresh_air_version: DeviceAttributes | None = None
         self._default_temperature_step: float = 0.5
         self._temperature_step: float = 0.5
-        self._used_subprotocol: bool = False
+        self._used_subprotocol: bool = self._model_capabilities.uses_bb_protocol
         self._bb_sn8_flag: bool = False
         self._bb_timer: bool = False
         # per-mode setpoint limits from the B5 capability, keyed by mode value
@@ -253,7 +331,16 @@ class MideaACDevice(MideaDevice):
     @property
     def fresh_air_fan_speeds(self) -> list[str]:
         """Midea AC device fresh air fan speeds."""
+        if self._model_capabilities.has_bb_fresh_air:
+            return list(MideaACDevice._bb_fresh_air_fan_speeds.values())
         return list(MideaACDevice._fresh_air_fan_speeds.values())
+
+    @property
+    def fresh_air_exhaust_fan_speeds(self) -> list[str]:
+        """Midea AC device fresh-air exhaust fan speeds."""
+        if self._model_capabilities.has_bb_fresh_air:
+            return list(MideaACDevice._bb_fresh_air_exhaust_speeds.values())
+        return []
 
     @property
     def wind_lr_angles(self) -> list[str]:
@@ -270,29 +357,18 @@ class MideaACDevice(MideaDevice):
         """Midea AC device rate_select options."""
         return list(MideaACDevice._rate_selects.values())
 
-    def build_query(
-        self,
-    ) -> list[
-        MessageSubProtocolQuery
-        | MessageQuery
-        | MessageNewProtocolQuery
-        | MessagePowerQuery
-        | MessageHumidityQuery
-        | MessageGroupZeroQuery
-        | MessageGroupOneQuery
-        | MessageGroupTwoQuery
-        | MessageGroupSevenQuery
-        | MessageCapabilitiesQuery
-        | MessageCapabilitiesAdditionalQuery
-    ]:
+    def build_query(self) -> list[ACQuery]:
         """Midea AC device build query."""
         if self._used_subprotocol:
+            # BB responses are independent status groups. Query each group with
+            # its own identity so an unsupported response for one group does not
+            # suppress later status groups.
             return [
-                MessageSubProtocolQuery(self._message_protocol_version, 0x10),
-                MessageSubProtocolQuery(self._message_protocol_version, 0x11),
-                MessageSubProtocolQuery(self._message_protocol_version, 0x30),
+                MessageSubProtocolQuery10(self._message_protocol_version),
+                MessageSubProtocolQuery11(self._message_protocol_version),
+                MessageSubProtocolQuery30(self._message_protocol_version),
             ]
-        return [
+        queries: list[ACQuery] = [
             MessageQuery(self._message_protocol_version),
             MessageNewProtocolQuery(self._message_protocol_version),
             MessagePowerQuery(self._message_protocol_version),
@@ -306,6 +382,7 @@ class MideaACDevice(MideaDevice):
             MessageCapabilitiesQuery(self._message_protocol_version),
             MessageCapabilitiesAdditionalQuery(self._message_protocol_version),
         ]
+        return queries
 
     def process_message(self, msg: bytes) -> dict[str, Any]:  # noqa: C901
         """Midea AC device process message."""
@@ -328,6 +405,44 @@ class MideaACDevice(MideaDevice):
                 self._bb_sn8_flag = message.sn8_flag
             if hasattr(message, "timer"):
                 self._bb_timer = message.timer
+        if self._model_capabilities.has_bb_fresh_air and hasattr(
+            message,
+            "bb_fresh_air_power",
+        ):
+            response_attributes = vars(message)
+            fresh_air_power = cast("bool", response_attributes["bb_fresh_air_power"])
+            fresh_air_speed = cast(
+                "int",
+                response_attributes["bb_fresh_air_fan_speed"],
+            )
+            exhaust_power = cast(
+                "bool",
+                response_attributes["bb_fresh_air_exhaust_power"],
+            )
+            exhaust_speed = cast(
+                "int",
+                response_attributes["bb_fresh_air_exhaust_speed"],
+            )
+            fresh_air_status = {
+                DeviceAttributes.fresh_air_power: fresh_air_power,
+                DeviceAttributes.fresh_air_fan_speed: fresh_air_speed,
+                DeviceAttributes.fresh_air_mode: self._fresh_air_mode(
+                    fresh_air_power,
+                    fresh_air_speed,
+                    MideaACDevice._bb_fresh_air_fan_speeds,
+                ),
+                DeviceAttributes.fresh_air_exhaust_power: exhaust_power,
+                DeviceAttributes.fresh_air_exhaust_speed: exhaust_speed,
+                DeviceAttributes.fresh_air_exhaust_mode: self._fresh_air_mode(
+                    exhaust_power,
+                    exhaust_speed,
+                    MideaACDevice._bb_fresh_air_exhaust_speeds,
+                ),
+            }
+            self._attributes.update(fresh_air_status)
+            new_status.update(
+                {str(key): value for key, value in fresh_air_status.items()},
+            )
         for attr in self._attributes:
             if hasattr(message, str(attr)):
                 if is_stale_c0_temperature and attr in STALE_C0_TEMPERATURE_ATTRIBUTES:
@@ -377,6 +492,22 @@ class MideaACDevice(MideaDevice):
         new_status.update(self._refresh_temperature_limits(message))
         self._update_capabilities(message)
         return new_status
+
+    @staticmethod
+    def _fresh_air_mode(
+        power: bool,
+        speed: int,
+        presets: dict[int, str],
+    ) -> str:
+        """Return the fresh-air preset represented by a reported speed."""
+        if not power:
+            return "off"
+        mode = "off"
+        for threshold, name in presets.items():
+            if speed < threshold:
+                break
+            mode = name
+        return mode
 
     def _update_capabilities(self, message: MessageACResponse) -> None:
         """Accumulate decoded B5 capability flags from a B5 response."""
@@ -545,6 +676,67 @@ class MideaACDevice(MideaDevice):
         message.timer = self._bb_timer
         return message
 
+    def make_subprotocol_fresh_air_set(
+        self,
+        attr: str,
+        value: bool | int | str,
+    ) -> MessageSubProtocolFreshAirSet:
+        """Build a BB fresh-air intake or exhaust single-control command."""
+        exhaust = attr in {
+            DeviceAttributes.fresh_air_exhaust_power,
+            DeviceAttributes.fresh_air_exhaust_speed,
+            DeviceAttributes.fresh_air_exhaust_mode,
+        }
+        power_attribute = (
+            DeviceAttributes.fresh_air_exhaust_power
+            if exhaust
+            else DeviceAttributes.fresh_air_power
+        )
+        speed_attribute = (
+            DeviceAttributes.fresh_air_exhaust_speed
+            if exhaust
+            else DeviceAttributes.fresh_air_fan_speed
+        )
+        mode_attribute = (
+            DeviceAttributes.fresh_air_exhaust_mode
+            if exhaust
+            else DeviceAttributes.fresh_air_mode
+        )
+        current_speed = int(
+            self._attributes[speed_attribute]
+            or (
+                # Intake can safely fall back to "medium"; exhaust must use a
+                # speed present in _bb_fresh_air_exhaust_speeds.
+                BB_FRESH_AIR_EXHAUST_DEFAULT_SPEED
+                if exhaust
+                else BB_FRESH_AIR_DEFAULT_SPEED
+            ),
+        )
+        power = bool(self._attributes[power_attribute])
+        speed = current_speed
+        if attr == power_attribute:
+            power = bool(value)
+        elif attr == speed_attribute:
+            requested_speed = max(0, min(int(value), 100))
+            power = requested_speed > 0
+            speed = requested_speed or current_speed
+        elif attr == mode_attribute:
+            requested_speed = self.get_dict_key_by_value(
+                "_bb_fresh_air_exhaust_speeds"
+                if exhaust
+                else "_bb_fresh_air_fan_speeds",
+                str(value),
+            )
+            if requested_speed is not None:
+                power = requested_speed > 0
+                speed = requested_speed or current_speed
+        return MessageSubProtocolFreshAirSet(
+            self._message_protocol_version,
+            power,
+            speed,
+            exhaust=exhaust,
+        )
+
     def make_message_uniq_set(self) -> MessageSubProtocolSet | MessageGeneralSet:
         """Midea AC device make message unique set."""
         message: MessageSubProtocolSet | MessageGeneralSet
@@ -560,6 +752,7 @@ class MideaACDevice(MideaDevice):
         message: (
             MessageToggleDisplay
             | MessageNewProtocolSet
+            | MessageSubProtocolFreshAirSet
             | MessageSubProtocolSet
             | MessageGeneralSet
             | None
@@ -592,6 +785,15 @@ class MideaACDevice(MideaDevice):
             elif attr == DeviceAttributes.screen_display:
                 message = MessageToggleDisplay(self._message_protocol_version)
                 message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
+            elif self._model_capabilities.has_bb_fresh_air and attr in {
+                DeviceAttributes.fresh_air_power,
+                DeviceAttributes.fresh_air_fan_speed,
+                DeviceAttributes.fresh_air_mode,
+                DeviceAttributes.fresh_air_exhaust_power,
+                DeviceAttributes.fresh_air_exhaust_speed,
+                DeviceAttributes.fresh_air_exhaust_mode,
+            }:
+                message = self.make_subprotocol_fresh_air_set(attr, value)
             elif attr in [
                 DeviceAttributes.indirect_wind,
                 DeviceAttributes.breezeless,

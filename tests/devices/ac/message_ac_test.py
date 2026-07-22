@@ -3,6 +3,7 @@
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.crc8 import calculate
 from midealocal.devices.ac.message import (
     MessageACBase,
     MessageACResponse,
@@ -19,13 +20,17 @@ from midealocal.devices.ac.message import (
     MessagePowerQuery,
     MessageQuery,
     MessageSubProtocol,
+    MessageSubProtocolFreshAirSet,
+    MessageSubProtocolQuery10,
+    MessageSubProtocolQuery11,
+    MessageSubProtocolQuery30,
     MessageSubProtocolSet,
     MessageToggleDisplay,
     NewProtocolQuery,
     NewProtocolTags,
     PowerFormats,
 )
-from midealocal.message import ListTypes, MessageType
+from midealocal.message import ListTypes, MessageBase, MessageType
 
 
 class TestMessageACBase:
@@ -301,6 +306,89 @@ class TestMessageSubProtocol:
             ],
         )
         assert msg.body[:-2] == expected_body
+
+    def test_distinct_query_classes(self) -> None:
+        """Test BB queries have independent protocol identities."""
+        queries = [
+            MessageSubProtocolQuery10(ProtocolVersion.V1),
+            MessageSubProtocolQuery11(ProtocolVersion.V1),
+            MessageSubProtocolQuery30(ProtocolVersion.V1),
+        ]
+
+        assert [query.body[5] for query in queries] == [0x10, 0x11, 0x30]
+        assert len({query.__class__.__name__ for query in queries}) == 3
+
+
+class TestMessageGroupOneQuery:
+    """Test AC C1 group 0x41 query."""
+
+    def test_query_body(self) -> None:
+        """Test exact group 0x41 query body."""
+        message = MessageGroupOneQuery(ProtocolVersion.V1)
+
+        assert message.body.hex() == "4121014100013c"
+
+
+class TestMessageSubProtocolFreshAirSet:
+    """Test BB fresh-air single-control commands."""
+
+    @pytest.mark.parametrize(
+        ("power", "speed", "exhaust", "expected"),
+        [
+            (
+                True,
+                60,
+                False,
+                "aa6800ffffc0000101000000000000000001c002540000000000000404000000"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "000000000000000000000000bc00000000000000000000000000000000000000"
+                "000000000026002d",
+            ),
+            (
+                False,
+                60,
+                False,
+                "aa6800ffffc0000101000000000000000001c002540000000000000400000000"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "000000000000000000000000bc00000000000000000000000000000000000000"
+                "00000000002a1c11",
+            ),
+            (
+                True,
+                80,
+                True,
+                "aa6800ffffc0000101000000000000000001c002540000000000000808000000"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "00000000000000000000000000d0000000000000000000000000000000000000"
+                "00000000000af23b",
+            ),
+            (
+                False,
+                80,
+                True,
+                "aa6800ffffc0000101000000000000000001c002540000000000000800000000"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "00000000000000000000000000d0000000000000000000000000000000000000"
+                "000000000012ca63",
+            ),
+        ],
+    )
+    def test_command_body(
+        self,
+        power: bool,
+        speed: int,
+        exhaust: bool,
+        expected: str,
+    ) -> None:
+        """Test exact intake and exhaust command bytes."""
+        message = MessageSubProtocolFreshAirSet(
+            ProtocolVersion.V1,
+            power,
+            speed,
+            exhaust=exhaust,
+        )
+
+        assert message.body.hex() == expected
 
 
 class TestMessageSubProtocolSet:
@@ -1030,6 +1118,41 @@ class TestMessageACResponse:
         response = MessageACResponse(self.header + body)
         assert not hasattr(response, "compressor_power")
 
+    def test_captured_c1_0x41_response(self) -> None:
+        """Test a complete response captured from model 22390001 subtype 8."""
+        frame = bytearray.fromhex(
+            "aa29ac00000000000803c12101412b2b0403d6005446736c2600000000000000"
+            "00000000000000019e8b",
+        )
+
+        response = MessageACResponse(frame)
+
+        assert hasattr(response, "compressor_frequency")
+        assert response.compressor_frequency == 43
+        assert hasattr(response, "target_compressor_frequency")
+        assert response.target_compressor_frequency == 43
+        assert hasattr(response, "compressor_current")
+        assert response.compressor_current == 3
+        assert hasattr(response, "compressor_voltage")
+        assert response.compressor_voltage == 214
+
+    def test_short_c1_response_does_not_raise(self) -> None:
+        """Test short C1 response ignores a missing group type."""
+        self.header[9] = 0x03
+
+        MessageACResponse(self.header + bytearray([0xC1, 0, 0]))
+
+    @pytest.mark.parametrize("group_type", [0x40, 0x41, 0x42, 0x44, 0x45, 0x47])
+    def test_recognized_short_c1_response_does_not_raise(
+        self,
+        group_type: int,
+    ) -> None:
+        """Test recognized C1 groups ignore fields missing from a short frame."""
+        self.header[9] = 0x03
+        body = bytearray([0xC1, 0, 0, group_type])
+
+        MessageACResponse(self.header + body + bytearray([0]))
+
     def test_message_query_bb_0x20(self) -> None:
         """Test Message parse query BB 0x20."""
         self.header[9] = 0x03
@@ -1063,6 +1186,45 @@ class TestMessageACResponse:
         assert hasattr(response, "mode")
         assert response.mode == 0
 
+    def test_message_query_bb_0x11_fresh_air(self) -> None:
+        """Test BB basic status parses independent intake and exhaust airflow."""
+        self.header[9] = 0x03
+        body = bytearray(56)
+        body[:6] = bytearray([0xBB, 0, 0, 0, 0, 0x11])
+        body[51] = 0x03
+        body[52] = 60
+        body[53] = 100
+
+        response = MessageACResponse(self.header + body)
+
+        assert hasattr(response, "bb_fresh_air_power")
+        assert response.bb_fresh_air_power is True
+        assert hasattr(response, "bb_fresh_air_fan_speed")
+        assert response.bb_fresh_air_fan_speed == 60
+        assert hasattr(response, "bb_fresh_air_exhaust_power")
+        assert response.bb_fresh_air_exhaust_power is True
+        assert hasattr(response, "bb_fresh_air_exhaust_speed")
+        assert response.bb_fresh_air_exhaust_speed == 100
+
+    def test_captured_bb_0x11_fresh_air_response(self) -> None:
+        """Test a complete fresh-air response captured from model 23096633."""
+        frame = bytearray.fromhex(
+            "aa5aac00000000000803bb5000ffff1101800000000057663200000000320001"
+            "2800007804523266000400000000000000000000000000000000000000413c64"
+            "0000002f000001e00000400003002828003000000000000046b7ef",
+        )
+
+        response = MessageACResponse(frame)
+
+        assert hasattr(response, "bb_fresh_air_power")
+        assert response.bb_fresh_air_power is True
+        assert hasattr(response, "bb_fresh_air_fan_speed")
+        assert response.bb_fresh_air_fan_speed == 60
+        assert hasattr(response, "bb_fresh_air_exhaust_power")
+        assert response.bb_fresh_air_exhaust_power is False
+        assert hasattr(response, "bb_fresh_air_exhaust_speed")
+        assert response.bb_fresh_air_exhaust_speed == 100
+
     def test_message_query_bb_0x10(self) -> None:
         """Test Message parse query BB 0x20."""
         self.header[9] = 0x03
@@ -1092,16 +1254,60 @@ class TestMessageACResponse:
         body[:6] = bytearray([0xBB, 0, 0, 0, 0, 0x30])  # Set the header and data type
         body[11] = 0x22  # Outdoor temperature byte 1
         body[12] = 0x80  # Outdoor temperature byte 2
+        body[16] = 49  # Compressor target frequency
+        body[17] = 47  # Compressor actual frequency
 
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == 328.02
+        assert hasattr(response, "target_compressor_frequency")
+        assert response.target_compressor_frequency == 49
+        assert hasattr(response, "compressor_frequency")
+        assert response.compressor_frequency == 47
 
         body[12] = 0x65  # Outdoor temperature byte 2
 
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == 258.9
+
+    def test_captured_bb_0x30_frequency_response(self) -> None:
+        """Test a complete frequency response captured from model 23096633."""
+        frame = bytearray.fromhex(
+            "aa6aac00000000000803bb6000ffff3000ff000000a60e8e12433131c000079b"
+            "0000000000000000000000630000000000000000000000000000000000000000"
+            "0000000000000000000000000000000000000000000000000000000000000000"
+            "002f000000000000e5e6df",
+        )
+
+        assert len(frame) == frame[1] + 1
+        assert len(frame[10:-1]) == frame[11]
+        assert calculate(frame[10:-2]) == 0
+        assert MessageBase.checksum(frame[1:-1]) == frame[-1]
+
+        response = MessageACResponse(frame)
+
+        assert hasattr(response, "target_compressor_frequency")
+        assert response.target_compressor_frequency == 49
+        assert hasattr(response, "compressor_frequency")
+        assert response.compressor_frequency == 49
+
+    @pytest.mark.parametrize("data_type", [0x10, 0x30])
+    def test_short_bb_response_does_not_raise(
+        self,
+        data_type: int,
+    ) -> None:
+        """Test short BB responses enter parsing without reading absent fields."""
+        self.header[9] = 0x03
+        body = bytearray(21)
+        body[:6] = bytearray([0xBB, 0, 0, 0, 0, data_type])
+
+        response = MessageACResponse(self.header + body + bytearray([0]))
+
+        assert response.used_subprotocol is True
+        if data_type == 0x10:
+            assert not hasattr(response, "indoor_humidity")
+            assert not hasattr(response, "sn8_flag")
 
     def test_message_query_bb_unimplemented(self) -> None:
         """Test Message parse query BB unimplemented."""

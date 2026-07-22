@@ -18,10 +18,14 @@ from midealocal.devices.ac.message import (
     MessageNewProtocolQuery,
     MessagePowerQuery,
     MessageQuery,
+    MessageSubProtocolFreshAirSet,
     MessageSubProtocolQuery,
+    MessageSubProtocolQuery10,
+    MessageSubProtocolQuery11,
+    MessageSubProtocolQuery30,
     PowerFormats,
 )
-from midealocal.message import ListTypes
+from midealocal.message import ListTypes, MessageBase
 
 
 class TestMideaACDevice:
@@ -58,6 +62,33 @@ class TestMideaACDevice:
         assert not self.device.attributes[DeviceAttributes.out_silent]
         assert self.device.temperature_step == 1
         assert self.device.fresh_air_fan_speeds is not None
+        assert DeviceAttributes.compressor_frequency in self.device.attributes
+        assert not self.device.fresh_air_exhaust_fan_speeds
+
+    @staticmethod
+    def _make_device(model: str, subtype: int) -> MideaACDevice:
+        """Create a model-specific AC device."""
+        return MideaACDevice(
+            name="Model Device",
+            device_id=2,
+            ip_address="192.168.1.2",
+            port=12345,
+            token="AA",
+            key="BB",
+            device_protocol=ProtocolVersion.V1,
+            model=model,
+            subtype=subtype,
+            customize="",
+        )
+
+    @staticmethod
+    def _response(body: bytearray) -> bytes:
+        """Wrap an AC response body in a complete query frame."""
+        header = bytearray([0xAA, 0, 0xAC, 0, 0, 0, 0, 0, 1, 3])
+        header[1] = len(header) + len(body)
+        frame = header + body
+        frame.append(MessageBase.checksum(frame[1:]))
+        return bytes(frame)
 
     def test_customize_accepts_bcd_energy_binary_power_format(self) -> None:
         """Test customize can select BCD energy with binary realtime power."""
@@ -172,6 +203,147 @@ class TestMideaACDevice:
         assert isinstance(queries[7], MessageGroupSevenQuery)
         assert isinstance(queries[8], MessageCapabilitiesQuery)
         assert isinstance(queries[9], MessageCapabilitiesAdditionalQuery)
+
+    def test_bb_model_builds_distinct_queries_and_attributes(self) -> None:
+        """Test verified BB model starts with independent BB queries."""
+        device = self._make_device("23096633", 1)
+
+        queries = device.build_query()
+
+        assert [type(query) for query in queries] == [
+            MessageSubProtocolQuery10,
+            MessageSubProtocolQuery11,
+            MessageSubProtocolQuery30,
+        ]
+        assert DeviceAttributes.compressor_frequency in device.attributes
+        assert DeviceAttributes.target_compressor_frequency in device.attributes
+        assert DeviceAttributes.fresh_air_exhaust_power in device.attributes
+        assert device.fresh_air_fan_speeds == [
+            "off",
+            "low",
+            "medium",
+            "high",
+            "full",
+        ]
+        assert device.fresh_air_exhaust_fan_speeds == [
+            "off",
+            "silent",
+            "high",
+            "full",
+        ]
+
+    @pytest.mark.parametrize(
+        ("model", "subtype"),
+        [("unknown", 1), ("23096633", 8), ("22390001", 1)],
+    )
+    def test_model_attribute_gating(self, model: str, subtype: int) -> None:
+        """Test diagnostics and commands require an exact model/subtype pair."""
+        device = self._make_device(model, subtype)
+
+        assert DeviceAttributes.fresh_air_exhaust_power not in device.attributes
+        queries = device.build_query()
+        assert isinstance(queries[0], MessageQuery)
+        assert not any(
+            isinstance(
+                query,
+                MessageSubProtocolQuery10
+                | MessageSubProtocolQuery11
+                | MessageSubProtocolQuery30,
+            )
+            for query in queries
+        )
+        with patch.object(device, "build_send") as build_send:
+            device.set_attribute(
+                DeviceAttributes.fresh_air_exhaust_power,
+                True,
+            )
+            build_send.assert_not_called()
+
+    def test_actual_frequency_only_model_gating(self) -> None:
+        """Test the naturally detected BB model exposes only actual frequency."""
+        actual_only = self._make_device("23096725", 1)
+
+        assert DeviceAttributes.compressor_frequency in actual_only.attributes
+        assert DeviceAttributes.target_compressor_frequency in actual_only.attributes
+
+    def test_process_bb_airflow_and_frequency(self) -> None:
+        """Test verified BB model publishes airflow and compressor frequency."""
+        device = self._make_device("23096633", 1)
+        basic_body = bytearray(56)
+        basic_body[:6] = bytearray([0xBB, 0, 0, 0, 0, 0x11])
+        basic_body[51] = 0x01
+        basic_body[52] = 60
+        basic_body[53] = 100
+        outdoor_body = bytearray(24)
+        outdoor_body[:6] = bytearray([0xBB, 0, 0, 0, 0, 0x30])
+        outdoor_body[16] = 49
+        outdoor_body[17] = 47
+
+        airflow = device.process_message(self._response(basic_body))
+        frequency = device.process_message(self._response(outdoor_body))
+
+        assert airflow[DeviceAttributes.fresh_air_power] is True
+        assert airflow[DeviceAttributes.fresh_air_fan_speed] == 60
+        assert airflow[DeviceAttributes.fresh_air_mode] == "medium"
+        assert airflow[DeviceAttributes.fresh_air_exhaust_power] is False
+        assert airflow[DeviceAttributes.fresh_air_exhaust_speed] == 100
+        assert airflow[DeviceAttributes.fresh_air_exhaust_mode] == "off"
+        assert frequency[DeviceAttributes.compressor_frequency] == 47
+        assert frequency[DeviceAttributes.target_compressor_frequency] == 49
+
+    def test_process_c1_frequency(self) -> None:
+        """Test verified C1 model publishes compressor frequency."""
+        device = self._make_device("22390001", 8)
+        body = bytearray(15)
+        body[0] = 0xC1
+        body[3] = 0x41
+        body[4] = 47
+        body[5] = 49
+        body[7] = 3
+        body[8] = 229
+
+        status = device.process_message(self._response(body))
+
+        assert status[DeviceAttributes.compressor_frequency] == 47
+        assert status[DeviceAttributes.target_compressor_frequency] == 49
+        assert status[DeviceAttributes.compressor_current] == 3
+        assert status[DeviceAttributes.compressor_voltage] == 229
+
+    def test_bb_fresh_air_set_attribute(self) -> None:
+        """Test BB model sends intake and exhaust single-control commands."""
+        device = self._make_device("23096633", 1)
+        with patch.object(device, "build_send") as build_send:
+            device.set_attribute(DeviceAttributes.fresh_air_mode, "medium")
+            intake = build_send.call_args.args[0]
+            assert isinstance(intake, MessageSubProtocolFreshAirSet)
+            assert intake.power is True
+            assert intake.speed == 60
+            assert intake.exhaust is False
+
+            device.set_attribute(DeviceAttributes.fresh_air_exhaust_mode, "high")
+            exhaust = build_send.call_args.args[0]
+            assert isinstance(exhaust, MessageSubProtocolFreshAirSet)
+            assert exhaust.power is True
+            assert exhaust.speed == 80
+            assert exhaust.exhaust is True
+
+            device.set_attribute(DeviceAttributes.fresh_air_exhaust_power, False)
+            exhaust_off = build_send.call_args.args[0]
+            assert exhaust_off.power is False
+            assert exhaust_off.exhaust is True
+
+    def test_bb_fresh_air_exhaust_power_defaults_to_advertised_speed(self) -> None:
+        """Test exhaust power-on uses a speed exposed by the preset list."""
+        device = self._make_device("23096633", 1)
+
+        with patch.object(device, "build_send") as build_send:
+            device.set_attribute(DeviceAttributes.fresh_air_exhaust_power, True)
+
+        message = build_send.call_args.args[0]
+        assert isinstance(message, MessageSubProtocolFreshAirSet)
+        assert message.power is True
+        assert message.speed == 80
+        assert message.exhaust is True
 
     def test_process_message(self) -> None:
         """Test process message."""
