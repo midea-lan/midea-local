@@ -2,16 +2,22 @@
 
 import json
 import logging
+import runpy
 import subprocess
 import sys
+import warnings
 from argparse import Namespace
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from midealocal.cli import (
     MideaCLI,
     get_config_file_path,
+    main,
 )
 from midealocal.cloud import MideaAirCloud, SmartHomeCloud
 from midealocal.const import ProtocolVersion
@@ -184,6 +190,10 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
 
             refresh_status_mock.side_effect = [SocketException, None]
             await self.cli.discover()  # V3 device SocketException on first key
+            refresh_status_mock.reset_mock()
+
+            refresh_status_mock.side_effect = [OSError, None]
+            await self.cli.discover()  # V3 device OSError on first key
             refresh_status_mock.reset_mock()
 
             mock_device["protocol"] = ProtocolVersion.V2
@@ -457,6 +467,50 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
 
         if clear_config:
             get_config_file_path().unlink()
+
+    def test_main(self) -> None:
+        """Test main entry parses args and merges config file values."""
+        with TemporaryDirectory() as tmpdir:
+            config_file = Path(tmpdir) / "midea-local.json"
+            config_file.write_text(
+                json.dumps({"username": "configuser", "password": "configpass"}),
+                encoding="utf-8",
+            )
+            exit_code: int | str | None = None
+            with (
+                patch.object(sys, "argv", ["midealocal", "discover", "-p", "argpass"]),
+                patch(
+                    "midealocal.cli.get_config_file_path",
+                    return_value=config_file,
+                ),
+                patch.object(MideaCLI, "run") as mock_run,
+            ):
+                try:
+                    main()
+                except SystemExit as exc:
+                    exit_code = exc.code
+
+            assert exit_code == 0
+            mock_run.assert_called_once()
+            namespace = mock_run.call_args[0][0]
+            # username not passed on command line: filled from the config file
+            assert namespace.username == "configuser"
+            # password passed on command line: config value is not applied
+            assert namespace.password == "argpass"
+            assert namespace.func.__name__ == "discover"
+
+    def test_main_module_entry(self) -> None:
+        """Test the __main__ guard when running the module as a script."""
+        with (
+            patch.object(sys, "argv", ["midealocal.cli", "--version"]),
+            warnings.catch_warnings(),
+        ):
+            # runpy warns when re-executing an already imported module
+            warnings.simplefilter("ignore", RuntimeWarning)
+            with pytest.raises(SystemExit) as exit_info:
+                runpy.run_module("midealocal.cli", run_name="__main__")
+
+        assert exit_info.value.code == 0
 
     def test_get_config_file_path(self) -> None:
         """Test get config file path."""
