@@ -7,6 +7,7 @@ from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.message import MessageType
 
 from .message import (
     MessageCDBase,
@@ -253,6 +254,14 @@ class MideaCDDevice(MideaDevice):
         message = MessageCDResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status: dict[str, Any] = {}
+        # SET echoes are known to carry junk in several body positions (see the
+        # openPTC/Tr and mode-echo notes below).  Treat the "power" bit from a
+        # SET echo as untrusted: a spurious power=0 echo must not overwrite a
+        # good ON reading, because the stored power is later replayed into every
+        # temperature/mode control frame and would silently switch the unit off
+        # (see midea_ac_lan#768).  Genuine status/notify/query frames still
+        # update power normally.  Unknown/mocked messages keep prior behaviour.
+        is_set_echo = getattr(message, "message_type", None) == MessageType.set
         if hasattr(message, "fields"):
             self._fields = message.fields
         # parse fahrenheit switch for temperature value
@@ -358,6 +367,12 @@ class MideaCDDevice(MideaDevice):
                         else:
                             self._attributes[attr] = None
                             new_status[str(attr)] = None
+                    continue
+                # Do not let a SET echo clobber the trusted power state; a
+                # bogus power=0 echo would be replayed as an OFF command on the
+                # next temperature/mode write (midea_ac_lan#768).
+                if attr == DeviceAttributes.power and is_set_echo:
+                    new_status[str(attr)] = self._attributes[attr]
                     continue
                 # non-temperature attributes
                 self._attributes[attr] = raw_value
