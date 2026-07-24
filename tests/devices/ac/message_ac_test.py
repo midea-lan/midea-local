@@ -5,6 +5,8 @@ import pytest
 from midealocal.const import ProtocolVersion
 from midealocal.crc8 import calculate
 from midealocal.devices.ac.message import (
+    MessageA0LongQuery,
+    MessageA0Query,
     MessageACBase,
     MessageACResponse,
     MessageCapabilitiesQuery,
@@ -122,6 +124,23 @@ class TestMessageCapabilitiesQuery:
         assert msg.body[:-2] == expected_body
 
 
+class TestMessageA0Query:
+    """Test Message A0 Query."""
+
+    def test_a0_query_body(self) -> None:
+        """Test A0 query body."""
+        msg = MessageA0Query(protocol_version=ProtocolVersion.V1)
+        expected_body = bytearray([0xA0, 0xA7])
+        assert msg.body[:2] == expected_body
+        assert len(msg.body) == 4  # body type + query + message id + crc
+
+    def test_a0_long_query_body(self) -> None:
+        """Test A0 long query body."""
+        msg = MessageA0LongQuery(protocol_version=ProtocolVersion.V1)
+        expected_body = bytearray([0xA0] + [0x00] * 19)
+        assert msg.body[:-2] == expected_body
+
+
 class TestMessagePowerQuery:
     """Test Message Power Query."""
 
@@ -154,6 +173,26 @@ class TestMessageGroupDataQuery:
         """Test that every group query encodes its group number."""
         msg = message_class(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray([0x41, 0x21, 0x01, 0x40 | group, 0x00, 0x01])
+        assert msg.body[:-1] == expected_body
+
+
+class TestMessageGroupZeroQuery:
+    """Test Message Group Zero Query."""
+
+    def test_group_zero_query_body(self) -> None:
+        """Test group zero query body."""
+        msg = MessageGroupZeroQuery(protocol_version=ProtocolVersion.V1)
+        expected_body = bytearray([0x41, 0x21, 0x01, 0x40, 0x00, 0x01])
+        assert msg.body[:-1] == expected_body
+
+
+class TestMessageHumidityQuery:
+    """Test Message Humidity Query."""
+
+    def test_humidity_query_body(self) -> None:
+        """Test humidity query body."""
+        msg = MessageHumidityQuery(protocol_version=ProtocolVersion.V1)
+        expected_body = bytearray([0x41, 0x21, 0x01, 0x45, 0x00, 0x01])
         assert msg.body[:-1] == expected_body
 
 
@@ -283,6 +322,56 @@ class TestMessageNewProtocolSetOutSilent:
         body = msg.body
         assert body[0] == 0xB0
         assert body[1] == 0x00  # 0 params packed
+
+
+class TestMessageNewProtocolSetAngles:
+    """Test Message New Protocol Set for wind angles and rate select."""
+
+    @pytest.mark.parametrize(
+        ("value", "expected_byte"),
+        [(25, 25), (0, 0x00)],
+    )
+    def test_wind_lr_angle(self, value: int, expected_byte: int) -> None:
+        """Test wind_lr_angle set sends correct byte."""
+        msg = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
+        # source annotates wind_lr_angle as bytes | None but the device sets ints
+        setattr(msg, "wind_lr_angle", value)  # noqa: B010
+        body = msg.body
+        assert body[0] == 0xB0
+        assert body[1] == 0x01  # 1 param packed
+        assert body[2] == NewProtocolTags.wind_lr_angle & 0xFF  # 0x0A
+        assert body[3] == NewProtocolTags.wind_lr_angle >> 8  # 0x00
+        assert body[4] == 0x01  # length byte
+        assert body[5] == expected_byte
+
+    @pytest.mark.parametrize(
+        ("value", "expected_byte"),
+        [(75, 75), (0, 0x00)],
+    )
+    def test_wind_ud_angle(self, value: int, expected_byte: int) -> None:
+        """Test wind_ud_angle set sends correct byte."""
+        msg = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
+        # source annotates wind_ud_angle as bytes | None but the device sets ints
+        setattr(msg, "wind_ud_angle", value)  # noqa: B010
+        body = msg.body
+        assert body[0] == 0xB0
+        assert body[1] == 0x01  # 1 param packed
+        assert body[2] == NewProtocolTags.wind_ud_angle & 0xFF  # 0x09
+        assert body[3] == NewProtocolTags.wind_ud_angle >> 8  # 0x00
+        assert body[4] == 0x01  # length byte
+        assert body[5] == expected_byte
+
+    def test_rate_select(self) -> None:
+        """Test rate_select set sends correct byte."""
+        msg = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
+        msg.rate_select = 60
+        body = msg.body
+        assert body[0] == 0xB0
+        assert body[1] == 0x01  # 1 param packed
+        assert body[2] == NewProtocolTags.rate_select & 0xFF  # 0x48
+        assert body[3] == NewProtocolTags.rate_select >> 8  # 0x00
+        assert body[4] == 0x01  # length byte
+        assert body[5] == 60
 
 
 class TestMessageSubProtocol:
@@ -595,6 +684,24 @@ class TestMessageACResponse:
         assert hasattr(response, "full_dust")
         assert hasattr(response, "comfort_mode")
 
+    def test_message_notify2_a0_fresh_filter(self) -> None:
+        """Test Message parse notify2 A0 with fresh filter bytes."""
+        body = bytearray(30)  # stripped body length 29 >= FRESH_AIR_C0_MIN_LENGTH
+        body[0] = 0xA0  # Body type
+        body[13] = 0x40  # Fresh filter timeout bit
+        body[15] = 0x20  # Fresh filter time use low byte
+        body[16] = 0x02  # Fresh filter time use high byte
+        body[24] = 0x10  # Fresh filter time total low byte
+        body[25] = 0x01  # Fresh filter time total high byte
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "fresh_filter_time_total")
+        assert response.fresh_filter_time_total == 0x01 * 256 + 0x10
+        assert hasattr(response, "fresh_filter_time_use")
+        assert response.fresh_filter_time_use == 0x02 * 256 + 0x20
+        assert hasattr(response, "fresh_filter_timeout")
+        assert response.fresh_filter_timeout == 1
+
     def test_message_notify1_a1(self) -> None:
         """Test Message parse notify1 A1."""
         self.header[9] = 0x04
@@ -718,6 +825,88 @@ class TestMessageACResponse:
         assert hasattr(response, "fresh_air_fan_speed")
         assert response.fresh_air_fan_speed == 20
 
+    def test_message_notify2_b0_rate_select(self) -> None:
+        """Test Message parse notify2 B0 with rate_select."""
+        body = bytearray(10)
+        body[0] = 0xB0  # Body type
+        body[1] = 0x01  # Params count
+        body[2] = NewProtocolTags.rate_select & 0xFF  # Low byte 0x48
+        body[3] = NewProtocolTags.rate_select >> 8  # High byte 0x00
+        body[4] = 0x00  # Padding
+        body[5] = 0x01  # Value length
+        body[6] = 40  # Value 40
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "rate_select")
+        assert response.rate_select == 40
+
+    def test_message_query_b5_capabilities(self) -> None:
+        """Test Message parse query B5 capabilities."""
+        self.header[9] = 0x03
+        body = bytearray([0xB5, 0x0B])  # Body type, params count
+        body += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode
+        body += bytearray([0x15, 0x02, 0x01, 1])  # b5_wind_swing
+        body += bytearray([0x10, 0x02, 0x01, 5])  # b5_wind_speed
+        body += bytearray([0x12, 0x02, 0x01, 1])  # b5_eco
+        body += bytearray([0x1E, 0x02, 0x01, 1])  # b5_anion
+        body += bytearray([0x17, 0x02, 0x01, 1])  # b5_filter_remind
+        body += bytearray([0x1A, 0x02, 0x01, 1])  # b5_strong_wind
+        body += bytearray([0x25, 0x02, 0x07, 34, 60, 34, 60, 34, 60, 0])  # temperature
+        body += bytearray([0x24, 0x02, 0x01, 1])  # b5_screen_display
+        body += bytearray([0x2C, 0x02, 0x01, 1])  # b5_sound
+        body += bytearray([0x1F, 0x02, 0x01, 1])  # b5_humidity
+        body += bytearray(1)  # trailing checksum byte (stripped by MessageResponse)
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "b5_mode")
+        assert response.b5_mode == 7
+        assert hasattr(response, "b5_anion")
+        assert response.b5_anion == 1
+        assert hasattr(response, "b5_filter_remind")
+        assert response.b5_filter_remind == 1
+        assert hasattr(response, "b5_strong_wind")
+        assert response.b5_strong_wind == 1
+        assert hasattr(response, "b5_wind_speed")
+        assert response.b5_wind_speed == 5
+        assert hasattr(response, "b5_screen_display")
+        assert response.b5_screen_display == 1
+        assert hasattr(response, "b5_sound")
+        assert response.b5_sound == 1
+        assert hasattr(response, "b5_humidity")
+        assert response.b5_humidity == 1
+        assert hasattr(response, "b5_temperature0")
+        assert response.b5_temperature0 == 34
+        assert hasattr(response, "b5_temperature6")
+        assert response.b5_temperature6 == 0
+        assert hasattr(response, "temperature_limits")
+        assert response.temperature_limits == {
+            1: (17.0, 30.0),
+            2: (17.0, 30.0),
+            3: (17.0, 30.0),
+            4: (17.0, 30.0),
+            5: (17.0, 30.0),
+        }
+        assert hasattr(response, "capabilities")
+        assert response.capabilities == {
+            "heat_mode": True,
+            "cool_mode": True,
+            "dry_mode": False,
+            "auto_mode": True,
+            "swing_horizontal": True,
+            "swing_vertical": True,
+            "fan_silent": False,
+            "fan_low": True,
+            "fan_medium": True,
+            "fan_high": True,
+            "fan_auto": True,
+            "fan_custom": False,
+            "eco": True,
+            "anion": True,
+            "turbo_cool": True,
+            "turbo_heat": True,
+            "display_control": True,
+        }
+
     @pytest.mark.parametrize(
         ("raw_value", "expected"),
         [(0x03, True), (0x00, False)],
@@ -833,6 +1022,57 @@ class TestMessageACResponse:
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature is None
+
+    def test_message_query_c0_fresh_filter(self) -> None:
+        """Test Message parse query C0 with fresh filter bytes."""
+        self.header[9] = 0x03
+        body = bytearray(30)  # stripped body length 29 >= FRESH_AIR_C0_MIN_LENGTH
+        body[0] = 0xC0  # Body type
+        body[13] = 0x40  # Fresh filter timeout bit
+        body[24] = 0x10  # Fresh filter time total low byte
+        body[25] = 0x01  # Fresh filter time total high byte
+        body[26] = 0x20  # Fresh filter time use low byte
+        body[27] = 0x02  # Fresh filter time use high byte
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "fresh_filter_time_total")
+        assert response.fresh_filter_time_total == 0x01 * 256 + 0x10
+        assert hasattr(response, "fresh_filter_time_use")
+        assert response.fresh_filter_time_use == 0x02 * 256 + 0x20
+        assert hasattr(response, "fresh_filter_timeout")
+        assert response.fresh_filter_timeout == 1
+
+    def test_message_query_c1_0x45(self) -> None:
+        """Test Message parse query C1 0x45 indoor humidity."""
+        self.header[9] = 0x03
+        body = bytearray(20)
+        body[0] = 0xC1  # Body type
+        body[3] = 0x45  # Set the type to 0x45
+        body[4] = 55  # Indoor humidity
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "indoor_humidity")
+        assert response.indoor_humidity == 55
+
+        body[4] = 0  # Indoor humidity unavailable
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "indoor_humidity")
+        assert response.indoor_humidity is None
+
+    def test_message_query_c1_unknown_method(self) -> None:
+        """Test Message parse query C1 with an unknown analysis method."""
+        self.header[9] = 0x03
+        body = bytearray(20)
+        body[0] = 0xC1  # Body type
+        body[3] = 0x44  # Set the type to 0x44
+        body[4] = 0x12  # Total energy consumption byte, ignored
+        body[16] = 0x11  # Real-time power byte, ignored
+        response = MessageACResponse(self.header + body, 5)
+        assert hasattr(response, "total_energy_consumption")
+        assert response.total_energy_consumption == 0.0
+        assert hasattr(response, "current_energy_consumption")
+        assert response.current_energy_consumption == 0.0
+        assert hasattr(response, "realtime_power")
+        assert response.realtime_power == 0.0
 
     def test_message_query_c1_method1(self) -> None:
         """Test Message parse query C1 method1."""
@@ -1542,6 +1782,24 @@ class TestMessageACResponse:
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "target_temperature")
         assert response.target_temperature == 25.0
+
+    def test_message_b5_notify2_0x7e_temperature_too_short(self) -> None:
+        """Test the 0x7e tag is ignored when shorter than the subtype-8 payload."""
+        self.header[9] = 0x05
+        body = bytearray(16)
+        body[0] = 0xB5
+        body[1] = 0x01
+        body[2] = 0x7E
+        body[3] = 0x00
+        body[4] = 0x0A  # length 10, at/below SUBTYPE8_TEMPERATURE_MIN_LENGTH
+        body[5 : 5 + 10] = bytearray(10)
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "has_subtype8_temperature")
+        assert response.has_subtype8_temperature is True
+        assert not hasattr(response, "target_temperature")
+        assert not hasattr(response, "indoor_temperature")
+        assert not hasattr(response, "outdoor_temperature")
 
 
 class TestMessageNewProtocolSetNewFeatures:
