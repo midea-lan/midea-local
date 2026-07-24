@@ -7,8 +7,14 @@ import pytest
 from midealocal.const import ProtocolVersion
 from midealocal.devices.ed import DeviceAttributes, MideaEDDevice
 from midealocal.devices.ed.message import (
+    MessageEDBase,
+    MessageOldSet,
     MessageQuery,
     MessageQuery01,
+    MessageQuery04,
+    MessageQuery05,
+    MessageQuery06,
+    MessageQuery07,
     MessageQuery09,
     MessageQueryFF,
 )
@@ -99,6 +105,38 @@ class TestMideaEDDevice:
         assert isinstance(queries[1], MessageQuery01)
         assert isinstance(queries[2], MessageQueryFF)
 
+    @pytest.mark.parametrize(
+        ("subtype", "expected_query"),
+        [
+            (309, MessageQuery04),
+            (316, MessageQuery05),
+            (290, MessageQuery06),
+            (288, MessageQuery07),
+            (775, MessageQuery01),
+        ],
+    )
+    def test_build_query_subtypes(
+        self,
+        subtype: int,
+        expected_query: type[MessageEDBase],
+    ) -> None:
+        """Test build query for subtype specific queries."""
+        device = MideaEDDevice(
+            name="Test Device",
+            device_id=1,
+            ip_address="192.168.1.100",
+            port=6444,
+            token="AA",
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="test_model",
+            subtype=subtype,
+            customize="test_customize",
+        )
+        queries = device.build_query()
+        assert len(queries) == 1
+        assert isinstance(queries[0], expected_query)
+
     def test_set_attribute(self) -> None:
         """Test set attribute."""
         with patch.object(self.device, "build_send") as mock_build_send:
@@ -181,6 +219,16 @@ class TestMideaEDDeviceSoftWater:
             assert sent_message.timing_regeneration_hour == 2
             assert sent_message.timing_regeneration_min == 30
 
+    def test_set_attribute_timing_regeneration_min_couples_hour(self) -> None:
+        """Test setting min also sends current hour value (coupled write)."""
+        self.device._attributes[DeviceAttributes.timing_regeneration_hour] = 5
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.timing_regeneration_min, 45)
+            mock_build_send.assert_called_once()
+            sent_message = mock_build_send.call_args[0][0]
+            assert sent_message.timing_regeneration_min == 45
+            assert sent_message.timing_regeneration_hour == 5
+
     def test_set_attribute_leak_water_protection_value_couples_switch(self) -> None:
         """Test setting leak_water_protection_value also sends current switch state."""
         self.device._attributes[DeviceAttributes.leak_water_protection] = True
@@ -190,3 +238,16 @@ class TestMideaEDDeviceSoftWater:
             sent_message = mock_build_send.call_args[0][0]
             assert sent_message.leak_water_protection_value == 400
             assert sent_message.leak_water_protection is True
+
+    def test_set_attribute_old_set(self) -> None:
+        """Test set attribute with the old set message."""
+        with (
+            patch.object(self.device, "_use_new_set", return_value=False),
+            patch.object(self.device, "build_send") as mock_build_send,
+        ):
+            self.device.set_attribute(DeviceAttributes.power, True)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert isinstance(message, MessageOldSet)
+            # power is set dynamically via setattr in set_attribute
+            assert getattr(message, "power", None) is True

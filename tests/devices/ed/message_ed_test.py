@@ -14,6 +14,7 @@ from midealocal.devices.ed.message import (
     MessageEDBase,
     MessageEDResponse,
     MessageNewSet,
+    MessageOldSet,
     MessageQuery,
     MessageQuery01,
     MessageQuery03,
@@ -242,6 +243,42 @@ class TestMessageNewSet:
         assert body[2] == 0x01  # pack_count
         assert body[3:8] == bytearray([0x02, 0x01, 0x00, 0x00, 0x1E])
 
+    def test_message_newset_flushing_days(self) -> None:
+        """Test MessageNewSet with flushing_days (addition param)."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.flushing_days = 7
+        body = new_set.body
+        # pack(param=0x0101, value=0x00, addition=7) -> [0x01, 0x01, 0x00, 0x07, 0x00]
+        assert body[2] == 0x01  # pack_count
+        assert body[3:8] == bytearray([0x01, 0x01, 0x00, 0x07, 0x00])
+
+    def test_message_newset_regeneration(self) -> None:
+        """Test MessageNewSet with regeneration switch."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.regeneration = True
+        body = new_set.body
+        # pack(param=0x0103, value=0x01) -> [0x03, 0x01, 0x01, 0x00, 0x00]
+        assert body[2] == 0x01  # pack_count
+        assert body[3:8] == bytearray([0x03, 0x01, 0x01, 0x00, 0x00])
+
+    def test_message_newset_salt_setting(self) -> None:
+        """Test MessageNewSet with salt_setting (addition param)."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.salt_setting = 3
+        body = new_set.body
+        # pack(param=0x0104, value=0x00, addition=3) -> [0x04, 0x01, 0x00, 0x03, 0x00]
+        assert body[2] == 0x01  # pack_count
+        assert body[3:8] == bytearray([0x04, 0x01, 0x00, 0x03, 0x00])
+
+    def test_message_newset_cl_sterilization(self) -> None:
+        """Test MessageNewSet with cl_sterilization switch."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.cl_sterilization = True
+        body = new_set.body
+        # pack(param=0x0109, value=0x01) -> [0x09, 0x01, 0x01, 0x00, 0x00]
+        assert body[2] == 0x01  # pack_count
+        assert body[3:8] == bytearray([0x09, 0x01, 0x01, 0x00, 0x00])
+
     def test_message_newset_water_way(self) -> None:
         """Test MessageNewSet with water_way switch."""
         new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
@@ -250,6 +287,16 @@ class TestMessageNewSet:
         # pack(param=0x0200, value=0x01) -> [0x00, 0x02, 0x01, 0x00, 0x00]
         assert body[2] == 0x01  # pack_count
         assert body[3:8] == bytearray([0x00, 0x02, 0x01, 0x00, 0x00])
+
+
+class TestMessageOldSet:
+    """Test MessageOldSet."""
+
+    def test_message_oldset(self) -> None:
+        """Test MessageOldSet has an empty body."""
+        old_set = MessageOldSet(protocol_version=ProtocolVersion.V1)
+        assert old_set.body == bytearray([])
+        assert old_set._body == bytearray([])
 
 
 class TestEDMessageBody01:
@@ -694,3 +741,72 @@ class TestMessageEDResponse:
         assert message.life2 == 2
         assert hasattr(message, "life3")
         assert message.life3 == 3
+
+    @pytest.mark.parametrize(
+        ("body_type", "body_size"),
+        [
+            (ListTypes.X01, 41),
+            (ListTypes.X03, 53),
+            (ListTypes.X04, 53),
+            (ListTypes.X05, 53),
+            (ListTypes.X06, 53),
+            (ListTypes.X07, 53),
+        ],
+    )
+    def test_ed_typed_body_response(
+        self,
+        body_type: ListTypes,
+        body_size: int,
+    ) -> None:
+        """Test response dispatch to the body parser of each body type."""
+        header = bytearray(
+            [
+                0xAA,
+                0x00,
+                0xDA,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x03,
+            ],
+        )
+        body = bytearray(body_size)
+        body[0] = body_type
+        message = MessageEDResponse(bytes(header + body))
+        assert hasattr(message, "device_class")
+        assert message.device_class == body_type
+        assert hasattr(message, "power")
+        assert message.power is False
+        assert hasattr(message, "water_consumption")
+        assert message.water_consumption == 0
+        assert hasattr(message, "child_lock")
+        assert message.child_lock is False
+
+    def test_ed_typed_body_response_x09(self) -> None:
+        """Test response dispatch to the body parser for body type X09."""
+        header = bytearray(
+            [
+                0xAA,
+                0x00,
+                0xDA,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x03,
+            ],
+        )
+        body = bytearray(60)
+        body[0] = ListTypes.X09
+        message = MessageEDResponse(bytes(header + body))
+        assert hasattr(message, "device_class")
+        assert message.device_class == ListTypes.X09
+        assert hasattr(message, "velocity")
+        assert message.velocity == 0
+        assert hasattr(message, "water_consumption")
+        assert message.water_consumption == 0
