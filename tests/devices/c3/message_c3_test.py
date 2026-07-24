@@ -11,8 +11,11 @@ from midealocal.devices.c3.message import (
     MessageQueryBasic,
     MessageQueryDisinfect,
     MessageQueryECO,
+    MessageQueryHMIPara,
+    MessageQueryInstall,
     MessageQuerySilence,
     MessageSet,
+    MessageSetDisinfect,
     MessageSetECO,
     MessageSetSilent,
 )
@@ -52,6 +55,14 @@ class TestC3MessageQuery:
 
         msg = MessageQueryECO(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray([0x7])
+        assert msg.body == expected_body
+
+        msg = MessageQueryInstall(protocol_version=ProtocolVersion.V1)
+        expected_body = bytearray([0x8])
+        assert msg.body == expected_body
+
+        msg = MessageQueryHMIPara(protocol_version=ProtocolVersion.V1)
+        expected_body = bytearray([0xA])
         assert msg.body == expected_body
 
 
@@ -124,6 +135,20 @@ class TestC3MessageSetECO:
         assert msg.body == expected_body_off
         msg.eco_mode = True
         assert msg.body == expected_body_eco
+
+
+class TestC3MessageSetDisinfect:
+    """Test C3 message set disinfect."""
+
+    def test_set_disinfect_body(self) -> None:
+        """Test set disinfect body."""
+        msg = MessageSetDisinfect(protocol_version=ProtocolVersion.V1)
+        expected_body_off = bytearray([0x9] + [0x0] * 4)
+        expected_body_on = bytearray([0x9, 0x1] + [0x0] * 3)
+
+        assert msg.body == expected_body_off
+        msg.disinfect = True
+        assert msg.body == expected_body_on
 
 
 class TestMessageC3Response:
@@ -341,3 +366,93 @@ class TestMessageC3Response:
         assert response.silent_mode is True
         assert hasattr(response, "silent_level")
         assert response.silent_level == C3SilentLevel.SUPER_SILENT.name
+
+    def test_message_eco_response(self) -> None:
+        """Test message ECO response."""
+        self.header[-1] = MessageType.query
+        body = bytearray([ListTypes.X07, 0x03, 0x00])
+        response = MessageC3Response(bytes(self.header + body))
+        assert response.body_type == ListTypes.X07
+        assert hasattr(response, "eco_function_state")
+        assert response.eco_function_state is True
+        assert hasattr(response, "eco_timer_state")
+        assert response.eco_timer_state is True
+
+        body[1] = 0x0
+        response = MessageC3Response(bytes(self.header + body))
+        assert hasattr(response, "eco_function_state")
+        assert response.eco_function_state is False
+        assert hasattr(response, "eco_timer_state")
+        assert response.eco_timer_state is False
+
+    def test_message_disinfect_response(self) -> None:
+        """Test message disinfect response."""
+        self.header[-1] = MessageType.query
+        body = bytearray(
+            [
+                ListTypes.X09,
+                0x03,  # BYTE 1: disinfect + disinfect_run
+                5,  # BYTE 2: disinfect_set_weekday
+                10,  # BYTE 3: disinfect_start_hour
+                30,  # BYTE 4: disinfect_start_minutes
+                0x00,  # CRC
+            ],
+        )
+        response = MessageC3Response(bytes(self.header + body))
+        assert response.body_type == ListTypes.X09
+        assert hasattr(response, "disinfect")
+        assert response.disinfect is True
+        assert hasattr(response, "disinfect_run")
+        assert response.disinfect_run is True
+        assert hasattr(response, "disinfect_set_weekday")
+        assert response.disinfect_set_weekday == 5
+        assert hasattr(response, "disinfect_start_hour")
+        assert response.disinfect_start_hour == 10
+        assert hasattr(response, "disinfect_start_minutes")
+        assert response.disinfect_start_minutes == 30
+
+    def test_message_unitpara_response(self) -> None:
+        """Test message unit parameters response."""
+        self.header[-1] = MessageType.query
+        body = bytearray(88)  # body type + 86 data bytes + CRC
+        body[0] = ListTypes.X10
+        body[1] = 50  # comp_run_freq
+        body[2] = 2  # unit_mode_run
+        body[4] = 8  # fan_speed / 10
+        body[6] = 9  # fg_capacity_need
+        body[8] = 30  # temp_t4
+        body[10] = 40  # temp_tw_in
+        body[11] = 35  # temp_tw_out
+        body[18] = 1  # odu_voltage high byte
+        body[19] = 44  # odu_voltage low byte
+        body[22] = 5  # odu_model
+        body[43] = 2  # pressure_high high byte
+        body[70] = 10  # total_electricity0 low byte
+        body[83] = 1  # instant_power0 high byte
+        body[84] = 244  # instant_power0 low byte
+        response = MessageC3Response(bytes(self.header + body))
+        assert response.body_type == ListTypes.X10
+        assert hasattr(response, "comp_run_freq")
+        assert response.comp_run_freq == 50
+        assert hasattr(response, "unit_mode_run")
+        assert response.unit_mode_run == 2
+        assert hasattr(response, "fan_speed")
+        assert response.fan_speed == 80
+        assert hasattr(response, "fg_capacity_need")
+        assert response.fg_capacity_need == 9
+        assert hasattr(response, "temp_t4")
+        assert response.temp_t4 == 30
+        assert hasattr(response, "temp_tw_in")
+        assert response.temp_tw_in == 40
+        assert hasattr(response, "temp_tw_out")
+        assert response.temp_tw_out == 35
+        assert hasattr(response, "odu_voltage")
+        assert response.odu_voltage == 300
+        assert hasattr(response, "odu_model")
+        assert response.odu_model == 5
+        assert hasattr(response, "pressure_high")
+        assert response.pressure_high == 512
+        assert hasattr(response, "total_electricity0")
+        assert response.total_electricity0 == 10
+        assert hasattr(response, "instant_power0")
+        assert response.instant_power0 == 500
