@@ -1089,11 +1089,12 @@ class XBXMessageBody(NewProtocolMessageBody):
                 len(data) > SELF_CLEAN_ACTIVE_STATUS_BYTE
                 and data[SELF_CLEAN_ACTIVE_STATUS_BYTE] != 0
             )
-        if SUBTYPE8_TEMPERATURE_TAG in params:
+        if SUBTYPE8_TEMPERATURE_TAG in params and self._parse_subtype8_temperatures(
+            params[SUBTYPE8_TEMPERATURE_TAG],
+        ):
             self.has_subtype8_temperature = True
-            self._parse_subtype8_temperatures(params[SUBTYPE8_TEMPERATURE_TAG])
 
-    def _parse_subtype8_temperatures(self, data: bytearray) -> None:
+    def _parse_subtype8_temperatures(self, data: bytearray) -> bool:
         """Decode setpoint/indoor temperature for AC subtype 8 (model 22013279).
 
         The standard C0 frame is stale for this subtype; temperatures are
@@ -1103,7 +1104,7 @@ class XBXMessageBody(NewProtocolMessageBody):
         - bit 0x40 adds an extra +0.5C
         """
         if len(data) <= SUBTYPE8_TEMPERATURE_MIN_LENGTH:
-            return
+            return False
         raw_setpoint = data[1]
         target_temperature = (
             SUBTYPE8_SETPOINT_OFFSET + (raw_setpoint & SUBTYPE8_SETPOINT_MASK) / 2
@@ -1124,15 +1125,25 @@ class XBXMessageBody(NewProtocolMessageBody):
                 <= SUBTYPE8_MAX_VALID_TEMPERATURE
             ):
                 target_temperature = fallback_target
-        self.target_temperature = target_temperature
-        self.indoor_temperature = round(
+            else:
+                return False
+        indoor_temperature = round(
             (data[SUBTYPE8_INDOOR_TEMPERATURE_BYTE] - 50) / 2
             + data[SUBTYPE8_INDOOR_TEMPERATURE_DECIMAL_BYTE] * 0.1,
             1,
         )
+        if not (
+            SUBTYPE8_MIN_VALID_TEMPERATURE
+            <= indoor_temperature
+            <= SUBTYPE8_MAX_VALID_TEMPERATURE
+        ):
+            return False
+        self.target_temperature = target_temperature
+        self.indoor_temperature = indoor_temperature
         # Outdoor temperature isn't available locally on this model (the app
         # shows a cloud/weather value); avoid the bogus C0-derived value.
         self.outdoor_temperature = None
+        return True
 
 
 class XB5MessageBody(NewProtocolMessageBody):
