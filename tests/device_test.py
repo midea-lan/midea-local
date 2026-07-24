@@ -1,5 +1,6 @@
 """Midea Local device test."""
 
+from typing import ClassVar
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,6 +9,8 @@ from midealocal.cloud import DEFAULT_KEYS
 from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import (
     MESSAGE_TYPE_INDEX,
+    QUERY_TIMEOUT,
+    RESPONSE_TIMEOUT,
     AuthException,
     MessageResult,
     MideaDevice,
@@ -15,6 +18,20 @@ from midealocal.device import (
 )
 from midealocal.exceptions import SocketException
 from midealocal.message import MessageType
+
+
+class _DictDevice(MideaDevice):
+    """MideaDevice subclass exposing a class-level dict for lookup tests."""
+
+    modes: ClassVar[dict[int, str]] = {1: "auto", 2: "cool"}
+
+
+def test_get_dict_key_by_value() -> None:
+    """Test get_dict_key_by_value found, not-found and missing-dict cases."""
+    assert _DictDevice.get_dict_key_by_value("modes", "cool") == 2
+    assert _DictDevice.get_dict_key_by_value("modes", "unknown") is None
+    with pytest.raises(ValueError, match="does not have a dict named 'missing'"):
+        _DictDevice.get_dict_key_by_value("missing", "cool")
 
 
 def test_fetch_v2_message() -> None:
@@ -89,7 +106,7 @@ def test_parse_message_short_appliance_query_message_skips_process_message() -> 
     assert device._appliance_query is True
 
 
-class MideaDeviceTest:
+class TestMideaDevice:
     """Midea device test case."""
 
     device: MideaDevice
@@ -124,6 +141,31 @@ class MideaDeviceTest:
         assert self.device.mac == "1234567890ab"
         assert self.device.serial_number == "test_serial"
 
+    def test_get_attribute(self) -> None:
+        """Test get_attribute reads from the internal attributes dict."""
+        self.device._attributes["power"] = True
+        assert self.device.get_attribute("power") is True
+        assert self.device.get_attribute("missing") is None
+
+    def test_attributes_property(self) -> None:
+        """Test attributes property stringifies keys from the internal dict."""
+        self.device._attributes[DeviceType.AC] = True
+        assert self.device.attributes == {str(DeviceType.AC): True}
+
+    def test_celsius_to_fahrenheit(self) -> None:
+        """Test celsius_to_fahrenheit conversion and pass-through branches."""
+        assert self.device.celsius_to_fahrenheit(20, is_fahrenheit=True) == 68
+        assert self.device.celsius_to_fahrenheit(20, is_fahrenheit=False) == 20
+        # is_fahrenheit=None falls back to the class default (False), so the
+        # value passes through unconverted.
+        assert self.device.celsius_to_fahrenheit(20) == 20
+
+    def test_fahrenheit_to_celsius(self) -> None:
+        """Test fahrenheit_to_celsius conversion and pass-through branches."""
+        assert self.device.fahrenheit_to_celsius(68, is_fahrenheit=True) == 20
+        assert self.device.fahrenheit_to_celsius(68, is_fahrenheit=False) == 68
+        assert self.device.fahrenheit_to_celsius(68) == 68
+
     @pytest.mark.parametrize(
         ("exc", "result", "socket_is_none"),
         [
@@ -131,6 +173,7 @@ class MideaDeviceTest:
             (OSError, False, True),
             (AuthException, False, True),
             (NoSupportedProtocol, False, True),
+            (SocketException, False, True),
             (None, True, False),
         ],
     )
@@ -275,6 +318,42 @@ class MideaDeviceTest:
             self.device.send_message(bytes([0x0] * 20))
             self.device._device_protocol_version = ProtocolVersion.V2
             self.device.send_message(bytes([0x0] * 20))
+
+    def test_send_message_v2_socket_none(self) -> None:
+        """Test send_message_v2 raises SocketException when socket is None."""
+        self.device._socket = None
+        with pytest.raises(SocketException):
+            self.device.send_message_v2(bytes([0x0] * 20))
+
+    def test_send_message_v2_query_sets_timeout(self) -> None:
+        """Test send_message_v2 sets QUERY_TIMEOUT when query is True."""
+        socket_mock = MagicMock()
+        self.device._socket = socket_mock
+        self.device.send_message_v2(bytes([0x0] * 20), query=True)
+        socket_mock.settimeout.assert_called_once_with(QUERY_TIMEOUT)
+        socket_mock.send.assert_called_once()
+
+    @pytest.mark.parametrize(
+        "exc",
+        [TimeoutError, ConnectionResetError, OSError, ValueError],
+    )
+    def test_send_message_v2_send_errors_reraised(self, exc: type[Exception]) -> None:
+        """Test send_message_v2 logs and re-raises every socket.send failure."""
+        socket_mock = MagicMock()
+        socket_mock.send.side_effect = exc("boom")
+        self.device._socket = socket_mock
+        with pytest.raises(exc):
+            self.device.send_message_v2(bytes([0x0] * 20))
+
+    def test_build_send(self) -> None:
+        """Test build_send serializes, packages and sends the command."""
+        cmd = MagicMock()
+        cmd.serialize.return_value = bytes([0x01, 0x02])
+        with patch.object(self.device, "send_message") as send_mock:
+            self.device.build_send(cmd, query=True)
+        cmd.serialize.assert_called_once()
+        send_mock.assert_called_once()
+        assert send_mock.call_args.kwargs["query"] is True
 
     def test_refresh_status(self) -> None:
         """Test refresh status."""
@@ -445,6 +524,15 @@ class MideaDeviceTest:
             assert self.device._is_run is False
             socket_mock.close.assert_called()
 
+    def test_close_socket_close_oserror(self) -> None:
+        """Test close_socket swallows OSError raised by socket.close()."""
+        socket_mock = MagicMock()
+        socket_mock.close.side_effect = OSError("already closed")
+        self.device._socket = socket_mock
+        self.device.close_socket()
+        socket_mock.close.assert_called_once()
+        assert self.device._socket is None
+
     def test_set_ip(self) -> None:
         """Test set ip."""
         with patch.object(self.device, "_socket") as socket_mock:
@@ -455,9 +543,159 @@ class MideaDeviceTest:
 
     def test_set_mac(self) -> None:
         """Test set mac."""
-        assert self.device._mac == "1234567890ab"
+        assert self.device.mac == "1234567890ab"
         self.device.set_mac("9234567890ab")
-        assert self.device._mac == "9234567890ab"
+        assert self.device.mac == "9234567890ab"
+
+    def test_enable_device(self) -> None:
+        """Test deprecated enable_device delegates to set_available."""
+        with pytest.warns(DeprecationWarning, match="enable_device"):
+            self.device.enable_device(True)
+        assert self.device.available is True
+        with pytest.warns(DeprecationWarning, match="enable_device"):
+            self.device.enable_device(False)
+        assert self.device.available is False
+
+    def test_should_run(self) -> None:
+        """Test _should_run reflects _is_run."""
+        self.device._is_run = True
+        assert self.device._should_run() is True
+        self.device._is_run = False
+        assert self.device._should_run() is False
+
+    def test_set_refresh_interval(self) -> None:
+        """Test set_refresh_interval."""
+        self.device.set_refresh_interval(60)
+        assert self.device._refresh_interval == 60
+
+    def test_check_refresh(self) -> None:
+        """Test _check_refresh triggers refresh_status once the interval elapses."""
+        self.device._refresh_interval = 30
+        self.device._previous_refresh = 0.0
+        with patch.object(self.device, "refresh_status") as refresh_mock:
+            # Not enough time elapsed yet: no refresh.
+            self.device._check_refresh(10.0)
+            refresh_mock.assert_not_called()
+            assert self.device._previous_refresh == 0.0
+
+            # Interval elapsed: refresh triggered and previous_refresh updated.
+            self.device._check_refresh(30.0)
+            refresh_mock.assert_called_once()
+            assert self.device._previous_refresh == 30.0
+
+    def test_check_heartbeat(self) -> None:
+        """Test _check_heartbeat triggers send_heartbeat once the interval elapses."""
+        self.device._heartbeat_interval = 10
+        self.device._previous_heartbeat = 0.0
+        with patch.object(self.device, "send_heartbeat") as heartbeat_mock:
+            self.device._check_heartbeat(5.0)
+            heartbeat_mock.assert_not_called()
+            assert self.device._previous_heartbeat == 0.0
+
+            self.device._check_heartbeat(10.0)
+            heartbeat_mock.assert_called_once()
+            assert self.device._previous_heartbeat == 10.0
+
+    def test_connect_loop(self) -> None:
+        """Test _connect_loop retries with backoff and stops when told to."""
+        self.device._is_run = True
+        self.device._socket = None
+        sleep_calls: list[float] = []
+
+        def fake_sleep(seconds: float) -> None:
+            sleep_calls.append(seconds)
+            # Simulate close() happening concurrently during the backoff sleep.
+            self.device._is_run = False
+
+        with (
+            patch.object(self.device, "connect", return_value=False),
+            patch("time.sleep", side_effect=fake_sleep),
+        ):
+            self.device._connect_loop()
+
+        assert sleep_calls == [1]
+        assert self.device._socket is None
+
+    def test_run_breaks_when_stopped_during_connect_loop(self) -> None:
+        """Test run exits immediately if closed while _connect_loop runs."""
+        self.device._is_run = True
+        with patch.object(
+            self.device,
+            "_connect_loop",
+            side_effect=lambda: setattr(self.device, "_is_run", False),
+        ):
+            self.device.run()
+        assert self.device._is_run is False
+
+    def test_run_socket_none_raises_socket_exception(self) -> None:
+        """Test run treats a None socket mid-loop as a SocketException."""
+        self.device._is_run = True
+        self.device._socket = None
+        with (
+            patch.object(self.device, "_connect_loop"),
+            patch.object(
+                self.device,
+                "close_socket",
+                side_effect=lambda: setattr(self.device, "_is_run", False),
+            ) as close_mock,
+        ):
+            self.device.run()
+        close_mock.assert_called_once()
+
+    def test_run_message_loop_branches(self) -> None:
+        """Test run's recv/parse result handling and every exception branch."""
+        self.device._is_run = True
+        self.device._socket = MagicMock()
+
+        connect_loop_calls = {"n": 0}
+
+        def fake_connect_loop() -> None:
+            connect_loop_calls["n"] += 1
+            if connect_loop_calls["n"] > 5:
+                self.device._is_run = False
+
+        check_refresh_side_effect = (
+            [None, None, None, None]  # passes 1-4: no refresh due
+            + [NoSupportedProtocol()]  # pass 5, iter a: continue
+            + [None]  # pass 5, iter b: refresh ok, then SUCCESS recv
+            + [None] * RESPONSE_TIMEOUT  # pass 5, iters c..: timeouts
+        )
+        recv_side_effect = [
+            b"",  # pass 1: empty -> ConnectionResetError
+            b"\x01",  # pass 2: parsed as ERROR
+            OSError("boom"),  # pass 3
+            ValueError("boom"),  # pass 4
+            b"\x01",  # pass 5, iter b: parsed as SUCCESS
+            *([TimeoutError()] * RESPONSE_TIMEOUT),  # pass 5: hits the threshold
+        ]
+        parse_message_side_effect = [MessageResult.ERROR, MessageResult.SUCCESS]
+
+        with (
+            patch.object(self.device, "_connect_loop", side_effect=fake_connect_loop),
+            patch.object(self.device, "close_socket"),
+            patch.object(
+                self.device,
+                "_check_refresh",
+                side_effect=check_refresh_side_effect,
+            ),
+            patch.object(self.device, "_check_heartbeat"),
+            patch.object(self.device._socket, "recv", side_effect=recv_side_effect),
+            patch.object(
+                self.device,
+                "parse_message",
+                side_effect=parse_message_side_effect,
+            ),
+            patch("time.sleep"),
+        ):
+            self.device.run()
+
+        assert connect_loop_calls["n"] == 6
+        assert self.device._is_run is False
+
+    def test_set_attribute(self) -> None:
+        """Test set_attribute raises NotImplementedError."""
+        with pytest.raises(NotImplementedError):
+            self.device.set_attribute("power", True)
 
     @staticmethod
     def _make_device(serial_number: str | None) -> MideaDevice:
