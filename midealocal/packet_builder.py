@@ -1,7 +1,6 @@
 """Midea local packet builder."""
 
 from datetime import UTC, datetime
-from typing import cast
 
 from .security import LocalSecurity
 
@@ -89,9 +88,9 @@ class PacketBuilder:
         return self.security.encode32_data(data)
 
     @staticmethod
-    def checksum(data: bytes) -> bytes:
+    def checksum(data: bytes) -> int:
         """Packet builder checksum."""
-        return cast(bytes, (~sum(data) + 1) & 0xFF)
+        return (~sum(data) + 1) & 0xFF
 
     @staticmethod
     def packet_time() -> bytearray:
