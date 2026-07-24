@@ -196,8 +196,8 @@ class MessageSet(MessageCDBase):
             if self.use_old_protocol
             else round(self.target_temperature)
         )
-        # flags: vacation / fahrenheit only (Lua normal set; openPTC forced 0)
-        byte8 = 0
+        # flags: vacation / fahrenheit / mute (preserved from echoed fields)
+        byte8 = self.read_field("byte8") & 0x08
         if self.vacation_flag:
             byte8 |= 0x10
         if self.fahrenheit:
