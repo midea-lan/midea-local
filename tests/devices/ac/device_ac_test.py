@@ -181,6 +181,61 @@ class TestMideaACDevice:
             self.device.set_attribute(DeviceAttributes.out_silent.value, False)
             mock_build_send.assert_called()
 
+    def test_set_attribute_angles_and_rate_select(self) -> None:
+        """Test set attribute for wind angles and rate select."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.wind_lr_angle.value, "left")
+            message = mock_build_send.call_args[0][0]
+            assert message.wind_lr_angle == 1
+
+            self.device.set_attribute(DeviceAttributes.wind_ud_angle.value, "up")
+            message = mock_build_send.call_args[0][0]
+            assert message.wind_ud_angle == 1
+
+            self.device.set_attribute(DeviceAttributes.rate_select.value, "40")
+            message = mock_build_send.call_args[0][0]
+            assert message.rate_select == 40
+
+    def test_set_attribute_fresh_air_mode_named_speed(self) -> None:
+        """Test set attribute for fresh air mode with a named fan speed."""
+        self.device._fresh_air_version = DeviceAttributes.fresh_air_1
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.fresh_air_mode.value, "medium")
+            message = mock_build_send.call_args[0][0]
+            assert message.fresh_air_1 == [True, 60]
+
+            self.device.set_attribute(DeviceAttributes.fresh_air_mode.value, "off")
+            message = mock_build_send.call_args[0][0]
+            assert message.fresh_air_1 == [False, 0]
+
+    def test_set_attribute_eco_mode_resets_exclusive_modes(self) -> None:
+        """Test eco mode set resets comfort and frost protect on general set."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.eco_mode.value, True)
+            message = mock_build_send.call_args[0][0]
+            assert message.eco_mode is True
+            assert message.boost_mode is False
+            assert message.sleep_mode is False
+            assert message.comfort_mode is False
+            assert message.frost_protect is False
+
+    def test_set_attribute_mode_change_from_dry(self) -> None:
+        """Test mode change out of dry mode forces fan speed to auto."""
+        self.device._attributes[DeviceAttributes.mode] = 3  # DRY_MODE
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.mode.value, 1)
+            message = mock_build_send.call_args[0][0]
+            assert message.mode == 1
+            assert message.power is True
+            assert message.dry is False
+            assert message.fan_speed == 102
+
+    def test_customize_temperature_limits(self) -> None:
+        """Test customize min/max temperature limits."""
+        self.device.set_customize('{"min_temperature": 17, "max_temperature": 28}')
+        assert self.device.attributes[DeviceAttributes.min_temperature] == 17
+        assert self.device.attributes[DeviceAttributes.max_temperature] == 28
+
     def test_build_query(self) -> None:
         """Test build query."""
         self.device._used_subprotocol = True
@@ -344,6 +399,76 @@ class TestMideaACDevice:
         assert message.power is True
         assert message.speed == 80
         assert message.exhaust is True
+
+    def test_bb_fresh_air_set_attribute_speed(self) -> None:
+        """Test BB model sends intake and exhaust numeric speed commands."""
+        device = self._make_device("23096633", 1)
+        with patch.object(device, "build_send") as build_send:
+            device.set_attribute(DeviceAttributes.fresh_air_fan_speed, 55)
+            intake = build_send.call_args.args[0]
+            assert isinstance(intake, MessageSubProtocolFreshAirSet)
+            assert intake.power is True
+            assert intake.speed == 55
+            assert intake.exhaust is False
+
+            device.set_attribute(DeviceAttributes.fresh_air_exhaust_speed, 30)
+            exhaust = build_send.call_args.args[0]
+            assert isinstance(exhaust, MessageSubProtocolFreshAirSet)
+            assert exhaust.power is True
+            assert exhaust.speed == 30
+            assert exhaust.exhaust is True
+
+            # Out-of-range values clamp to [0, 100]; 0 powers off and falls
+            # back to the current speed. set_attribute does not itself
+            # mutate _attributes, so the "current" exhaust speed used as a
+            # fallback remains the model's advertised default.
+            device.set_attribute(DeviceAttributes.fresh_air_exhaust_speed, 150)
+            clamped = build_send.call_args.args[0]
+            assert clamped.speed == 100
+
+            device.set_attribute(DeviceAttributes.fresh_air_exhaust_speed, 0)
+            zero_speed = build_send.call_args.args[0]
+            assert zero_speed.power is False
+            assert zero_speed.speed == 80
+
+    def test_wind_angle_and_rate_select_properties(self) -> None:
+        """Test wind angle and rate select option lists."""
+        assert self.device.wind_lr_angles == [
+            "off",
+            "left",
+            "left-mid",
+            "middle",
+            "right-mid",
+            "right",
+        ]
+        assert self.device.wind_ud_angles == [
+            "off",
+            "up",
+            "up-mid",
+            "middle",
+            "down-mid",
+            "down",
+        ]
+        assert self.device.rate_selects == ["1", "20", "40", "60", "80", "100"]
+
+    def test_capabilities_property_updates_from_b5_response(self) -> None:
+        """Test B5 capability flags accumulate into the capabilities property."""
+        assert self.device.capabilities == {}
+        body = bytearray([0xB5, 0x03])
+        body += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode
+        body += bytearray([0x12, 0x02, 0x01, 1])  # b5_eco
+        body += bytearray([0x1E, 0x02, 0x01, 1])  # b5_anion
+
+        self.device.process_message(self._response(body))
+
+        assert self.device.capabilities == {
+            "heat_mode": True,
+            "cool_mode": True,
+            "dry_mode": False,
+            "auto_mode": True,
+            "eco": True,
+            "anion": True,
+        }
 
     def test_process_message(self) -> None:
         """Test process message."""
