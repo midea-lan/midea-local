@@ -123,6 +123,12 @@ class TestMideaA1Device:
         assert message_set.pump
         assert message_set.pump_enable
 
+        self.device._attributes[DeviceAttributes.fan_speed] = "Unknown"
+        self.device._attributes[DeviceAttributes.mode] = "Unknown"
+        message_set = self.device.make_message_set()
+        assert message_set.fan_speed == 40
+        assert message_set.mode == 1
+
     def test_set_attribute(self) -> None:
         """Test set attribute."""
         with patch.object(self.device, "build_send") as mock_build_send:
@@ -143,3 +149,19 @@ class TestMideaA1Device:
 
             self.device.set_attribute(DeviceAttributes.pump, True)
             mock_build_send.assert_called()
+
+    def test_set_customize(self) -> None:
+        """Test set customize with valid speeds and modes."""
+        with patch.object(self.device, "update_all") as mock_update_all:
+            self.device.set_customize(
+                '{"speeds": {"2": "New Low", "1": "New Lowest"},'
+                ' "modes": {"2": "New Mode", "1": "New Manual"}}',
+            )
+            assert self.device._speeds == {1: "New Lowest", 2: "New Low"}
+            assert self.device._modes == {1: "New Manual", 2: "New Mode"}
+            mock_update_all.assert_called_once_with(
+                {
+                    "speeds": {1: "New Lowest", 2: "New Low"},
+                    "modes": {1: "New Manual", 2: "New Mode"},
+                },
+            )
