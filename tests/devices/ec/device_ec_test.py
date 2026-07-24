@@ -46,6 +46,10 @@ class TestMideaECDevice:
         assert len(queries) == 1
         assert isinstance(queries[0], MessageQuery)
 
+    def test_set_attribute(self) -> None:
+        """Test set attribute is a no-op."""
+        self.device.set_attribute(DeviceAttributes.cooking.value, True)
+
     @pytest.mark.parametrize(
         ("message_type", "sub_body_type"),
         [
