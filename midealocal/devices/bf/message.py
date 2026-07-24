@@ -58,8 +58,8 @@ class MessageSet(MessageBFBase):
             message_type=MessageType.query,
             body_type=ListTypes.X02,
         )
-        self.power = None
-        self.child_lock = None
+        self.power: bool | None = None
+        self.child_lock: bool | None = None
 
     @property
     def _body(self) -> bytearray:
