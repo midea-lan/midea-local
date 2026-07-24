@@ -6,8 +6,15 @@ import pytest
 
 from midealocal.const import ProtocolVersion
 from midealocal.devices.e1 import DeviceAttributes, MideaE1Device
-from midealocal.devices.e1.message import MessageQuery, MessageWork
+from midealocal.devices.e1.message import (
+    MessageLock,
+    MessagePower,
+    MessageQuery,
+    MessageStorage,
+    MessageWork,
+)
 from midealocal.exceptions import ValueWrongType
+from midealocal.message import MessageType
 
 
 class TestMideaE1Device:
@@ -80,3 +87,79 @@ class TestMideaE1Device:
         self.device._attributes[DeviceAttributes.mode] = 4
         with pytest.raises(ValueWrongType, match="Invalid work mode"):
             self.device.start_work()
+
+    @staticmethod
+    def _message(message_type: MessageType, body: bytearray) -> bytes:
+        header = bytearray(
+            [0xAA, *([0x00] * 7), ProtocolVersion.V1, message_type],
+        )
+        crc = bytearray([0x00])
+        return bytes(header + body + crc)
+
+    def test_process_message_maps_status_progress_and_mode(self) -> None:
+        """Test process message maps status, progress and mode via lookup tables."""
+        body = bytearray(40)
+        body[1] = 0x03  # status Running
+        body[2] = 0x04  # mode ECO Wash
+        body[9] = 0x03  # progress Rinse
+        new_status = self.device.process_message(
+            self._message(MessageType.query, body),
+        )
+        assert self.device.attributes[DeviceAttributes.status] == "Running"
+        assert self.device.attributes[DeviceAttributes.mode] == "ECO Wash"
+        assert self.device.attributes[DeviceAttributes.progress] == "Rinse"
+        assert new_status[DeviceAttributes.status.value] == "Running"
+
+    def test_process_message_unknown_status_mode_and_progress(self) -> None:
+        """Test process message returns None for unmapped lookup values."""
+        body = bytearray(40)
+        body[1] = 0xFF  # unknown status
+        body[2] = 0xFF  # unknown mode
+        body[9] = 0xFF  # out-of-range progress
+        self.device.process_message(self._message(MessageType.query, body))
+        assert self.device.attributes[DeviceAttributes.status] is None
+        assert self.device.attributes[DeviceAttributes.mode] is None
+        assert self.device.attributes[DeviceAttributes.progress] is None
+
+    def test_process_message_unhandled_message_type(self) -> None:
+        """Test process message ignores unhandled message/body type combinations."""
+        body = bytearray(40)
+        new_status = self.device.process_message(
+            self._message(MessageType.notify2, body),
+        )
+        assert new_status == {}
+
+    def test_set_attribute_rejects_non_bool(self) -> None:
+        """Test set attribute rejects non-bool values."""
+        with pytest.raises(ValueWrongType, match="Expected bool"):
+            self.device.set_attribute(DeviceAttributes.power.value, "on")
+
+    def test_set_attribute_power(self) -> None:
+        """Test set attribute power sends a power message."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.power.value, True)
+        message = mock_build_send.call_args.args[0]
+        assert isinstance(message, MessagePower)
+        assert message.power is True
+
+    def test_set_attribute_child_lock(self) -> None:
+        """Test set attribute child lock sends a lock message."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.child_lock.value, True)
+        message = mock_build_send.call_args.args[0]
+        assert isinstance(message, MessageLock)
+        assert message.lock is True
+
+    def test_set_attribute_storage(self) -> None:
+        """Test set attribute storage sends a storage message."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.storage.value, True)
+        message = mock_build_send.call_args.args[0]
+        assert isinstance(message, MessageStorage)
+        assert message.storage is True
+
+    def test_set_attribute_unknown_attribute_is_noop(self) -> None:
+        """Test set attribute with an unsupported attribute sends nothing."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.mode.value, True)
+        mock_build_send.assert_not_called()
