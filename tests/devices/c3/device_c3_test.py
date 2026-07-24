@@ -108,6 +108,9 @@ class TestMideaC3Device:
             self.device.set_attribute(DeviceAttributes.eco_mode.value, True)
             mock_build_send.assert_called()
 
+            self.device.set_attribute(DeviceAttributes.disinfect.value, True)
+            mock_build_send.assert_called()
+
             self.device.set_attribute(DeviceAttributes.silent_mode.value, True)
             mock_build_send.assert_called()
 
