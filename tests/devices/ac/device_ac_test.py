@@ -669,6 +669,45 @@ class TestMideaACDevice:
             assert self.device.attributes[DeviceAttributes.target_temperature] == 27.0
             assert self.device.attributes[DeviceAttributes.indoor_temperature] == 28.8
 
+    @staticmethod
+    def _new_protocol_temperature_response() -> bytes:
+        """Build a B1 query frame carrying a valid 0x7e temperature payload."""
+        body = bytearray(62)
+        body[0] = 0xB1
+        body[1] = 0x01  # one property
+        body[2] = 0x7E  # tag 0x7e, low byte
+        body[3] = 0x00  # tag 0x7e, high byte
+        body[4] = 0x00  # fixed byte of the 5-byte pack
+        body[5] = 0x38  # payload length: 56
+        payload = bytearray(56)
+        payload[1] = 0x1D  # 26.0 C setpoint
+        payload[39] = 0x6A  # 28.8 C indoor temperature
+        payload[40] = 0x08
+        body[6 : 6 + len(payload)] = payload
+        header = bytearray([0xAA, 0, 0xAC, 0, 0, 0, 0, 0, 1, 3])
+        header[1] = len(header) + len(body)
+        frame = header + body
+        frame.append(MessageBase.checksum(frame[1:]))
+        return bytes(frame)
+
+    def test_process_message_0x7e_temperatures_are_gated_by_subtype(self) -> None:
+        """Only subtype-8 devices take their temperatures from the 0x7e tag."""
+        frame = self._new_protocol_temperature_response()
+
+        subtype8 = self._make_device("22013279", 8)
+        status = subtype8.process_message(frame)
+        assert status[DeviceAttributes.target_temperature.value] == 26.0
+        assert status[DeviceAttributes.indoor_temperature.value] == 28.8
+        assert subtype8._prefer_new_protocol_temperature
+
+        # Other subtypes send tag 0x7e with unrelated content, so it must not
+        # overwrite - nor latch out - their valid C0 temperatures.
+        other = self._make_device("22251759", 32773)
+        status = other.process_message(frame)
+        assert DeviceAttributes.target_temperature.value not in status
+        assert DeviceAttributes.indoor_temperature.value not in status
+        assert not other._prefer_new_protocol_temperature
+
     def test_power_saving_control(self) -> None:
         """Test power saving control and preset exclusivity."""
         with patch.object(self.device, "build_send") as mock_build_send:
