@@ -1678,6 +1678,7 @@ class TestMessageACResponse:
                 0x00,
                 0x00,
                 0x00,
+                0x00,
                 0x6A,
                 0x08,
                 0x00,
@@ -1759,6 +1760,7 @@ class TestMessageACResponse:
                 0x00,
                 0x00,
                 0x00,
+                0x00,
                 0x6A,
                 0x08,
                 0x00,
@@ -1796,7 +1798,7 @@ class TestMessageACResponse:
         body[4] = 0x38
         payload = bytearray(56)
         payload[1] = 0x1D  # valid 26.0 C setpoint
-        payload[39] = 0x00  # decodes to the reported invalid -25.0 C
+        payload[40] = 0x00  # decodes to the reported invalid -25.0 C
         body[5 : 5 + len(payload)] = payload
 
         response = MessageACResponse(self.header + body, subtype8_temperature=True)
