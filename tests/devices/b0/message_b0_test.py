@@ -263,6 +263,26 @@ class TestB0MessageBodies:
         assert body.weight == 100
         assert body.people_number == 10
 
+    def test_31_body_cloudmenuid_single_byte(self) -> None:
+        """Test 31 body cloudmenuid with only the low byte set."""
+        raw = bytearray(18)
+        raw[0] = 0x31
+        raw[2] = 0x00
+        raw[3] = 0x00
+        raw[4] = 0x8D
+        body = B0Message31Body(raw)
+        assert body.cloudmenuid == 0x8D
+
+    def test_31_body_cloudmenuid_multi_byte(self) -> None:
+        """Test 31 body cloudmenuid assembles all three bytes big-endian."""
+        raw = bytearray(18)
+        raw[0] = 0x31
+        raw[2] = 0x01
+        raw[3] = 0x02
+        raw[4] = 0x03
+        body = B0Message31Body(raw)
+        assert body.cloudmenuid == 0x010203
+
     def test_31_body_preheat_working(self) -> None:
         """Test 31 body with preheat working."""
         raw = bytearray(18)
