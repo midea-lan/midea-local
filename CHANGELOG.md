@@ -1,5 +1,18 @@
 # Changelog
 
+## [6.11.1](https://github.com/midea-lan/midea-local/compare/v6.11.0...v6.11.1) (2026-07-27)
+
+
+### Bug Fixes
+
+* **ac:** only decode 0x7e temperatures on subtype-8 devices ([#567](https://github.com/midea-lan/midea-local/issues/567)) ([13d25b9](https://github.com/midea-lan/midea-local/commit/13d25b96a0c74946d05d7efc1033ef69bd7fd20b))
+* **ac:** reject invalid subtype-8 temperatures ([#563](https://github.com/midea-lan/midea-local/issues/563)) ([0953364](https://github.com/midea-lan/midea-local/commit/0953364556d813b99bbb6b2651913b3a17a7a944))
+
+
+### Documentation
+
+* add E2 and AC (0xAC) reference lua plugins ([#564](https://github.com/midea-lan/midea-local/issues/564)) ([61de6e6](https://github.com/midea-lan/midea-local/commit/61de6e6a50e4fe919cc48a5cefa0942a641793f2))
+
 ## [6.11.0](https://github.com/midea-lan/midea-local/compare/v6.10.0...v6.11.0) (2026-07-22)
 
 
