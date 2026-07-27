@@ -159,6 +159,13 @@ AC_MODEL_CAPABILITIES = {
     ),
 }
 
+# The 0x7e new-protocol temperature payload was decoded from subtype-8 traces
+# (model 22013279). Other subtypes emit tag 0x7e as well, but with unrelated
+# content: on model 22251759 / subtype 32773 the same offsets decode to
+# -15.0 C and permanently suppress the correct C0 temperatures.
+# https://github.com/wuwentao/midea_ac_lan/issues/893
+SUBTYPE8 = 8
+
 STALE_C0_TEMPERATURE_ATTRIBUTES = (
     DeviceAttributes.target_temperature,
     DeviceAttributes.indoor_temperature,
@@ -318,6 +325,8 @@ class MideaACDevice(MideaDevice):
         self._customize_max_temperature: float | None = None
         self._power_analysis_method: int = 1
         self._default_power_analysis_method: int = 1
+        # Only subtype-8 devices carry temperatures in the 0x7e payload.
+        self._subtype8_temperature: bool = int(self.subtype) == SUBTYPE8
         # Once 0x7e-derived temperatures are seen, ignore stale C0 temperature
         # fields to avoid brief UI flicker caused by query ordering.
         self._prefer_new_protocol_temperature: bool = False
@@ -386,7 +395,11 @@ class MideaACDevice(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:  # noqa: C901
         """Midea AC device process message."""
-        message = MessageACResponse(bytearray(msg), self._power_analysis_method)
+        message = MessageACResponse(
+            bytearray(msg),
+            self._power_analysis_method,
+            self._subtype8_temperature,
+        )
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         has_fresh_air = False

@@ -1042,7 +1042,12 @@ class XA1MessageBody(XMessageBody):
 class XBXMessageBody(NewProtocolMessageBody):
     """AC BX message body. body[0] b0/b1, body[1] propertyNumber, cursor 2."""
 
-    def __init__(self, body: bytearray, bt: int) -> None:
+    def __init__(
+        self,
+        body: bytearray,
+        bt: int,
+        subtype8_temperature: bool = False,
+    ) -> None:
         """Initialize AC BX message body."""
         super().__init__(body, bt)
 
@@ -1089,8 +1094,10 @@ class XBXMessageBody(NewProtocolMessageBody):
                 len(data) > SELF_CLEAN_ACTIVE_STATUS_BYTE
                 and data[SELF_CLEAN_ACTIVE_STATUS_BYTE] != 0
             )
-        if SUBTYPE8_TEMPERATURE_TAG in params and self._parse_subtype8_temperatures(
-            params[SUBTYPE8_TEMPERATURE_TAG],
+        if (
+            subtype8_temperature
+            and SUBTYPE8_TEMPERATURE_TAG in params
+            and self._parse_subtype8_temperatures(params[SUBTYPE8_TEMPERATURE_TAG])
         ):
             self.has_subtype8_temperature = True
 
@@ -1102,6 +1109,10 @@ class XBXMessageBody(NewProtocolMessageBody):
         setpoint in byte 1:
         - low 6 bits encode 0.5C steps with a +11.5C offset
         - bit 0x40 adds an extra +0.5C
+
+        Only call this for subtype-8 devices: other subtypes send tag 0x7e with
+        unrelated content, where these offsets decode to a bogus temperature
+        that would then suppress their valid C0 temperatures.
         """
         if len(data) <= SUBTYPE8_TEMPERATURE_MIN_LENGTH:
             return False
@@ -1542,7 +1553,12 @@ class XBBMessageBody(MessageBody):
 class MessageACResponse(MessageResponse):
     """AC message response."""
 
-    def __init__(self, message: bytearray, power_analysis_method: int = 3) -> None:
+    def __init__(
+        self,
+        message: bytearray,
+        power_analysis_method: int = 3,
+        subtype8_temperature: bool = False,
+    ) -> None:
         """Initialize AC message response."""
         super().__init__(message)
         # dataType 0x05 and messageBytes[0] 0xA0
@@ -1565,7 +1581,9 @@ class MessageACResponse(MessageResponse):
             MessageType.set,
             MessageType.notify2,
         ] and self.body_type in [ListTypes.B0, ListTypes.B1, ListTypes.B5]:
-            self.set_body(XBXMessageBody(super().body, self.body_type))
+            self.set_body(
+                XBXMessageBody(super().body, self.body_type, subtype8_temperature),
+            )
         # dataType 0x02 and messageBytes[0] 0xC0
         # dataType 0x03 and messageBytes[0] 0xC0
         elif (
