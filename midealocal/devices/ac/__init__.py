@@ -164,10 +164,12 @@ AC_MODEL_CAPABILITIES = {
 # content: on model 22251759 / subtype 32773 the same offsets decode to
 # -15.0 C and permanently suppress the correct C0 temperatures.
 # https://github.com/wuwentao/midea_ac_lan/issues/893
-NEW_PROTOCOL_TEMPERATURE_DEVICES = frozenset({
-    ("22013279", 0),
-    ("22013279", 8),
-})
+NEW_PROTOCOL_TEMPERATURE_DEVICES = frozenset(
+    {
+        ("22013279", 0),
+        ("22013279", 8),
+    },
+)
 
 STALE_C0_TEMPERATURE_ATTRIBUTES = (
     DeviceAttributes.target_temperature,
