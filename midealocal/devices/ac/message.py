@@ -85,8 +85,8 @@ BB_FRESH_AIR_INTAKE_CONTROL_SPEED_INDEX = 55
 BB_FRESH_AIR_EXHAUST_CONTROL_SPEED_INDEX = 56
 BB_FRESH_AIR_SPEED_FLAG = 0x80
 
-# AC subtype 8 (e.g. model 22013279) reports temperatures in this
-# new-protocol tag instead of the standard C0 frame.
+# Model 22013279 reports temperatures in this new-protocol tag because its
+# standard C0 temperature fields are stale.
 SUBTYPE8_TEMPERATURE_TAG = 0x7E
 SUBTYPE8_TEMPERATURE_MIN_LENGTH = 41
 SUBTYPE8_SETPOINT_OFFSET = 11.5
@@ -1102,17 +1102,17 @@ class XBXMessageBody(NewProtocolMessageBody):
             self.has_subtype8_temperature = True
 
     def _parse_subtype8_temperatures(self, data: bytearray) -> bool:
-        """Decode setpoint/indoor temperature for AC subtype 8 (model 22013279).
+        """Decode setpoint and indoor temperature for model 22013279.
 
-        The standard C0 frame is stale for this subtype; temperatures are
-        reported in this new-protocol tag instead. Synced captures show the
-        setpoint in byte 1:
+        Its standard C0 temperature fields are stale; temperatures are reported
+        in this new-protocol tag instead. Synced captures show the setpoint in
+        byte 1:
         - low 6 bits encode 0.5C steps with a +11.5C offset
         - bit 0x40 adds an extra +0.5C
 
-        Only call this for subtype-8 devices: other subtypes send tag 0x7e with
-        unrelated content, where these offsets decode to a bogus temperature
-        that would then suppress their valid C0 temperatures.
+        Only call this for model 22013279. For other models, this tag is not
+        known to supersede C0; accepting it would latch B1 values and discard
+        C0 temperatures, including any outdoor reading.
         """
         if len(data) <= SUBTYPE8_TEMPERATURE_MIN_LENGTH:
             return False
