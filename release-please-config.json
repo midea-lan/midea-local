@@ -1,0 +1,9 @@
+{
+  "include-commit-authors": true,
+  "packages": {
+    ".": {
+      "release-type": "python",
+      "package-name": "midea-local"
+    }
+  }
+}
