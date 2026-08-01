@@ -296,7 +296,7 @@ class MessageQuery(MessageBFBase):
 
     @property
     def _body(self) -> bytearray:
-        return bytearray([])
+        return bytearray([0x01])
 
 
 class MessageSet(MessageBFBase):
@@ -854,7 +854,7 @@ class MessageBFResponse(MessageResponse):
         if (
             self.message_type
             in [MessageType.set, MessageType.notify1, MessageType.query]
-            and self.body_type == 0x01
+            and self.body_type == BODY_TYPE_TOTAL_STATE
         ):
             self.set_body(MessageBFBody(super().body))
         self.set_attr()
