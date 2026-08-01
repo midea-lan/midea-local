@@ -506,3 +506,442 @@ class TestMessageSet:
         body = msg.body
         assert body[0] == ListTypes.X02  # notWorkMode wins
 
+
+class TestMessageBFBody:
+    """Test MessageBFBody parsing."""
+
+    def _make_body(self, length: int = 60) -> bytearray:
+        """Create a minimal body with given length, body_type at index 0."""
+        body = bytearray(length)
+        body[0] = 0x01  # body_type
+        return body
+
+    def test_execute_ok(self) -> None:
+        """Test execute status = ok (default)."""
+        body = self._make_body()
+        msg = MessageBFBody(body=body)
+        assert msg.execute == "ok"
+
+    def test_execute_status_nonsupport(self) -> None:
+        """Test execute status = status_nonsupport."""
+        body = self._make_body()
+        body[1] = 0x01
+        msg = MessageBFBody(body=body)
+        assert msg.execute == "status_nonsupport"
+
+    def test_execute_function_nonsupport(self) -> None:
+        """Test execute status = function_nonsupport."""
+        body = self._make_body()
+        body[1] = 0x02
+        msg = MessageBFBody(body=body)
+        assert msg.execute == "function_nonsupport"
+
+    def test_execute_param_range_error(self) -> None:
+        """Test execute status = param_range_error."""
+        body = self._make_body()
+        body[1] = 0x03
+        msg = MessageBFBody(body=body)
+        assert msg.execute == "param_range_error"
+
+    def test_cloudmenuid(self) -> None:
+        """Test cloudmenuid parsing."""
+        body = self._make_body()
+        body[2] = 0x01
+        body[3] = 0x02
+        body[4] = 0x03
+        msg = MessageBFBody(body=body)
+        assert msg.cloudmenuid == 0x010203
+
+    def test_cloudmenuid_zero(self) -> None:
+        """Test cloudmenuid = 0 when all bytes are 0."""
+        body = self._make_body()
+        msg = MessageBFBody(body=body)
+        assert msg.cloudmenuid == 0
+
+    def test_totalstep_and_stepnum(self) -> None:
+        """Test totalstep and stepnum parsing from byte 5."""
+        body = self._make_body()
+        body[5] = 0x32  # totalstep=3, stepnum=2
+        msg = MessageBFBody(body=body)
+        assert msg.totalstep == 3
+        assert msg.stepnum == 2
+
+    def test_totalstep_max_stepnum_zero(self) -> None:
+        """Test totalstep=15 (max) and stepnum=0."""
+        body = self._make_body()
+        body[5] = 0xF0  # totalstep=15, stepnum=0
+        msg = MessageBFBody(body=body)
+        assert msg.totalstep == 15
+        assert msg.stepnum == 0
+
+    def test_probe_and_turntable_flags(self) -> None:
+        """Test probe and turntable flags from byte 6."""
+        body = self._make_body()
+        body[6] = 0x0A  # probe(bit1)=1, turntable(bit3)=1
+        msg = MessageBFBody(body=body)
+        assert msg.probe is True
+        assert msg.turntable is True
+
+    def test_probe_false_turntable_false(self) -> None:
+        """Test probe and turntable both False."""
+        body = self._make_body()
+        body[6] = 0x00
+        msg = MessageBFBody(body=body)
+        assert msg.probe is False
+        assert msg.turntable is False
+
+    def test_work_mode_parsing(self) -> None:
+        """Test work_mode parsing."""
+        body = self._make_body()
+        body[7] = 0x01
+        body[8] = 0x00
+        msg = MessageBFBody(body=body)
+        assert msg.work_mode == "microwave"
+
+    def test_work_mode_parsing_unknown(self) -> None:
+        """Test work_mode parsing with unknown bytes."""
+        body = self._make_body()
+        body[7] = 0xFF
+        body[8] = 0xFF
+        msg = MessageBFBody(body=body)
+        assert msg.work_mode == "unknown"
+
+    def test_time_settings_default(self) -> None:
+        """Test time settings (hour_set/minute_set/second_set) default to 0."""
+        body = self._make_body()
+        body[9] = 0xFF  # hour_set = 0xFF -> treated as 0
+        body[10] = 0xFF
+        body[11] = 0xFF
+        msg = MessageBFBody(body=body)
+        assert msg.hour_set == 0
+        assert msg.minute_set == 0
+        assert msg.second_set == 0
+
+    def test_time_settings_with_values(self) -> None:
+        """Test time settings with actual values."""
+        body = self._make_body()
+        body[9] = 2  # hour_set
+        body[10] = 30  # minute_set
+        body[11] = 15  # second_set
+        msg = MessageBFBody(body=body)
+        assert msg.hour_set == 2
+        assert msg.minute_set == 30
+        assert msg.second_set == 15
+
+    def test_fire_power_known(self) -> None:
+        """Test fire_power parsing with known value."""
+        body = self._make_body()
+        body[12] = 0x05  # fire_power_5
+        msg = MessageBFBody(body=body)
+        assert msg.fire_power == "fire_power_5"
+
+    def test_fire_power_unknown(self) -> None:
+        """Test fire_power parsing with unknown value."""
+        body = self._make_body()
+        body[12] = 0x0B  # invalid fire_power
+        msg = MessageBFBody(body=body)
+        assert msg.fire_power == "unknown"
+
+    def test_fire_power_ff(self) -> None:
+        """Test fire_power with 0xFF (unset)."""
+        body = self._make_body()
+        body[12] = 0xFF
+        msg = MessageBFBody(body=body)
+        assert msg.fire_power == "unknown"
+
+    def test_temperature_above_only(self) -> None:
+        """Test temperature parsing when only temperature_above is nonzero."""
+        body = self._make_body()
+        body[13] = 0x00  # temp_above_high
+        body[14] = 200  # temp_above_low = 200
+        body[15] = 0x00  # temp_underside_high
+        body[16] = 0x00  # temp_underside_low
+        msg = MessageBFBody(body=body)
+        assert msg.temperature_above == 200
+        assert msg.temperature_underside == 0
+        assert msg.temperature == 200  # above != 0 -> use above
+
+    def test_temperature_underside_only(self) -> None:
+        """Test temperature when only temperature_underside is nonzero."""
+        body = self._make_body()
+        body[13] = 0x00
+        body[14] = 0x00  # above = 0
+        body[15] = 0x00
+        body[16] = 180  # underside = 180
+        msg = MessageBFBody(body=body)
+        assert msg.temperature_above == 0
+        assert msg.temperature_underside == 180
+        assert msg.temperature == 180  # above=0 -> use underside
+
+    def test_temperature_both_zero(self) -> None:
+        """Test temperature when both above and underside are 0."""
+        body = self._make_body()
+        msg = MessageBFBody(body=body)
+        assert msg.temperature == 0  # fallback to underside (also 0)
+
+    def test_temperature_16bit(self) -> None:
+        """Test temperature parsing with 16-bit value."""
+        body = self._make_body()
+        body[13] = 0x01  # high byte
+        body[14] = 0x00  # low byte -> 256
+        msg = MessageBFBody(body=body)
+        assert msg.temperature_above == 256
+        assert msg.temperature == 256
+
+    def test_probe_temperature(self) -> None:
+        """Test probe_temperature parsing."""
+        body = self._make_body()
+        body[17] = 0x00  # high
+        body[18] = 80  # low
+        msg = MessageBFBody(body=body)
+        assert msg.probe_temperature == 80
+
+    def test_probe_temperature_zero(self) -> None:
+        """Test probe_temperature = 0."""
+        body = self._make_body()
+        msg = MessageBFBody(body=body)
+        assert msg.probe_temperature == 0
+
+    def test_steam_quantity(self) -> None:
+        """Test steam_quantity parsing."""
+        body = self._make_body()
+        body[19] = 5
+        msg = MessageBFBody(body=body)
+        assert msg.steam_quantity == 5
+
+    def test_steam_quantity_unset(self) -> None:
+        """Test steam_quantity = 0xFF -> None."""
+        body = self._make_body()
+        body[19] = 0xFF
+        msg = MessageBFBody(body=body)
+        assert msg.steam_quantity is None
+
+    def test_weight(self) -> None:
+        """Test weight parsing (value * 10)."""
+        body = self._make_body()
+        body[20] = 50  # weight = 50 * 10 = 500
+        msg = MessageBFBody(body=body)
+        assert msg.weight == 500
+        assert msg.people_number == 50
+
+    def test_weight_unset(self) -> None:
+        """Test weight = 0xFF -> None."""
+        body = self._make_body()
+        body[20] = 0xFF
+        msg = MessageBFBody(body=body)
+        assert msg.weight is None
+        assert msg.people_number is None
+
+    def test_people_number(self) -> None:
+        """Test people_number parsing (same byte as weight)."""
+        body = self._make_body()
+        body[20] = 4  # people_number = 4, weight = 40
+        msg = MessageBFBody(body=body)
+        assert msg.people_number == 4
+        assert msg.weight == 40
+
+    def test_time_remaining(self) -> None:
+        """Test time_remaining computed from work_hour/minute/second."""
+        body = self._make_body()
+        body[22] = 1
+        body[23] = 30
+        body[24] = 0
+        msg = MessageBFBody(body=body)
+        assert msg.time_remaining == 5400  # 1h30m
+
+    def test_time_remaining_zero(self) -> None:
+        """Test time_remaining = 0 when all work time bytes are 0."""
+        body = self._make_body()
+        msg = MessageBFBody(body=body)
+        assert msg.time_remaining == 0
+
+    def test_time_remaining_full_hour(self) -> None:
+        """Test time_remaining with only hours."""
+        body = self._make_body()
+        body[22] = 2  # 2 hours
+        body[23] = 0
+        body[24] = 0
+        msg = MessageBFBody(body=body)
+        assert msg.time_remaining == 7200  # 2h
+
+    def test_current_temperatures_above(self) -> None:
+        """Test current_temperature when cur_temperature_above is nonzero."""
+        body = self._make_body()
+        body[25] = 0x00  # cur_temp_above_high
+        body[26] = 180  # cur_temp_above_low
+        body[27] = 0x00  # cur_temp_underside_high
+        body[28] = 150  # cur_temp_underside_low
+        msg = MessageBFBody(body=body)
+        assert msg.cur_temperature_above == 180
+        assert msg.cur_temperature_underside == 150
+        assert msg.current_temperature == 180  # above nonzero -> use above
+
+    def test_current_temperatures_underside(self) -> None:
+        """Test current_temperature when cur_temperature_above is 0."""
+        body = self._make_body()
+        body[25] = 0x00
+        body[26] = 0x00  # cur_temp_above = 0
+        body[27] = 0x00
+        body[28] = 150  # cur_temp_underside = 150
+        msg = MessageBFBody(body=body)
+        assert msg.current_temperature == 150  # above=0 -> use underside
+
+    def test_cur_probe_temperature(self) -> None:
+        """Test cur_probe_temperature parsing."""
+        body = self._make_body()
+        body[29] = 0x00  # high
+        body[30] = 75  # low
+        msg = MessageBFBody(body=body)
+        assert msg.cur_probe_temperature == 75
+
+    def test_power_inferred_from_status(self) -> None:
+        """Test power is inferred from status: save_power=False, others=True."""
+        body = self._make_body()
+        body[31] = WorkStatus.save_power.value
+        msg = MessageBFBody(body=body)
+        assert msg.power is False
+        assert msg.status == "save_power"
+
+        body[31] = WorkStatus.standby.value
+        msg = MessageBFBody(body=body)
+        assert msg.power is True
+        assert msg.status == "standby"
+
+    def test_status_unknown_value(self) -> None:
+        """Test status parsing with invalid value returns 'unknown'."""
+        body = self._make_body()
+        body[31] = 0x00  # not in WorkStatus enum
+        msg = MessageBFBody(body=body)
+        assert msg.status == "unknown"
+        assert msg.power is True  # not save_power -> True
+
+    def test_status_all_valid_values(self) -> None:
+        """Test all valid WorkStatus values parse correctly."""
+        for name, value in {
+            "save_power": 0x01,
+            "standby": 0x02,
+            "work": 0x03,
+            "work_finish": 0x04,
+            "order": 0x05,
+            "pause": 0x06,
+            "pause_c": 0x07,
+        }.items():
+            body = self._make_body()
+            body[31] = value
+            msg = MessageBFBody(body=body)
+            assert msg.status == name
+
+    def test_status_flags_byte32(self) -> None:
+        """Test flags in byte 32 (child_lock, door, tank_ejected, etc)."""
+        body = self._make_body()
+        body[32] = 0x07  # child_lock + door + tank_ejected
+        msg = MessageBFBody(body=body)
+        assert msg.child_lock is True
+        assert msg.door is True
+        assert msg.tank_ejected is True
+        assert msg.water_shortage is False
+        assert msg.water_change_reminder is False
+        assert msg.error_code is False
+
+    def test_byte32_water_shortage(self) -> None:
+        """Test water_shortage flag in byte 32."""
+        body = self._make_body()
+        body[32] = 0x08  # water_shortage bit
+        msg = MessageBFBody(body=body)
+        assert msg.water_shortage is True
+        assert msg.child_lock is False
+        assert msg.door is False
+
+    def test_byte32_water_change_reminder(self) -> None:
+        """Test water_change_reminder flag in byte 32."""
+        body = self._make_body()
+        body[32] = 0x10  # water_change bit
+        msg = MessageBFBody(body=body)
+        assert msg.water_change_reminder is True
+
+    def test_byte32_error_code(self) -> None:
+        """Test error_code flag in byte 32."""
+        body = self._make_body()
+        body[32] = 0x80  # error_code bit
+        msg = MessageBFBody(body=body)
+        assert msg.error_code is True
+
+    def test_byte32_pre_heat(self) -> None:
+        """Test pre_heat flag in byte 32."""
+        body = self._make_body()
+        body[32] = 0x20  # pre_heat bit
+        msg = MessageBFBody(body=body)
+        assert msg.pre_heat is True
+
+    def test_byte32_all_flags(self) -> None:
+        """Test all flags in byte 32 set simultaneously."""
+        body = self._make_body()
+        # all bits: child_lock(0x01)+door(0x02)+tank_ejected(0x04)
+        # +water_shortage(0x08)+water_change(0x10)+pre_heat(0x20)+error_code(0x80)=0xBF
+        body[32] = 0xBF
+        msg = MessageBFBody(body=body)
+        assert msg.child_lock is True
+        assert msg.door is True
+        assert msg.tank_ejected is True
+        assert msg.water_shortage is True
+        assert msg.water_change_reminder is True
+        assert msg.error_code is True
+        assert msg.pre_heat is True
+
+    def test_status_flags_byte33(self) -> None:
+        """Test flags in byte 33 (flip_side, reaction, furnace_light, etc)."""
+        body = self._make_body()
+        body[33] = 0x07  # flip_side + reaction + furnace_light
+        msg = MessageBFBody(body=body)
+        assert msg.flip_side is True
+        assert msg.reaction is True
+        assert msg.furnace_light is True
+
+    def test_byte33_high_temperature_lock(self) -> None:
+        """Test high_temperature_lock (bit3=0 means lock ON)."""
+        body = self._make_body()
+        body[33] = 0x00  # all bits off -> high_temp_lock bit=0 -> lock is ON
+        msg = MessageBFBody(body=body)
+        assert msg.high_temperature_lock is True  # bit=0 -> True
+
+    def test_byte33_high_temperature_lock_off(self) -> None:
+        """Test high_temperature_lock off (bit3=1 means lock OFF)."""
+        body = self._make_body()
+        body[33] = 0x08  # only high_temp_lock bit set -> lock is OFF
+        msg = MessageBFBody(body=body)
+        assert msg.high_temperature_lock is False  # bit=1 -> False
+
+    def test_byte33_high_temperature_work(self) -> None:
+        """Test high_temperature_work flag."""
+        body = self._make_body()
+        body[33] = 0x10  # high_temperature_work bit
+        msg = MessageBFBody(body=body)
+        assert msg.high_temperature_work is True
+
+    def test_byte33_high_temperature(self) -> None:
+        """Test high_temperature flag."""
+        body = self._make_body()
+        body[33] = 0x20  # high_temperature bit
+        msg = MessageBFBody(body=body)
+        assert msg.high_temperature is True
+
+    def test_byte33_probe_mode(self) -> None:
+        """Test probe_mode flag."""
+        body = self._make_body()
+        body[33] = 0x40  # probe_mode bit
+        msg = MessageBFBody(body=body)
+        assert msg.probe_mode is True
+
+    def test_byte33_all_flags(self) -> None:
+        """Test all flags in byte 33."""
+        body = self._make_body()
+        body[33] = 0x7F  # all bits except probe_mode
+        msg = MessageBFBody(body=body)
+        assert msg.flip_side is True
+        assert msg.reaction is True
+        assert msg.furnace_light is True
+        assert msg.high_temperature_lock is False  # bit3=1 -> lock off
+        assert msg.high_temperature_work is True
+        assert msg.high_temperature is True
+        assert msg.probe_mode is True
+
