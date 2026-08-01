@@ -945,3 +945,195 @@ class TestMessageBFBody:
         assert msg.high_temperature is True
         assert msg.probe_mode is True
 
+    def test_byte34_ramadan(self) -> None:
+        """Test ramadan flag from byte 34."""
+        body = self._make_body()
+        body[34] = 0x20  # hot_wind bit used for ramadan
+        msg = MessageBFBody(body=body)
+        assert msg.ramadan is True
+
+    def test_byte34_ramadan_false(self) -> None:
+        """Test ramadan False."""
+        body = self._make_body()
+        body[34] = 0x00
+        msg = MessageBFBody(body=body)
+        assert msg.ramadan is False
+
+    def test_byte35_hot_wind(self) -> None:
+        """Test hot_wind flag from byte 35."""
+        body = self._make_body()
+        body[35] = 0x20  # hot_wind bit
+        msg = MessageBFBody(body=body)
+        assert msg.hot_wind is True
+
+    def test_byte35_hot_wind_false(self) -> None:
+        """Test hot_wind False."""
+        body = self._make_body()
+        body[35] = 0x00
+        msg = MessageBFBody(body=body)
+        assert msg.hot_wind is False
+
+    def test_cbs_version(self) -> None:
+        """Test cbs_version string parsing."""
+        body = self._make_body(length=60)
+        body[47] = 1
+        body[48] = 2
+        body[49] = 3
+        msg = MessageBFBody(body=body)
+        assert msg.cbs_version == "V1.2.3"
+
+    def test_cbs_version_zero(self) -> None:
+        """Test cbs_version with all zeros."""
+        body = self._make_body(length=60)
+        msg = MessageBFBody(body=body)
+        assert msg.cbs_version == "V0.0.0"
+
+    def test_cbs_version_short_body(self) -> None:
+        """Test cbs_version with body too short returns V0.0.0."""
+        body = bytearray(10)  # shorter than OFFSET_CBS_VERSION_PATCH=49
+        body[0] = 0x01
+        msg = MessageBFBody(body=body)
+        assert msg.cbs_version == "V0.0.0"
+
+    def test_clean_scale_and_ota(self) -> None:
+        """Test clean_scale and ota flags from byte 56."""
+        body = self._make_body(length=60)
+        body[56] = 0xC0  # clean_scale(bit6) + ota(bit7)
+        msg = MessageBFBody(body=body)
+        assert msg.clean_scale is True
+        assert msg.ota is True
+
+    def test_clean_scale_only(self) -> None:
+        """Test clean_scale only."""
+        body = self._make_body(length=60)
+        body[56] = 0x40  # clean_scale bit only
+        msg = MessageBFBody(body=body)
+        assert msg.clean_scale is True
+        assert msg.ota is False
+
+    def test_ota_only(self) -> None:
+        """Test ota only."""
+        body = self._make_body(length=60)
+        body[56] = 0x80  # ota bit only
+        msg = MessageBFBody(body=body)
+        assert msg.clean_scale is False
+        assert msg.ota is True
+
+    def test_byte58_clean_sink_ponding(self) -> None:
+        """Test clean_sink_ponding flag from byte 58."""
+        body = self._make_body(length=60)
+        body[58] = 0x01  # clean_sink_ponding bit
+        msg = MessageBFBody(body=body)
+        assert msg.clean_sink_ponding is True
+        assert msg.dissipate_heat is False
+
+    def test_byte58_dissipate_heat(self) -> None:
+        """Test dissipate_heat flag from byte 58."""
+        body = self._make_body(length=60)
+        body[58] = 0x02  # dissipate_heat bit
+        msg = MessageBFBody(body=body)
+        assert msg.clean_sink_ponding is False
+        assert msg.dissipate_heat is True
+
+    def test_byte58_both_flags(self) -> None:
+        """Test both flags in byte 58."""
+        body = self._make_body(length=60)
+        body[58] = 0x03  # both bits
+        msg = MessageBFBody(body=body)
+        assert msg.clean_sink_ponding is True
+        assert msg.dissipate_heat is True
+
+
+def _build_message(message_type: MessageType, body: bytearray) -> bytes:
+    """Build a full BF response message."""
+    header = bytearray(
+        [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [message_type],
+    )
+    return bytes(header + body + bytearray([0x00]))
+
+
+class TestMessageBFResponse:
+    """Test MessageBFResponse."""
+
+    def test_total_state_response(self) -> None:
+        """Test parsing of a totalState (body_type 0x01) response."""
+        header = bytearray(
+            [
+                0xAA,
+                0x00,
+                0xBF,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x03,
+            ],
+        )
+        body = bytearray(60)
+        body[0] = 0x01  # body_type
+        body[31] = WorkStatus.standby.value  # status=standby, power=True
+        message = MessageBFResponse(bytes(header + body))
+        assert hasattr(message, "body_type")
+        assert message.body_type == 0x01
+        assert hasattr(message, "status")
+        assert message.status == "standby"
+        assert hasattr(message, "power")
+        assert message.power is True
+
+    def test_response_with_all_attributes(self) -> None:
+        """Test response parsing populates all expected attributes."""
+        body = bytearray(60)
+        body[0] = 0x01  # body_type totalState
+        body[31] = WorkStatus.work.value  # status=work
+        body[32] = 0xBF  # all byte32 flags
+        body[33] = 0x7F  # all byte33 flags
+        body[34] = 0x20  # ramadan
+        body[35] = 0x20  # hot_wind
+        body[56] = 0xC0  # clean_scale + ota
+        body[58] = 0x03  # clean_sink_ponding + dissipate_heat
+        message = MessageBFResponse(
+            bytes(_build_message(MessageType.query, body)),
+        )
+        assert message.status == "work"  # type: ignore[attr-defined]
+        assert message.power is True  # type: ignore[attr-defined]
+        assert message.child_lock is True  # type: ignore[attr-defined]
+        assert message.door is True  # type: ignore[attr-defined]
+        assert message.tank_ejected is True  # type: ignore[attr-defined]
+        assert message.ramadan is True  # type: ignore[attr-defined]
+        assert message.hot_wind is True  # type: ignore[attr-defined]
+        assert message.clean_scale is True  # type: ignore[attr-defined]
+        assert message.ota is True  # type: ignore[attr-defined]
+        assert message.clean_sink_ponding is True  # type: ignore[attr-defined]
+        assert message.dissipate_heat is True  # type: ignore[attr-defined]
+
+    def test_response_save_power(self) -> None:
+        """Test response with save_power status -> power=False."""
+        body = bytearray(60)
+        body[0] = 0x01
+        body[31] = WorkStatus.save_power.value
+        message = MessageBFResponse(
+            bytes(_build_message(MessageType.set, body)),
+        )
+        assert message.power is False  # type: ignore[attr-defined]
+
+    def test_response_notify_type(self) -> None:
+        """Test response with notify1 message type."""
+        body = bytearray(60)
+        body[0] = 0x01
+        body[31] = WorkStatus.standby.value
+        message = MessageBFResponse(
+            bytes(_build_message(MessageType.notify1, body)),
+        )
+        assert message.status == "standby"  # type: ignore[attr-defined]
+
+    def test_response_non_total_state_body_type(self) -> None:
+        """Test response with non-0x01 body_type does not parse BF attributes."""
+        body = bytearray(10)
+        body[0] = 0x02  # not totalState
+        message = MessageBFResponse(
+            bytes(_build_message(MessageType.query, body)),
+        )
+        # Should not have BF-specific attributes
+        assert not hasattr(message, "status")
