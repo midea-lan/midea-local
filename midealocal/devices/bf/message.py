@@ -302,23 +302,328 @@ class MessageQuery(MessageBFBase):
 class MessageSet(MessageBFBase):
     """BF message set."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int | ProtocolVersion) -> None:
         """Initialize BF message set."""
         super().__init__(
             protocol_version=protocol_version,
-            message_type=MessageType.query,
+            message_type=MessageType.set,
             body_type=ListTypes.X02,
         )
+        # Non-work mode controls (notWorkModeControl in Lua)
         self.power: bool | None = None
+        self.work_status: str | None = None  # save_power/standby/work/pause
         self.child_lock: bool | None = None
+        self.furnace_light: bool | None = None
+        self.door: bool | None = None  # True=open, False=close
+        self.screen_luminance: int | None = None
+        self.volume: int | None = None
+        self.hot_wind: bool | None = None
+        self.ramadan: bool | None = None
+        # Work mode controls (workModeControl/singleCooking in Lua)
+        self.work_mode: str | None = None
+        self.work_hour: int | None = None
+        self.work_minute: int | None = None
+        self.work_second: int | None = None
+        self.fire_power: str | None = None
+        self.temperature: int | None = None
+        self.temperature_above: int | None = None
+        self.temperature_underside: int | None = None
+        self.probe_temperature: int | None = None
+        self.steam_quantity: int | None = None
+        self.weight: int | None = None
+        self.people_number: int | None = None
+        self.pre_heat: bool | None = None
+        self.turntable: bool | None = None
+        # Set controls (setControl in Lua) - runtime parameter adjustments
+        self.steam_set: int | None = None
+        self.hour_set: int | None = None
+        self.minute_set: int | None = None
+        self.second_set: int | None = None
+        self.fire_power_set: str | None = None
+        self.temp_set: int | None = None
+        self.probe_temp_set: int | None = None
+        self.temp_above_set: int | None = None
+        self.temp_underside_set: int | None = None
+
+    @staticmethod
+    def _fire_power_value(name: str | None) -> int:
+        if name is None:
+            return 0xFF
+        try:
+            return FirePower[name].value
+        except KeyError:
+            return 0xFF
+
+    @staticmethod
+    def _work_status_value(status: str | None) -> int:
+        if status is None:
+            return 0xFF
+        try:
+            return WorkStatus[status].value
+        except KeyError:
+            return 0xFF
+
+    @property
+    def body(self) -> bytearray:
+        """Message body. Override to set body_type from control type."""
+        content = self._body  # determines and sets self.body_type
+        body = bytearray([])
+        if self.body_type is not None:
+            body.append(self.body_type)
+        if content is not None:
+            body.extend(content)
+        return body
 
     @property
     def _body(self) -> bytearray:
-        power = 0xFF if self.power is None else 0x11 if self.power else 0x01
-        child_lock = (
-            0xFF if self.child_lock is None else 0x01 if self.child_lock else 0x00
+        """Determine which control group to use based on set fields.
+
+        Priority: work_mode > notWorkMode fields > setControl fields.
+        body_type is dynamically set to match Lua's bodyBytes[0] control type.
+        """
+        if self.work_mode is not None:
+            self.body_type = ListTypes.X01  # workModeControl
+            return self._build_work_mode_control()
+        not_work_mode_fields = [
+            self.work_status,
+            self.power,
+            self.furnace_light,
+            self.child_lock,
+            self.door,
+            self.hot_wind,
+            self.screen_luminance,
+            self.volume,
+            self.ramadan,
+        ]
+        if any(field is not None for field in not_work_mode_fields):
+            self.body_type = ListTypes.X02  # notWorkModeControl
+            return self._build_not_work_mode_control()
+        # setControl: parameter adjustments during work
+        self.body_type = ListTypes.X03  # setControl
+        return self._build_set_control()
+
+    def _build_not_work_mode_control(self) -> bytearray:
+        """Build notWorkModeControl body content (body_type=0x02 added by framework)."""
+        power_byte = self._bool_to_byte(
+            self.power,
+            BYTE_POWER_ON,
+            BYTE_POWER_OFF,
         )
-        return bytearray([power, child_lock] + [0xFF] * 7)
+        status_byte = (
+            self._work_status_value(self.work_status)
+            if self.work_status is not None
+            else power_byte
+        )
+        lock_byte = self._bool_to_byte(
+            self.child_lock,
+            BYTE_LOCK_ON,
+            BYTE_LOCK_OFF,
+        )
+        light_byte = self._bool_to_byte(
+            self.furnace_light,
+            BYTE_LIGHT_ON,
+            BYTE_LIGHT_OFF,
+        )
+        door_byte = self._bool_to_byte(
+            self.door,
+            BYTE_DOOR_OPEN,
+            BYTE_DOOR_CLOSE,
+        )
+        screen_byte = (
+            self.screen_luminance if self.screen_luminance is not None else BYTE_FF
+        )
+        volume_byte = self.volume if self.volume is not None else BYTE_FF
+        hot_wind_byte = self._bool_to_byte(
+            self.hot_wind,
+            BYTE_HOT_WIND_ON,
+            BYTE_HOT_WIND_OFF,
+        )
+        ramadan_byte = self._bool_to_byte(
+            self.ramadan,
+            BYTE_RAMADAN_ON,
+            BYTE_RAMADAN_OFF,
+        )
+
+        # Lua bodyBytes[1..17] (bodyBytes[0]=0x02 is body_type, added by framework)
+        return bytearray(
+            [
+                status_byte,
+                lock_byte,
+                light_byte,
+                BYTE_FF,
+                door_byte,
+                BYTE_FF,
+                BYTE_FF,
+                screen_byte,
+                volume_byte,
+                BYTE_FF,
+                BYTE_FF,
+                hot_wind_byte,
+                BYTE_FF,
+                BYTE_FF,
+                BYTE_FF,
+                ramadan_byte,
+                BYTE_FF,
+            ],
+        )
+
+    @staticmethod
+    def _bool_to_byte(value: bool | None, true_val: int, false_val: int) -> int:
+        """Convert optional bool to byte value."""
+        if value is True:
+            return true_val
+        if value is False:
+            return false_val
+        return BYTE_FF
+
+    def _build_work_mode_control(self) -> bytearray:
+        """Build workModeControl/singleCooking body content (body_type=0x01 added by framework)."""  # noqa: E501
+        # b5 flags: bit0=pre_heat, bit1=probe, bit3=turntable, bit4=hot_wind
+        b5 = 0
+        if self.pre_heat is True:
+            b5 |= 0x01
+        if self.probe_temperature is not None:
+            b5 |= 0x02
+        if self.turntable is True:
+            b5 |= 0x08
+        if self.hot_wind is True:
+            b5 |= 0x10
+
+        mode_high, mode_low = work_mode_to_bytes(self.work_mode)
+
+        work_hour = self.work_hour if self.work_hour is not None else 0x00
+        work_minute = self.work_minute if self.work_minute is not None else 0x00
+        work_second = self.work_second if self.work_second is not None else 0x00
+        fire_power_byte = self._fire_power_value(self.fire_power)
+
+        # Temperature bytes
+        temp_high = temp_low = 0x00
+        temp_above_high = temp_above_low = 0x00
+        temp_underside_high = temp_underside_low = 0x00
+
+        if self.temperature is not None:
+            temp_high = self.temperature >> 8
+            temp_low = self.temperature & 0xFF
+            temp_above_high = temp_high
+            temp_above_low = temp_low
+            temp_underside_high = temp_high
+            temp_underside_low = temp_low
+        if self.temperature_above is not None:
+            temp_above_high = self.temperature_above >> 8
+            temp_above_low = self.temperature_above & 0xFF
+        if self.temperature_underside is not None:
+            temp_underside_high = self.temperature_underside >> 8
+            temp_underside_low = self.temperature_underside & 0xFF
+
+        # Probe temperature
+        probe_high = probe_low = 0x00
+        if self.probe_temperature is not None:
+            probe_high = self.probe_temperature >> 8
+            probe_low = self.probe_temperature & 0xFF
+
+        # Steam quantity
+        steam_byte = self.steam_quantity if self.steam_quantity is not None else BYTE_FF
+
+        # Weight / people number
+        if self.weight is not None:
+            weight_byte = self.weight // WEIGHT_DIVISOR
+        elif self.people_number is not None:
+            weight_byte = self.people_number
+        else:
+            weight_byte = BYTE_FF
+
+        # Lua bodyBytes[1..21] (bodyBytes[0]=0x01 is body_type, added by framework)
+        return bytearray(
+            [
+                0x00,  # bodyBytes[1] reserved
+                0x00,  # bodyBytes[2] reserved
+                0x00,  # bodyBytes[3] reserved
+                0x00,  # bodyBytes[4] reserved
+                b5,  # bodyBytes[5] flags
+                mode_high,  # bodyBytes[6] work mode high
+                mode_low,  # bodyBytes[7] work mode low
+                work_hour,  # bodyBytes[8]
+                work_minute,  # bodyBytes[9]
+                work_second,  # bodyBytes[10]
+                fire_power_byte,  # bodyBytes[11]
+                temp_above_high,  # bodyBytes[12]
+                temp_above_low,  # bodyBytes[13]
+                temp_underside_high,  # bodyBytes[14]
+                temp_underside_low,  # bodyBytes[15]
+                probe_high,  # bodyBytes[16]
+                probe_low,  # bodyBytes[17]
+                steam_byte,  # bodyBytes[18]
+                weight_byte,  # bodyBytes[19]
+                BYTE_FF,  # bodyBytes[20]
+                0x00,  # bodyBytes[21]
+            ],
+        )
+
+    def _build_set_control(self) -> bytearray:
+        """Build setControl body content (body_type=0x03 added by framework)."""
+        body = bytearray([0x01, 0x00])  # 0x01, paramSum placeholder
+        param_sum = 0
+
+        if self.steam_set is not None:
+            body.append(0x00)
+            param_sum += 1
+            body.append(self.steam_set)
+
+        time_fields = [self.hour_set, self.minute_set, self.second_set]
+        if any(f is not None for f in time_fields):
+            body.append(0x01)
+            body.append(self.hour_set if self.hour_set is not None else 0x00)
+            body.append(self.minute_set if self.minute_set is not None else 0x00)
+            body.append(self.second_set if self.second_set is not None else 0x00)
+            param_sum += 1
+
+        if self.fire_power_set is not None:
+            body.append(0x02)
+            param_sum += 1
+            body.append(self._fire_power_value(self.fire_power_set))
+
+        if self.temp_set is not None:
+            temp_high = self.temp_set >> 8
+            temp_low = self.temp_set & 0xFF
+            body.append(0x03)
+            body.append(0x00)
+            body.append(temp_high)
+            body.append(temp_low)
+            param_sum += 1
+
+        if self.probe_temp_set is not None:
+            temp_high = self.probe_temp_set >> 8
+            temp_low = self.probe_temp_set & 0xFF
+            body.append(0x04)
+            body.append(0x00)
+            body.append(temp_high)
+            body.append(temp_low)
+            param_sum += 1
+
+        if self.temp_above_set is not None:
+            temp_high = self.temp_above_set >> 8
+            temp_low = self.temp_above_set & 0xFF
+            body.append(0x05)
+            body.append(0x00)
+            body.append(0x00)
+            body.append(0x00)
+            body.append(temp_high)
+            body.append(temp_low)
+            param_sum += 1
+
+        if self.temp_underside_set is not None:
+            temp_high = self.temp_underside_set >> 8
+            temp_low = self.temp_underside_set & 0xFF
+            body.append(0x05)
+            body.append(0x00)
+            body.append(0x00)
+            body.append(0x01)
+            body.append(temp_high)
+            body.append(temp_low)
+            param_sum += 1
+
+        body[1] = param_sum
+        return body
 
 
 class MessageBFBody(MessageBody):
