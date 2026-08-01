@@ -135,6 +135,132 @@ class FirePower(IntEnum):
     fire_power_10 = 0x0A
 
 
+# Work mode name <-> (high_byte, low_byte) mapping (from Lua workMode16/workMode)
+WORK_MODE_MAP: dict[str, tuple[int, int]] = {
+    "microwave": (0x01, 0x00),
+    "microwave_1": (0x01, 0x01),
+    "microwave_2": (0x01, 0x02),
+    "microwave_3": (0x01, 0x03),
+    "microwave_4": (0x01, 0x04),
+    "microwave_5": (0x01, 0x05),
+    "microwave_steam_above_tube": (0x02, 0x00),
+    "microwave_double_tube": (0x03, 0x00),
+    "microwave_hot_wind_tube_fan": (0x04, 0x00),
+    "microwave_underside_tube_hot_wind_tube_fan": (0x05, 0x00),
+    "microwave_double_tube_hot_wind_tube_fan": (0x06, 0x00),
+    "microwave_steam": (0x07, 0x00),
+    "microwave_steam_1": (0x07, 0x01),
+    "unfreeze": (0x09, 0x00),
+    "unfreeze_1": (0x09, 0x01),
+    "unfreeze_2": (0x09, 0x02),
+    "unfreeze_3": (0x09, 0x03),
+    "unfreeze_t": (0x0A, 0x00),
+    "microwave_above_tube": (0x0B, 0x00),
+    "microwave_above_tube_1": (0x0B, 0x01),
+    "microwave_above_tube_2": (0x0B, 0x02),
+    "microwave_above_tube_fan": (0x0C, 0x00),
+    "fast_unfreeze": (0x0D, 0x00),
+    "fresh_unfreeze": (0x0E, 0x00),
+    "microwave_zymosis": (0x0F, 0x00),
+    "pure_steam": (0x29, 0x00),
+    "pure_steam_1": (0x29, 0x01),
+    "pure_steam_2": (0x29, 0x02),
+    "pure_steam_3": (0x29, 0x03),
+    "pure_steam_4": (0x29, 0x04),
+    "pure_steam_5": (0x29, 0x05),
+    "pure_steam_6": (0x29, 0x06),
+    "pure_steam_7": (0x29, 0x07),
+    "pure_steam_8": (0x29, 0x08),
+    "pure_steam_9": (0x29, 0x09),
+    "steam_above_tube": (0x2B, 0x00),
+    "steam_underside_tube": (0x2C, 0x00),
+    "steam_double_tube": (0x2D, 0x00),
+    "steam_hot_wind_tube_fan": (0x2E, 0x00),
+    "steam_hot_wind_tube_fan_1": (0x2E, 0x01),
+    "steam_hot_wind_tube_fan_2": (0x2E, 0x02),
+    "steam_hot_wind_tube": (0x2F, 0x00),
+    "steam_double_tube_fan": (0x30, 0x00),
+    "steam_above_inside_outside_tube_fan": (0x31, 0x00),
+    "steam_above_inside_tube_fan": (0x32, 0x00),
+    "above_tube": (0x51, 0x00),
+    "underside_tube": (0x52, 0x00),
+    "double_tube": (0x53, 0x00),
+    "hot_wind_tube_fan": (0x54, 0x00),
+    "pure_preheat": (0x55, 0x00),
+    "above_tube_hot_wind_tube_fan": (0x56, 0x00),
+    "underside_tube_hot_wind_tube_fan": (0x57, 0x00),
+    "zymosis": (0x58, 0x00),
+    "double_tube_hot_wind_tube_fan": (0x59, 0x00),
+    "above_tube_revolve": (0x5A, 0x00),
+    "underside_tube_revolve": (0x5B, 0x00),
+    "double_tube_revolve": (0x5C, 0x00),
+    "hot_wind_tube_fan_revolve": (0x5D, 0x00),
+    "warm": (0x5E, 0x00),
+    "double_tube_fan": (0x5F, 0x00),
+    "double_tube_fan_1": (0x5F, 0x01),
+    "double_tube_fan_2": (0x5F, 0x02),
+    "double_tube_fan_3": (0x5F, 0x03),
+    "above_inside_tube_revolve": (0x60, 0x00),
+    "above_inside_tube_fan": (0x61, 0x00),
+    "above_inside_outside_tube_revolve": (0x62, 0x00),
+    "above_inside_outside_tube_fan": (0x63, 0x00),
+    "above_inside_underside_tube": (0x64, 0x00),
+    "above_inside_underside_tube_1": (0x64, 0x01),
+    "above_inside_underside_tube_fan": (0x65, 0x00),
+    "above_inside_underside_tube_fan_1": (0x65, 0x01),
+    "above_inside_tube": (0x66, 0x00),
+    "above_inside_outside_tube": (0x67, 0x00),
+    "underside_tube_fan": (0x68, 0x00),
+    "above_tube_fan": (0x69, 0x00),
+    "above_tube_fan_1": (0x69, 0x01),
+    "above_tube_fan_2": (0x69, 0x02),
+    "scale_clean": (0x79, 0x00),
+    "clean": (0x7A, 0x00),
+    "remove_odor": (0x7B, 0x00),
+    "remove_odor_2": (0x7B, 0x02),
+    "high_temperature_clean": (0x7C, 0x00),
+    "dining_utensils_clean": (0x7D, 0x00),
+    "auto_menu": (0xA1, 0x00),
+    "eco": (0xA2, 0x00),
+    "above_tube_1": (0x51, 0x01),
+    "above_tube_2": (0x51, 0x02),
+    "above_tube_3": (0x51, 0x03),
+    "underside_tube_1": (0x52, 0x01),
+    "underside_tube_2": (0x52, 0x02),
+    "double_tube_1": (0x53, 0x01),
+    "double_tube_2": (0x53, 0x02),
+    "double_tube_3": (0x53, 0x03),
+    "double_tube_4": (0x53, 0x04),
+    "double_tube_5": (0x53, 0x05),
+    "double_tube_6": (0x53, 0x06),
+    "hot_wind_tube_fan_1": (0x54, 0x01),
+    "hot_wind_tube_fan_2": (0x54, 0x02),
+    "hot_wind_tube_fan_3": (0x54, 0x03),
+    "hot_wind_tube_fan_4": (0x54, 0x04),
+    "hot_wind_tube_fan_5": (0x54, 0x05),
+    "double_tube_hot_wind_tube_fan_1": (0x59, 0x01),
+    "double_tube_hot_wind_tube_fan_2": (0x59, 0x02),
+    "double_tube_hot_wind_tube_fan_3": (0x59, 0x03),
+    "double_tube_hot_wind_tube_fan_4": (0x59, 0x04),
+    "double_tube_hot_wind_tube_fan_5": (0x59, 0x05),
+}
+
+# Reverse map: (high, low) -> name
+WORK_MODE_REVERSE: dict[tuple[int, int], str] = {v: k for k, v in WORK_MODE_MAP.items()}
+
+
+def work_mode_to_bytes(mode: str | None) -> tuple[int, int]:
+    """Convert work mode name to (high, low) bytes."""
+    if mode is None:
+        return (0xFF, 0xFF)
+    return WORK_MODE_MAP.get(mode, (0xFF, 0xFF))
+
+
+def work_mode_to_name(high: int, low: int) -> str:
+    """Convert (high, low) bytes to work mode name."""
+    return WORK_MODE_REVERSE.get((high, low), "unknown")
+
+
 class MessageBFBase(MessageRequest):
     """BF message base."""
 
