@@ -33,6 +33,9 @@ jobs:
         os: ["windows-latest", "ubuntu-latest", "macos-latest"]
     env:
       SKIP: no-commit-to-branch
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - name: Install uv
@@ -81,10 +84,8 @@ jobs:
       - name: Upload coverage reports to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14'
         uses: codecov/codecov-action@v7
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: true
           fail_ci_if_error: true
           verbose: true
 
