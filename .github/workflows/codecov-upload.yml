@@ -1,0 +1,95 @@
+# Coverage uploads for PRs from forks can't use secrets.CODECOV_TOKEN directly:
+# GitHub withholds repo secrets from `pull_request` runs triggered by a fork, and
+# Codecov's tokenless fallback for this repo isn't accepting uploads. This workflow
+# runs via `workflow_run`, which always executes in the base repo's context (so it
+# has real secret access) after the PR workflow finishes, and re-uploads the
+# coverage report that workflow already produced as an artifact.
+#
+# Nothing here executes code from the triggering run/PR - it only downloads a data
+# artifact and checks out the PR's commit for path context, so it's safe to run
+# with secrets even when the trigger was a fork PR.
+name: Upload Coverage to Codecov
+
+on:
+  workflow_run:
+    workflows: ["PR and Python checks"]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+  checks: write
+
+jobs:
+  upload:
+    name: Upload Coverage to Codecov
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+      # workflow_run jobs don't automatically show up as a check on the PR - GitHub
+      # attaches their check-run to the workflow's own trigger ref (the base branch),
+      # not the PR's head commit. Creating a check-run against head_sha explicitly is
+      # what makes it appear in the PR's checks list, same as e.g. Codecov's own app.
+      - name: Create check run
+        id: create_check
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { data } = await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Upload Coverage to Codecov',
+              head_sha: context.payload.workflow_run.head_sha,
+              status: 'in_progress',
+            });
+            core.setOutput('check_id', data.id);
+
+      - name: Checkout PR commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage-report
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve PR number for this commit
+        id: pr
+        run: |
+          number=$(gh api "repos/${{ github.repository }}/commits/${{ github.event.workflow_run.head_sha }}/pulls" \
+            --jq '.[0].number // empty')
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload coverage reports to Codecov
+        id: codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+          override_commit: ${{ github.event.workflow_run.head_sha }}
+          override_branch: ${{ github.event.workflow_run.head_branch }}
+          override_pr: ${{ steps.pr.outputs.number }}
+
+      - name: Finalize check run
+        if: always() && steps.create_check.outputs.check_id
+        uses: actions/github-script@v8
+        env:
+          CHECK_ID: ${{ steps.create_check.outputs.check_id }}
+          OUTCOME: ${{ steps.codecov.outcome }}
+        with:
+          script: |
+            await github.rest.checks.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              check_run_id: Number(process.env.CHECK_ID),
+              status: 'completed',
+              conclusion: process.env.OUTCOME === 'success' ? 'success' : 'failure',
+            });
