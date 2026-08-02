@@ -82,6 +82,7 @@ jobs:
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
   deploy:
     name: Deploy Release to PyPI
