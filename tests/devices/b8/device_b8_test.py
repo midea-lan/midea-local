@@ -5,15 +5,12 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
-from midealocal.devices.b8 import MideaB8Device
-from midealocal.devices.b8.const import (
+from midealocal.devices.b8 import (
     B8CleanMode,
     B8ControlType,
     B8DeviceAttributes,
     B8ErrorCanFixDescription,
-    B8ErrorRebootDescription,
     B8ErrorType,
-    B8ErrorWarningDescription,
     B8FanLevel,
     B8FunctionType,
     B8MopState,
@@ -22,8 +19,11 @@ from midealocal.devices.b8.const import (
     B8WaterLevel,
     B8WorkMode,
     B8WorkStatus,
+    MideaB8Device,
 )
 from midealocal.devices.b8.message import (
+    B8ErrorRebootDescription,
+    B8ErrorWarningDescription,
     MessageQuery,
 )
 from midealocal.message import MessageType
@@ -53,84 +53,84 @@ class TestMideaB8Device:
     def test_initial_attributes(self) -> None:
         """Test initial attributes."""
         assert (
-            self.device.attributes[B8DeviceAttributes.WORK_STATUS]
+            self.device.attributes[B8DeviceAttributes.work_status]
             == B8WorkStatus.NONE.name.lower()
         )
         assert (
-            self.device.attributes[B8DeviceAttributes.FUNCTION_TYPE]
+            self.device.attributes[B8DeviceAttributes.function_type]
             == B8FunctionType.NONE.name.lower()
         )
         assert (
-            self.device.attributes[B8DeviceAttributes.CONTROL_TYPE]
+            self.device.attributes[B8DeviceAttributes.control_type]
             == B8ControlType.NONE.name.lower()
         )
         assert (
-            self.device.attributes[B8DeviceAttributes.MOVE_DIRECTION]
+            self.device.attributes[B8DeviceAttributes.move_direction]
             == B8Moviment.NONE.name.lower()
         )
         assert (
-            self.device.attributes[B8DeviceAttributes.CLEAN_MODE]
+            self.device.attributes[B8DeviceAttributes.clean_mode]
             == B8CleanMode.NONE.name.lower()
         )
         assert (
-            self.device.attributes[B8DeviceAttributes.FAN_LEVEL]
+            self.device.attributes[B8DeviceAttributes.fan_level]
             == B8FanLevel.OFF.name.lower()
         )
-        assert self.device.attributes[B8DeviceAttributes.AREA] == 0
+        assert self.device.attributes[B8DeviceAttributes.area] == 0
         assert (
-            self.device.attributes[B8DeviceAttributes.WATER_LEVEL]
+            self.device.attributes[B8DeviceAttributes.water_level]
             == B8WaterLevel.OFF.name.lower()
         )
-        assert self.device.attributes[B8DeviceAttributes.VOICE_VOLUME] == 0
+        assert self.device.attributes[B8DeviceAttributes.voice_volume] == 0
         assert (
-            self.device.attributes[B8DeviceAttributes.MOP]
+            self.device.attributes[B8DeviceAttributes.mop]
             == B8MopState.OFF.name.lower()
         )
-        assert self.device.attributes[B8DeviceAttributes.CARPET_SWITCH] is False
+        assert self.device.attributes[B8DeviceAttributes.carpet_switch] is False
         assert (
-            self.device.attributes[B8DeviceAttributes.SPEED]
+            self.device.attributes[B8DeviceAttributes.speed]
             == B8Speed.HIGH.name.lower()
         )
-        assert self.device.attributes[B8DeviceAttributes.HAVE_RESERVE_TASK] is False
-        assert self.device.attributes[B8DeviceAttributes.BATTERY_PERCENT] == 0
-        assert self.device.attributes[B8DeviceAttributes.WORK_TIME] == 0
-        assert self.device.attributes[B8DeviceAttributes.UV_SWITCH] is False
-        assert self.device.attributes[B8DeviceAttributes.WIFI_SWITCH] is False
-        assert self.device.attributes[B8DeviceAttributes.VOICE_SWITCH] is False
-        assert self.device.attributes[B8DeviceAttributes.COMMAND_SOURCE] is False
+        assert self.device.attributes[B8DeviceAttributes.have_reserve_task] is False
+        assert self.device.attributes[B8DeviceAttributes.battery_percent] == 0
+        assert self.device.attributes[B8DeviceAttributes.work_time] == 0
+        assert self.device.attributes[B8DeviceAttributes.uv_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.wifi_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.voice_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.command_source] is False
         assert (
-            self.device.attributes[B8DeviceAttributes.ERROR_TYPE]
+            self.device.attributes[B8DeviceAttributes.error_type]
             == B8ErrorType.NO.name.lower()
         )
-        assert self.device.attributes[B8DeviceAttributes.ERROR_DESC] == "no"
-        assert self.device.attributes[B8DeviceAttributes.DEVICE_ERROR] is False
+        assert self.device.attributes[B8DeviceAttributes.error_desc] == "no"
+        assert self.device.attributes[B8DeviceAttributes.device_error] is False
         assert (
-            self.device.attributes[B8DeviceAttributes.BOARD_COMMUNICATION_ERROR]
+            self.device.attributes[B8DeviceAttributes.board_communication_error]
             is False
         )
-        assert self.device.attributes[B8DeviceAttributes.LASER_SENSOR_SHELTER] is False
-        assert self.device.attributes[B8DeviceAttributes.LASER_SENSOR_ERROR] is False
+        assert self.device.attributes[B8DeviceAttributes.laser_sensor_shelter] is False
+        assert self.device.attributes[B8DeviceAttributes.laser_sensor_error] is False
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
         with patch.object(self.device, "send_message_v2") as mock_build_send:
-            self.device.set_attribute(B8DeviceAttributes.CLEAN_MODE.value, "area")
+            self.device.set_attribute(B8DeviceAttributes.clean_mode.value, "area")
             mock_build_send.assert_called_once()
             mock_build_send.reset_mock()
 
-            self.device.set_attribute(B8DeviceAttributes.FAN_LEVEL.value, "normal")
+            self.device.set_attribute(B8DeviceAttributes.fan_level.value, "normal")
             mock_build_send.assert_called_once()
             mock_build_send.reset_mock()
 
-            self.device.set_attribute(B8DeviceAttributes.WATER_LEVEL.value, "normal")
+            self.device.set_attribute(B8DeviceAttributes.water_level.value, "normal")
             mock_build_send.assert_called_once()
             mock_build_send.reset_mock()
 
-            self.device.set_attribute(B8DeviceAttributes.VOICE_VOLUME.value, 10)
+            self.device.set_attribute(B8DeviceAttributes.voice_volume.value, 10)
             mock_build_send.assert_called_once()
             mock_build_send.reset_mock()
 
-            self.device.set_attribute(B8DeviceAttributes.WATER_LEVEL.value, "invalid")
+            self.device.set_attribute(B8DeviceAttributes.water_level.value, "invalid")
             mock_build_send.assert_not_called()
 
     def test_set_work_mode(self) -> None:
@@ -182,35 +182,35 @@ class TestMideaB8Device:
         )
         self.device.process_message(bytes(header + body))
         assert (
-            self.device.attributes[B8DeviceAttributes.WORK_STATUS]
+            self.device.attributes[B8DeviceAttributes.work_status]
             == "charging_with_wire"
         )
-        assert self.device.attributes[B8DeviceAttributes.FUNCTION_TYPE] == "none"
-        assert self.device.attributes[B8DeviceAttributes.CONTROL_TYPE] == "auto"
-        assert self.device.attributes[B8DeviceAttributes.MOVE_DIRECTION] == "none"
-        assert self.device.attributes[B8DeviceAttributes.CLEAN_MODE] == "auto"
-        assert self.device.attributes[B8DeviceAttributes.FAN_LEVEL] == "normal"
-        assert self.device.attributes[B8DeviceAttributes.AREA] == 0
-        assert self.device.attributes[B8DeviceAttributes.WATER_LEVEL] == "normal"
-        assert self.device.attributes[B8DeviceAttributes.VOICE_VOLUME] == 40
-        assert self.device.attributes[B8DeviceAttributes.HAVE_RESERVE_TASK] is False
-        assert self.device.attributes[B8DeviceAttributes.BATTERY_PERCENT] == 80
-        assert self.device.attributes[B8DeviceAttributes.WORK_TIME] == 20
-        assert self.device.attributes[B8DeviceAttributes.UV_SWITCH] is True
-        assert self.device.attributes[B8DeviceAttributes.WIFI_SWITCH] is True
-        assert self.device.attributes[B8DeviceAttributes.VOICE_SWITCH] is True
-        assert self.device.attributes[B8DeviceAttributes.COMMAND_SOURCE] is True
-        assert self.device.attributes[B8DeviceAttributes.DEVICE_ERROR] is True
-        assert self.device.attributes[B8DeviceAttributes.ERROR_TYPE] == "can_fix"
-        assert self.device.attributes[B8DeviceAttributes.ERROR_DESC] == "fix_dust"
-        assert self.device.attributes[B8DeviceAttributes.MOP] == "on"
-        assert self.device.attributes[B8DeviceAttributes.CARPET_SWITCH] is True
-        assert self.device.attributes[B8DeviceAttributes.LASER_SENSOR_ERROR] is True
-        assert self.device.attributes[B8DeviceAttributes.LASER_SENSOR_SHELTER] is True
+        assert self.device.attributes[B8DeviceAttributes.function_type] == "none"
+        assert self.device.attributes[B8DeviceAttributes.control_type] == "auto"
+        assert self.device.attributes[B8DeviceAttributes.move_direction] == "none"
+        assert self.device.attributes[B8DeviceAttributes.clean_mode] == "auto"
+        assert self.device.attributes[B8DeviceAttributes.fan_level] == "normal"
+        assert self.device.attributes[B8DeviceAttributes.area] == 0
+        assert self.device.attributes[B8DeviceAttributes.water_level] == "normal"
+        assert self.device.attributes[B8DeviceAttributes.voice_volume] == 40
+        assert self.device.attributes[B8DeviceAttributes.have_reserve_task] is False
+        assert self.device.attributes[B8DeviceAttributes.battery_percent] == 80
+        assert self.device.attributes[B8DeviceAttributes.work_time] == 20
+        assert self.device.attributes[B8DeviceAttributes.uv_switch] is True
+        assert self.device.attributes[B8DeviceAttributes.wifi_switch] is True
+        assert self.device.attributes[B8DeviceAttributes.voice_switch] is True
+        assert self.device.attributes[B8DeviceAttributes.command_source] is True
+        assert self.device.attributes[B8DeviceAttributes.device_error] is True
+        assert self.device.attributes[B8DeviceAttributes.error_type] == "can_fix"
+        assert self.device.attributes[B8DeviceAttributes.error_desc] == "fix_dust"
+        assert self.device.attributes[B8DeviceAttributes.mop] == "on"
+        assert self.device.attributes[B8DeviceAttributes.carpet_switch] is True
+        assert self.device.attributes[B8DeviceAttributes.laser_sensor_error] is True
+        assert self.device.attributes[B8DeviceAttributes.laser_sensor_shelter] is True
         assert (
-            self.device.attributes[B8DeviceAttributes.BOARD_COMMUNICATION_ERROR] is True
+            self.device.attributes[B8DeviceAttributes.board_communication_error] is True
         )
-        assert self.device.attributes[B8DeviceAttributes.SPEED] == "high"
+        assert self.device.attributes[B8DeviceAttributes.speed] == "high"
 
     def test_notify_response(self) -> None:
         """Test notify response."""
@@ -243,36 +243,36 @@ class TestMideaB8Device:
             ],
         )
         self.device.process_message(bytes(header + body))
-        assert self.device.attributes[B8DeviceAttributes.WORK_STATUS] == "work"
+        assert self.device.attributes[B8DeviceAttributes.work_status] == "work"
         assert (
-            self.device.attributes[B8DeviceAttributes.FUNCTION_TYPE]
+            self.device.attributes[B8DeviceAttributes.function_type]
             == "dust_box_cleaning"
         )
-        assert self.device.attributes[B8DeviceAttributes.CONTROL_TYPE] == "manual"
-        assert self.device.attributes[B8DeviceAttributes.MOVE_DIRECTION] == "left"
-        assert self.device.attributes[B8DeviceAttributes.CLEAN_MODE] == "path"
-        assert self.device.attributes[B8DeviceAttributes.FAN_LEVEL] == "high"
-        assert self.device.attributes[B8DeviceAttributes.AREA] == 1
-        assert self.device.attributes[B8DeviceAttributes.WATER_LEVEL] == "low"
-        assert self.device.attributes[B8DeviceAttributes.VOICE_VOLUME] == 90
-        assert self.device.attributes[B8DeviceAttributes.HAVE_RESERVE_TASK] is True
-        assert self.device.attributes[B8DeviceAttributes.BATTERY_PERCENT] == 40
-        assert self.device.attributes[B8DeviceAttributes.WORK_TIME] == 15
-        assert self.device.attributes[B8DeviceAttributes.UV_SWITCH] is False
-        assert self.device.attributes[B8DeviceAttributes.WIFI_SWITCH] is True
-        assert self.device.attributes[B8DeviceAttributes.VOICE_SWITCH] is True
-        assert self.device.attributes[B8DeviceAttributes.COMMAND_SOURCE] is False
-        assert self.device.attributes[B8DeviceAttributes.DEVICE_ERROR] is True
-        assert self.device.attributes[B8DeviceAttributes.ERROR_TYPE] == "warning"
-        assert self.device.attributes[B8DeviceAttributes.ERROR_DESC] == "warn_full_dust"
-        assert self.device.attributes[B8DeviceAttributes.MOP] == "lack_water"
-        assert self.device.attributes[B8DeviceAttributes.CARPET_SWITCH] is False
-        assert self.device.attributes[B8DeviceAttributes.LASER_SENSOR_ERROR] is False
-        assert self.device.attributes[B8DeviceAttributes.LASER_SENSOR_SHELTER] is True
+        assert self.device.attributes[B8DeviceAttributes.control_type] == "manual"
+        assert self.device.attributes[B8DeviceAttributes.move_direction] == "left"
+        assert self.device.attributes[B8DeviceAttributes.clean_mode] == "path"
+        assert self.device.attributes[B8DeviceAttributes.fan_level] == "high"
+        assert self.device.attributes[B8DeviceAttributes.area] == 1
+        assert self.device.attributes[B8DeviceAttributes.water_level] == "low"
+        assert self.device.attributes[B8DeviceAttributes.voice_volume] == 90
+        assert self.device.attributes[B8DeviceAttributes.have_reserve_task] is True
+        assert self.device.attributes[B8DeviceAttributes.battery_percent] == 40
+        assert self.device.attributes[B8DeviceAttributes.work_time] == 15
+        assert self.device.attributes[B8DeviceAttributes.uv_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.wifi_switch] is True
+        assert self.device.attributes[B8DeviceAttributes.voice_switch] is True
+        assert self.device.attributes[B8DeviceAttributes.command_source] is False
+        assert self.device.attributes[B8DeviceAttributes.device_error] is True
+        assert self.device.attributes[B8DeviceAttributes.error_type] == "warning"
+        assert self.device.attributes[B8DeviceAttributes.error_desc] == "warn_full_dust"
+        assert self.device.attributes[B8DeviceAttributes.mop] == "lack_water"
+        assert self.device.attributes[B8DeviceAttributes.carpet_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.laser_sensor_error] is False
+        assert self.device.attributes[B8DeviceAttributes.laser_sensor_shelter] is True
         assert (
-            self.device.attributes[B8DeviceAttributes.BOARD_COMMUNICATION_ERROR] is True
+            self.device.attributes[B8DeviceAttributes.board_communication_error] is True
         )
-        assert self.device.attributes[B8DeviceAttributes.SPEED] == "low"
+        assert self.device.attributes[B8DeviceAttributes.speed] == "low"
 
     def test_query_response_reboot_error(self) -> None:
         """Test query response."""
@@ -306,40 +306,40 @@ class TestMideaB8Device:
             ],
         )
         self.device.process_message(bytes(header + body))
-        assert self.device.attributes[B8DeviceAttributes.WORK_STATUS] == "updating"
+        assert self.device.attributes[B8DeviceAttributes.work_status] == "updating"
         assert (
-            self.device.attributes[B8DeviceAttributes.FUNCTION_TYPE]
+            self.device.attributes[B8DeviceAttributes.function_type]
             == "water_tank_cleaning"
         )
-        assert self.device.attributes[B8DeviceAttributes.CONTROL_TYPE] == "none"
-        assert self.device.attributes[B8DeviceAttributes.MOVE_DIRECTION] == "none"
-        assert self.device.attributes[B8DeviceAttributes.CLEAN_MODE] == "none"
-        assert self.device.attributes[B8DeviceAttributes.FAN_LEVEL] == "off"
-        assert self.device.attributes[B8DeviceAttributes.AREA] == 0
-        assert self.device.attributes[B8DeviceAttributes.WATER_LEVEL] == "off"
-        assert self.device.attributes[B8DeviceAttributes.VOICE_VOLUME] == 0
-        assert self.device.attributes[B8DeviceAttributes.HAVE_RESERVE_TASK] is False
-        assert self.device.attributes[B8DeviceAttributes.BATTERY_PERCENT] == 0
-        assert self.device.attributes[B8DeviceAttributes.WORK_TIME] == 0
-        assert self.device.attributes[B8DeviceAttributes.UV_SWITCH] is False
-        assert self.device.attributes[B8DeviceAttributes.WIFI_SWITCH] is False
-        assert self.device.attributes[B8DeviceAttributes.VOICE_SWITCH] is False
-        assert self.device.attributes[B8DeviceAttributes.COMMAND_SOURCE] is False
-        assert self.device.attributes[B8DeviceAttributes.DEVICE_ERROR] is False
-        assert self.device.attributes[B8DeviceAttributes.ERROR_TYPE] == "reboot"
+        assert self.device.attributes[B8DeviceAttributes.control_type] == "none"
+        assert self.device.attributes[B8DeviceAttributes.move_direction] == "none"
+        assert self.device.attributes[B8DeviceAttributes.clean_mode] == "none"
+        assert self.device.attributes[B8DeviceAttributes.fan_level] == "off"
+        assert self.device.attributes[B8DeviceAttributes.area] == 0
+        assert self.device.attributes[B8DeviceAttributes.water_level] == "off"
+        assert self.device.attributes[B8DeviceAttributes.voice_volume] == 0
+        assert self.device.attributes[B8DeviceAttributes.have_reserve_task] is False
+        assert self.device.attributes[B8DeviceAttributes.battery_percent] == 0
+        assert self.device.attributes[B8DeviceAttributes.work_time] == 0
+        assert self.device.attributes[B8DeviceAttributes.uv_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.wifi_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.voice_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.command_source] is False
+        assert self.device.attributes[B8DeviceAttributes.device_error] is False
+        assert self.device.attributes[B8DeviceAttributes.error_type] == "reboot"
         assert (
-            self.device.attributes[B8DeviceAttributes.ERROR_DESC]
+            self.device.attributes[B8DeviceAttributes.error_desc]
             == "reboot_laser_comm_fail"
         )
-        assert self.device.attributes[B8DeviceAttributes.MOP] == "off"
-        assert self.device.attributes[B8DeviceAttributes.CARPET_SWITCH] is False
-        assert self.device.attributes[B8DeviceAttributes.LASER_SENSOR_ERROR] is False
-        assert self.device.attributes[B8DeviceAttributes.LASER_SENSOR_SHELTER] is False
+        assert self.device.attributes[B8DeviceAttributes.mop] == "off"
+        assert self.device.attributes[B8DeviceAttributes.carpet_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.laser_sensor_error] is False
+        assert self.device.attributes[B8DeviceAttributes.laser_sensor_shelter] is False
         assert (
-            self.device.attributes[B8DeviceAttributes.BOARD_COMMUNICATION_ERROR]
+            self.device.attributes[B8DeviceAttributes.board_communication_error]
             is False
         )
-        assert self.device.attributes[B8DeviceAttributes.SPEED] == "low"
+        assert self.device.attributes[B8DeviceAttributes.speed] == "low"
 
     def test_query_response_no_error(self) -> None:
         """Test query response."""
@@ -373,34 +373,34 @@ class TestMideaB8Device:
             ],
         )
         self.device.process_message(bytes(header + body))
-        assert self.device.attributes[B8DeviceAttributes.WORK_STATUS] == "none"
-        assert self.device.attributes[B8DeviceAttributes.FUNCTION_TYPE] == "none"
-        assert self.device.attributes[B8DeviceAttributes.CONTROL_TYPE] == "none"
-        assert self.device.attributes[B8DeviceAttributes.MOVE_DIRECTION] == "none"
-        assert self.device.attributes[B8DeviceAttributes.CLEAN_MODE] == "none"
-        assert self.device.attributes[B8DeviceAttributes.FAN_LEVEL] == "off"
-        assert self.device.attributes[B8DeviceAttributes.AREA] == 0
-        assert self.device.attributes[B8DeviceAttributes.WATER_LEVEL] == "off"
-        assert self.device.attributes[B8DeviceAttributes.VOICE_VOLUME] == 0
-        assert self.device.attributes[B8DeviceAttributes.HAVE_RESERVE_TASK] is False
-        assert self.device.attributes[B8DeviceAttributes.BATTERY_PERCENT] == 0
-        assert self.device.attributes[B8DeviceAttributes.WORK_TIME] == 0
-        assert self.device.attributes[B8DeviceAttributes.UV_SWITCH] is False
-        assert self.device.attributes[B8DeviceAttributes.WIFI_SWITCH] is False
-        assert self.device.attributes[B8DeviceAttributes.VOICE_SWITCH] is False
-        assert self.device.attributes[B8DeviceAttributes.COMMAND_SOURCE] is False
-        assert self.device.attributes[B8DeviceAttributes.DEVICE_ERROR] is False
-        assert self.device.attributes[B8DeviceAttributes.ERROR_TYPE] == "no"
-        assert self.device.attributes[B8DeviceAttributes.ERROR_DESC] == "no"
-        assert self.device.attributes[B8DeviceAttributes.MOP] == "off"
-        assert self.device.attributes[B8DeviceAttributes.CARPET_SWITCH] is False
-        assert self.device.attributes[B8DeviceAttributes.LASER_SENSOR_ERROR] is False
-        assert self.device.attributes[B8DeviceAttributes.LASER_SENSOR_SHELTER] is False
+        assert self.device.attributes[B8DeviceAttributes.work_status] == "none"
+        assert self.device.attributes[B8DeviceAttributes.function_type] == "none"
+        assert self.device.attributes[B8DeviceAttributes.control_type] == "none"
+        assert self.device.attributes[B8DeviceAttributes.move_direction] == "none"
+        assert self.device.attributes[B8DeviceAttributes.clean_mode] == "none"
+        assert self.device.attributes[B8DeviceAttributes.fan_level] == "off"
+        assert self.device.attributes[B8DeviceAttributes.area] == 0
+        assert self.device.attributes[B8DeviceAttributes.water_level] == "off"
+        assert self.device.attributes[B8DeviceAttributes.voice_volume] == 0
+        assert self.device.attributes[B8DeviceAttributes.have_reserve_task] is False
+        assert self.device.attributes[B8DeviceAttributes.battery_percent] == 0
+        assert self.device.attributes[B8DeviceAttributes.work_time] == 0
+        assert self.device.attributes[B8DeviceAttributes.uv_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.wifi_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.voice_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.command_source] is False
+        assert self.device.attributes[B8DeviceAttributes.device_error] is False
+        assert self.device.attributes[B8DeviceAttributes.error_type] == "no"
+        assert self.device.attributes[B8DeviceAttributes.error_desc] == "no"
+        assert self.device.attributes[B8DeviceAttributes.mop] == "off"
+        assert self.device.attributes[B8DeviceAttributes.carpet_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.laser_sensor_error] is False
+        assert self.device.attributes[B8DeviceAttributes.laser_sensor_shelter] is False
         assert (
-            self.device.attributes[B8DeviceAttributes.BOARD_COMMUNICATION_ERROR]
+            self.device.attributes[B8DeviceAttributes.board_communication_error]
             is False
         )
-        assert self.device.attributes[B8DeviceAttributes.SPEED] == "low"
+        assert self.device.attributes[B8DeviceAttributes.speed] == "low"
 
     def test_unexpected_response(self) -> None:
         """Test unexpected response."""
