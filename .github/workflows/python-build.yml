@@ -83,9 +83,8 @@ jobs:
         shell: bash
       - name: Upload coverage reports to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14'
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@v4
         with:
-          slug: midea-lan/midea-local
           fail_ci_if_error: true
           verbose: true
 
