@@ -94,6 +94,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Download coverage artifact
         uses: actions/download-artifact@v8
         with:
