@@ -6,7 +6,7 @@
 # coverage report that workflow already produced as an artifact.
 #
 # Nothing here executes code from the triggering run/PR - it only downloads a data
-# artifact and checks out the PR's commit for path context, so it's safe to run
+# artifact and checks out the base branch for git context, so it's safe to run
 # with secrets even when the trigger was a fork PR.
 name: Upload Coverage to Codecov
 
@@ -45,10 +45,14 @@ jobs:
             });
             core.setOutput('check_id', data.id);
 
-      - name: Checkout PR commit
+      # Deliberately not checking out the PR's own commit: actions/checkout refuses
+      # to check out fork PR code by default in workflow_run jobs (they run with base
+      # repo secrets, so checking out untrusted code here would be a "pwn request"
+      # risk). We don't need the PR's tree anyway - nothing in this job executes
+      # code from it, this just gives codecov-action a git repo to work from.
+      - name: Checkout base branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
           persist-credentials: false
 
       - name: Download coverage artifact
