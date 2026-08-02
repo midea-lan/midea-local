@@ -44,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           uv venv --python ${{ matrix.python-version }}
-          uv pip install -r requirements-all.txt pre-commit build
+          uv pip install -r requirements-all.txt prek build
         shell: bash
       - name: Activate virtualenv
         # This repo has no pyproject.toml, so expose the .venv to later steps by
@@ -60,15 +60,15 @@ jobs:
             cygpath -w "$PWD/.venv" | sed 's/^/VIRTUAL_ENV=/' >> "$GITHUB_ENV"
           fi
         shell: bash
-      - name: Cache pre-commit environments
+      - name: Cache prek environments
         if: github.event_name != 'release'
         uses: actions/cache@v6
         with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
-      - name: Run pre-commit
+          path: ~/.cache/prek
+          key: prek-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Run prek
         if: github.event_name != 'release'
-        run: pre-commit run --show-diff-on-failure --color=always --all-files
+        run: prek run --show-diff-on-failure --color=always --all-files
         shell: bash
       - name: Build midea-local
         run: python -m build

@@ -79,7 +79,7 @@ cd midea-local
 ./scripts/setup.sh          # Linux / macOS / WSL2 （Windows 使用 scripts\setup.ps1）
 ```
 
-该脚本会创建 `.venv`、安装所有依赖并配置 pre-commit 钩子。
+该脚本会创建 `.venv`、安装所有依赖并配置 prek 钩子。
 使用 `uv run` 运行工具，例如 `uv run python -m pytest ./tests/`。
 完整流程与各操作系统的 uv 安装说明请参见贡献指南。
 
