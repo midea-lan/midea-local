@@ -85,28 +85,6 @@ jobs:
           name: coverage-report
           path: coverage.xml
 
-  codecov:
-    name: Upload Coverage to Codecov
-    needs: [build]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - name: Download coverage artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: coverage-report
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v7
-        with:
-          use_oidc: true
-          fail_ci_if_error: true
-          verbose: true
-
   deploy:
     name: Deploy Release to PyPI
     needs: [build]
