@@ -5,12 +5,13 @@ name: PR and Python checks
 on:
   pull_request:
     branches: ["main"]
+  pull_request_target:
+    branches: ["main"]
   release:
     types: [published]
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   commitlint:
@@ -79,6 +80,31 @@ jobs:
           python -m pytest --rootdir . --cov=midealocal --cov-report html --cov-report xml --junitxml=reports/junit/junit.xml ./tests/
           mv htmlcov reports/coverage
         shell: bash
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
+          path: |
+            coverage.xml
+            reports/coverage
+          retention-days: 1
+
+  codecov:
+    name: Upload coverage to Codecov
+    needs: build
+    if: github.event_name == 'pull_request_target' || github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+          merge-multiple: true
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v7
         with:
