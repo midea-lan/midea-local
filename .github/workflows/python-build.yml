@@ -33,9 +33,6 @@ jobs:
         os: ["windows-latest", "ubuntu-latest", "macos-latest"]
     env:
       SKIP: no-commit-to-branch
-    permissions:
-      id-token: write
-      contents: read
     steps:
       - uses: actions/checkout@v7
       - name: Install uv
@@ -81,8 +78,27 @@ jobs:
           python -m pytest --rootdir . --cov=midealocal --cov-report html --cov-report xml --junitxml=reports/junit/junit.xml ./tests/
           mv htmlcov reports/coverage
         shell: bash
-      - name: Upload coverage reports to Codecov
+      - name: Upload coverage artifact
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14'
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  codecov:
+    name: Upload Coverage to Codecov
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage-report
+      - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
