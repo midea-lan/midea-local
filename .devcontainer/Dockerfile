@@ -34,10 +34,10 @@ RUN if [ -n "${APT_MIRROR_DOMAIN}" ] && [ "${APT_MIRROR_DOMAIN}" != "deb.debian.
 # pre-commit, so the first container start (scripts/setup.sh) is fast. The
 # workspace .venv itself is created on create by scripts/setup.sh (see the
 # devcontainer.json postCreateCommand); this only populates uv's global cache.
-COPY requirements*.txt /tmp/uv-tmp/
-RUN su vscode -c "uv venv /tmp/uv-tmp/.venv --python 3.12 \
-    && VIRTUAL_ENV=/tmp/uv-tmp/.venv uv pip install -r /tmp/uv-tmp/requirements-all.txt pre-commit" \
-    && rm -rf /tmp/uv-tmp/.venv
+# COPY requirements*.txt /tmp/uv-tmp/
+# RUN su vscode -c "uv venv /tmp/uv-tmp/.venv --python 3.12 \
+#     && VIRTUAL_ENV=/tmp/uv-tmp/.venv uv pip install -r /tmp/uv-tmp/requirements-all.txt pre-commit" \
+#     && rm -rf /tmp/uv-tmp/.venv
 
 # [Optional] Uncomment this section to install additional OS packages.
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
