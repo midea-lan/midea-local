@@ -270,7 +270,7 @@ class LocalSecurity:
         """Decrypt AES."""
         try:
             return cast(
-                bytearray,
+                "bytearray",
                 unpad(AES.new(self.aes_key, AES.MODE_ECB).decrypt(bytearray(raw)), 16),
             )
         except ValueError:

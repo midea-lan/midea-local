@@ -137,8 +137,10 @@ def _redact_data(data: str) -> str:
         # IPv4
         r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
         # Simple street address
-        r"\b\d{1,5}\s+[A-Za-z0-9\s]{3,40}"
-        r"(?:Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Way|Boulevard|Blvd)\b",
+        (
+            r"\b\d{1,5}\s+[A-Za-z0-9\s]{3,40}"
+            r"(?:Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Way|Boulevard|Blvd)\b"
+        ),
     ]
 
     for pattern in patterns:
@@ -238,7 +240,7 @@ class MideaCloud:
                     repr(e),
                 )
         if int(response["code"]) == 0 and "data" in response:
-            return cast(dict, response["data"])
+            return cast("dict", response["data"])
         return None
 
     async def _get_login_id(self) -> str | None:
@@ -311,7 +313,7 @@ class MideaCloud:
         if (response := await self.list_appliances(home_id=None)) and (
             int(device_id) in response
         ):
-            return cast(dict, response[device_id])
+            return cast("dict", response[device_id])
         return None
 
     async def download_lua(
@@ -633,7 +635,7 @@ class SmartHomeCloud(MideaCloud):
         password: str,
     ) -> None:
         """Initialize MSmart Cloud."""
-        cloud_data = cast(dict[str, Any], SUPPORTED_CLOUDS[cloud_name])
+        cloud_data = cast("dict[str, Any]", SUPPORTED_CLOUDS[cloud_name])
         super().__init__(
             session=session,
             security=MSmartCloudSecurity(
@@ -866,7 +868,7 @@ class MideaAirCloud(MideaCloud):
         password: str,
     ) -> None:
         """Initialize Midea Air Cloud."""
-        cloud_data = cast(dict[str, Any], SUPPORTED_CLOUDS[cloud_name])
+        cloud_data = cast("dict[str, Any]", SUPPORTED_CLOUDS[cloud_name])
         super().__init__(
             session=session,
             security=MideaAirSecurity(login_key=cloud_data["app_key"]),
@@ -934,7 +936,7 @@ class MideaAirCloud(MideaCloud):
                     repr(e),
                 )
         if int(response["errorCode"]) == 0 and "result" in response:
-            return cast(dict[str, Any], response["result"])
+            return cast("dict[str, Any]", response["result"])
         return None
 
     async def login(self) -> bool:
@@ -1012,9 +1014,9 @@ def get_midea_cloud(
             f"Unsupported Cloud specified: {cloud_name}",
         )
 
-    cloud_data = cast(dict[str, Any], SUPPORTED_CLOUDS[cloud_name])
+    cloud_data = cast("dict[str, Any]", SUPPORTED_CLOUDS[cloud_name])
     return cast(
-        MideaCloud,
+        "MideaCloud",
         globals()[cloud_data["class_name"]](
             cloud_name=cloud_name,
             session=session,
