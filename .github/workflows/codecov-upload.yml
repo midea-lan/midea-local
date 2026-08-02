@@ -17,15 +17,26 @@
 # built around - this is the reliable way for an out-of-band job to report status
 # against a specific commit.
 #
-# The status is always posted and always resolved (even when the triggering
+# The status is posted and then resolved (even when the triggering
 # "PR and Python checks" run failed), so this is safe to mark as a required status
-# check in branch protection without risking a permanently "Expected" state.
+# check in branch protection without normally leaving it stuck on "Expected". The
+# github-script steps retry on failure, but a run cancelled between the pending
+# and final status writes would still leave the commit on "pending" - that gap
+# isn't closed here, since a full recovery mechanism is disproportionate to the
+# case it guards against.
 name: Upload Coverage to Codecov
 
 on:
   workflow_run:
     workflows: ["PR and Python checks"]
     types: [completed]
+
+# A rerun for the same commit isn't guaranteed to finish in the order it was
+# queued, so without this an older run's status write could overwrite a newer
+# one. Keyed on head_sha (not the run id) so all runs for one commit serialize.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -43,6 +54,7 @@ jobs:
         env:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         with:
+          retries: 3
           script: |
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
@@ -105,6 +117,7 @@ jobs:
           OUTCOME: ${{ steps.codecov.outcome }}
           TRIGGER_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         with:
+          retries: 3
           script: |
             const skipped = process.env.TRIGGER_CONCLUSION !== 'success';
             const ok = skipped || process.env.OUTCOME === 'success';
