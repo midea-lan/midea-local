@@ -3,8 +3,9 @@
 import pytest
 
 from midealocal.const import ProtocolVersion
-from midealocal.devices.c3.const import C3DeviceMode, C3SilentLevel
 from midealocal.devices.c3.message import (
+    C3DeviceMode,
+    C3SilentLevel,
     MessageC3Base,
     MessageC3Response,
     MessageQuery,
