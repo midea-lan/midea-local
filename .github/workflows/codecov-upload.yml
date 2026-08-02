@@ -1,0 +1,118 @@
+# Coverage uploads for PRs from forks can't use secrets.CODECOV_TOKEN directly:
+# GitHub withholds repo secrets from `pull_request` runs triggered by a fork, and
+# Codecov's tokenless fallback for this repo isn't accepting uploads. This workflow
+# runs via `workflow_run`, which always executes in the base repo's context (so it
+# has real secret access) after the PR workflow finishes, and re-uploads the
+# coverage report that workflow already produced as an artifact.
+#
+# Nothing here executes code from the triggering run/PR - it only downloads a data
+# artifact and checks out the base branch for git context, so it's safe to run
+# with secrets even when the trigger was a fork PR.
+#
+# The check-run is always created and always resolved (even when the triggering
+# "PR and Python checks" run failed), so this is safe to mark as a required status
+# check in branch protection without risking a permanently "Expected" check.
+name: Upload Coverage to Codecov
+
+on:
+  workflow_run:
+    workflows: ["PR and Python checks"]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+  checks: write
+
+jobs:
+  upload:
+    name: Upload Coverage to Codecov
+    runs-on: ubuntu-latest
+    steps:
+      # workflow_run jobs don't automatically show up as a check on the PR - GitHub
+      # attaches their check-run to the workflow's own trigger ref (the base branch),
+      # not the PR's head commit. Creating a check-run against head_sha explicitly is
+      # what makes it appear in the PR's checks list, same as e.g. Codecov's own app.
+      # Created unconditionally (not gated on the trigger's conclusion) so a build
+      # failure upstream can't leave this check stuck "Expected" forever.
+      - name: Create check run
+        id: create_check
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { data } = await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Upload Coverage to Codecov',
+              head_sha: context.payload.workflow_run.head_sha,
+              status: 'in_progress',
+            });
+            core.setOutput('check_id', data.id);
+
+      # Deliberately not checking out the PR's own commit: actions/checkout refuses
+      # to check out fork PR code by default in workflow_run jobs (they run with base
+      # repo secrets, so checking out untrusted code here would be a "pwn request"
+      # risk). We don't need the PR's tree anyway - nothing in this job executes
+      # code from it, this just gives codecov-action a git repo to work from.
+      - name: Checkout base branch
+        if: github.event.workflow_run.conclusion == 'success'
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Download coverage artifact
+        if: github.event.workflow_run.conclusion == 'success'
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage-report
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve PR number for this commit
+        if: github.event.workflow_run.conclusion == 'success'
+        id: pr
+        run: |
+          number=$(gh api "repos/${{ github.repository }}/commits/${{ github.event.workflow_run.head_sha }}/pulls" \
+            --jq '.[0].number // empty')
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload coverage reports to Codecov
+        if: github.event.workflow_run.conclusion == 'success'
+        id: codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+          override_commit: ${{ github.event.workflow_run.head_sha }}
+          override_branch: ${{ github.event.workflow_run.head_branch }}
+          override_pr: ${{ steps.pr.outputs.number }}
+
+      # 'skipped' when the trigger run itself didn't succeed (nothing to upload -
+      # not our failure to report), otherwise mirror the upload step's outcome.
+      # GitHub treats 'skipped' like 'success' for required-check merge gating.
+      - name: Finalize check run
+        if: always() && steps.create_check.outputs.check_id
+        uses: actions/github-script@v9
+        env:
+          CHECK_ID: ${{ steps.create_check.outputs.check_id }}
+          OUTCOME: ${{ steps.codecov.outcome }}
+          TRIGGER_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        with:
+          script: |
+            let conclusion;
+            if (process.env.TRIGGER_CONCLUSION !== 'success') {
+              conclusion = 'skipped';
+            } else {
+              conclusion = process.env.OUTCOME === 'success' ? 'success' : 'failure';
+            }
+            await github.rest.checks.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              check_run_id: Number(process.env.CHECK_ID),
+              status: 'completed',
+              conclusion,
+            });
