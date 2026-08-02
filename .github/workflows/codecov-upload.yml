@@ -33,7 +33,7 @@ jobs:
       # what makes it appear in the PR's checks list, same as e.g. Codecov's own app.
       - name: Create check run
         id: create_check
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const { data } = await github.rest.checks.create({
@@ -80,7 +80,7 @@ jobs:
 
       - name: Finalize check run
         if: always() && steps.create_check.outputs.check_id
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           CHECK_ID: ${{ steps.create_check.outputs.check_id }}
           OUTCOME: ${{ steps.codecov.outcome }}
