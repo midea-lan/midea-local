@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/vscode/devcontainers/python:${VARIANT}-bookworm
 
 # Install uv (the project's dev-environment manager) from the official image.
 # Pinned to a minor version for reproducibility; bump as needed.
-COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /uvx /usr/local/bin/
+COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /uvx /usr/local/bin/
 
 # define apt default source
 ARG APT_MIRROR_DOMAIN="deb.debian.org"

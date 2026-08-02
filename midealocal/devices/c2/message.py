@@ -165,8 +165,8 @@ class MessageSet(MessageC2Base):
         elif self.foam_shield is not None:
             key = C2MessageEnum.foam_shield
             value = self.foam_shield
-        x = cast(dict, C2_MESSAGE_KEYS[key])
-        value = cast(int | bool, x.get(value))
+        x = cast("dict", C2_MESSAGE_KEYS[key])
+        value = cast("int | bool", x.get(value))
         return bytearray([key, value])
 
 
