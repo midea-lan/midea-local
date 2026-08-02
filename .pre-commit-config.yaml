@@ -1,13 +1,7 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
+# Run via prek: https://github.com/j178/prek
+# See https://pre-commit.com/hooks.html for more hooks (prek uses the same config format)
 exclude: "CHANGELOG.md|.copier-answers.yml"
 default_stages: [pre-commit]
-
-ci:
-  autofix_commit_msg: "chore(pre-commit.ci): auto fixes"
-  autoupdate_commit_msg: "chore(pre-commit.ci): pre-commit autoupdate"
-  autoupdate_schedule: weekly
-  skip: [pylint]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks

@@ -25,14 +25,17 @@ uv venv --python 3.12
 # pyproject.toml, so `uv run` cannot auto-discover the environment.)
 & .venv\Scripts\Activate.ps1
 
-# Install runtime + dev + type-stub dependencies, plus pre-commit.
+# Install runtime + dev + type-stub dependencies, plus prek.
 Write-Host "Installing dependencies from requirements-all.txt..."
-uv pip install -r requirements-all.txt pre-commit
+uv pip install -r requirements-all.txt prek
 
-# Install the git pre-commit hooks (commit + commit-msg stages).
-Write-Host "Installing pre-commit hooks..."
-pre-commit install
-pre-commit install --hook-type commit-msg
+# Install the git hooks (commit + commit-msg stages).
+Write-Host "Installing prek hooks..."
+prek install
+prek install --hook-type commit-msg
+
+# Shim so muscle-memory `pre-commit` invocations still work, backed by prek.
+Set-Content -Path ".venv\Scripts\pre-commit.cmd" -Value "@echo off`r`nprek %*"
 
 # commitlint (a commit-msg hook) needs its shared config; install it if npm exists.
 if (Get-Command npm -ErrorAction SilentlyContinue) {
@@ -48,4 +51,4 @@ Write-Host "Done. The environment is active in this shell. In new shells, activa
 Write-Host "  .venv\Scripts\Activate.ps1"
 Write-Host "Then run tools directly, e.g.:"
 Write-Host "  python -m pytest ./tests/"
-Write-Host "  pre-commit run --all-files"
+Write-Host "  prek run --all-files"
