@@ -1,19 +1,15 @@
 {
   "name": "Midea Local Dev",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": "..",
-    "args": {
-      "APT_MIRROR_DOMAIN": "${localEnv:APT_MIRROR_DOMAIN:deb.debian.org}",
-      "UV_DEFAULT_INDEX": "${localEnv:UV_DEFAULT_INDEX:}",
-      "UV_PYTHON_INSTALL_MIRROR": "${localEnv:UV_PYTHON_INSTALL_MIRROR:}"
-    }
-  },
+  "image": "mcr.microsoft.com/devcontainers/python:3-3.14",
   "postCreateCommand": "scripts/setup.sh",
   "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/node:2": {
+      "version": "lts"
+    }
   },
   "runArgs": ["-e", "GIT_EDITOR=code --wait"],
+  "remoteUser": "vscode",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -30,6 +26,7 @@
         "python.terminal.activateEnvInCurrentTerminal": true,
         "python.testing.pytestArgs": ["--no-cov"],
         "pylint.importStrategy": "fromEnvironment",
+        "python.languageServer": "Pylance",
         "editor.formatOnPaste": false,
         "editor.formatOnSave": true,
         "editor.formatOnType": true,
