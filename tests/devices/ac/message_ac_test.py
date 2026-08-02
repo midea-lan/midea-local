@@ -1791,6 +1791,80 @@ class TestMessageACResponse:
         assert hasattr(response, "target_temperature")
         assert response.target_temperature == 25.0
 
+    def test_message_b5_notify2_0x7e_temperature_parse_fallback_invalid(self) -> None:
+        """Fallback to legacy byte-3 mapping when byte-1 decoding is out of range."""
+        self.header[9] = 0x05
+        body = bytearray(62)
+        body[0] = 0xB5
+        body[1] = 0x01
+        body[2] = 0x7E
+        body[3] = 0x00
+        body[4] = 0x38
+
+        payload = bytearray(
+            [
+                0xA0,
+                0x7F,  # byte-1 mapping would exceed sane range (>40)
+                0x41,
+                0x88,  # fallback byte-3 mapping -> (136 - 50) / 2 = 43.0 (>40)
+                0x7F,
+                0x7F,
+                0x00,
+                0x00,
+                0x00,
+                0x04,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x78,
+                0x00,
+                0x4C,
+                0x00,
+                0xC0,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x64,
+                0x00,
+                0x64,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x6A,
+                0x08,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x05,
+                0x00,
+            ],
+        )
+        body[5 : 5 + len(payload)] = payload
+
+        response = MessageACResponse(self.header + body, subtype8_temperature=True)
+        assert not hasattr(response, "target_temperature")
+
     def test_message_b5_notify2_0x7e_rejects_invalid_indoor_temperature(
         self,
     ) -> None:
