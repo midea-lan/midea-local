@@ -26,14 +26,21 @@ uv venv --python 3.12
 # shellcheck disable=SC1091
 source .venv/bin/activate
 
-# Install runtime + dev + type-stub dependencies, plus pre-commit.
+# Install runtime + dev + type-stub dependencies, plus prek.
 echo "Installing dependencies from requirements-all.txt..."
-uv pip install -r requirements-all.txt pre-commit
+uv pip install -r requirements-all.txt prek
 
-# Install the git pre-commit hooks (commit + commit-msg stages).
-echo "Installing pre-commit hooks..."
-pre-commit install
-pre-commit install --hook-type commit-msg
+# Install the git hooks (commit + commit-msg stages).
+echo "Installing prek hooks..."
+prek install
+prek install --hook-type commit-msg
+
+# Shim so muscle-memory `pre-commit` invocations still work, backed by prek.
+cat > .venv/bin/pre-commit <<'EOF'
+#!/usr/bin/env bash
+exec prek "$@"
+EOF
+chmod +x .venv/bin/pre-commit
 
 # commitlint (a commit-msg hook) needs its shared config; install it if npm exists.
 if command -v npm >/dev/null 2>&1; then
@@ -49,4 +56,4 @@ echo "Done. The environment is active in this shell. In new shells, activate wit
 echo "  source .venv/bin/activate      # bash/zsh"
 echo "Then run tools directly, e.g.:"
 echo "  python3 -m pytest ./tests/"
-echo "  pre-commit run --all-files"
+echo "  prek run --all-files"
