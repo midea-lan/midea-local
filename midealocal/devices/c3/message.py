@@ -1,5 +1,7 @@
 """Midea local C3 message."""
 
+from enum import IntEnum
+
 from midealocal.const import DeviceType
 from midealocal.message import (
     ListTypes,
@@ -9,9 +11,22 @@ from midealocal.message import (
     MessageType,
 )
 
-from .const import C3SilentLevel
-
 TEMP_NEG_VALUE = 127
+
+
+class C3SilentLevel(IntEnum):
+    """C3 Silent Level."""
+
+    OFF = 0x0
+    SILENT = 0x1
+    SUPER_SILENT = 0x3
+
+
+class C3DeviceMode(IntEnum):
+    """C3 Device Mode."""
+
+    COOL = 2
+    HEAT = 3
 
 
 class MessageC3Base(MessageRequest):

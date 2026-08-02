@@ -45,4 +45,4 @@ def device_selector(
         )
     except ModuleNotFoundError:
         device = None
-    return cast(MideaDevice, device)
+    return cast("MideaDevice", device)
