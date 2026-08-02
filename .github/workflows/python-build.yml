@@ -85,7 +85,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14'
         uses: codecov/codecov-action@v7
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: midea-lan/midea-local
           fail_ci_if_error: true
           verbose: true
 
