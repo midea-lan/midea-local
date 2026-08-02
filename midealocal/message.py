@@ -3,7 +3,7 @@
 import logging
 import warnings
 from enum import IntEnum
-from typing import Any, Generic, SupportsIndex, TypeVar, cast
+from typing import Any, SupportsIndex, cast
 
 from deprecated import deprecated
 
@@ -349,7 +349,7 @@ class MessageBase:
     @staticmethod
     def checksum(data: bytes | bytearray) -> SupportsIndex:
         """Message checksum."""
-        return cast(SupportsIndex, (~sum(data) + 1) & 0xFF)
+        return cast("SupportsIndex", (~sum(data) + 1) & 0xFF)
 
     @property
     def header(self) -> bytearray:
@@ -556,11 +556,7 @@ class MessageQueryAppliance(MessageRequest):
         return bytearray([0x00] * 19)
 
 
-T = TypeVar("T")
-E = TypeVar("E", bound="IntEnum")
-
-
-class BodyParser(Generic[T]):
+class BodyParser[T]:
     """Body parser to decode message."""
 
     def __init__(
@@ -636,7 +632,7 @@ class BoolParser(BodyParser[bool]):
         return raw_value == self._true_value
 
 
-class IntEnumParser(BodyParser[E]):
+class IntEnumParser[E: IntEnum](BodyParser[E]):
     """IntEnum message body parser."""
 
     def __init__(

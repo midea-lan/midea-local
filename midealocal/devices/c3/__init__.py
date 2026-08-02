@@ -137,27 +137,27 @@ class MideaC3Device(MideaDevice):
                         == C3DeviceMode.COOL
                     ):  # cooling mode
                         self._attributes[DeviceAttributes.temperature_max][zone] = (
-                            self._attributes[
-                                DeviceAttributes.zone_cooling_temp_max
-                            ][zone]
+                            self._attributes[DeviceAttributes.zone_cooling_temp_max][
+                                zone
+                            ]
                         )
                         self._attributes[DeviceAttributes.temperature_min][zone] = (
-                            self._attributes[
-                                DeviceAttributes.zone_cooling_temp_min
-                            ][zone]
+                            self._attributes[DeviceAttributes.zone_cooling_temp_min][
+                                zone
+                            ]
                         )
                     elif (
                         self._attributes[DeviceAttributes.mode] == C3DeviceMode.HEAT
                     ):  # heating mode
                         self._attributes[DeviceAttributes.temperature_max][zone] = (
-                            self._attributes[
-                                DeviceAttributes.zone_heating_temp_max
-                            ][zone]
+                            self._attributes[DeviceAttributes.zone_heating_temp_max][
+                                zone
+                            ]
                         )
                         self._attributes[DeviceAttributes.temperature_min][zone] = (
-                            self._attributes[
-                                DeviceAttributes.zone_heating_temp_min
-                            ][zone]
+                            self._attributes[DeviceAttributes.zone_heating_temp_min][
+                                zone
+                            ]
                         )
                 else:  # Room temp mode
                     self._attributes[DeviceAttributes.target_temperature][zone] = (
