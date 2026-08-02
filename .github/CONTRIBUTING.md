@@ -19,7 +19,7 @@ GitHub Path: `.github/CONTRIBUTING.md`
 6. [China Mainland Network Mirrors](#6-china-mainland-network-mirrors)
 7. [Common Commands](#7-common-commands)
 8. [Commit & Pull Request Workflow](#8-commit--pull-request-workflow)
-9. [Code Style, Pre-commit & Testing](#9-code-style-pre-commit--testing)
+9. [Code Style, prek & Testing](#9-code-style-prek--testing)
 10. [Issues & Community Conduct](#10-issues--community-conduct)
 
 ---
@@ -31,7 +31,7 @@ environment. uv installs the right Python version for you (3.12–3.14 are suppo
 fast, and works the same on Linux, macOS, Windows, and WSL2 — no Docker required.
 
 > ✅ Recommended: run `./scripts/setup.sh` (or `scripts\setup.ps1` on Windows) once after
-> cloning; it creates the `.venv`, installs all dependencies, and wires up the pre-commit
+> cloning; it creates the `.venv`, installs all dependencies, and wires up the prek
 > hooks.
 
 ---
@@ -82,15 +82,15 @@ The setup script:
 
 1. creates a `.venv` with Python 3.12 (`uv venv --python 3.12`),
 2. installs runtime + dev + type-stub dependencies (`uv pip install -r requirements-all.txt`),
-3. installs the pre-commit hooks (commit and commit-msg stages).
+3. installs the prek hooks (commit and commit-msg stages).
 
 **Manual setup** (equivalent to the script):
 
 ```bash
 uv venv --python 3.12
-uv pip install -r requirements-all.txt
-uv run pre-commit install
-uv run pre-commit install --hook-type commit-msg
+uv pip install -r requirements-all.txt prek
+uv run prek install
+uv run prek install --hook-type commit-msg
 ```
 
 Then either activate the environment (`source .venv/bin/activate`) or prefix commands with
@@ -136,7 +136,7 @@ persist these in your shell profile.
 | Run all tests              | `uv run python -m pytest ./tests/`                                            |
 | Run one test file          | `uv run python -m pytest tests/devices/ac/message_ac_test.py`                 |
 | Coverage report            | `uv run python -m pytest --cov=midealocal --cov-report term-missing ./tests/` |
-| Lint / format / type-check | `uv run pre-commit run --all-files`                                           |
+| Lint / format / type-check | `uv run prek run --all-files`                                                 |
 | Ruff only                  | `uv run ruff check .` / `uv run ruff format .`                                |
 | Build the package          | `uv run python -m build`                                                      |
 | Add a dependency           | edit `requirements*.txt`, then `uv pip install -r requirements-all.txt`       |
@@ -163,7 +163,7 @@ persist these in your shell profile.
 
    ```bash
    feat: add user authentication
-   chore: update pre-commit hooks
+   chore: update prek hooks
    fix: correct API endpoint error
    ```
 
@@ -173,15 +173,16 @@ persist these in your shell profile.
 
 ---
 
-## 9. Code Style, Pre-commit & Testing
+## 9. Code Style, prek & Testing
 
-- **Pre-commit** is installed by the setup script and runs on every commit. It includes:
+- **[prek](https://github.com/j178/prek)** is installed by the setup script and runs on
+  every commit. It includes:
   - `ruff` → Linting and formatting
   - `mypy` → Type checking (strict)
   - `pylint` → Additional static analysis
-- Run the full suite any time with `uv run pre-commit run --all-files`, and fix all reported
+- Run the full suite any time with `uv run prek run --all-files`, and fix all reported
   issues before committing.
-- Tests use `pytest`. CI runs the full pre-commit suite and the tests across the
+- Tests use `pytest`. CI runs the full prek suite and the tests across the
   Python 3.12/3.13/3.14 × Linux/macOS/Windows matrix and blocks merge on failure.
 
 ---
