@@ -78,10 +78,12 @@ jobs:
           python -m pytest --rootdir . --cov=midealocal --cov-report html --cov-report xml --junitxml=reports/junit/junit.xml ./tests/
           mv htmlcov reports/coverage
         shell: bash
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v7
+      - name: Upload coverage artifact
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14'
+        uses: actions/upload-artifact@v7
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          name: coverage-report
+          path: coverage.xml
 
   deploy:
     name: Deploy Release to PyPI

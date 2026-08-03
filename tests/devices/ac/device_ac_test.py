@@ -681,8 +681,8 @@ class TestMideaACDevice:
         body[5] = 0x38  # payload length: 56
         payload = bytearray(56)
         payload[1] = 0x1D  # 26.0 C setpoint
-        payload[39] = 0x6A  # 28.8 C indoor temperature
-        payload[40] = 0x08
+        payload[40] = 0x6A  # 28.8 C indoor temperature
+        payload[41] = 0x08
         body[6 : 6 + len(payload)] = payload
         header = bytearray([0xAA, 0, 0xAC, 0, 0, 0, 0, 0, 1, 3])
         header[1] = len(header) + len(body)
@@ -690,18 +690,21 @@ class TestMideaACDevice:
         frame.append(MessageBase.checksum(frame[1:]))
         return bytes(frame)
 
-    def test_process_message_0x7e_temperatures_are_gated_by_subtype(self) -> None:
-        """Only subtype-8 devices take their temperatures from the 0x7e tag."""
+    def test_process_message_0x7e_temperatures_are_gated_by_model(self) -> None:
+        """Only model 22013279 takes temperatures from the 0x7e tag."""
         frame = self._new_protocol_temperature_response()
 
-        subtype8 = self._make_device("22013279", 8)
-        status = subtype8.process_message(frame)
-        assert status[DeviceAttributes.target_temperature.value] == 26.0
-        assert status[DeviceAttributes.indoor_temperature.value] == 28.8
-        assert subtype8._prefer_new_protocol_temperature
+        # The gate is deliberately model-only, including subtype 1 which was
+        # not among the prior subtype allowlist values.
+        for subtype in (0, 1, 8):
+            device = self._make_device("22013279", subtype)
+            status = device.process_message(frame)
+            assert status[DeviceAttributes.target_temperature.value] == 26.0
+            assert status[DeviceAttributes.indoor_temperature.value] == 28.8
+            assert device._prefer_new_protocol_temperature
 
-        # Other subtypes send tag 0x7e with unrelated content, so it must not
-        # overwrite - nor latch out - their valid C0 temperatures.
+        # The known 22251759 / 32773 device keeps its C0 temperatures, which
+        # include an outdoor reading not available from the 0x7e response.
         other = self._make_device("22251759", 32773)
         status = other.process_message(frame)
         assert DeviceAttributes.target_temperature.value not in status

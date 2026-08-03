@@ -85,18 +85,18 @@ BB_FRESH_AIR_INTAKE_CONTROL_SPEED_INDEX = 55
 BB_FRESH_AIR_EXHAUST_CONTROL_SPEED_INDEX = 56
 BB_FRESH_AIR_SPEED_FLAG = 0x80
 
-# AC subtype 8 (e.g. model 22013279) reports temperatures in this
-# new-protocol tag instead of the standard C0 frame.
+# Model 22013279 reports temperatures in this new-protocol tag because its
+# standard C0 temperature fields are stale.
 SUBTYPE8_TEMPERATURE_TAG = 0x7E
-SUBTYPE8_TEMPERATURE_MIN_LENGTH = 40
+SUBTYPE8_TEMPERATURE_MIN_LENGTH = 41
 SUBTYPE8_SETPOINT_OFFSET = 11.5
 SUBTYPE8_SETPOINT_MASK = 0x3F
 SUBTYPE8_SETPOINT_HALF_DEGREE_BIT = 0x40
 SUBTYPE8_MIN_VALID_TEMPERATURE = 10
 SUBTYPE8_MAX_VALID_TEMPERATURE = 40
 SUBTYPE8_LEGACY_SETPOINT_BYTE = 3
-SUBTYPE8_INDOOR_TEMPERATURE_BYTE = 39
-SUBTYPE8_INDOOR_TEMPERATURE_DECIMAL_BYTE = 40
+SUBTYPE8_INDOOR_TEMPERATURE_BYTE = 40
+SUBTYPE8_INDOOR_TEMPERATURE_DECIMAL_BYTE = 41
 
 # B5 capability value semantics (reverse-engineered; see _parse_capabilities).
 # The raw byte of each capability is not a 0/1 flag; each has its own value set.
@@ -106,10 +106,10 @@ B5_DRY_MODE_VALUES = frozenset({0, 1, 5, 6, 9, 11, 13})
 B5_AUTO_MODE_VALUES = frozenset({0, 1, 2, 7, 8, 9, 13})
 B5_SWING_HORIZONTAL_VALUES = frozenset({1, 3})
 B5_LOW_VALUE_MAX = 2  # value < 2 -> vertical swing / cool turbo available
-B5_FAN_LOW_HIGH_VALUES = frozenset({3, 4, 5, 6, 7})
+B5_FAN_LOW_HIGH_VALUES = frozenset({3, 4, 5, 6, 7, 9})
 B5_FAN_MEDIUM_VALUES = frozenset({5, 6, 7})
-B5_FAN_AUTO_VALUES = frozenset({4, 5, 6})
-B5_FAN_SILENT_VALUE = 6
+B5_FAN_AUTO_VALUES = frozenset({4, 5, 6, 9})
+B5_FAN_SILENT_VALUES = frozenset({6, 9})
 B5_FAN_CUSTOM_VALUE = 1
 B5_ECO_VALUES = frozenset({1, 2})
 B5_ANION_ON_VALUE = 1
@@ -1102,17 +1102,17 @@ class XBXMessageBody(NewProtocolMessageBody):
             self.has_subtype8_temperature = True
 
     def _parse_subtype8_temperatures(self, data: bytearray) -> bool:
-        """Decode setpoint/indoor temperature for AC subtype 8 (model 22013279).
+        """Decode setpoint and indoor temperature for model 22013279.
 
-        The standard C0 frame is stale for this subtype; temperatures are
-        reported in this new-protocol tag instead. Synced captures show the
-        setpoint in byte 1:
+        Its standard C0 temperature fields are stale; temperatures are reported
+        in this new-protocol tag instead. Synced captures show the setpoint in
+        byte 1:
         - low 6 bits encode 0.5C steps with a +11.5C offset
         - bit 0x40 adds an extra +0.5C
 
-        Only call this for subtype-8 devices: other subtypes send tag 0x7e with
-        unrelated content, where these offsets decode to a bogus temperature
-        that would then suppress their valid C0 temperatures.
+        Only call this for model 22013279. For other models, this tag is not
+        known to supersede C0; accepting it would latch B1 values and discard
+        C0 temperatures, including any outdoor reading.
         """
         if len(data) <= SUBTYPE8_TEMPERATURE_MIN_LENGTH:
             return False
@@ -1220,12 +1220,13 @@ class XB5MessageBody(NewProtocolMessageBody):
             caps["swing_vertical"] = value < B5_LOW_VALUE_MAX
         if NewProtocolTags.b5_wind_speed in params:
             value = params[NewProtocolTags.b5_wind_speed][0]
-            caps["fan_silent"] = value == B5_FAN_SILENT_VALUE
-            caps["fan_low"] = value in B5_FAN_LOW_HIGH_VALUES
-            caps["fan_medium"] = value in B5_FAN_MEDIUM_VALUES
-            caps["fan_high"] = value in B5_FAN_LOW_HIGH_VALUES
-            caps["fan_auto"] = value in B5_FAN_AUTO_VALUES
-            caps["fan_custom"] = value == B5_FAN_CUSTOM_VALUE
+            fan_custom = value == B5_FAN_CUSTOM_VALUE
+            caps["fan_silent"] = fan_custom or value in B5_FAN_SILENT_VALUES
+            caps["fan_low"] = fan_custom or value in B5_FAN_LOW_HIGH_VALUES
+            caps["fan_medium"] = fan_custom or value in B5_FAN_MEDIUM_VALUES
+            caps["fan_high"] = fan_custom or value in B5_FAN_LOW_HIGH_VALUES
+            caps["fan_auto"] = fan_custom or value in B5_FAN_AUTO_VALUES
+            caps["fan_custom"] = fan_custom
         if NewProtocolTags.b5_eco in params:
             caps["eco"] = params[NewProtocolTags.b5_eco][0] in B5_ECO_VALUES
         if NewProtocolTags.b5_anion in params:

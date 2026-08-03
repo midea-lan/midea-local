@@ -12,9 +12,14 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 if ! command -v uv >/dev/null 2>&1; then
-  echo "Error: 'uv' is not installed." >&2
-  echo "Install it: curl -LsSf https://astral.sh/uv/install.sh | sh" >&2
-  exit 1
+  if command -v pipx >/dev/null 2>&1; then
+    echo "Installing uv via pipx..."
+    pipx install uv
+  else
+    echo "Error: 'uv' is not installed." >&2
+    echo "Install it: curl -LsSf https://astral.sh/uv/install.sh | sh" >&2
+    exit 1
+  fi
 fi
 
 # Create the virtual environment (uv downloads Python 3.12 if needed).
