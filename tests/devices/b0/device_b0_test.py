@@ -95,6 +95,22 @@ class TestMideaB0Device:
         assert self.device.attributes[DeviceAttributes.child_lock] is True
         assert new_status[DeviceAttributes.status.value] == "Working"
 
+    def test_process_message_31_time_unfreeze(self) -> None:
+        """Test process message with the time defrost mode on a 31 body."""
+        body = bytearray(18)
+        body[0] = 0x31
+        body[1] = 0x03  # status "Working"
+        body[6] = 0  # hours
+        body[7] = 1  # minutes
+        body[8] = 0  # seconds
+        body[9] = 0xA1  # mode "Time Unfreeze"
+        body[14] = 0x03  # fire power "Medium Low"
+        self.device.process_message(_build_message(MessageType.query, body))
+        assert self.device.attributes[DeviceAttributes.status] == "Working"
+        assert self.device.attributes[DeviceAttributes.time_remaining] == 60
+        assert self.device.attributes[DeviceAttributes.mode] == "Time Unfreeze"
+        assert self.device.attributes[DeviceAttributes.fire_power] == "Medium Low"
+
     def test_process_message_41(self) -> None:
         """Test process message with a 41 body variant."""
         body = bytearray(18)

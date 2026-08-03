@@ -138,6 +138,7 @@ class MideaB0Device(MideaDevice):
         0x01: "Microwave",
         0x40: "Above Tube",
         0xA0: "Unfreeze",
+        0xA1: "Time Unfreeze",
         0xC3: "Remove Odor",
         0xE0: "Auto",
         0xE2: "Humidit Auto",
