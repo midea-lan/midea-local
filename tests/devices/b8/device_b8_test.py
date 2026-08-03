@@ -402,6 +402,67 @@ class TestMideaB8Device:
         )
         assert self.device.attributes[B8DeviceAttributes.speed] == "low"
 
+    def test_query_response_invalid_values(self) -> None:
+        """Test query response."""
+        header = bytearray(
+            [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.query],
+        )
+        body = bytearray(
+            [
+                0x32,
+                0x1,
+                0x13,  # Invalid work status
+                0x03,  # Invalid function type
+                0x03,  # Invalid control type
+                0x05,  # Invalid move direction
+                0x0D,  # Invalid clean mode
+                0x05,  # Invalid fan level
+                0,
+                0x04,  # Invalid water level
+                0,
+                0,
+                0,
+                0,
+                0,
+                0x04,  # Invalid error type
+                0x04,  # Invalid error description
+                0x03,  # Invalid mop state
+                0x0,
+                0x0,
+                0x02,  # Invalid speed
+                0x0,  # CRC
+            ],
+        )
+        self.device.process_message(bytes(header + body))
+        assert self.device.attributes[B8DeviceAttributes.work_status] == "none"
+        assert self.device.attributes[B8DeviceAttributes.function_type] == "none"
+        assert self.device.attributes[B8DeviceAttributes.control_type] == "none"
+        assert self.device.attributes[B8DeviceAttributes.move_direction] == "none"
+        assert self.device.attributes[B8DeviceAttributes.clean_mode] == "none"
+        assert self.device.attributes[B8DeviceAttributes.fan_level] == "off"
+        assert self.device.attributes[B8DeviceAttributes.area] == 0
+        assert self.device.attributes[B8DeviceAttributes.water_level] == "off"
+        assert self.device.attributes[B8DeviceAttributes.voice_volume] == 0
+        assert self.device.attributes[B8DeviceAttributes.have_reserve_task] is False
+        assert self.device.attributes[B8DeviceAttributes.battery_percent] == 0
+        assert self.device.attributes[B8DeviceAttributes.work_time] == 0
+        assert self.device.attributes[B8DeviceAttributes.uv_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.wifi_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.voice_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.command_source] is False
+        assert self.device.attributes[B8DeviceAttributes.device_error] is False
+        assert self.device.attributes[B8DeviceAttributes.error_type] == "no"
+        assert self.device.attributes[B8DeviceAttributes.error_desc] == "no"
+        assert self.device.attributes[B8DeviceAttributes.mop] == "lack_water"
+        assert self.device.attributes[B8DeviceAttributes.carpet_switch] is False
+        assert self.device.attributes[B8DeviceAttributes.laser_sensor_error] is False
+        assert self.device.attributes[B8DeviceAttributes.laser_sensor_shelter] is False
+        assert (
+            self.device.attributes[B8DeviceAttributes.board_communication_error]
+            is False
+        )
+        assert self.device.attributes[B8DeviceAttributes.speed] == "high"
+
     def test_unexpected_response(self) -> None:
         """Test unexpected response."""
         header = bytearray(
