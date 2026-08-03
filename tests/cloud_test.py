@@ -110,6 +110,8 @@ class CloudTest(IsolatedAsyncioTestCase):
         with pytest.raises(NotImplementedError):
             await cloud.list_appliances(None)
         with pytest.raises(NotImplementedError):
+            await cloud.download_lua("path", 10, "0000AC000ABCD1234000")
+        with pytest.raises(NotImplementedError):
             await cloud.download_plugin("path", 10, "0000AC000ABCD1234000")
 
     async def test_meijucloud_login_success(self) -> None:
@@ -667,6 +669,66 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert cloud is not None
         assert not await cloud.login()
 
+    async def test_mideaaircloud_download_lua(self) -> None:
+        """Test MideaAirCloud download_lua against the legacy backend."""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["mideaaircloud_login_id.json"],
+                self.responses["mideaaircloud_login.json"],
+                self.responses["mideaaircloud_download_lua.json"],
+                self.responses["mideaaircloud_download_lua.json"],
+            ],
+        )
+        session.request = AsyncMock(return_value=response)
+        res = Mock()
+        res.status = 200
+        # Hex-encoded AES-128-ECB blob keyed by md5("Midea Air" app_key)[:16]
+        # that decrypts to a small valid lua snippet.
+        res.text = AsyncMock(
+            return_value=(
+                "f424cd84479c665a7e8a82d3b6bea6b67a1fdc95a7783791a6ff35b2953a158a"
+            ),
+        )
+        session.get = AsyncMock(return_value=res)
+        cloud = get_midea_cloud(
+            "Midea Air",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert cloud is not None
+        assert await cloud.login()
+
+        with TemporaryDirectory() as tmpdir:
+            file = await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
+            assert file is not None
+            file_path = Path(file)
+            assert Path.exists(file_path)
+            assert file_path.read_text().startswith(  # noqa: ASYNC240
+                'local bit = require "bit"',
+            )
+            Path.unlink(file_path)
+
+            res.status = 404
+            assert (
+                await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010") is None
+            )
+
+    async def test_mideaaircloud_download_plugin_not_implemented(self) -> None:
+        """Test MideaAirCloud does not implement download_plugin."""
+        session = Mock()
+        cloud = get_midea_cloud(
+            "Midea Air",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert cloud is not None
+        with pytest.raises(NotImplementedError):
+            await cloud.download_plugin("path", 10, "0000AC000ABCD1234000")
+
     async def test_mideaaircloud_list_home(self) -> None:
         """Test MideaAirCloud list_home."""
         session = Mock()
@@ -777,16 +839,3 @@ class CloudTest(IsolatedAsyncioTestCase):
 
         device = await cloud.get_device_info(99)
         assert device is None
-
-    async def test_mideaaircloud_download_lua(self) -> None:
-        """Test MideaAirCloud download_lua."""
-        session = Mock()
-        cloud = get_midea_cloud(
-            "Midea Air",
-            session=session,
-            account="account",
-            password="password",
-        )
-        assert cloud is not None
-        with pytest.raises(NotImplementedError), TemporaryDirectory() as tmpdir:
-            await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
