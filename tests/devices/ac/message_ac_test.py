@@ -915,6 +915,46 @@ class TestMessageACResponse:
             "display_control": True,
         }
 
+    def test_message_query_b5_custom_fan_supports_named_speeds(self) -> None:
+        """Test B5 fan custom profile includes named fan speeds."""
+        self.header[9] = 0x03
+        body = bytearray([0xB5, 0x01])  # Body type, params count
+        body += bytearray([0x10, 0x02, 0x01, 1])  # b5_wind_speed: fan_custom
+        body += bytearray(1)  # trailing checksum byte (stripped by MessageResponse)
+
+        response = MessageACResponse(self.header + body)
+
+        assert hasattr(response, "capabilities")
+        assert response.capabilities == {
+            "fan_silent": True,
+            "fan_low": True,
+            "fan_medium": True,
+            "fan_high": True,
+            "fan_auto": True,
+            "fan_custom": True,
+        }
+
+    def test_message_query_b5_value_9_fan_supports_silent_low_high_auto(
+        self,
+    ) -> None:
+        """Test B5 fan profile 9 includes silent, low, high, and auto."""
+        self.header[9] = 0x03
+        body = bytearray([0xB5, 0x01])  # Body type, params count
+        body += bytearray([0x10, 0x02, 0x01, 9])  # b5_wind_speed: profile 9
+        body += bytearray(1)  # trailing checksum byte (stripped by MessageResponse)
+
+        response = MessageACResponse(self.header + body)
+
+        assert hasattr(response, "capabilities")
+        assert response.capabilities == {
+            "fan_silent": True,
+            "fan_low": True,
+            "fan_medium": False,
+            "fan_high": True,
+            "fan_auto": True,
+            "fan_custom": False,
+        }
+
     @pytest.mark.parametrize(
         ("raw_value", "expected"),
         [(0x03, True), (0x00, False)],
@@ -1635,7 +1675,7 @@ class TestMessageACResponse:
         assert response.sound is False
 
     def test_message_b5_notify2_0x7e_temperature_parse(self) -> None:
-        """Test 0x7e tag parsing for subtype-8 style setpoint and indoor temp."""
+        """Test 0x7e tag parsing for the model-22013279 temperature layout."""
         self.header[9] = 0x05
         body = bytearray(62)
         body[0] = 0xB5
@@ -1678,6 +1718,7 @@ class TestMessageACResponse:
                 0x64,
                 0x00,
                 0x64,
+                0x00,
                 0x00,
                 0x00,
                 0x00,
@@ -1759,6 +1800,7 @@ class TestMessageACResponse:
                 0x64,
                 0x00,
                 0x64,
+                0x00,
                 0x00,
                 0x00,
                 0x00,
@@ -1878,7 +1920,7 @@ class TestMessageACResponse:
         body[4] = 0x38
         payload = bytearray(56)
         payload[1] = 0x1D  # valid 26.0 C setpoint
-        payload[39] = 0x00  # decodes to the reported invalid -25.0 C
+        payload[40] = 0x00  # decodes to the reported invalid -25.0 C
         body[5 : 5 + len(payload)] = payload
 
         response = MessageACResponse(self.header + body, subtype8_temperature=True)
@@ -1905,8 +1947,8 @@ class TestMessageACResponse:
         assert not hasattr(response, "indoor_temperature")
         assert not hasattr(response, "outdoor_temperature")
 
-    def test_message_b5_notify2_0x7e_ignored_without_subtype8(self) -> None:
-        """Test the 0x7e tag is ignored when the device is not subtype 8."""
+    def test_message_b5_notify2_0x7e_ignored_without_temperature_gate(self) -> None:
+        """Test the 0x7e tag is ignored without the model-specific gate."""
         self.header[9] = 0x05
         body = bytearray(62)
         body[0] = 0xB5
@@ -1916,8 +1958,8 @@ class TestMessageACResponse:
         body[4] = 0x38
         payload = bytearray(56)
         payload[1] = 0x1D  # decodes to a plausible 26.0 C setpoint
-        payload[39] = 0x6A  # decodes to a plausible 28.8 C indoor temperature
-        payload[40] = 0x08
+        payload[40] = 0x6A  # decodes to a plausible 28.8 C indoor temperature
+        payload[41] = 0x08
         body[5 : 5 + len(payload)] = payload
 
         response = MessageACResponse(self.header + body)
