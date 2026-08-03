@@ -352,7 +352,7 @@ class B0Message31Body(MessageBody):
         super().__init__(body)
         if len(body) > MIN_MSG_BODY:
             self.status = body[1]
-            self.cloudmenuid = body[2] * (16 ^ 4) + body[3] * (16 ^ 2) + body[4]
+            self.cloudmenuid = int.from_bytes(body[2:5], "big")
             self.total_step = body[5] / 16
             self.step_num = body[5]
             self.time_remaining = (
