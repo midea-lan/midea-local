@@ -3,10 +3,13 @@
 name: PR and Python checks
 
 on:
+  # Trigger the workflow on push to main
   push:
     branches: ["main"]
+  # Trigger the workflow on pull requests to main
   pull_request:
     branches: ["main"]
+  # Trigger the workflow on published releases
   release:
     types: [published]
 
