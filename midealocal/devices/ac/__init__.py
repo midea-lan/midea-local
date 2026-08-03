@@ -857,6 +857,15 @@ class MideaACDevice(MideaDevice):
                     # Force fan_speed to AUTO when leaving DRY mode
                     if self._attributes[DeviceAttributes.mode] == DRY_MODE:
                         message.fan_speed = 102
+                    # Optimistically reflect the commanded state in the cache so
+                    # an immediate follow-up write (e.g. set_target_temperature,
+                    # which serializes a full packet from make_message_uniq_set)
+                    # is built from power=True and the new mode. Without this the
+                    # follow-up reuses the stale last-confirmed power=False and
+                    # turns the unit back off before the mode response arrives.
+                    # https://github.com/midea-lan/midea-local/issues/495
+                    self._attributes[DeviceAttributes.power] = True
+                    self._attributes[DeviceAttributes.mode] = value
         if message is not None:
             self.build_send(message)
 
