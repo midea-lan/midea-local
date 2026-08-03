@@ -3,6 +3,8 @@
 name: PR and Python checks
 
 on:
+  push:
+    branches: ["main"]
   pull_request:
     branches: ["main"]
   release:
