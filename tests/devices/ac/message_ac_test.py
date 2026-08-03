@@ -915,6 +915,46 @@ class TestMessageACResponse:
             "display_control": True,
         }
 
+    def test_message_query_b5_custom_fan_supports_named_speeds(self) -> None:
+        """Test B5 fan custom profile includes named fan speeds."""
+        self.header[9] = 0x03
+        body = bytearray([0xB5, 0x01])  # Body type, params count
+        body += bytearray([0x10, 0x02, 0x01, 1])  # b5_wind_speed: fan_custom
+        body += bytearray(1)  # trailing checksum byte (stripped by MessageResponse)
+
+        response = MessageACResponse(self.header + body)
+
+        assert hasattr(response, "capabilities")
+        assert response.capabilities == {
+            "fan_silent": True,
+            "fan_low": True,
+            "fan_medium": True,
+            "fan_high": True,
+            "fan_auto": True,
+            "fan_custom": True,
+        }
+
+    def test_message_query_b5_value_9_fan_supports_silent_low_high_auto(
+        self,
+    ) -> None:
+        """Test B5 fan profile 9 includes silent, low, high, and auto."""
+        self.header[9] = 0x03
+        body = bytearray([0xB5, 0x01])  # Body type, params count
+        body += bytearray([0x10, 0x02, 0x01, 9])  # b5_wind_speed: profile 9
+        body += bytearray(1)  # trailing checksum byte (stripped by MessageResponse)
+
+        response = MessageACResponse(self.header + body)
+
+        assert hasattr(response, "capabilities")
+        assert response.capabilities == {
+            "fan_silent": True,
+            "fan_low": True,
+            "fan_medium": False,
+            "fan_high": True,
+            "fan_auto": True,
+            "fan_custom": False,
+        }
+
     @pytest.mark.parametrize(
         ("raw_value", "expected"),
         [(0x03, True), (0x00, False)],

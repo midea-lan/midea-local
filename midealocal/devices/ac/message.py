@@ -106,10 +106,10 @@ B5_DRY_MODE_VALUES = frozenset({0, 1, 5, 6, 9, 11, 13})
 B5_AUTO_MODE_VALUES = frozenset({0, 1, 2, 7, 8, 9, 13})
 B5_SWING_HORIZONTAL_VALUES = frozenset({1, 3})
 B5_LOW_VALUE_MAX = 2  # value < 2 -> vertical swing / cool turbo available
-B5_FAN_LOW_HIGH_VALUES = frozenset({3, 4, 5, 6, 7})
+B5_FAN_LOW_HIGH_VALUES = frozenset({3, 4, 5, 6, 7, 9})
 B5_FAN_MEDIUM_VALUES = frozenset({5, 6, 7})
-B5_FAN_AUTO_VALUES = frozenset({4, 5, 6})
-B5_FAN_SILENT_VALUE = 6
+B5_FAN_AUTO_VALUES = frozenset({4, 5, 6, 9})
+B5_FAN_SILENT_VALUES = frozenset({6, 9})
 B5_FAN_CUSTOM_VALUE = 1
 B5_ECO_VALUES = frozenset({1, 2})
 B5_ANION_ON_VALUE = 1
@@ -1220,12 +1220,13 @@ class XB5MessageBody(NewProtocolMessageBody):
             caps["swing_vertical"] = value < B5_LOW_VALUE_MAX
         if NewProtocolTags.b5_wind_speed in params:
             value = params[NewProtocolTags.b5_wind_speed][0]
-            caps["fan_silent"] = value == B5_FAN_SILENT_VALUE
-            caps["fan_low"] = value in B5_FAN_LOW_HIGH_VALUES
-            caps["fan_medium"] = value in B5_FAN_MEDIUM_VALUES
-            caps["fan_high"] = value in B5_FAN_LOW_HIGH_VALUES
-            caps["fan_auto"] = value in B5_FAN_AUTO_VALUES
-            caps["fan_custom"] = value == B5_FAN_CUSTOM_VALUE
+            fan_custom = value == B5_FAN_CUSTOM_VALUE
+            caps["fan_silent"] = fan_custom or value in B5_FAN_SILENT_VALUES
+            caps["fan_low"] = fan_custom or value in B5_FAN_LOW_HIGH_VALUES
+            caps["fan_medium"] = fan_custom or value in B5_FAN_MEDIUM_VALUES
+            caps["fan_high"] = fan_custom or value in B5_FAN_LOW_HIGH_VALUES
+            caps["fan_auto"] = fan_custom or value in B5_FAN_AUTO_VALUES
+            caps["fan_custom"] = fan_custom
         if NewProtocolTags.b5_eco in params:
             caps["eco"] = params[NewProtocolTags.b5_eco][0] in B5_ECO_VALUES
         if NewProtocolTags.b5_anion in params:
