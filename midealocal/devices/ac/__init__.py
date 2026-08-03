@@ -798,8 +798,17 @@ class MideaACDevice(MideaDevice):
                 self._attributes[DeviceAttributes.prompt_tone] = value
                 self.update_all({DeviceAttributes.prompt_tone.value: value})
             elif attr == DeviceAttributes.screen_display:
-                message = MessageToggleDisplay(self._message_protocol_version)
-                message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
+                # The AC firmware only exposes a toggle command for the
+                # display, so make the switch idempotent: toggle only when the
+                # requested state differs from the last reported state.
+                # Otherwise repeated turn_on/turn_off service calls alternate
+                # the physical display instead of setting an absolute state.
+                # https://github.com/wuwentao/midea_ac_lan/issues/623
+                if bool(value) != bool(
+                    self._attributes[DeviceAttributes.screen_display],
+                ):
+                    message = MessageToggleDisplay(self._message_protocol_version)
+                    message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
             elif self._model_capabilities.has_bb_fresh_air and attr in {
                 DeviceAttributes.fresh_air_power,
                 DeviceAttributes.fresh_air_fan_speed,
