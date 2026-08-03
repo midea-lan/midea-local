@@ -79,7 +79,7 @@ cd midea-local
 ./scripts/setup.sh          # Linux / macOS / WSL2  (Windows: scripts\setup.ps1)
 ```
 
-This creates a `.venv`, installs all dependencies, and sets up the pre-commit hooks.
+This creates a `.venv`, installs all dependencies, and sets up the prek hooks.
 Run tools with `uv run`, e.g. `uv run python -m pytest ./tests/`. See the contributing
 guide for the full workflow and per-OS uv install instructions.
 
