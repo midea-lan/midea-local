@@ -6,3 +6,4 @@ deprecated
 ifaddr
 pycryptodome
 platformdirs
+typing_extensions
