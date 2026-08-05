@@ -1,6 +1,5 @@
 {
   "include-commit-authors": true,
-  "last-release-sha": "feeab8165d796cc1d5b1045f0593724d75d0ed13",
   "packages": {
     ".": {
       "release-type": "python",
