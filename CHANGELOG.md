@@ -1,5 +1,31 @@
 # Changelog
 
+## [7.0.0](https://github.com/midea-lan/midea-local/compare/midea-local-v6.11.1...midea-local-v7.0.0) (2026-08-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* **b8:** drop const and align behavior with other devices ([#579](https://github.com/midea-lan/midea-local/issues/579))
+* **c3:** drop const in devices ([#577](https://github.com/midea-lan/midea-local/issues/577))
+
+### Features
+
+* **b0:** map mode 0xA1 time defrost in _mode31 ([#570](https://github.com/midea-lan/midea-local/issues/570)) ([514a583](https://github.com/midea-lan/midea-local/commit/514a583c1f8cab1dcf8fb926ac7779234b186607))
+
+
+### Bug Fixes
+
+* **ac:** expose named speeds for custom fan capability ([#568](https://github.com/midea-lan/midea-local/issues/568)) ([fb5e7d7](https://github.com/midea-lan/midea-local/commit/fb5e7d7b2f1bf16b8ca7e69101722b033a69390b))
+* **ac:** make screen_display switch idempotent ([#600](https://github.com/midea-lan/midea-local/issues/600)) ([05e5f95](https://github.com/midea-lan/midea-local/commit/05e5f95f562bd71c57be1f62807320114942677c))
+* **ac:** model 22013279 temperature decoding ([#572](https://github.com/midea-lan/midea-local/issues/572)) ([efae776](https://github.com/midea-lan/midea-local/commit/efae776232a2baacd41f7284c17b8ebb30022a57))
+* **b0:** assemble cloudmenuid as a big-endian 3-byte value ([#569](https://github.com/midea-lan/midea-local/issues/569)) ([cb3ec5e](https://github.com/midea-lan/midea-local/commit/cb3ec5ecfeecf1dc68926fa03e0de567ba9526b6))
+
+
+### Code Refactoring
+
+* **b8:** drop const and align behavior with other devices ([#579](https://github.com/midea-lan/midea-local/issues/579)) ([f233f15](https://github.com/midea-lan/midea-local/commit/f233f15c246328275e26b1d52efaf948ccd8e132))
+* **c3:** drop const in devices ([#577](https://github.com/midea-lan/midea-local/issues/577)) ([752ef52](https://github.com/midea-lan/midea-local/commit/752ef52e32d40311eb356b15e3bcaa22a88cfc0c))
+
 ## [6.11.1](https://github.com/midea-lan/midea-local/compare/v6.11.0...v6.11.1) (2026-07-27)
 
 
