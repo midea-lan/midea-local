@@ -507,11 +507,10 @@ class MideaACDevice(MideaDevice):
             update_self_clean = True
             if self._pending_self_clean is not None:
                 expected, set_at = self._pending_self_clean
-                now = time.monotonic()
-                elapsed = now - set_at
-                if active == expected:
+                elapsed = time.monotonic() - set_at
+                if active == expected or elapsed > self._self_clean_pending_timeout:
                     self._pending_self_clean = None
-                elif elapsed <= self._self_clean_pending_timeout:
+                else:
                     _LOGGER.debug(
                         "[%s] Ignoring stale self-clean status %s while awaiting %s",
                         self.device_id,
@@ -519,8 +518,6 @@ class MideaACDevice(MideaDevice):
                         expected,
                     )
                     update_self_clean = False
-                else:
-                    self._pending_self_clean = None
             if update_self_clean:
                 self._attributes[DeviceAttributes.self_clean] = active
                 new_status[DeviceAttributes.self_clean.value] = active
