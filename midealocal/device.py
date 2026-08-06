@@ -39,6 +39,11 @@ QUERY_TIMEOUT = (
 
 _LOGGER = logging.getLogger(__name__)
 
+SKIP_ATTRIBUTE = object()
+"""Sentinel a translator can return from update_attributes_from_message() to leave
+an attribute's stored value untouched (e.g. when it depends on another attribute
+that is not yet known, or won't be known until later in the same message)."""
+
 
 class AuthException(Exception):
     """Authentication exception."""
@@ -644,7 +649,8 @@ class MideaDevice(threading.Thread):
         ``default_transform`` (if given and no specific translator matched),
         then store the result in both ``self._attributes`` and the returned
         status dict -- so pushed updates and ``device.attributes`` reads can
-        never disagree on the value.
+        never disagree on the value. A translator may return ``SKIP_ATTRIBUTE``
+        to leave the attribute's stored value untouched for this message.
         """
         new_status: dict[str, Any] = {}
         translators = translators or {}
@@ -655,6 +661,8 @@ class MideaDevice(threading.Thread):
                     value = translators[status](value)
                 elif default_transform is not None:
                     value = default_transform(value)
+                if value is SKIP_ATTRIBUTE:
+                    continue
                 self._attributes[status] = value
                 new_status[str(status)] = value
         return new_status

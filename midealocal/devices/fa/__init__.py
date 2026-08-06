@@ -139,47 +139,42 @@ class MideaFADevice(MideaDevice):
         """Midea FA device process message."""
         message = MessageFAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.oscillation_angle:
-                    if value < len(MideaFADevice._oscillation_angles):
-                        self._attributes[status] = MideaFADevice._oscillation_angles[
-                            value
-                        ]
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.tilting_angle:
-                    if value < len(MideaFADevice._tilting_angles):
-                        self._attributes[status] = MideaFADevice._tilting_angles[value]
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.oscillation_mode:
-                    if value < len(MideaFADevice._oscillation_modes):
-                        self._attributes[status] = MideaFADevice._oscillation_modes[
-                            value
-                        ]
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.mode:
-                    if value < len(MideaFADevice._modes):
-                        self._attributes[status] = MideaFADevice._modes[value]
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.power:
-                    self._attributes[status] = value
-                    if not value:
-                        self._attributes[DeviceAttributes.fan_speed] = 0
-                elif (
-                    status == DeviceAttributes.fan_speed
-                    and not self._attributes[DeviceAttributes.power]
-                ):
-                    self._attributes[status] = 0
-                else:
-                    self._attributes[status] = value
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+
+        def _translate_power(value: bool) -> bool:
+            # Powering off forces fan_speed to 0, even when this particular
+            # message doesn't carry a fan_speed field of its own.
+            if not value:
+                self._attributes[DeviceAttributes.fan_speed] = 0
+            return value
+
+        def _translate_fan_speed(value: int) -> int:
+            return 0 if not self._attributes[DeviceAttributes.power] else value
+
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.oscillation_angle: lambda v: (
+                    MideaFADevice._oscillation_angles[v]
+                    if v < len(MideaFADevice._oscillation_angles)
+                    else None
+                ),
+                DeviceAttributes.tilting_angle: lambda v: (
+                    MideaFADevice._tilting_angles[v]
+                    if v < len(MideaFADevice._tilting_angles)
+                    else None
+                ),
+                DeviceAttributes.oscillation_mode: lambda v: (
+                    MideaFADevice._oscillation_modes[v]
+                    if v < len(MideaFADevice._oscillation_modes)
+                    else None
+                ),
+                DeviceAttributes.mode: lambda v: (
+                    MideaFADevice._modes[v] if v < len(MideaFADevice._modes) else None
+                ),
+                DeviceAttributes.power: _translate_power,
+                DeviceAttributes.fan_speed: _translate_fan_speed,
+            },
+        )
 
     def _set_oscillation_mode(self, message: MessageSet, value: str) -> None:
         if value == "Off" or not value:
