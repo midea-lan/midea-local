@@ -143,7 +143,7 @@ class MideaB8Device(MideaDevice):
         msg = MessageSetCommand(self._message_protocol_version, work_mode=work_mode)
         self.build_send(msg)
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea B8 device set attribute."""
         try:
             msg = self._gen_set_msg_default_values()

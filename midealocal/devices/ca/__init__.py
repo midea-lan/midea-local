@@ -118,7 +118,7 @@ class MideaCADevice(MideaDevice):
                 new_status[str(attr)] = getattr(message, str(attr))
         return new_status
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea CA device set attribute."""
 
 

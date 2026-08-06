@@ -835,7 +835,7 @@ class MideaDevice(threading.Thread):
                     self.close_socket()
                     break
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Set attribute."""
         raise NotImplementedError
 

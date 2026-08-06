@@ -261,7 +261,11 @@ class MideaFADevice(MideaDevice):
                     self._attributes[DeviceAttributes.oscillation_angle],
                 )
 
-    def set_oscillation(self, attr: str, value: int | str | bool) -> MessageSet | None:
+    def set_oscillation(
+        self,
+        attr: str,
+        value: bool | float | str,
+    ) -> MessageSet | None:
         """Set oscillation mode."""
         message: MessageSet | None = None
         if self._attributes[attr] != value:
@@ -288,7 +292,7 @@ class MideaFADevice(MideaDevice):
                 self._set_tilting_angle(message, str(value))
         return message
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Set attribute."""
         message = None
         if attr in [
