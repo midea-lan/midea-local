@@ -97,7 +97,7 @@ class MideaADDevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea AD device set attribute."""
 
     def set_customize(self, customize: str) -> None:
