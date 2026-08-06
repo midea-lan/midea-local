@@ -6,13 +6,17 @@ import logging
 import re
 import time
 from asyncio import Lock
+from collections.abc import Mapping
 from datetime import UTC, datetime
+from hashlib import md5
 from http import HTTPStatus
 from secrets import token_hex
 from typing import Any, cast
 
 import aiofiles
 from aiohttp import ClientConnectionError, ClientSession, ClientTimeout
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
 
 from midealocal.exceptions import ElementMissing
 
@@ -69,6 +73,12 @@ SUPPORTED_CLOUDS: dict[str, Any] = {
         "app_id": "1005",
         "app_key": "434a209a5ce141c3b726de067835d7f0",
         "api_url": "https://mapp.appsmb.com",  # codespell:ignore
+    },
+    "Toshiba Iolife": {
+        "class_name": "ToshibaIOLife",
+        "app_id": "1203",
+        "app_key": "09c4d09f0da1513bb62dc7b6b0af9c11",
+        "api_url": "https://app.iolife.toshiba-lifestyle.com",  # codespell:ignore
     },
 }
 
@@ -1000,6 +1010,99 @@ class MideaAirCloud(MideaCloud):
                 appliances[int(appliance["id"])] = device_info
             return appliances
         return None
+
+
+class ToshibaIOLife(MideaAirCloud):
+    """Toshiba IOLife cloud."""
+
+    def _decrypt_sn(self, encrypted_sn: str) -> str:
+        """Decrypt SN blob from home/page/list/info.
+
+        The server encrypts the SN string with AES-128-ECB using a session
+        data_key derived from the accessToken:
+          aes_key  = MD5(app_key)[:16]
+          data_key = AES_ECB_decrypt(bytes.fromhex(accessToken), aes_key)
+          sn       = AES_ECB_decrypt(bytes.fromhex(encrypted_sn), data_key)
+        """
+        if not self._access_token or not encrypted_sn:
+            return ""
+        try:
+            aes_key = (
+                md5(
+                    self._app_key.encode(),
+                    usedforsecurity=False,
+                )
+                .hexdigest()[:16]
+                .encode()
+            )
+            token_bytes = bytes.fromhex(self._access_token)
+            data_key = bytes(
+                unpad(AES.new(aes_key, AES.MODE_ECB).decrypt(token_bytes), 16),
+            )
+            sn_bytes = bytes.fromhex(encrypted_sn)
+            plain = unpad(AES.new(data_key[:16], AES.MODE_ECB).decrypt(sn_bytes), 16)
+            return plain.decode()
+        except Exception:  # noqa: BLE001
+            return ""
+
+    async def list_appliance_types(
+        self,
+    ) -> dict[str, Any] | None:
+        """List Toshiba IOLife device types."""
+        data = self._make_general_data()
+        data.update({"applianceType": "0xFF"})
+        if response := await self._api_request(
+            endpoint="/v1/appliance/type/list/get",
+            data=data,
+        ):
+            return response
+        return None
+
+    async def list_appliances(
+        self,
+        home_id: str | None = None,  # noqa: ARG002
+    ) -> dict[int, dict[str, Any]] | None:
+        """Get Toshiba IOLife devices."""
+        data = self._make_general_data()
+        data["appVersion"] = "3.4.0"
+        # home/page/list/info returns result as a bare list, not {list: [...]}
+        page_list: Any = await self._api_request(
+            endpoint="/v1/appliance/user/home/page/list/info",
+            data=data,
+        )
+        if not isinstance(page_list, list):
+            return None
+
+        appliances: dict[int, dict[str, Any]] = {}
+        for appliance in page_list:
+            if not isinstance(appliance, Mapping):
+                continue
+            # Skip virtual/batch devices
+            if appliance.get("type") == "0x_BATCH_AC":
+                continue
+            if appliance.get("id") == "virtual_ag_0xAC":
+                continue
+            try:
+                device_id = int(appliance["id"])
+                model_number = int(appliance.get("modelNumber", 0))
+                device_type = int(appliance["type"], 16)
+            except (ValueError, KeyError, TypeError):
+                _LOGGER.debug("Skipping malformed appliance entry: %s", appliance)
+                continue
+            sn = self._decrypt_sn(appliance.get("sn", ""))
+            appliances[device_id] = {
+                "name": appliance.get("name"),
+                "type": device_type,
+                "sn": sn,
+                "sn8": sn[9:17] if len(sn) > SN8_MIN_SERIAL_LENGTH else "",
+                "model_number": model_number,
+                # All Toshiba IoLife devices carry manufacturer code 0x0008.
+                "manufacturer_code": "0008",
+                "model": sn[9:17] if len(sn) > SN8_MIN_SERIAL_LENGTH else "",
+                "online": appliance.get("onlineStatus") == "1",
+            }
+
+        return appliances if appliances else None
 
 
 def get_midea_cloud(
