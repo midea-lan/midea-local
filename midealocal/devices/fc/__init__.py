@@ -192,7 +192,7 @@ class MideaFCDevice(MideaDevice):
         message.standby_detect = self._standby_detect
         return message
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea FC device set attribute."""
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
