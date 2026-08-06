@@ -70,7 +70,7 @@ class DeviceAttributes(StrEnum):
     temp_tw_out = "temp_tw_out"
     instant_power0 = "instant_power0"
     silent_mode = "silent_mode"
-    SILENT_LEVEL = "silent_level"
+    silent_level = "silent_level"
     eco_mode = "eco_mode"
     tbh = "tbh"
     error_code = "error_code"
@@ -109,7 +109,7 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.zone1_water_temp_mode: False,
                 DeviceAttributes.zone2_water_temp_mode: False,
                 DeviceAttributes.silent_mode: False,
-                DeviceAttributes.SILENT_LEVEL: C3SilentLevel.OFF.name,
+                DeviceAttributes.silent_level: C3SilentLevel.OFF.name,
                 DeviceAttributes.eco_mode: False,
                 DeviceAttributes.tbh: False,
                 DeviceAttributes.mode: 1,
@@ -292,7 +292,7 @@ class MideaC3Device(MideaDevice):
             setattr(message, str(attr), value)
         elif attr in [
             DeviceAttributes.silent_mode.value,
-            DeviceAttributes.SILENT_LEVEL.value,
+            DeviceAttributes.silent_level.value,
         ]:
             message = MessageSetSilent(self._message_protocol_version)
             if attr == DeviceAttributes.silent_mode.value and isinstance(value, bool):
@@ -300,11 +300,11 @@ class MideaC3Device(MideaDevice):
                 message.silent_level = (
                     C3SilentLevel.SILENT
                     if value
-                    and self._attributes[DeviceAttributes.SILENT_LEVEL]
+                    and self._attributes[DeviceAttributes.silent_level]
                     == C3SilentLevel.OFF.name
-                    else C3SilentLevel[self._attributes[DeviceAttributes.SILENT_LEVEL]]
+                    else C3SilentLevel[self._attributes[DeviceAttributes.silent_level]]
                 )
-            elif attr == DeviceAttributes.SILENT_LEVEL.value and isinstance(value, str):
+            elif attr == DeviceAttributes.silent_level.value and isinstance(value, str):
                 message.silent_level = C3SilentLevel[value]
                 message.silent_mode = value != C3SilentLevel.OFF.name
         if message is not None:
