@@ -16,6 +16,7 @@ from midealocal.devices.ac.message import (
     MessageGroupZeroQuery,
     MessageHumidityQuery,
     MessageNewProtocolQuery,
+    MessageNewProtocolSelfCleanQuery,
     MessagePowerQuery,
     MessageQuery,
     MessageSubProtocolFreshAirSet,
@@ -279,17 +280,18 @@ class TestMideaACDevice:
 
         self.device._used_subprotocol = False
         queries = self.device.build_query()
-        assert len(queries) == 10
+        assert len(queries) == 11
         assert isinstance(queries[0], MessageQuery)
         assert isinstance(queries[1], MessageNewProtocolQuery)
-        assert isinstance(queries[2], MessagePowerQuery)
-        assert isinstance(queries[3], MessageHumidityQuery)
-        assert isinstance(queries[4], MessageGroupZeroQuery)
-        assert isinstance(queries[5], MessageGroupOneQuery)
-        assert isinstance(queries[6], MessageGroupTwoQuery)
-        assert isinstance(queries[7], MessageGroupSevenQuery)
-        assert isinstance(queries[8], MessageCapabilitiesQuery)
-        assert isinstance(queries[9], MessageCapabilitiesAdditionalQuery)
+        assert isinstance(queries[2], MessageNewProtocolSelfCleanQuery)
+        assert isinstance(queries[3], MessagePowerQuery)
+        assert isinstance(queries[4], MessageHumidityQuery)
+        assert isinstance(queries[5], MessageGroupZeroQuery)
+        assert isinstance(queries[6], MessageGroupOneQuery)
+        assert isinstance(queries[7], MessageGroupTwoQuery)
+        assert isinstance(queries[8], MessageGroupSevenQuery)
+        assert isinstance(queries[9], MessageCapabilitiesQuery)
+        assert isinstance(queries[10], MessageCapabilitiesAdditionalQuery)
 
     def test_bb_model_builds_distinct_queries_and_attributes(self) -> None:
         """Test verified BB model starts with independent BB queries."""
