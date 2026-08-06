@@ -132,7 +132,7 @@ class MideaB6Device(MideaDevice):
             message.fan_level = list(self._speeds.keys())[fan_speed]
         else:
             message.fan_level = self._power_speed
-        if mode is not None in self._speeds.values():
+        if mode is not None and mode in self._speeds.values():
             message.fan_level = list(self._speeds.keys())[
                 list(self._speeds.values()).index(mode)
             ]
