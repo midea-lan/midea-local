@@ -206,6 +206,19 @@ class TestMideaE2Device:
         assert isinstance(message, MessageSet)
         assert message.target_temperature == 40
 
+    def test_set_attribute_literal_temperature_for_subtype_255(
+        self,
+    ) -> None:
+        """Subtype 255 sends literal Celsius values on the wire."""
+        device = self._device(subtype=255)
+        with patch.object(device, "build_send") as mock_build_send:
+            device.set_attribute(DeviceAttributes.target_temperature.value, 45)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+        assert isinstance(message, MessageNewProtocolSet)
+        assert message.target_temperature == 45
+        assert message._body == bytearray([0x07, 45])
+
     def test_set_attribute_new_protocol(self) -> None:
         """Test new protocol attributes use the new protocol set message."""
         device = self._device('{"old_protocol": "false"}')
