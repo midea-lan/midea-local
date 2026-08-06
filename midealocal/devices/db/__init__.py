@@ -279,7 +279,7 @@ class MideaDBDevice(MideaDevice):
                 new_status[str(attr)] = self._attributes[attr]
         return new_status
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea DB device set attribute."""
         if not isinstance(value, bool):
             raise ValueWrongType("[db] Expected bool")

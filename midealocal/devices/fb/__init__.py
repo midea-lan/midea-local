@@ -85,7 +85,7 @@ class MideaFBDevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: str | int | bool) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea FB device set attribute."""
         if attr == DeviceAttributes.mode:
             message = MessageSet(self._message_protocol_version, self.subtype)
