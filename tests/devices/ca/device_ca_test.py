@@ -117,8 +117,8 @@ class TestMideaCADevice:
         assert self.device.attributes[DeviceAttributes.electronic_smell] is True
         assert self.device.attributes[DeviceAttributes.humidity] == "high"
         assert self.device.attributes[DeviceAttributes.variable_mode] == "soft_freezing"
-        assert new_status[DeviceAttributes.humidity.value] == 0x10
-        assert new_status[DeviceAttributes.variable_mode.value] == 0x01
+        assert new_status[DeviceAttributes.humidity.value] == "high"
+        assert new_status[DeviceAttributes.variable_mode.value] == "soft_freezing"
         assert new_status[DeviceAttributes.energy_consumption.value] == 272
 
     def test_process_message_general_unknown_mappings(self) -> None:

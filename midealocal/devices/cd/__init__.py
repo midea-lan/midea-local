@@ -364,7 +364,7 @@ class MideaCDDevice(MideaDevice):
                 new_status[str(attr)] = self._attributes[attr]
         return new_status
 
-    def set_attribute(self, attr: str, value: str | float | bool) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea CD device set attribute."""
         # Maintenance reminder is read-only until the weekly write payload is safe.
         if attr in [

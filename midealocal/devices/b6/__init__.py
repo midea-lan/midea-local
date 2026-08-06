@@ -98,7 +98,7 @@ class MideaB6Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea B6 device set attribute."""
         message = None
         if attr == DeviceAttributes.fan_speed:
@@ -132,7 +132,7 @@ class MideaB6Device(MideaDevice):
             message.fan_level = list(self._speeds.keys())[fan_speed]
         else:
             message.fan_level = self._power_speed
-        if mode is not None in self._speeds.values():
+        if mode is not None and mode in self._speeds.values():
             message.fan_level = list(self._speeds.keys())[
                 list(self._speeds.values()).index(mode)
             ]

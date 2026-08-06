@@ -598,7 +598,7 @@ class MideaACDevice(MideaDevice):
     def make_newprotocol_message_set(
         self,
         attr: str,
-        value: bool | int | str,
+        value: bool | float | str,
     ) -> MessageNewProtocolSet:
         """Midea AC device make newprotocol message set."""
         message = MessageNewProtocolSet(self._message_protocol_version)
@@ -694,7 +694,7 @@ class MideaACDevice(MideaDevice):
     def make_subprotocol_fresh_air_set(
         self,
         attr: str,
-        value: bool | int | str,
+        value: bool | float | str,
     ) -> MessageSubProtocolFreshAirSet:
         """Build a BB fresh-air intake or exhaust single-control command."""
         exhaust = attr in {
@@ -761,7 +761,7 @@ class MideaACDevice(MideaDevice):
             message = self.make_message_set()
         return message
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea AC device set attribute."""
         # if nat a sensor
         message: (

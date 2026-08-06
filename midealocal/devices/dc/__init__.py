@@ -175,7 +175,7 @@ class MideaDCDevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea DC device set attribute."""
         if not isinstance(value, bool):
             raise ValueWrongType("[dc] Expected bool")
