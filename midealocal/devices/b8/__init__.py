@@ -109,15 +109,11 @@ class MideaB8Device(MideaDevice):
         """Midea B8 device process message."""
         message = MessageB8Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if isinstance(value, IntEnum):  # lowercase name for IntEnums
-                    value = value.name.lower()
-                self._attributes[status] = value
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        # lowercase name for IntEnums, pass through everything else unchanged
+        return self.update_attributes_from_message(
+            message,
+            default_transform=lambda v: v.name.lower() if isinstance(v, IntEnum) else v,
+        )
 
     def _gen_set_msg_default_values(self) -> MessageSet:
         msg = MessageSet(self._message_protocol_version)

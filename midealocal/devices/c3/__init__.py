@@ -170,11 +170,7 @@ class MideaC3Device(MideaDevice):
         """Midea C3 device process message."""
         message = MessageC3Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                self._attributes[status] = getattr(message, str(status))
-                new_status[str(status)] = getattr(message, str(status))
+        new_status = self.update_attributes_from_message(message)
         if "zone_temp_type" in new_status:
             for zone in [0, 1]:
                 if self._attributes[DeviceAttributes.zone_temp_type][

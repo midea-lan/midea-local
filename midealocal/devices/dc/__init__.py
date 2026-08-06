@@ -139,7 +139,6 @@ class MideaDCDevice(MideaDevice):
         """Midea DC device process message."""
         message = MessageDCResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
         progress = [
             "Prog0",
             "Prog1",
@@ -150,30 +149,17 @@ class MideaDCDevice(MideaDevice):
             "Prog6",
             "Prog7",
         ]
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                # parse progress
-                if status == DeviceAttributes.progress:
-                    # 0 means no progress bit is set; prevent value out of index range
-                    if 0 < value < len(progress):
-                        self._attributes[DeviceAttributes.progress] = progress[value]
-                    else:
-                        self._attributes[DeviceAttributes.progress] = None
-                # parse status
-                elif status == DeviceAttributes.status:
-                    self._attributes[DeviceAttributes.status] = (
-                        MideaDCDevice._status.get(value, value)
-                    )
-                # parse program
-                elif status == DeviceAttributes.program:
-                    self._attributes[DeviceAttributes.program] = (
-                        MideaDCDevice._program.get(value, value)
-                    )
-                else:
-                    self._attributes[status] = getattr(message, str(status))
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                # 0 means no progress bit is set; prevent value out of index range
+                DeviceAttributes.progress: lambda v: (
+                    progress[v] if 0 < v < len(progress) else None
+                ),
+                DeviceAttributes.status: lambda v: MideaDCDevice._status.get(v, v),
+                DeviceAttributes.program: lambda v: MideaDCDevice._program.get(v, v),
+            },
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea DC device set attribute."""

@@ -174,26 +174,21 @@ class MideaECDevice(MideaDevice):
         """Midea EC device process merge."""
         message = MessageECResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.progress:
-                    if value < len(MideaECDevice._progress):
-                        self._attributes[status] = MideaECDevice._progress[
-                            getattr(message, str(status))
-                        ]
-                    else:
-                        self._attributes[status] = "Unknown"
-                elif status == DeviceAttributes.mode:
-                    if value < len(MideaECDevice._mode_list):
-                        self._attributes[status] = MideaECDevice._mode_list[value]
-                    else:
-                        self._attributes[status] = "Cloud"
-                else:
-                    self._attributes[status] = value
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.progress: lambda v: (
+                    MideaECDevice._progress[v]
+                    if v < len(MideaECDevice._progress)
+                    else "Unknown"
+                ),
+                DeviceAttributes.mode: lambda v: (
+                    MideaECDevice._mode_list[v]
+                    if v < len(MideaECDevice._mode_list)
+                    else "Cloud"
+                ),
+            },
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea EC device set attribute."""

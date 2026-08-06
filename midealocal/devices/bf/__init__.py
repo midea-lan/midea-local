@@ -65,21 +65,15 @@ class MideaBFDevice(MideaDevice):
         """Midea BF device process message."""
         message = MessageBFResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.status:
-                    if value in MideaBFDevice._status:
-                        self._attributes[DeviceAttributes.status] = (
-                            MideaBFDevice._status.get(value)
-                        )
-                    else:
-                        self._attributes[DeviceAttributes.status] = "Unknown"
-                else:
-                    self._attributes[status] = value
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.status: lambda v: MideaBFDevice._status.get(
+                    v,
+                    "Unknown",
+                ),
+            },
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea BF device set attribute."""

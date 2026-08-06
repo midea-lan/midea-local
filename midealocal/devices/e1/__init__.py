@@ -186,23 +186,16 @@ class MideaE1Device(MideaDevice):
         """Midea E1 device process message."""
         message = MessageE1Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.status:
-                    self._attributes[status] = self._status.get(value)
-                elif status == DeviceAttributes.progress:
-                    if value < len(self._progress):
-                        self._attributes[status] = self._progress[value]
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.mode:
-                    self._attributes[status] = self._modes.get(value)
-                else:
-                    self._attributes[status] = getattr(message, str(status))
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.status: self._status.get,
+                DeviceAttributes.progress: lambda v: (
+                    self._progress[v] if v < len(self._progress) else None
+                ),
+                DeviceAttributes.mode: self._modes.get,
+            },
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea E1 device set attribute."""

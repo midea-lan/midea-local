@@ -631,6 +631,34 @@ class MideaDevice(threading.Thread):
         for update in self._updates:
             update(status)
 
+    def update_attributes_from_message(
+        self,
+        message: object,
+        translators: dict[str, Callable[[Any], Any]] | None = None,
+        default_transform: Callable[[Any], Any] | None = None,
+    ) -> dict[str, Any]:
+        """Copy matching attributes from a parsed response into self._attributes.
+
+        For each attribute the device declares, if ``message`` carries a
+        same-named field, run it through ``translators[attr]`` (if present) or
+        ``default_transform`` (if given and no specific translator matched),
+        then store the result in both ``self._attributes`` and the returned
+        status dict -- so pushed updates and ``device.attributes`` reads can
+        never disagree on the value.
+        """
+        new_status: dict[str, Any] = {}
+        translators = translators or {}
+        for status in self._attributes:
+            if hasattr(message, str(status)):
+                value = getattr(message, str(status))
+                if status in translators:
+                    value = translators[status](value)
+                elif default_transform is not None:
+                    value = default_transform(value)
+                self._attributes[status] = value
+                new_status[str(status)] = value
+        return new_status
+
     def set_available(self, available: bool = True) -> None:
         """Set available value."""
         _LOGGER.debug(

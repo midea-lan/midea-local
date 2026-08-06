@@ -115,36 +115,19 @@ class MideaFCDevice(MideaDevice):
         """Midea FC device process message."""
         message = MessageFCResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.mode:
-                    if value in MideaFCDevice._modes:
-                        self._attributes[status] = MideaFCDevice._modes.get(value)
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.fan_speed:
-                    if value in MideaFCDevice._speeds:
-                        self._attributes[status] = MideaFCDevice._speeds.get(value)
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.screen_display:
-                    if value in MideaFCDevice._screen_displays:
-                        self._attributes[status] = MideaFCDevice._screen_displays.get(
-                            value,
-                        )
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.detect_mode:
-                    if value < len(MideaFCDevice._detect_modes):
-                        self._attributes[status] = MideaFCDevice._detect_modes[value]
-                    else:
-                        self._attributes[status] = None
-                else:
-                    self._attributes[status] = value
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.mode: MideaFCDevice._modes.get,
+                DeviceAttributes.fan_speed: MideaFCDevice._speeds.get,
+                DeviceAttributes.screen_display: MideaFCDevice._screen_displays.get,
+                DeviceAttributes.detect_mode: lambda v: (
+                    MideaFCDevice._detect_modes[v]
+                    if v < len(MideaFCDevice._detect_modes)
+                    else None
+                ),
+            },
+        )
 
     def make_message_set(self) -> MessageSet:
         """Midea FC device make message set."""
