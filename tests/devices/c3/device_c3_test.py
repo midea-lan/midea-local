@@ -56,7 +56,7 @@ class TestMideaC3Device:
         assert self.device.attributes[DeviceAttributes.zone2_water_temp_mode] is False
         assert self.device.attributes[DeviceAttributes.silent_mode] is False
         assert (
-            self.device.attributes[DeviceAttributes.SILENT_LEVEL]
+            self.device.attributes[DeviceAttributes.silent_level]
             == C3SilentLevel.OFF.name
         )
         assert self.device.attributes[DeviceAttributes.eco_mode] is False
@@ -117,7 +117,7 @@ class TestMideaC3Device:
             mock_build_send.assert_called()
 
             self.device.set_attribute(
-                DeviceAttributes.SILENT_LEVEL.value,
+                DeviceAttributes.silent_level.value,
                 C3SilentLevel.SILENT.name,
             )
 
