@@ -115,7 +115,7 @@ class MideaCADevice(MideaDevice):
                     self._attributes[attr] = MideaCADevice._humidity.get(value)
                 else:
                     self._attributes[attr] = value
-                new_status[str(attr)] = getattr(message, str(attr))
+                new_status[str(attr)] = self._attributes[attr]
         return new_status
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
