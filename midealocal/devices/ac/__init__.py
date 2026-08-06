@@ -22,6 +22,7 @@ from .message import (
     MessageGroupZeroQuery,
     MessageHumidityQuery,
     MessageNewProtocolQuery,
+    MessageNewProtocolSelfCleanQuery,
     MessageNewProtocolSet,
     MessagePowerQuery,
     MessageQuery,
@@ -384,6 +385,9 @@ class MideaACDevice(MideaDevice):
         queries: list[ACQuery] = [
             MessageQuery(self._message_protocol_version),
             MessageNewProtocolQuery(self._message_protocol_version),
+            # Queried on its own so an empty response for the combined
+            # new-protocol query does not suppress the self-clean state.
+            MessageNewProtocolSelfCleanQuery(self._message_protocol_version),
             MessagePowerQuery(self._message_protocol_version),
             MessageHumidityQuery(self._message_protocol_version),
             MessageGroupZeroQuery(self._message_protocol_version),

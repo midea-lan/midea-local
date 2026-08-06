@@ -18,6 +18,7 @@ from midealocal.devices.ac.message import (
     MessageGroupZeroQuery,
     MessageHumidityQuery,
     MessageNewProtocolQuery,
+    MessageNewProtocolSelfCleanQuery,
     MessageNewProtocolSet,
     MessagePowerQuery,
     MessageQuery,
@@ -264,7 +265,7 @@ class TestMessageNewProtocolQuery:
         expected_body = bytearray(
             [
                 0xB1,
-                0x0D,
+                0x0C,
                 NewProtocolTags.indirect_wind & 0xFF,
                 NewProtocolTags.indirect_wind >> 8,
                 NewProtocolTags.breezeless & 0xFF,
@@ -289,8 +290,19 @@ class TestMessageNewProtocolQuery:
                 NewProtocolTags.buzzer_all >> 8,
                 NewProtocolQuery.error_code_query & 0xFF,
                 NewProtocolQuery.error_code_query >> 8,
-                NewProtocolTags.b5_self_clean_active & 0xFF,
-                NewProtocolTags.b5_self_clean_active >> 8,
+            ],
+        )
+        assert msg.body[:-2] == expected_body
+
+    def test_new_protocol_self_clean_query_body(self) -> None:
+        """Test new protocol self-clean query body."""
+        msg = MessageNewProtocolSelfCleanQuery(protocol_version=ProtocolVersion.V1)
+        expected_body = bytearray(
+            [
+                0xB1,
+                0x01,
+                NewProtocolTags.self_clean & 0xFF,
+                NewProtocolTags.self_clean >> 8,
             ],
         )
         assert msg.body[:-2] == expected_body
@@ -979,37 +991,52 @@ class TestMessageACResponse:
         assert response.out_silent is expected
 
     @pytest.mark.parametrize(
-        ("byte13", "expected"),
-        [(0x40, True), (0x00, False)],
+        ("raw_value", "expected"),
+        [(0x01, True), (0x00, False)],
     )
-    def test_message_notify2_b5_self_clean_active(
+    def test_message_query_b1_self_clean_active(
         self,
-        byte13: int,
+        raw_value: int,
         expected: bool,
     ) -> None:
-        """Test Message parse notify2 B5 with self_clean_active."""
-        # B5 push body: body_type(1) + count(1) + tag(2) + length(1) + value(39)
-        payload = bytearray(39)
-        # Byte 12 changes independently of self-clean. The PortaSplit reports
-        # the active-state flag at byte 13, where 0x40 means active.
-        payload[12] = 0x3C
-        payload[13] = byte13
-        body = bytearray(2)
-        body[0] = 0xB5  # Body type
-        body[1] = 0x01  # Params count
-        body += bytearray(
+        """Test Message parse query B1 reports live self-clean state."""
+        # B1 body: body_type(1) + count(1) + tag(2) + 0x00 + length(1) + value(1)
+        self.header[9] = 0x03
+        body = bytearray(
             [
-                NewProtocolTags.b5_self_clean_active & 0xFF,  # tag low 0xE2
-                NewProtocolTags.b5_self_clean_active >> 8,  # tag high 0x00
-                len(payload),  # length 39
+                0xB1,  # Body type
+                0x01,  # Params count
+                NewProtocolTags.self_clean & 0xFF,
+                NewProtocolTags.self_clean >> 8,
+                0x00,
+                0x01,  # Value length
+                raw_value,
+                0x00,  # trailing checksum byte (stripped by MessageResponse)
             ],
         )
-        body += payload
-        body += bytearray(1)  # trailing checksum byte (stripped by MessageResponse)
 
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "self_clean_active")
         assert response.self_clean_active is expected
+
+    def test_message_notify2_b5_self_clean_is_capability_only(self) -> None:
+        """Test that tag 0x0039 in a B5 body is not read as live state."""
+        # B5 advertises self-clean support with a constant 0x01, so it must not
+        # be mistaken for the running state.
+        body = bytearray(
+            [
+                0xB5,  # Body type
+                0x01,  # Params count
+                NewProtocolTags.self_clean & 0xFF,
+                NewProtocolTags.self_clean >> 8,
+                0x01,  # Value length
+                0x01,  # Capability: supported
+                0x00,  # trailing checksum byte (stripped by MessageResponse)
+            ],
+        )
+
+        response = MessageACResponse(self.header + body)
+        assert not hasattr(response, "self_clean_active")
 
     def test_message_query_c0(self) -> None:
         """Test Message parse query C0."""
