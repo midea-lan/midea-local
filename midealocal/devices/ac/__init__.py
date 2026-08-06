@@ -2,6 +2,7 @@
 
 import json
 import logging
+import time
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, cast
@@ -311,6 +312,7 @@ class MideaACDevice(MideaDevice):
             dict.fromkeys(self._model_capabilities.attributes),
         )
         self._fresh_air_version: DeviceAttributes | None = None
+        self._pending_self_clean: tuple[bool, float] | None = None
         self._default_temperature_step: float = 0.5
         self._temperature_step: float = 0.5
         self._used_subprotocol: bool = self._model_capabilities.uses_bb_protocol
@@ -502,8 +504,26 @@ class MideaACDevice(MideaDevice):
             self._fresh_air_version = DeviceAttributes.fresh_air_2
         if hasattr(message, "self_clean_active"):
             active = message.self_clean_active
-            self._attributes[DeviceAttributes.self_clean] = active
-            new_status[DeviceAttributes.self_clean.value] = active
+            update_self_clean = True
+            if self._pending_self_clean is not None:
+                expected, set_at = self._pending_self_clean
+                now = time.monotonic()
+                elapsed = now - set_at
+                if active == expected:
+                    self._pending_self_clean = None
+                elif elapsed <= self._self_clean_pending_timeout:
+                    _LOGGER.debug(
+                        "[%s] Ignoring stale self-clean status %s while awaiting %s",
+                        self.device_id,
+                        active,
+                        expected,
+                    )
+                    update_self_clean = False
+                else:
+                    self._pending_self_clean = None
+            if update_self_clean:
+                self._attributes[DeviceAttributes.self_clean] = active
+                new_status[DeviceAttributes.self_clean.value] = active
         new_status.update(self._refresh_temperature_limits(message))
         self._update_capabilities(message)
         return new_status
@@ -523,6 +543,15 @@ class MideaACDevice(MideaDevice):
                 break
             mode = name
         return mode
+
+    @property
+    def _self_clean_pending_timeout(self) -> int:
+        """Return the stale-status window for a pending self-clean command."""
+        return (
+            self._refresh_interval
+            if self._refresh_interval > 0
+            else self._default_refresh_interval
+        )
 
     def _update_capabilities(self, message: MessageACResponse) -> None:
         """Accumulate decoded B5 capability flags from a B5 response."""
@@ -772,6 +801,7 @@ class MideaACDevice(MideaDevice):
             | MessageGeneralSet
             | None
         ) = None
+        optimistic_self_clean: bool | None = None
         if attr not in [
             DeviceAttributes.indoor_temperature,
             DeviceAttributes.outdoor_temperature,
@@ -833,6 +863,8 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.self_clean,
             ]:
                 message = self.make_newprotocol_message_set(attr=attr, value=value)
+                if attr == DeviceAttributes.self_clean:
+                    optimistic_self_clean = bool(value)
             elif attr == DeviceAttributes.power_saving and self._used_subprotocol:
                 _LOGGER.debug(
                     "[%s] Power saving is unsupported by the AC subprotocol",
@@ -868,6 +900,12 @@ class MideaACDevice(MideaDevice):
                         message.fan_speed = 102
         if message is not None:
             self.build_send(message)
+            if optimistic_self_clean is not None:
+                self._pending_self_clean = (optimistic_self_clean, time.monotonic())
+                self._attributes[DeviceAttributes.self_clean] = optimistic_self_clean
+                self.update_all(
+                    {DeviceAttributes.self_clean.value: optimistic_self_clean},
+                )
 
     def set_target_temperature(
         self,

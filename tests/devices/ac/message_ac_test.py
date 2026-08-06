@@ -979,18 +979,21 @@ class TestMessageACResponse:
         assert response.out_silent is expected
 
     @pytest.mark.parametrize(
-        ("byte12", "expected"),
-        [(0x3C, True), (0x00, False)],
+        ("byte13", "expected"),
+        [(0x40, True), (0x00, False)],
     )
     def test_message_notify2_b5_self_clean_active(
         self,
-        byte12: int,
+        byte13: int,
         expected: bool,
     ) -> None:
         """Test Message parse notify2 B5 with self_clean_active."""
         # B5 push body: body_type(1) + count(1) + tag(2) + length(1) + value(39)
         payload = bytearray(39)
-        payload[12] = byte12
+        # Byte 12 changes independently of self-clean. The PortaSplit reports
+        # the active-state flag at byte 13, where 0x40 means active.
+        payload[12] = 0x3C
+        payload[13] = byte13
         body = bytearray(2)
         body[0] = 0xB5  # Body type
         body[1] = 0x01  # Params count

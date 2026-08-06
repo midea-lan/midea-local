@@ -44,7 +44,8 @@ INDIRECT_WIND_VALUE = 0x02
 MAX_MSG_SERIAL_NUM = 254
 OUT_SILENT_VALUE = 0x03
 POWER_SAVING_VALUE = 0x08
-SELF_CLEAN_ACTIVE_STATUS_BYTE = 12
+SELF_CLEAN_ACTIVE_STATUS_BYTE = 13
+SELF_CLEAN_ACTIVE_STATUS_VALUE = 0x40
 SCREEN_DISPLAY_BYTE_CHECK = 0x07
 SUB_PROTOCOL_BODY_TEMP_CHECK = 0x80
 TEMP_DECIMAL_MIN_BODY_LENGTH = 20
@@ -1092,7 +1093,10 @@ class XBXMessageBody(NewProtocolMessageBody):
             data = params[NewProtocolTags.b5_self_clean_active]
             self.self_clean_active: bool = (
                 len(data) > SELF_CLEAN_ACTIVE_STATUS_BYTE
-                and data[SELF_CLEAN_ACTIVE_STATUS_BYTE] != 0
+                and (
+                    data[SELF_CLEAN_ACTIVE_STATUS_BYTE] & SELF_CLEAN_ACTIVE_STATUS_VALUE
+                )
+                != 0
             )
         if (
             new_protocol_temperature
