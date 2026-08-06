@@ -93,14 +93,20 @@ class MideaCFDevice(MideaDevice):
                 raise ValueWrongType("[cf] Expected bool")
             message.power = value
         elif attr == DeviceAttributes.mode:
+            if isinstance(value, bool):
+                raise ValueWrongType("[cf] Expected int")
             message.power = True
             message.mode = int(value)
         elif attr == DeviceAttributes.target_temperature:
+            if isinstance(value, bool):
+                raise ValueWrongType("[cf] Expected float")
             message.target_temperature = float(value)
         elif attr == DeviceAttributes.aux_heating:
             if not isinstance(value, bool):
                 raise ValueWrongType("[cf] Expected bool")
             message.aux_heating = value
+        else:
+            raise ValueError(f"[cf] Unsupported attribute: {attr}")
         self.build_send(message)
 
 

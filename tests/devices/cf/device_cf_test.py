@@ -155,36 +155,58 @@ class TestMideaCFDevice:
             assert message.target_temperature == 30
 
     @pytest.mark.parametrize(
-        ("attr", "value"),
+        ("attr", "value", "expected"),
         [
-            (DeviceAttributes.power, True),
-            (DeviceAttributes.mode, 2),
-            (DeviceAttributes.target_temperature, 30),
-            (DeviceAttributes.aux_heating, True),
+            (DeviceAttributes.power, True, True),
+            (DeviceAttributes.mode, 2, 2),
+            (DeviceAttributes.mode, "2", 2),
+            (DeviceAttributes.target_temperature, 30, 30.0),
+            (DeviceAttributes.aux_heating, True, True),
         ],
     )
     def test_set_attribute(
         self,
         attr: DeviceAttributes,
-        value: bool | int,
+        value: bool | int | str,
+        expected: bool | float,
     ) -> None:
-        """Test set attribute sends a set message."""
+        """Test set attribute sends a set message with the converted value."""
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(attr.value, value)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageSet)
-            assert getattr(message, attr.value) == value
+            actual = getattr(message, attr.value)
+            assert actual == expected
+            assert type(actual) is type(expected)
 
     @pytest.mark.parametrize(
-        "attr",
-        [DeviceAttributes.power, DeviceAttributes.aux_heating],
+        ("attr", "value"),
+        [
+            (DeviceAttributes.power, 5),
+            (DeviceAttributes.aux_heating, 5),
+            (DeviceAttributes.mode, True),
+            (DeviceAttributes.target_temperature, True),
+        ],
     )
-    def test_set_attribute_wrong_type(self, attr: DeviceAttributes) -> None:
-        """Test set attribute with a non-bool value raises and does not send."""
+    def test_set_attribute_wrong_type(
+        self,
+        attr: DeviceAttributes,
+        value: bool | int,
+    ) -> None:
+        """Test set attribute with a wrong-type value raises and does not send."""
         with (
             patch.object(self.device, "build_send") as mock_build_send,
             pytest.raises(ValueWrongType),
         ):
-            self.device.set_attribute(attr.value, 5)
+            self.device.set_attribute(attr.value, value)
+        mock_build_send.assert_not_called()
+
+    def test_set_attribute_unsupported(self) -> None:
+        """Test set attribute with an unsupported attribute raises and does not send."""
+        with (
+            patch.object(self.device, "build_send") as mock_build_send,
+            pytest.raises(ValueError, match="Unsupported attribute"),
+        ):
+            self.device.set_attribute(DeviceAttributes.current_temperature.value, 5)
         mock_build_send.assert_not_called()
