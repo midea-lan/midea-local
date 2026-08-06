@@ -321,8 +321,8 @@ class MideaFADevice(MideaDevice):
         message.power = True
         if fan_speed is not None:
             message.fan_speed = fan_speed
-        if mode is None:
-            message.mode = mode
+        if mode is not None and mode in MideaFADevice._modes:
+            message.mode = MideaFADevice._modes.index(mode)
         self.build_send(message)
 
     def set_customize(self, customize: str) -> None:
