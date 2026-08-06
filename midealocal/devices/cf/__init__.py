@@ -1,6 +1,7 @@
 """Midea local CF device."""
 
 import logging
+import math
 from enum import StrEnum
 from typing import Any, Unpack
 
@@ -88,23 +89,24 @@ class MideaCFDevice(MideaDevice):
         message = MessageSet(self._message_protocol_version)
         message.power = True
         message.mode = self._attributes[DeviceAttributes.mode]
-        if attr == DeviceAttributes.power:
+        if attr in (DeviceAttributes.power, DeviceAttributes.aux_heating):
             if not isinstance(value, bool):
                 raise ValueWrongType("[cf] Expected bool")
-            message.power = value
+            setattr(message, attr, value)
         elif attr == DeviceAttributes.mode:
             if isinstance(value, bool):
                 raise ValueWrongType("[cf] Expected int")
-            message.power = True
-            message.mode = int(value)
+            mode_value = float(value)
+            if not mode_value.is_integer():
+                raise ValueWrongType("[cf] Expected int")
+            message.mode = int(mode_value)
         elif attr == DeviceAttributes.target_temperature:
             if isinstance(value, bool):
                 raise ValueWrongType("[cf] Expected float")
-            message.target_temperature = float(value)
-        elif attr == DeviceAttributes.aux_heating:
-            if not isinstance(value, bool):
-                raise ValueWrongType("[cf] Expected bool")
-            message.aux_heating = value
+            temperature_value = float(value)
+            if not math.isfinite(temperature_value):
+                raise ValueWrongType("[cf] Expected float")
+            message.target_temperature = temperature_value
         else:
             raise ValueError(f"[cf] Unsupported attribute: {attr}")
         self.build_send(message)
