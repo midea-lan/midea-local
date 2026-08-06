@@ -161,14 +161,16 @@ class TestMideaB6Device:
             mock_build_send.assert_called_once()
 
     def test_turn_on_with_mode(self) -> None:
-        """Test turn on with a mode when a speed maps to None."""
-        # The mode branch uses a chained comparison that requires None to be
-        # one of the configured speed values, which is only possible through
-        # a customize payload containing a null speed name.
-        self.device.set_customize('{"speeds": {"0": null, "1": "Low"}}')
+        """Test turn on with a mode name applies the matching fan level."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.turn_on(mode="Low")
+            self.device.turn_on(mode="Level 1")
             mock_build_send.assert_called_once()
+            assert mock_build_send.call_args[0][0].fan_level == 1
+            mock_build_send.reset_mock()
+
+            self.device.turn_on(mode="invalid")
+            mock_build_send.assert_called_once()
+            assert mock_build_send.call_args[0][0].fan_level == self.device._power_speed
 
     def test_set_customize(self) -> None:
         """Test set customize."""
