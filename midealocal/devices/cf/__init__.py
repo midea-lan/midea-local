@@ -83,7 +83,7 @@ class MideaCFDevice(MideaDevice):
             message.mode = mode
         self.build_send(message)
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea CF device set attribute."""
         if not isinstance(value, bool):
             raise ValueWrongType("[cf] Expected bool")

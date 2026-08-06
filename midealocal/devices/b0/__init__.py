@@ -220,7 +220,7 @@ class MideaB0Device(MideaDevice):
                 new_status[str(attr)] = self._attributes[attr]
         return new_status
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """B0 Midea device set attribute."""
 
 

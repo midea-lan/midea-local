@@ -125,7 +125,7 @@ class MideaCEDevice(MideaDevice):
         message.child_lock = self._attributes[DeviceAttributes.child_lock]
         return message
 
-    def set_attribute(self, attr: str, value: str | int | bool) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea CE device set attribute."""
         message = self.make_message_set()
         if attr == DeviceAttributes.mode:

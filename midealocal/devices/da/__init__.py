@@ -155,7 +155,7 @@ class MideaDADevice(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea DA device set attribute."""
         if not isinstance(value, bool):
             raise ValueWrongType("[da] Expected bool")
