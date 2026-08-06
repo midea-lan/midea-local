@@ -29,7 +29,7 @@ from .message import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class B8DeviceAttributes(StrEnum):
+class DeviceAttributes(StrEnum):
     """Midea B8 device attributes."""
 
     work_status = "work_status"
@@ -73,31 +73,31 @@ class MideaB8Device(MideaDevice):
             device_type=DeviceType.B8,
             **kwargs,
             attributes={
-                B8DeviceAttributes.work_status: B8WorkStatus.NONE.name.lower(),
-                B8DeviceAttributes.function_type: B8FunctionType.NONE.name.lower(),
-                B8DeviceAttributes.control_type: B8ControlType.NONE.name.lower(),
-                B8DeviceAttributes.move_direction: B8Moviment.NONE.name.lower(),
-                B8DeviceAttributes.clean_mode: B8CleanMode.NONE.name.lower(),
-                B8DeviceAttributes.fan_level: B8FanLevel.OFF.name.lower(),
-                B8DeviceAttributes.area: 0,
-                B8DeviceAttributes.water_level: B8WaterLevel.OFF.name.lower(),
-                B8DeviceAttributes.voice_volume: 0,
-                B8DeviceAttributes.mop: B8MopState.OFF.name.lower(),
-                B8DeviceAttributes.carpet_switch: False,
-                B8DeviceAttributes.speed: B8Speed.HIGH.name.lower(),
-                B8DeviceAttributes.have_reserve_task: False,
-                B8DeviceAttributes.battery_percent: 0,
-                B8DeviceAttributes.work_time: 0,
-                B8DeviceAttributes.uv_switch: False,
-                B8DeviceAttributes.wifi_switch: False,
-                B8DeviceAttributes.voice_switch: False,
-                B8DeviceAttributes.command_source: False,
-                B8DeviceAttributes.error_type: B8ErrorType.NO.name.lower(),
-                B8DeviceAttributes.error_desc: B8ErrorCanFixDescription.NO.name.lower(),
-                B8DeviceAttributes.device_error: False,
-                B8DeviceAttributes.board_communication_error: False,
-                B8DeviceAttributes.laser_sensor_shelter: False,
-                B8DeviceAttributes.laser_sensor_error: False,
+                DeviceAttributes.work_status: B8WorkStatus.NONE.name.lower(),
+                DeviceAttributes.function_type: B8FunctionType.NONE.name.lower(),
+                DeviceAttributes.control_type: B8ControlType.NONE.name.lower(),
+                DeviceAttributes.move_direction: B8Moviment.NONE.name.lower(),
+                DeviceAttributes.clean_mode: B8CleanMode.NONE.name.lower(),
+                DeviceAttributes.fan_level: B8FanLevel.OFF.name.lower(),
+                DeviceAttributes.area: 0,
+                DeviceAttributes.water_level: B8WaterLevel.OFF.name.lower(),
+                DeviceAttributes.voice_volume: 0,
+                DeviceAttributes.mop: B8MopState.OFF.name.lower(),
+                DeviceAttributes.carpet_switch: False,
+                DeviceAttributes.speed: B8Speed.HIGH.name.lower(),
+                DeviceAttributes.have_reserve_task: False,
+                DeviceAttributes.battery_percent: 0,
+                DeviceAttributes.work_time: 0,
+                DeviceAttributes.uv_switch: False,
+                DeviceAttributes.wifi_switch: False,
+                DeviceAttributes.voice_switch: False,
+                DeviceAttributes.command_source: False,
+                DeviceAttributes.error_type: B8ErrorType.NO.name.lower(),
+                DeviceAttributes.error_desc: B8ErrorCanFixDescription.NO.name.lower(),
+                DeviceAttributes.device_error: False,
+                DeviceAttributes.board_communication_error: False,
+                DeviceAttributes.laser_sensor_shelter: False,
+                DeviceAttributes.laser_sensor_error: False,
             },
         )
 
@@ -122,23 +122,21 @@ class MideaB8Device(MideaDevice):
     def _gen_set_msg_default_values(self) -> MessageSet:
         msg = MessageSet(self._message_protocol_version)
         msg.clean_mode = B8CleanMode[
-            self.attributes[B8DeviceAttributes.clean_mode].upper()
+            self.attributes[DeviceAttributes.clean_mode].upper()
         ]
-        msg.fan_level = B8FanLevel[
-            self.attributes[B8DeviceAttributes.fan_level].upper()
-        ]
+        msg.fan_level = B8FanLevel[self.attributes[DeviceAttributes.fan_level].upper()]
         msg.water_level = B8WaterLevel[
-            self.attributes[B8DeviceAttributes.water_level].upper()
+            self.attributes[DeviceAttributes.water_level].upper()
         ]
-        msg.voice_volume = self.attributes[B8DeviceAttributes.voice_volume]
+        msg.voice_volume = self.attributes[DeviceAttributes.voice_volume]
         return msg
 
     def set_work_mode(self, work_mode: B8WorkMode) -> None:
         """Midea B8 device set work mode."""
         if work_mode == B8WorkMode.WORK:
             self.set_attribute(
-                B8DeviceAttributes.clean_mode,
-                self.attributes[B8DeviceAttributes.clean_mode],
+                DeviceAttributes.clean_mode,
+                self.attributes[DeviceAttributes.clean_mode],
             )
             return
 
@@ -149,13 +147,13 @@ class MideaB8Device(MideaDevice):
         """Midea B8 device set attribute."""
         try:
             msg = self._gen_set_msg_default_values()
-            if attr == B8DeviceAttributes.clean_mode:
+            if attr == DeviceAttributes.clean_mode:
                 msg.clean_mode = B8CleanMode[str(value).upper()]
-            elif attr == B8DeviceAttributes.fan_level:
+            elif attr == DeviceAttributes.fan_level:
                 msg.fan_level = B8FanLevel[str(value).upper()]
-            elif attr == B8DeviceAttributes.water_level:
+            elif attr == DeviceAttributes.water_level:
                 msg.water_level = B8WaterLevel[str(value).upper()]
-            elif attr == B8DeviceAttributes.voice_volume:
+            elif attr == DeviceAttributes.voice_volume:
                 msg.voice_volume = int(value)
 
             if msg is not None:
