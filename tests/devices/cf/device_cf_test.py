@@ -192,19 +192,21 @@ class TestMideaCFDevice:
             (DeviceAttributes.target_temperature, float("nan")),
             (DeviceAttributes.mode, "abc"),
             (DeviceAttributes.target_temperature, "abc"),
+            (DeviceAttributes.mode, None),
+            (DeviceAttributes.target_temperature, None),
         ],
     )
     def test_set_attribute_wrong_type(
         self,
         attr: DeviceAttributes,
-        value: bool | float | str,
+        value: bool | float | str | None,
     ) -> None:
         """Test set attribute with a wrong-type value raises and does not send."""
         with (
             patch.object(self.device, "build_send") as mock_build_send,
             pytest.raises(ValueWrongType),
         ):
-            self.device.set_attribute(attr.value, value)
+            self.device.set_attribute(attr.value, value)  # type: ignore[arg-type]
         mock_build_send.assert_not_called()
 
     def test_set_attribute_unsupported(self) -> None:
