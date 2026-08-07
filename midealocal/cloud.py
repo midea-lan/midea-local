@@ -1045,19 +1045,6 @@ class ToshibaIOLife(MideaAirCloud):
         except Exception:  # noqa: BLE001
             return ""
 
-    async def list_appliance_types(
-        self,
-    ) -> dict[str, Any] | None:
-        """List Toshiba IOLife device types."""
-        data = self._make_general_data()
-        data.update({"applianceType": "0xFF"})
-        if response := await self._api_request(
-            endpoint="/v1/appliance/type/list/get",
-            data=data,
-        ):
-            return response
-        return None
-
     async def list_appliances(
         self,
         home_id: str | None = None,  # noqa: ARG002
