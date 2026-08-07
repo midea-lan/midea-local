@@ -96,14 +96,20 @@ class MideaCFDevice(MideaDevice):
         elif attr == DeviceAttributes.mode:
             if isinstance(value, bool):
                 raise ValueWrongType("[cf] Expected int")
-            mode_value = float(value)
+            try:
+                mode_value = float(value)
+            except ValueError as err:
+                raise ValueWrongType("[cf] Expected int") from err
             if not mode_value.is_integer():
                 raise ValueWrongType("[cf] Expected int")
             message.mode = int(mode_value)
         elif attr == DeviceAttributes.target_temperature:
             if isinstance(value, bool):
                 raise ValueWrongType("[cf] Expected float")
-            temperature_value = float(value)
+            try:
+                temperature_value = float(value)
+            except ValueError as err:
+                raise ValueWrongType("[cf] Expected float") from err
             if not math.isfinite(temperature_value):
                 raise ValueWrongType("[cf] Expected float")
             message.target_temperature = temperature_value

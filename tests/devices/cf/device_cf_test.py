@@ -190,12 +190,14 @@ class TestMideaCFDevice:
             (DeviceAttributes.mode, 2.5),
             (DeviceAttributes.target_temperature, float("inf")),
             (DeviceAttributes.target_temperature, float("nan")),
+            (DeviceAttributes.mode, "abc"),
+            (DeviceAttributes.target_temperature, "abc"),
         ],
     )
     def test_set_attribute_wrong_type(
         self,
         attr: DeviceAttributes,
-        value: bool | float,
+        value: bool | float | str,
     ) -> None:
         """Test set attribute with a wrong-type value raises and does not send."""
         with (
