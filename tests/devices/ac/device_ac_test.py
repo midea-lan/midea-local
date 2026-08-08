@@ -673,7 +673,7 @@ class TestMideaACDevice:
         """After 0x7e temperatures are seen, stale C0 temperatures are ignored."""
         new_protocol_msg = SimpleNamespace(
             body_type=ListTypes.B5,
-            has_subtype8_temperature=True,
+            has_new_protocol_temperature=True,
             power=True,
             target_temperature=27.0,
             indoor_temperature=28.8,
