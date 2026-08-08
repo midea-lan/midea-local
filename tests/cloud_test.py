@@ -15,6 +15,7 @@ from midealocal.cloud import (
     MideaAirCloud,
     MideaCloud,
     SmartHomeCloud,
+    ToshibaIOLife,
     _mask_token,
     get_default_cloud,
     get_midea_cloud,
@@ -83,7 +84,7 @@ class CloudTest(IsolatedAsyncioTestCase):
     async def test_get_cloud_servers(self) -> None:
         """Test get cloud servers."""
         servers = await MideaCloud.get_cloud_servers()
-        assert len(servers.items()) == 5
+        assert len(servers.items()) == 6
 
     async def test_get_preset_account_cloud(self) -> None:
         """Test get preset cloud account."""
@@ -790,3 +791,135 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert cloud is not None
         with pytest.raises(NotImplementedError), TemporaryDirectory() as tmpdir:
             await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
+
+
+class ToshibaIOLifeTest(IsolatedAsyncioTestCase):
+    """ToshibaIOLife cloud test case."""
+
+    responses: ClassVar[dict[str, bytes]] = {}
+
+    APP_KEY = "00000000000000000000000000000000"
+    ACCESS_TOKEN = "e4ddcc22d5ccc270e3b1c876df7c9a8d0a31b22810d0e532c2dd921bb9e0389f"
+    ENCRYPTED_SN = (
+        "e1f17526c18d049e4862e19f5d6cd269"
+        "df9b09edd41d4b2627b35dbb2d47b963"
+        "a433df71998b41d4dc354e9bdf78902a"
+    )
+    EXPECTED_SN = "0008AC0000000000000000000000BEEF"
+
+    def setUp(self) -> None:
+        """Load shared response fixtures."""
+        file_path = Path(__file__)
+        for file in Path.iterdir(Path(file_path.parent, "responses")):
+            fp = Path(file)
+            with fp.open(encoding="utf-8") as f:
+                self.responses[fp.name] = bytes(f.read(), encoding="utf-8")
+
+    def _make_cloud(self, session: Mock) -> ToshibaIOLife:
+        cloud = get_midea_cloud(
+            "Toshiba Iolife",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert isinstance(cloud, ToshibaIOLife)
+        cloud._app_key = self.APP_KEY
+        return cloud
+
+    def test_decrypt_sn_known_vector(self) -> None:
+        """_decrypt_sn returns correct SN for a synthetic valid vector."""
+        cloud = self._make_cloud(Mock())
+        cloud._access_token = self.ACCESS_TOKEN
+        assert cloud._decrypt_sn(self.ENCRYPTED_SN) == self.EXPECTED_SN
+
+    def test_decrypt_sn_no_token(self) -> None:
+        """_decrypt_sn returns '' when no access token is set."""
+        cloud = self._make_cloud(Mock())
+        cloud._access_token = None
+        assert cloud._decrypt_sn(self.ENCRYPTED_SN) == ""
+
+    def test_decrypt_sn_empty_sn(self) -> None:
+        """_decrypt_sn returns '' for an empty encrypted_sn."""
+        cloud = self._make_cloud(Mock())
+        cloud._access_token = self.ACCESS_TOKEN
+        assert cloud._decrypt_sn("") == ""
+
+    def test_decrypt_sn_bad_ciphertext(self) -> None:
+        """Corrupt ciphertext (unpadding fails) returns '' instead of raising."""
+        cloud = self._make_cloud(Mock())
+        cloud._access_token = self.ACCESS_TOKEN
+        assert cloud._decrypt_sn("deadbeef" * 4) == ""
+
+    async def test_list_appliances_success(self) -> None:
+        """list_appliances decrypts SN inline and skips virtual devices."""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["mideaaircloud_login_id.json"],
+                self.responses["mideaaircloud_login.json"],
+                self.responses["toshibaiolife_list_appliances.json"],
+            ],
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = self._make_cloud(session)
+        assert await cloud.login()
+        cloud._access_token = self.ACCESS_TOKEN
+
+        appliances = await cloud.list_appliances(None)
+        assert appliances is not None
+        assert len(appliances) == 1
+
+        dev = appliances[12345678]
+        assert dev["name"] == "Living Room AC"
+        assert dev["type"] == 0xAC
+        assert dev["sn"] == self.EXPECTED_SN
+        assert dev["sn8"] == "00000000"
+        assert dev["model_number"] == 10
+        assert dev["manufacturer_code"] == "0008"
+        assert dev["model"] == "00000000"
+        assert dev["online"] is True
+
+    async def test_list_appliances_api_failure(self) -> None:
+        """list_appliances returns None when the API returns an error."""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            return_value=self.responses["mideaaircloud_invalid_response.json"],
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = self._make_cloud(session)
+        cloud._access_token = self.ACCESS_TOKEN
+        assert await cloud.list_appliances(None) is None
+
+    async def test_list_appliances_non_list_response(self) -> None:
+        """list_appliances returns None when the API returns a non-list."""
+        cloud = self._make_cloud(Mock())
+        cloud._access_token = self.ACCESS_TOKEN
+        with patch.object(
+            cloud,
+            "_api_request",
+            new=AsyncMock(return_value={"result": []}),
+        ):
+            assert await cloud.list_appliances(None) is None
+
+    async def test_list_appliances_skips_non_mapping_entries(self) -> None:
+        """list_appliances silently skips non-mapping entries in the list."""
+        entry = {
+            "id": "12345678",
+            "type": "0xAC",
+            "name": "Living Room AC",
+            "modelNumber": 10,
+            "onlineStatus": "1",
+            "sn": self.ENCRYPTED_SN,
+        }
+        cloud = self._make_cloud(Mock())
+        cloud._access_token = self.ACCESS_TOKEN
+        with patch.object(
+            cloud,
+            "_api_request",
+            new=AsyncMock(return_value=["not-a-mapping", entry]),
+        ):
+            appliances = await cloud.list_appliances(None)
+        assert appliances is not None
+        assert len(appliances) == 1
