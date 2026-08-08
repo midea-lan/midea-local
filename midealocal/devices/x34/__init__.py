@@ -128,7 +128,7 @@ class Midea34Device(MideaDevice):
             {
                 DeviceAttributes.status: list_translator(self._status),
                 DeviceAttributes.progress: list_translator(self._progress),
-                DeviceAttributes.mode: self._modes.__getitem__,
+                DeviceAttributes.mode: self._modes.get,
             },
         )
 
