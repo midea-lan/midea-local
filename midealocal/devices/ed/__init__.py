@@ -173,14 +173,9 @@ class MideaEDDevice(MideaDevice):
         """Midea ED device process message."""
         message = MessageEDResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
         if hasattr(message, "device_class"):
             self._device_class = message.device_class
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                new_status[str(status)] = getattr(message, str(status))
-                self._attributes[status] = getattr(message, str(status))
-        return new_status
+        return self.update_attributes_from_message(message)
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea ED device set attribute."""

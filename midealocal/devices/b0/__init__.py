@@ -2,10 +2,13 @@
 
 import logging
 from enum import StrEnum
-from typing import ClassVar, Unpack
+from typing import TYPE_CHECKING, Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, dict_translator
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from .message import (
     MessageB0Response,
@@ -190,35 +193,24 @@ class MideaB0Device(MideaDevice):
         """B0 Midea device process message."""
         message = MessageB0Response(bytearray(msg))
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for attr in self._attributes:
-            if hasattr(message, str(attr)):
-                value = getattr(message, str(attr))
-                # status
-                if attr == DeviceAttributes.status:
-                    # model 0TG025JG, subtype 2
-                    if self._subtype > 0:
-                        self._attributes[attr] = MideaB0Device._status31.get(value)
-                    else:
-                        self._attributes[attr] = MideaB0Device._status.get(value)
-                # mode
-                elif attr == DeviceAttributes.mode:
-                    # model 0TG025JG, subtype 2
-                    if self._subtype > 0:
-                        self._attributes[attr] = MideaB0Device._mode31.get(value)
-                    else:
-                        self._attributes[attr] = MideaB0Device._mode.get(value)
-                # fire_power
-                elif attr == DeviceAttributes.fire_power:
-                    # model 0TG025JG, subtype 2
-                    if self._subtype > 0:
-                        self._attributes[attr] = MideaB0Device._fire_power31.get(value)
-                    else:
-                        self._attributes[attr] = value
-                else:
-                    self._attributes[attr] = value
-                new_status[str(attr)] = self._attributes[attr]
-        return new_status
+        # model 0TG025JG, subtype 2, uses the *31 tables instead
+        use_v31_tables = self._subtype > 0
+        translators: dict[str, Callable[[Any], str | float | bool | None]] = {
+            DeviceAttributes.status: dict_translator(
+                MideaB0Device._status31 if use_v31_tables else MideaB0Device._status,
+                default=None,
+            ),
+            DeviceAttributes.mode: dict_translator(
+                MideaB0Device._mode31 if use_v31_tables else MideaB0Device._mode,
+                default=None,
+            ),
+        }
+        if use_v31_tables:
+            translators[DeviceAttributes.fire_power] = dict_translator(
+                MideaB0Device._fire_power31,
+                default=None,
+            )
+        return self.update_attributes_from_message(message, translators)
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """B0 Midea device set attribute."""

@@ -73,29 +73,31 @@ class MideaB6Device(MideaDevice):
         message = MessageB6Response(msg)
         self._message_protocol_version = message.protocol_version
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.fan_level:
-                    if value in self._speeds:
-                        self._attributes[DeviceAttributes.mode] = self._speeds.get(
-                            value,
-                        )
-                        self._attributes[DeviceAttributes.fan_speed] = list(
-                            self._speeds.keys(),
-                        ).index(value)
-                    else:
-                        self._attributes[DeviceAttributes.mode] = None
-                        self._attributes[DeviceAttributes.fan_speed] = 0
-                    new_status[DeviceAttributes.mode.value] = self._attributes[
-                        DeviceAttributes.mode
-                    ]
-                    new_status[DeviceAttributes.fan_speed.value] = self._attributes[
-                        DeviceAttributes.fan_speed
-                    ]
-                self._attributes[status] = getattr(message, str(status))
-                new_status[str(status)] = self._attributes[status]
+
+        def _translate_fan_level(value: int) -> int:
+            # A single fan_level field on the wire drives both the friendly
+            # mode name and the fan_speed index shown to consumers.
+            if value in self._speeds:
+                self._attributes[DeviceAttributes.mode] = self._speeds.get(value)
+                self._attributes[DeviceAttributes.fan_speed] = list(
+                    self._speeds.keys(),
+                ).index(value)
+            else:
+                self._attributes[DeviceAttributes.mode] = None
+                self._attributes[DeviceAttributes.fan_speed] = 0
+            return value
+
+        new_status = self.update_attributes_from_message(
+            message,
+            {DeviceAttributes.fan_level: _translate_fan_level},
+        )
+        if DeviceAttributes.fan_level.value in new_status:
+            new_status[DeviceAttributes.mode.value] = self._attributes[
+                DeviceAttributes.mode
+            ]
+            new_status[DeviceAttributes.fan_speed.value] = self._attributes[
+                DeviceAttributes.fan_speed
+            ]
         return new_status
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:

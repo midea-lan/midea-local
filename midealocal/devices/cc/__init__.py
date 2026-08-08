@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import SKIP_ATTRIBUTE, MideaDevice, MideaDeviceInitKwargs
 
 from .message import (
     INDEX_TO_FE_MODE,
@@ -120,16 +120,22 @@ class MideaCCDevice(MideaDevice):
         if getattr(message, "is_fe_format", False):
             self._is_fe_format = True
             _LOGGER.debug("[%s] _is_fe_format option True", self.device_id)
-        new_status = {}
+
+        # fan_speed's translation depends on fan_speed_level, which may be
+        # updated by this same message but is declared later in
+        # DeviceAttributes -- capture the raw value and resolve it below,
+        # once every other attribute (including fan_speed_level) is settled.
         fan_speed: int | None = None
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.fan_speed:
-                    fan_speed = value
-                else:
-                    self._attributes[status] = getattr(message, str(status))
-                    new_status[str(status)] = getattr(message, str(status))
+
+        def _capture_fan_speed(value: int) -> Any:  # noqa: ANN401
+            nonlocal fan_speed
+            fan_speed = value
+            return SKIP_ATTRIBUTE
+
+        new_status = self.update_attributes_from_message(
+            message,
+            {DeviceAttributes.fan_speed: _capture_fan_speed},
+        )
         if (
             fan_speed is not None
             and self._attributes[DeviceAttributes.fan_speed_level] is not None
