@@ -407,7 +407,7 @@ class MideaACDevice(MideaDevice):
         has_fresh_air = False
         body_type = getattr(message, "body_type", None)
 
-        if getattr(message, "has_subtype8_temperature", False):
+        if getattr(message, "has_new_protocol_temperature", False):
             self._prefer_new_protocol_temperature = True
 
         is_stale_c0_temperature = (

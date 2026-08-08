@@ -1,6 +1,7 @@
 """Midea local CF device."""
 
 import logging
+import math
 from enum import StrEnum
 from typing import Any, Unpack
 
@@ -83,22 +84,36 @@ class MideaCFDevice(MideaDevice):
             message.mode = mode
         self.build_send(message)
 
+    @staticmethod
+    def _parse_float(value: bool | float | str, expected: str) -> float:
+        if isinstance(value, bool):
+            raise ValueWrongType(f"[cf] Expected {expected}")
+        try:
+            number = float(value)
+        except (TypeError, ValueError) as err:
+            raise ValueWrongType(f"[cf] Expected {expected}") from err
+        if not math.isfinite(number):
+            raise ValueWrongType(f"[cf] Expected {expected}")
+        return number
+
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea CF device set attribute."""
-        if not isinstance(value, bool):
-            raise ValueWrongType("[cf] Expected bool")
         message = MessageSet(self._message_protocol_version)
         message.power = True
         message.mode = self._attributes[DeviceAttributes.mode]
-        if attr == DeviceAttributes.power:
-            message.power = value
+        if attr in (DeviceAttributes.power, DeviceAttributes.aux_heating):
+            if not isinstance(value, bool):
+                raise ValueWrongType("[cf] Expected bool")
+            setattr(message, attr, value)
         elif attr == DeviceAttributes.mode:
-            message.power = True
-            message.mode = value
+            mode_value = self._parse_float(value, "int")
+            if not mode_value.is_integer():
+                raise ValueWrongType("[cf] Expected int")
+            message.mode = int(mode_value)
         elif attr == DeviceAttributes.target_temperature:
-            message.target_temperature = value
-        elif attr == DeviceAttributes.aux_heating:
-            message.aux_heating = value
+            message.target_temperature = self._parse_float(value, "float")
+        else:
+            raise ValueError(f"[cf] Unsupported attribute: {attr}")
         self.build_send(message)
 
 
