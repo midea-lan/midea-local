@@ -2,7 +2,6 @@ aiofiles
 aiohttp
 colorlog
 defusedxml
-deprecated
 ifaddr
 pycryptodome
 platformdirs
