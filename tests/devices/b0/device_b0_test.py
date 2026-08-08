@@ -157,6 +157,38 @@ class TestMideaB0Device:
         assert device.attributes[DeviceAttributes.mode] is None
         assert new_status[DeviceAttributes.door.value] is True
 
+    def test_process_message_31_ignored_on_subtype_zero(self) -> None:
+        """A 31 body must not overwrite good data on a subtype zero device.
+
+        The 31 body layout is specific to model 0TG025JG (subtype 2). On
+        subtype zero devices it still arrives in response to Query31, but
+        decoding it with that layout produces meaningless values that would
+        otherwise clobber the good data just received via a 01 body.
+        """
+        device = _build_device(0)
+        body_01 = bytearray(34)
+        body_01[0] = 0x01
+        body_01[31] = 0x02  # status "Working"
+        body_01[32] = 0x00  # door closed, no tank/water flags
+        device.process_message(_build_message(MessageType.query, body_01))
+        assert device.attributes[DeviceAttributes.door] is False
+        assert device.attributes[DeviceAttributes.status] == "Working"
+        assert device.attributes[DeviceAttributes.tank_ejected] is False
+        assert device.attributes[DeviceAttributes.water_shortage] is False
+
+        body_31 = bytearray(18)
+        body_31[0] = 0x31
+        body_31[1] = 0x00  # status code not present in the subtype-zero map
+        body_31[16] = 0x4B  # child lock, door, water shortage, preheat end
+        new_status = device.process_message(
+            _build_message(MessageType.query, body_31),
+        )
+        assert new_status == {}
+        assert device.attributes[DeviceAttributes.door] is False
+        assert device.attributes[DeviceAttributes.status] == "Working"
+        assert device.attributes[DeviceAttributes.tank_ejected] is False
+        assert device.attributes[DeviceAttributes.water_shortage] is False
+
     def test_process_message_default_body_subtype_zero(self) -> None:
         """Test process message with the default body on subtype zero."""
         device = _build_device(0)
