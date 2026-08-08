@@ -39,10 +39,11 @@ QUERY_TIMEOUT = (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Sentinel returned by translators to preserve the stored attribute value.
 SKIP_ATTRIBUTE = object()
-"""Sentinel a translator can return from update_attributes_from_message() to leave
-an attribute's stored value untouched (e.g. when it depends on another attribute
-that is not yet known, or won't be known until later in the same message)."""
+
+# Private marker that distinguishes an omitted default from an explicit default.
+_NO_DEFAULT = object()
 
 
 def list_translator(
@@ -70,11 +71,6 @@ def list_translator(
         return values[i] if min_index <= i < len(values) else default
 
     return _translate
-
-
-_NO_DEFAULT = object()
-"""Private marker distinguishing "no default passed" from a caller explicitly
-passing ``default=None`` (or ``default=SKIP_ATTRIBUTE``) to dict_translator()."""
 
 
 def dict_translator(
