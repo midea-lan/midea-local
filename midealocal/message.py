@@ -5,7 +5,7 @@ import warnings
 from enum import IntEnum
 from typing import Any, SupportsIndex, cast
 
-from deprecated import deprecated
+from typing_extensions import deprecated
 
 from midealocal.const import DeviceType
 
