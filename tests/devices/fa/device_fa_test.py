@@ -436,6 +436,12 @@ class TestMideaFADevice:
             message = mock_build_send.call_args[0][0]
             assert message.power is True
             assert message.fan_speed == 3
+            assert message.mode == 0
+            mock_build_send.reset_mock()
+
+            self.device.turn_on(mode="invalid")
+            mock_build_send.assert_called_once()
+            assert mock_build_send.call_args[0][0].mode is None
 
     def test_set_customize(self) -> None:
         """Test set customize."""

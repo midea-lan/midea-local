@@ -109,7 +109,7 @@ class MideaX40Device(MideaDevice):
                 new_status[str(status)] = self._attributes[status]
         return new_status
 
-    def set_attribute(self, attr: str, value: int | str | bool) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea x40 Device set attribute."""
         if attr in [
             DeviceAttributes.light,

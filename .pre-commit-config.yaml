@@ -15,7 +15,7 @@ repos:
       - id: check-yaml
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.1
+    rev: v0.16.2
     hooks:
       - id: ruff-check
         args:
@@ -51,16 +51,24 @@ repos:
       - id: mypy
         additional_dependencies:
           - types-aiofiles
-          - types-deprecated
           - pycryptodome
           - platformdirs
-  - repo: local
+  - repo: https://github.com/PyCQA/pylint
+    rev: v4.0.6
     hooks:
       - id: pylint
         name: pylint
-        entry: uv run pylint
-        language: system
         types: [python]
+        additional_dependencies:
+          - aiofiles
+          - pycryptodome
+          - platformdirs
+          - typing_extensions
+          - aiohttp
+          - colorlog
+          - defusedxml
+          - ifaddr
+          - setuptools
         args: [
             "-rn", # Only display messages
             "-sn", # Don't display the score
