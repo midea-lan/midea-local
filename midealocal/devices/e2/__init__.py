@@ -83,6 +83,12 @@ class DeviceAttributes(StrEnum):
     rate = "rate"
 
 
+# E2 subtype 255 devices use literal Celsius values in the target-temperature
+# command.  Other E2 variants use the legacy half-degree wire representation
+# unless ``precision_halves`` is explicitly enabled.
+_LITERAL_TEMPERATURE_SUBTYPES = frozenset({255})
+
+
 class MideaE2Device(MideaDevice):
     """Midea E2 device."""
 
@@ -215,8 +221,12 @@ class MideaE2Device(MideaDevice):
             DeviceAttributes.current_temperature,
         ]:
             old_protocol = self._normalize_old_protocol(self._old_protocol)
-            if attr == DeviceAttributes.target_temperature:
-                value = value if self._precision_halves else value * 2
+            if (
+                attr == DeviceAttributes.target_temperature
+                and not self._precision_halves
+                and self.subtype not in _LITERAL_TEMPERATURE_SUBTYPES
+            ):
+                value = value * 2
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._message_protocol_version)
                 message.power = bool(value)

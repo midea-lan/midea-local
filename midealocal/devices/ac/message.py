@@ -87,16 +87,16 @@ BB_FRESH_AIR_SPEED_FLAG = 0x80
 
 # Model 22013279 reports temperatures in this new-protocol tag because its
 # standard C0 temperature fields are stale.
-SUBTYPE8_TEMPERATURE_TAG = 0x7E
-SUBTYPE8_TEMPERATURE_MIN_LENGTH = 41
-SUBTYPE8_SETPOINT_OFFSET = 11.5
-SUBTYPE8_SETPOINT_MASK = 0x3F
-SUBTYPE8_SETPOINT_HALF_DEGREE_BIT = 0x40
-SUBTYPE8_MIN_VALID_TEMPERATURE = 10
-SUBTYPE8_MAX_VALID_TEMPERATURE = 40
-SUBTYPE8_LEGACY_SETPOINT_BYTE = 3
-SUBTYPE8_INDOOR_TEMPERATURE_BYTE = 40
-SUBTYPE8_INDOOR_TEMPERATURE_DECIMAL_BYTE = 41
+NEW_PROTOCOL_TEMPERATURE_TAG = 0x7E
+NEW_PROTOCOL_TEMPERATURE_MIN_LENGTH = 41
+NEW_PROTOCOL_SETPOINT_OFFSET = 11.5
+NEW_PROTOCOL_SETPOINT_MASK = 0x3F
+NEW_PROTOCOL_SETPOINT_HALF_DEGREE_BIT = 0x40
+NEW_PROTOCOL_MIN_VALID_TEMPERATURE = 10
+NEW_PROTOCOL_MAX_VALID_TEMPERATURE = 40
+NEW_PROTOCOL_LEGACY_SETPOINT_BYTE = 3
+NEW_PROTOCOL_INDOOR_TEMPERATURE_BYTE = 40
+NEW_PROTOCOL_INDOOR_TEMPERATURE_DECIMAL_BYTE = 41
 
 # B5 capability value semantics (reverse-engineered; see _parse_capabilities).
 # The raw byte of each capability is not a 0/1 flag; each has its own value set.
@@ -1046,7 +1046,7 @@ class XBXMessageBody(NewProtocolMessageBody):
         self,
         body: bytearray,
         bt: int,
-        subtype8_temperature: bool = False,
+        new_protocol_temperature: bool = False,
     ) -> None:
         """Initialize AC BX message body."""
         super().__init__(body, bt)
@@ -1095,13 +1095,15 @@ class XBXMessageBody(NewProtocolMessageBody):
                 and data[SELF_CLEAN_ACTIVE_STATUS_BYTE] != 0
             )
         if (
-            subtype8_temperature
-            and SUBTYPE8_TEMPERATURE_TAG in params
-            and self._parse_subtype8_temperatures(params[SUBTYPE8_TEMPERATURE_TAG])
+            new_protocol_temperature
+            and NEW_PROTOCOL_TEMPERATURE_TAG in params
+            and self._parse_new_protocol_temperatures(
+                params[NEW_PROTOCOL_TEMPERATURE_TAG],
+            )
         ):
-            self.has_subtype8_temperature = True
+            self.has_new_protocol_temperature = True
 
-    def _parse_subtype8_temperatures(self, data: bytearray) -> bool:
+    def _parse_new_protocol_temperatures(self, data: bytearray) -> bool:
         """Decode setpoint and indoor temperature for model 22013279.
 
         Its standard C0 temperature fields are stale; temperatures are reported
@@ -1114,39 +1116,40 @@ class XBXMessageBody(NewProtocolMessageBody):
         known to supersede C0; accepting it would latch B1 values and discard
         C0 temperatures, including any outdoor reading.
         """
-        if len(data) <= SUBTYPE8_TEMPERATURE_MIN_LENGTH:
+        if len(data) <= NEW_PROTOCOL_TEMPERATURE_MIN_LENGTH:
             return False
         raw_setpoint = data[1]
         target_temperature = (
-            SUBTYPE8_SETPOINT_OFFSET + (raw_setpoint & SUBTYPE8_SETPOINT_MASK) / 2
+            NEW_PROTOCOL_SETPOINT_OFFSET
+            + (raw_setpoint & NEW_PROTOCOL_SETPOINT_MASK) / 2
         )
-        if raw_setpoint & SUBTYPE8_SETPOINT_HALF_DEGREE_BIT:
+        if raw_setpoint & NEW_PROTOCOL_SETPOINT_HALF_DEGREE_BIT:
             target_temperature += 0.5
         if not (
-            SUBTYPE8_MIN_VALID_TEMPERATURE
+            NEW_PROTOCOL_MIN_VALID_TEMPERATURE
             <= target_temperature
-            <= SUBTYPE8_MAX_VALID_TEMPERATURE
+            <= NEW_PROTOCOL_MAX_VALID_TEMPERATURE
         ):
             # Fallback for payload variants where the legacy byte-3 mapping
             # is still active.
-            fallback_target = (data[SUBTYPE8_LEGACY_SETPOINT_BYTE] - 50) / 2
+            fallback_target = (data[NEW_PROTOCOL_LEGACY_SETPOINT_BYTE] - 50) / 2
             if (
-                SUBTYPE8_MIN_VALID_TEMPERATURE
+                NEW_PROTOCOL_MIN_VALID_TEMPERATURE
                 <= fallback_target
-                <= SUBTYPE8_MAX_VALID_TEMPERATURE
+                <= NEW_PROTOCOL_MAX_VALID_TEMPERATURE
             ):
                 target_temperature = fallback_target
             else:
                 return False
         indoor_temperature = round(
-            (data[SUBTYPE8_INDOOR_TEMPERATURE_BYTE] - 50) / 2
-            + data[SUBTYPE8_INDOOR_TEMPERATURE_DECIMAL_BYTE] * 0.1,
+            (data[NEW_PROTOCOL_INDOOR_TEMPERATURE_BYTE] - 50) / 2
+            + data[NEW_PROTOCOL_INDOOR_TEMPERATURE_DECIMAL_BYTE] * 0.1,
             1,
         )
         if not (
-            SUBTYPE8_MIN_VALID_TEMPERATURE
+            NEW_PROTOCOL_MIN_VALID_TEMPERATURE
             <= indoor_temperature
-            <= SUBTYPE8_MAX_VALID_TEMPERATURE
+            <= NEW_PROTOCOL_MAX_VALID_TEMPERATURE
         ):
             return False
         self.target_temperature = target_temperature
@@ -1558,7 +1561,7 @@ class MessageACResponse(MessageResponse):
         self,
         message: bytearray,
         power_analysis_method: int = 3,
-        subtype8_temperature: bool = False,
+        new_protocol_temperature: bool = False,
     ) -> None:
         """Initialize AC message response."""
         super().__init__(message)
@@ -1583,7 +1586,7 @@ class MessageACResponse(MessageResponse):
             MessageType.notify2,
         ] and self.body_type in [ListTypes.B0, ListTypes.B1, ListTypes.B5]:
             self.set_body(
-                XBXMessageBody(super().body, self.body_type, subtype8_temperature),
+                XBXMessageBody(super().body, self.body_type, new_protocol_temperature),
             )
         # dataType 0x02 and messageBytes[0] 0xC0
         # dataType 0x03 and messageBytes[0] 0xC0

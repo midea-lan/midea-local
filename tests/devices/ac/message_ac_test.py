@@ -1747,9 +1747,9 @@ class TestMessageACResponse:
         )
         body[5 : 5 + len(payload)] = payload
 
-        response = MessageACResponse(self.header + body, subtype8_temperature=True)
-        assert hasattr(response, "has_subtype8_temperature")
-        assert response.has_subtype8_temperature is True
+        response = MessageACResponse(self.header + body, new_protocol_temperature=True)
+        assert hasattr(response, "has_new_protocol_temperature")
+        assert response.has_new_protocol_temperature is True
         assert hasattr(response, "target_temperature")
         assert response.target_temperature == 26.0
         assert hasattr(response, "indoor_temperature")
@@ -1829,7 +1829,7 @@ class TestMessageACResponse:
         )
         body[5 : 5 + len(payload)] = payload
 
-        response = MessageACResponse(self.header + body, subtype8_temperature=True)
+        response = MessageACResponse(self.header + body, new_protocol_temperature=True)
         assert hasattr(response, "target_temperature")
         assert response.target_temperature == 25.0
 
@@ -1904,7 +1904,7 @@ class TestMessageACResponse:
         )
         body[5 : 5 + len(payload)] = payload
 
-        response = MessageACResponse(self.header + body, subtype8_temperature=True)
+        response = MessageACResponse(self.header + body, new_protocol_temperature=True)
         assert not hasattr(response, "target_temperature")
 
     def test_message_b5_notify2_0x7e_rejects_invalid_indoor_temperature(
@@ -1923,26 +1923,26 @@ class TestMessageACResponse:
         payload[40] = 0x00  # decodes to the reported invalid -25.0 C
         body[5 : 5 + len(payload)] = payload
 
-        response = MessageACResponse(self.header + body, subtype8_temperature=True)
+        response = MessageACResponse(self.header + body, new_protocol_temperature=True)
 
-        assert not hasattr(response, "has_subtype8_temperature")
+        assert not hasattr(response, "has_new_protocol_temperature")
         assert not hasattr(response, "target_temperature")
         assert not hasattr(response, "indoor_temperature")
         assert not hasattr(response, "outdoor_temperature")
 
     def test_message_b5_notify2_0x7e_temperature_too_short(self) -> None:
-        """Test the 0x7e tag is ignored when shorter than the subtype-8 payload."""
+        """Test the 0x7e tag is ignored when shorter than the expected payload."""
         self.header[9] = 0x05
         body = bytearray(16)
         body[0] = 0xB5
         body[1] = 0x01
         body[2] = 0x7E
         body[3] = 0x00
-        body[4] = 0x0A  # length 10, at/below SUBTYPE8_TEMPERATURE_MIN_LENGTH
+        body[4] = 0x0A  # length 10, at/below NEW_PROTOCOL_TEMPERATURE_MIN_LENGTH
         body[5 : 5 + 10] = bytearray(10)
 
-        response = MessageACResponse(self.header + body, subtype8_temperature=True)
-        assert not hasattr(response, "has_subtype8_temperature")
+        response = MessageACResponse(self.header + body, new_protocol_temperature=True)
+        assert not hasattr(response, "has_new_protocol_temperature")
         assert not hasattr(response, "target_temperature")
         assert not hasattr(response, "indoor_temperature")
         assert not hasattr(response, "outdoor_temperature")
@@ -1966,7 +1966,7 @@ class TestMessageACResponse:
 
         # The payload decodes to in-range temperatures, so only the subtype
         # gate keeps another model's unrelated 0x7e content out.
-        assert not hasattr(response, "has_subtype8_temperature")
+        assert not hasattr(response, "has_new_protocol_temperature")
         assert not hasattr(response, "target_temperature")
         assert not hasattr(response, "indoor_temperature")
         assert not hasattr(response, "outdoor_temperature")
