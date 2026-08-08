@@ -639,8 +639,8 @@ class MideaDevice(threading.Thread):
     def update_attributes_from_message(
         self,
         message: object,
-        translators: dict[str, Callable[[Any], Any]] | None = None,
-        default_transform: Callable[[Any], Any] | None = None,
+        translators: dict[str, Callable[[Any], str | float | bool]] | None = None,
+        default_transform: Callable[[Any], str | float | bool] | None = None,
     ) -> dict[str, Any]:
         """Copy matching attributes from a parsed response into self._attributes.
 
