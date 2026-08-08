@@ -245,6 +245,19 @@ class MideaAirSecurity(CloudSecurity):
         sha.update((urlparse(url).path + payload + self._login_key).encode("ascii"))
         return sha.hexdigest()
 
+    def decrypt_appliance_lua(self, data: str) -> str:
+        """Decrypt a legacy (mapp.appsmb.com) appliance lua file.
+
+        Unlike the Meiju/SmartHome clouds, the legacy backend serves lua files
+        as a hex-encoded AES-128-ECB blob keyed by ``md5(app_key)[:16]``, where
+        ``app_key`` is this security object's login key.
+        """
+        key = md5(self._login_key.encode("ascii")).hexdigest()[:16].encode("ascii")
+        return unpad(
+            AES.new(key, AES.MODE_ECB).decrypt(bytes.fromhex(data)),
+            16,
+        ).decode()
+
 
 class LocalSecurity:
     """Evaluate local security."""
