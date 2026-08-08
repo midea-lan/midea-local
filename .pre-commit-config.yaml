@@ -54,7 +54,7 @@ repos:
           - pycryptodome
           - platformdirs
   - repo: https://github.com/PyCQA/pylint
-    rev: v3.3.4
+    rev: v3.3.9
     hooks:
       - id: pylint
         name: pylint
