@@ -127,7 +127,7 @@ class MideaCCDevice(MideaDevice):
         # once every other attribute (including fan_speed_level) is settled.
         fan_speed: int | None = None
 
-        def _capture_fan_speed(value: int) -> object:
+        def _capture_fan_speed(value: int) -> Any:  # noqa: ANN401
             nonlocal fan_speed
             fan_speed = value
             return SKIP_ATTRIBUTE
