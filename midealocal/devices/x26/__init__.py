@@ -6,7 +6,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
 
 from .message import Message26Response, MessageQuery, MessageSet
 
@@ -118,10 +118,11 @@ class Midea26Device(MideaDevice):
         return self.update_attributes_from_message(
             message,
             {
-                DeviceAttributes.mode: lambda v: Midea26Device._modes[v],
-                DeviceAttributes.direction: lambda v: Midea26Device._directions[
-                    self._convert_from_midea_direction(v)
-                ],
+                DeviceAttributes.mode: Midea26Device._modes.__getitem__,
+                DeviceAttributes.direction: list_translator(
+                    Midea26Device._directions,
+                    key=Midea26Device._convert_from_midea_direction,
+                ),
             },
         )
 

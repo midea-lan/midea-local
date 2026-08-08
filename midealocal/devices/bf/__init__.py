@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, dict_translator
 
 from .message import MessageBFResponse, MessageQuery
 
@@ -68,9 +68,9 @@ class MideaBFDevice(MideaDevice):
         return self.update_attributes_from_message(
             message,
             {
-                DeviceAttributes.status: lambda v: MideaBFDevice._status.get(
-                    v,
-                    "Unknown",
+                DeviceAttributes.status: dict_translator(
+                    MideaBFDevice._status,
+                    default="Unknown",
                 ),
             },
         )

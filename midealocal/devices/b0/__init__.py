@@ -2,10 +2,13 @@
 
 import logging
 from enum import StrEnum
-from typing import ClassVar, Unpack
+from typing import TYPE_CHECKING, Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, dict_translator
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from .message import (
     MessageB0Response,
@@ -191,24 +194,23 @@ class MideaB0Device(MideaDevice):
         message = MessageB0Response(bytearray(msg))
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         # model 0TG025JG, subtype 2, uses the *31 tables instead
-        return self.update_attributes_from_message(
-            message,
-            {
-                DeviceAttributes.status: lambda v: (
-                    MideaB0Device._status31.get(v)
-                    if self._subtype > 0
-                    else MideaB0Device._status.get(v)
-                ),
-                DeviceAttributes.mode: lambda v: (
-                    MideaB0Device._mode31.get(v)
-                    if self._subtype > 0
-                    else MideaB0Device._mode.get(v)
-                ),
-                DeviceAttributes.fire_power: lambda v: (
-                    MideaB0Device._fire_power31.get(v) if self._subtype > 0 else v
-                ),
-            },
-        )
+        use_v31_tables = self._subtype > 0
+        translators: dict[str, Callable[[Any], str | float | bool | None]] = {
+            DeviceAttributes.status: dict_translator(
+                MideaB0Device._status31 if use_v31_tables else MideaB0Device._status,
+                default=None,
+            ),
+            DeviceAttributes.mode: dict_translator(
+                MideaB0Device._mode31 if use_v31_tables else MideaB0Device._mode,
+                default=None,
+            ),
+        }
+        if use_v31_tables:
+            translators[DeviceAttributes.fire_power] = dict_translator(
+                MideaB0Device._fire_power31,
+                default=None,
+            )
+        return self.update_attributes_from_message(message, translators)
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """B0 Midea device set attribute."""

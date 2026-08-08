@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, dict_translator
 from midealocal.exceptions import ValueWrongType
 
 from .message import MessageDBResponse, MessagePower, MessageQuery, MessageStart
@@ -238,21 +238,19 @@ class MideaDBDevice(MideaDevice):
         return self.update_attributes_from_message(
             message,
             {
-                DeviceAttributes.mode: lambda v: MideaDBDevice._mode.get(v, v),
-                DeviceAttributes.status: lambda v: MideaDBDevice._status.get(v, v),
-                DeviceAttributes.dehydration_speed: lambda v: (
-                    MideaDBDevice._dehydration_speed.get(v, v)
+                DeviceAttributes.mode: dict_translator(MideaDBDevice._mode),
+                DeviceAttributes.status: dict_translator(MideaDBDevice._status),
+                DeviceAttributes.dehydration_speed: dict_translator(
+                    MideaDBDevice._dehydration_speed,
                 ),
-                DeviceAttributes.water_level: lambda v: MideaDBDevice._water_level.get(
-                    v,
-                    v,
+                DeviceAttributes.water_level: dict_translator(
+                    MideaDBDevice._water_level,
                 ),
-                DeviceAttributes.program: lambda v: MideaDBDevice._program.get(v, v),
-                DeviceAttributes.temperature: lambda v: MideaDBDevice._temperature.get(
-                    v,
-                    v,
+                DeviceAttributes.program: dict_translator(MideaDBDevice._program),
+                DeviceAttributes.temperature: dict_translator(
+                    MideaDBDevice._temperature,
                 ),
-                DeviceAttributes.progress: lambda v: MideaDBDevice._progress[v],
+                DeviceAttributes.progress: MideaDBDevice._progress.__getitem__,
             },
         )
 

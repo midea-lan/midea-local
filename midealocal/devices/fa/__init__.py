@@ -6,7 +6,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
 
 from .message import MessageFAResponse, MessageQuery, MessageSet
 
@@ -153,24 +153,16 @@ class MideaFADevice(MideaDevice):
         return self.update_attributes_from_message(
             message,
             {
-                DeviceAttributes.oscillation_angle: lambda v: (
-                    MideaFADevice._oscillation_angles[v]
-                    if v < len(MideaFADevice._oscillation_angles)
-                    else None
+                DeviceAttributes.oscillation_angle: list_translator(
+                    MideaFADevice._oscillation_angles,
                 ),
-                DeviceAttributes.tilting_angle: lambda v: (
-                    MideaFADevice._tilting_angles[v]
-                    if v < len(MideaFADevice._tilting_angles)
-                    else None
+                DeviceAttributes.tilting_angle: list_translator(
+                    MideaFADevice._tilting_angles,
                 ),
-                DeviceAttributes.oscillation_mode: lambda v: (
-                    MideaFADevice._oscillation_modes[v]
-                    if v < len(MideaFADevice._oscillation_modes)
-                    else None
+                DeviceAttributes.oscillation_mode: list_translator(
+                    MideaFADevice._oscillation_modes,
                 ),
-                DeviceAttributes.mode: lambda v: (
-                    MideaFADevice._modes[v] if v < len(MideaFADevice._modes) else None
-                ),
+                DeviceAttributes.mode: list_translator(MideaFADevice._modes),
                 DeviceAttributes.power: _translate_power,
                 DeviceAttributes.fan_speed: _translate_fan_speed,
             },

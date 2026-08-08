@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
 
 from .message import MessageFDResponse, MessageQuery, MessageSet
 
@@ -119,10 +119,9 @@ class MideaFDDevice(MideaDevice):
         return self.update_attributes_from_message(
             message,
             {
-                DeviceAttributes.mode: lambda v: (
-                    MideaFDDevice._modes[v - 1]
-                    if v <= len(MideaFDDevice._modes)
-                    else None
+                DeviceAttributes.mode: list_translator(
+                    MideaFDDevice._modes,
+                    offset=1,
                 ),
                 DeviceAttributes.fan_speed: self._speeds.get,
                 DeviceAttributes.screen_display: MideaFDDevice._screen_displays.get,

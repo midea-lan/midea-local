@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
 
 from .message import MessageEAResponse, MessageQuery
 
@@ -165,15 +165,13 @@ class MideaEADevice(MideaDevice):
         return self.update_attributes_from_message(
             message,
             {
-                DeviceAttributes.progress: lambda v: (
-                    MideaEADevice._progress[v]
-                    if v < len(MideaEADevice._progress)
-                    else "Unknown"
+                DeviceAttributes.progress: list_translator(
+                    MideaEADevice._progress,
+                    default="Unknown",
                 ),
-                DeviceAttributes.mode: lambda v: (
-                    MideaEADevice._mode_list[v]
-                    if v < len(MideaEADevice._mode_list)
-                    else "Cloud"
+                DeviceAttributes.mode: list_translator(
+                    MideaEADevice._mode_list,
+                    default="Cloud",
                 ),
             },
         )

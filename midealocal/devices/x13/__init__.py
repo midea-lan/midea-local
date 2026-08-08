@@ -98,7 +98,7 @@ class Midea13Device(MideaDevice):
         return self.update_attributes_from_message(
             message,
             {
-                DeviceAttributes.effect: lambda v: Midea13Device._effects[v],
+                DeviceAttributes.effect: Midea13Device._effects.__getitem__,
                 DeviceAttributes.color_temperature: self.midea_to_kelvin,
             },
         )

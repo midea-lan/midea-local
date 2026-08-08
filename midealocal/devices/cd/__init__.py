@@ -7,7 +7,13 @@ from enum import IntEnum, StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import SKIP_ATTRIBUTE, MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import (
+    SKIP_ATTRIBUTE,
+    MideaDevice,
+    MideaDeviceInitKwargs,
+    dict_translator,
+    sentinel_translator,
+)
 
 from .message import (
     MessageCDBase,
@@ -337,9 +343,9 @@ class MideaCDDevice(MideaDevice):
                 # transient unrecognised values (e.g. 8) from a SET-echo
                 # corrupting the displayed mode; the next status notification
                 # will correct it.
-                DeviceAttributes.mode: lambda v: MideaCDDevice._modes.get(
-                    v,
-                    SKIP_ATTRIBUTE,
+                DeviceAttributes.mode: dict_translator(
+                    MideaCDDevice._modes,
+                    default=SKIP_ATTRIBUTE,
                 ),
                 **{
                     attr: self._make_temperature_translator(attr)
@@ -350,8 +356,9 @@ class MideaCDDevice(MideaDevice):
                 # None values so a previous valid reading is preserved (e.g.
                 # when sterilize is off the echo body sends an out-of-range
                 # value and the message class sets None).
-                DeviceAttributes.disinfection_temperature: (
-                    lambda v: v if v is not None else SKIP_ATTRIBUTE
+                DeviceAttributes.disinfection_temperature: sentinel_translator(
+                    None,
+                    SKIP_ATTRIBUTE,
                 ),
                 DeviceAttributes.auto_sterilize_week: self._translate_sterilize_time(
                     MessageSetSterilize.clamp_week,

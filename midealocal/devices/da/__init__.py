@@ -5,7 +5,12 @@ from enum import StrEnum
 from typing import Any, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import (
+    MideaDevice,
+    MideaDeviceInitKwargs,
+    list_translator,
+    sentinel_translator,
+)
 from midealocal.exceptions import ValueWrongType
 
 from .message import MessageDAResponse, MessagePower, MessageQuery, MessageStart
@@ -123,25 +128,13 @@ class MideaDADevice(MideaDevice):
         return self.update_attributes_from_message(
             message,
             {
-                DeviceAttributes.progress: lambda v: (
-                    None if v >= len(progress) else progress[v]
-                ),
-                DeviceAttributes.program: lambda v: (
-                    None if v >= len(program) else program[v]
-                ),
-                DeviceAttributes.rinse_level: lambda v: "-" if v == MIN_TEMP else v,
-                DeviceAttributes.dehydration_speed: lambda v: (
-                    None if v >= len(speed) else speed[v]
-                ),
-                DeviceAttributes.detergent: lambda v: (
-                    None if v >= len(detergent) else detergent[v]
-                ),
-                DeviceAttributes.softener: lambda v: (
-                    None if v >= len(softener) else softener[v]
-                ),
-                DeviceAttributes.wash_strength: lambda v: (
-                    None if v >= len(strength) else strength[v]
-                ),
+                DeviceAttributes.progress: list_translator(progress),
+                DeviceAttributes.program: list_translator(program),
+                DeviceAttributes.rinse_level: sentinel_translator(MIN_TEMP, "-"),
+                DeviceAttributes.dehydration_speed: list_translator(speed),
+                DeviceAttributes.detergent: list_translator(detergent),
+                DeviceAttributes.softener: list_translator(softener),
+                DeviceAttributes.wash_strength: list_translator(strength),
             },
         )
 

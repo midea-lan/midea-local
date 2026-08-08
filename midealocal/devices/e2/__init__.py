@@ -7,7 +7,7 @@ from enum import IntEnum, StrEnum
 from typing import Any, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, multiplier_translator
 
 from .message import (
     MessageE2Response,
@@ -191,10 +191,8 @@ class MideaE2Device(MideaDevice):
         return self.update_attributes_from_message(
             message,
             {
-                DeviceAttributes.heating_power: lambda v: (
-                    round(v * self._heating_power_multiplier)
-                    if v is not None and self._heating_power_multiplier != 1.0
-                    else v
+                DeviceAttributes.heating_power: multiplier_translator(
+                    self._heating_power_multiplier,
                 ),
             },
         )

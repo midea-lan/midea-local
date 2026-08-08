@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
 from midealocal.exceptions import ValueWrongType
 
 from .message import (
@@ -126,13 +126,9 @@ class Midea34Device(MideaDevice):
         return self.update_attributes_from_message(
             message,
             {
-                DeviceAttributes.status: lambda v: (
-                    self._status[v] if v < len(self._status) else None
-                ),
-                DeviceAttributes.progress: lambda v: (
-                    self._progress[v] if v < len(self._progress) else None
-                ),
-                DeviceAttributes.mode: lambda v: self._modes[v],
+                DeviceAttributes.status: list_translator(self._status),
+                DeviceAttributes.progress: list_translator(self._progress),
+                DeviceAttributes.mode: self._modes.__getitem__,
             },
         )
 

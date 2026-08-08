@@ -4,7 +4,7 @@ import logging
 import socket
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 from enum import IntEnum, StrEnum
 from typing import Any, ClassVar, NotRequired, TypedDict, Unpack
 
@@ -43,6 +43,99 @@ SKIP_ATTRIBUTE = object()
 """Sentinel a translator can return from update_attributes_from_message() to leave
 an attribute's stored value untouched (e.g. when it depends on another attribute
 that is not yet known, or won't be known until later in the same message)."""
+
+
+def list_translator(
+    values: Sequence[str],
+    *,
+    offset: int = 0,
+    min_index: int = 0,
+    default: str | None = None,
+    key: Callable[[int], int] | None = None,
+) -> Callable[[int], str | None]:
+    """Build an update_attributes_from_message() translator for enum-style values.
+
+    Returns a callable that maps a raw index into ``values``, or ``default``
+    if the index falls outside ``[min_index, len(values))``, instead of
+    raising or wrapping around on a negative index. ``offset`` shifts the raw
+    value before indexing, for devices that report 1-based (or otherwise
+    offset) indices; ``min_index`` excludes otherwise-valid low indices some
+    devices reserve (e.g. 0 meaning "no value"). ``key``, if given, is applied
+    to the raw value first, for devices that encode the index indirectly
+    (e.g. a physical angle that first needs converting to a list position).
+    """
+
+    def _translate(index: int) -> str | None:
+        i = (key(index) if key is not None else index) - offset
+        return values[i] if min_index <= i < len(values) else default
+
+    return _translate
+
+
+_NO_DEFAULT = object()
+"""Private marker distinguishing "no default passed" from a caller explicitly
+passing ``default=None`` (or ``default=SKIP_ATTRIBUTE``) to dict_translator()."""
+
+
+def dict_translator(
+    mapping: Mapping[Any, Any],
+    default: Any = _NO_DEFAULT,  # noqa: ANN401
+) -> Callable[[Any], Any]:
+    """Build an update_attributes_from_message() translator for coded values.
+
+    Looks up the raw value in ``mapping``. If absent, returns ``default`` when
+    given, otherwise passes the raw value through unchanged.
+    """
+
+    def _translate(value: Any) -> Any:  # noqa: ANN401
+        return mapping.get(value, value if default is _NO_DEFAULT else default)
+
+    return _translate
+
+
+def precision_halves_translator(
+    precision_halves: bool | None,
+) -> Callable[[float], float]:
+    """Build an update_attributes_from_message() translator for halved readings.
+
+    Some devices report values doubled (in 0.5-unit steps) when their
+    ``precision_halves`` customize flag is enabled. Returns a callable that
+    divides by 2 when ``precision_halves`` is truthy, otherwise passes the
+    value through unchanged.
+    """
+
+    def _translate(value: float) -> float:
+        return value / 2 if precision_halves else value
+
+    return _translate
+
+
+def multiplier_translator(multiplier: float) -> Callable[[float | None], float | None]:
+    """Build an update_attributes_from_message() translator that scales a reading.
+
+    Rounds ``value * multiplier`` to the nearest int, unless ``multiplier`` is
+    1.0 (a no-op) or the raw value is ``None`` (unknown).
+    """
+
+    def _translate(value: float | None) -> float | None:
+        if value is None or multiplier == 1.0:
+            return value
+        return round(value * multiplier)
+
+    return _translate
+
+
+def sentinel_translator(sentinel: Any, replacement: Any) -> Callable[[Any], Any]:  # noqa: ANN401
+    """Build an update_attributes_from_message() translator for sentinel values.
+
+    Swaps a device-specific "unset" sentinel raw value for a display
+    placeholder, passing every other value through unchanged.
+    """
+
+    def _translate(value: Any) -> Any:  # noqa: ANN401
+        return replacement if value == sentinel else value
+
+    return _translate
 
 
 class AuthException(Exception):
@@ -639,8 +732,9 @@ class MideaDevice(threading.Thread):
     def update_attributes_from_message(
         self,
         message: object,
-        translators: dict[str, Callable[[Any], str | float | bool]] | None = None,
-        default_transform: Callable[[Any], str | float | bool] | None = None,
+        translators: dict[str, Callable[[Any], str | float | bool | None]]
+        | None = None,
+        default_transform: Callable[[Any], str | float | bool | None] | None = None,
     ) -> dict[str, Any]:
         """Copy matching attributes from a parsed response into self._attributes.
 

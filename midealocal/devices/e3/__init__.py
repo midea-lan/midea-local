@@ -6,7 +6,11 @@ from enum import StrEnum
 from typing import Any, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import (
+    MideaDevice,
+    MideaDeviceInitKwargs,
+    precision_halves_translator,
+)
 
 from .message import (
     MessageE3Response,
@@ -89,7 +93,7 @@ class MideaE3Device(MideaDevice):
                     DeviceAttributes.current_temperature,
                     DeviceAttributes.target_temperature,
                 ],
-                lambda v: v / 2 if self._precision_halves else v,
+                precision_halves_translator(self._precision_halves),
             ),
         )
 

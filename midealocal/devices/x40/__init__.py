@@ -7,7 +7,12 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import (
+    MideaDevice,
+    MideaDeviceInitKwargs,
+    list_translator,
+    precision_halves_translator,
+)
 
 from .message import MessageQuery, MessageSet, MessageX40Response
 
@@ -94,12 +99,13 @@ class MideaX40Device(MideaDevice):
         return self.update_attributes_from_message(
             message,
             {
-                DeviceAttributes.current_temperature: lambda v: (
-                    v / 2 if self._precision_halves else v
+                DeviceAttributes.current_temperature: precision_halves_translator(
+                    self._precision_halves,
                 ),
-                DeviceAttributes.direction: lambda v: self._directions[
-                    self._convert_from_midea_direction(v)
-                ],
+                DeviceAttributes.direction: list_translator(
+                    self._directions,
+                    key=self._convert_from_midea_direction,
+                ),
             },
         )
 

@@ -29,6 +29,10 @@ from .message import (
 _LOGGER = logging.getLogger(__name__)
 
 
+def _translate_int_enum(v: Any) -> Any:  # noqa: ANN401
+    return v.name.lower() if isinstance(v, IntEnum) else v
+
+
 class DeviceAttributes(StrEnum):
     """Midea B8 device attributes."""
 
@@ -112,7 +116,7 @@ class MideaB8Device(MideaDevice):
         # lowercase name for IntEnums, pass through everything else unchanged
         return self.update_attributes_from_message(
             message,
-            default_transform=lambda v: v.name.lower() if isinstance(v, IntEnum) else v,
+            default_transform=_translate_int_enum,
         )
 
     def _gen_set_msg_default_values(self) -> MessageSet:

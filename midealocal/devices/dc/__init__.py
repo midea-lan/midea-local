@@ -5,7 +5,12 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import (
+    MideaDevice,
+    MideaDeviceInitKwargs,
+    dict_translator,
+    list_translator,
+)
 from midealocal.exceptions import ValueWrongType
 
 from .message import MessageDCResponse, MessagePower, MessageQuery, MessageStart
@@ -153,11 +158,9 @@ class MideaDCDevice(MideaDevice):
             message,
             {
                 # 0 means no progress bit is set; prevent value out of index range
-                DeviceAttributes.progress: lambda v: (
-                    progress[v] if 0 < v < len(progress) else None
-                ),
-                DeviceAttributes.status: lambda v: MideaDCDevice._status.get(v, v),
-                DeviceAttributes.program: lambda v: MideaDCDevice._program.get(v, v),
+                DeviceAttributes.progress: list_translator(progress, min_index=1),
+                DeviceAttributes.status: dict_translator(MideaDCDevice._status),
+                DeviceAttributes.program: dict_translator(MideaDCDevice._program),
             },
         )
 
