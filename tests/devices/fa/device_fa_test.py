@@ -167,6 +167,22 @@ class TestMideaFADevice:
         assert self.device.attributes[DeviceAttributes.display_on_off] is False
         assert DeviceAttributes.mode.value not in new_status
 
+    def test_power_off_without_fan_speed_field_reports_reset(self) -> None:
+        """A power-off message lacking its own fan_speed field still reports it."""
+        self.device._attributes[DeviceAttributes.power] = True
+        self.device._attributes[DeviceAttributes.fan_speed] = 3
+
+        class _FakePowerOnlyMessage:
+            power = False
+
+        with patch(
+            "midealocal.devices.fa.MessageFAResponse",
+            return_value=_FakePowerOnlyMessage(),
+        ):
+            new_status = self.device.process_message(b"")
+        assert self.device.attributes[DeviceAttributes.fan_speed] == 0
+        assert new_status[DeviceAttributes.fan_speed.value] == 0
+
     def test_unexpected_response(self) -> None:
         """Test notify2 response is not parsed."""
         body = bytearray(10)

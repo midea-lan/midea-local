@@ -140,17 +140,21 @@ class MideaFADevice(MideaDevice):
         message = MessageFAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
 
+        forced_fan_speed_reset = False
+
         def _translate_power(value: bool) -> bool:
             # Powering off forces fan_speed to 0, even when this particular
             # message doesn't carry a fan_speed field of its own.
+            nonlocal forced_fan_speed_reset
             if not value:
                 self._attributes[DeviceAttributes.fan_speed] = 0
+                forced_fan_speed_reset = True
             return value
 
         def _translate_fan_speed(value: int) -> int:
             return 0 if not self._attributes[DeviceAttributes.power] else value
 
-        return self.update_attributes_from_message(
+        new_status = self.update_attributes_from_message(
             message,
             {
                 DeviceAttributes.oscillation_angle: list_translator(
@@ -167,6 +171,9 @@ class MideaFADevice(MideaDevice):
                 DeviceAttributes.fan_speed: _translate_fan_speed,
             },
         )
+        if forced_fan_speed_reset:
+            new_status[DeviceAttributes.fan_speed.value] = 0
+        return new_status
 
     def _set_oscillation_mode(self, message: MessageSet, value: str) -> None:
         if value == "Off" or not value:
