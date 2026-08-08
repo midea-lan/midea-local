@@ -51,16 +51,24 @@ repos:
       - id: mypy
         additional_dependencies:
           - types-aiofiles
-          - types-deprecated
           - pycryptodome
           - platformdirs
-  - repo: local
+  - repo: https://github.com/PyCQA/pylint
+    rev: v3.3.4
     hooks:
       - id: pylint
         name: pylint
-        entry: .venv/bin/pylint
-        language: system
         types: [python]
+        additional_dependencies:
+          - aiofiles
+          - pycryptodome
+          - platformdirs
+          - typing_extensions
+          - aiohttp
+          - colorlog
+          - defusedxml
+          - ifaddr
+          - setuptools
         args: [
             "-rn", # Only display messages
             "-sn", # Don't display the score
