@@ -1,6 +1,8 @@
 """Midea Local device test."""
 
-from typing import ClassVar
+from collections.abc import Callable
+from types import SimpleNamespace
+from typing import Any, ClassVar
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -11,6 +13,7 @@ from midealocal.device import (
     MESSAGE_TYPE_INDEX,
     QUERY_TIMEOUT,
     RESPONSE_TIMEOUT,
+    SKIP_ATTRIBUTE,
     AuthException,
     MessageResult,
     MideaDevice,
@@ -24,6 +27,10 @@ class _DictDevice(MideaDevice):
     """MideaDevice subclass exposing a class-level dict for lookup tests."""
 
     modes: ClassVar[dict[int, str]] = {1: "auto", 2: "cool"}
+
+
+def _skip_attribute_translator(_: int) -> Any:  # noqa: ANN401
+    return SKIP_ATTRIBUTE
 
 
 def test_get_dict_key_by_value() -> None:
@@ -151,6 +158,83 @@ class TestMideaDevice:
         """Test attributes property stringifies keys from the internal dict."""
         self.device._attributes[DeviceType.AC] = True
         assert self.device.attributes == {str(DeviceType.AC): True}
+
+    @pytest.mark.parametrize(
+        (
+            "initial_value",
+            "message_kwargs",
+            "translators",
+            "default_transform",
+            "expected_status",
+            "expected_attribute",
+        ),
+        [
+            pytest.param(
+                None,
+                {"mode": 2},
+                {"mode": lambda v: f"translator-{v}"},
+                lambda v: f"default-{v}",
+                {"mode": "translator-2"},
+                "translator-2",
+                id="translator_wins_over_default_transform",
+            ),
+            pytest.param(
+                None,
+                {"mode": 2},
+                None,
+                lambda v: f"default-{v}",
+                {"mode": "default-2"},
+                "default-2",
+                id="default_transform_used_when_no_translator",
+            ),
+            pytest.param(
+                "previous",
+                {},
+                None,
+                None,
+                {},
+                "previous",
+                id="missing_field_is_ignored",
+            ),
+            pytest.param(
+                None,
+                {"mode": 2},
+                None,
+                None,
+                {"mode": 2},
+                2,
+                id="status_and_attributes_stay_synchronized",
+            ),
+            pytest.param(
+                "previous",
+                {"mode": 2},
+                {"mode": _skip_attribute_translator},
+                None,
+                {},
+                "previous",
+                id="skip_attribute_preserves_stored_value",
+            ),
+        ],
+    )
+    def test_update_attributes_from_message(
+        self,
+        initial_value: Any,  # noqa: ANN401
+        message_kwargs: dict[str, Any],
+        translators: dict[str, Callable[[Any], Any]] | None,
+        default_transform: Callable[[Any], Any] | None,
+        expected_status: dict[str, Any],
+        expected_attribute: Any,  # noqa: ANN401
+    ) -> None:
+        """Test translator precedence, defaults, missing fields, and SKIP_ATTRIBUTE."""
+        self.device._attributes = {"mode": initial_value}
+        message = SimpleNamespace(**message_kwargs)
+        new_status = self.device.update_attributes_from_message(
+            message,
+            translators=translators,
+            default_transform=default_transform,
+        )
+        assert new_status == expected_status
+        assert self.device._attributes["mode"] == expected_attribute
 
     def test_celsius_to_fahrenheit(self) -> None:
         """Test celsius_to_fahrenheit conversion and pass-through branches."""
