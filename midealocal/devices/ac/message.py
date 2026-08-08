@@ -44,7 +44,6 @@ INDIRECT_WIND_VALUE = 0x02
 MAX_MSG_SERIAL_NUM = 254
 OUT_SILENT_VALUE = 0x03
 POWER_SAVING_VALUE = 0x08
-SELF_CLEAN_ACTIVE_STATUS_BYTE = 12
 SCREEN_DISPLAY_BYTE_CHECK = 0x07
 SUB_PROTOCOL_BODY_TEMP_CHECK = 0x80
 TEMP_DECIMAL_MIN_BODY_LENGTH = 20
@@ -149,7 +148,9 @@ class NewProtocolTags(IntEnum):
     fresh_air_2 = 0x004B  # queryType == "fresh_air"
     prevent_super_cool = 0x0049
     auto_prevent_straight_wind = 0x0226
-    self_clean = 0x0039  # self_clean query can't return response
+    # Live self-clean status. Reported in B0 (set echo) and B1 (query) bodies.
+    # The same tag in a B5 capability body only advertises support, not state.
+    self_clean = 0x0039
     wind_straight = 0x0032
     wind_avoid = 0x0033
     intelligent_wind = 0x0034
@@ -211,7 +212,6 @@ class NewProtocolTags(IntEnum):
     rate_select = 0x0048
     # AC outdoor silent mode (PortaSplit)
     out_silent = 0x00CD
-    b5_self_clean_active = 0x00E2
 
 
 class MessageACBase(MessageRequest):
@@ -448,6 +448,21 @@ class MessageToggleDisplay(MessageACBase):
 class MessageNewProtocolQuery(MessageACBase):
     """AC message new protocol query."""
 
+    _query_params: tuple[int, ...] = (
+        NewProtocolTags.indirect_wind,
+        NewProtocolTags.breezeless,
+        NewProtocolTags.indoor_humidity,
+        NewProtocolTags.screen_display,
+        NewProtocolTags.fresh_air_1,
+        NewProtocolTags.fresh_air_2,
+        NewProtocolTags.wind_lr_angle,
+        NewProtocolTags.wind_ud_angle,
+        NewProtocolTags.rate_select,
+        NewProtocolTags.out_silent,
+        NewProtocolTags.buzzer_all,
+        NewProtocolQuery.error_code_query,
+    )
+
     def __init__(self, protocol_version: int) -> None:
         """Initialize AC message new protocol query."""
         super().__init__(
@@ -458,26 +473,21 @@ class MessageNewProtocolQuery(MessageACBase):
 
     @property
     def _body(self) -> bytearray:
-        query_params = [
-            NewProtocolTags.indirect_wind,
-            NewProtocolTags.breezeless,
-            NewProtocolTags.indoor_humidity,
-            NewProtocolTags.screen_display,
-            NewProtocolTags.fresh_air_1,
-            NewProtocolTags.fresh_air_2,
-            NewProtocolTags.wind_lr_angle,
-            NewProtocolTags.wind_ud_angle,
-            NewProtocolTags.rate_select,
-            NewProtocolTags.out_silent,
-            NewProtocolTags.buzzer_all,
-            NewProtocolQuery.error_code_query,
-            NewProtocolTags.b5_self_clean_active,
-        ]
-
-        _body = bytearray([len(query_params)])
-        for param in query_params:
+        _body = bytearray([len(self._query_params)])
+        for param in self._query_params:
             _body.extend([param & 0xFF, param >> 8])
         return _body
+
+
+class MessageNewProtocolSelfCleanQuery(MessageNewProtocolQuery):
+    """AC message new protocol self-clean query.
+
+    A device answers with an empty parameter list when a query carries a tag it
+    does not support, which suppresses every other tag in the same request. The
+    self-clean state is therefore asked for as an independent status group.
+    """
+
+    _query_params = (NewProtocolTags.self_clean,)
 
 
 class MessageSubProtocol(MessageACBase):
@@ -1088,12 +1098,10 @@ class XBXMessageBody(NewProtocolMessageBody):
             self.sound = params[NewProtocolTags.buzzer_all][0] > 0
         if NewProtocolQuery.error_code_query in params:
             self.error_code = params[NewProtocolQuery.error_code_query][0]
-        if NewProtocolTags.b5_self_clean_active in params:
-            data = params[NewProtocolTags.b5_self_clean_active]
-            self.self_clean_active: bool = (
-                len(data) > SELF_CLEAN_ACTIVE_STATUS_BYTE
-                and data[SELF_CLEAN_ACTIVE_STATUS_BYTE] != 0
-            )
+        if NewProtocolTags.self_clean in params and bt != ListTypes.B5:
+            # A B5 body carries this tag as a capability flag (always 1 when the
+            # model supports self-clean), so only B0/B1 bodies report live state.
+            self.self_clean_active: bool = params[NewProtocolTags.self_clean][0] > 0
         if (
             subtype8_temperature
             and SUBTYPE8_TEMPERATURE_TAG in params
