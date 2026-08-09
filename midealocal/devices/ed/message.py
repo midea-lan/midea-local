@@ -756,11 +756,13 @@ class MessageEDResponse(MessageResponse):
             if self._body_type in [ListTypes.X00, ListTypes.FF]:
                 self.set_body(EDMessageBodyFF(super().body))
             elif self._body_type == ListTypes.X15 and subtype == TEA_BAR_SUBTYPE:
-                # Subtype 395 acknowledges a new-set command with the same status
-                # payload as body 06, but omits the leading 0x06 body type byte.
+                # Subtype 395 can return either a full body-06 style status
+                # acknowledgement or a short X15 acknowledgement. Only convert
+                # the full status form because EDMessageBody06 reads body[52].
                 status_body = bytearray(super().body)
-                status_body[0] = ListTypes.X06
-                self.set_body(EDMessageBody06(status_body, subtype))
+                if len(status_body) > TEA_BAR_ERROR_OFFSET:
+                    status_body[0] = ListTypes.X06
+                    self.set_body(EDMessageBody06(status_body, subtype))
             elif self.body_type == ListTypes.X01:
                 self.set_body(EDMessageBody01(super().body))
             elif self.body_type in [ListTypes.X03, ListTypes.X04]:
