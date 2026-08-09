@@ -1088,6 +1088,11 @@ class MideaAirCloud(MideaCloud):
         return str(fnm) if fnm else None
 
 
+_IOLIFE_APP_VERSION = "3.4.0"
+# All Toshiba IoLife devices carry manufacturer code 0x0008.
+_IOLIFE_MANUFACTURER_CODE = "0008"
+
+
 class ToshibaIOLife(MideaAirCloud):
     """Toshiba IOLife cloud."""
 
@@ -1124,30 +1129,31 @@ class ToshibaIOLife(MideaAirCloud):
     async def list_appliances(
         self,
         home_id: str | None = None,  # noqa: ARG002
-    ) -> dict[int, dict[str, Any]] | None:
+    ) -> dict[int, dict[str, Any]]:
         """Get Toshiba IOLife devices."""
         data = self._make_general_data()
-        data["appVersion"] = "3.4.0"
+        data["appVersion"] = _IOLIFE_APP_VERSION
         # home/page/list/info returns result as a bare list, not {list: [...]}
         page_list: Any = await self._api_request(
             endpoint="/v1/appliance/user/home/page/list/info",
             data=data,
         )
         if not isinstance(page_list, list):
-            return None
+            return {}
 
         appliances: dict[int, dict[str, Any]] = {}
         for appliance in page_list:
             if not isinstance(appliance, Mapping):
                 continue
             # Skip virtual/batch devices
-            if appliance.get("type") == "0x_BATCH_AC":
+            if (
+                appliance.get("type") == "0x_BATCH_AC"
+                or appliance.get("id") == "virtual_ag_0xAC"
+            ):
                 continue
-            if appliance.get("id") == "virtual_ag_0xAC":
-                continue
+            model_number = int(appliance.get("modelNumber", 0))
             try:
                 device_id = int(appliance["id"])
-                model_number = int(appliance.get("modelNumber", 0))
                 device_type = int(appliance["type"], 16)
             except (ValueError, KeyError, TypeError):
                 _LOGGER.debug("Skipping malformed appliance entry: %s", appliance)
@@ -1159,13 +1165,12 @@ class ToshibaIOLife(MideaAirCloud):
                 "sn": sn,
                 "sn8": sn[9:17] if len(sn) > SN8_MIN_SERIAL_LENGTH else "",
                 "model_number": model_number,
-                # All Toshiba IoLife devices carry manufacturer code 0x0008.
-                "manufacturer_code": "0008",
+                "manufacturer_code": _IOLIFE_MANUFACTURER_CODE,
                 "model": sn[9:17] if len(sn) > SN8_MIN_SERIAL_LENGTH else "",
                 "online": appliance.get("onlineStatus") == "1",
             }
 
-        return appliances if appliances else None
+        return appliances
 
 
 def get_midea_cloud(
