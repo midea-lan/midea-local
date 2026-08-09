@@ -68,7 +68,7 @@ XC1_GROUP_ONE_MIN_LENGTH = 15
 XC1_GROUP_TWO_MIN_LENGTH = 9
 XC1_GROUP_SEVEN_MIN_LENGTH = 12
 # Refrigerant circuit temperatures are reported as half degrees with an offset:
-# T1/T2 (indoor coil / evaporator) use 30, T3/T4 (condenser / outdoor) use 50.
+# T1/T2 (indoor ambient / indoor coil) use 30, T3/T4 (outdoor coil / ambient) use 50.
 XC1_TEMP_INDOOR_OFFSET = 30
 XC1_TEMP_OUTDOOR_OFFSET = 50
 XC1_TEMP_DIVISOR = 2
@@ -1392,15 +1392,15 @@ class XC1MessageBody(MessageBody):
         self.target_compressor_frequency = body[5]
         self.compressor_current = body[7]
         self.compressor_voltage = body[8]
-        # T1: indoor coil, T2: evaporator outlet
-        self.indoor_coil_temperature = (
+        # T1: indoor return air, T2: indoor coil
+        self.indoor_ambient_temperature = (
             body[10] - XC1_TEMP_INDOOR_OFFSET
         ) / XC1_TEMP_DIVISOR
-        self.evaporator_temperature = (
+        self.indoor_coil_temperature = (
             body[11] - XC1_TEMP_INDOOR_OFFSET
         ) / XC1_TEMP_DIVISOR
-        # T3: condenser, T4: outdoor ambient
-        self.condenser_temperature = (
+        # T3: outdoor coil, T4: outdoor ambient
+        self.outdoor_coil_temperature = (
             body[12] - XC1_TEMP_OUTDOOR_OFFSET
         ) / XC1_TEMP_DIVISOR
         self.outdoor_ambient_temperature = (

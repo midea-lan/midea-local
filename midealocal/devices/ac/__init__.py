@@ -113,9 +113,9 @@ class DeviceAttributes(StrEnum):
     target_compressor_frequency = "target_compressor_frequency"
     compressor_current = "compressor_current"
     compressor_voltage = "compressor_voltage"
-    indoor_coil_temperature = "indoor_coil_temperature"  # T1
-    evaporator_temperature = "evaporator_temperature"  # T2
-    condenser_temperature = "condenser_temperature"  # T3
+    indoor_ambient_temperature = "indoor_ambient_temperature"  # T1
+    indoor_coil_temperature = "indoor_coil_temperature"  # T2
+    outdoor_coil_temperature = "outdoor_coil_temperature"  # T3
     outdoor_ambient_temperature = "outdoor_ambient_temperature"  # T4
     discharge_pipe_temperature = "discharge_pipe_temperature"  # TP
     # group 2: indoor fan and condensate pump
@@ -291,9 +291,9 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.target_compressor_frequency: None,
                 DeviceAttributes.compressor_current: None,
                 DeviceAttributes.compressor_voltage: None,
+                DeviceAttributes.indoor_ambient_temperature: None,
                 DeviceAttributes.indoor_coil_temperature: None,
-                DeviceAttributes.evaporator_temperature: None,
-                DeviceAttributes.condenser_temperature: None,
+                DeviceAttributes.outdoor_coil_temperature: None,
                 DeviceAttributes.outdoor_ambient_temperature: None,
                 DeviceAttributes.discharge_pipe_temperature: None,
                 DeviceAttributes.indoor_fan_speed: None,
@@ -784,9 +784,9 @@ class MideaACDevice(MideaDevice):
             DeviceAttributes.target_compressor_frequency,
             DeviceAttributes.compressor_current,
             DeviceAttributes.compressor_voltage,
+            DeviceAttributes.indoor_ambient_temperature,
             DeviceAttributes.indoor_coil_temperature,
-            DeviceAttributes.evaporator_temperature,
-            DeviceAttributes.condenser_temperature,
+            DeviceAttributes.outdoor_coil_temperature,
             DeviceAttributes.outdoor_ambient_temperature,
             DeviceAttributes.discharge_pipe_temperature,
             DeviceAttributes.indoor_fan_speed,

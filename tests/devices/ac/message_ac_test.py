@@ -1319,12 +1319,12 @@ class TestMessageACResponse:
         assert response.compressor_current == 1
         assert hasattr(response, "compressor_voltage")
         assert response.compressor_voltage == 232
+        assert hasattr(response, "indoor_ambient_temperature")
+        assert response.indoor_ambient_temperature == 20.5
         assert hasattr(response, "indoor_coil_temperature")
-        assert response.indoor_coil_temperature == 20.5
-        assert hasattr(response, "evaporator_temperature")
-        assert response.evaporator_temperature == 4.0
-        assert hasattr(response, "condenser_temperature")
-        assert response.condenser_temperature == 26.0
+        assert response.indoor_coil_temperature == 4.0
+        assert hasattr(response, "outdoor_coil_temperature")
+        assert response.outdoor_coil_temperature == 26.0
         assert hasattr(response, "outdoor_ambient_temperature")
         assert response.outdoor_ambient_temperature == 19.0
         assert hasattr(response, "discharge_pipe_temperature")
