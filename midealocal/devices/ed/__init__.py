@@ -31,6 +31,7 @@ TEA_BAR_MAX_TARGET_TEMPERATURE = 100
 TEA_BAR_DEFAULT_TARGET_TEMPERATURE = 100
 TEA_BAR_MIN_KEEP_WARM_HOURS = 1.0
 TEA_BAR_MAX_KEEP_WARM_HOURS = 12.0
+TEA_BAR_DEFAULT_KEEP_WARM_HOURS = 12.0
 TEA_BAR_MODEL = "63000622"
 
 
@@ -323,8 +324,16 @@ class MideaEDDevice(MideaDevice):
                 if attr == DeviceAttributes.keep_warm_time
                 else self._attributes.get(DeviceAttributes.keep_warm_time)
             )
+            # A zero addition means "use the appliance default" for model
+            # 63000622. The appliance has no user-adjustable keep-warm duration
+            # and defaults to 12 hours, so normal keep-warm toggles must not
+            # invent or require a duration. Keep explicit non-default values
+            # only for low-level backward compatibility.
             raw_keep_warm_time = 0
-            if isinstance(keep_warm_time, int | float):
+            if (
+                isinstance(keep_warm_time, int | float)
+                and float(keep_warm_time) != TEA_BAR_DEFAULT_KEEP_WARM_HOURS
+            ):
                 if not (
                     TEA_BAR_MIN_KEEP_WARM_HOURS
                     <= keep_warm_time
