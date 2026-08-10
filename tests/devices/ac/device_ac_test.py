@@ -874,7 +874,7 @@ class TestMideaACDevice:
             assert self.device._pending_self_clean is None
 
     def test_self_clean_accepts_status_at_refresh_interval_boundary(self) -> None:
-        """Test stale-status guard expires exactly at the configured refresh interval."""
+        """Test stale-status guard expires exactly at the refresh interval."""
         with patch("midealocal.devices.ac.MessageACResponse") as mock_message_response:
             mock_message = mock_message_response.return_value
             mock_message.used_subprotocol = False
