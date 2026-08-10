@@ -512,7 +512,7 @@ class MideaACDevice(MideaDevice):
             if self._pending_self_clean is not None:
                 expected, set_at = self._pending_self_clean
                 elapsed = time.monotonic() - set_at
-                if active == expected or elapsed > self._self_clean_pending_timeout:
+                if active == expected or elapsed >= self._self_clean_pending_timeout:
                     self._pending_self_clean = None
                 else:
                     _LOGGER.debug(

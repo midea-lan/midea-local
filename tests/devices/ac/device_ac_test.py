@@ -873,6 +873,35 @@ class TestMideaACDevice:
             assert self.device.attributes[DeviceAttributes.self_clean] is False
             assert self.device._pending_self_clean is None
 
+    def test_self_clean_accepts_status_at_refresh_interval_boundary(self) -> None:
+        """Test stale-status guard expires exactly at the configured refresh interval."""
+        with patch("midealocal.devices.ac.MessageACResponse") as mock_message_response:
+            mock_message = mock_message_response.return_value
+            mock_message.used_subprotocol = False
+            mock_message.power = False
+            mock_message.fresh_air_power = False
+            mock_message.fresh_air_fan_speed = 0
+            mock_message.fresh_air_1 = None
+            mock_message.fresh_air_2 = None
+            mock_message.swing_vertical = False
+            mock_message.indoor_temperature = None
+            mock_message.outdoor_temperature = None
+            mock_message.indoor_humidity = None
+            mock_message.total_energy_consumption = None
+            mock_message.current_energy_consumption = None
+            mock_message.realtime_power = None
+            del mock_message.self_clean
+
+            self.device.set_refresh_interval(5)
+            self.device._pending_self_clean = (True, 100.0)
+            mock_message.self_clean_active = False
+            with patch("midealocal.devices.ac.time.monotonic", return_value=105.0):
+                result = self.device.process_message(b"")
+
+            assert result[DeviceAttributes.self_clean.value] is False
+            assert self.device.attributes[DeviceAttributes.self_clean] is False
+            assert self.device._pending_self_clean is None
+
     def test_set_self_clean_updates_status_after_send(self) -> None:
         """Test self-clean command publishes its requested state after sending."""
         updates: list[dict[str, bool]] = []
