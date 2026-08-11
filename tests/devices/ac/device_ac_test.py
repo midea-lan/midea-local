@@ -23,6 +23,7 @@ from midealocal.devices.ac.message import (
     MessageSubProtocolQuery10,
     MessageSubProtocolQuery11,
     MessageSubProtocolQuery30,
+    MessageToggleDisplay,
     PowerFormats,
 )
 from midealocal.message import ListTypes, MessageBase
@@ -207,6 +208,37 @@ class TestMideaACDevice:
             self.device.set_attribute(DeviceAttributes.fresh_air_mode.value, "off")
             message = mock_build_send.call_args[0][0]
             assert message.fresh_air_1 == [False, 0]
+
+    def test_set_screen_display_is_idempotent(self) -> None:
+        """screen_display toggles only when the requested state differs.
+
+        The firmware exposes a toggle-only command, so setting the switch to
+        its current state must send nothing; only a differing request emits a
+        single MessageToggleDisplay.
+        https://github.com/wuwentao/midea_ac_lan/issues/623
+        """
+        with patch.object(self.device, "build_send") as mock_build_send:
+            # Currently off: turning off again is a no-op.
+            self.device._attributes[DeviceAttributes.screen_display] = False
+            self.device.set_attribute(DeviceAttributes.screen_display.value, False)
+            mock_build_send.assert_not_called()
+
+            # Currently off: turning on sends one toggle.
+            self.device.set_attribute(DeviceAttributes.screen_display.value, True)
+            mock_build_send.assert_called_once()
+            assert isinstance(mock_build_send.call_args[0][0], MessageToggleDisplay)
+
+            mock_build_send.reset_mock()
+
+            # Currently on: turning on again is a no-op.
+            self.device._attributes[DeviceAttributes.screen_display] = True
+            self.device.set_attribute(DeviceAttributes.screen_display.value, True)
+            mock_build_send.assert_not_called()
+
+            # Currently on: turning off sends one toggle.
+            self.device.set_attribute(DeviceAttributes.screen_display.value, False)
+            mock_build_send.assert_called_once()
+            assert isinstance(mock_build_send.call_args[0][0], MessageToggleDisplay)
 
     def test_set_attribute_eco_mode_resets_exclusive_modes(self) -> None:
         """Test eco mode set resets comfort and frost protect on general set."""
@@ -641,7 +673,7 @@ class TestMideaACDevice:
         """After 0x7e temperatures are seen, stale C0 temperatures are ignored."""
         new_protocol_msg = SimpleNamespace(
             body_type=ListTypes.B5,
-            has_subtype8_temperature=True,
+            has_new_protocol_temperature=True,
             power=True,
             target_temperature=27.0,
             indoor_temperature=28.8,

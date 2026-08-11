@@ -407,7 +407,7 @@ class MideaACDevice(MideaDevice):
         has_fresh_air = False
         body_type = getattr(message, "body_type", None)
 
-        if getattr(message, "has_subtype8_temperature", False):
+        if getattr(message, "has_new_protocol_temperature", False):
             self._prefer_new_protocol_temperature = True
 
         is_stale_c0_temperature = (
@@ -598,7 +598,7 @@ class MideaACDevice(MideaDevice):
     def make_newprotocol_message_set(
         self,
         attr: str,
-        value: bool | int | str,
+        value: bool | float | str,
     ) -> MessageNewProtocolSet:
         """Midea AC device make newprotocol message set."""
         message = MessageNewProtocolSet(self._message_protocol_version)
@@ -694,7 +694,7 @@ class MideaACDevice(MideaDevice):
     def make_subprotocol_fresh_air_set(
         self,
         attr: str,
-        value: bool | int | str,
+        value: bool | float | str,
     ) -> MessageSubProtocolFreshAirSet:
         """Build a BB fresh-air intake or exhaust single-control command."""
         exhaust = attr in {
@@ -761,7 +761,7 @@ class MideaACDevice(MideaDevice):
             message = self.make_message_set()
         return message
 
-    def set_attribute(self, attr: str, value: bool | int | str) -> None:
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea AC device set attribute."""
         # if nat a sensor
         message: (
@@ -798,8 +798,17 @@ class MideaACDevice(MideaDevice):
                 self._attributes[DeviceAttributes.prompt_tone] = value
                 self.update_all({DeviceAttributes.prompt_tone.value: value})
             elif attr == DeviceAttributes.screen_display:
-                message = MessageToggleDisplay(self._message_protocol_version)
-                message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
+                # The AC firmware only exposes a toggle command for the
+                # display, so make the switch idempotent: toggle only when the
+                # requested state differs from the last reported state.
+                # Otherwise repeated turn_on/turn_off service calls alternate
+                # the physical display instead of setting an absolute state.
+                # https://github.com/wuwentao/midea_ac_lan/issues/623
+                if bool(value) != bool(
+                    self._attributes[DeviceAttributes.screen_display],
+                ):
+                    message = MessageToggleDisplay(self._message_protocol_version)
+                    message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
             elif self._model_capabilities.has_bb_fresh_air and attr in {
                 DeviceAttributes.fresh_air_power,
                 DeviceAttributes.fresh_air_fan_speed,
