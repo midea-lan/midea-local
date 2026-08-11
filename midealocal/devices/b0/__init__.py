@@ -39,7 +39,7 @@ class MideaB0Device(MideaDevice):
     _status: ClassVar[dict[int, str]] = {
         0x01: "Cancel",
         0x02: "Working",
-        0x03: "Pause",
+        0x03: "Working",
         0x04: "Finished",
         0x06: "Order",
         0x07: "Save Power",

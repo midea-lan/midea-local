@@ -189,6 +189,31 @@ class TestMideaB0Device:
         assert device.attributes[DeviceAttributes.tank_ejected] is False
         assert device.attributes[DeviceAttributes.water_shortage] is False
 
+    def test_process_message_01_status_working_real_device_sample(self) -> None:
+        """Test status code 0x03 decodes to "Working" on a subtype zero device.
+
+        Captured via debug logs from a real subtype-zero microwave (model
+        70000209) answering an X01/notify1 response mid-heat. Confirms raw
+        status byte 3 - observed continuously across four separate hardware
+        test runs (short heat, defrost, a 100-second uninterrupted full-power
+        run, and a pause/resume/door test) whenever the device was actively
+        cooking, and never on the physical "Pause" button, which instead
+        reports status 2 ("Idle") - decodes to "Working", matching both
+        ``_status31`` (subtype 2 of the same device) and the B1 device's
+        ``_status`` map.
+        """
+        device = _build_device(0)
+        header = bytearray.fromhex("aa46b000000000000004")
+        body = bytearray.fromhex(
+            "0100000000110001010001000affffffffffff000000000100ffffffffffff"
+            "030004000000000000000000000002dc01000100000000000080000021",
+        )
+        new_status = device.process_message(bytes(header + body))
+        assert device.attributes[DeviceAttributes.door] is False
+        assert device.attributes[DeviceAttributes.status] == "Working"
+        assert device.attributes[DeviceAttributes.time_remaining] == 60
+        assert new_status[DeviceAttributes.status.value] == "Working"
+
     def test_process_message_default_body_subtype_zero(self) -> None:
         """Test process message with the default body on subtype zero."""
         device = _build_device(0)
