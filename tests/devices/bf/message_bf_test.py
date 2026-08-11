@@ -61,11 +61,7 @@ class TestWorkModeHelpers:
 
     def test_work_mode_roundtrip(self) -> None:
         """Test roundtrip: name -> bytes -> name."""
-        for name in {
-            "microwave": (0x01, 0x00),
-            "eco": (0xA2, 0x00),
-            "scale_clean": (0x79, 0x00),
-        }:
+        for name in ("microwave", "eco", "scale_clean"):
             result = work_mode_to_name(*work_mode_to_bytes(name))
             assert result == name
 
@@ -326,20 +322,16 @@ class TestMessageSet:
         body = msg.body
         assert body[0] == ListTypes.X03
 
-    def test_set_control_no_params_does_not_crash(self) -> None:
-        """SetControl with no params set must not raise IndexError.
+    def test_set_no_control_fields_raises_value_error(self) -> None:
+        """MessageSet with no serializable control fields raises ValueError.
 
-        Regression: body[2]=param_sum was out of range when body stayed at
-        length 2 (no params appended). paramSum lives at body[1].
+        turntable is a work-mode-only field; without work_mode it cannot be
+        serialized into any control body, so accessing body raises ValueError.
         """
         msg = MessageSet(protocol_version=ProtocolVersion.V1)
-        # Force routing into _build_set_control without setting any *_set field.
         msg.turntable = False
-        body = msg.body
-        assert body[0] == ListTypes.X03
-        # body[1]=0x01 header, body[2]=paramSum=0
-        assert body[1] == 0x01
-        assert body[2] == 0x00
+        with pytest.raises(ValueError, match="no control fields"):
+            _ = msg.body
 
     def test_set_control_param_sum_at_index_one(self) -> None:
         """ParamSum must be at body[1] (content), not overwrite first param id."""
@@ -542,6 +534,13 @@ class TestMessageBFBody:
         body[1] = 0x03
         msg = MessageBFBody(body=body)
         assert msg.execute == "param_range_error"
+
+    def test_execute_unknown_value(self) -> None:
+        """Test execute status with unknown value returns 'unknown'."""
+        body = self._make_body()
+        body[1] = 0xFF  # not in known execute status mapping
+        msg = MessageBFBody(body=body)
+        assert msg.execute == "unknown"
 
     def test_cloudmenuid(self) -> None:
         """Test cloudmenuid parsing."""
@@ -813,7 +812,7 @@ class TestMessageBFBody:
         body[31] = 0x00  # not in WorkStatus enum
         msg = MessageBFBody(body=body)
         assert msg.status == "unknown"
-        assert msg.power is True  # not save_power -> True
+        assert msg.power is False  # unknown status cannot be trusted as on
 
     def test_status_all_valid_values(self) -> None:
         """Test all valid WorkStatus values parse correctly."""
@@ -825,6 +824,8 @@ class TestMessageBFBody:
             "order": 0x05,
             "pause": 0x06,
             "pause_c": 0x07,
+            "self_inspection": 0x0A,
+            "wait_to_start": 0x10,
         }.items():
             body = self._make_body()
             body[31] = value
@@ -935,7 +936,7 @@ class TestMessageBFBody:
     def test_byte33_all_flags(self) -> None:
         """Test all flags in byte 33."""
         body = self._make_body()
-        body[33] = 0x7F  # all bits except probe_mode
+        body[33] = 0x7F  # bits 0-6 set
         msg = MessageBFBody(body=body)
         assert msg.flip_side is True
         assert msg.reaction is True
@@ -948,7 +949,7 @@ class TestMessageBFBody:
     def test_byte34_ramadan(self) -> None:
         """Test ramadan flag from byte 34."""
         body = self._make_body()
-        body[34] = 0x20  # hot_wind bit used for ramadan
+        body[34] = 0x20  # BIT_RAMADAN
         msg = MessageBFBody(body=body)
         assert msg.ramadan is True
 
@@ -1057,24 +1058,10 @@ class TestMessageBFResponse:
 
     def test_total_state_response(self) -> None:
         """Test parsing of a totalState (body_type 0x01) response."""
-        header = bytearray(
-            [
-                0xAA,
-                0x00,
-                0xBF,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x01,
-                0x03,
-            ],
-        )
         body = bytearray(60)
         body[0] = 0x01  # body_type
         body[31] = WorkStatus.standby.value  # status=standby, power=True
-        message = MessageBFResponse(bytes(header + body))
+        message = MessageBFResponse(_build_message(MessageType.query, body))
         assert hasattr(message, "body_type")
         assert message.body_type == 0x01
         assert hasattr(message, "status")
@@ -1094,7 +1081,7 @@ class TestMessageBFResponse:
         body[56] = 0xC0  # clean_scale + ota
         body[58] = 0x03  # clean_sink_ponding + dissipate_heat
         message = MessageBFResponse(
-            bytes(_build_message(MessageType.query, body)),
+            _build_message(MessageType.query, body),
         )
         assert message.status == "work"  # type: ignore[attr-defined]
         assert message.power is True  # type: ignore[attr-defined]
@@ -1114,7 +1101,7 @@ class TestMessageBFResponse:
         body[0] = 0x01
         body[31] = WorkStatus.save_power.value
         message = MessageBFResponse(
-            bytes(_build_message(MessageType.set, body)),
+            _build_message(MessageType.set, body),
         )
         assert message.power is False  # type: ignore[attr-defined]
 
@@ -1124,7 +1111,7 @@ class TestMessageBFResponse:
         body[0] = 0x01
         body[31] = WorkStatus.standby.value
         message = MessageBFResponse(
-            bytes(_build_message(MessageType.notify1, body)),
+            _build_message(MessageType.notify1, body),
         )
         assert message.status == "standby"  # type: ignore[attr-defined]
 
@@ -1133,7 +1120,7 @@ class TestMessageBFResponse:
         body = bytearray(10)
         body[0] = 0x02  # not totalState
         message = MessageBFResponse(
-            bytes(_build_message(MessageType.query, body)),
+            _build_message(MessageType.query, body),
         )
         # Should not have BF-specific attributes
         assert not hasattr(message, "status")

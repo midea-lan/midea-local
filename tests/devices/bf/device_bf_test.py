@@ -245,16 +245,42 @@ class TestMideaBFDevice:
         assert self.device.attributes[DeviceAttributes.work_mode] is None
 
     def test_set_attribute_fire_power(self) -> None:
-        """Test set_attribute with fire_power."""
-        with pytest.raises(SocketException):
+        """Test set_attribute with fire_power requires work_mode context."""
+        # Without an active work_mode, fire_power cannot be serialized
+        with pytest.raises(ValueError, match="no control fields"):
             self.device.set_attribute(DeviceAttributes.fire_power, "fire_power_5")
         assert self.device.attributes[DeviceAttributes.fire_power] is None
 
-    def test_set_attribute_temperature(self) -> None:
-        """Test set_attribute with temperature."""
+    def test_set_attribute_fire_power_with_work_mode(self) -> None:
+        """Test set_attribute with fire_power when work_mode is active."""
+        # First set up work_mode via a processed message
+        body = bytearray(60)
+        body[0] = 0x01
+        body[31] = WorkStatus.work.value
+        body[7] = 0x01  # microwave high
+        body[8] = 0x00  # microwave low
+        self.device.process_message(_build_message(MessageType.query, body))
+        # Now fire_power should route via make_message_set with work_mode context
         with pytest.raises(SocketException):
+            self.device.set_attribute(DeviceAttributes.fire_power, "fire_power_5")
+
+    def test_set_attribute_temperature(self) -> None:
+        """Test set_attribute with temperature requires work_mode context."""
+        # Without an active work_mode, temperature cannot be serialized
+        with pytest.raises(ValueError, match="no control fields"):
             self.device.set_attribute(DeviceAttributes.temperature, 200)
         assert self.device.attributes[DeviceAttributes.temperature] is None
+
+    def test_set_attribute_temperature_with_work_mode(self) -> None:
+        """Test set_attribute with temperature when work_mode is active."""
+        body = bytearray(60)
+        body[0] = 0x01
+        body[31] = WorkStatus.work.value
+        body[7] = 0x01  # microwave high
+        body[8] = 0x00  # microwave low
+        self.device.process_message(_build_message(MessageType.query, body))
+        with pytest.raises(SocketException):
+            self.device.set_attribute(DeviceAttributes.temperature, 200)
 
     def test_set_attribute_status_with_string(self) -> None:
         """Test set_attribute with status (maps to work_status on message)."""
@@ -319,9 +345,9 @@ class TestMideaBFDevice:
         """Test process_message with non-totalState body_type."""
         body = bytearray(10)
         body[0] = 0x02  # not totalState (0x01)
-        self.device.process_message(
+        new_status = self.device.process_message(
             _build_message(MessageType.query, body),
         )
         # No BF-specific attributes should be parsed
-        # The dict may contain empty/default values from MessageBFResponse.set_attr()
-        # but status should not be set since MessageBFBody was not constructed
+        assert self.device.attributes[DeviceAttributes.status] is None
+        assert DeviceAttributes.status.value not in new_status
