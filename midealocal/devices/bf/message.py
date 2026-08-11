@@ -55,10 +55,11 @@ OFFSET_CBS_VERSION_PATCH = 49
 OFFSET_FLAGS_B56 = 56
 OFFSET_FLAGS_B58 = 58
 
-# Bit masks
+# Bit masks (response parsing)
 BIT_PROBE = 0x02
 BIT_TURNTABLE = 0x08
 BIT_HOT_WIND = 0x20
+BIT_RAMADAN = 0x20
 BIT_CHILD_LOCK = 0x01
 BIT_DOOR = 0x02
 BIT_TANK_EJECTED = 0x04
@@ -77,6 +78,24 @@ BIT_CLEAN_SCALE = 0x40
 BIT_OTA = 0x80
 BIT_CLEAN_SINK_PONDING = 0x01
 BIT_DISSIPATE_HEAT = 0x02
+
+# Bit masks (workModeControl set body, byte b5)
+BIT_SET_PRE_HEAT = 0x01
+BIT_SET_PROBE = 0x02
+BIT_SET_TURNTABLE = 0x08
+BIT_SET_HOT_WIND = 0x10
+
+# setControl parameter IDs
+PARAM_ID_STEAM = 0x00
+PARAM_ID_TIME = 0x01
+PARAM_ID_FIRE_POWER = 0x02
+PARAM_ID_TEMP = 0x03
+PARAM_ID_PROBE_TEMP = 0x04
+PARAM_ID_TEMP_ABOVE_UNDERSIDE = 0x05
+
+# setControl temp_above/underside sub-index
+SUBINDEX_ABOVE = 0x00
+SUBINDEX_UNDERSIDE = 0x01
 
 # Special byte values
 BYTE_FF = 0xFF
@@ -252,8 +271,8 @@ WORK_MODE_REVERSE: dict[tuple[int, int], str] = {v: k for k, v in WORK_MODE_MAP.
 def work_mode_to_bytes(mode: str | None) -> tuple[int, int]:
     """Convert work mode name to (high, low) bytes."""
     if mode is None:
-        return (0xFF, 0xFF)
-    return WORK_MODE_MAP.get(mode, (0xFF, 0xFF))
+        return (BYTE_FF, BYTE_FF)
+    return WORK_MODE_MAP.get(mode, (BYTE_FF, BYTE_FF))
 
 
 def work_mode_to_name(high: int, low: int) -> str:
@@ -302,7 +321,7 @@ class MessageQuery(MessageBFBase):
 class MessageSet(MessageBFBase):
     """BF message set."""
 
-    def __init__(self, protocol_version: int | ProtocolVersion) -> None:
+    def __init__(self, protocol_version: ProtocolVersion) -> None:
         """Initialize BF message set."""
         super().__init__(
             protocol_version=protocol_version,
@@ -348,20 +367,20 @@ class MessageSet(MessageBFBase):
     @staticmethod
     def _fire_power_value(name: str | None) -> int:
         if name is None:
-            return 0xFF
+            return BYTE_FF
         try:
             return FirePower[name].value
         except KeyError:
-            return 0xFF
+            return BYTE_FF
 
     @staticmethod
     def _work_status_value(status: str | None) -> int:
         if status is None:
-            return 0xFF
+            return BYTE_FF
         try:
             return WorkStatus[status].value
         except KeyError:
-            return 0xFF
+            return BYTE_FF
 
     @property
     def body(self) -> bytearray:
@@ -399,8 +418,22 @@ class MessageSet(MessageBFBase):
             self.body_type = ListTypes.X02  # notWorkModeControl
             return self._build_not_work_mode_control()
         # setControl: parameter adjustments during work
-        self.body_type = ListTypes.X03  # setControl
-        return self._build_set_control()
+        set_control_fields = [
+            self.steam_set,
+            self.hour_set,
+            self.minute_set,
+            self.second_set,
+            self.fire_power_set,
+            self.temp_set,
+            self.probe_temp_set,
+            self.temp_above_set,
+            self.temp_underside_set,
+        ]
+        if any(field is not None for field in set_control_fields):
+            self.body_type = ListTypes.X03  # setControl
+            return self._build_set_control()
+        msg = "MessageSet has no control fields set"
+        raise ValueError(msg)
 
     def _build_not_work_mode_control(self) -> bytearray:
         """Build notWorkModeControl body content (body_type=0x02 added by framework)."""
@@ -409,6 +442,8 @@ class MessageSet(MessageBFBase):
             BYTE_POWER_ON,
             BYTE_POWER_OFF,
         )
+        # work_status takes priority over power: when both are set, only work_status
+        # byte is written (Lua writes statusByte = workStatus or powerByte).
         status_byte = (
             self._work_status_value(self.work_status)
             if self.work_status is not None
@@ -430,9 +465,11 @@ class MessageSet(MessageBFBase):
             BYTE_DOOR_CLOSE,
         )
         screen_byte = (
-            self.screen_luminance if self.screen_luminance is not None else BYTE_FF
+            self.screen_luminance & BYTE_FF
+            if self.screen_luminance is not None
+            else BYTE_FF
         )
-        volume_byte = self.volume if self.volume is not None else BYTE_FF
+        volume_byte = self.volume & BYTE_FF if self.volume is not None else BYTE_FF
         hot_wind_byte = self._bool_to_byte(
             self.hot_wind,
             BYTE_HOT_WIND_ON,
@@ -481,19 +518,23 @@ class MessageSet(MessageBFBase):
         # b5 flags: bit0=pre_heat, bit1=probe, bit3=turntable, bit4=hot_wind
         b5 = 0
         if self.pre_heat is True:
-            b5 |= 0x01
+            b5 |= BIT_SET_PRE_HEAT
         if self.probe_temperature is not None:
-            b5 |= 0x02
+            b5 |= BIT_SET_PROBE
         if self.turntable is True:
-            b5 |= 0x08
+            b5 |= BIT_SET_TURNTABLE
         if self.hot_wind is True:
-            b5 |= 0x10
+            b5 |= BIT_SET_HOT_WIND
 
         mode_high, mode_low = work_mode_to_bytes(self.work_mode)
 
-        work_hour = self.work_hour if self.work_hour is not None else 0x00
-        work_minute = self.work_minute if self.work_minute is not None else 0x00
-        work_second = self.work_second if self.work_second is not None else 0x00
+        work_hour = self.work_hour & BYTE_FF if self.work_hour is not None else 0x00
+        work_minute = (
+            self.work_minute & BYTE_FF if self.work_minute is not None else 0x00
+        )
+        work_second = (
+            self.work_second & BYTE_FF if self.work_second is not None else 0x00
+        )
         fire_power_byte = self._fire_power_value(self.fire_power)
 
         # Temperature bytes
@@ -502,33 +543,37 @@ class MessageSet(MessageBFBase):
         temp_underside_high = temp_underside_low = 0x00
 
         if self.temperature is not None:
-            temp_high = self.temperature >> 8
-            temp_low = self.temperature & 0xFF
+            temp_high = (self.temperature >> 8) & BYTE_FF
+            temp_low = self.temperature & BYTE_FF
             temp_above_high = temp_high
             temp_above_low = temp_low
             temp_underside_high = temp_high
             temp_underside_low = temp_low
         if self.temperature_above is not None:
-            temp_above_high = self.temperature_above >> 8
-            temp_above_low = self.temperature_above & 0xFF
+            temp_above_high = (self.temperature_above >> 8) & BYTE_FF
+            temp_above_low = self.temperature_above & BYTE_FF
         if self.temperature_underside is not None:
-            temp_underside_high = self.temperature_underside >> 8
-            temp_underside_low = self.temperature_underside & 0xFF
+            temp_underside_high = (self.temperature_underside >> 8) & BYTE_FF
+            temp_underside_low = self.temperature_underside & BYTE_FF
 
         # Probe temperature
         probe_high = probe_low = 0x00
         if self.probe_temperature is not None:
-            probe_high = self.probe_temperature >> 8
-            probe_low = self.probe_temperature & 0xFF
+            probe_high = (self.probe_temperature >> 8) & BYTE_FF
+            probe_low = self.probe_temperature & BYTE_FF
 
         # Steam quantity
-        steam_byte = self.steam_quantity if self.steam_quantity is not None else BYTE_FF
+        steam_byte = (
+            self.steam_quantity & BYTE_FF
+            if self.steam_quantity is not None
+            else BYTE_FF
+        )
 
         # Weight / people number
         if self.weight is not None:
-            weight_byte = self.weight // WEIGHT_DIVISOR
+            weight_byte = (self.weight // WEIGHT_DIVISOR) & BYTE_FF
         elif self.people_number is not None:
-            weight_byte = self.people_number
+            weight_byte = self.people_number & BYTE_FF
         else:
             weight_byte = BYTE_FF
 
@@ -565,59 +610,65 @@ class MessageSet(MessageBFBase):
         param_sum = 0
 
         if self.steam_set is not None:
-            body.append(0x00)
+            body.append(PARAM_ID_STEAM)
             param_sum += 1
-            body.append(self.steam_set)
+            body.append(self.steam_set & BYTE_FF)
 
         time_fields = [self.hour_set, self.minute_set, self.second_set]
         if any(f is not None for f in time_fields):
-            body.append(0x01)
-            body.append(self.hour_set if self.hour_set is not None else 0x00)
-            body.append(self.minute_set if self.minute_set is not None else 0x00)
-            body.append(self.second_set if self.second_set is not None else 0x00)
+            body.append(PARAM_ID_TIME)
+            body.append(
+                self.hour_set & BYTE_FF if self.hour_set is not None else 0x00,
+            )
+            body.append(
+                self.minute_set & BYTE_FF if self.minute_set is not None else 0x00,
+            )
+            body.append(
+                self.second_set & BYTE_FF if self.second_set is not None else 0x00,
+            )
             param_sum += 1
 
         if self.fire_power_set is not None:
-            body.append(0x02)
+            body.append(PARAM_ID_FIRE_POWER)
             param_sum += 1
             body.append(self._fire_power_value(self.fire_power_set))
 
         if self.temp_set is not None:
-            temp_high = self.temp_set >> 8
-            temp_low = self.temp_set & 0xFF
-            body.append(0x03)
+            temp_high = (self.temp_set >> 8) & BYTE_FF
+            temp_low = self.temp_set & BYTE_FF
+            body.append(PARAM_ID_TEMP)
             body.append(0x00)
             body.append(temp_high)
             body.append(temp_low)
             param_sum += 1
 
         if self.probe_temp_set is not None:
-            temp_high = self.probe_temp_set >> 8
-            temp_low = self.probe_temp_set & 0xFF
-            body.append(0x04)
+            temp_high = (self.probe_temp_set >> 8) & BYTE_FF
+            temp_low = self.probe_temp_set & BYTE_FF
+            body.append(PARAM_ID_PROBE_TEMP)
             body.append(0x00)
             body.append(temp_high)
             body.append(temp_low)
             param_sum += 1
 
         if self.temp_above_set is not None:
-            temp_high = self.temp_above_set >> 8
-            temp_low = self.temp_above_set & 0xFF
-            body.append(0x05)
+            temp_high = (self.temp_above_set >> 8) & BYTE_FF
+            temp_low = self.temp_above_set & BYTE_FF
+            body.append(PARAM_ID_TEMP_ABOVE_UNDERSIDE)
             body.append(0x00)
             body.append(0x00)
-            body.append(0x00)
+            body.append(SUBINDEX_ABOVE)
             body.append(temp_high)
             body.append(temp_low)
             param_sum += 1
 
         if self.temp_underside_set is not None:
-            temp_high = self.temp_underside_set >> 8
-            temp_low = self.temp_underside_set & 0xFF
-            body.append(0x05)
+            temp_high = (self.temp_underside_set >> 8) & BYTE_FF
+            temp_low = self.temp_underside_set & BYTE_FF
+            body.append(PARAM_ID_TEMP_ABOVE_UNDERSIDE)
             body.append(0x00)
             body.append(0x00)
-            body.append(0x01)
+            body.append(SUBINDEX_UNDERSIDE)
             body.append(temp_high)
             body.append(temp_low)
             param_sum += 1
@@ -657,10 +708,11 @@ class MessageBFBody(MessageBody):
         """Parse execute status from body."""
         execute = self.read_byte(body, OFFSET_EXECUTE, 0)
         self.execute = {
+            0x00: "ok",
             0x01: "status_nonsupport",
             0x02: "function_nonsupport",
             0x03: "param_range_error",
-        }.get(execute, "ok")
+        }.get(execute, "unknown")
 
     def _parse_cloudmenuid(self, body: bytearray) -> None:
         """Parse cloudmenuid from body."""
@@ -763,8 +815,7 @@ class MessageBFBody(MessageBody):
             OFFSET_CUR_TEMP_UNDERSIDE_HIGH,
             OFFSET_CUR_TEMP_UNDERSIDE_LOW,
         )
-        cur_temp = self.cur_temperature_above
-        if cur_temp == 0:
+        if (cur_temp := self.cur_temperature_above) == 0:
             cur_temp = self.cur_temperature_underside
         self.current_temperature = cur_temp
         self.cur_probe_temperature = self._read_word(
@@ -780,7 +831,8 @@ class MessageBFBody(MessageBody):
             self.status = WorkStatus(status_byte).name
         except ValueError:
             self.status = "unknown"
-        self.power = self.status != "save_power"
+        # save_power means device is off; unknown status cannot be trusted as on
+        self.power = self.status not in ("save_power", "unknown")
 
     def _parse_byte32_flags(self, body: bytearray) -> None:
         """Parse flags from body byte 32."""
@@ -807,7 +859,7 @@ class MessageBFBody(MessageBody):
     def _parse_byte34_flags(self, body: bytearray) -> None:
         """Parse ramadan flag from body byte 34."""
         b = self.read_byte(body, OFFSET_RAMADAN, 0)
-        self.ramadan = bool(b & BIT_HOT_WIND)
+        self.ramadan = bool(b & BIT_RAMADAN)
 
     def _parse_byte35_flags(self, body: bytearray) -> None:
         """Parse hot_wind flag from body byte 35."""

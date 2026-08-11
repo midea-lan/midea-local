@@ -15,6 +15,8 @@ from .message import (
 
 _LOGGER = logging.getLogger(__name__)
 
+_MISSING = object()
+
 
 class DeviceAttributes(StrEnum):
     """Midea BF device attributes."""
@@ -101,9 +103,29 @@ _SETTABLE_ATTRS: frozenset[DeviceAttributes] = frozenset(
         DeviceAttributes.weight,
         DeviceAttributes.people_number,
         DeviceAttributes.turntable,
+        DeviceAttributes.pre_heat,
         DeviceAttributes.hour_set,
         DeviceAttributes.minute_set,
         DeviceAttributes.second_set,
+    },
+)
+
+# Work-mode-related attributes that need current work_mode context to serialize
+# correctly via workModeControl instead of an empty setControl body.
+_WORK_MODE_SETTABLE_ATTRS: frozenset[DeviceAttributes] = frozenset(
+    {
+        DeviceAttributes.work_mode,
+        DeviceAttributes.fire_power,
+        DeviceAttributes.temperature,
+        DeviceAttributes.temperature_above,
+        DeviceAttributes.temperature_underside,
+        DeviceAttributes.probe_temperature,
+        DeviceAttributes.steam_quantity,
+        DeviceAttributes.weight,
+        DeviceAttributes.people_number,
+        DeviceAttributes.turntable,
+        DeviceAttributes.pre_heat,
+        DeviceAttributes.hot_wind,
     },
 )
 
@@ -134,17 +156,40 @@ class MideaBFDevice(MideaDevice):
         """Midea BF device process message."""
         message = MessageBFResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
+        new_status: dict[str, Any] = {}
         for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
+            value = getattr(message, str(status), _MISSING)
+            if value is not _MISSING:
                 self._attributes[status] = value
                 new_status[str(status)] = value
         return new_status
 
+    def make_message_set(self) -> MessageSet:
+        """Create a MessageSet pre-populated with current work-mode attributes.
+
+        Ensures that adjusting a single work-mode parameter (e.g. fire_power)
+        carries the active work_mode so the message routes to workModeControl
+        rather than producing an empty setControl command.
+        """
+        message = MessageSet(self._message_protocol_version)
+        message.work_mode = self._attributes[DeviceAttributes.work_mode]
+        message.fire_power = self._attributes[DeviceAttributes.fire_power]
+        message.temperature = self._attributes[DeviceAttributes.temperature]
+        message.temperature_above = self._attributes[DeviceAttributes.temperature_above]
+        message.temperature_underside = self._attributes[
+            DeviceAttributes.temperature_underside
+        ]
+        message.probe_temperature = self._attributes[DeviceAttributes.probe_temperature]
+        message.steam_quantity = self._attributes[DeviceAttributes.steam_quantity]
+        message.weight = self._attributes[DeviceAttributes.weight]
+        message.people_number = self._attributes[DeviceAttributes.people_number]
+        message.turntable = self._attributes[DeviceAttributes.turntable]
+        message.pre_heat = self._attributes[DeviceAttributes.pre_heat]
+        message.hot_wind = self._attributes[DeviceAttributes.hot_wind]
+        return message
+
     def set_attribute(self, attr: str, value: bool | int | str) -> None:
         """Midea BF device set attribute."""
-        message = MessageSet(self._message_protocol_version)
         # status on device maps to work_status on message
         if attr == DeviceAttributes.status:
             if not isinstance(value, str):
@@ -154,12 +199,22 @@ class MideaBFDevice(MideaDevice):
                     value,
                 )
                 return
+            message = MessageSet(self._message_protocol_version)
             message.work_status = value
-        elif attr in _SETTABLE_ATTRS:
-            setattr(message, attr, value)
-        else:
+            self.build_send(message)
+            return
+
+        if attr not in _SETTABLE_ATTRS:
             _LOGGER.warning("[%s] Unsupported attribute: %s", self.device_id, attr)
             return
+
+        # Work-mode-related attributes need the current work_mode context so the
+        # MessageSet routes to workModeControl instead of an empty setControl.
+        if attr in _WORK_MODE_SETTABLE_ATTRS:
+            message = self.make_message_set()
+        else:
+            message = MessageSet(self._message_protocol_version)
+        setattr(message, attr, value)
         self.build_send(message)
 
 
