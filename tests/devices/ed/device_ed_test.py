@@ -111,7 +111,6 @@ class TestMideaEDDevice:
             (309, MessageQuery04),
             (316, MessageQuery05),
             (290, MessageQuery06),
-            (395, MessageQuery06),
             (288, MessageQuery07),
             (775, MessageQuery01),
         ],
@@ -147,8 +146,8 @@ class TestMideaEDDevice:
             self.device.set_attribute(DeviceAttributes.child_lock, True)
             mock_build_send.assert_called()
 
-    def test_tea_bar_attributes_are_subtype_specific(self) -> None:
-        """Expose tea bar status attributes only for subtype 395."""
+    def test_tea_bar_attributes_are_model_specific(self) -> None:
+        """Expose tea bar status attributes only for the verified model."""
         tea_bar = MideaEDDevice(
             name="Tea Bar",
             device_id=2,
@@ -196,7 +195,47 @@ class TestMideaEDDevice:
         assert DeviceAttributes.fault_code not in self.device.attributes
         assert DeviceAttributes.fault not in self.device.attributes
 
-    def test_tea_bar_set_target_starts_heating(self) -> None:
+    def test_tea_bar_query_is_model_specific(self) -> None:
+        """Use body-06 queries only for the verified subtype and model."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token="AA",
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        queries = tea_bar.build_query()
+        assert len(queries) == 1
+        assert isinstance(queries[0], MessageQuery06)
+
+        other_model = MideaEDDevice(
+            name="Other subtype-395 appliance",
+            device_id=3,
+            ip_address="192.0.2.2",
+            port=6444,
+            token="AA",
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000000",
+            subtype=395,
+            customize="",
+        )
+        queries = other_model.build_query()
+        assert len(queries) == 3
+        assert isinstance(queries[0], MessageQuery)
+        assert DeviceAttributes.current_temperature not in other_model.attributes
+
+        with patch("midealocal.devices.ed.MessageEDResponse") as response:
+            other_model.process_message(b"")
+        response.assert_called_once_with(b"", 0)
+
+    @pytest.mark.parametrize("target", [80, 80.0])
+    def test_tea_bar_set_target_starts_heating(self, target: float) -> None:
         """Set target temperature with the official compound start command."""
         tea_bar = MideaEDDevice(
             name="Tea Bar",
@@ -213,7 +252,7 @@ class TestMideaEDDevice:
         tea_bar._attributes[DeviceAttributes.current_temperature] = 60
 
         with patch.object(tea_bar, "build_send") as mock_build_send:
-            tea_bar.set_attribute(DeviceAttributes.boil_temperature, 80)
+            tea_bar.set_attribute(DeviceAttributes.boil_temperature, target)
 
         message = mock_build_send.call_args.args[0]
         assert message.body == bytearray(
@@ -473,6 +512,29 @@ class TestMideaEDDevice:
             pytest.raises(ValueError, match="is not below target"),
         ):
             tea_bar.set_attribute(DeviceAttributes.boil_temperature, 70)
+        mock_build_send.assert_not_called()
+
+    def test_tea_bar_rejects_fractional_target_temperature(self) -> None:
+        """Reject fractional targets instead of silently truncating them."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token="AA",
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        tea_bar._attributes[DeviceAttributes.current_temperature] = 20
+
+        with (
+            patch.object(tea_bar, "build_send") as mock_build_send,
+            pytest.raises(ValueError, match="must be a whole number"),
+        ):
+            tea_bar.set_attribute(DeviceAttributes.boil_temperature, 80.5)
         mock_build_send.assert_not_called()
 
     def test_non_tea_bar_cannot_send_tea_bar_controls(self) -> None:

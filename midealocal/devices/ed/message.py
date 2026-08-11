@@ -85,7 +85,7 @@ class NewSetTags(IntEnum):
     tea_bar_target_temperature = 0x0401
     tea_bar_heat_start = 0x0405
     tea_bar_keep_warm = 0x0408
-    tea_bar_sleep = 0x0104
+    tea_bar_sleep = 0x0104  # Intentional alias: same wire tag as salt_setting.
     tea_bar_cooling = 0x0500
 
 

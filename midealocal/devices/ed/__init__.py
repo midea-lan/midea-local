@@ -143,7 +143,7 @@ class MideaEDDevice(MideaDevice):
                 DeviceAttributes.error: None,
             },
         )
-        if self.subtype == TEA_BAR_SUBTYPE:
+        if self._is_tea_bar():
             self._attributes.update(
                 {
                     DeviceAttributes.current_temperature: None,
@@ -171,6 +171,10 @@ class MideaEDDevice(MideaDevice):
         # if (self.sub_type > 342 or self.sub_type == 340) else False
         return True
 
+    def _is_tea_bar(self) -> bool:
+        """Return whether this device matches the verified tea-bar model."""
+        return self.subtype == TEA_BAR_SUBTYPE and self.model == TEA_BAR_MODEL
+
     def build_query(
         self,
     ) -> list[
@@ -197,7 +201,7 @@ class MideaEDDevice(MideaDevice):
                 MessageQuery04,
             ),
             **dict.fromkeys([316, 318, 319, 320], MessageQuery05),
-            **dict.fromkeys([290, 331, 332, 340, TEA_BAR_SUBTYPE], MessageQuery06),
+            **dict.fromkeys([290, 331, 332, 340], MessageQuery06),
             **dict.fromkeys([288, 307, 329, 349], MessageQuery07),
             # Soft water machine (water softener) subtypes
             # subtype 703: model 6360000A, confirmed from cloud API modelNumber
@@ -208,6 +212,8 @@ class MideaEDDevice(MideaDevice):
             # remove MessageQuery03 as it return 0
             775: MessageQuery01,
         }
+        if self._is_tea_bar():
+            return [MessageQuery06(pv)]
         query_cls = subtype_query.get(self.subtype)
         if query_cls is not None:
             return [query_cls(pv)]
@@ -219,7 +225,8 @@ class MideaEDDevice(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea ED device process message."""
-        message = MessageEDResponse(msg, self.subtype)
+        response_subtype = self.subtype if self._is_tea_bar() else 0
+        message = MessageEDResponse(msg, response_subtype)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         if hasattr(message, "device_class"):
@@ -228,7 +235,7 @@ class MideaEDDevice(MideaDevice):
             if hasattr(message, str(status)):
                 new_status[str(status)] = getattr(message, str(status))
                 self._attributes[status] = getattr(message, str(status))
-        if self.subtype == TEA_BAR_SUBTYPE:
+        if self._is_tea_bar():
             if DeviceAttributes.target_temperature in new_status:
                 target_temperature = new_status[DeviceAttributes.target_temperature]
                 new_status[DeviceAttributes.boil_temperature] = target_temperature
@@ -245,26 +252,24 @@ class MideaEDDevice(MideaDevice):
         value: bool | float | str,
     ) -> bool:
         """Build and send a subtype-395 tea bar control command."""
-        if (
-            self.subtype != TEA_BAR_SUBTYPE
-            or self.model != TEA_BAR_MODEL
-            or attr
-            not in [
-                DeviceAttributes.boil_temperature,
-                DeviceAttributes.boiling,
-                DeviceAttributes.child_lock,
-                DeviceAttributes.keep_warm,
-                DeviceAttributes.keep_warm_time,
-                DeviceAttributes.sleep,
-                DeviceAttributes.screen_display,
-                DeviceAttributes.cooling,
-            ]
-        ):
+        if not self._is_tea_bar() or attr not in [
+            DeviceAttributes.boil_temperature,
+            DeviceAttributes.boiling,
+            DeviceAttributes.child_lock,
+            DeviceAttributes.keep_warm,
+            DeviceAttributes.keep_warm_time,
+            DeviceAttributes.sleep,
+            DeviceAttributes.screen_display,
+            DeviceAttributes.cooling,
+        ]:
             return False
 
         message = MessageNewSet(self._message_protocol_version)
         stored_value: bool | float | str
         if attr == DeviceAttributes.boil_temperature:
+            if isinstance(value, float) and not value.is_integer():
+                msg = "Tea bar target temperature must be a whole number"
+                raise ValueError(msg)
             target_temperature = int(value)
             if not (
                 TEA_BAR_MIN_TARGET_TEMPERATURE
