@@ -259,8 +259,53 @@ class TestMessageNewProtocolQuery:
     """Test Message New Protocol Query."""
 
     def test_new_protocol_query_body(self) -> None:
-        """Test new protocol query body."""
+        """Test new protocol query body excludes rate_select by default.
+
+        rate_select is only queried once the device has advertised support
+        via the B5 b5_electricity capability; devices that never advertise it
+        don't answer the query.
+        """
         msg = MessageNewProtocolQuery(protocol_version=ProtocolVersion.V1)
+        expected_body = bytearray(
+            [
+                0xB1,
+                0x0C,
+                NewProtocolTags.indirect_wind & 0xFF,
+                NewProtocolTags.indirect_wind >> 8,
+                NewProtocolTags.breezeless & 0xFF,
+                NewProtocolTags.breezeless >> 8,
+                NewProtocolTags.indoor_humidity & 0xFF,
+                NewProtocolTags.indoor_humidity >> 8,
+                NewProtocolTags.screen_display & 0xFF,
+                NewProtocolTags.screen_display >> 8,
+                NewProtocolTags.fresh_air_1 & 0xFF,
+                NewProtocolTags.fresh_air_1 >> 8,
+                NewProtocolTags.fresh_air_2 & 0xFF,
+                NewProtocolTags.fresh_air_2 >> 8,
+                NewProtocolTags.wind_lr_angle & 0xFF,
+                NewProtocolTags.wind_lr_angle >> 8,
+                NewProtocolTags.wind_ud_angle & 0xFF,
+                NewProtocolTags.wind_ud_angle >> 8,
+                NewProtocolTags.out_silent & 0xFF,
+                NewProtocolTags.out_silent >> 8,
+                NewProtocolTags.buzzer_all & 0xFF,
+                NewProtocolTags.buzzer_all >> 8,
+                NewProtocolQuery.error_code_query & 0xFF,
+                NewProtocolQuery.error_code_query >> 8,
+                NewProtocolTags.b5_self_clean_active & 0xFF,
+                NewProtocolTags.b5_self_clean_active >> 8,
+            ],
+        )
+        assert msg.body[:-2] == expected_body
+
+    def test_new_protocol_query_body_includes_rate_select_when_supported(
+        self,
+    ) -> None:
+        """Test rate_select is appended once the device has advertised support."""
+        msg = MessageNewProtocolQuery(
+            protocol_version=ProtocolVersion.V1,
+            supports_rate_select=True,
+        )
         expected_body = bytearray(
             [
                 0xB1,
@@ -281,8 +326,6 @@ class TestMessageNewProtocolQuery:
                 NewProtocolTags.wind_lr_angle >> 8,
                 NewProtocolTags.wind_ud_angle & 0xFF,
                 NewProtocolTags.wind_ud_angle >> 8,
-                NewProtocolTags.rate_select & 0xFF,
-                NewProtocolTags.rate_select >> 8,
                 NewProtocolTags.out_silent & 0xFF,
                 NewProtocolTags.out_silent >> 8,
                 NewProtocolTags.buzzer_all & 0xFF,
@@ -291,6 +334,8 @@ class TestMessageNewProtocolQuery:
                 NewProtocolQuery.error_code_query >> 8,
                 NewProtocolTags.b5_self_clean_active & 0xFF,
                 NewProtocolTags.b5_self_clean_active >> 8,
+                NewProtocolTags.rate_select & 0xFF,
+                NewProtocolTags.rate_select >> 8,
             ],
         )
         assert msg.body[:-2] == expected_body
@@ -914,6 +959,30 @@ class TestMessageACResponse:
             "turbo_heat": True,
             "display_control": True,
         }
+
+    @pytest.mark.parametrize(
+        ("raw_value", "expected"),
+        [(4, True), (1, True), (0, False)],
+    )
+    def test_message_query_b5_electricity_gates_rate_select(
+        self,
+        raw_value: int,
+        expected: bool,
+    ) -> None:
+        """Test b5_electricity capability gates the rate_select capability flag.
+
+        A nonzero value (rate level count) means the device supports
+        rate_select; 0 means unsupported.
+        """
+        self.header[9] = 0x03
+        body = bytearray([0xB5, 0x01])  # Body type, params count
+        body += bytearray([0x16, 0x02, 0x01, raw_value])  # b5_electricity
+        body += bytearray(1)  # trailing checksum byte (stripped by MessageResponse)
+
+        response = MessageACResponse(self.header + body)
+
+        assert hasattr(response, "capabilities")
+        assert response.capabilities == {"rate_select": expected}
 
     def test_message_query_b5_custom_fan_supports_named_speeds(self) -> None:
         """Test B5 fan custom profile includes named fan speeds."""

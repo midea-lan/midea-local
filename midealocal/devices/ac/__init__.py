@@ -381,7 +381,10 @@ class MideaACDevice(MideaDevice):
             ]
         queries: list[ACQuery] = [
             MessageQuery(self._message_protocol_version),
-            MessageNewProtocolQuery(self._message_protocol_version),
+            MessageNewProtocolQuery(
+                self._message_protocol_version,
+                supports_rate_select=self._capabilities.get("rate_select", False),
+            ),
             MessagePowerQuery(self._message_protocol_version),
             MessageHumidityQuery(self._message_protocol_version),
             MessageGroupZeroQuery(self._message_protocol_version),

@@ -24,6 +24,7 @@ from midealocal.devices.ac.message import (
     MessageSubProtocolQuery11,
     MessageSubProtocolQuery30,
     MessageToggleDisplay,
+    NewProtocolTags,
     PowerFormats,
 )
 from midealocal.message import ListTypes, MessageBase
@@ -290,6 +291,27 @@ class TestMideaACDevice:
         assert isinstance(queries[7], MessageGroupSevenQuery)
         assert isinstance(queries[8], MessageCapabilitiesQuery)
         assert isinstance(queries[9], MessageCapabilitiesAdditionalQuery)
+
+    def test_build_query_omits_rate_select_until_capability_confirmed(self) -> None:
+        """Test rate_select stays out of the B1 query until b5_electricity confirms it.
+
+        Before any B5 capabilities response is seen, `_capabilities` is empty, so
+        the query built for the device must not ask for rate_select.
+        """
+        self.device._used_subprotocol = False
+        assert self.device.capabilities == {}
+        queries = self.device.build_query()
+        new_protocol_query = next(
+            q for q in queries if isinstance(q, MessageNewProtocolQuery)
+        )
+        assert NewProtocolTags.rate_select not in new_protocol_query._body
+
+        self.device._capabilities["rate_select"] = True
+        queries = self.device.build_query()
+        new_protocol_query = next(
+            q for q in queries if isinstance(q, MessageNewProtocolQuery)
+        )
+        assert NewProtocolTags.rate_select in new_protocol_query._body
 
     def test_bb_model_builds_distinct_queries_and_attributes(self) -> None:
         """Test verified BB model starts with independent BB queries."""

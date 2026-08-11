@@ -115,6 +115,7 @@ B5_ECO_VALUES = frozenset({1, 2})
 B5_ANION_ON_VALUE = 1
 B5_TURBO_HEAT_VALUES = frozenset({1, 3})
 B5_DISPLAY_VALUES = frozenset({1, 2, 100})
+B5_ELECTRICITY_UNSUPPORTED_VALUE = 0  # 0 = unsupported; nonzero = rate level count
 
 
 class PowerFormats(IntEnum):
@@ -448,13 +449,25 @@ class MessageToggleDisplay(MessageACBase):
 class MessageNewProtocolQuery(MessageACBase):
     """AC message new protocol query."""
 
-    def __init__(self, protocol_version: int) -> None:
-        """Initialize AC message new protocol query."""
+    def __init__(
+        self,
+        protocol_version: int,
+        *,
+        supports_rate_select: bool = False,
+    ) -> None:
+        """Initialize AC message new protocol query.
+
+        `supports_rate_select` gates the rate_select (0x0048) query param on
+        the device having advertised it via the B5 b5_electricity capability
+        (tag 0x0216). Devices that don't report it never answer the query, so
+        it's left out until support is confirmed.
+        """
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
             body_type=ListTypes.B1,
         )
+        self._supports_rate_select = supports_rate_select
 
     @property
     def _body(self) -> bytearray:
@@ -467,12 +480,13 @@ class MessageNewProtocolQuery(MessageACBase):
             NewProtocolTags.fresh_air_2,
             NewProtocolTags.wind_lr_angle,
             NewProtocolTags.wind_ud_angle,
-            NewProtocolTags.rate_select,
             NewProtocolTags.out_silent,
             NewProtocolTags.buzzer_all,
             NewProtocolQuery.error_code_query,
             NewProtocolTags.b5_self_clean_active,
         ]
+        if self._supports_rate_select:
+            query_params.append(NewProtocolTags.rate_select)
 
         _body = bytearray([len(query_params)])
         for param in query_params:
@@ -1241,6 +1255,9 @@ class XB5MessageBody(NewProtocolMessageBody):
         if NewProtocolTags.b5_screen_display in params:
             value = params[NewProtocolTags.b5_screen_display][0]
             caps["display_control"] = value in B5_DISPLAY_VALUES
+        if NewProtocolTags.b5_electricity in params:
+            value = params[NewProtocolTags.b5_electricity][0]
+            caps["rate_select"] = value > B5_ELECTRICITY_UNSUPPORTED_VALUE
         self.capabilities = caps
 
 
