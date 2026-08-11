@@ -9,6 +9,8 @@ from midealocal.devices.ed import DeviceAttributes, MideaEDDevice
 from midealocal.devices.ed.message import MessageEDResponse
 from midealocal.message import ListTypes
 
+TEST_AUTH_VALUE = "AA"
+
 
 @pytest.mark.parametrize("reported_keep_warm_time", [None, 12.0])
 def test_tea_bar_keep_warm_uses_device_default_duration(
@@ -20,7 +22,7 @@ def test_tea_bar_keep_warm_uses_device_default_duration(
         device_id=2,
         ip_address="192.0.2.1",
         port=6444,
-        token="AA",
+        token=TEST_AUTH_VALUE,
         key="BB",
         device_protocol=ProtocolVersion.V3,
         model="63000622",

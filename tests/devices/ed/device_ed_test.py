@@ -19,6 +19,8 @@ from midealocal.devices.ed.message import (
     MessageQueryFF,
 )
 
+TEST_AUTH_VALUE = "AA"
+
 
 class TestMideaEDDevice:
     """Test Midea ED Device."""
@@ -33,7 +35,7 @@ class TestMideaEDDevice:
             device_id=1,
             ip_address="192.168.1.100",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="test_model",
@@ -126,7 +128,7 @@ class TestMideaEDDevice:
             device_id=1,
             ip_address="192.168.1.100",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="test_model",
@@ -153,7 +155,7 @@ class TestMideaEDDevice:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000622",
@@ -195,6 +197,43 @@ class TestMideaEDDevice:
         assert DeviceAttributes.fault_code not in self.device.attributes
         assert DeviceAttributes.fault not in self.device.attributes
 
+        wrong_subtype = MideaEDDevice(
+            name="Same model, different subtype",
+            device_id=4,
+            ip_address="192.0.2.4",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=394,
+            customize="",
+        )
+        for attribute in (
+            DeviceAttributes.current_temperature,
+            DeviceAttributes.target_temperature,
+            DeviceAttributes.heating,
+            DeviceAttributes.dispensing,
+            DeviceAttributes.boil_temperature,
+            DeviceAttributes.boiling,
+            DeviceAttributes.keep_warm,
+            DeviceAttributes.keep_warm_time,
+            DeviceAttributes.keep_warm_remaining,
+            DeviceAttributes.sleep,
+            DeviceAttributes.screen_display,
+            DeviceAttributes.cooling,
+            DeviceAttributes.lack_water,
+            DeviceAttributes.standby,
+            DeviceAttributes.hot_water_dispensing,
+            DeviceAttributes.fault_code,
+            DeviceAttributes.fault,
+        ):
+            assert attribute not in wrong_subtype.attributes
+        with patch.object(wrong_subtype, "build_send") as mock_build_send:
+            wrong_subtype.set_attribute(DeviceAttributes.boil_temperature, 80)
+            wrong_subtype.set_attribute(DeviceAttributes.keep_warm, True)
+        mock_build_send.assert_not_called()
+
     def test_tea_bar_query_is_model_specific(self) -> None:
         """Use body-06 queries only for the verified subtype and model."""
         tea_bar = MideaEDDevice(
@@ -202,7 +241,7 @@ class TestMideaEDDevice:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000622",
@@ -218,7 +257,7 @@ class TestMideaEDDevice:
             device_id=3,
             ip_address="192.0.2.2",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000000",
@@ -242,7 +281,7 @@ class TestMideaEDDevice:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000622",
@@ -280,7 +319,7 @@ class TestMideaEDDevice:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000622",
@@ -305,7 +344,7 @@ class TestMideaEDDevice:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000622",
@@ -368,7 +407,7 @@ class TestMideaEDDevice:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000622",
@@ -431,7 +470,7 @@ class TestMideaEDDevice:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000622",
@@ -451,7 +490,7 @@ class TestMideaEDDevice:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000622",
@@ -475,7 +514,7 @@ class TestMideaEDDevice:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000622",
@@ -498,7 +537,7 @@ class TestMideaEDDevice:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000622",
@@ -521,7 +560,7 @@ class TestMideaEDDevice:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000622",
@@ -551,7 +590,7 @@ class TestMideaEDDevice:
             device_id=3,
             ip_address="192.0.2.2",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000000",
@@ -575,7 +614,7 @@ class TestMideaEDDevice:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000622",
@@ -599,7 +638,7 @@ class TestMideaEDDevice:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000622",
@@ -623,7 +662,7 @@ class TestMideaEDDevice:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="63000622",
@@ -652,7 +691,7 @@ class TestMideaEDDeviceSoftWater:
             device_id=2,
             ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="6360000A",
