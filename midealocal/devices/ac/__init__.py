@@ -384,7 +384,10 @@ class MideaACDevice(MideaDevice):
             ]
         queries: list[ACQuery] = [
             MessageQuery(self._message_protocol_version),
-            MessageNewProtocolQuery(self._message_protocol_version),
+            MessageNewProtocolQuery(
+                self._message_protocol_version,
+                supports_rate_select=self._capabilities.get("rate_select", False),
+            ),
             # Queried on its own so an empty response for the combined
             # new-protocol query does not suppress the self-clean state.
             MessageNewProtocolSelfCleanQuery(self._message_protocol_version),
