@@ -44,7 +44,6 @@ INDIRECT_WIND_VALUE = 0x02
 MAX_MSG_SERIAL_NUM = 254
 OUT_SILENT_VALUE = 0x03
 POWER_SAVING_VALUE = 0x08
-SELF_CLEAN_ACTIVE_STATUS_BYTE = 12
 SCREEN_DISPLAY_BYTE_CHECK = 0x07
 SUB_PROTOCOL_BODY_TEMP_CHECK = 0x80
 TEMP_DECIMAL_MIN_BODY_LENGTH = 20
@@ -68,7 +67,7 @@ XC1_GROUP_ONE_MIN_LENGTH = 15
 XC1_GROUP_TWO_MIN_LENGTH = 9
 XC1_GROUP_SEVEN_MIN_LENGTH = 12
 # Refrigerant circuit temperatures are reported as half degrees with an offset:
-# T1/T2 (indoor coil / evaporator) use 30, T3/T4 (condenser / outdoor) use 50.
+# T1/T2 (indoor ambient / indoor coil) use 30, T3/T4 (outdoor coil / ambient) use 50.
 XC1_TEMP_INDOOR_OFFSET = 30
 XC1_TEMP_OUTDOOR_OFFSET = 50
 XC1_TEMP_DIVISOR = 2
@@ -150,7 +149,9 @@ class NewProtocolTags(IntEnum):
     fresh_air_2 = 0x004B  # queryType == "fresh_air"
     prevent_super_cool = 0x0049
     auto_prevent_straight_wind = 0x0226
-    self_clean = 0x0039  # self_clean query can't return response
+    # Live self-clean status. Reported in B0 (set echo) and B1 (query) bodies.
+    # The same tag in a B5 capability body only advertises support, not state.
+    self_clean = 0x0039
     wind_straight = 0x0032
     wind_avoid = 0x0033
     intelligent_wind = 0x0034
@@ -212,7 +213,6 @@ class NewProtocolTags(IntEnum):
     rate_select = 0x0048
     # AC outdoor silent mode (PortaSplit)
     out_silent = 0x00CD
-    b5_self_clean_active = 0x00E2
 
 
 class MessageACBase(MessageRequest):
@@ -462,6 +462,23 @@ class MessageNewProtocolQuery(MessageACBase):
         (tag 0x0216). Devices that don't report it never answer the query, so
         it's left out until support is confirmed.
         """
+    _query_params: tuple[int, ...] = (
+        NewProtocolTags.indirect_wind,
+        NewProtocolTags.breezeless,
+        NewProtocolTags.indoor_humidity,
+        NewProtocolTags.screen_display,
+        NewProtocolTags.fresh_air_1,
+        NewProtocolTags.fresh_air_2,
+        NewProtocolTags.wind_lr_angle,
+        NewProtocolTags.wind_ud_angle,
+        NewProtocolTags.out_silent,
+        NewProtocolTags.buzzer_all,
+        NewProtocolQuery.error_code_query,
+        NewProtocolTags.b5_self_clean_active,
+    )
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize AC message new protocol query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -471,27 +488,25 @@ class MessageNewProtocolQuery(MessageACBase):
 
     @property
     def _body(self) -> bytearray:
-        query_params = [
-            NewProtocolTags.indirect_wind,
-            NewProtocolTags.breezeless,
-            NewProtocolTags.indoor_humidity,
-            NewProtocolTags.screen_display,
-            NewProtocolTags.fresh_air_1,
-            NewProtocolTags.fresh_air_2,
-            NewProtocolTags.wind_lr_angle,
-            NewProtocolTags.wind_ud_angle,
-            NewProtocolTags.out_silent,
-            NewProtocolTags.buzzer_all,
-            NewProtocolQuery.error_code_query,
-            NewProtocolTags.b5_self_clean_active,
-        ]
-        if self._supports_rate_select:
-            query_params.append(NewProtocolTags.rate_select)
 
-        _body = bytearray([len(query_params)])
-        for param in query_params:
+        if self._supports_rate_select:
+            _query_params.append(NewProtocolTags.rate_select)
+
+        _body = bytearray([len(self._query_params)])
+        for param in self._query_params:
             _body.extend([param & 0xFF, param >> 8])
         return _body
+
+
+class MessageNewProtocolSelfCleanQuery(MessageNewProtocolQuery):
+    """AC message new protocol self-clean query.
+
+    A device answers with an empty parameter list when a query carries a tag it
+    does not support, which suppresses every other tag in the same request. The
+    self-clean state is therefore asked for as an independent status group.
+    """
+
+    _query_params = (NewProtocolTags.self_clean,)
 
 
 class MessageSubProtocol(MessageACBase):
@@ -1102,12 +1117,10 @@ class XBXMessageBody(NewProtocolMessageBody):
             self.sound = params[NewProtocolTags.buzzer_all][0] > 0
         if NewProtocolQuery.error_code_query in params:
             self.error_code = params[NewProtocolQuery.error_code_query][0]
-        if NewProtocolTags.b5_self_clean_active in params:
-            data = params[NewProtocolTags.b5_self_clean_active]
-            self.self_clean_active: bool = (
-                len(data) > SELF_CLEAN_ACTIVE_STATUS_BYTE
-                and data[SELF_CLEAN_ACTIVE_STATUS_BYTE] != 0
-            )
+        if NewProtocolTags.self_clean in params and bt != ListTypes.B5:
+            # A B5 body carries this tag as a capability flag (always 1 when the
+            # model supports self-clean), so only B0/B1 bodies report live state.
+            self.self_clean_active: bool = params[NewProtocolTags.self_clean][0] > 0
         if (
             new_protocol_temperature
             and NEW_PROTOCOL_TEMPERATURE_TAG in params
@@ -1409,15 +1422,15 @@ class XC1MessageBody(MessageBody):
         self.target_compressor_frequency = body[5]
         self.compressor_current = body[7]
         self.compressor_voltage = body[8]
-        # T1: indoor coil, T2: evaporator outlet
-        self.indoor_coil_temperature = (
+        # T1: indoor return air, T2: indoor coil
+        self.indoor_ambient_temperature = (
             body[10] - XC1_TEMP_INDOOR_OFFSET
         ) / XC1_TEMP_DIVISOR
-        self.evaporator_temperature = (
+        self.indoor_coil_temperature = (
             body[11] - XC1_TEMP_INDOOR_OFFSET
         ) / XC1_TEMP_DIVISOR
-        # T3: condenser, T4: outdoor ambient
-        self.condenser_temperature = (
+        # T3: outdoor coil, T4: outdoor ambient
+        self.outdoor_coil_temperature = (
             body[12] - XC1_TEMP_OUTDOOR_OFFSET
         ) / XC1_TEMP_DIVISOR
         self.outdoor_ambient_temperature = (
