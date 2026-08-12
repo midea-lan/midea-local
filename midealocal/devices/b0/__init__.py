@@ -6,6 +6,7 @@ from typing import ClassVar, Unpack
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.message import ListTypes
 
 from .message import (
     MessageB0Response,
@@ -190,6 +191,13 @@ class MideaB0Device(MideaDevice):
         """B0 Midea device process message."""
         message = MessageB0Response(bytearray(msg))
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
+        # B0Message31Body's byte layout is specific to model 0TG025JG,
+        # subtype 2. On subtype 0 devices this response still arrives, but
+        # decoding it with the wrong layout produces garbage that
+        # immediately overwrites the good data just received via the X01
+        # response a moment earlier. Ignore X31 entirely for subtype 0.
+        if self._subtype == 0 and message.body_type == ListTypes.X31:
+            return {}
         new_status = {}
         for attr in self._attributes:
             if hasattr(message, str(attr)):
