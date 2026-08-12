@@ -270,7 +270,7 @@ class TestMessageNewProtocolQuery:
         expected_body = bytearray(
             [
                 0xB1,
-                0x0D,
+                0x0B,
                 NewProtocolTags.indirect_wind & 0xFF,
                 NewProtocolTags.indirect_wind >> 8,
                 NewProtocolTags.breezeless & 0xFF,
@@ -295,6 +295,7 @@ class TestMessageNewProtocolQuery:
                 NewProtocolQuery.error_code_query >> 8,
             ],
         )
+
         assert msg.body[:-2] == expected_body
 
     def test_new_protocol_query_body_includes_rate_select_when_supported(
@@ -308,7 +309,7 @@ class TestMessageNewProtocolQuery:
         expected_body = bytearray(
             [
                 0xB1,
-                0x0D,
+                0x0C,
                 NewProtocolTags.indirect_wind & 0xFF,
                 NewProtocolTags.indirect_wind >> 8,
                 NewProtocolTags.breezeless & 0xFF,
@@ -335,6 +336,7 @@ class TestMessageNewProtocolQuery:
                 NewProtocolTags.rate_select >> 8,
             ],
         )
+
         assert msg.body[:-2] == expected_body
 
     def test_new_protocol_self_clean_query_body(self) -> None:
