@@ -503,24 +503,17 @@ class MessageSet(MessageBFBase):
     @staticmethod
     def _bool_to_byte(value: bool | None, true_val: int, false_val: int) -> int:
         """Convert optional bool to byte value."""
-        if value is True:
-            return true_val
-        if value is False:
-            return false_val
-        return BYTE_FF
+        return {True: true_val, False: false_val}.get(value, BYTE_FF)
 
     def _build_work_mode_control(self) -> bytearray:
         """Build workModeControl/singleCooking body content (body_type=0x01 added by framework)."""  # noqa: E501
         # b5 flags: bit0=pre_heat, bit1=probe, bit3=turntable, bit4=hot_wind
-        b5 = 0
-        if self.pre_heat is True:
-            b5 |= BIT_SET_PRE_HEAT
-        if self.probe_temperature is not None:
-            b5 |= BIT_SET_PROBE
-        if self.turntable is True:
-            b5 |= BIT_SET_TURNTABLE
-        if self.hot_wind is True:
-            b5 |= BIT_SET_HOT_WIND
+        b5 = (
+            (BIT_SET_PRE_HEAT if self.pre_heat is True else 0)
+            | (BIT_SET_PROBE if self.probe_temperature is not None else 0)
+            | (BIT_SET_TURNTABLE if self.turntable is True else 0)
+            | (BIT_SET_HOT_WIND if self.hot_wind is True else 0)
+        )
 
         mode_high, mode_low = work_mode_to_bytes(self.work_mode)
 
@@ -605,9 +598,11 @@ class MessageSet(MessageBFBase):
         time_fields = [self.hour_set, self.minute_set, self.second_set]
         if any(f is not None for f in time_fields):
             body.append(PARAM_ID_TIME)
-            body.append(self.hour_set or 0x00)
-            body.append(self.minute_set or 0x00)
-            body.append(self.second_set or 0x00)
+            body.extend([
+                self.hour_set or 0x00,
+                self.minute_set or 0x00,
+                self.second_set or 0x00,
+            ])
             param_sum += 1
 
         if self.fire_power_set is not None:
