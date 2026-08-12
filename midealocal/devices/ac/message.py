@@ -449,19 +449,6 @@ class MessageToggleDisplay(MessageACBase):
 class MessageNewProtocolQuery(MessageACBase):
     """AC message new protocol query."""
 
-    def __init__(
-        self,
-        protocol_version: int,
-        *,
-        supports_rate_select: bool = False,
-    ) -> None:
-        """Initialize AC message new protocol query.
-
-        `supports_rate_select` gates the rate_select (0x0048) query param on
-        the device having advertised it via the B5 b5_electricity capability
-        (tag 0x0216). Devices that don't report it never answer the query, so
-        it's left out until support is confirmed.
-        """
     _query_params: tuple[int, ...] = (
         NewProtocolTags.indirect_wind,
         NewProtocolTags.breezeless,
@@ -476,8 +463,19 @@ class MessageNewProtocolQuery(MessageACBase):
         NewProtocolQuery.error_code_query,
     )
 
-    def __init__(self, protocol_version: int) -> None:
-        """Initialize AC message new protocol query."""
+    def __init__(
+        self,
+        protocol_version: int,
+        *,
+        supports_rate_select: bool = False,
+    ) -> None:
+        """Initialize AC message new protocol query.
+
+        `supports_rate_select` gates the rate_select (0x0048) query param on
+        the device having advertised it via the B5 b5_electricity capability
+        (tag 0x0216). Devices that don't report it never answer the query, so
+        it's left out until support is confirmed.
+        """
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
@@ -488,11 +486,12 @@ class MessageNewProtocolQuery(MessageACBase):
     @property
     def _body(self) -> bytearray:
 
+        params = list(self._query_params)
         if self._supports_rate_select:
-            _query_params.append(NewProtocolTags.rate_select)
+            params.append(NewProtocolTags.rate_select)
 
-        _body = bytearray([len(self._query_params)])
-        for param in self._query_params:
+        _body = bytearray([len(params)])
+        for param in params:
             _body.extend([param & 0xFF, param >> 8])
         return _body
 
