@@ -12,6 +12,13 @@ from midealocal.message import (
 X01_STATUS_OFFSET = 31
 X01_FLAGS_OFFSET = 32
 X01_MIN_BODY_LENGTH = X01_FLAGS_OFFSET + 1
+X01_TIME_REMAINING_HOURS_OFFSET = 22
+X01_TIME_REMAINING_MINUTES_OFFSET = 23
+X01_TIME_REMAINING_SECONDS_OFFSET = 24
+X01_TEMPERATURE_HIGH_OFFSET = 25
+X01_TEMPERATURE_LOW_OFFSET = 26
+X01_TEMPERATURE_FALLBACK_HIGH_OFFSET = 27
+X01_TEMPERATURE_FALLBACK_LOW_OFFSET = 28
 
 
 class MessageB1Base(MessageRequest):
@@ -115,13 +122,31 @@ class B1Message01Body(MessageBody):
             self.door = (body[X01_FLAGS_OFFSET] & 0x02) > 0
             self.status = body[X01_STATUS_OFFSET]
             self.time_remaining = (
-                (0 if body[22] == MAX_BYTE_VALUE else body[22]) * 3600
-                + (0 if body[23] == MAX_BYTE_VALUE else body[23]) * 60
-                + (0 if body[24] == MAX_BYTE_VALUE else body[24])
+                (
+                    0
+                    if body[X01_TIME_REMAINING_HOURS_OFFSET] == MAX_BYTE_VALUE
+                    else body[X01_TIME_REMAINING_HOURS_OFFSET]
+                )
+                * 3600
+                + (
+                    0
+                    if body[X01_TIME_REMAINING_MINUTES_OFFSET] == MAX_BYTE_VALUE
+                    else body[X01_TIME_REMAINING_MINUTES_OFFSET]
+                )
+                * 60
+                + (
+                    0
+                    if body[X01_TIME_REMAINING_SECONDS_OFFSET] == MAX_BYTE_VALUE
+                    else body[X01_TIME_REMAINING_SECONDS_OFFSET]
+                )
             )
-            self.current_temperature = (body[25] << 8) + body[26]
+            self.current_temperature = (body[X01_TEMPERATURE_HIGH_OFFSET] << 8) + body[
+                X01_TEMPERATURE_LOW_OFFSET
+            ]
             if self.current_temperature == 0:
-                self.current_temperature = (body[27] << 8) + body[28]
+                self.current_temperature = (
+                    body[X01_TEMPERATURE_FALLBACK_HIGH_OFFSET] << 8
+                ) + body[X01_TEMPERATURE_FALLBACK_LOW_OFFSET]
             self.tank_ejected = (body[X01_FLAGS_OFFSET] & 0x04) > 0
             self.water_shortage = (body[X01_FLAGS_OFFSET] & 0x08) > 0
             self.water_change_reminder = (body[X01_FLAGS_OFFSET] & 0x10) > 0
