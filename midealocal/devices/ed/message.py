@@ -11,6 +11,26 @@ from midealocal.message import (
     MessageType,
 )
 
+TEA_BAR_SUBTYPE = 395
+TEA_BAR_CURRENT_TEMPERATURE_OFFSET = 3
+TEA_BAR_TARGET_TEMPERATURE_OFFSET = 10
+TEA_BAR_HEATING_FLAG_OFFSET = 49
+TEA_BAR_STATUS_FLAG_OFFSET = 51
+TEA_BAR_KEEP_WARM_TIME_OFFSET = 33
+TEA_BAR_KEEP_WARM_REMAINING_LOW_OFFSET = 34
+TEA_BAR_KEEP_WARM_REMAINING_HIGH_OFFSET = 35
+TEA_BAR_KEEP_WARM_FLAG_OFFSET = 48
+TEA_BAR_COOLING_STATUS_OFFSET = 50
+TEA_BAR_HEATING_FLAG = 0x01
+TEA_BAR_KEEP_WARM_FLAG = 0x01
+TEA_BAR_SLEEP_FLAG = 0x80
+TEA_BAR_STATUS_LACK_WATER_FLAG = 0x02
+TEA_BAR_STATUS_HEATING_FLAG = 0x04
+TEA_BAR_STATUS_HOT_WATER_FLAG = 0x40
+TEA_BAR_STATUS_STANDBY_FLAG = 0x80
+TEA_BAR_STATUS_DISPENSING_MASK = 0x50
+TEA_BAR_ERROR_OFFSET = 52
+
 
 class Attributes(IntEnum):
     """Attributes."""
@@ -62,6 +82,11 @@ class NewSetTags(IntEnum):
     cl_sterilization = 0x0109  # setbytes(0x09, 0x01, ...)
     leak_water_protection = 0x010A  # setbytes(0x0A, 0x01, ...)
     water_way = 0x0200  # setbytes(0x00, 0x02, ...)
+    tea_bar_target_temperature = 0x0401
+    tea_bar_heat_start = 0x0405
+    tea_bar_keep_warm = 0x0408
+    tea_bar_sleep = 0x0104  # Intentional alias: same wire tag as salt_setting.
+    tea_bar_cooling = 0x0500
 
 
 class EDNewSetParamPack:
@@ -305,6 +330,13 @@ class MessageNewSet(MessageEDBase):
         self.leak_water_protection: bool | None = None
         self.leak_water_protection_value: int | None = None
         self.water_way: bool | None = None
+        # Tea bar controls from the official ED Lua encoder.
+        self.target_temperature: int | None = None
+        self.heating: bool | None = None
+        self.keep_warm: bool | None = None
+        self.keep_warm_time: int | None = None
+        self.sleep: bool | None = None
+        self.cooling: bool | None = None
 
     @property
     def _body(self) -> bytearray:
@@ -423,6 +455,48 @@ class MessageNewSet(MessageEDBase):
                     value=0x01 if self.water_way else 0x00,
                 ),
             )
+        if self.target_temperature is not None:
+            pack_count += 1
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.tea_bar_target_temperature,
+                    value=self.target_temperature,
+                    addition=0x0A,
+                ),
+            )
+        if self.heating is not None:
+            pack_count += 1
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.tea_bar_heat_start,
+                    value=0x01 if self.heating else 0x00,
+                ),
+            )
+        if self.keep_warm is not None:
+            pack_count += 1
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.tea_bar_keep_warm,
+                    value=0x01 if self.keep_warm else 0x00,
+                    addition=self.keep_warm_time or 0,
+                ),
+            )
+        if self.sleep is not None:
+            pack_count += 1
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.tea_bar_sleep,
+                    value=0x01 if self.sleep else 0x00,
+                ),
+            )
+        if self.cooling is not None:
+            pack_count += 1
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.tea_bar_cooling,
+                    value=0x01 if self.cooling else 0x00,
+                ),
+            )
         payload[1] = pack_count
         return payload
 
@@ -496,12 +570,45 @@ class EDMessageBody05(MessageBody):
 class EDMessageBody06(MessageBody):
     """ED message body 06."""
 
-    def __init__(self, body: bytearray) -> None:
+    def __init__(self, body: bytearray, subtype: int = 0) -> None:
         """Initialize ED message body 06."""
         super().__init__(body)
         self.power = (body[51] & 0x01) > 0
         self.child_lock = (body[51] & 0x08) > 0
         self.water_consumption = body[25] + (body[26] << 8)
+        if subtype == TEA_BAR_SUBTYPE:
+            self.current_temperature = body[TEA_BAR_CURRENT_TEMPERATURE_OFFSET]
+            self.target_temperature = body[TEA_BAR_TARGET_TEMPERATURE_OFFSET] or None
+            self.heating = (
+                body[TEA_BAR_HEATING_FLAG_OFFSET] == TEA_BAR_HEATING_FLAG
+                and body[TEA_BAR_STATUS_FLAG_OFFSET] & TEA_BAR_STATUS_HEATING_FLAG > 0
+            )
+            self.dispensing = (
+                body[TEA_BAR_STATUS_FLAG_OFFSET] & TEA_BAR_STATUS_DISPENSING_MASK
+                == TEA_BAR_STATUS_DISPENSING_MASK
+            )
+            self.keep_warm = (
+                body[TEA_BAR_KEEP_WARM_FLAG_OFFSET] & TEA_BAR_KEEP_WARM_FLAG > 0
+            )
+            self.sleep = body[TEA_BAR_KEEP_WARM_FLAG_OFFSET] & TEA_BAR_SLEEP_FLAG > 0
+            self.screen_display = not self.sleep
+            self.cooling = body[TEA_BAR_COOLING_STATUS_OFFSET] != 0
+            self.lack_water = (
+                body[TEA_BAR_STATUS_FLAG_OFFSET] & TEA_BAR_STATUS_LACK_WATER_FLAG > 0
+            )
+            self.standby = (
+                body[TEA_BAR_STATUS_FLAG_OFFSET] & TEA_BAR_STATUS_STANDBY_FLAG > 0
+            )
+            self.hot_water_dispensing = (
+                body[TEA_BAR_STATUS_FLAG_OFFSET] & TEA_BAR_STATUS_HOT_WATER_FLAG > 0
+            )
+            self.fault_code = body[TEA_BAR_ERROR_OFFSET]
+            self.fault = self.fault_code != 0
+            raw_keep_warm_time = body[TEA_BAR_KEEP_WARM_TIME_OFFSET]
+            self.keep_warm_time = raw_keep_warm_time / 2 if raw_keep_warm_time else None
+            self.keep_warm_remaining = body[TEA_BAR_KEEP_WARM_REMAINING_LOW_OFFSET] + (
+                body[TEA_BAR_KEEP_WARM_REMAINING_HIGH_OFFSET] << 8
+            )
 
 
 class EDMessageBody07(MessageBody):
@@ -637,7 +744,7 @@ class EDMessageBodyFF(MessageBody):
 class MessageEDResponse(MessageResponse):
     """ED message response."""
 
-    def __init__(self, message: bytes) -> None:
+    def __init__(self, message: bytes, subtype: int = 0) -> None:
         """Initialize ED message response."""
         super().__init__(bytearray(message))
         if self._message_type in [
@@ -646,16 +753,24 @@ class MessageEDResponse(MessageResponse):
             MessageType.notify1,
         ]:
             self.device_class = self._body_type
-            if self._body_type in [ListTypes.X00, ListTypes.X15, ListTypes.FF]:
+            if self._body_type in [ListTypes.X00, ListTypes.FF]:
                 self.set_body(EDMessageBodyFF(super().body))
-            if self.body_type == ListTypes.X01:
+            elif self._body_type == ListTypes.X15 and subtype == TEA_BAR_SUBTYPE:
+                # Subtype 395 can return either a full body-06 style status
+                # acknowledgement or a short X15 acknowledgement. Only convert
+                # the full status form because EDMessageBody06 reads body[52].
+                status_body = bytearray(super().body)
+                if len(status_body) > TEA_BAR_ERROR_OFFSET:
+                    status_body[0] = ListTypes.X06
+                    self.set_body(EDMessageBody06(status_body, subtype))
+            elif self.body_type == ListTypes.X01:
                 self.set_body(EDMessageBody01(super().body))
             elif self.body_type in [ListTypes.X03, ListTypes.X04]:
                 self.set_body(EDMessageBody03(super().body))
             elif self.body_type == ListTypes.X05:
                 self.set_body(EDMessageBody05(super().body))
             elif self.body_type == ListTypes.X06:
-                self.set_body(EDMessageBody06(super().body))
+                self.set_body(EDMessageBody06(super().body, subtype))
             elif self.body_type == ListTypes.X07:
                 self.set_body(EDMessageBody07(super().body))
             elif self.body_type == ListTypes.X09:
