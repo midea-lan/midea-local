@@ -606,9 +606,9 @@ class TestMideaACDevice:
             mock_message.target_compressor_frequency = 25
             mock_message.compressor_current = 1
             mock_message.compressor_voltage = 232
-            mock_message.indoor_coil_temperature = 20.5
-            mock_message.evaporator_temperature = 4.0
-            mock_message.condenser_temperature = 26.0
+            mock_message.indoor_ambient_temperature = 20.5
+            mock_message.indoor_coil_temperature = 4.0
+            mock_message.outdoor_coil_temperature = 26.0
             mock_message.outdoor_ambient_temperature = 19.0
             mock_message.discharge_pipe_temperature = 36
             # group 2
@@ -624,9 +624,9 @@ class TestMideaACDevice:
             assert result[DeviceAttributes.target_compressor_frequency.value] == 25
             assert result[DeviceAttributes.compressor_current.value] == 1
             assert result[DeviceAttributes.compressor_voltage.value] == 232
-            assert result[DeviceAttributes.indoor_coil_temperature.value] == 20.5
-            assert result[DeviceAttributes.evaporator_temperature.value] == 4.0
-            assert result[DeviceAttributes.condenser_temperature.value] == 26.0
+            assert result[DeviceAttributes.indoor_ambient_temperature.value] == 20.5
+            assert result[DeviceAttributes.indoor_coil_temperature.value] == 4.0
+            assert result[DeviceAttributes.outdoor_coil_temperature.value] == 26.0
             assert result[DeviceAttributes.outdoor_ambient_temperature.value] == 19.0
             assert result[DeviceAttributes.discharge_pipe_temperature.value] == 36
             assert result[DeviceAttributes.indoor_fan_speed.value] == 424
@@ -642,9 +642,9 @@ class TestMideaACDevice:
                 DeviceAttributes.target_compressor_frequency,
                 DeviceAttributes.compressor_current,
                 DeviceAttributes.compressor_voltage,
+                DeviceAttributes.indoor_ambient_temperature,
                 DeviceAttributes.indoor_coil_temperature,
-                DeviceAttributes.evaporator_temperature,
-                DeviceAttributes.condenser_temperature,
+                DeviceAttributes.outdoor_coil_temperature,
                 DeviceAttributes.outdoor_ambient_temperature,
                 DeviceAttributes.discharge_pipe_temperature,
                 DeviceAttributes.indoor_fan_speed,
