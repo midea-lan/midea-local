@@ -474,7 +474,6 @@ class MessageNewProtocolQuery(MessageACBase):
         NewProtocolTags.out_silent,
         NewProtocolTags.buzzer_all,
         NewProtocolQuery.error_code_query,
-        NewProtocolTags.b5_self_clean_active,
     )
 
     def __init__(self, protocol_version: int) -> None:
