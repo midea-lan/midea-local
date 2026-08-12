@@ -114,6 +114,58 @@ class TestMideaB1Device:
         result = self.device.process_message(bytes(header + body + bytearray(1)))
         assert result == {}
 
+    def test_x01_response_short_body_guard(self) -> None:
+        """Test X01 response shorter than X01_MIN_BODY_LENGTH is ignored safely.
+
+        Truncates the real captured X01 payload to 32 bytes (one short of
+        the 33-byte minimum enforced by ``B1Message01Body``) to exercise
+        the length guard's false branch: it must not raise ``IndexError``
+        and must leave door/status/time_remaining/etc. unset, so no
+        attributes change from their initial values.
+        """
+        header = bytearray(
+            [0xAA, 0x00, DeviceType.B1] + [0x00] * 5 + [ProtocolVersion.V1],
+        ) + bytearray([MessageType.query])
+        body = bytearray.fromhex(self.X01_RESPONSE_711001CJ_HEX)[:32]
+        result = self.device.process_message(bytes(header + body + bytearray(1)))
+        assert self.device.attributes[DeviceAttributes.door] is False
+        assert self.device.attributes[DeviceAttributes.status] is None
+        assert self.device.attributes[DeviceAttributes.time_remaining] is None
+        assert self.device.attributes[DeviceAttributes.current_temperature] is None
+        assert self.device.attributes[DeviceAttributes.tank_ejected] is False
+        assert self.device.attributes[DeviceAttributes.water_shortage] is False
+        assert self.device.attributes[DeviceAttributes.water_change_reminder] is False
+        assert result == {}
+
+    def test_x01_response_temperature_fallback(self) -> None:
+        """Test X01 response falls back to the secondary temperature bytes.
+
+        When the primary temperature reading (``body[25:27]``) is zero,
+        ``B1Message01Body`` falls back to the secondary bytes
+        (``body[27:29]``) instead. Builds a synthetic minimal-length X01
+        body (the 33-byte guard minimum) with a zero primary reading and a
+        non-zero secondary reading to exercise that fallback branch.
+        """
+        header = bytearray(
+            [0xAA, 0x00, DeviceType.B1] + [0x00] * 5 + [ProtocolVersion.V1],
+        ) + bytearray([MessageType.query])
+        body = bytearray(33)
+        body[0] = 0x01  # X01 body type marker
+        body[25] = 0x00  # primary temperature high byte
+        body[26] = 0x00  # primary temperature low byte -> reads as 0
+        body[27] = 0x00  # fallback temperature high byte
+        body[28] = 0x14  # fallback temperature low byte -> 20
+        body[31] = 0x02  # status -> Idle
+        result = self.device.process_message(bytes(header + body + bytearray(1)))
+        assert self.device.attributes[DeviceAttributes.door] is False
+        assert self.device.attributes[DeviceAttributes.status] == "Idle"
+        assert self.device.attributes[DeviceAttributes.time_remaining] == 0
+        assert self.device.attributes[DeviceAttributes.current_temperature] == 20
+        assert self.device.attributes[DeviceAttributes.tank_ejected] is False
+        assert self.device.attributes[DeviceAttributes.water_shortage] is False
+        assert self.device.attributes[DeviceAttributes.water_change_reminder] is False
+        assert result[DeviceAttributes.status.value] == "Idle"
+
     def test_x01_response_real_device_sample(self) -> None:
         """Test X01 response decoding against a real subtype-zero oven capture.
 
@@ -159,3 +211,12 @@ class TestMessageQuery:
         """Test query body."""
         msg = MessageQuery(protocol_version=ProtocolVersion.V1)
         assert msg.body == bytearray([0x00])
+
+
+class TestMessageQueryX01:
+    """Test B1 Message Query X01."""
+
+    def test_query_body(self) -> None:
+        """Test query body."""
+        msg = MessageQueryX01(protocol_version=ProtocolVersion.V1)
+        assert msg.body == bytearray([0x01])
