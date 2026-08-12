@@ -144,11 +144,11 @@ class TestMideaB0Device:
         body[24] = 0xFF  # seconds unset
         body[27] = 0x01  # temperature fallback high byte
         body[28] = 44  # temperature fallback low byte
-        body[31] = 0x02  # status "Working"
+        body[31] = 0x02  # status "Idle"
         body[32] = 0x12  # door and water change reminder
         new_status = device.process_message(_build_message(MessageType.query, body))
         assert device.attributes[DeviceAttributes.door] is True
-        assert device.attributes[DeviceAttributes.status] == "Working"
+        assert device.attributes[DeviceAttributes.status] == "Idle"
         assert device.attributes[DeviceAttributes.time_remaining] == 3660
         assert device.attributes[DeviceAttributes.current_temperature] == 300
         assert device.attributes[DeviceAttributes.tank_ejected] is False
@@ -168,11 +168,11 @@ class TestMideaB0Device:
         device = _build_device(0)
         body_01 = bytearray(34)
         body_01[0] = 0x01
-        body_01[31] = 0x02  # status "Working"
+        body_01[31] = 0x02  # status "Idle"
         body_01[32] = 0x00  # door closed, no tank/water flags
         device.process_message(_build_message(MessageType.query, body_01))
         assert device.attributes[DeviceAttributes.door] is False
-        assert device.attributes[DeviceAttributes.status] == "Working"
+        assert device.attributes[DeviceAttributes.status] == "Idle"
         assert device.attributes[DeviceAttributes.tank_ejected] is False
         assert device.attributes[DeviceAttributes.water_shortage] is False
 
@@ -185,22 +185,47 @@ class TestMideaB0Device:
         )
         assert new_status == {}
         assert device.attributes[DeviceAttributes.door] is False
-        assert device.attributes[DeviceAttributes.status] == "Working"
+        assert device.attributes[DeviceAttributes.status] == "Idle"
         assert device.attributes[DeviceAttributes.tank_ejected] is False
         assert device.attributes[DeviceAttributes.water_shortage] is False
+
+    def test_process_message_01_status_working_real_device_sample(self) -> None:
+        """Test status code 0x03 decodes to "Working" on a subtype zero device.
+
+        Captured via debug logs from a real subtype-zero microwave (model
+        70000209) answering an X01/notify1 response mid-heat. Confirms raw
+        status byte 3 - observed continuously across four separate hardware
+        test runs (short heat, defrost, a 100-second uninterrupted full-power
+        run, and a pause/resume/door test) whenever the device was actively
+        cooking, and never on the physical "Pause" button, which instead
+        reports status 2 ("Idle") - decodes to "Working", matching both
+        ``_status31`` (subtype 2 of the same device) and the B1 device's
+        ``_status`` map.
+        """
+        device = _build_device(0)
+        header = bytearray.fromhex("aa46b000000000000004")
+        body = bytearray.fromhex(
+            "0100000000110001010001000affffffffffff000000000100ffffffffffff"
+            "030004000000000000000000000002dc01000100000000000080000021",
+        )
+        new_status = device.process_message(bytes(header + body))
+        assert device.attributes[DeviceAttributes.door] is False
+        assert device.attributes[DeviceAttributes.status] == "Working"
+        assert device.attributes[DeviceAttributes.time_remaining] == 60
+        assert new_status[DeviceAttributes.status.value] == "Working"
 
     def test_process_message_default_body_subtype_zero(self) -> None:
         """Test process message with the default body on subtype zero."""
         device = _build_device(0)
         body = bytearray(17)
-        body[0] = 0x82  # unhandled body type with the door bit set
+        body[0] = 0x82  # unhandled body type with the door bit set, status "Idle"
         body[1] = 0x02  # mode "Baking"
         body[2] = 1  # minutes
         body[3] = 30  # seconds
         body[14] = 5  # raw fire power
         device.process_message(_build_message(MessageType.set, body))
         assert device.attributes[DeviceAttributes.door] is True
-        assert device.attributes[DeviceAttributes.status] == "Working"
+        assert device.attributes[DeviceAttributes.status] == "Idle"
         assert device.attributes[DeviceAttributes.time_remaining] == 90
         assert device.attributes[DeviceAttributes.mode] == "Baking"
         assert device.attributes[DeviceAttributes.fire_power] == 5
