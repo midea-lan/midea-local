@@ -17,6 +17,15 @@ class TestMideaB1Device:
 
     device: MideaB1Device
 
+    # Real-device X01 response captured via debug logs from a real electric
+    # oven (model 711001CJ, subtype 0) answering ``MessageQueryX01`` while
+    # idle with the door closed.
+    X01_RESPONSE_711001CJ_HEX = (
+        "010000000011000000000000000000ffff00000000000000000020ffff"
+        "0000020000000000000000000000000001910300010000000000008000"
+        "0021"
+    )
+
     @pytest.fixture(autouse=True)
     def _setup_device(self) -> None:
         """Midea B1 Device setup."""
@@ -108,9 +117,7 @@ class TestMideaB1Device:
     def test_x01_response_real_device_sample(self) -> None:
         """Test X01 response decoding against a real subtype-zero oven capture.
 
-        Captured via debug logs from a real electric oven (model 711001CJ,
-        subtype 0) answering ``MessageQueryX01`` while idle with the door
-        closed. Confirms the X01 body layout matches B0's ``B0Message01Body``
+        Confirms the X01 body layout matches B0's ``B0Message01Body``
         offsets (see ``B1Message01Body``) and produces sane values: door
         closed, no tank/water flags, idle status, no time remaining, and a
         plausible ~32C cavity temperature (rather than B0's known-broken
@@ -119,11 +126,7 @@ class TestMideaB1Device:
         header = bytearray(
             [0xAA, 0x00, DeviceType.B1] + [0x00] * 5 + [ProtocolVersion.V1],
         ) + bytearray([MessageType.query])
-        body = bytearray.fromhex(
-            "010000000011000000000000000000ffff00000000000000000020ffff"
-            "0000020000000000000000000000000001910300010000000000008000"
-            "0021",
-        )
+        body = bytearray.fromhex(self.X01_RESPONSE_711001CJ_HEX)
         result = self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.door] is False
         assert self.device.attributes[DeviceAttributes.status] == "Idle"
