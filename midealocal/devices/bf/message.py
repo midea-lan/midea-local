@@ -464,12 +464,8 @@ class MessageSet(MessageBFBase):
             BYTE_DOOR_OPEN,
             BYTE_DOOR_CLOSE,
         )
-        screen_byte = (
-            self.screen_luminance & BYTE_FF
-            if self.screen_luminance is not None
-            else BYTE_FF
-        )
-        volume_byte = self.volume & BYTE_FF if self.volume is not None else BYTE_FF
+        screen_byte = self.screen_luminance or BYTE_FF
+        volume_byte = self.volume or BYTE_FF
         hot_wind_byte = self._bool_to_byte(
             self.hot_wind,
             BYTE_HOT_WIND_ON,
@@ -528,13 +524,9 @@ class MessageSet(MessageBFBase):
 
         mode_high, mode_low = work_mode_to_bytes(self.work_mode)
 
-        work_hour = self.work_hour & BYTE_FF if self.work_hour is not None else 0x00
-        work_minute = (
-            self.work_minute & BYTE_FF if self.work_minute is not None else 0x00
-        )
-        work_second = (
-            self.work_second & BYTE_FF if self.work_second is not None else 0x00
-        )
+        work_hour = self.work_hour or 0x00
+        work_minute = self.work_minute or 0x00
+        work_second = self.work_second or 0x00
         fire_power_byte = self._fire_power_value(self.fire_power)
 
         # Temperature bytes
@@ -563,11 +555,7 @@ class MessageSet(MessageBFBase):
             probe_low = self.probe_temperature & BYTE_FF
 
         # Steam quantity
-        steam_byte = (
-            self.steam_quantity & BYTE_FF
-            if self.steam_quantity is not None
-            else BYTE_FF
-        )
+        steam_byte = self.steam_quantity or BYTE_FF
 
         # Weight / people number
         if self.weight is not None:
@@ -617,15 +605,9 @@ class MessageSet(MessageBFBase):
         time_fields = [self.hour_set, self.minute_set, self.second_set]
         if any(f is not None for f in time_fields):
             body.append(PARAM_ID_TIME)
-            body.append(
-                self.hour_set & BYTE_FF if self.hour_set is not None else 0x00,
-            )
-            body.append(
-                self.minute_set & BYTE_FF if self.minute_set is not None else 0x00,
-            )
-            body.append(
-                self.second_set & BYTE_FF if self.second_set is not None else 0x00,
-            )
+            body.append(self.hour_set or 0x00)
+            body.append(self.minute_set or 0x00)
+            body.append(self.second_set or 0x00)
             param_sum += 1
 
         if self.fire_power_set is not None:
