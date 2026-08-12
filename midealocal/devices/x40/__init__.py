@@ -64,6 +64,17 @@ class MideaX40Device(MideaDevice):
         return self._precision_halves
 
     @property
+    def speed_count(self) -> int:
+        """Midea x40 device speed count."""
+        return 2
+
+    @property
+    def preset_modes(self) -> list[str] | None:
+        """Midea x40 device preset modes."""
+        # X40 has no "mode" attribute, so it has no named presets.
+        return None
+
+    @property
     def directions(self) -> list[str]:
         """Midea x40 device directions."""
         return self._directions
