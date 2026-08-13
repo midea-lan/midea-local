@@ -90,8 +90,21 @@ class TestMideaFADevice:
             "reserved",
             "both",
         ]
-        assert self.device.preset_modes[0] == "normal"
-        assert len(self.device.preset_modes) == 13
+        assert self.device.preset_modes == [
+            "normal",
+            "natural",
+            "sleep",
+            "comfort",
+            "silent",
+            "baby",
+            "induction",
+            "circulation",
+            "strong",
+            "soft",
+            "customize",
+            "warm",
+            "smart",
+        ]
 
     def test_build_query(self) -> None:
         """Test build query."""
