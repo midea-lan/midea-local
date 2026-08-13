@@ -72,7 +72,7 @@ class TestMideaE8Device:
         body[41] = 0x01  # finished
         body[43] = 0x01  # water shortage
         result = self.device.process_message(bytes(header + body + bytearray(1)))
-        assert self.device.attributes[DeviceAttributes.status] == "Working"
+        assert self.device.attributes[DeviceAttributes.status] == "working"
         assert self.device.attributes[DeviceAttributes.time_remaining] == 3661
         assert self.device.attributes[DeviceAttributes.keep_warm_remaining] == 90
         assert self.device.attributes[DeviceAttributes.working_time] == 125
@@ -80,7 +80,7 @@ class TestMideaE8Device:
         assert self.device.attributes[DeviceAttributes.current_temperature] == 60
         assert self.device.attributes[DeviceAttributes.finished] is True
         assert self.device.attributes[DeviceAttributes.water_shortage] is True
-        assert result[DeviceAttributes.status.value] == "Working"
+        assert result[DeviceAttributes.status.value] == "working"
 
     @pytest.mark.parametrize("sub_cmd", [0x02, 0x04, 0x06])
     def test_set_response(self, sub_cmd: int) -> None:
@@ -93,7 +93,7 @@ class TestMideaE8Device:
         body[6] = sub_cmd
         body[11] = 0xFF  # status -> Error
         self.device.process_message(bytes(header + body + bytearray(1)))
-        assert self.device.attributes[DeviceAttributes.status] == "Error"
+        assert self.device.attributes[DeviceAttributes.status] == "error"
         assert self.device.attributes[DeviceAttributes.time_remaining] == 0
         assert self.device.attributes[DeviceAttributes.keep_warm_remaining] == 0
         assert self.device.attributes[DeviceAttributes.working_time] == 0
