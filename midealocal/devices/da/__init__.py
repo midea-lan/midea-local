@@ -80,46 +80,46 @@ class MideaDADevice(MideaDevice):
         message = MessageDAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
-        progress = ["Idle", "Spin", "Rinse", "Wash", "Weight", "Unknown", "Dry", "Soak"]
+        progress = ["idle", "spin", "rinse", "wash", "weight", "unknown", "dry", "soak"]
         program = [
-            "Standard",
-            "Fast",
-            "Blanket",
-            "Wool",
+            "standard",
+            "fast",
+            "blanket",
+            "wool",
             "embathe",
-            "Memory",
-            "Child",
-            "Down Jacket",
-            "Stir",
-            "Mute",
-            "Bucket Self Clean",
-            "Air Dry",
+            "memory",
+            "child",
+            "down_jacket",
+            "stir",
+            "mute",
+            "bucket_self_clean",
+            "air_dry",
         ]
-        speed = ["-", "Low", "Medium", "High"]
-        strength = ["-", "Week", "Medium", "Strong"]
+        speed = ["none", "low", "medium", "high"]
+        strength = ["none", "weak", "medium", "strong"]
         detergent = [
-            "No",
-            "Less",
-            "Medium",
-            "More",
+            "no",
+            "less",
+            "medium",
+            "more",
             "4",
             "5",
             "6",
             "7",
             "8",
-            "Insufficient",
+            "insufficient",
         ]
         softener = [
-            "No",
-            "Intelligent",
-            "Programed",  # codespell:ignore
+            "no",
+            "intelligent",
+            "programed",  # codespell:ignore
             "3",
             "4",
             "5",
             "6",
             "7",
             "8",
-            "Insufficient",
+            "insufficient",
         ]
         for status in self._attributes:
             if hasattr(message, str(status)):
@@ -133,7 +133,7 @@ class MideaDADevice(MideaDevice):
                         None if value >= len(program) else program[value]
                     )
                 elif status == DeviceAttributes.rinse_level:
-                    self._attributes[status] = "-" if value == MIN_TEMP else value
+                    self._attributes[status] = "none" if value == MIN_TEMP else value
                 elif status == DeviceAttributes.dehydration_speed:
                     self._attributes[status] = (
                         None if value >= len(speed) else speed[value]
