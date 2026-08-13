@@ -1,5 +1,14 @@
 # Changelog
 
+## [8.0.1](https://github.com/midea-lan/midea-local/compare/midea-local-v8.0.0...midea-local-v8.0.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* **b0:** correct status labels 0x02/0x03 (Idle/Working, not Working/Pause) on subtype zero ([#634](https://github.com/midea-lan/midea-local/issues/634)) ([7b4b856](https://github.com/midea-lan/midea-local/commit/7b4b856151b55a015f0d3384f3664ec8dbf214e6))
+* **ed:** cancel queued tea bar heating after filling ([#638](https://github.com/midea-lan/midea-local/issues/638)) ([5297dce](https://github.com/midea-lan/midea-local/commit/5297dce739ff88c46f22b656f1f0dbd8c7ceed59))
+* **x40:** align with other device fan implementations ([#637](https://github.com/midea-lan/midea-local/issues/637)) ([4564297](https://github.com/midea-lan/midea-local/commit/4564297408a21bf29b30b233b23882d58f08bebf))
+
 ## [8.0.0](https://github.com/midea-lan/midea-local/compare/midea-local-v7.0.0...midea-local-v8.0.0) (2026-08-12)
 
 
