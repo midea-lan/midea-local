@@ -84,8 +84,8 @@ class TestMideaCDDevice:
 
     def test_preset_modes_excludes_vacation_from_selectable_modes(self) -> None:
         """Vacation is readable state, not directly selectable operation mode."""
-        assert "Vacation" not in self.device.preset_modes
-        assert self.device._modes[0x05] == "Vacation"
+        assert "vacation" not in self.device.preset_modes
+        assert self.device._modes[0x05] == "vacation"
 
     def test_set_mode_vacation_is_rejected(self) -> None:
         """Direct Vacation operation mode writes are blocked."""
@@ -391,7 +391,7 @@ class TestMideaCDDevice:
             _build_message(MessageType.query, _general_body()),
         )
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.mode] == "Standard"
+        assert self.device.attributes[DeviceAttributes.mode] == "standard"
         assert self.device.attributes[DeviceAttributes.target_temperature] == 40
         assert self.device.attributes[DeviceAttributes.current_temperature] == 35
         assert self.device.attributes[DeviceAttributes.outdoor_temperature] == 20
@@ -405,7 +405,7 @@ class TestMideaCDDevice:
         assert self.device.attributes[DeviceAttributes.error_code] == 3
         assert self.device.attributes[DeviceAttributes.disinfection_temperature] == 65.0
         assert self.device.attributes[DeviceAttributes.fahrenheit] is False
-        assert new_status[DeviceAttributes.mode.value] == "Standard"
+        assert new_status[DeviceAttributes.mode.value] == "standard"
 
     def test_process_vacation_status_message(self) -> None:
         """Vacation bit in body[35] maps to Vacation mode and days."""
@@ -414,7 +414,7 @@ class TestMideaCDDevice:
         body[36] = 0x00
         body[37] = 30
         self.device.process_message(_build_message(MessageType.query, body))
-        assert self.device.attributes[DeviceAttributes.mode] == "Vacation"
+        assert self.device.attributes[DeviceAttributes.mode] == "vacation"
         assert self.device.attributes[DeviceAttributes.vacation_mode] is True
         assert self.device.attributes[DeviceAttributes.vacation_days] == 30
 
@@ -446,7 +446,7 @@ class TestMideaCDDevice:
             "byte8": 0x10,
         }
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.mode] == "Standard"
+        assert self.device.attributes[DeviceAttributes.mode] == "standard"
         assert self.device.attributes[DeviceAttributes.target_temperature] == 40
         assert self.device.attributes[DeviceAttributes.vacation_mode] is True
         assert self.device.attributes[DeviceAttributes.vacation_days] == 30
@@ -623,7 +623,7 @@ class TestMideaCDDevice:
 
     def test_set_power_with_known_mode_state(self) -> None:
         """Stored Standard mode maps back to its key."""
-        self.device._attributes[DeviceAttributes.mode] = "Standard"
+        self.device._attributes[DeviceAttributes.mode] = "standard"
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.power.value, True)
             mock_send.assert_called_once()
@@ -632,7 +632,7 @@ class TestMideaCDDevice:
 
     def test_set_power_with_none_string_mode_state(self) -> None:
         """Stored "None" mode maps to 0x00."""
-        self.device._attributes[DeviceAttributes.mode] = "None"
+        self.device._attributes[DeviceAttributes.mode] = "none"
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.power.value, True)
             mock_send.assert_called_once()
@@ -648,7 +648,7 @@ class TestMideaCDDevice:
     def test_set_mode_standard(self) -> None:
         """A valid mode value is mapped to its key and sent."""
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.mode.value, "Standard")
+            self.device.set_attribute(DeviceAttributes.mode.value, "standard")
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
             assert msg.mode == 0x02

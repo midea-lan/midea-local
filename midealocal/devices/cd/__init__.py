@@ -94,12 +94,12 @@ class MideaCDDevice(MideaDevice):
     """Midea CD device."""
 
     _modes: ClassVar[dict[int, str]] = {
-        0x00: "None",
-        0x01: "Energy-save",
-        0x02: "Standard",
-        0x03: "Dual",
-        0x04: "Smart",
-        0x05: "Vacation",
+        0x00: "none",
+        0x01: "energy_save",
+        0x02: "standard",
+        0x03: "dual",
+        0x04: "smart",
+        0x05: "vacation",
     }
     _vacation_mode_key: ClassVar[int] = 0x05
 
@@ -457,9 +457,9 @@ class MideaCDDevice(MideaDevice):
             # Note: when vacation is active the stored mode is "Vacation" (0x05)
             # which is NOT a valid modeValue for the device.  We handle that
             # explicitly in the vacation branches below.
-            if current_mode is None or current_mode == "None":
+            if current_mode is None or current_mode == "none":
                 message.mode = 0x00
-            elif current_mode == "Vacation":
+            elif current_mode == "vacation":
                 # Do not send 0x05 as modeValue; the device does not support it.
                 # Fall back to 0x00 (no explicit operating mode).
                 message.mode = 0x00
