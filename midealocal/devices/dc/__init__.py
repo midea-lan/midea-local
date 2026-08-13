@@ -5,7 +5,12 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import (
+    MideaDevice,
+    MideaDeviceInitKwargs,
+    dict_translator,
+    list_translator,
+)
 from midealocal.exceptions import ValueWrongType
 
 from .message import MessageDCResponse, MessagePower, MessageQuery, MessageStart
@@ -139,41 +144,25 @@ class MideaDCDevice(MideaDevice):
         """Midea DC device process message."""
         message = MessageDCResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
         progress = [
-            "Prog0",
-            "Prog1",
-            "Prog2",
-            "Prog3",
-            "Prog4",
-            "Prog5",
-            "Prog6",
-            "Prog7",
+            "prog0",
+            "prog1",
+            "prog2",
+            "prog3",
+            "prog4",
+            "prog5",
+            "prog6",
+            "prog7",
         ]
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                # parse progress
-                if status == DeviceAttributes.progress:
-                    # 0 means no progress bit is set; prevent value out of index range
-                    if 0 < value < len(progress):
-                        self._attributes[DeviceAttributes.progress] = progress[value]
-                    else:
-                        self._attributes[DeviceAttributes.progress] = None
-                # parse status
-                elif status == DeviceAttributes.status:
-                    self._attributes[DeviceAttributes.status] = (
-                        MideaDCDevice._status.get(value, value)
-                    )
-                # parse program
-                elif status == DeviceAttributes.program:
-                    self._attributes[DeviceAttributes.program] = (
-                        MideaDCDevice._program.get(value, value)
-                    )
-                else:
-                    self._attributes[status] = getattr(message, str(status))
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                # 0 means no progress bit is set; prevent value out of index range
+                DeviceAttributes.progress: list_translator(progress, min_index=1),
+                DeviceAttributes.status: dict_translator(MideaDCDevice._status),
+                DeviceAttributes.program: dict_translator(MideaDCDevice._program),
+            },
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea DC device set attribute."""
