@@ -12,6 +12,8 @@ from midealocal.message import (
 )
 
 TEMP_NEG_VALUE = 127
+ECO_FUNCTION_STATE_MASK = 0x01
+ECO_TIMER_STATE_MASK = 0x02
 
 
 class C3SilentLevel(IntEnum):
@@ -386,9 +388,11 @@ class C3ECOBody(MessageBody):
         """Initialize C3 ECO message body."""
         super().__init__(body)
         self.eco_function_state = (
-            len(body) > data_offset and body[data_offset] & 0x01 > 0
+            len(body) > data_offset and body[data_offset] & ECO_FUNCTION_STATE_MASK > 0
         )
-        self.eco_timer_state = len(body) > data_offset and body[data_offset] & 0x02 > 0
+        self.eco_timer_state = (
+            len(body) > data_offset and body[data_offset] & ECO_TIMER_STATE_MASK > 0
+        )
 
 
 class C3DisinfectBody(MessageBody):
