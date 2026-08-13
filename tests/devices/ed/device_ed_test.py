@@ -338,7 +338,7 @@ class TestMideaEDDevice:
         assert tea_bar.attributes[DeviceAttributes.boiling] is True
 
     def test_tea_bar_heating_switch_uses_official_tea_heat_command(self) -> None:
-        """Use the model-specific App command for normal 100-degree boiling."""
+        """Start at 100 degrees and stop without re-queuing that target."""
         tea_bar = MideaEDDevice(
             name="Tea Bar",
             device_id=2,
@@ -381,12 +381,7 @@ class TestMideaEDDevice:
                 [
                     0x15,
                     0x01,
-                    0x02,
                     0x01,
-                    0x04,
-                    0x64,
-                    0x0A,
-                    0x00,
                     0x05,
                     0x04,
                     0x00,
@@ -394,6 +389,122 @@ class TestMideaEDDevice:
                     0x00,
                 ],
             )
+
+    def test_tea_bar_stop_during_fill_cancels_queued_heating_once(self) -> None:
+        """Repeat the verified stop once after the firmware finishes filling."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        tea_bar._attributes[DeviceAttributes.dispensing] = True
+
+        with (
+            patch.object(tea_bar, "build_send") as mock_build_send,
+            patch("midealocal.devices.ed.MessageEDResponse") as response,
+        ):
+            tea_bar.set_attribute(DeviceAttributes.boiling, False)
+            initial_stop = mock_build_send.call_args.args[0]
+            assert initial_stop.body == bytearray(
+                [0x15, 0x01, 0x01, 0x05, 0x04, 0x00, 0x00, 0x00],
+            )
+
+            message = response.return_value
+            message.dispensing = True
+            message.heating = False
+            tea_bar.process_message(b"")
+            assert mock_build_send.call_count == 1
+
+            message.dispensing = False
+            message.heating = True
+            tea_bar.process_message(b"")
+            assert mock_build_send.call_count == 2
+            repeated_stop = mock_build_send.call_args.args[0]
+            assert repeated_stop.body == bytearray(
+                [0x15, 0x01, 0x01, 0x05, 0x04, 0x00, 0x00, 0x00],
+            )
+
+            tea_bar.process_message(b"")
+            assert mock_build_send.call_count == 2
+
+    def test_tea_bar_cancel_during_fill_clears_without_heating(self) -> None:
+        """Do not repeat stop if the fill finishes without starting heat."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        tea_bar._attributes[DeviceAttributes.dispensing] = True
+
+        with (
+            patch.object(tea_bar, "build_send") as mock_build_send,
+            patch("midealocal.devices.ed.MessageEDResponse") as response,
+        ):
+            tea_bar.set_attribute(DeviceAttributes.boiling, False)
+            message = response.return_value
+            message.dispensing = False
+            message.heating = False
+            tea_bar.process_message(b"")
+            assert mock_build_send.call_count == 1
+
+            message.heating = True
+            tea_bar.process_message(b"")
+            assert mock_build_send.call_count == 1
+
+    @pytest.mark.parametrize(
+        ("attribute", "value"),
+        [
+            (DeviceAttributes.boiling, True),
+            (DeviceAttributes.boil_temperature, 80),
+        ],
+    )
+    def test_tea_bar_new_heat_request_clears_pending_cancel(
+        self,
+        attribute: str,
+        value: bool | int,
+    ) -> None:
+        """A later local heat request supersedes a fill-phase cancellation."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        tea_bar._attributes[DeviceAttributes.current_temperature] = 20
+        tea_bar._attributes[DeviceAttributes.dispensing] = True
+
+        with (
+            patch.object(tea_bar, "build_send") as mock_build_send,
+            patch("midealocal.devices.ed.MessageEDResponse") as response,
+        ):
+            tea_bar.set_attribute(DeviceAttributes.boiling, False)
+            tea_bar.set_attribute(attribute, value)
+            message = response.return_value
+            message.dispensing = False
+            message.heating = True
+            tea_bar.process_message(b"")
+
+        assert mock_build_send.call_count == 2
 
     @pytest.mark.parametrize(("locked", "raw_value"), [(True, 0x01), (False, 0x00)])
     def test_tea_bar_child_lock_uses_official_lua_command(

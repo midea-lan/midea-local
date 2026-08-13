@@ -144,6 +144,7 @@ class MideaEDDevice(MideaDevice):
             },
         )
         if self._is_tea_bar():
+            self._tea_bar_cancel_after_dispensing = False
             self._attributes.update(
                 {
                     DeviceAttributes.current_temperature: None,
@@ -244,6 +245,21 @@ class MideaEDDevice(MideaDevice):
                 heating = new_status[DeviceAttributes.heating]
                 new_status[DeviceAttributes.boiling] = heating
                 self._attributes[DeviceAttributes.boiling] = heating
+            if (
+                self._tea_bar_cancel_after_dispensing
+                and DeviceAttributes.dispensing in new_status
+                and DeviceAttributes.heating in new_status
+                and new_status[DeviceAttributes.dispensing] is False
+            ):
+                self._tea_bar_cancel_after_dispensing = False
+                if new_status[DeviceAttributes.heating] is True:
+                    # Model 63000622 queues heating while it dispenses water.
+                    # Its first heat-stop command is acknowledged but does not
+                    # cancel that queued phase, so repeat the same verified
+                    # command once when the device transitions into heating.
+                    stop_message = MessageNewSet(self._message_protocol_version)
+                    stop_message.heating = False
+                    self.build_send(stop_message)
         return new_status
 
     def _set_tea_bar_attribute(
@@ -283,15 +299,21 @@ class MideaEDDevice(MideaDevice):
                 )
                 raise ValueError(msg)
             self._validate_tea_bar_target(target_temperature)
+            self._tea_bar_cancel_after_dispensing = False
             message.target_temperature = target_temperature
             message.heating = True
             stored_value = target_temperature
         elif attr == DeviceAttributes.boiling:
             boiling = bool(value)
-            # Model 63000622's official App TeaHeat control always sends both
-            # custom_temperature_1=100 and the heat_start toggle. It does not
-            # use the generic ED heat (0x0400) field.
-            message.target_temperature = TEA_BAR_DEFAULT_TARGET_TEMPERATURE
+            # Starting a normal cycle uses the appliance's 100-degree target
+            # together with heat_start. Stopping must send heat_start off on
+            # its own: resending a target while the appliance is filling can
+            # leave that target queued and start heating after filling ends.
+            if boiling:
+                self._tea_bar_cancel_after_dispensing = False
+                message.target_temperature = TEA_BAR_DEFAULT_TARGET_TEMPERATURE
+            elif self._attributes.get(DeviceAttributes.dispensing) is True:
+                self._tea_bar_cancel_after_dispensing = True
             message.heating = boiling
             stored_value = boiling
         elif attr == DeviceAttributes.child_lock:
