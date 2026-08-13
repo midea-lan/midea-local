@@ -80,9 +80,9 @@ class MideaC3Device(MideaDevice):
     """Midea C3 device."""
 
     _silent_modes: ClassVar[list[str]] = [
-        C3SilentLevel.OFF.name,
-        C3SilentLevel.SILENT.name,
-        C3SilentLevel.SUPER_SILENT.name,
+        C3SilentLevel.OFF.name.lower(),
+        C3SilentLevel.SILENT.name.lower(),
+        C3SilentLevel.SUPER_SILENT.name.lower(),
     ]
 
     def __init__(
@@ -109,7 +109,7 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.zone1_water_temp_mode: False,
                 DeviceAttributes.zone2_water_temp_mode: False,
                 DeviceAttributes.silent_mode: False,
-                DeviceAttributes.silent_level: C3SilentLevel.OFF.name,
+                DeviceAttributes.silent_level: C3SilentLevel.OFF.name.lower(),
                 DeviceAttributes.eco_mode: False,
                 DeviceAttributes.tbh: False,
                 DeviceAttributes.mode: 1,
@@ -301,12 +301,15 @@ class MideaC3Device(MideaDevice):
                     C3SilentLevel.SILENT
                     if value
                     and self._attributes[DeviceAttributes.silent_level]
-                    == C3SilentLevel.OFF.name
-                    else C3SilentLevel[self._attributes[DeviceAttributes.silent_level]]
+                    == C3SilentLevel.OFF.name.lower()
+                    else C3SilentLevel[
+                        self._attributes[DeviceAttributes.silent_level].upper()
+                    ]
                 )
             elif attr == DeviceAttributes.silent_level.value and isinstance(value, str):
-                message.silent_level = C3SilentLevel[value]
-                message.silent_mode = value != C3SilentLevel.OFF.name
+                normalized_value = value.upper()
+                message.silent_level = C3SilentLevel[normalized_value]
+                message.silent_mode = normalized_value != C3SilentLevel.OFF.name
         if message is not None:
             self.build_send(message)
 
