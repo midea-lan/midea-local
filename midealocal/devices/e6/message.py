@@ -88,13 +88,13 @@ class MessageSet(MessageE6Base):
             cold_water_dot = 0x01 if self.cold_water_dot else 0x00
             body = [0x04, 0x1B, cold_water_dot]
         elif self.heating_modes is not None:
-            if self.heating_modes == "normal_mode":
+            if self.heating_modes == "normal":
                 body = [0x04, 0x02, 0x01]
-            if self.heating_modes == "out_mode":
+            if self.heating_modes == "out":
                 body = [0x04, 0x02, 0x02]
-            if self.heating_modes == "home_mode":
+            if self.heating_modes == "home":
                 body = [0x04, 0x02, 0x04]
-            if self.heating_modes == "sleep_mode":
+            if self.heating_modes == "sleep":
                 body = [0x04, 0x02, 0x08]
         body_len = len(body)
         return bytearray(body + [0] * (30 - body_len))
