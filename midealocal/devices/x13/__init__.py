@@ -27,12 +27,12 @@ class Midea13Device(MideaDevice):
     """Midea x13 Device."""
 
     _effects: ClassVar[list[str]] = [
-        "Manual",
-        "Living",
-        "Reading",
-        "Mildly",
-        "Cinema",
-        "Night",
+        "manual",
+        "living",
+        "reading",
+        "mildly",
+        "cinema",
+        "night",
     ]
 
     def __init__(
