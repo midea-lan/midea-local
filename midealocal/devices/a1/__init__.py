@@ -37,19 +37,19 @@ class MideaA1Device(MideaDevice):
     """Midea A1 Device."""
 
     _default_modes: ClassVar[dict[int, str]] = {
-        1: "Manual",
-        2: "Continuous",
-        3: "Auto",
-        4: "Clothes-Dry",
-        5: "Shoes-Dry",
+        1: "manual",
+        2: "continuous",
+        3: "auto",
+        4: "clothes_dry",
+        5: "shoes_dry",
     }
     _default_speeds: ClassVar[dict[int, str]] = {
-        1: "Lowest",
-        40: "Low",
-        60: "Medium",
-        80: "High",
-        102: "Auto",
-        127: "Off",
+        1: "lowest",
+        40: "low",
+        60: "medium",
+        80: "high",
+        102: "auto",
+        127: "off",
     }
     _water_level_sets: ClassVar[list[str]] = ["25", "50", "75", "100"]
 
@@ -68,7 +68,7 @@ class MideaA1Device(MideaDevice):
                 DeviceAttributes.prompt_tone: True,
                 DeviceAttributes.child_lock: False,
                 DeviceAttributes.mode: None,
-                DeviceAttributes.fan_speed: "Medium",
+                DeviceAttributes.fan_speed: "medium",
                 DeviceAttributes.swing: False,
                 DeviceAttributes.target_humidity: 35,
                 DeviceAttributes.anion: False,
