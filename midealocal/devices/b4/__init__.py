@@ -65,21 +65,10 @@ class MideaB4Device(MideaDevice):
         """Midea B4 device process message."""
         message = MessageB4Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.status:
-                    if value in MideaB4Device._status:
-                        self._attributes[DeviceAttributes.status] = (
-                            MideaB4Device._status.get(value)
-                        )
-                    else:
-                        self._attributes[DeviceAttributes.status] = None
-                else:
-                    self._attributes[status] = value
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {DeviceAttributes.status: MideaB4Device._status.get},
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea B4 device set attribute."""

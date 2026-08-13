@@ -7,7 +7,7 @@ from enum import IntEnum, StrEnum
 from typing import Any, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, multiplier_translator
 
 from .message import (
     MessageE2Response,
@@ -188,19 +188,14 @@ class MideaE2Device(MideaDevice):
         """Midea E2 device process message."""
         message = MessageE2Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if (
-                    status == DeviceAttributes.heating_power
-                    and value is not None
-                    and self._heating_power_multiplier != 1.0
-                ):
-                    value = round(value * self._heating_power_multiplier)
-                self._attributes[status] = value
-                new_status[str(status)] = value
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.heating_power: multiplier_translator(
+                    self._heating_power_multiplier,
+                ),
+            },
+        )
 
     def make_message_set(self) -> MessageSet:
         """Midea E2 device make message set."""

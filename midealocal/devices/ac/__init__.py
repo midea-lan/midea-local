@@ -8,7 +8,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack, cast
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import SKIP_ATTRIBUTE, MideaDevice, MideaDeviceInitKwargs
 from midealocal.message import ListTypes
 
 from .message import (
@@ -404,7 +404,7 @@ class MideaACDevice(MideaDevice):
         ]
         return queries
 
-    def process_message(self, msg: bytes) -> dict[str, Any]:  # noqa: C901
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea AC device process message."""
         message = MessageACResponse(
             bytearray(msg),
@@ -412,7 +412,7 @@ class MideaACDevice(MideaDevice):
             self._uses_new_protocol_temperature,
         )
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
+        new_status: dict[str, Any] = {}
         has_fresh_air = False
         body_type = getattr(message, "body_type", None)
 
@@ -467,24 +467,30 @@ class MideaACDevice(MideaDevice):
             new_status.update(
                 {str(key): value for key, value in fresh_air_status.items()},
             )
-        for attr in self._attributes:
-            if hasattr(message, str(attr)):
-                if is_stale_c0_temperature and attr in STALE_C0_TEMPERATURE_ATTRIBUTES:
-                    continue
-                value = getattr(message, str(attr))
-                if attr == DeviceAttributes.fresh_air_power:
-                    has_fresh_air = True
-                # wind_lr_angle
-                if attr == DeviceAttributes.wind_lr_angle:
-                    self._attributes[attr] = MideaACDevice._wind_lr_angles.get(value)
-                # wind_ud_angle
-                elif attr == DeviceAttributes.wind_ud_angle:
-                    self._attributes[attr] = MideaACDevice._wind_ud_angles.get(value)
-                elif attr == DeviceAttributes.rate_select:
-                    self._attributes[attr] = MideaACDevice._rate_selects.get(value)
-                else:
-                    self._attributes[attr] = value
-                new_status[str(attr)] = self._attributes[attr]
+
+        def _translate_fresh_air_power(value: bool) -> bool:
+            nonlocal has_fresh_air
+            has_fresh_air = True
+            return value
+
+        def _skip_if_stale_temperature(value: Any) -> Any:  # noqa: ANN401
+            return SKIP_ATTRIBUTE if is_stale_c0_temperature else value
+
+        new_status.update(
+            self.update_attributes_from_message(
+                message,
+                {
+                    **dict.fromkeys(
+                        STALE_C0_TEMPERATURE_ATTRIBUTES,
+                        _skip_if_stale_temperature,
+                    ),
+                    DeviceAttributes.fresh_air_power: _translate_fresh_air_power,
+                    DeviceAttributes.wind_lr_angle: MideaACDevice._wind_lr_angles.get,
+                    DeviceAttributes.wind_ud_angle: MideaACDevice._wind_ud_angles.get,
+                    DeviceAttributes.rate_select: MideaACDevice._rate_selects.get,
+                },
+            ),
+        )
         if has_fresh_air:
             if self._attributes[DeviceAttributes.fresh_air_power]:
                 for k, v in MideaACDevice._fresh_air_fan_speeds.items():
@@ -509,25 +515,7 @@ class MideaACDevice(MideaDevice):
             self._fresh_air_version = DeviceAttributes.fresh_air_1
         elif self._attributes[DeviceAttributes.fresh_air_2] is not None:
             self._fresh_air_version = DeviceAttributes.fresh_air_2
-        if hasattr(message, "self_clean_active"):
-            active = message.self_clean_active
-            update_self_clean = True
-            if self._pending_self_clean is not None:
-                expected, set_at = self._pending_self_clean
-                elapsed = time.monotonic() - set_at
-                if active == expected or elapsed >= self._self_clean_pending_timeout:
-                    self._pending_self_clean = None
-                else:
-                    _LOGGER.debug(
-                        "[%s] Ignoring stale self-clean status %s while awaiting %s",
-                        self.device_id,
-                        active,
-                        expected,
-                    )
-                    update_self_clean = False
-            if update_self_clean:
-                self._attributes[DeviceAttributes.self_clean] = active
-                new_status[DeviceAttributes.self_clean.value] = active
+        new_status.update(self._refresh_self_clean_status(message))
         new_status.update(self._refresh_temperature_limits(message))
         self._update_capabilities(message)
         return new_status
@@ -561,6 +549,34 @@ class MideaACDevice(MideaDevice):
         """Accumulate decoded B5 capability flags from a B5 response."""
         if hasattr(message, "capabilities"):
             self._capabilities.update(message.capabilities)
+
+    def _refresh_self_clean_status(self, message: MessageACResponse) -> dict[str, Any]:
+        """Apply a reported self-clean status, ignoring stale readings.
+
+        A command that sets self-clean can take a moment to take effect. While
+        `_pending_self_clean` is set, a status that still contradicts the
+        command is presumed stale (a report queued before the command was
+        processed) and is ignored until either a matching status arrives or
+        the pending window elapses.
+        """
+        if not hasattr(message, "self_clean_active"):
+            return {}
+        active = message.self_clean_active
+        if self._pending_self_clean is not None:
+            expected, set_at = self._pending_self_clean
+            elapsed = time.monotonic() - set_at
+            if active == expected or elapsed >= self._self_clean_pending_timeout:
+                self._pending_self_clean = None
+            else:
+                _LOGGER.debug(
+                    "[%s] Ignoring stale self-clean status %s while awaiting %s",
+                    self.device_id,
+                    active,
+                    expected,
+                )
+                return {}
+        self._attributes[DeviceAttributes.self_clean] = active
+        return {DeviceAttributes.self_clean.value: active}
 
     @property
     def capabilities(self) -> dict[str, bool]:
