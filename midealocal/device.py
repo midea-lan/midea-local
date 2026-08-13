@@ -4,7 +4,7 @@ import logging
 import socket
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 from enum import IntEnum, StrEnum
 from typing import Any, ClassVar, NotRequired, TypedDict, Unpack
 
@@ -38,6 +38,100 @@ QUERY_TIMEOUT = (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# Sentinel returned by translators to preserve the stored attribute value.
+SKIP_ATTRIBUTE = object()
+
+# Private marker that distinguishes an omitted default from an explicit default.
+_NO_DEFAULT = object()
+
+
+def list_translator(
+    values: Sequence[str],
+    *,
+    offset: int = 0,
+    min_index: int = 0,
+    default: str | None = None,
+    key: Callable[[int], int] | None = None,
+) -> Callable[[int], str | None]:
+    """Build an update_attributes_from_message() translator for enum-style values.
+
+    Returns a callable that maps a raw index into ``values``, or ``default``
+    if the index falls outside ``[min_index, len(values))``, instead of
+    raising or wrapping around on a negative index. ``offset`` shifts the raw
+    value before indexing, for devices that report 1-based (or otherwise
+    offset) indices; ``min_index`` excludes otherwise-valid low indices some
+    devices reserve (e.g. 0 meaning "no value"). ``key``, if given, is applied
+    to the raw value first, for devices that encode the index indirectly
+    (e.g. a physical angle that first needs converting to a list position).
+    """
+
+    def _translate(index: int) -> str | None:
+        i = (key(index) if key is not None else index) - offset
+        return values[i] if min_index <= i < len(values) else default
+
+    return _translate
+
+
+def dict_translator(
+    mapping: Mapping[Any, Any],
+    default: Any = _NO_DEFAULT,  # noqa: ANN401
+) -> Callable[[Any], Any]:
+    """Build an update_attributes_from_message() translator for coded values.
+
+    Looks up the raw value in ``mapping``. If absent, returns ``default`` when
+    given, otherwise passes the raw value through unchanged.
+    """
+
+    def _translate(value: Any) -> Any:  # noqa: ANN401
+        return mapping.get(value, value if default is _NO_DEFAULT else default)
+
+    return _translate
+
+
+def precision_halves_translator(
+    precision_halves: bool | None,
+) -> Callable[[float], float]:
+    """Build an update_attributes_from_message() translator for halved readings.
+
+    Some devices report values doubled (in 0.5-unit steps) when their
+    ``precision_halves`` customize flag is enabled. Returns a callable that
+    divides by 2 when ``precision_halves`` is truthy, otherwise passes the
+    value through unchanged.
+    """
+
+    def _translate(value: float) -> float:
+        return value / 2 if precision_halves else value
+
+    return _translate
+
+
+def multiplier_translator(multiplier: float) -> Callable[[float | None], float | None]:
+    """Build an update_attributes_from_message() translator that scales a reading.
+
+    Rounds ``value * multiplier`` to the nearest int, unless ``multiplier`` is
+    1.0 (a no-op) or the raw value is ``None`` (unknown).
+    """
+
+    def _translate(value: float | None) -> float | None:
+        if value is None or multiplier == 1.0:
+            return value
+        return round(value * multiplier)
+
+    return _translate
+
+
+def sentinel_translator(sentinel: Any, replacement: Any) -> Callable[[Any], Any]:  # noqa: ANN401
+    """Build an update_attributes_from_message() translator for sentinel values.
+
+    Swaps a device-specific "unset" sentinel raw value for a display
+    placeholder, passing every other value through unchanged.
+    """
+
+    def _translate(value: Any) -> Any:  # noqa: ANN401
+        return replacement if value == sentinel else value
+
+    return _translate
 
 
 class AuthException(Exception):
@@ -630,6 +724,38 @@ class MideaDevice(threading.Thread):
         _LOGGER.debug("[%s] Status update: %s", self._device_id, status)
         for update in self._updates:
             update(status)
+
+    def update_attributes_from_message(
+        self,
+        message: object,
+        translators: dict[str, Callable[[Any], str | float | bool | None]]
+        | None = None,
+        default_transform: Callable[[Any], str | float | bool | None] | None = None,
+    ) -> dict[str, Any]:
+        """Copy matching attributes from a parsed response into self._attributes.
+
+        For each attribute the device declares, if ``message`` carries a
+        same-named field, run it through ``translators[attr]`` (if present) or
+        ``default_transform`` (if given and no specific translator matched),
+        then store the result in both ``self._attributes`` and the returned
+        status dict -- so pushed updates and ``device.attributes`` reads can
+        never disagree on the value. A translator may return ``SKIP_ATTRIBUTE``
+        to leave the attribute's stored value untouched for this message.
+        """
+        new_status: dict[str, Any] = {}
+        translators = translators or {}
+        for status in self._attributes:
+            if hasattr(message, str(status)):
+                value = getattr(message, str(status))
+                if status in translators:
+                    value = translators[status](value)
+                elif default_transform is not None:
+                    value = default_transform(value)
+                if value is SKIP_ATTRIBUTE:
+                    continue
+                self._attributes[status] = value
+                new_status[str(status)] = value
+        return new_status
 
     def set_available(self, available: bool = True) -> None:
         """Set available value."""

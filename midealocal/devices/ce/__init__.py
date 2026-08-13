@@ -94,12 +94,7 @@ class MideaCEDevice(MideaDevice):
         """Midea CE device process message."""
         message = MessageCEResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                self._attributes[status] = value
-                new_status[str(status)] = self._attributes[status]
+        new_status = self.update_attributes_from_message(message)
         if self._attributes[DeviceAttributes.sleep_mode]:
             self._attributes[DeviceAttributes.mode] = "sleep_mode"
         elif self._attributes[DeviceAttributes.eco_mode]:
