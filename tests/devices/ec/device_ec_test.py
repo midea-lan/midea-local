@@ -37,7 +37,7 @@ class TestMideaECDevice:
         assert self.device.attributes[DeviceAttributes.keep_warm_time] is None
         assert self.device.attributes[DeviceAttributes.top_temperature] is None
         assert self.device.attributes[DeviceAttributes.bottom_temperature] is None
-        assert self.device.attributes[DeviceAttributes.progress] == "Unknown"
+        assert self.device.attributes[DeviceAttributes.progress] == "unknown"
         assert self.device.attributes[DeviceAttributes.with_pressure] is None
 
     def test_build_query(self) -> None:
@@ -87,9 +87,9 @@ class TestMideaECDevice:
         assert self.device.attributes[DeviceAttributes.keep_warm_time] == 45
         assert self.device.attributes[DeviceAttributes.top_temperature] == 50
         assert self.device.attributes[DeviceAttributes.bottom_temperature] == 60
-        assert self.device.attributes[DeviceAttributes.progress] == "Keep-warm"
+        assert self.device.attributes[DeviceAttributes.progress] == "keep_warm"
         assert self.device.attributes[DeviceAttributes.with_pressure] is True
-        assert result[DeviceAttributes.progress.value] == "Keep-warm"
+        assert result[DeviceAttributes.progress.value] == "keep_warm"
 
     def test_general_response_unknown_mode_and_progress(self) -> None:
         """Test general response with cloud mode and unknown progress."""
@@ -99,12 +99,12 @@ class TestMideaECDevice:
         body = bytearray(24)
         body[3] = 0x03  # sub body type
         body[4] = 0xF4  # mode low byte
-        body[5] = 0x01  # mode high byte -> 500, out of list -> Cloud
-        body[8] = 0x20  # progress out of list -> Unknown
+        body[5] = 0x01  # mode high byte -> 500, out of list -> cloud
+        body[8] = 0x20  # progress out of list -> unknown
         self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.cooking] is False
-        assert self.device.attributes[DeviceAttributes.mode] == "Cloud"
-        assert self.device.attributes[DeviceAttributes.progress] == "Unknown"
+        assert self.device.attributes[DeviceAttributes.mode] == "cloud"
+        assert self.device.attributes[DeviceAttributes.progress] == "unknown"
         assert self.device.attributes[DeviceAttributes.with_pressure] is False
 
     def test_notify_response_new_body(self) -> None:
@@ -114,7 +114,7 @@ class TestMideaECDevice:
         ) + bytearray([MessageType.notify1])
         body = bytearray(50)
         body[3] = 0x01  # sub body type
-        body[11] = 0x01  # progress -> Cooking
+        body[11] = 0x01  # progress -> cooking
         body[16] = 0x02  # time remaining minutes
         body[17] = 0x1E  # time remaining seconds
         body[19] = 0x01  # keep warm minutes
@@ -128,7 +128,7 @@ class TestMideaECDevice:
         assert self.device.attributes[DeviceAttributes.keep_warm_time] == 70
         assert self.device.attributes[DeviceAttributes.top_temperature] == 95
         assert self.device.attributes[DeviceAttributes.bottom_temperature] == 98
-        assert self.device.attributes[DeviceAttributes.progress] == "Cooking"
+        assert self.device.attributes[DeviceAttributes.progress] == "cooking"
         assert self.device.attributes[DeviceAttributes.with_pressure] is True
         assert result[DeviceAttributes.cooking.value] is True
 
