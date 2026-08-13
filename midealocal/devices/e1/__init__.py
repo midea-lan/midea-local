@@ -90,38 +90,38 @@ class MideaE1Device(MideaDevice):
             },
         )
         self._modes = {
-            0x00: "Neutral Gear",  # BYTE_MODE_NEUTRAL_GEAR
-            0x01: "Auto Wash",  # BYTE_MODE_AUTO_WASH
-            0x02: "Strong Wash",  # BYTE_MODE_STRONG_WASH
-            0x03: "Standard Wash",  # BYTE_MODE_STANDARD_WASH
-            0x04: "ECO Wash",  # BYTE_MODE_ECO_WASH
-            0x05: "Glass Wash",  # BYTE_MODE_GLASS_WASH
-            0x06: "Hour Wash",  # BYTE_MODE_HOUR_WASH
-            0x07: "Fast Wash",  # BYTE_MODE_FAST_WASH
-            0x08: "Soak Wash",  # BYTE_MODE_SOAK_WASH
-            0x09: "90Min",  # BYTE_MODE_90MIN_WASH
-            0x0A: "Self Clean",  # BYTE_MODE_SELF_CLEAN
-            0x0B: "Fruit Wash",  # BYTE_MODE_FRUIT_WASH
-            0x0C: "Self Define",  # BYTE_MODE_SELF_DEFINE
-            0x0D: "Germ",  # BYTE_MODE_GERM ???
-            0x0E: "Bowl Wash",  # BYTE_MODE_BOWL_WASH
-            0x0F: "Kill Germ",  # BYTE_MODE_KILL_GERM
-            0x10: "Sea Food Wash",  # BYTE_MODE_SEA_FOOD_WASH
-            0x12: "Hot Pot Wash",  # BYTE_MODE_HOT_POT_WASH
-            0x13: "Quiet Night Wash",  # BYTE_MODE_QUIET_NIGHT_WASH
-            0x14: "Less Wash",  # BYTE_MODE_LESS_WASH
-            0x16: "Oil Net Wash",  # BYTE_MODE_OIL_NET_WASH
-            0x19: "Cloud Wash",  # BYTE_MODE_CLOUD_WASH
+            0x00: "neutral_gear",  # BYTE_MODE_NEUTRAL_GEAR
+            0x01: "auto_wash",  # BYTE_MODE_AUTO_WASH
+            0x02: "strong_wash",  # BYTE_MODE_STRONG_WASH
+            0x03: "standard_wash",  # BYTE_MODE_STANDARD_WASH
+            0x04: "eco_wash",  # BYTE_MODE_ECO_WASH
+            0x05: "glass_wash",  # BYTE_MODE_GLASS_WASH
+            0x06: "hour_wash",  # BYTE_MODE_HOUR_WASH
+            0x07: "fast_wash",  # BYTE_MODE_FAST_WASH
+            0x08: "soak_wash",  # BYTE_MODE_SOAK_WASH
+            0x09: "90min",  # BYTE_MODE_90MIN_WASH
+            0x0A: "self_clean",  # BYTE_MODE_SELF_CLEAN
+            0x0B: "fruit_wash",  # BYTE_MODE_FRUIT_WASH
+            0x0C: "self_define",  # BYTE_MODE_SELF_DEFINE
+            0x0D: "germ",  # BYTE_MODE_GERM ???
+            0x0E: "bowl_wash",  # BYTE_MODE_BOWL_WASH
+            0x0F: "kill_germ",  # BYTE_MODE_KILL_GERM
+            0x10: "sea_food_wash",  # BYTE_MODE_SEA_FOOD_WASH
+            0x12: "hot_pot_wash",  # BYTE_MODE_HOT_POT_WASH
+            0x13: "quiet_night_wash",  # BYTE_MODE_QUIET_NIGHT_WASH
+            0x14: "less_wash",  # BYTE_MODE_LESS_WASH
+            0x16: "oil_net_wash",  # BYTE_MODE_OIL_NET_WASH
+            0x19: "cloud_wash",  # BYTE_MODE_CLOUD_WASH
         }
         self._status = {
-            0x00: "Power Off",
-            0x01: "Cancel",
-            0x02: "Delay",
-            0x03: "Running",
-            0x04: "Error",
-            0x05: "Soft Gear",
+            0x00: "off",
+            0x01: "cancel",
+            0x02: "delay",
+            0x03: "running",
+            0x04: "error",
+            0x05: "soft_gear",
         }
-        self._progress = ["Idle", "Pre-wash", "Wash", "Rinse", "Dry", "Complete"]
+        self._progress = ["idle", "pre_wash", "wash", "rinse", "dry", "complete"]
 
     @property
     def modes(self) -> dict[int, str]:
