@@ -90,7 +90,7 @@ class TestMideaCDDevice:
     def test_set_mode_vacation_is_rejected(self) -> None:
         """Direct Vacation operation mode writes are blocked."""
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.mode.value, "Vacation")
+            self.device.set_attribute(DeviceAttributes.mode.value, "vacation")
             mock_send.assert_not_called()
 
     def test_set_power_uses_ts_max_at_body_23(self) -> None:
