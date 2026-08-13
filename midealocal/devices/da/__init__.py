@@ -5,7 +5,12 @@ from enum import StrEnum
 from typing import Any, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import (
+    MideaDevice,
+    MideaDeviceInitKwargs,
+    list_translator,
+    sentinel_translator,
+)
 from midealocal.exceptions import ValueWrongType
 
 from .message import MessageDAResponse, MessagePower, MessageQuery, MessageStart
@@ -121,39 +126,18 @@ class MideaDADevice(MideaDevice):
             "8",
             "insufficient",
         ]
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.progress:
-                    self._attributes[status] = (
-                        None if value >= len(progress) else progress[value]
-                    )
-                elif status == DeviceAttributes.program:
-                    self._attributes[status] = (
-                        None if value >= len(program) else program[value]
-                    )
-                elif status == DeviceAttributes.rinse_level:
-                    self._attributes[status] = "none" if value == MIN_TEMP else value
-                elif status == DeviceAttributes.dehydration_speed:
-                    self._attributes[status] = (
-                        None if value >= len(speed) else speed[value]
-                    )
-                elif status == DeviceAttributes.detergent:
-                    self._attributes[status] = (
-                        None if value >= len(detergent) else detergent[value]
-                    )
-                elif status == DeviceAttributes.softener:
-                    self._attributes[status] = (
-                        None if value >= len(softener) else softener[value]
-                    )
-                elif status == DeviceAttributes.wash_strength:
-                    self._attributes[status] = (
-                        None if value >= len(strength) else strength[value]
-                    )
-                else:
-                    self._attributes[status] = value
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.progress: list_translator(progress),
+                DeviceAttributes.program: list_translator(program),
+                DeviceAttributes.rinse_level: sentinel_translator(MIN_TEMP, "none"),
+                DeviceAttributes.dehydration_speed: list_translator(speed),
+                DeviceAttributes.detergent: list_translator(detergent),
+                DeviceAttributes.softener: list_translator(softener),
+                DeviceAttributes.wash_strength: list_translator(strength),
+            },
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea DA device set attribute."""
