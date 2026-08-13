@@ -132,11 +132,13 @@ class TestMideaA1Device:
     def test_set_attribute(self) -> None:
         """Test set attribute."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.mode, "Continuous")
+            self.device.set_attribute(DeviceAttributes.mode, "continuous")
             mock_build_send.assert_called_once()
+            assert mock_build_send.call_args[0][0].mode == 2
 
-            self.device.set_attribute(DeviceAttributes.fan_speed, "Medium")
+            self.device.set_attribute(DeviceAttributes.fan_speed, "medium")
             mock_build_send.assert_called()
+            assert mock_build_send.call_args[0][0].fan_speed == 60
 
             self.device.set_attribute(DeviceAttributes.water_level_set, "75")
             mock_build_send.assert_called()
