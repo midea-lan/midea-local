@@ -32,13 +32,13 @@ class Midea26Device(MideaDevice):
     """Midea x26 device."""
 
     _modes: ClassVar[list[str]] = [
-        "Off",
-        "Heat(high)",
-        "Heat(low)",
-        "Bath",
-        "Blow",
-        "Ventilation",
-        "Dry",
+        "off",
+        "heat_high",
+        "heat_low",
+        "bath",
+        "blow",
+        "ventilation",
+        "dry",
     ]
     _directions: ClassVar[list[str]] = [
         "60",
@@ -48,7 +48,7 @@ class Midea26Device(MideaDevice):
         "100",
         "110",
         "120",
-        "Oscillate",
+        "oscillate",
     ]
 
     def __init__(
@@ -75,7 +75,7 @@ class Midea26Device(MideaDevice):
 
     @staticmethod
     def _convert_to_midea_direction(direction: str) -> int:
-        if direction == "Oscillate":
+        if direction == "oscillate":
             result = 0xFD
         else:
             result = (
