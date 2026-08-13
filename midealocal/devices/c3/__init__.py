@@ -311,8 +311,9 @@ class MideaC3Device(MideaDevice):
                     ]
                 )
             elif attr == DeviceAttributes.silent_level.value and isinstance(value, str):
-                message.silent_level = C3SilentLevel[value.upper()]
-                message.silent_mode = value != C3SilentLevel.OFF.name
+                normalized_value = value.upper()
+                message.silent_level = C3SilentLevel[normalized_value]
+                message.silent_mode = normalized_value != C3SilentLevel.OFF.name
         if message is not None:
             self.build_send(message)
 
