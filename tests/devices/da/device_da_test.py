@@ -106,6 +106,16 @@ class TestMideaDADevice:
             assert new_status[DeviceAttributes.detergent.value] is None
             assert new_status[DeviceAttributes.wash_strength.value] is None
 
+            mock_message.dehydration_speed = 0
+            mock_message.wash_strength = 0
+            mock_message.detergent = 1
+            mock_message.softener = 1
+            new_status = self.device.process_message(b"")
+            assert new_status[DeviceAttributes.dehydration_speed.value] == "none"
+            assert new_status[DeviceAttributes.wash_strength.value] == "none"
+            assert new_status[DeviceAttributes.detergent.value] == "less"
+            assert new_status[DeviceAttributes.softener.value] == "intelligent"
+
     def test_build_query(self) -> None:
         """Test build query."""
         queries = self.device.build_query()
