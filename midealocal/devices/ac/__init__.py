@@ -205,18 +205,18 @@ class MideaACDevice(MideaDevice):
     _wind_lr_angles: ClassVar[dict[int, str]] = {
         0: "off",
         1: "left",
-        25: "left-mid",
+        25: "left_mid",
         50: "middle",
-        75: "right-mid",
+        75: "right_mid",
         100: "right",
     }
 
     _wind_ud_angles: ClassVar[dict[int, str]] = {
         0: "off",
         1: "up",
-        25: "up-mid",
+        25: "up_mid",
         50: "middle",
-        75: "down-mid",
+        75: "down_mid",
         100: "down",
     }
 
