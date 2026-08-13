@@ -84,7 +84,6 @@ class MideaDADevice(MideaDevice):
         """Midea DA device process message."""
         message = MessageDAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
         progress = ["idle", "spin", "rinse", "wash", "weight", "unknown", "dry", "soak"]
         program = [
             "standard",
