@@ -1,6 +1,8 @@
 """Midea Local device test."""
 
-from typing import ClassVar
+from collections.abc import Callable
+from types import SimpleNamespace
+from typing import Any, ClassVar
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -11,10 +13,16 @@ from midealocal.device import (
     MESSAGE_TYPE_INDEX,
     QUERY_TIMEOUT,
     RESPONSE_TIMEOUT,
+    SKIP_ATTRIBUTE,
     AuthException,
     MessageResult,
     MideaDevice,
     NoSupportedProtocol,
+    dict_translator,
+    list_translator,
+    multiplier_translator,
+    precision_halves_translator,
+    sentinel_translator,
 )
 from midealocal.exceptions import SocketException
 from midealocal.message import MessageType
@@ -24,6 +32,137 @@ class _DictDevice(MideaDevice):
     """MideaDevice subclass exposing a class-level dict for lookup tests."""
 
     modes: ClassVar[dict[int, str]] = {1: "auto", 2: "cool"}
+
+
+def _skip_attribute_translator(_: int) -> Any:  # noqa: ANN401
+    return SKIP_ATTRIBUTE
+
+
+@pytest.mark.parametrize(
+    ("values", "kwargs", "index", "expected"),
+    [
+        pytest.param(["a", "b", "c"], {}, 1, "b", id="in_range"),
+        pytest.param(["a", "b", "c"], {}, 5, None, id="out_of_range_defaults_to_none"),
+        pytest.param(
+            ["a", "b", "c"],
+            {},
+            -1,
+            None,
+            id="negative_index_does_not_wrap",
+        ),
+        pytest.param(
+            ["a", "b", "c"],
+            {"default": "unknown"},
+            5,
+            "unknown",
+            id="custom_default",
+        ),
+        pytest.param(
+            ["a", "b", "c"],
+            {"offset": 1},
+            1,
+            "a",
+            id="offset_shifts_raw_value",
+        ),
+        pytest.param(
+            ["a", "b", "c"],
+            {"min_index": 1},
+            0,
+            None,
+            id="min_index_excludes_low_index",
+        ),
+        pytest.param(
+            ["a", "b", "c"],
+            {"key": lambda v: v // 10},
+            20,
+            "c",
+            id="key_transforms_raw_value_first",
+        ),
+    ],
+)
+def test_list_translator(
+    values: list[str],
+    kwargs: dict[str, Any],
+    index: int,
+    expected: str | None,
+) -> None:
+    """Test list_translator's offset, min_index, default, and key arguments."""
+    assert list_translator(values, **kwargs)(index) == expected
+
+
+def test_dict_translator_found_returns_mapped_value() -> None:
+    """Test dict_translator looks up a present key in the mapping."""
+    assert dict_translator({1: "a", 2: "b"})(1) == "a"
+
+
+def test_dict_translator_not_found_passes_value_through_by_default() -> None:
+    """Test dict_translator with no default passes an absent key through."""
+    assert dict_translator({1: "a"})(99) == 99
+
+
+@pytest.mark.parametrize(
+    "default",
+    [
+        pytest.param("unknown", id="explicit_string_default"),
+        pytest.param(None, id="explicit_none_default_distinct_from_unset"),
+    ],
+)
+def test_dict_translator_not_found_uses_explicit_default(
+    default: Any,  # noqa: ANN401
+) -> None:
+    """Test dict_translator returns an explicit default for an absent key."""
+    assert dict_translator({1: "a"}, default=default)(99) == default
+
+
+@pytest.mark.parametrize(
+    ("precision_halves", "value", "expected"),
+    [
+        pytest.param(True, 10, 5, id="halves_when_enabled"),
+        pytest.param(False, 10, 10, id="passes_through_when_disabled"),
+        pytest.param(None, 10, 10, id="passes_through_when_unset"),
+    ],
+)
+def test_precision_halves_translator(
+    precision_halves: bool | None,
+    value: float,
+    expected: float,
+) -> None:
+    """Test precision_halves_translator's enabled, disabled, and unset states."""
+    assert precision_halves_translator(precision_halves)(value) == expected
+
+
+@pytest.mark.parametrize(
+    ("multiplier", "value", "expected"),
+    [
+        pytest.param(3.0, 2, 6, id="scales_and_rounds"),
+        pytest.param(1.0, 2, 2, id="no_op_multiplier_skips_rounding"),
+        pytest.param(3.0, None, None, id="none_value_passes_through"),
+    ],
+)
+def test_multiplier_translator(
+    multiplier: float,
+    value: float | None,
+    expected: float | None,
+) -> None:
+    """Test multiplier_translator's scaling, no-op, and None-value arguments."""
+    assert multiplier_translator(multiplier)(value) == expected
+
+
+@pytest.mark.parametrize(
+    ("sentinel", "replacement", "value", "expected"),
+    [
+        pytest.param(0xFF, None, 0xFF, None, id="sentinel_value_is_replaced"),
+        pytest.param(0xFF, None, 5, 5, id="other_values_pass_through"),
+    ],
+)
+def test_sentinel_translator(
+    sentinel: int,
+    replacement: Any,  # noqa: ANN401
+    value: int,
+    expected: Any,  # noqa: ANN401
+) -> None:
+    """Test sentinel_translator's replacement and passthrough arguments."""
+    assert sentinel_translator(sentinel, replacement)(value) == expected
 
 
 def test_get_dict_key_by_value() -> None:
@@ -151,6 +290,83 @@ class TestMideaDevice:
         """Test attributes property stringifies keys from the internal dict."""
         self.device._attributes[DeviceType.AC] = True
         assert self.device.attributes == {str(DeviceType.AC): True}
+
+    @pytest.mark.parametrize(
+        (
+            "initial_value",
+            "message_kwargs",
+            "translators",
+            "default_transform",
+            "expected_status",
+            "expected_attribute",
+        ),
+        [
+            pytest.param(
+                None,
+                {"mode": 2},
+                {"mode": lambda v: f"translator-{v}"},
+                lambda v: f"default-{v}",
+                {"mode": "translator-2"},
+                "translator-2",
+                id="translator_wins_over_default_transform",
+            ),
+            pytest.param(
+                None,
+                {"mode": 2},
+                None,
+                lambda v: f"default-{v}",
+                {"mode": "default-2"},
+                "default-2",
+                id="default_transform_used_when_no_translator",
+            ),
+            pytest.param(
+                "previous",
+                {},
+                None,
+                None,
+                {},
+                "previous",
+                id="missing_field_is_ignored",
+            ),
+            pytest.param(
+                None,
+                {"mode": 2},
+                None,
+                None,
+                {"mode": 2},
+                2,
+                id="status_and_attributes_stay_synchronized",
+            ),
+            pytest.param(
+                "previous",
+                {"mode": 2},
+                {"mode": _skip_attribute_translator},
+                None,
+                {},
+                "previous",
+                id="skip_attribute_preserves_stored_value",
+            ),
+        ],
+    )
+    def test_update_attributes_from_message(
+        self,
+        initial_value: Any,  # noqa: ANN401
+        message_kwargs: dict[str, Any],
+        translators: dict[str, Callable[[Any], Any]] | None,
+        default_transform: Callable[[Any], Any] | None,
+        expected_status: dict[str, Any],
+        expected_attribute: Any,  # noqa: ANN401
+    ) -> None:
+        """Test translator precedence, defaults, missing fields, and SKIP_ATTRIBUTE."""
+        self.device._attributes = {"mode": initial_value}
+        message = SimpleNamespace(**message_kwargs)
+        new_status = self.device.update_attributes_from_message(
+            message,
+            translators=translators,
+            default_transform=default_transform,
+        )
+        assert new_status == expected_status
+        assert self.device._attributes["mode"] == expected_attribute
 
     def test_celsius_to_fahrenheit(self) -> None:
         """Test celsius_to_fahrenheit conversion and pass-through branches."""
