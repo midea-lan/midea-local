@@ -18,6 +18,11 @@ from midealocal.device import (
     MessageResult,
     MideaDevice,
     NoSupportedProtocol,
+    dict_translator,
+    list_translator,
+    multiplier_translator,
+    precision_halves_translator,
+    sentinel_translator,
 )
 from midealocal.exceptions import SocketException
 from midealocal.message import MessageType
@@ -31,6 +36,133 @@ class _DictDevice(MideaDevice):
 
 def _skip_attribute_translator(_: int) -> Any:  # noqa: ANN401
     return SKIP_ATTRIBUTE
+
+
+@pytest.mark.parametrize(
+    ("values", "kwargs", "index", "expected"),
+    [
+        pytest.param(["a", "b", "c"], {}, 1, "b", id="in_range"),
+        pytest.param(["a", "b", "c"], {}, 5, None, id="out_of_range_defaults_to_none"),
+        pytest.param(
+            ["a", "b", "c"],
+            {},
+            -1,
+            None,
+            id="negative_index_does_not_wrap",
+        ),
+        pytest.param(
+            ["a", "b", "c"],
+            {"default": "unknown"},
+            5,
+            "unknown",
+            id="custom_default",
+        ),
+        pytest.param(
+            ["a", "b", "c"],
+            {"offset": 1},
+            1,
+            "a",
+            id="offset_shifts_raw_value",
+        ),
+        pytest.param(
+            ["a", "b", "c"],
+            {"min_index": 1},
+            0,
+            None,
+            id="min_index_excludes_low_index",
+        ),
+        pytest.param(
+            ["a", "b", "c"],
+            {"key": lambda v: v // 10},
+            20,
+            "c",
+            id="key_transforms_raw_value_first",
+        ),
+    ],
+)
+def test_list_translator(
+    values: list[str],
+    kwargs: dict[str, Any],
+    index: int,
+    expected: str | None,
+) -> None:
+    """Test list_translator's offset, min_index, default, and key arguments."""
+    assert list_translator(values, **kwargs)(index) == expected
+
+
+def test_dict_translator_found_returns_mapped_value() -> None:
+    """Test dict_translator looks up a present key in the mapping."""
+    assert dict_translator({1: "a", 2: "b"})(1) == "a"
+
+
+def test_dict_translator_not_found_passes_value_through_by_default() -> None:
+    """Test dict_translator with no default passes an absent key through."""
+    assert dict_translator({1: "a"})(99) == 99
+
+
+@pytest.mark.parametrize(
+    "default",
+    [
+        pytest.param("unknown", id="explicit_string_default"),
+        pytest.param(None, id="explicit_none_default_distinct_from_unset"),
+    ],
+)
+def test_dict_translator_not_found_uses_explicit_default(
+    default: Any,  # noqa: ANN401
+) -> None:
+    """Test dict_translator returns an explicit default for an absent key."""
+    assert dict_translator({1: "a"}, default=default)(99) == default
+
+
+@pytest.mark.parametrize(
+    ("precision_halves", "value", "expected"),
+    [
+        pytest.param(True, 10, 5, id="halves_when_enabled"),
+        pytest.param(False, 10, 10, id="passes_through_when_disabled"),
+        pytest.param(None, 10, 10, id="passes_through_when_unset"),
+    ],
+)
+def test_precision_halves_translator(
+    precision_halves: bool | None,
+    value: float,
+    expected: float,
+) -> None:
+    """Test precision_halves_translator's enabled, disabled, and unset states."""
+    assert precision_halves_translator(precision_halves)(value) == expected
+
+
+@pytest.mark.parametrize(
+    ("multiplier", "value", "expected"),
+    [
+        pytest.param(3.0, 2, 6, id="scales_and_rounds"),
+        pytest.param(1.0, 2, 2, id="no_op_multiplier_skips_rounding"),
+        pytest.param(3.0, None, None, id="none_value_passes_through"),
+    ],
+)
+def test_multiplier_translator(
+    multiplier: float,
+    value: float | None,
+    expected: float | None,
+) -> None:
+    """Test multiplier_translator's scaling, no-op, and None-value arguments."""
+    assert multiplier_translator(multiplier)(value) == expected
+
+
+@pytest.mark.parametrize(
+    ("sentinel", "replacement", "value", "expected"),
+    [
+        pytest.param(0xFF, None, 0xFF, None, id="sentinel_value_is_replaced"),
+        pytest.param(0xFF, None, 5, 5, id="other_values_pass_through"),
+    ],
+)
+def test_sentinel_translator(
+    sentinel: int,
+    replacement: Any,  # noqa: ANN401
+    value: int,
+    expected: Any,  # noqa: ANN401
+) -> None:
+    """Test sentinel_translator's replacement and passthrough arguments."""
+    assert sentinel_translator(sentinel, replacement)(value) == expected
 
 
 def test_get_dict_key_by_value() -> None:
