@@ -28,12 +28,12 @@ class MideaBFDevice(MideaDevice):
     """Midea BF device."""
 
     _status: ClassVar[dict[int, str]] = {
-        0x01: "PowerSave",
-        0x02: "Standby",
-        0x03: "Working",
-        0x04: "Finished",
-        0x05: "Delay",
-        0x06: "Paused",
+        0x01: "power_save",
+        0x02: "standby",
+        0x03: "working",
+        0x04: "finished",
+        0x05: "delay",
+        0x06: "paused",
     }
 
     def __init__(
@@ -70,7 +70,7 @@ class MideaBFDevice(MideaDevice):
             {
                 DeviceAttributes.status: dict_translator(
                     MideaBFDevice._status,
-                    default="Unknown",
+                    default="unknown",
                 ),
             },
         )

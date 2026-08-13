@@ -28,12 +28,12 @@ class MideaB1Device(MideaDevice):
     """Midea B1 device."""
 
     _status: ClassVar[dict[int, str]] = {
-        0x01: "Standby",
-        0x02: "Idle",
-        0x03: "Working",
-        0x04: "Finished",
-        0x05: "Delay",
-        0x06: "Paused",
+        0x01: "standby",
+        0x02: "idle",
+        0x03: "working",
+        0x04: "finished",
+        0x05: "delay",
+        0x06: "paused",
     }
 
     def __init__(

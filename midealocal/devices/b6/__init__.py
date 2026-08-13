@@ -48,7 +48,7 @@ class MideaB6Device(MideaDevice):
                 DeviceAttributes.cleaning_reminder: False,
             },
         )
-        self._default_speeds = {0: "Off", 1: "Level 1", 2: "Level 2"}
+        self._default_speeds = {0: "off", 1: "low", 2: "high"}
         self._default_power_speed = 2
         self._power_speed = self._default_power_speed
         self._speeds = self._default_speeds
