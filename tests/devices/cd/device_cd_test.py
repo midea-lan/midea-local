@@ -115,7 +115,7 @@ class TestMideaCDDevice:
         self.device._attributes[DeviceAttributes.max_temperature] = 65.0
         self.device._attributes[DeviceAttributes.target_temperature] = 60.0
         self.device._attributes[DeviceAttributes.power] = True
-        self.device._attributes[DeviceAttributes.mode] = "Standard"
+        self.device._attributes[DeviceAttributes.mode] = "standard"
 
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.target_temperature.value, 63.0)
@@ -614,7 +614,7 @@ class TestMideaCDDevice:
 
     def test_set_power_with_vacation_mode_state(self) -> None:
         """Stored Vacation mode is never sent as a modeValue."""
-        self.device._attributes[DeviceAttributes.mode] = "Vacation"
+        self.device._attributes[DeviceAttributes.mode] = "vacation"
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.power.value, True)
             mock_send.assert_called_once()
