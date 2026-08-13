@@ -368,23 +368,49 @@ class TestMessageC3Response:
         assert hasattr(response, "silent_level")
         assert response.silent_level == C3SilentLevel.SUPER_SILENT.name
 
-    def test_message_eco_response(self) -> None:
+    @pytest.mark.parametrize(
+        ("body", "eco_function_state", "eco_timer_state"),
+        [
+            pytest.param(
+                bytearray([ListTypes.X07, 0x03, 0x00]),
+                True,
+                True,
+                id="eco on, timer on",
+            ),
+            pytest.param(
+                bytearray([ListTypes.X07, 0x00, 0x00]),
+                False,
+                False,
+                id="eco off, timer off",
+            ),
+            pytest.param(
+                bytearray([ListTypes.X07, 0x01, 0x00]),
+                True,
+                False,
+                id="eco on, timer off",
+            ),
+            pytest.param(
+                bytearray([ListTypes.X07, 0x00]),
+                False,
+                False,
+                id="eco missing, timer missing",
+            ),
+        ],
+    )
+    def test_message_eco_response(
+        self,
+        body: bytearray,
+        eco_function_state: bool,
+        eco_timer_state: bool,
+    ) -> None:
         """Test message ECO response."""
         self.header[-1] = MessageType.query
-        body = bytearray([ListTypes.X07, 0x03, 0x00])
         response = MessageC3Response(bytes(self.header + body))
         assert response.body_type == ListTypes.X07
         assert hasattr(response, "eco_function_state")
-        assert response.eco_function_state is True
+        assert response.eco_function_state is eco_function_state
         assert hasattr(response, "eco_timer_state")
-        assert response.eco_timer_state is True
-
-        body[1] = 0x0
-        response = MessageC3Response(bytes(self.header + body))
-        assert hasattr(response, "eco_function_state")
-        assert response.eco_function_state is False
-        assert hasattr(response, "eco_timer_state")
-        assert response.eco_timer_state is False
+        assert response.eco_timer_state is eco_timer_state
 
     def test_message_disinfect_response(self) -> None:
         """Test message disinfect response."""

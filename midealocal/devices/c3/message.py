@@ -385,8 +385,10 @@ class C3ECOBody(MessageBody):
     def __init__(self, body: bytearray, data_offset: int = 0) -> None:
         """Initialize C3 ECO message body."""
         super().__init__(body)
-        self.eco_function_state = body[data_offset] & 0x01 > 0
-        self.eco_timer_state = body[data_offset] & 0x02 > 0
+        self.eco_function_state = (
+            len(body) > data_offset and body[data_offset] & 0x01 > 0
+        )
+        self.eco_timer_state = len(body) > data_offset and body[data_offset] & 0x02 > 0
 
 
 class C3DisinfectBody(MessageBody):
