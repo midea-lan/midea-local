@@ -32,29 +32,29 @@ class TestMideaA1Device:
         """Test initial attributes."""
         assert not self.device.attributes[DeviceAttributes.power]
         assert self.device.attributes[DeviceAttributes.prompt_tone]
-        assert self.device.attributes[DeviceAttributes.fan_speed] == "Medium"
+        assert self.device.attributes[DeviceAttributes.fan_speed] == "medium"
         assert self.device.attributes[DeviceAttributes.target_humidity] == 35
         assert not self.device.attributes[DeviceAttributes.pump]
 
     def test_modes(self) -> None:
         """Test modes."""
         assert self.device.modes == [
-            "Manual",
-            "Continuous",
-            "Auto",
-            "Clothes-Dry",
-            "Shoes-Dry",
+            "manual",
+            "continuous",
+            "auto",
+            "clothes_dry",
+            "shoes_dry",
         ]
 
     def test_fan_speeds(self) -> None:
         """Test fan speeds."""
         assert self.device.fan_speeds == [
-            "Lowest",
-            "Low",
-            "Medium",
-            "High",
-            "Auto",
-            "Off",
+            "lowest",
+            "low",
+            "medium",
+            "high",
+            "auto",
+            "off",
         ]
 
     def test_water_level_sets(self) -> None:
@@ -78,11 +78,11 @@ class TestMideaA1Device:
             new_status = self.device.process_message(b"")
             assert new_status[DeviceAttributes.power.value]
             assert not new_status[DeviceAttributes.prompt_tone.value]
-            assert new_status[DeviceAttributes.fan_speed.value] == "Low"
+            assert new_status[DeviceAttributes.fan_speed.value] == "low"
             assert new_status[DeviceAttributes.target_humidity.value] == 40
             assert new_status[DeviceAttributes.pump.value]
             assert new_status[DeviceAttributes.tank_full.value]
-            assert new_status[DeviceAttributes.mode.value] == "Manual"
+            assert new_status[DeviceAttributes.mode.value] == "manual"
 
             mock_message.mode = 10
             mock_message.fan_speed = 99
@@ -123,8 +123,8 @@ class TestMideaA1Device:
         assert message_set.pump
         assert message_set.pump_enable
 
-        self.device._attributes[DeviceAttributes.fan_speed] = "Unknown"
-        self.device._attributes[DeviceAttributes.mode] = "Unknown"
+        self.device._attributes[DeviceAttributes.fan_speed] = "unknown"
+        self.device._attributes[DeviceAttributes.mode] = "unknown"
         message_set = self.device.make_message_set()
         assert message_set.fan_speed == 40
         assert message_set.mode == 1
@@ -132,11 +132,13 @@ class TestMideaA1Device:
     def test_set_attribute(self) -> None:
         """Test set attribute."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.mode, "Continuous")
+            self.device.set_attribute(DeviceAttributes.mode, "continuous")
             mock_build_send.assert_called_once()
+            assert mock_build_send.call_args[0][0].mode == 2
 
-            self.device.set_attribute(DeviceAttributes.fan_speed, "Medium")
+            self.device.set_attribute(DeviceAttributes.fan_speed, "medium")
             mock_build_send.assert_called()
+            assert mock_build_send.call_args[0][0].fan_speed == 60
 
             self.device.set_attribute(DeviceAttributes.water_level_set, "75")
             mock_build_send.assert_called()

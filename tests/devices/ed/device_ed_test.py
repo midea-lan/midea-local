@@ -19,6 +19,8 @@ from midealocal.devices.ed.message import (
     MessageQueryFF,
 )
 
+TEST_AUTH_VALUE = "AA"
+
 
 class TestMideaEDDevice:
     """Test Midea ED Device."""
@@ -33,7 +35,7 @@ class TestMideaEDDevice:
             device_id=1,
             ip_address="192.168.1.100",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="test_model",
@@ -126,7 +128,7 @@ class TestMideaEDDevice:
             device_id=1,
             ip_address="192.168.1.100",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="test_model",
@@ -146,6 +148,646 @@ class TestMideaEDDevice:
             self.device.set_attribute(DeviceAttributes.child_lock, True)
             mock_build_send.assert_called()
 
+    def test_tea_bar_attributes_are_model_specific(self) -> None:
+        """Expose tea bar status attributes only for the verified model."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        assert tea_bar.attributes[DeviceAttributes.current_temperature] is None
+        assert tea_bar.attributes[DeviceAttributes.target_temperature] is None
+        assert tea_bar.attributes[DeviceAttributes.heating] is False
+        assert tea_bar.attributes[DeviceAttributes.dispensing] is False
+        assert tea_bar.attributes[DeviceAttributes.boil_temperature] is None
+        assert tea_bar.attributes[DeviceAttributes.boiling] is False
+        assert tea_bar.attributes[DeviceAttributes.keep_warm] is False
+        assert tea_bar.attributes[DeviceAttributes.keep_warm_time] is None
+        assert tea_bar.attributes[DeviceAttributes.keep_warm_remaining] is None
+        assert tea_bar.attributes[DeviceAttributes.sleep] is False
+        assert tea_bar.attributes[DeviceAttributes.screen_display] is True
+        assert tea_bar.attributes[DeviceAttributes.cooling] is False
+        assert tea_bar.attributes[DeviceAttributes.lack_water] is False
+        assert tea_bar.attributes[DeviceAttributes.standby] is False
+        assert tea_bar.attributes[DeviceAttributes.hot_water_dispensing] is False
+        assert tea_bar.attributes[DeviceAttributes.fault_code] == 0
+        assert tea_bar.attributes[DeviceAttributes.fault] is False
+        assert DeviceAttributes.current_temperature not in self.device.attributes
+        assert DeviceAttributes.target_temperature not in self.device.attributes
+        assert DeviceAttributes.heating not in self.device.attributes
+        assert DeviceAttributes.dispensing not in self.device.attributes
+        assert DeviceAttributes.boil_temperature not in self.device.attributes
+        assert DeviceAttributes.boiling not in self.device.attributes
+        assert DeviceAttributes.keep_warm not in self.device.attributes
+        assert DeviceAttributes.keep_warm_time not in self.device.attributes
+        assert DeviceAttributes.keep_warm_remaining not in self.device.attributes
+        assert DeviceAttributes.sleep not in self.device.attributes
+        assert DeviceAttributes.screen_display not in self.device.attributes
+        assert DeviceAttributes.cooling not in self.device.attributes
+        assert DeviceAttributes.lack_water not in self.device.attributes
+        assert DeviceAttributes.standby not in self.device.attributes
+        assert DeviceAttributes.hot_water_dispensing not in self.device.attributes
+        assert DeviceAttributes.fault_code not in self.device.attributes
+        assert DeviceAttributes.fault not in self.device.attributes
+
+        wrong_subtype = MideaEDDevice(
+            name="Same model, different subtype",
+            device_id=4,
+            ip_address="192.0.2.4",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=394,
+            customize="",
+        )
+        for attribute in (
+            DeviceAttributes.current_temperature,
+            DeviceAttributes.target_temperature,
+            DeviceAttributes.heating,
+            DeviceAttributes.dispensing,
+            DeviceAttributes.boil_temperature,
+            DeviceAttributes.boiling,
+            DeviceAttributes.keep_warm,
+            DeviceAttributes.keep_warm_time,
+            DeviceAttributes.keep_warm_remaining,
+            DeviceAttributes.sleep,
+            DeviceAttributes.screen_display,
+            DeviceAttributes.cooling,
+            DeviceAttributes.lack_water,
+            DeviceAttributes.standby,
+            DeviceAttributes.hot_water_dispensing,
+            DeviceAttributes.fault_code,
+            DeviceAttributes.fault,
+        ):
+            assert attribute not in wrong_subtype.attributes
+        with patch.object(wrong_subtype, "build_send") as mock_build_send:
+            wrong_subtype.set_attribute(DeviceAttributes.boil_temperature, 80)
+            wrong_subtype.set_attribute(DeviceAttributes.keep_warm, True)
+        mock_build_send.assert_not_called()
+
+    def test_tea_bar_query_is_model_specific(self) -> None:
+        """Use body-06 queries only for the verified subtype and model."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        queries = tea_bar.build_query()
+        assert len(queries) == 1
+        assert isinstance(queries[0], MessageQuery06)
+
+        other_model = MideaEDDevice(
+            name="Other subtype-395 appliance",
+            device_id=3,
+            ip_address="192.0.2.2",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000000",
+            subtype=395,
+            customize="",
+        )
+        queries = other_model.build_query()
+        assert len(queries) == 3
+        assert isinstance(queries[0], MessageQuery)
+        assert DeviceAttributes.current_temperature not in other_model.attributes
+
+        with patch("midealocal.devices.ed.MessageEDResponse") as response:
+            other_model.process_message(b"")
+        response.assert_called_once_with(b"", 0)
+
+    @pytest.mark.parametrize("target", [80, 80.0])
+    def test_tea_bar_set_target_starts_heating(self, target: float) -> None:
+        """Set target temperature with the official compound start command."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        tea_bar._attributes[DeviceAttributes.current_temperature] = 60
+
+        with patch.object(tea_bar, "build_send") as mock_build_send:
+            tea_bar.set_attribute(DeviceAttributes.boil_temperature, target)
+
+        message = mock_build_send.call_args.args[0]
+        assert message.body == bytearray(
+            [
+                0x15,
+                0x01,
+                0x02,
+                0x01,
+                0x04,
+                0x50,
+                0x0A,
+                0x00,
+                0x05,
+                0x04,
+                0x01,
+                0x00,
+                0x00,
+            ],
+        )
+
+    def test_tea_bar_status_updates_control_entities(self) -> None:
+        """Mirror reported target and heating state into writable controls."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        with patch("midealocal.devices.ed.MessageEDResponse") as response:
+            message = response.return_value
+            message.target_temperature = 80
+            message.heating = True
+            status = tea_bar.process_message(b"")
+
+        assert status[DeviceAttributes.boil_temperature] == 80
+        assert status[DeviceAttributes.boiling] is True
+        assert tea_bar.attributes[DeviceAttributes.boil_temperature] == 80
+        assert tea_bar.attributes[DeviceAttributes.boiling] is True
+
+    def test_tea_bar_heating_switch_uses_official_tea_heat_command(self) -> None:
+        """Start at 100 degrees and stop without re-queuing that target."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        tea_bar._attributes[DeviceAttributes.current_temperature] = 60
+        tea_bar._attributes[DeviceAttributes.boil_temperature] = 80
+
+        with patch.object(tea_bar, "build_send") as mock_build_send:
+            tea_bar.set_attribute(DeviceAttributes.boiling, True)
+            start_message = mock_build_send.call_args.args[0]
+            assert start_message.body == bytearray(
+                [
+                    0x15,
+                    0x01,
+                    0x02,
+                    0x01,
+                    0x04,
+                    0x64,
+                    0x0A,
+                    0x00,
+                    0x05,
+                    0x04,
+                    0x01,
+                    0x00,
+                    0x00,
+                ],
+            )
+
+            tea_bar.set_attribute(DeviceAttributes.boiling, False)
+            stop_message = mock_build_send.call_args.args[0]
+            assert stop_message.body == bytearray(
+                [
+                    0x15,
+                    0x01,
+                    0x01,
+                    0x05,
+                    0x04,
+                    0x00,
+                    0x00,
+                    0x00,
+                ],
+            )
+
+    def test_tea_bar_stop_during_fill_cancels_queued_heating_once(self) -> None:
+        """Repeat the verified stop once after the firmware finishes filling."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        tea_bar._attributes[DeviceAttributes.dispensing] = True
+
+        with (
+            patch.object(tea_bar, "build_send") as mock_build_send,
+            patch("midealocal.devices.ed.MessageEDResponse") as response,
+        ):
+            tea_bar.set_attribute(DeviceAttributes.boiling, False)
+            initial_stop = mock_build_send.call_args.args[0]
+            assert initial_stop.body == bytearray(
+                [0x15, 0x01, 0x01, 0x05, 0x04, 0x00, 0x00, 0x00],
+            )
+
+            message = response.return_value
+            message.dispensing = True
+            message.heating = False
+            tea_bar.process_message(b"")
+            assert mock_build_send.call_count == 1
+
+            message.dispensing = False
+            message.heating = True
+            tea_bar.process_message(b"")
+            assert mock_build_send.call_count == 2
+            repeated_stop = mock_build_send.call_args.args[0]
+            assert repeated_stop.body == bytearray(
+                [0x15, 0x01, 0x01, 0x05, 0x04, 0x00, 0x00, 0x00],
+            )
+
+            tea_bar.process_message(b"")
+            assert mock_build_send.call_count == 2
+
+    def test_tea_bar_cancel_during_fill_clears_without_heating(self) -> None:
+        """Do not repeat stop if the fill finishes without starting heat."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        tea_bar._attributes[DeviceAttributes.dispensing] = True
+
+        with (
+            patch.object(tea_bar, "build_send") as mock_build_send,
+            patch("midealocal.devices.ed.MessageEDResponse") as response,
+        ):
+            tea_bar.set_attribute(DeviceAttributes.boiling, False)
+            message = response.return_value
+            message.dispensing = False
+            message.heating = False
+            tea_bar.process_message(b"")
+            assert mock_build_send.call_count == 1
+
+            message.heating = True
+            tea_bar.process_message(b"")
+            assert mock_build_send.call_count == 1
+
+    @pytest.mark.parametrize(
+        ("attribute", "value"),
+        [
+            (DeviceAttributes.boiling, True),
+            (DeviceAttributes.boil_temperature, 80),
+        ],
+    )
+    def test_tea_bar_new_heat_request_clears_pending_cancel(
+        self,
+        attribute: str,
+        value: bool | int,
+    ) -> None:
+        """A later local heat request supersedes a fill-phase cancellation."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        tea_bar._attributes[DeviceAttributes.current_temperature] = 20
+        tea_bar._attributes[DeviceAttributes.dispensing] = True
+
+        with (
+            patch.object(tea_bar, "build_send") as mock_build_send,
+            patch("midealocal.devices.ed.MessageEDResponse") as response,
+        ):
+            tea_bar.set_attribute(DeviceAttributes.boiling, False)
+            tea_bar.set_attribute(attribute, value)
+            message = response.return_value
+            message.dispensing = False
+            message.heating = True
+            tea_bar.process_message(b"")
+
+        assert mock_build_send.call_count == 2
+
+    @pytest.mark.parametrize(("locked", "raw_value"), [(True, 0x01), (False, 0x00)])
+    def test_tea_bar_child_lock_uses_official_lua_command(
+        self,
+        locked: bool,
+        raw_value: int,
+    ) -> None:
+        """Encode the model-specific official child-lock command."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+
+        with patch.object(tea_bar, "build_send") as mock_build_send:
+            tea_bar.set_attribute(DeviceAttributes.child_lock, locked)
+
+        message = mock_build_send.call_args.args[0]
+        assert message.body == bytearray(
+            [0x15, 0x01, 0x01, 0x01, 0x02, raw_value, 0x00, 0x00],
+        )
+
+    @pytest.mark.parametrize(
+        ("attribute", "enabled", "expected"),
+        [
+            (
+                DeviceAttributes.sleep,
+                True,
+                [0x15, 0x01, 0x01, 0x04, 0x01, 0x01, 0x00, 0x00],
+            ),
+            (
+                DeviceAttributes.sleep,
+                False,
+                [0x15, 0x01, 0x01, 0x04, 0x01, 0x00, 0x00, 0x00],
+            ),
+            (
+                DeviceAttributes.screen_display,
+                True,
+                [0x15, 0x01, 0x01, 0x04, 0x01, 0x00, 0x00, 0x00],
+            ),
+            (
+                DeviceAttributes.screen_display,
+                False,
+                [0x15, 0x01, 0x01, 0x04, 0x01, 0x01, 0x00, 0x00],
+            ),
+            (
+                DeviceAttributes.cooling,
+                True,
+                [0x15, 0x01, 0x01, 0x00, 0x05, 0x01, 0x00, 0x00],
+            ),
+            (
+                DeviceAttributes.cooling,
+                False,
+                [0x15, 0x01, 0x01, 0x00, 0x05, 0x00, 0x00, 0x00],
+            ),
+        ],
+    )
+    def test_tea_bar_auxiliary_controls_use_official_lua_commands(
+        self,
+        attribute: DeviceAttributes,
+        enabled: bool,
+        expected: list[int],
+    ) -> None:
+        """Encode the model-specific screen and signal-cooling controls."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+
+        with patch.object(tea_bar, "build_send") as mock_build_send:
+            tea_bar.set_attribute(attribute, enabled)
+
+        assert mock_build_send.call_args.args[0].body == bytearray(expected)
+
+    def test_tea_bar_rejects_stopping_cooling_while_dispensing(self) -> None:
+        """Match the official App safety check for signal cooling."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        tea_bar._attributes[DeviceAttributes.dispensing] = True
+
+        with (
+            patch.object(tea_bar, "build_send") as mock_build_send,
+            pytest.raises(ValueError, match="cannot be stopped"),
+        ):
+            tea_bar.set_attribute(DeviceAttributes.cooling, False)
+        mock_build_send.assert_not_called()
+
+    @pytest.mark.parametrize("target", [39, 101])
+    def test_tea_bar_rejects_unsafe_target(self, target: int) -> None:
+        """Reject target temperatures outside the supported safe range."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        tea_bar._attributes[DeviceAttributes.current_temperature] = 20
+
+        with (
+            patch.object(tea_bar, "build_send") as mock_build_send,
+            pytest.raises(ValueError, match="must be between"),
+        ):
+            tea_bar.set_attribute(DeviceAttributes.boil_temperature, target)
+        mock_build_send.assert_not_called()
+
+    def test_tea_bar_rejects_target_not_above_current_temperature(self) -> None:
+        """Match the official App preflight for a non-increasing target."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        tea_bar._attributes[DeviceAttributes.current_temperature] = 70
+
+        with (
+            patch.object(tea_bar, "build_send") as mock_build_send,
+            pytest.raises(ValueError, match="is not below target"),
+        ):
+            tea_bar.set_attribute(DeviceAttributes.boil_temperature, 70)
+        mock_build_send.assert_not_called()
+
+    def test_tea_bar_rejects_fractional_target_temperature(self) -> None:
+        """Reject fractional targets instead of silently truncating them."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        tea_bar._attributes[DeviceAttributes.current_temperature] = 20
+
+        with (
+            patch.object(tea_bar, "build_send") as mock_build_send,
+            pytest.raises(ValueError, match="must be a whole number"),
+        ):
+            tea_bar.set_attribute(DeviceAttributes.boil_temperature, 80.5)
+        mock_build_send.assert_not_called()
+
+    def test_non_tea_bar_cannot_send_tea_bar_controls(self) -> None:
+        """Never apply tea bar controls to another ED subtype."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.boil_temperature, 80)
+            self.device.set_attribute(DeviceAttributes.boiling, True)
+        mock_build_send.assert_not_called()
+
+    def test_other_model_cannot_send_tea_bar_controls(self) -> None:
+        """Never apply model-specific commands by subtype alone."""
+        other_model = MideaEDDevice(
+            name="Other subtype-395 appliance",
+            device_id=3,
+            ip_address="192.0.2.2",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000000",
+            subtype=395,
+            customize="",
+        )
+
+        with patch.object(other_model, "build_send") as mock_build_send:
+            other_model.set_attribute(DeviceAttributes.boil_temperature, 80)
+            other_model.set_attribute(DeviceAttributes.boiling, True)
+            other_model.set_attribute(DeviceAttributes.keep_warm, True)
+            other_model.set_attribute(DeviceAttributes.sleep, True)
+            other_model.set_attribute(DeviceAttributes.screen_display, True)
+            other_model.set_attribute(DeviceAttributes.cooling, True)
+        mock_build_send.assert_not_called()
+
+    def test_tea_bar_keep_warm_uses_official_lua_command(self) -> None:
+        """Send the model-specific keep-warm toggle with its saved duration."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+        tea_bar._attributes[DeviceAttributes.keep_warm_time] = 3.0
+
+        with patch.object(tea_bar, "build_send") as mock_build_send:
+            tea_bar.set_attribute(DeviceAttributes.keep_warm, True)
+
+        message = mock_build_send.call_args.args[0]
+        assert message.body == bytearray(
+            [0x15, 0x01, 0x01, 0x08, 0x04, 0x01, 0x06, 0x00],
+        )
+
+    def test_tea_bar_keep_warm_time_preserves_off_state(self) -> None:
+        """Save a duration without unexpectedly enabling keep-warm."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+
+        with patch.object(tea_bar, "build_send") as mock_build_send:
+            tea_bar.set_attribute(DeviceAttributes.keep_warm_time, 4.5)
+
+        message = mock_build_send.call_args.args[0]
+        assert message.body == bytearray(
+            [0x15, 0x01, 0x01, 0x08, 0x04, 0x00, 0x09, 0x00],
+        )
+
+    @pytest.mark.parametrize("duration", [0.5, 12.5, 1.25])
+    def test_tea_bar_rejects_invalid_keep_warm_time(self, duration: float) -> None:
+        """Reject durations outside the official model range and step."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+            customize="",
+        )
+
+        with (
+            patch.object(tea_bar, "build_send") as mock_build_send,
+            pytest.raises(ValueError, match=r"0\.5-hour steps"),
+        ):
+            tea_bar.set_attribute(DeviceAttributes.keep_warm_time, duration)
+        mock_build_send.assert_not_called()
+
 
 class TestMideaEDDeviceSoftWater:
     """Test Midea ED Device soft water machine (subtype 703)."""
@@ -158,9 +800,9 @@ class TestMideaEDDeviceSoftWater:
         self.device = MideaEDDevice(
             name="Soft Water",
             device_id=2,
-            ip_address="192.168.1.101",
+            ip_address="192.0.2.1",
             port=6444,
-            token="AA",
+            token=TEST_AUTH_VALUE,
             key="BB",
             device_protocol=ProtocolVersion.V3,
             model="6360000A",

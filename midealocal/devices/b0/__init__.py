@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs, dict_translator
+from midealocal.message import ListTypes
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -40,8 +41,8 @@ class MideaB0Device(MideaDevice):
 
     _status: ClassVar[dict[int, str]] = {
         0x01: "Cancel",
-        0x02: "Working",
-        0x03: "Pause",
+        0x02: "Idle",
+        0x03: "Working",
         0x04: "Finished",
         0x06: "Order",
         0x07: "Save Power",
@@ -193,6 +194,13 @@ class MideaB0Device(MideaDevice):
         """B0 Midea device process message."""
         message = MessageB0Response(bytearray(msg))
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
+        # B0Message31Body's byte layout is specific to model 0TG025JG,
+        # subtype 2. On subtype 0 devices this response still arrives, but
+        # decoding it with the wrong layout produces garbage that
+        # immediately overwrites the good data just received via the X01
+        # response a moment earlier. Ignore X31 entirely for subtype 0.
+        if self._subtype == 0 and message.body_type == ListTypes.X31:
+            return {}
         # model 0TG025JG, subtype 2, uses the *31 tables instead
         use_v31_tables = self._subtype > 0
         translators: dict[str, Callable[[Any], str | float | bool | None]] = {

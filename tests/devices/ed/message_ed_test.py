@@ -191,6 +191,58 @@ class TestMessageNewSet:
         expected_body = bytearray([0x15, 0x01, 0x01, 0x01, 0x02, 0x01, 0x00, 0x00])
         assert new_set.body == expected_body
 
+    def test_message_newset_tea_bar_start_to_target(self) -> None:
+        """Encode the official Lua target-temperature and heat-start packs."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.target_temperature = 80
+        new_set.heating = True
+
+        assert new_set.body == bytearray(
+            [
+                0x15,
+                0x01,
+                0x02,
+                0x01,
+                0x04,
+                0x50,
+                0x0A,
+                0x00,
+                0x05,
+                0x04,
+                0x01,
+                0x00,
+                0x00,
+            ],
+        )
+
+    def test_message_newset_tea_bar_stop(self) -> None:
+        """Encode the official Lua heat-start off pack."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.heating = False
+
+        assert new_set.body == bytearray(
+            [0x15, 0x01, 0x01, 0x05, 0x04, 0x00, 0x00, 0x00],
+        )
+
+    @pytest.mark.parametrize(
+        ("enabled", "duration", "raw_enabled"),
+        [(True, 6, 0x01), (False, 24, 0x00)],
+    )
+    def test_message_newset_tea_bar_keep_warm(
+        self,
+        enabled: bool,
+        duration: int,
+        raw_enabled: int,
+    ) -> None:
+        """Encode the official Lua keep-warm command and duration."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.keep_warm = enabled
+        new_set.keep_warm_time = duration
+
+        assert new_set.body == bytearray(
+            [0x15, 0x01, 0x01, 0x08, 0x04, raw_enabled, duration, 0x00],
+        )
+
     def test_message_newset_soften(self) -> None:
         """Test MessageNewSet with soften (soft water machine)."""
         new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
@@ -429,6 +481,200 @@ class TestEDMessageBody06:
         assert hasattr(message, "child_lock")
         assert not message.child_lock
 
+    @pytest.mark.parametrize(
+        ("body_hex", "current_temperature", "heating", "dispensing"),
+        [
+            (
+                "0601002064645a000000000000000000000000000000000000950a0000000000000000005600000000000000000000000000000100",
+                32,
+                False,
+                False,
+            ),
+            (
+                "0601002064645a000000000000000000000000000000000000950a0000000000000000005600000000000000000000000001000500",
+                32,
+                True,
+                False,
+            ),
+            (
+                "0601002164645a000000000000000000000000000000000000950a0000000000000000005600000000000000000000000000000100",
+                33,
+                False,
+                False,
+            ),
+            (
+                "0601002264645a000000000000000000000000000000000000950a0000000000000000005600000000000000000000000000000100",
+                34,
+                False,
+                False,
+            ),
+            (
+                "0601002664645a000000000000000000000000000000000000960a0000000000000000001c00000000000000000000000000000100",
+                38,
+                False,
+                False,
+            ),
+            (
+                "0601002664645a000000000000000000000000000000000000960a0000000000000000001e00000000000000000000000000005100",
+                38,
+                False,
+                True,
+            ),
+            (
+                "0601001c64645a000000000000000000000000000000000000970a0000000000000000000e00000000000000000000000000000100",
+                28,
+                False,
+                False,
+            ),
+            (
+                "0601006464645a000000000000000000000000000000000000970a0000000000000000000e00000000000000000000000000000100",
+                100,
+                False,
+                False,
+            ),
+        ],
+    )
+    def test_tea_bar_status_reports(
+        self,
+        body_hex: str,
+        current_temperature: int,
+        heating: bool,
+        dispensing: bool,
+    ) -> None:
+        """Parse subtype 395 status from captured reports."""
+        message = EDMessageBody06(bytearray.fromhex(body_hex), subtype=395)
+        assert message.current_temperature == current_temperature
+        assert message.target_temperature is None
+        assert message.heating is heating
+        assert message.dispensing is dispensing
+        assert message.sleep is False
+        assert message.screen_display is True
+        assert message.cooling is False
+        assert message.lack_water is False
+        assert message.standby is False
+        assert message.fault_code == 0
+        assert message.fault is False
+
+    @pytest.mark.parametrize(
+        (
+            "body_hex",
+            "current_temperature",
+            "target_temperature",
+            "heating",
+            "dispensing",
+        ),
+        [
+            (
+                "0601004164645a000000460000000000000000000000000000970a0000000000000000002000000000000000000000000000005100",
+                65,
+                70,
+                False,
+                True,
+            ),
+            (
+                "0601001e64645a000000460000000000000000000000000000980a0000000000000000000c00000000000000000000000001000500",
+                30,
+                70,
+                True,
+                False,
+            ),
+            (
+                "0601004564645a000000460000000000000000000000000000980a0000000000000000000c00000000000000000000000000000100",
+                69,
+                70,
+                False,
+                False,
+            ),
+            (
+                "0601003f64645a0000004b0000000000000000000000000000980a0000000000000000000c00000000000000000000000001000500",
+                63,
+                75,
+                True,
+                False,
+            ),
+            (
+                "0601004b64645a0000004b0000000000000000000000000000980a0000000000000000000c00000000000000000000000000000100",
+                75,
+                75,
+                False,
+                False,
+            ),
+        ],
+    )
+    def test_tea_bar_voice_target_temperature_reports(
+        self,
+        body_hex: str,
+        current_temperature: int,
+        target_temperature: int,
+        heating: bool,
+        dispensing: bool,
+    ) -> None:
+        """Parse native targets throughout captured official voice flows."""
+        message = EDMessageBody06(bytearray.fromhex(body_hex), subtype=395)
+        assert message.current_temperature == current_temperature
+        assert message.target_temperature == target_temperature
+        assert message.heating is heating
+        assert message.dispensing is dispensing
+
+    def test_tea_bar_fields_are_not_parsed_for_other_subtypes(self) -> None:
+        """Do not apply subtype 395 offsets to other ED appliances."""
+        body = bytearray.fromhex(
+            "0601002064645a000000000000000000000000000000000000950a0000000000000000005600000000000000000000000001000500",
+        )
+        message = EDMessageBody06(body, subtype=394)
+        assert not hasattr(message, "current_temperature")
+        assert not hasattr(message, "target_temperature")
+        assert not hasattr(message, "heating")
+        assert not hasattr(message, "dispensing")
+        assert not hasattr(message, "keep_warm")
+        assert not hasattr(message, "keep_warm_time")
+        assert not hasattr(message, "keep_warm_remaining")
+        assert not hasattr(message, "sleep")
+        assert not hasattr(message, "screen_display")
+        assert not hasattr(message, "cooling")
+        assert not hasattr(message, "lack_water")
+        assert not hasattr(message, "standby")
+        assert not hasattr(message, "hot_water_dispensing")
+        assert not hasattr(message, "fault_code")
+        assert not hasattr(message, "fault")
+
+    def test_tea_bar_keep_warm_status_uses_official_body06_layout(self) -> None:
+        """Parse official keep-warm flag and half-hour duration encoding."""
+        body = bytearray.fromhex(
+            "0601002064645a000000000000000000000000000000000000950a0000000000000000005600000000000000000000000000000100",
+        )
+        body[33] = 6
+        body[34] = 0x4D
+        body[35] = 0x0E
+        body[48] = 0x01
+
+        message = EDMessageBody06(body, subtype=395)
+
+        assert message.keep_warm is True
+        assert message.keep_warm_time == 3
+        assert message.keep_warm_remaining == 3661
+
+    def test_tea_bar_extended_status_uses_official_body06_layout(self) -> None:
+        """Parse screen, cooling, water, standby, and fault status fields."""
+        body = bytearray.fromhex(
+            "0601002064645a000000000000000000000000000000000000950a0000000000000000005600000000000000000000000000000100",
+        )
+        body[48] = 0x80
+        body[50] = 0x01
+        body[51] = 0xC3
+        body[52] = 22
+
+        message = EDMessageBody06(body, subtype=395)
+
+        assert message.sleep is True
+        assert message.screen_display is False
+        assert message.cooling is True
+        assert message.lack_water is True
+        assert message.standby is True
+        assert message.hot_water_dispensing is True
+        assert message.fault_code == 22
+        assert message.fault is True
+
 
 class TestEDMessageBody07:
     """Test EDMessageBody07."""
@@ -663,6 +909,7 @@ class TestEDMessageBodyFF:
         assert message.out_tds == 258
         assert hasattr(message, "child_lock")
         assert message.child_lock
+
         assert hasattr(message, "life1")
         assert message.life1 == 1
         assert hasattr(message, "life2")
@@ -673,6 +920,25 @@ class TestEDMessageBodyFF:
 
 class TestMessageEDResponse:
     """Test Message ED Response."""
+
+    def test_tea_bar_new_set_status_acknowledgement(self) -> None:
+        """Parse the real subtype-395 X15 acknowledgement after stopping heat."""
+        raw = bytes.fromhex(
+            "aa3fed000000000000021501004a64645a00000050000000000000000000000000"
+            "0000980a0000000000000000005e00000000000000000000000000000100ff",
+        )
+
+        message = MessageEDResponse(raw, subtype=395)
+
+        assert message.body_type == ListTypes.X15
+        assert hasattr(message, "current_temperature")
+        assert hasattr(message, "target_temperature")
+        assert hasattr(message, "heating")
+        assert hasattr(message, "dispensing")
+        assert message.current_temperature == 74
+        assert message.target_temperature == 80
+        assert message.heating is False
+        assert message.dispensing is False
 
     def test_ed_general_response(self) -> None:
         """Test general response."""
