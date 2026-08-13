@@ -37,7 +37,7 @@ class DeviceAttributes(StrEnum):
 class MideaX40Device(MideaDevice):
     """Midea x40 Device."""
 
-    _directions: ClassVar[list[str]] = ["60", "70", "80", "90", "100", "Oscillate"]
+    _directions: ClassVar[list[str]] = ["60", "70", "80", "90", "100", "oscillate"]
 
     def __init__(
         self,
@@ -85,7 +85,7 @@ class MideaX40Device(MideaDevice):
         return self._directions
 
     def _convert_to_midea_direction(self, direction: str) -> int:
-        if direction == "Oscillate" or direction not in self._directions:
+        if direction == "oscillate" or direction not in self._directions:
             return 0xFD
 
         return self._directions.index(direction) * 10 + 60
