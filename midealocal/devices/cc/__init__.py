@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import SKIP_ATTRIBUTE, MideaDevice, MideaDeviceInitKwargs
 
 from .message import (
     INDEX_TO_FE_MODE,
@@ -44,31 +44,31 @@ class MideaCCDevice(MideaDevice):
     """Midea CC device."""
 
     _fan_speeds_7level: ClassVar[dict[int, str]] = {
-        0x01: "Level 1",
-        0x02: "Level 2",
-        0x04: "Level 3",
-        0x08: "Level 4",
-        0x10: "Level 5",
-        0x20: "Level 6",
-        0x40: "Level 7",
-        0x80: "Auto",
+        0x01: "level_1",
+        0x02: "level_2",
+        0x04: "level_3",
+        0x08: "level_4",
+        0x10: "level_5",
+        0x20: "level_6",
+        0x40: "level_7",
+        0x80: "auto",
     }
     _fan_speeds_3level: ClassVar[dict[int, str]] = {
-        0x01: "Low",
-        0x08: "Medium",
-        0x40: "High",
-        0x80: "Auto",
+        0x01: "low",
+        0x08: "medium",
+        0x40: "high",
+        0x80: "auto",
     }
     # 0xFE VRF panels report fan speed as 1-7 (+8=auto), not as a bitmask
     _fan_speeds_fe: ClassVar[dict[int, str]] = {
-        0x01: "Level 1",
-        0x02: "Level 2",
-        0x03: "Level 3",
-        0x04: "Level 4",
-        0x05: "Level 5",
-        0x06: "Level 6",
-        0x07: "Level 7",
-        0x08: "Auto",
+        0x01: "level_1",
+        0x02: "level_2",
+        0x03: "level_3",
+        0x04: "level_4",
+        0x05: "level_5",
+        0x06: "level_6",
+        0x07: "level_7",
+        0x08: "auto",
     }
 
     def __init__(
@@ -120,16 +120,22 @@ class MideaCCDevice(MideaDevice):
         if getattr(message, "is_fe_format", False):
             self._is_fe_format = True
             _LOGGER.debug("[%s] _is_fe_format option True", self.device_id)
-        new_status = {}
+
+        # fan_speed's translation depends on fan_speed_level, which may be
+        # updated by this same message but is declared later in
+        # DeviceAttributes -- capture the raw value and resolve it below,
+        # once every other attribute (including fan_speed_level) is settled.
         fan_speed: int | None = None
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.fan_speed:
-                    fan_speed = value
-                else:
-                    self._attributes[status] = getattr(message, str(status))
-                    new_status[str(status)] = getattr(message, str(status))
+
+        def _capture_fan_speed(value: int) -> Any:  # noqa: ANN401
+            nonlocal fan_speed
+            fan_speed = value
+            return SKIP_ATTRIBUTE
+
+        new_status = self.update_attributes_from_message(
+            message,
+            {DeviceAttributes.fan_speed: _capture_fan_speed},
+        )
         if (
             fan_speed is not None
             and self._attributes[DeviceAttributes.fan_speed_level] is not None
