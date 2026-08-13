@@ -141,14 +141,14 @@ class MideaDCDevice(MideaDevice):
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         progress = [
-            "Prog0",
-            "Prog1",
-            "Prog2",
-            "Prog3",
-            "Prog4",
-            "Prog5",
-            "Prog6",
-            "Prog7",
+            "prog0",
+            "prog1",
+            "prog2",
+            "prog3",
+            "prog4",
+            "prog5",
+            "prog6",
+            "prog7",
         ]
         for status in self._attributes:
             if hasattr(message, str(status)):
