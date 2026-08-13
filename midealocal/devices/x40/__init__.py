@@ -7,7 +7,12 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import (
+    MideaDevice,
+    MideaDeviceInitKwargs,
+    list_translator,
+    precision_halves_translator,
+)
 
 from .message import MessageQuery, MessageSet, MessageX40Response
 
@@ -101,24 +106,19 @@ class MideaX40Device(MideaDevice):
         """Midea x40 Device process message."""
         message = MessageX40Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
         self._fields = message.fields
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if (
-                    self._precision_halves
-                    and status == DeviceAttributes.current_temperature
-                ):
-                    value /= 2
-                if status == DeviceAttributes.direction:
-                    self._attributes[status] = self._directions[
-                        self._convert_from_midea_direction(value)
-                    ]
-                else:
-                    self._attributes[status] = value
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.current_temperature: precision_halves_translator(
+                    self._precision_halves,
+                ),
+                DeviceAttributes.direction: list_translator(
+                    self._directions,
+                    key=self._convert_from_midea_direction,
+                ),
+            },
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea x40 Device set attribute."""
