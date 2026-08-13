@@ -38,22 +38,22 @@ class MideaFCDevice(MideaDevice):
     """Midea FC device."""
 
     _modes: ClassVar[dict[int, str]] = {
-        0x00: "Standby",
-        0x10: "Auto",
-        0x20: "Manual",
-        0x30: "Sleep",
-        0x40: "Fast",
-        0x50: "Smoke",
+        0x00: "standby",
+        0x10: "auto",
+        0x20: "manual",
+        0x30: "sleep",
+        0x40: "fast",
+        0x50: "smoke",
     }
     _speeds: ClassVar[dict[int, str]] = {
-        1: "Auto",
-        4: "Standby",
-        39: "Low",
-        59: "Medium",
-        80: "High",
+        1: "auto",
+        4: "standby",
+        39: "low",
+        59: "medium",
+        80: "high",
     }
-    _screen_displays: ClassVar[dict[int, str]] = {0: "Bright", 6: "Dim", 7: "Off"}
-    _detect_modes: ClassVar[list[str]] = ["Off", "PM 2.5", "Methanal"]
+    _screen_displays: ClassVar[dict[int, str]] = {0: "bright", 6: "dim", 7: "off"}
+    _detect_modes: ClassVar[list[str]] = ["off", "pm_25", "methanal"]
 
     def __init__(
         self,
