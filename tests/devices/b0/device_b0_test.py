@@ -230,6 +230,19 @@ class TestMideaB0Device:
         assert device.attributes[DeviceAttributes.mode] == "baking"
         assert device.attributes[DeviceAttributes.fire_power] == 5
 
+    def test_process_message_31_humidity_auto_and_medium_high(self) -> None:
+        """Test process message with a 31 body sets mode and fire power."""
+        body = bytearray(18)
+        body[0] = 0x31
+        body[1] = 0x03
+        body[9] = 0xE2
+        body[14] = 0x08
+        self.device.process_message(
+            _build_message(MessageType.query, body),
+        )
+        assert self.device.attributes[DeviceAttributes.mode] == "humidity_auto"
+        assert self.device.attributes[DeviceAttributes.fire_power] == "medium_high"
+
     def test_process_message_04_body(self) -> None:
         """Test process message with a 04 body updates nothing."""
         body = bytearray(18)
