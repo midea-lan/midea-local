@@ -85,12 +85,7 @@ class MideaE6Device(MideaDevice):
         """Midea E6 device process message."""
         message = MessageE6Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                self._attributes[status] = getattr(message, str(status))
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(message)
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea E6 device set attribute."""
