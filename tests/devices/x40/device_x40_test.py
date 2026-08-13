@@ -59,6 +59,14 @@ class TestMideaX40Device:
         """Test the available directions."""
         assert self.device.directions == ["60", "70", "80", "90", "100", "Oscillate"]
 
+    def test_speed_count(self) -> None:
+        """Test the speed count."""
+        assert self.device.speed_count == 2
+
+    def test_preset_modes(self) -> None:
+        """Test the available preset modes."""
+        assert self.device.preset_modes == []
+
     @pytest.mark.parametrize(
         ("direction", "expected"),
         [
