@@ -229,13 +229,7 @@ class MideaEDDevice(MideaDevice):
         response_subtype = self.subtype if self._is_tea_bar() else 0
         message = MessageEDResponse(msg, response_subtype)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        if hasattr(message, "device_class"):
-            self._device_class = message.device_class
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                new_status[str(status)] = getattr(message, str(status))
-                self._attributes[status] = getattr(message, str(status))
+        new_status = self.update_attributes_from_message(message)
         if self._is_tea_bar():
             if DeviceAttributes.target_temperature in new_status:
                 target_temperature = new_status[DeviceAttributes.target_temperature]
