@@ -57,7 +57,7 @@ class TestMideaC3Device:
         assert self.device.attributes[DeviceAttributes.silent_mode] is False
         assert (
             self.device.attributes[DeviceAttributes.silent_level]
-            == C3SilentLevel.OFF.name
+            == C3SilentLevel.OFF.name.lower()
         )
         assert self.device.attributes[DeviceAttributes.eco_mode] is False
         assert self.device.attributes[DeviceAttributes.tbh] is False
@@ -118,7 +118,7 @@ class TestMideaC3Device:
 
             self.device.set_attribute(
                 DeviceAttributes.silent_level.value,
-                C3SilentLevel.SILENT.name,
+                C3SilentLevel.SILENT.name.lower(),
             )
 
     def test_build_query(self) -> None:
