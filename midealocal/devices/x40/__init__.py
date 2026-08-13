@@ -69,10 +69,10 @@ class MideaX40Device(MideaDevice):
         return 2
 
     @property
-    def preset_modes(self) -> list[str] | None:
+    def preset_modes(self) -> list[str]:
         """Midea x40 device preset modes."""
         # X40 has no "mode" attribute, so it has no named presets.
-        return None
+        return []
 
     @property
     def directions(self) -> list[str]:
