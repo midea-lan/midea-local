@@ -103,20 +103,13 @@ class MideaCADevice(MideaDevice):
         """Midea CA device process message."""
         message = MessageCAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for attr in self._attributes:
-            if hasattr(message, str(attr)):
-                value = getattr(message, str(attr))
-                # variable_mode
-                if attr == DeviceAttributes.variable_mode:
-                    self._attributes[attr] = MideaCADevice._variable_mode.get(value)
-                # humidity
-                elif attr == DeviceAttributes.humidity:
-                    self._attributes[attr] = MideaCADevice._humidity.get(value)
-                else:
-                    self._attributes[attr] = value
-                new_status[str(attr)] = self._attributes[attr]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.variable_mode: MideaCADevice._variable_mode.get,
+                DeviceAttributes.humidity: MideaCADevice._humidity.get,
+            },
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea CA device set attribute."""

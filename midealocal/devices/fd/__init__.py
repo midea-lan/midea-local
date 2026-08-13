@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
 
 from .message import MessageFDResponse, MessageQuery, MessageSet
 
@@ -116,31 +116,17 @@ class MideaFDDevice(MideaDevice):
         """Midea FD device process message."""
         message = MessageFDResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.mode:
-                    if value <= len(MideaFDDevice._modes):
-                        self._attributes[status] = MideaFDDevice._modes[value - 1]
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.fan_speed:
-                    if value in self._speeds:
-                        self._attributes[status] = self._speeds.get(value)
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.screen_display:
-                    if value in MideaFDDevice._screen_displays:
-                        self._attributes[status] = MideaFDDevice._screen_displays.get(
-                            value,
-                        )
-                    else:
-                        self._attributes[status] = None
-                else:
-                    self._attributes[status] = value
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.mode: list_translator(
+                    MideaFDDevice._modes,
+                    offset=1,
+                ),
+                DeviceAttributes.fan_speed: self._speeds.get,
+                DeviceAttributes.screen_display: MideaFDDevice._screen_displays.get,
+            },
+        )
 
     def make_message_set(self) -> MessageSet:
         """Midea FD device make message set."""
