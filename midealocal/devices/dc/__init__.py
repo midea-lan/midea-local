@@ -145,14 +145,14 @@ class MideaDCDevice(MideaDevice):
         message = MessageDCResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         progress = [
-            "Prog0",
-            "Prog1",
-            "Prog2",
-            "Prog3",
-            "Prog4",
-            "Prog5",
-            "Prog6",
-            "Prog7",
+            "prog0",
+            "prog1",
+            "prog2",
+            "prog3",
+            "prog4",
+            "prog5",
+            "prog6",
+            "prog7",
         ]
         return self.update_attributes_from_message(
             message,
