@@ -113,45 +113,23 @@ class MideaA1Device(MideaDevice):
         if hasattr(message, "pump_enable"):
             self._pump_enable = message.pump_enable
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.mode:
-                    if value in self._modes:
-                        self._attributes[status] = self._modes.get(value)
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.fan_speed:
-                    if value in self._speeds:
-                        self._attributes[status] = self._speeds.get(value)
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.water_level_set:
-                    self._attributes[status] = str(value)
-                else:
-                    self._attributes[status] = value
-                tank_full = self._attributes[DeviceAttributes.tank_full]
-                tank = self._attributes[DeviceAttributes.tank]
-                water_level = int(self._attributes[DeviceAttributes.water_level_set])
-                tank_full_calculated = tank >= water_level if bool(tank) else False
-                _LOGGER.debug(
-                    "Device - tank: %s, tank_full: %s, \
-                                     water_level: %s, tank_full_calculated: %s",
-                    tank,
-                    tank_full,
-                    water_level,
-                    tank_full_calculated,
-                )
-                if tank_full is None or tank_full != tank_full_calculated:
-                    self._attributes[DeviceAttributes.tank_full] = tank_full_calculated
-                    new_status[str(DeviceAttributes.tank_full)] = tank_full_calculated
-                new_status[str(status)] = self._attributes[status]
-                _LOGGER.debug(
-                    "Device after - new_status: %s, tank_full: %s",
-                    new_status,
-                    self._attributes[DeviceAttributes.tank_full],
-                )
+        new_status = self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.mode: self._modes.get,
+                DeviceAttributes.fan_speed: self._speeds.get,
+                DeviceAttributes.water_level_set: str,
+            },
+        )
+        # tank_full is derived from tank/water_level_set, not reported directly;
+        # recompute it once whenever any attribute in this message changed.
+        if new_status:
+            tank = self._attributes[DeviceAttributes.tank]
+            water_level = int(self._attributes[DeviceAttributes.water_level_set])
+            tank_full_calculated = tank >= water_level if bool(tank) else False
+            if self._attributes[DeviceAttributes.tank_full] != tank_full_calculated:
+                self._attributes[DeviceAttributes.tank_full] = tank_full_calculated
+                new_status[DeviceAttributes.tank_full.value] = tank_full_calculated
         return new_status
 
     def make_message_set(self) -> MessageSet:

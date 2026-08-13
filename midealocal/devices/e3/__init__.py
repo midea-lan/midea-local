@@ -6,7 +6,11 @@ from enum import StrEnum
 from typing import Any, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import (
+    MideaDevice,
+    MideaDeviceInitKwargs,
+    precision_halves_translator,
+)
 
 from .message import (
     MessageE3Response,
@@ -82,19 +86,16 @@ class MideaE3Device(MideaDevice):
         """Midea E3 device process message."""
         message = MessageE3Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                if self._precision_halves and status in [
+        return self.update_attributes_from_message(
+            message,
+            dict.fromkeys(
+                [
                     DeviceAttributes.current_temperature,
                     DeviceAttributes.target_temperature,
-                ]:
-                    self._attributes[status] = getattr(message, str(status)) / 2
-                else:
-                    self._attributes[status] = getattr(message, str(status))
-                new_status[str(status)] = self._attributes[status]
-
-        return new_status
+                ],
+                precision_halves_translator(self._precision_halves),
+            ),
+        )
 
     def make_message_set(self) -> MessageSet:
         """Midea E3 device make message set."""
