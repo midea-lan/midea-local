@@ -6,7 +6,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
 
 from .message import Message26Response, MessageQuery, MessageSet
 
@@ -111,24 +111,20 @@ class Midea26Device(MideaDevice):
         """Midea x26 device process message."""
         message = Message26Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
         # Message26Response only populates `.fields` for body_type 0x01;
         # for any other body type, keep the last known fields instead of
         # raising AttributeError.
         self._fields = getattr(message, "fields", self._fields)
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.mode:
-                    self._attributes[status] = Midea26Device._modes[value]
-                elif status == DeviceAttributes.direction:
-                    self._attributes[status] = Midea26Device._directions[
-                        self._convert_from_midea_direction(value)
-                    ]
-                else:
-                    self._attributes[status] = value
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.mode: Midea26Device._modes.__getitem__,
+                DeviceAttributes.direction: list_translator(
+                    Midea26Device._directions,
+                    key=Midea26Device._convert_from_midea_direction,
+                ),
+            },
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea x26 device set attribute."""
