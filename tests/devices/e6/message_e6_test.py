@@ -150,11 +150,11 @@ class TestE6GeneralMessageBody:
     @pytest.mark.parametrize(
         ("byte4", "expected_mode"),
         [
-            (0x08, "out_mode"),
-            (0x04, "normal_mode"),
-            (0x10, "home_mode"),
-            (0x20, "sleep_mode"),
-            (0x00, "normal_mode"),
+            (0x08, "out"),
+            (0x04, "normal"),
+            (0x10, "home"),
+            (0x20, "sleep"),
+            (0x00, "normal"),
         ],
     )
     def test_heating_modes(self, byte4: int, expected_mode: str) -> None:
