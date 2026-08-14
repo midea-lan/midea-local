@@ -76,17 +76,17 @@ class TestMideaDADevice:
             assert new_status[DeviceAttributes.power.value]
             assert new_status[DeviceAttributes.start.value]
             assert new_status[DeviceAttributes.error_code.value] == 10
-            assert new_status[DeviceAttributes.program.value] == "Memory"
-            assert new_status[DeviceAttributes.progress.value] == "Rinse"
+            assert new_status[DeviceAttributes.program.value] == "memory"
+            assert new_status[DeviceAttributes.progress.value] == "rinse"
             assert new_status[DeviceAttributes.time_remaining.value] == 75
             assert new_status[DeviceAttributes.wash_time.value] == 30
             assert new_status[DeviceAttributes.soak_time.value] == 10
             assert new_status[DeviceAttributes.dehydration_time.value] == 2
-            assert new_status[DeviceAttributes.dehydration_speed.value] == "High"
+            assert new_status[DeviceAttributes.dehydration_speed.value] == "high"
             assert new_status[DeviceAttributes.rinse_count.value] == 3
             assert new_status[DeviceAttributes.rinse_level.value] == 4
             assert new_status[DeviceAttributes.wash_level.value] == 1
-            assert new_status[DeviceAttributes.wash_strength.value] == "Medium"
+            assert new_status[DeviceAttributes.wash_strength.value] == "medium"
             assert new_status[DeviceAttributes.softener.value] == "5"
             assert new_status[DeviceAttributes.detergent.value] == "4"
 
@@ -100,11 +100,21 @@ class TestMideaDADevice:
             new_status = self.device.process_message(b"")
             assert new_status[DeviceAttributes.program.value] is None
             assert new_status[DeviceAttributes.progress.value] is None
-            assert new_status[DeviceAttributes.rinse_level.value] == "-"
+            assert new_status[DeviceAttributes.rinse_level.value] == "none"
             assert new_status[DeviceAttributes.dehydration_speed.value] is None
             assert new_status[DeviceAttributes.softener.value] is None
             assert new_status[DeviceAttributes.detergent.value] is None
             assert new_status[DeviceAttributes.wash_strength.value] is None
+
+            mock_message.dehydration_speed = 0
+            mock_message.wash_strength = 0
+            mock_message.detergent = 1
+            mock_message.softener = 1
+            new_status = self.device.process_message(b"")
+            assert new_status[DeviceAttributes.dehydration_speed.value] == "none"
+            assert new_status[DeviceAttributes.wash_strength.value] == "none"
+            assert new_status[DeviceAttributes.detergent.value] == "less"
+            assert new_status[DeviceAttributes.softener.value] == "intelligent"
 
     def test_build_query(self) -> None:
         """Test build query."""
