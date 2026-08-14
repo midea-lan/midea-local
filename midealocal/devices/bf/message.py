@@ -2,7 +2,7 @@
 
 from enum import IntEnum
 
-from midealocal.const import MAX_BYTE_VALUE, DeviceType, ProtocolVersion
+from midealocal.const import MAX_BYTE_VALUE, DeviceType
 from midealocal.message import (
     ListTypes,
     MessageBody,
@@ -321,7 +321,7 @@ class MessageQuery(MessageBFBase):
 class MessageSet(MessageBFBase):
     """BF message set."""
 
-    def __init__(self, protocol_version: ProtocolVersion) -> None:
+    def __init__(self, protocol_version: int) -> None:
         """Initialize BF message set."""
         super().__init__(
             protocol_version=protocol_version,
@@ -503,7 +503,9 @@ class MessageSet(MessageBFBase):
     @staticmethod
     def _bool_to_byte(value: bool | None, true_val: int, false_val: int) -> int:
         """Convert optional bool to byte value."""
-        return {True: true_val, False: false_val}.get(value, BYTE_FF)
+        if value is None:
+            return BYTE_FF
+        return {True: true_val, False: false_val}[value]
 
     def _build_work_mode_control(self) -> bytearray:
         """Build workModeControl/singleCooking body content (body_type=0x01 added by framework)."""  # noqa: E501
@@ -603,7 +605,7 @@ class MessageSet(MessageBFBase):
                     self.hour_set or 0x00,
                     self.minute_set or 0x00,
                     self.second_set or 0x00,
-                ]
+                ],
             )
             param_sum += 1
 
