@@ -50,7 +50,18 @@ class TestMideaE8Device:
         """Test set attribute is a no-op."""
         self.device.set_attribute(DeviceAttributes.status.value, True)
 
-    def test_query_response(self) -> None:
+    @pytest.mark.parametrize(
+        ("status", "expected_status"),
+        [
+            (0x00, "standby"),
+            (0x01, "delay"),
+            (0x02, "working"),
+            (0x03, "paused"),
+            (0x04, "keep_warming"),
+            (0xFF, "error"),
+        ],
+    )
+    def test_query_response(self, status: int, expected_status: str) -> None:
         """Test query response with valid status."""
         header = bytearray(
             [0xAA, 0x00, DeviceType.E8] + [0x00] * 5 + [ProtocolVersion.V1],
@@ -58,7 +69,7 @@ class TestMideaE8Device:
         body = bytearray(44)
         body[0] = 0xAA  # body type
         body[6] = 0x02  # sub command
-        body[11] = 0x02  # status -> Working
+        body[11] = status  # status -> Working
         body[16] = 0x01  # time remaining hours
         body[17] = 0x01  # time remaining minutes
         body[18] = 0x01  # time remaining seconds
@@ -72,7 +83,7 @@ class TestMideaE8Device:
         body[41] = 0x01  # finished
         body[43] = 0x01  # water shortage
         result = self.device.process_message(bytes(header + body + bytearray(1)))
-        assert self.device.attributes[DeviceAttributes.status] == "working"
+        assert self.device.attributes[DeviceAttributes.status] == expected_status
         assert self.device.attributes[DeviceAttributes.time_remaining] == 3661
         assert self.device.attributes[DeviceAttributes.keep_warm_remaining] == 90
         assert self.device.attributes[DeviceAttributes.working_time] == 125
@@ -80,7 +91,7 @@ class TestMideaE8Device:
         assert self.device.attributes[DeviceAttributes.current_temperature] == 60
         assert self.device.attributes[DeviceAttributes.finished] is True
         assert self.device.attributes[DeviceAttributes.water_shortage] is True
-        assert result[DeviceAttributes.status.value] == "working"
+        assert result[DeviceAttributes.status.value] == expected_status
 
     @pytest.mark.parametrize("sub_cmd", [0x02, 0x04, 0x06])
     def test_set_response(self, sub_cmd: int) -> None:
