@@ -40,15 +40,15 @@ class TestMideaFBDevice:
         assert self.device.attributes[DeviceAttributes.current_temperature] is None
         assert self.device.attributes[DeviceAttributes.child_lock] is False
         assert self.device.modes == [
-            "Auto",
-            "ECO",
-            "Sleep",
-            "Anti-freezing",
-            "Comfort",
-            "Constant-temperature",
-            "Normal",
-            "Fast-heating",
-            "Standby",
+            "auto",
+            "eco",
+            "sleep",
+            "anti_freezing",
+            "comfort",
+            "constant_temperature",
+            "normal",
+            "fast_heating",
+            "standby",
         ]
 
     def test_build_query(self) -> None:
@@ -68,7 +68,7 @@ class TestMideaFBDevice:
         )
         body = bytearray(22)
         body[0] = 0x01  # power on
-        body[4] = 0x02  # mode ECO
+        body[4] = 0x02  # mode eco
         body[5] = 3  # heating_level
         body[6] = 66  # target_temperature = 25
         body[7] = 50  # target_humidity
@@ -80,12 +80,12 @@ class TestMideaFBDevice:
         crc = bytearray([0x00])
         new_status = self.device.process_message(bytes(header + body + crc))
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.mode] == "ECO"
+        assert self.device.attributes[DeviceAttributes.mode] == "eco"
         assert self.device.attributes[DeviceAttributes.heating_level] == 3
         assert self.device.attributes[DeviceAttributes.target_temperature] == 25
         assert self.device.attributes[DeviceAttributes.current_temperature] == 25
         assert self.device.attributes[DeviceAttributes.child_lock] is True
-        assert new_status[DeviceAttributes.mode.value] == "ECO"
+        assert new_status[DeviceAttributes.mode.value] == "eco"
 
     def test_process_message_unknown_mode_and_short_body(self) -> None:
         """Test process message with an unknown mode and a short body."""
@@ -118,7 +118,7 @@ class TestMideaFBDevice:
     def test_set_attribute_mode(self) -> None:
         """Test set attribute mode with a valid mode name."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.mode.value, "ECO")
+            self.device.set_attribute(DeviceAttributes.mode.value, "eco")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageSet)
@@ -127,7 +127,7 @@ class TestMideaFBDevice:
     def test_set_attribute_mode_invalid(self) -> None:
         """Test set attribute mode with an invalid mode name leaves mode unset."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.mode.value, "Invalid")
+            self.device.set_attribute(DeviceAttributes.mode.value, "invalid")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageSet)

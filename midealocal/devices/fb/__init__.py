@@ -27,15 +27,15 @@ class MideaFBDevice(MideaDevice):
     """Midea FB device."""
 
     _modes: ClassVar[dict[int, str]] = {
-        0x01: "Auto",
-        0x02: "ECO",
-        0x03: "Sleep",
-        0x04: "Anti-freezing",
-        0x05: "Comfort",
-        0x06: "Constant-temperature",
-        0x07: "Normal",
-        0x08: "Fast-heating",
-        0x10: "Standby",
+        0x01: "auto",
+        0x02: "eco",
+        0x03: "sleep",
+        0x04: "anti_freezing",
+        0x05: "comfort",
+        0x06: "constant_temperature",
+        0x07: "normal",
+        0x08: "fast_heating",
+        0x10: "standby",
     }
 
     def __init__(
