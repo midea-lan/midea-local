@@ -598,11 +598,13 @@ class MessageSet(MessageBFBase):
         time_fields = [self.hour_set, self.minute_set, self.second_set]
         if any(f is not None for f in time_fields):
             body.append(PARAM_ID_TIME)
-            body.extend([
-                self.hour_set or 0x00,
-                self.minute_set or 0x00,
-                self.second_set or 0x00,
-            ])
+            body.extend(
+                [
+                    self.hour_set or 0x00,
+                    self.minute_set or 0x00,
+                    self.second_set or 0x00,
+                ]
+            )
             param_sum += 1
 
         if self.fire_power_set is not None:
