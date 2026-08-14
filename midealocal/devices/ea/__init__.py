@@ -130,7 +130,7 @@ class MideaEADevice(MideaDevice):
         + ["unknown"] * 5
         + ["keep_warm"]
     )
-    _progress: ClassVar[list[str]] = ["Idle", "Delay", "Cooking", "Keep-warm"]
+    _progress: ClassVar[list[str]] = ["idle", "delay", "cooking", "keep_warm"]
 
     def __init__(
         self,
@@ -150,7 +150,7 @@ class MideaEADevice(MideaDevice):
                 DeviceAttributes.top_temperature: None,
                 DeviceAttributes.bottom_temperature: None,
                 DeviceAttributes.keep_warm_time: None,
-                DeviceAttributes.progress: "Unknown",
+                DeviceAttributes.progress: "unknown",
             },
         )
 
@@ -167,11 +167,11 @@ class MideaEADevice(MideaDevice):
             {
                 DeviceAttributes.progress: list_translator(
                     MideaEADevice._progress,
-                    default="Unknown",
+                    default="unknown",
                 ),
                 DeviceAttributes.mode: list_translator(
                     MideaEADevice._mode_list,
-                    default="Cloud",
+                    default="cloud",
                 ),
             },
         )
