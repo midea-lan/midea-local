@@ -40,7 +40,7 @@ class TestMideaEADevice:
         assert self.device.attributes[DeviceAttributes.keep_warm_time] is None
         assert self.device.attributes[DeviceAttributes.top_temperature] is None
         assert self.device.attributes[DeviceAttributes.bottom_temperature] is None
-        assert self.device.attributes[DeviceAttributes.progress] == "Unknown"
+        assert self.device.attributes[DeviceAttributes.progress] == "unknown"
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -76,7 +76,7 @@ class TestMideaEADevice:
         assert self.device.attributes[DeviceAttributes.keep_warm_time] == 45
         assert self.device.attributes[DeviceAttributes.top_temperature] == 90
         assert self.device.attributes[DeviceAttributes.bottom_temperature] == 85
-        assert self.device.attributes[DeviceAttributes.progress] == "Cooking"
+        assert self.device.attributes[DeviceAttributes.progress] == "cooking"
         assert new_status[DeviceAttributes.cooking.value] is True
 
     def test_process_message_body2_query(self) -> None:
@@ -104,7 +104,7 @@ class TestMideaEADevice:
         assert self.device.attributes[DeviceAttributes.keep_warm_time] == 65
         assert self.device.attributes[DeviceAttributes.top_temperature] == 70
         assert self.device.attributes[DeviceAttributes.bottom_temperature] == 60
-        assert self.device.attributes[DeviceAttributes.progress] == "Keep-warm"
+        assert self.device.attributes[DeviceAttributes.progress] == "keep_warm"
 
     def test_process_message_body1_query(self) -> None:
         """Test process message with a V0 query message parses EABody1."""
@@ -123,7 +123,7 @@ class TestMideaEADevice:
         assert self.device.attributes[DeviceAttributes.keep_warm_time] == 0
         assert self.device.attributes[DeviceAttributes.top_temperature] == 0
         assert self.device.attributes[DeviceAttributes.bottom_temperature] == 0
-        assert self.device.attributes[DeviceAttributes.progress] == "Idle"
+        assert self.device.attributes[DeviceAttributes.progress] == "idle"
 
     def test_process_message_body1_notify(self) -> None:
         """Test process message with a V0 notify1 message parses EABody1."""
@@ -136,7 +136,7 @@ class TestMideaEADevice:
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
         assert self.device.attributes[DeviceAttributes.mode] == "smart"
-        assert self.device.attributes[DeviceAttributes.progress] == "Unknown"
+        assert self.device.attributes[DeviceAttributes.progress] == "unknown"
 
     @pytest.mark.parametrize(
         ("message_type", "body_type"),
@@ -174,7 +174,7 @@ class TestMideaEADevice:
         assert self.device.attributes[DeviceAttributes.keep_warm_time] == 30
         assert self.device.attributes[DeviceAttributes.top_temperature] == 95
         assert self.device.attributes[DeviceAttributes.bottom_temperature] == 88
-        assert self.device.attributes[DeviceAttributes.progress] == "Cooking"
+        assert self.device.attributes[DeviceAttributes.progress] == "cooking"
 
     def test_process_message_body3_cloud_mode(self) -> None:
         """Test process message maps out-of-range mode and progress values."""
@@ -188,8 +188,8 @@ class TestMideaEADevice:
         body[8] = 9  # progress out of range
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
-        assert self.device.attributes[DeviceAttributes.mode] == "Cloud"
-        assert self.device.attributes[DeviceAttributes.progress] == "Unknown"
+        assert self.device.attributes[DeviceAttributes.mode] == "cloud"
+        assert self.device.attributes[DeviceAttributes.progress] == "unknown"
 
     @pytest.mark.parametrize("sub_type", [2, 4, 6, 8, 10, 0x62])
     def test_process_message_new_body(self, sub_type: int) -> None:
@@ -217,7 +217,7 @@ class TestMideaEADevice:
         assert self.device.attributes[DeviceAttributes.keep_warm_time] == 50
         assert self.device.attributes[DeviceAttributes.top_temperature] == 99
         assert self.device.attributes[DeviceAttributes.bottom_temperature] == 77
-        assert self.device.attributes[DeviceAttributes.progress] == "Cooking"
+        assert self.device.attributes[DeviceAttributes.progress] == "cooking"
 
     def test_process_message_new_body_unknown_subtype(self) -> None:
         """Test process message with an unknown EABodyNew subtype updates nothing."""
@@ -243,7 +243,7 @@ class TestMideaEADevice:
         new_status = self.device.process_message(bytes(header + body + crc))
         assert new_status == {DeviceAttributes.mode.value: "cook_rice"}
         assert self.device.attributes[DeviceAttributes.mode] == "cook_rice"
-        assert self.device.attributes[DeviceAttributes.progress] == "Unknown"
+        assert self.device.attributes[DeviceAttributes.progress] == "unknown"
 
     @pytest.mark.parametrize(
         ("protocol", "message_type"),

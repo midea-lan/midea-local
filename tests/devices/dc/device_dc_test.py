@@ -108,7 +108,7 @@ class TestMideaDCDevice:
         body[16] = 0x02  # progress bit 1
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
-        assert self.device.attributes[DeviceAttributes.progress] == "Prog1"
+        assert self.device.attributes[DeviceAttributes.progress] == "prog1"
 
     def test_notify1_response_unmapped_values(self) -> None:
         """Test notify1 response with unmapped status and program values."""

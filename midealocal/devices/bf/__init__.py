@@ -15,8 +15,6 @@ from .message import (
 
 _LOGGER = logging.getLogger(__name__)
 
-_MISSING = object()
-
 
 class DeviceAttributes(StrEnum):
     """Midea BF device attributes."""
@@ -154,13 +152,9 @@ class MideaBFDevice(MideaDevice):
         """Midea BF device process message."""
         message = MessageBFResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status: dict[str, Any] = {}
-        for status in self._attributes:
-            value = getattr(message, str(status), _MISSING)
-            if value is not _MISSING:
-                self._attributes[status] = value
-                new_status[str(status)] = value
-        return new_status
+        # message layer already resolves work_status into a string name
+        # (see MessageBFBody._parse_status_and_power), so no translator needed.
+        return self.update_attributes_from_message(message)
 
     def make_message_set(self) -> MessageSet:
         """Create a MessageSet pre-populated with current work-mode attributes.

@@ -27,12 +27,12 @@ class Midea13Device(MideaDevice):
     """Midea x13 Device."""
 
     _effects: ClassVar[list[str]] = [
-        "Manual",
-        "Living",
-        "Reading",
-        "Mildly",
-        "Cinema",
-        "Night",
+        "manual",
+        "living",
+        "reading",
+        "mildly",
+        "cinema",
+        "night",
     ]
 
     def __init__(
@@ -90,23 +90,18 @@ class Midea13Device(MideaDevice):
         """Midea x13 Device process message."""
         message = Message13Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status: dict[str, Any] = {}
         if hasattr(message, "control_success"):
-            new_status = {"control_success": message.control_success}
+            new_status: dict[str, Any] = {"control_success": message.control_success}
             if message.control_success:
                 self.refresh_status()
-        else:
-            for status in self._attributes:
-                if hasattr(message, str(status)):
-                    value = getattr(message, str(status))
-                    if status == DeviceAttributes.effect:
-                        self._attributes[status] = Midea13Device._effects[value]
-                    elif status == DeviceAttributes.color_temperature:
-                        self._attributes[status] = self.midea_to_kelvin(value)
-                    else:
-                        self._attributes[status] = value
-                    new_status[str(status)] = self._attributes[status]
-        return new_status
+            return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.effect: Midea13Device._effects.__getitem__,
+                DeviceAttributes.color_temperature: self.midea_to_kelvin,
+            },
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea x13 Device set attribute."""

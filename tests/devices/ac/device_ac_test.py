@@ -492,17 +492,17 @@ class TestMideaACDevice:
         assert self.device.wind_lr_angles == [
             "off",
             "left",
-            "left-mid",
+            "left_mid",
             "middle",
-            "right-mid",
+            "right_mid",
             "right",
         ]
         assert self.device.wind_ud_angles == [
             "off",
             "up",
-            "up-mid",
+            "up_mid",
             "middle",
-            "down-mid",
+            "down_mid",
             "down",
         ]
         assert self.device.rate_selects == ["1", "20", "40", "60", "80", "100"]
