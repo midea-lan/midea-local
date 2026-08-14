@@ -89,31 +89,31 @@ class Midea34Device(MideaDevice):
             },
         )
         self._modes = {
-            0x0: "Neutral Gear",  # BYTE_MODE_NEUTRAL_GEAR
-            0x1: "Auto",  # BYTE_MODE_AUTO_WASH
-            0x2: "Heavy",  # BYTE_MODE_STRONG_WASH
-            0x3: "Normal",  # BYTE_MODE_STANDARD_WASH
-            0x4: "Energy Saving",  # BYTE_MODE_ECO_WASH
-            0x5: "Delicate",  # BYTE_MODE_GLASS_WASH
-            0x6: "Hour",  # BYTE_MODE_HOUR_WASH
-            0x7: "Quick",  # BYTE_MODE_FAST_WASH
-            0x8: "Rinse",  # BYTE_MODE_SOAK_WASH
+            0x0: "neutral_gear",  # BYTE_MODE_NEUTRAL_GEAR
+            0x1: "auto",  # BYTE_MODE_AUTO_WASH
+            0x2: "heavy",  # BYTE_MODE_STRONG_WASH
+            0x3: "normal",  # BYTE_MODE_STANDARD_WASH
+            0x4: "energy_saving",  # BYTE_MODE_ECO_WASH
+            0x5: "delicate",  # BYTE_MODE_GLASS_WASH
+            0x6: "hour",  # BYTE_MODE_HOUR_WASH
+            0x7: "quick",  # BYTE_MODE_FAST_WASH
+            0x8: "rinse",  # BYTE_MODE_SOAK_WASH
             0x9: "90min",  # BYTE_MODE_90MIN_WASH
-            0xA: "Self Clean",  # BYTE_MODE_SELF_CLEAN
-            0xB: "Fruit Wash",  # BYTE_MODE_FRUIT_WASH
-            0xC: "Self Define",  # BYTE_MODE_SELF_DEFINE
-            0xD: "Germ",  # BYTE_MODE_GERM ???
-            0xE: "Bowl Wash",  # BYTE_MODE_BOWL_WASH
-            0xF: "Kill Germ",  # BYTE_MODE_KILL_GERM
-            0x10: "Sea Food Wash",  # BYTE_MODE_SEA_FOOD_WASH
-            0x12: "Hot Pot Wash",  # BYTE_MODE_HOT_POT_WASH
-            0x13: "Quiet",  # BYTE_MODE_QUIET_NIGHT_WASH
-            0x14: "Less Wash",  # BYTE_MODE_LESS_WASH
-            0x16: "Oil Net Wash",  # BYTE_MODE_OIL_NET_WASH
-            0x19: "Cloud Wash",  # BYTE_MODE_CLOUD_WASH
+            0xA: "self_clean",  # BYTE_MODE_SELF_CLEAN
+            0xB: "fruit_wash",  # BYTE_MODE_FRUIT_WASH
+            0xC: "self_define",  # BYTE_MODE_SELF_DEFINE
+            0xD: "germ",  # BYTE_MODE_GERM ???
+            0xE: "bowl_wash",  # BYTE_MODE_BOWL_WASH
+            0xF: "kill_germ",  # BYTE_MODE_KILL_GERM
+            0x10: "sea_food_wash",  # BYTE_MODE_SEA_FOOD_WASH
+            0x12: "hot_pot_wash",  # BYTE_MODE_HOT_POT_WASH
+            0x13: "quiet",  # BYTE_MODE_QUIET_NIGHT_WASH
+            0x14: "less_wash",  # BYTE_MODE_LESS_WASH
+            0x16: "oil_net_wash",  # BYTE_MODE_OIL_NET_WASH
+            0x19: "cloud_wash",  # BYTE_MODE_CLOUD_WASH
         }
-        self._status = ["Off", "Idle", "Delay", "Running", "Error"]
-        self._progress = ["Idle", "Pre-wash", "Wash", "Rinse", "Dry", "Complete"]
+        self._status = ["off", "idle", "delay", "running", "error"]
+        self._progress = ["idle", "pre_wash", "wash", "rinse", "dry", "complete"]
 
     def build_query(self) -> list[MessageQuery]:
         """Midea x34 device build query."""

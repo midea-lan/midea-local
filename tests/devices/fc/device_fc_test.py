@@ -63,16 +63,16 @@ class TestMideaFCDevice:
     def test_properties(self) -> None:
         """Test properties."""
         assert self.device.modes == [
-            "Standby",
-            "Auto",
-            "Manual",
-            "Sleep",
-            "Fast",
-            "Smoke",
+            "standby",
+            "auto",
+            "manual",
+            "sleep",
+            "fast",
+            "smoke",
         ]
-        assert self.device.fan_speeds == ["Auto", "Standby", "Low", "Medium", "High"]
-        assert self.device.screen_displays == ["Bright", "Dim", "Off"]
-        assert self.device.detect_modes == ["Off", "PM 2.5", "Methanal"]
+        assert self.device.fan_speeds == ["auto", "standby", "low", "medium", "high"]
+        assert self.device.screen_displays == ["bright", "dim", "off"]
+        assert self.device.detect_modes == ["off", "pm_25", "methanal"]
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -85,10 +85,10 @@ class TestMideaFCDevice:
         body = bytearray(40)
         body[0] = 0xC8
         body[1] = 0x09  # power on, detect mode enabled
-        body[2] = 0x10  # mode Auto
-        body[3] = 39  # fan speed Low
+        body[2] = 0x10  # mode auto
+        body[3] = 39  # fan speed low
         body[8] = 0x80  # child lock on
-        body[9] = 0x06  # screen display Dim
+        body[9] = 0x06  # screen display dim
         body[13] = 0x10  # pm25 low byte
         body[14] = 0x00  # pm25 high byte
         body[15] = 0x05  # tvoc
@@ -103,10 +103,10 @@ class TestMideaFCDevice:
             _build_message(ProtocolVersion.V1, MessageType.query, body),
         )
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.mode] == "Auto"
-        assert self.device.attributes[DeviceAttributes.fan_speed] == "Low"
-        assert self.device.attributes[DeviceAttributes.screen_display] == "Dim"
-        assert self.device.attributes[DeviceAttributes.detect_mode] == "PM 2.5"
+        assert self.device.attributes[DeviceAttributes.mode] == "auto"
+        assert self.device.attributes[DeviceAttributes.fan_speed] == "low"
+        assert self.device.attributes[DeviceAttributes.screen_display] == "dim"
+        assert self.device.attributes[DeviceAttributes.detect_mode] == "pm_25"
         assert self.device.attributes[DeviceAttributes.pm25] == 16
         assert self.device.attributes[DeviceAttributes.tvoc] == 5
         assert self.device.attributes[DeviceAttributes.hcho] == 2
@@ -115,8 +115,8 @@ class TestMideaFCDevice:
         assert self.device.attributes[DeviceAttributes.child_lock] is True
         assert self.device.attributes[DeviceAttributes.filter1_life] == 88
         assert self.device.attributes[DeviceAttributes.filter2_life] == 77
-        assert new_status[DeviceAttributes.mode.value] == "Auto"
-        assert new_status[DeviceAttributes.fan_speed.value] == "Low"
+        assert new_status[DeviceAttributes.mode.value] == "auto"
+        assert new_status[DeviceAttributes.fan_speed.value] == "low"
 
     def test_query_response_invalid_values(self) -> None:
         """Test query response with values not present in the maps."""
@@ -154,7 +154,7 @@ class TestMideaFCDevice:
             _build_message(ProtocolVersion.V1, MessageType.query, body),
         )
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.detect_mode] == "Off"
+        assert self.device.attributes[DeviceAttributes.detect_mode] == "off"
 
     def test_query_response_short_body(self) -> None:
         """Test query response with a short general body."""
@@ -168,9 +168,9 @@ class TestMideaFCDevice:
             _build_message(ProtocolVersion.V1, MessageType.query, body),
         )
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.mode] == "Manual"
-        assert self.device.attributes[DeviceAttributes.fan_speed] == "Standby"
-        assert self.device.attributes[DeviceAttributes.screen_display] == "Bright"
+        assert self.device.attributes[DeviceAttributes.mode] == "manual"
+        assert self.device.attributes[DeviceAttributes.fan_speed] == "standby"
+        assert self.device.attributes[DeviceAttributes.screen_display] == "bright"
         assert self.device.attributes[DeviceAttributes.detect_mode] is None
         assert self.device.attributes[DeviceAttributes.pm25] is None
         assert self.device.attributes[DeviceAttributes.tvoc] is None
@@ -200,10 +200,10 @@ class TestMideaFCDevice:
             _build_message(ProtocolVersion.V1, MessageType.notify1, body),
         )
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.mode] == "Sleep"
-        assert self.device.attributes[DeviceAttributes.fan_speed] == "Medium"
-        assert self.device.attributes[DeviceAttributes.screen_display] == "Off"
-        assert self.device.attributes[DeviceAttributes.detect_mode] == "Methanal"
+        assert self.device.attributes[DeviceAttributes.mode] == "sleep"
+        assert self.device.attributes[DeviceAttributes.fan_speed] == "medium"
+        assert self.device.attributes[DeviceAttributes.screen_display] == "off"
+        assert self.device.attributes[DeviceAttributes.detect_mode] == "methanal"
         assert self.device.attributes[DeviceAttributes.pm25] == 16
         assert self.device.attributes[DeviceAttributes.tvoc] == 5
         assert self.device.attributes[DeviceAttributes.hcho] == 1
@@ -223,7 +223,7 @@ class TestMideaFCDevice:
             _build_message(ProtocolVersion.V1, MessageType.notify1, body),
         )
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.detect_mode] == "Off"
+        assert self.device.attributes[DeviceAttributes.detect_mode] == "off"
         assert self.device.attributes[DeviceAttributes.pm25] is None
         assert self.device.attributes[DeviceAttributes.tvoc] is None
         assert self.device.attributes[DeviceAttributes.hcho] is None
@@ -241,8 +241,8 @@ class TestMideaFCDevice:
             _build_message(ProtocolVersion.V1, MessageType.notify1, body),
         )
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.mode] == "Standby"
-        assert self.device.attributes[DeviceAttributes.fan_speed] == "Auto"
+        assert self.device.attributes[DeviceAttributes.mode] == "standby"
+        assert self.device.attributes[DeviceAttributes.fan_speed] == "auto"
         assert self.device.attributes[DeviceAttributes.anion] is False
         assert self.device.attributes[DeviceAttributes.standby] is False
         assert self.device.attributes[DeviceAttributes.child_lock] is False
@@ -284,10 +284,10 @@ class TestMideaFCDevice:
     def test_make_message_set_with_attributes(self) -> None:
         """Test make message set with populated attributes."""
         self.device._attributes[DeviceAttributes.power] = True
-        self.device._attributes[DeviceAttributes.mode] = "Manual"
-        self.device._attributes[DeviceAttributes.fan_speed] = "High"
-        self.device._attributes[DeviceAttributes.screen_display] = "Dim"
-        self.device._attributes[DeviceAttributes.detect_mode] = "PM 2.5"
+        self.device._attributes[DeviceAttributes.mode] = "manual"
+        self.device._attributes[DeviceAttributes.fan_speed] = "high"
+        self.device._attributes[DeviceAttributes.screen_display] = "dim"
+        self.device._attributes[DeviceAttributes.detect_mode] = "pm_25"
         self.device._attributes[DeviceAttributes.anion] = True
         self.device._attributes[DeviceAttributes.standby] = True
         self.device._attributes[DeviceAttributes.child_lock] = True
@@ -311,7 +311,7 @@ class TestMideaFCDevice:
     def test_set_attribute_mode(self) -> None:
         """Test set attribute mode."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.mode.value, "Sleep")
+            self.device.set_attribute(DeviceAttributes.mode.value, "sleep")
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].mode == 0x30
             mock_build_send.reset_mock()
@@ -323,7 +323,7 @@ class TestMideaFCDevice:
     def test_set_attribute_fan_speed(self) -> None:
         """Test set attribute fan speed."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.fan_speed.value, "High")
+            self.device.set_attribute(DeviceAttributes.fan_speed.value, "high")
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].fan_speed == 80
             mock_build_send.reset_mock()
@@ -335,7 +335,7 @@ class TestMideaFCDevice:
     def test_set_attribute_screen_display(self) -> None:
         """Test set attribute screen display."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.screen_display.value, "Dim")
+            self.device.set_attribute(DeviceAttributes.screen_display.value, "dim")
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].screen_display == 6
             mock_build_send.reset_mock()
@@ -352,7 +352,7 @@ class TestMideaFCDevice:
     def test_set_attribute_detect_mode(self) -> None:
         """Test set attribute detect mode."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.detect_mode.value, "Methanal")
+            self.device.set_attribute(DeviceAttributes.detect_mode.value, "methanal")
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].detect_mode == 2
             mock_build_send.reset_mock()

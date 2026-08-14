@@ -33,7 +33,7 @@ class MideaFADevice(MideaDevice):
     """Midea FA device."""
 
     _oscillation_angles: ClassVar[list[str]] = [
-        "Off",
+        "off",
         "30",
         "60",
         "90",
@@ -42,40 +42,40 @@ class MideaFADevice(MideaDevice):
         "360",
     ]
     _tilting_angles: ClassVar[list[str]] = [
-        "Off",
+        "off",
         "30",
         "60",
         "90",
         "120",
         "180",
         "360",
-        "+60",
-        "-60",
+        "plus_60",
+        "minus_60",
         "40",
     ]
     _oscillation_modes: ClassVar[list[str]] = [
-        "Off",
-        "Oscillation",
-        "Tilting",
-        "Curve-W",
-        "Curve-8",
-        "Reserved",
-        "Both",
+        "off",
+        "oscillation",
+        "tilting",
+        "curve_w",
+        "curve_8",
+        "reserved",
+        "both",
     ]
     _modes: ClassVar[list[str]] = [
-        "Normal",
-        "Natural",
-        "Sleep",
-        "Comfort",
-        "Silent",
-        "Baby",
-        "Induction",
-        "Circulation",
-        "Strong",
-        "Soft",
-        "Customize",
-        "Warm",
-        "Smart",
+        "normal",
+        "natural",
+        "sleep",
+        "comfort",
+        "silent",
+        "baby",
+        "induction",
+        "circulation",
+        "strong",
+        "soft",
+        "customize",
+        "warm",
+        "smart",
     ]
 
     def __init__(
@@ -176,35 +176,35 @@ class MideaFADevice(MideaDevice):
         return new_status
 
     def _set_oscillation_mode(self, message: MessageSet, value: str) -> None:
-        if value == "Off" or not value:
+        if value == "off" or not value:
             message.oscillate = False
         else:
             message.oscillate = True
             message.oscillation_mode = MideaFADevice._oscillation_modes.index(
                 value,
             )
-            if value == "Oscillation":
-                if self._attributes[DeviceAttributes.oscillation_angle] == "Off":
+            if value == "oscillation":
+                if self._attributes[DeviceAttributes.oscillation_angle] == "off":
                     message.oscillation_angle = 3  # 90
                 else:
                     message.oscillation_angle = MideaFADevice._oscillation_angles.index(
                         self._attributes[DeviceAttributes.oscillation_angle],
                     )
-            elif value == "Tilting":
-                if self._attributes[DeviceAttributes.tilting_angle] == "Off":
+            elif value == "tilting":
+                if self._attributes[DeviceAttributes.tilting_angle] == "off":
                     message.tilting_angle = 3  # 90
                 else:
                     message.tilting_angle = MideaFADevice._tilting_angles.index(
                         self._attributes[DeviceAttributes.tilting_angle],
                     )
             else:
-                if self._attributes[DeviceAttributes.oscillation_angle] == "Off":
+                if self._attributes[DeviceAttributes.oscillation_angle] == "off":
                     message.oscillation_angle = 3  # 90
                 else:
                     message.oscillation_angle = MideaFADevice._oscillation_angles.index(
                         self._attributes[DeviceAttributes.oscillation_angle],
                     )
-                if self._attributes[DeviceAttributes.tilting_angle] == "Off":
+                if self._attributes[DeviceAttributes.tilting_angle] == "off":
                     message.tilting_angle = 3  # 90
                 else:
                     message.tilting_angle = MideaFADevice._tilting_angles.index(
@@ -212,8 +212,8 @@ class MideaFADevice(MideaDevice):
                     )
 
     def _set_oscillation_angle(self, message: MessageSet, value: str) -> None:
-        if value == "Off" or not value:
-            if self._attributes[DeviceAttributes.tilting_angle] == "Off":
+        if value == "off" or not value:
+            if self._attributes[DeviceAttributes.tilting_angle] == "off":
                 message.oscillate = False
             else:
                 message.oscillate = True
@@ -226,17 +226,17 @@ class MideaFADevice(MideaDevice):
                 value,
             )
             message.oscillate = True
-            if self._attributes[DeviceAttributes.tilting_angle] == "Off":
+            if self._attributes[DeviceAttributes.tilting_angle] == "off":
                 message.oscillation_mode = 1
-            elif self._attributes[DeviceAttributes.oscillation_mode] == "Tilting":
+            elif self._attributes[DeviceAttributes.oscillation_mode] == "tilting":
                 message.oscillation_mode = 6
                 message.tilting_angle = MideaFADevice._tilting_angles.index(
                     self._attributes[DeviceAttributes.tilting_angle],
                 )
 
     def _set_tilting_angle(self, message: MessageSet, value: str) -> None:
-        if value == "Off" or not value:
-            if self._attributes[DeviceAttributes.oscillation_angle] == "Off":
+        if value == "off" or not value:
+            if self._attributes[DeviceAttributes.oscillation_angle] == "off":
                 message.oscillate = False
             else:
                 message.oscillate = True
@@ -247,9 +247,9 @@ class MideaFADevice(MideaDevice):
         else:
             message.tilting_angle = MideaFADevice._tilting_angles.index(value)
             message.oscillate = True
-            if self._attributes[DeviceAttributes.oscillation_angle] == "Off":
+            if self._attributes[DeviceAttributes.oscillation_angle] == "off":
                 message.oscillation_mode = 2
-            elif self._attributes[DeviceAttributes.oscillation_mode] == "Oscillation":
+            elif self._attributes[DeviceAttributes.oscillation_mode] == "oscillation":
                 message.oscillation_mode = 6
                 message.oscillation_angle = MideaFADevice._oscillation_angles.index(
                     self._attributes[DeviceAttributes.oscillation_angle],

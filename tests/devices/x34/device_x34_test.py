@@ -94,8 +94,8 @@ class TestMidea34Device:
         crc = bytearray([0x00])
         new_status = self.device.process_message(bytes(header + body + crc))
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.status] == "Running"
-        assert self.device.attributes[DeviceAttributes.mode] == "Heavy"
+        assert self.device.attributes[DeviceAttributes.status] == "running"
+        assert self.device.attributes[DeviceAttributes.mode] == "heavy"
         assert self.device.attributes[DeviceAttributes.additional] == 1
         assert self.device.attributes[DeviceAttributes.uv] is True
         assert self.device.attributes[DeviceAttributes.dry] is True
@@ -107,7 +107,7 @@ class TestMidea34Device:
         assert self.device.attributes[DeviceAttributes.storage] is True
         assert self.device.attributes[DeviceAttributes.storage_status] is True
         assert self.device.attributes[DeviceAttributes.time_remaining] == 45
-        assert self.device.attributes[DeviceAttributes.progress] == "Wash"
+        assert self.device.attributes[DeviceAttributes.progress] == "wash"
         assert self.device.attributes[DeviceAttributes.storage_remaining] == 12
         assert self.device.attributes[DeviceAttributes.temperature] == 55
         assert self.device.attributes[DeviceAttributes.humidity] == 60
@@ -117,7 +117,7 @@ class TestMidea34Device:
         assert self.device.attributes[DeviceAttributes.softwater] == 7
         assert self.device.attributes[DeviceAttributes.wrong_operation] == 1
         assert self.device.attributes[DeviceAttributes.bright] == 100
-        assert new_status[DeviceAttributes.status.value] == "Running"
+        assert new_status[DeviceAttributes.status.value] == "running"
 
     def test_process_message_notify(self) -> None:
         """Test process message with a short notify1 response."""
@@ -134,8 +134,8 @@ class TestMidea34Device:
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.status] == "Idle"
-        assert self.device.attributes[DeviceAttributes.mode] == "Cloud Wash"
+        assert self.device.attributes[DeviceAttributes.status] == "idle"
+        assert self.device.attributes[DeviceAttributes.mode] == "cloud_wash"
         assert self.device.attributes[DeviceAttributes.door] is False
         assert self.device.attributes[DeviceAttributes.progress] is None
         assert self.device.attributes[DeviceAttributes.humidity] is None
@@ -156,8 +156,8 @@ class TestMidea34Device:
         self.device.process_message(bytes(header + body + crc))
         assert self.device.attributes[DeviceAttributes.power] is True
         assert self.device.attributes[DeviceAttributes.status] is None
-        assert self.device.attributes[DeviceAttributes.mode] == "Neutral Gear"
-        assert self.device.attributes[DeviceAttributes.progress] == "Idle"
+        assert self.device.attributes[DeviceAttributes.mode] == "neutral_gear"
+        assert self.device.attributes[DeviceAttributes.progress] == "idle"
 
     @pytest.mark.parametrize(
         ("message_type", "body_type"),

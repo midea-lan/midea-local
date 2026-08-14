@@ -61,50 +61,50 @@ class TestMideaFDDevice:
     def test_modes(self) -> None:
         """Test modes property."""
         assert self.device.modes == [
-            "Manual",
-            "Auto",
-            "Continuous",
-            "Living-Room",
-            "Bed-Room",
-            "Kitchen",
-            "Sleep",
+            "manual",
+            "auto",
+            "continuous",
+            "living_room",
+            "bed_room",
+            "kitchen",
+            "sleep",
         ]
 
     def test_fan_speeds_old(self) -> None:
         """Test fan speeds property with an old subtype."""
         assert self.device.fan_speeds == [
-            "Lowest",
-            "Low",
-            "Medium",
-            "High",
-            "Auto",
-            "Off",
+            "lowest",
+            "low",
+            "medium",
+            "high",
+            "auto",
+            "off",
         ]
 
     def test_fan_speeds_new(self) -> None:
         """Test fan speeds property with a new subtype uses new speed keys."""
         device = _build_device(6)
         assert device.fan_speeds == [
-            "Lowest",
-            "Low",
-            "Medium",
-            "High",
-            "Auto",
-            "Off",
+            "lowest",
+            "low",
+            "medium",
+            "high",
+            "auto",
+            "off",
         ]
         body = bytearray(36)
         body[0] = 0xC8
         body[3] = 39
         device.process_message(_build_message(MessageType.query, body))
-        assert device.attributes[DeviceAttributes.fan_speed] == "Low"
+        assert device.attributes[DeviceAttributes.fan_speed] == "low"
 
     def test_screen_displays(self) -> None:
         """Test screen displays property."""
-        assert self.device.screen_displays == ["Bright", "Dim", "Off"]
+        assert self.device.screen_displays == ["bright", "dim", "off"]
 
     def test_detect_modes(self) -> None:
         """Test detect modes property."""
-        assert self.device.detect_modes == ["Off", "PM 2.5", "Methanal"]
+        assert self.device.detect_modes == ["off", "pm_25", "methanal"]
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -117,10 +117,10 @@ class TestMideaFDDevice:
         body = bytearray(38)
         body[0] = 0xC8
         body[1] = 0x01  # power on
-        body[3] = 40  # fan speed "Low"
+        body[3] = 40  # fan speed "low"
         body[7] = 55  # target humidity
-        body[8] = 0x10  # mode 1 "Manual"
-        body[9] = 0x06  # screen display "Dim"
+        body[8] = 0x10  # mode 1 "manual"
+        body[9] = 0x06  # screen display "dim"
         body[10] = 2  # tank
         body[16] = 45  # current humidity
         body[17] = 90  # current temperature raw
@@ -129,10 +129,10 @@ class TestMideaFDDevice:
             _build_message(MessageType.query, body),
         )
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.fan_speed] == "Low"
+        assert self.device.attributes[DeviceAttributes.fan_speed] == "low"
         assert self.device.attributes[DeviceAttributes.target_humidity] == 55
-        assert self.device.attributes[DeviceAttributes.mode] == "Manual"
-        assert self.device.attributes[DeviceAttributes.screen_display] == "Dim"
+        assert self.device.attributes[DeviceAttributes.mode] == "manual"
+        assert self.device.attributes[DeviceAttributes.screen_display] == "dim"
         assert self.device.attributes[DeviceAttributes.tank] == 2
         assert self.device.attributes[DeviceAttributes.current_humidity] == 45
         assert self.device.attributes[DeviceAttributes.current_temperature] == 20.0
@@ -143,14 +143,14 @@ class TestMideaFDDevice:
         """Test process message with a short C8 body without disinfect."""
         body = bytearray(36)
         body[0] = 0xC8
-        body[3] = 3  # low raw fan speed is remapped to 1 "Lowest"
-        body[8] = 0x70  # mode 7 "Sleep"
+        body[3] = 3  # low raw fan speed is remapped to 1 "lowest"
+        body[8] = 0x70  # mode 7 "sleep"
         body[9] = 0x03  # unknown screen display
         body[17] = 70
         self.device.process_message(_build_message(MessageType.set, body))
         assert self.device.attributes[DeviceAttributes.power] is False
-        assert self.device.attributes[DeviceAttributes.fan_speed] == "Lowest"
-        assert self.device.attributes[DeviceAttributes.mode] == "Sleep"
+        assert self.device.attributes[DeviceAttributes.fan_speed] == "lowest"
+        assert self.device.attributes[DeviceAttributes.mode] == "sleep"
         assert self.device.attributes[DeviceAttributes.screen_display] is None
         assert self.device.attributes[DeviceAttributes.current_temperature] == 10.0
         assert self.device.attributes[DeviceAttributes.disinfect] is None
@@ -160,19 +160,19 @@ class TestMideaFDDevice:
         body = bytearray(31)
         body[0] = 0xA0
         body[1] = 0x01  # power on
-        body[3] = 60  # fan speed "Medium"
+        body[3] = 60  # fan speed "medium"
         body[7] = 50  # target humidity
-        body[9] = 0x00  # screen display "Bright"
-        body[10] = 0x0A  # tank 10, mode 2 "Auto"
+        body[9] = 0x00  # screen display "bright"
+        body[10] = 0x0A  # tank 10, mode 2 "auto"
         body[16] = 40  # current humidity
         body[17] = 70  # current temperature raw
         body[27] = 0x02  # disinfect off
         self.device.process_message(_build_message(MessageType.notify1, body))
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.fan_speed] == "Medium"
+        assert self.device.attributes[DeviceAttributes.fan_speed] == "medium"
         assert self.device.attributes[DeviceAttributes.target_humidity] == 50
-        assert self.device.attributes[DeviceAttributes.mode] == "Auto"
-        assert self.device.attributes[DeviceAttributes.screen_display] == "Bright"
+        assert self.device.attributes[DeviceAttributes.mode] == "auto"
+        assert self.device.attributes[DeviceAttributes.screen_display] == "bright"
         assert self.device.attributes[DeviceAttributes.tank] == 10
         assert self.device.attributes[DeviceAttributes.current_humidity] == 40
         assert self.device.attributes[DeviceAttributes.current_temperature] == 10.0
@@ -230,9 +230,9 @@ class TestMideaFDDevice:
 
     def test_make_message_set_populated(self) -> None:
         """Test make message set with populated attributes."""
-        self.device._attributes[DeviceAttributes.mode] = "Continuous"
-        self.device._attributes[DeviceAttributes.fan_speed] = "High"
-        self.device._attributes[DeviceAttributes.screen_display] = "Off"
+        self.device._attributes[DeviceAttributes.mode] = "continuous"
+        self.device._attributes[DeviceAttributes.fan_speed] = "high"
+        self.device._attributes[DeviceAttributes.screen_display] = "off"
         self.device._attributes[DeviceAttributes.disinfect] = True
         message = self.device.make_message_set()
         assert message.mode == 3
@@ -256,7 +256,7 @@ class TestMideaFDDevice:
     def test_set_attribute_mode(self) -> None:
         """Test set attribute mode converts the name to its index."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.mode.value, "Auto")
+            self.device.set_attribute(DeviceAttributes.mode.value, "auto")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageSet)
@@ -274,7 +274,7 @@ class TestMideaFDDevice:
     def test_set_attribute_fan_speed(self) -> None:
         """Test set attribute fan speed converts the name to its key."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.fan_speed.value, "Medium")
+            self.device.set_attribute(DeviceAttributes.fan_speed.value, "medium")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageSet)
@@ -292,7 +292,7 @@ class TestMideaFDDevice:
     def test_set_attribute_screen_display(self) -> None:
         """Test set attribute screen display converts the name to its key."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.screen_display.value, "Dim")
+            self.device.set_attribute(DeviceAttributes.screen_display.value, "dim")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageSet)
