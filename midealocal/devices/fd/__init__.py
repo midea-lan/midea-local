@@ -33,32 +33,32 @@ class MideaFDDevice(MideaDevice):
     """Midea FD device."""
 
     _modes: ClassVar[list[str]] = [
-        "Manual",
-        "Auto",
-        "Continuous",
-        "Living-Room",
-        "Bed-Room",
-        "Kitchen",
-        "Sleep",
+        "manual",
+        "auto",
+        "continuous",
+        "living_room",
+        "bed_room",
+        "kitchen",
+        "sleep",
     ]
     _speeds_old: ClassVar[dict[int, str]] = {
-        1: "Lowest",
-        40: "Low",
-        60: "Medium",
-        80: "High",
-        102: "Auto",
-        127: "Off",
+        1: "lowest",
+        40: "low",
+        60: "medium",
+        80: "high",
+        102: "auto",
+        127: "off",
     }
     _speeds_new: ClassVar[dict[int, str]] = {
-        1: "Lowest",
-        39: "Low",
-        59: "Medium",
-        80: "High",
-        101: "Auto",
-        127: "Off",
+        1: "lowest",
+        39: "low",
+        59: "medium",
+        80: "high",
+        101: "auto",
+        127: "off",
     }
-    _screen_displays: ClassVar[dict[int, str]] = {0: "Bright", 6: "Dim", 7: "Off"}
-    _detect_modes: ClassVar[list[str]] = ["Off", "PM 2.5", "Methanal"]
+    _screen_displays: ClassVar[dict[int, str]] = {0: "bright", 6: "dim", 7: "off"}
+    _detect_modes: ClassVar[list[str]] = ["off", "pm_25", "methanal"]
 
     def __init__(
         self,
