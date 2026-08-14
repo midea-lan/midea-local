@@ -54,7 +54,7 @@ class TestMideaCEDevice:
         assert self.device.attributes[DeviceAttributes.filter_change_reminder] is False
         assert self.device.attributes[DeviceAttributes.error_code] == 0
         assert self.device.speed_count == 7
-        assert self.device.preset_modes == ["normal", "sleep_mode", "eco_mode"]
+        assert self.device.preset_modes == ["normal", "sleep", "eco"]
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -115,9 +115,9 @@ class TestMideaCEDevice:
         assert self.device.attributes[DeviceAttributes.filter_cleaning_reminder] is True
         assert self.device.attributes[DeviceAttributes.filter_change_reminder] is True
         assert self.device.attributes[DeviceAttributes.error_code] == 7
-        assert self.device.attributes[DeviceAttributes.mode] == "sleep_mode"
+        assert self.device.attributes[DeviceAttributes.mode] == "sleep"
         assert self.device.attributes[DeviceAttributes.aux_heating] is True
-        assert new_status[DeviceAttributes.mode.value] == "sleep_mode"
+        assert new_status[DeviceAttributes.mode.value] == "sleep"
 
     def test_general_response_eco_mode_and_sensor_sentinels(self) -> None:
         """Test general response with ECO mode and 0xFF sensor sentinels."""
@@ -129,7 +129,7 @@ class TestMideaCEDevice:
         body[7] = 0xFF  # no humidity
         body[9] = 0xFF  # no temperature
         body[11] = 0xFF  # no hcho
-        body[17] = 0x04  # eco_mode
+        body[17] = 0x04  # eco
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
         assert self.device.attributes[DeviceAttributes.power] is False
@@ -137,7 +137,7 @@ class TestMideaCEDevice:
         assert self.device.attributes[DeviceAttributes.current_temperature] is None
         assert self.device.attributes[DeviceAttributes.hcho] is None
         assert self.device.attributes[DeviceAttributes.eco_mode] is True
-        assert self.device.attributes[DeviceAttributes.mode] == "eco_mode"
+        assert self.device.attributes[DeviceAttributes.mode] == "eco"
 
     def test_notify_response(self) -> None:
         """Test notify1 response with body type 0x01."""
@@ -197,8 +197,8 @@ class TestMideaCEDevice:
     @pytest.mark.parametrize(
         ("value", "sleep_mode", "eco_mode"),
         [
-            ("sleep_mode", True, False),
-            ("eco_mode", False, True),
+            ("sleep", True, False),
+            ("eco", False, True),
             ("normal", False, False),
         ],
     )
