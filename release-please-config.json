@@ -2,6 +2,7 @@
   "include-commit-authors": true,
   "include-v-in-tag": true,
   "include-component-in-tag": false,
+  "last-release-sha": "999f49505bad380e45a80d201e95145a90ca411f",
   "packages": {
     ".": {
       "release-type": "python",
