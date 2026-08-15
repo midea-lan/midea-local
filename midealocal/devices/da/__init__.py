@@ -84,53 +84,53 @@ class MideaDADevice(MideaDevice):
         """Midea DA device process message."""
         message = MessageDAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        progress = ["Idle", "Spin", "Rinse", "Wash", "Weight", "Unknown", "Dry", "Soak"]
+        progress = ["idle", "spin", "rinse", "wash", "weight", "unknown", "dry", "soak"]
         program = [
-            "Standard",
-            "Fast",
-            "Blanket",
-            "Wool",
+            "standard",
+            "fast",
+            "blanket",
+            "wool",
             "embathe",
-            "Memory",
-            "Child",
-            "Down Jacket",
-            "Stir",
-            "Mute",
-            "Bucket Self Clean",
-            "Air Dry",
+            "memory",
+            "child",
+            "down_jacket",
+            "stir",
+            "mute",
+            "bucket_self_clean",
+            "air_dry",
         ]
-        speed = ["-", "Low", "Medium", "High"]
-        strength = ["-", "Week", "Medium", "Strong"]
+        speed = ["none", "low", "medium", "high"]
+        strength = ["none", "weak", "medium", "strong"]
         detergent = [
-            "No",
-            "Less",
-            "Medium",
-            "More",
+            "no",
+            "less",
+            "medium",
+            "more",
             "4",
             "5",
             "6",
             "7",
             "8",
-            "Insufficient",
+            "insufficient",
         ]
         softener = [
-            "No",
-            "Intelligent",
-            "Programed",  # codespell:ignore
+            "no",
+            "intelligent",
+            "programed",  # codespell:ignore
             "3",
             "4",
             "5",
             "6",
             "7",
             "8",
-            "Insufficient",
+            "insufficient",
         ]
         return self.update_attributes_from_message(
             message,
             {
                 DeviceAttributes.progress: list_translator(progress),
                 DeviceAttributes.program: list_translator(program),
-                DeviceAttributes.rinse_level: sentinel_translator(MIN_TEMP, "-"),
+                DeviceAttributes.rinse_level: sentinel_translator(MIN_TEMP, "none"),
                 DeviceAttributes.dehydration_speed: list_translator(speed),
                 DeviceAttributes.detergent: list_translator(detergent),
                 DeviceAttributes.softener: list_translator(softener),

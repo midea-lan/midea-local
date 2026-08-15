@@ -71,11 +71,11 @@ class MideaDBDevice(MideaDevice):
     }
 
     _water_level: ClassVar[dict[int, str]] = {
-        0x01: "Low",
-        0x02: "Mid",
-        0x03: "High",
+        0x01: "low",
+        0x02: "mid",
+        0x03: "high",
         0x04: "4",
-        0x05: "Auto",
+        0x05: "auto",
         0xFF: "default",
     }
 
@@ -183,15 +183,15 @@ class MideaDBDevice(MideaDevice):
     }
 
     _progress: ClassVar[list[str]] = [
-        "Idle",
-        "Spin",
-        "Rinse",
-        "Wash",
-        "Pre-wash",
-        "Dry",
-        "Weight",
-        "Hi-speed Spin",
-        "Unknown",
+        "idle",
+        "spin",
+        "rinse",
+        "wash",
+        "pre_wash",
+        "dry",
+        "weight",
+        "hi_speed_spin",
+        "unknown",
     ]
 
     def __init__(

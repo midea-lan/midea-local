@@ -35,10 +35,10 @@ class MideaE6Device(MideaDevice):
     """Midea E6 device."""
 
     _heating_modes: ClassVar[list[str]] = [
-        "normal_mode",
-        "out_mode",
-        "home_mode",
-        "sleep_mode",
+        "normal",
+        "out",
+        "home",
+        "sleep",
     ]
 
     def __init__(

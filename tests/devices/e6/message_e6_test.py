@@ -51,10 +51,10 @@ class TestMessageSet:
             ("cold_water_single", False, [0x04, 0x1A, 0x00]),
             ("cold_water_dot", True, [0x04, 0x1B, 0x01]),
             ("cold_water_dot", False, [0x04, 0x1B, 0x00]),
-            ("heating_modes", "normal_mode", [0x04, 0x02, 0x01]),
-            ("heating_modes", "out_mode", [0x04, 0x02, 0x02]),
-            ("heating_modes", "home_mode", [0x04, 0x02, 0x04]),
-            ("heating_modes", "sleep_mode", [0x04, 0x02, 0x08]),
+            ("heating_modes", "normal", [0x04, 0x02, 0x01]),
+            ("heating_modes", "out", [0x04, 0x02, 0x02]),
+            ("heating_modes", "home", [0x04, 0x02, 0x04]),
+            ("heating_modes", "sleep", [0x04, 0x02, 0x08]),
             ("heating_modes", "invalid", []),
         ],
     )
@@ -150,11 +150,11 @@ class TestE6GeneralMessageBody:
     @pytest.mark.parametrize(
         ("byte4", "expected_mode"),
         [
-            (0x08, "out_mode"),
-            (0x04, "normal_mode"),
-            (0x10, "home_mode"),
-            (0x20, "sleep_mode"),
-            (0x00, "normal_mode"),
+            (0x08, "out"),
+            (0x04, "normal"),
+            (0x10, "home"),
+            (0x20, "sleep"),
+            (0x00, "normal"),
         ],
     )
     def test_heating_modes(self, byte4: int, expected_mode: str) -> None:
