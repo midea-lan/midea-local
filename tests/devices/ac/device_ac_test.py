@@ -264,6 +264,36 @@ class TestMideaACDevice:
             assert message.dry is False
             assert message.fan_speed == 102
 
+    def test_set_mode_then_temperature_keeps_unit_on(self) -> None:
+        """A mode change followed immediately by a temperature write stays on.
+
+        set_attribute("mode") only forced power=True on the outgoing packet, so
+        a rapid follow-up set_target_temperature (built from make_message_uniq_set)
+        reused the stale last-confirmed power=False and turned the unit back off.
+        The mode change now optimistically caches power=True + the new mode.
+        https://github.com/midea-lan/midea-local/issues/495
+        """
+        # Start from the confirmed "off" state, as after a fresh query.
+        self.device._attributes[DeviceAttributes.power] = False
+        self.device._attributes[DeviceAttributes.mode] = 0
+        with patch.object(self.device, "build_send") as mock_build_send:
+            # 1. set HVAC mode to cool (value 2)
+            self.device.set_attribute(DeviceAttributes.mode.value, 2)
+            mode_message = mock_build_send.call_args[0][0]
+            assert mode_message.power is True
+            assert mode_message.mode == 2
+            # Cache reflects the commanded state before the device responds.
+            assert self.device.attributes[DeviceAttributes.power] is True
+            assert self.device.attributes[DeviceAttributes.mode] == 2
+
+            # 2. immediately set target temperature (mode=None, as the climate
+            #    entity does) - must not resurrect the stale power=False.
+            self.device.set_target_temperature(21, None)
+            temp_message = mock_build_send.call_args[0][0]
+            assert temp_message.power is True
+            assert temp_message.mode == 2
+            assert temp_message.target_temperature == 21
+
     def test_customize_temperature_limits(self) -> None:
         """Test customize min/max temperature limits."""
         self.device.set_customize('{"min_temperature": 17, "max_temperature": 28}')
