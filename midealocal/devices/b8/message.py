@@ -12,15 +12,6 @@ from midealocal.message import (
 )
 
 
-class B8WorkMode(IntEnum):
-    """Midea B8 work mode."""
-
-    CHARGE = 0x01
-    WORK = 0x02
-    STOP = 0x03
-    PAUSE = 0x1B
-
-
 class B8WorkStatus(IntEnum):
     """Midea B8 work status."""
 
@@ -255,7 +246,7 @@ class MessageSetCommand(MessageB8Base):
     def __init__(
         self,
         protocol_version: int,
-        work_mode: B8WorkMode,
+        work_status: B8WorkStatus,
     ) -> None:
         """Initialize B8 message set command."""
         super().__init__(
@@ -263,13 +254,13 @@ class MessageSetCommand(MessageB8Base):
             message_type=MessageType.set,
             body_type=ListTypes.X22,
         )
-        self.work_mode = work_mode
+        self.work_status = work_status
 
     @property
     def _body(self) -> bytearray:
         return bytearray(
             [
-                self.work_mode,
+                self.work_status,
                 0x00,
                 0x00,
             ],
