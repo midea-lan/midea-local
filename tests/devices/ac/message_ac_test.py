@@ -29,7 +29,6 @@ from midealocal.devices.ac.message import (
     MessageSubProtocolQuery30,
     MessageSubProtocolSet,
     MessageToggleDisplay,
-    NewProtocolQuery,
     NewProtocolTags,
     PowerFormats,
 )
@@ -291,8 +290,8 @@ class TestMessageNewProtocolQuery:
                 NewProtocolTags.out_silent >> 8,
                 NewProtocolTags.buzzer_all & 0xFF,
                 NewProtocolTags.buzzer_all >> 8,
-                NewProtocolQuery.error_code_query & 0xFF,
-                NewProtocolQuery.error_code_query >> 8,
+                NewProtocolTags.error_code_query & 0xFF,
+                NewProtocolTags.error_code_query >> 8,
             ],
         )
 
@@ -330,8 +329,8 @@ class TestMessageNewProtocolQuery:
                 NewProtocolTags.out_silent >> 8,
                 NewProtocolTags.buzzer_all & 0xFF,
                 NewProtocolTags.buzzer_all >> 8,
-                NewProtocolQuery.error_code_query & 0xFF,
-                NewProtocolQuery.error_code_query >> 8,
+                NewProtocolTags.error_code_query & 0xFF,
+                NewProtocolTags.error_code_query >> 8,
                 NewProtocolTags.rate_select & 0xFF,
                 NewProtocolTags.rate_select >> 8,
             ],
@@ -1744,8 +1743,8 @@ class TestMessageACResponse:
         body = bytearray(10)
         body[0] = 0xB1
         body[1] = 0x01  # 1 param
-        body[2] = NewProtocolQuery.error_code_query & 0xFF
-        body[3] = NewProtocolQuery.error_code_query >> 8
+        body[2] = NewProtocolTags.error_code_query & 0xFF
+        body[3] = NewProtocolTags.error_code_query >> 8
         body[4] = 0x00  # padding
         body[5] = 0x01  # length
         body[6] = 0x05  # error code 5
