@@ -18,7 +18,6 @@ from .message import (
     B8Moviment,
     B8Speed,
     B8WaterLevel,
-    B8WorkMode,
     B8WorkStatus,
     MessageB8Response,
     MessageQuery,
@@ -131,16 +130,16 @@ class MideaB8Device(MideaDevice):
         msg.voice_volume = self.attributes[DeviceAttributes.voice_volume]
         return msg
 
-    def set_work_mode(self, work_mode: B8WorkMode) -> None:
-        """Midea B8 device set work mode."""
-        if work_mode == B8WorkMode.WORK:
+    def set_work_status(self, work_status: B8WorkStatus) -> None:
+        """Midea B8 device set work status."""
+        if work_status == B8WorkStatus.WORK:
             self.set_attribute(
                 DeviceAttributes.clean_mode,
                 self.attributes[DeviceAttributes.clean_mode],
             )
             return
 
-        msg = MessageSetCommand(self._message_protocol_version, work_mode=work_mode)
+        msg = MessageSetCommand(self._message_protocol_version, work_status=work_status)
         self.build_send(msg)
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:

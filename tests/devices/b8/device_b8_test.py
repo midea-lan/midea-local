@@ -16,7 +16,6 @@ from midealocal.devices.b8 import (
     B8Moviment,
     B8Speed,
     B8WaterLevel,
-    B8WorkMode,
     B8WorkStatus,
     DeviceAttributes,
     MideaB8Device,
@@ -130,14 +129,14 @@ class TestMideaB8Device:
             self.device.set_attribute(DeviceAttributes.water_level.value, "invalid")
             mock_build_send.assert_not_called()
 
-    def test_set_work_mode(self) -> None:
-        """Test set work mode."""
+    def test_set_work_status(self) -> None:
+        """Test set work status."""
         with patch.object(self.device, "send_message_v2") as mock_build_send:
-            self.device.set_work_mode(B8WorkMode.CHARGE)
+            self.device.set_work_status(B8WorkStatus.CHARGE)
             mock_build_send.assert_called_once()
             mock_build_send.reset_mock()
 
-            self.device.set_work_mode(B8WorkMode.WORK)
+            self.device.set_work_status(B8WorkStatus.WORK)
             mock_build_send.assert_called_once()
 
     def test_build_query(self) -> None:
