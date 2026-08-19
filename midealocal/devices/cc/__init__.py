@@ -175,11 +175,10 @@ class MideaCCDevice(MideaDevice):
         message.target_temperature = self._attributes[
             DeviceAttributes.target_temperature
         ]
-        if self._fan_speeds:
+        fan_speed = self._attributes[DeviceAttributes.fan_speed]
+        if self._fan_speeds and fan_speed in self._fan_speeds.values():
             message.fan_speed = list(self._fan_speeds.keys())[
-                list(self._fan_speeds.values()).index(
-                    self._attributes[DeviceAttributes.fan_speed],
-                )
+                list(self._fan_speeds.values()).index(fan_speed)
             ]
         message.eco_mode = self._attributes[DeviceAttributes.eco_mode]
         message.sleep_mode = self._attributes[DeviceAttributes.sleep_mode]
