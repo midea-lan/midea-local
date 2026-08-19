@@ -723,6 +723,55 @@ class TestMideaDevice:
         self.device.unregister_update(other_upd)
         assert len(self.device._updates) == 0
 
+    def test_update_all_isolates_callback_errors(self) -> None:
+        """Test a failing callback does not prevent others from being called."""
+        failing_upd = MagicMock(side_effect=RuntimeError("event loop is closed"))
+        ok_upd = MagicMock()
+        self.device.register_update(failing_upd)
+        self.device.register_update(ok_upd)
+        self.device.update_all({"status": True})
+        failing_upd.assert_called_once_with({"status": True})
+        ok_upd.assert_called_once_with({"status": True})
+
+    def test_parse_message_skips_update_all_when_not_running(self) -> None:
+        """Test parse_message does not propagate status once device is closed.
+
+        A message can already be in flight when close() is called from
+        another thread; propagating it further (e.g. into a callback that
+        touches an asyncio loop the consumer is tearing down) must be
+        avoided.
+        """
+        upd = MagicMock()
+        self.device.register_update(upd)
+        self.device._device_protocol_version = ProtocolVersion.V2
+        with (
+            patch.object(
+                self.device._security,
+                "aes_decrypt",
+                return_value=bytearray([0x1] * 16),
+            ),
+            patch.object(
+                self.device,
+                "fetch_v2_message",
+                return_value=(
+                    [bytearray([0x0] * 4 + [0x8, 0x1] + [0x1] * 56)],
+                    b"",
+                ),
+            ),
+            patch.object(
+                self.device,
+                "process_message",
+                return_value={"power": True},
+            ),
+        ):
+            self.device._is_run = False
+            assert self.device.parse_message(bytes([])) == MessageResult.SUCCESS
+            upd.assert_not_called()
+
+            self.device._is_run = True
+            assert self.device.parse_message(bytes([])) == MessageResult.SUCCESS
+            upd.assert_called_once_with({"power": True})
+
     def test_open(self) -> None:
         """Test open."""
         with (
