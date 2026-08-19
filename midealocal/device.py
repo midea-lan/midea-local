@@ -629,13 +629,18 @@ class MideaDevice(threading.Thread):
                                 self._message_protocol_version,
                             )
                             status = self.process_message(bytes(decrypted))
-                            if len(status) > 0:
-                                self.update_all(status)
-                            else:
+                            if len(status) == 0:
                                 _LOGGER.debug(
                                     "[%s] Unidentified protocol",
                                     self._device_id,
                                 )
+                                continue
+                            if self._should_run():
+                                # Closing (e.g. Home Assistant shutting down
+                                # or reloading) may already have torn down
+                                # whatever these callbacks depend on; don't
+                                # propagate stale reads.
+                                self.update_all(status)
                     except Exception:
                         _LOGGER.exception(
                             "[%s] Error in process message %s, \
@@ -723,7 +728,14 @@ class MideaDevice(threading.Thread):
         """Update all."""
         _LOGGER.debug("[%s] Status update: %s", self._device_id, status)
         for update in self._updates:
-            update(status)
+            try:
+                update(status)
+            except Exception:
+                _LOGGER.exception(
+                    "[%s] Error in update callback %s",
+                    self._device_id,
+                    update,
+                )
 
     def update_attributes_from_message(
         self,
