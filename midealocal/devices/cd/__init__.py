@@ -109,6 +109,15 @@ class MideaCDDevice(MideaDevice):
         0x05: "vacation",
     }
     _vacation_mode_key: ClassVar[int] = 0x05
+    # models that report over the new (raw °C) Lua protocol
+    _new_protocol_models: ClassVar[frozenset[str]] = frozenset(
+        {"RSJRAC01", "RSJRAC06", "RSJRAC07", "2530001N"},
+    )
+    # new-protocol models whose outdoor/current temps still need the old
+    # fahrenheit/°C decoding quirk (RSJRAC01 does not need this)
+    _forced_temperature_models: ClassVar[frozenset[str]] = frozenset(
+        {"RSJRAC06", "RSJRAC07", "2530001N"},
+    )
 
     def __init__(
         self,
@@ -216,18 +225,13 @@ class MideaCDDevice(MideaDevice):
             return_value = LuaProtocol(value)
             # auto mode, use model to set value as old or new
             if return_value == LuaProtocol.auto:
-                # new protocol: models RSJRAC01, RSJRAC06, RSJRAC07
                 # old protocol: RSJ18RD2 (subtype 186), confirmed by
                 # real-device messages. Raw body[3]=148 decodes to 59C
                 # only with old protocol: (148-30)/2=59.
                 # subtype 186 was previously mapped to new protocol from
                 # an unverified RSJ000CB assumption; subtype alone cannot
                 # distinguish models with different protocol versions.
-                check_device = self.model in {
-                    "RSJRAC01",
-                    "RSJRAC06",
-                    "RSJRAC07",
-                }
+                check_device = self.model in self._new_protocol_models
                 return_value = LuaProtocol.new if check_device else LuaProtocol.old
         if isinstance(value, bool | int):
             return_value = LuaProtocol.new if value else LuaProtocol.old
@@ -261,11 +265,11 @@ class MideaCDDevice(MideaDevice):
     ) -> Callable[[float], Any]:
         """Build a translator for one of the seven temperature-family attrs."""
         force_fahrenheit = (
-            self.model in ["RSJRAC06", "RSJRAC07"]
+            self.model in self._forced_temperature_models
             and attr == DeviceAttributes.outdoor_temperature
         )
         force_old = (
-            self.model in ["RSJRAC06", "RSJRAC07"]
+            self.model in self._forced_temperature_models
             and attr == DeviceAttributes.current_temperature
         )
         is_bounded = attr in {
@@ -500,6 +504,10 @@ class MideaCDDevice(MideaDevice):
                     )
                     return  # Don't send invalid mode
                 message.mode = mode_key
+                # None has no on-device meaning distinct from Off; selecting
+                # it powers the unit off, selecting any other mode powers it
+                # back on.
+                message.power = mode_key != 0x00
 
             elif attr == DeviceAttributes.power:
                 message.power = bool(value)
