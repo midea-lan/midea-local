@@ -84,6 +84,7 @@ class MessageSet(MessageFABase):
         self.humidify: bool | None = None
         self.waterions: bool | None = None
         self.display_on_off: bool | None = None
+        self.mode_set_overrides: dict[int, int] | None = None
 
     @property
     def _body(self) -> bytearray:  # noqa: C901
@@ -177,7 +178,12 @@ class MessageSet(MessageFABase):
             else:
                 _body_return[2] = 2
         if self.mode is not None:
-            _body_return[3] = 1 | (((self.mode + 1) << 1) & 0x1E)
+            override = (self.mode_set_overrides or {}).get(self.mode)
+            _body_return[3] = (
+                override
+                if override is not None
+                else 1 | (((self.mode + 1) << 1) & 0x1E)
+            )
         if self.fan_speed is not None and 1 <= self.fan_speed <= MAX_FAN_SPEED:
             _body_return[4] = self.fan_speed
         if self.oscillate is not None:

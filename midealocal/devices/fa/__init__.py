@@ -104,6 +104,7 @@ class MideaFADevice(MideaDevice):
         )
         self._default_speed_count = 3
         self._speed_count: int = self._default_speed_count
+        self._mode_set_overrides: dict[int, int] = {}
         self.set_customize(customize)
 
     @property
@@ -308,6 +309,7 @@ class MideaFADevice(MideaDevice):
             if value in MideaFADevice._modes:
                 message = MessageSet(self._message_protocol_version, self.subtype)
                 message.mode = MideaFADevice._modes.index(str(value))
+                message.mode_set_overrides = self._mode_set_overrides
         elif not (attr == DeviceAttributes.fan_speed and value == 0):
             message = MessageSet(self._message_protocol_version, self.subtype)
             setattr(message, str(attr), value)
@@ -322,16 +324,23 @@ class MideaFADevice(MideaDevice):
             message.fan_speed = fan_speed
         if mode is not None and mode in MideaFADevice._modes:
             message.mode = MideaFADevice._modes.index(mode)
+            message.mode_set_overrides = self._mode_set_overrides
         self.build_send(message)
 
     def set_customize(self, customize: str) -> None:
         """Set customize."""
         self._speed_count = self._default_speed_count
+        self._mode_set_overrides = {}
         if customize and len(customize) > 0:
             try:
                 params = json.loads(customize)
                 if params and "speed_count" in params:
                     self._speed_count = params.get("speed_count")
+                if params and "mode_set_overrides" in params:
+                    self._mode_set_overrides = {
+                        int(k): int(v)
+                        for k, v in params.get("mode_set_overrides").items()
+                    }
             except Exception:
                 _LOGGER.exception("[%s] Set customize error", self.device_id)
             self.update_all({"speed_count": self._speed_count})
