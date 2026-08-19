@@ -128,91 +128,83 @@ class PowerFormats(IntEnum):
     BCD_ENERGY_BINARY_POWER = 101
 
 
-class NewProtocolQuery(IntEnum):
-    """New protocol tags in query."""
-
-    error_code_query = 0x003F
-    mode_query = 0x0041
-    high_temperature_monitor = 0x0047
-    rate_select = 0x0048
-
-
 class NewProtocolTags(IntEnum):
     """New protocol tags in query and response."""
 
-    indoor_humidity = 0x0015  # queryType == "indoor_humidity"
-    screen_display = 0x0017
+    arom = 0x0069
+    auto_prevent_straight_wind = 0x0226
+    b5_anion = 0x021E
+    b5_eco = 0x0212
+    b5_electricity = 0x0216
+    b5_fahrenheit = 0x0222
+    b5_filter_check = 0x0221
+    b5_filter_remind = 0x0217
+    b5_humidity = 0x021F
+    b5_mode = 0x0214
+    b5_ptc = 0x0219
+    b5_screen_display = 0x0224
+    b5_sound = 0x022C
+    b5_strong_wind = 0x021A
+    b5_temperature = 0x0225
+    b5_wind_speed = 0x0210
+    b5_wind_swing = 0x0215
     breezeless = 0x0018  # queryType == "fn_no_wind_sense"
-    prompt_tone = 0x001A  # buzzerValue
-    indirect_wind = 0x0042  # prevent_straight_wind
+    buzzer_all = 0x022C
+    child_lock = 0x005C
+    child_prevent_cold_wind = 0x003A
+    cool_hot_sense = 0x0021
+    degerming = 0x005A
+    error_code_query = 0x003F
+    even_wind = 0x004E
+    extreme_wind = 0x004C
+    face_register = 0x0044
+    filter_level = 0x0409
     fresh_air_1 = 0x0233
     fresh_air_2 = 0x004B  # queryType == "fresh_air"
+    fresh_air_parm = 0x0250
+    gentle_wind_sense = 0x0043
+    high_temp_remove_odor_alone = 0x005E
+    high_temperature_monitor = 0x0047
+    indirect_wind = 0x0042  # prevent_straight_wind
+    indoor_humidity = 0x0015  # queryType == "indoor_humidity"
+    intelligent_control = 0x0031
+    intelligent_wind = 0x0034
+    light = 0x005B
+    little_angel = 0x021B
+    mode_query = 0x0041
+    nobody_energy_save = 0x0030
+    offline_operating_time = 0x022B
+    operating_time = 0x0228
+    out_silent = 0x00CD
+    ozone = 0x005F
+    parent_control = 0x0051
+    pm25_value = 0x020B
+    pre_cool_hot = 0x0201
+    prevent_straight_wind_lr = 0x0058
     prevent_super_cool = 0x0049
-    auto_prevent_straight_wind = 0x0226
+    prompt_tone = 0x001A  # buzzerValue
+    ptc_lock = 0x0229
+    rate_select = 0x0048
+    remote_control_lock = 0x0227  # power_lock?
+    rewarming_dry = 0x0068
+    screen_display = 0x0017
+    security = 0x0029
     # Live self-clean status. Reported in B0 (set echo) and B1 (query) bodies.
     # The same tag in a B5 capability body only advertises support, not state.
     self_clean = 0x0039
-    wind_straight = 0x0032
-    wind_avoid = 0x0033
-    intelligent_wind = 0x0034
-    child_prevent_cold_wind = 0x003A
-    little_angel = 0x021B
-    cool_hot_sense = 0x0021
-    even_wind = 0x004E
-    security = 0x0029
-    voice_control = 0x0020
-    single_tuyere = 0x004F
-    extreme_wind = 0x004C
-    pre_cool_hot = 0x0201
-    water_washing = 0x004A
-    gentle_wind_sense = 0x0043
-    parent_control = 0x0051
-    nobody_energy_save = 0x0030
-    filter_level = 0x0409
-    prevent_straight_wind_lr = 0x0058
-    pm25_value = 0x020B
-    water_pump = 0x0050
-    intelligent_control = 0x0031
-    volume_control = 0x0024
-    wind_ud_angle = 0x0009
-    wind_lr_angle = 0x000A
-    face_register = 0x0044
-    degerming = 0x005A
-    light = 0x005B
-    wind_top = 0x0061
-    wind_around = 0x0059
-    remote_control_lock = 0x0227  # power_lock?
-    ptc_lock = 0x0229
-    offline_operating_time = 0x022B
-    operating_time = 0x0228
-    child_lock = 0x005C
-    buzzer_all = 0x022C
     self_remove_odor_phase = 0x005D
-    high_temp_remove_odor_alone = 0x005E
-    ozone = 0x005F
+    single_tuyere = 0x004F
     soft_warm = 0x0063
-    fresh_air_parm = 0x0250
-    rewarming_dry = 0x0068
-    arom = 0x0069
-    # b5 device
-    b5_mode = 0x0214
-    b5_strong_wind = 0x021A
-    b5_wind_speed = 0x0210
-    b5_humidity = 0x021F
-    b5_temperature = 0x0225
-    b5_eco = 0x0212
-    b5_filter_remind = 0x0217
-    b5_filter_check = 0x0221
-    b5_fahrenheit = 0x0222
-    b5_electricity = 0x0216
-    b5_ptc = 0x0219
-    b5_wind_swing = 0x0215
-    b5_screen_display = 0x0224
-    b5_anion = 0x021E
-    b5_sound = 0x022C
-    rate_select = 0x0048
-    # AC outdoor silent mode (PortaSplit)
-    out_silent = 0x00CD
+    voice_control = 0x0020
+    volume_control = 0x0024
+    water_pump = 0x0050
+    water_washing = 0x004A
+    wind_around = 0x0059
+    wind_avoid = 0x0033
+    wind_lr_angle = 0x000A
+    wind_straight = 0x0032
+    wind_top = 0x0061
+    wind_ud_angle = 0x0009
 
 
 class MessageACBase(MessageRequest):
@@ -460,7 +452,7 @@ class MessageNewProtocolQuery(MessageACBase):
         NewProtocolTags.wind_ud_angle,
         NewProtocolTags.out_silent,
         NewProtocolTags.buzzer_all,
-        NewProtocolQuery.error_code_query,
+        NewProtocolTags.error_code_query,
     )
 
     def __init__(
@@ -1113,8 +1105,8 @@ class XBXMessageBody(NewProtocolMessageBody):
             self.out_silent = params[NewProtocolTags.out_silent][0] == OUT_SILENT_VALUE
         if NewProtocolTags.buzzer_all in params:
             self.sound = params[NewProtocolTags.buzzer_all][0] > 0
-        if NewProtocolQuery.error_code_query in params:
-            self.error_code = params[NewProtocolQuery.error_code_query][0]
+        if NewProtocolTags.error_code_query in params:
+            self.error_code = params[NewProtocolTags.error_code_query][0]
         if NewProtocolTags.self_clean in params and bt != ListTypes.B5:
             # A B5 body carries this tag as a capability flag (always 1 when the
             # model supports self-clean), so only B0/B1 bodies report live state.
