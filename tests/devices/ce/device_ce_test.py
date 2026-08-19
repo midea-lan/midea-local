@@ -54,7 +54,7 @@ class TestMideaCEDevice:
         assert self.device.attributes[DeviceAttributes.filter_change_reminder] is False
         assert self.device.attributes[DeviceAttributes.error_code] == 0
         assert self.device.speed_count == 7
-        assert self.device.preset_modes == ["normal", "sleep", "eco"]
+        assert self.device.preset_modes == ["none", "sleep", "eco"]
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -165,7 +165,7 @@ class TestMideaCEDevice:
         assert self.device.attributes[DeviceAttributes.current_temperature] == 5.0
         assert self.device.attributes[DeviceAttributes.hcho] == 0.1
         assert self.device.attributes[DeviceAttributes.error_code] == 3
-        assert self.device.attributes[DeviceAttributes.mode] == "normal"
+        assert self.device.attributes[DeviceAttributes.mode] == "none"
 
     def test_notify_response_sensor_sentinels(self) -> None:
         """Test notify1 response with 0xFF sensor sentinels."""
@@ -192,14 +192,14 @@ class TestMideaCEDevice:
         body[0] = 0x01
         crc = bytearray([0x00])
         new_status = self.device.process_message(bytes(header + body + crc))
-        assert new_status == {DeviceAttributes.mode.value: "normal"}
+        assert new_status == {DeviceAttributes.mode.value: "none"}
 
     @pytest.mark.parametrize(
         ("value", "sleep_mode", "eco_mode"),
         [
             ("sleep", True, False),
             ("eco", False, True),
-            ("normal", False, False),
+            ("none", False, False),
         ],
     )
     def test_set_attribute_mode(

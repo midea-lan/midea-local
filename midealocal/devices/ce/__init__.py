@@ -39,7 +39,7 @@ class DeviceAttributes(StrEnum):
 class MideaCEDevice(MideaDevice):
     """Midea CE device."""
 
-    _modes: ClassVar[list[str]] = ["normal", "sleep", "eco"]
+    _modes: ClassVar[list[str]] = ["none", "sleep", "eco"]
 
     def __init__(
         self,
@@ -100,7 +100,7 @@ class MideaCEDevice(MideaDevice):
         elif self._attributes[DeviceAttributes.eco_mode]:
             self._attributes[DeviceAttributes.mode] = "eco"
         else:
-            self._attributes[DeviceAttributes.mode] = "normal"
+            self._attributes[DeviceAttributes.mode] = "none"
         new_status[DeviceAttributes.mode.value] = self._attributes[
             DeviceAttributes.mode
         ]
