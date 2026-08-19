@@ -517,7 +517,7 @@ class MideaACDevice(MideaDevice):
             self._fresh_air_version = DeviceAttributes.fresh_air_2
         new_status.update(self._refresh_self_clean_status(message))
         new_status.update(self._refresh_temperature_limits(message))
-        self._update_capabilities(message)
+        new_status.update(self._update_capabilities(message))
         return new_status
 
     @staticmethod
@@ -545,10 +545,23 @@ class MideaACDevice(MideaDevice):
             else self._default_refresh_interval
         )
 
-    def _update_capabilities(self, message: MessageACResponse) -> None:
-        """Accumulate decoded B5 capability flags from a B5 response."""
-        if hasattr(message, "capabilities"):
-            self._capabilities.update(message.capabilities)
+    def _update_capabilities(self, message: MessageACResponse) -> dict[str, Any]:
+        """Accumulate decoded B5 capability flags from a B5 response.
+
+        Returns a status delta so a capability-only frame (no DeviceAttributes
+        changed) still reaches update_all(); callers that derive state from
+        `capabilities` would otherwise never be notified of the change.
+        """
+        if not hasattr(message, "capabilities"):
+            return {}
+        new_capabilities = message.capabilities
+        if all(
+            self._capabilities.get(key) == value
+            for key, value in new_capabilities.items()
+        ):
+            return {}
+        self._capabilities.update(new_capabilities)
+        return {"capabilities": dict(self._capabilities)}
 
     def _refresh_self_clean_status(self, message: MessageACResponse) -> dict[str, Any]:
         """Apply a reported self-clean status, ignoring stale readings.
