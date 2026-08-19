@@ -556,6 +556,31 @@ class TestMideaACDevice:
             "anion": True,
         }
 
+    def test_process_message_reports_capabilities_only_change(self) -> None:
+        """A capability-only frame must still produce a non-empty status delta.
+
+        `Device.parse_message` only calls `update_all` (and so notifies
+        callback-driven consumers, e.g. entities deriving state from
+        `capabilities`) when `process_message` returns a non-empty dict.
+        """
+        body = bytearray([0xB5, 0x01])
+        body += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode
+
+        status = self.device.process_message(self._response(body))
+
+        assert status.get("capabilities") == self.device.capabilities
+        assert self.device.capabilities["heat_mode"] is True
+
+    def test_process_message_capabilities_unchanged_is_a_no_op(self) -> None:
+        """A repeated, identical capability frame reports no delta the second time."""
+        body = bytearray([0xB5, 0x01])
+        body += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode
+
+        self.device.process_message(self._response(body))
+        status = self.device.process_message(self._response(body))
+
+        assert "capabilities" not in status
+
     def test_process_message(self) -> None:
         """Test process message."""
         with patch("midealocal.devices.ac.MessageACResponse") as mock_message_response:
