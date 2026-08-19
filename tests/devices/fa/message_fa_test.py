@@ -91,11 +91,25 @@ class TestMessageSet:
         msg.lock = lock
         assert msg._body[2] == expected
 
-    def test_body_mode(self) -> None:
-        """Test set body mode."""
+    @pytest.mark.parametrize(
+        ("mode", "mode_set_overrides", "expected"),
+        [
+            pytest.param(2, None, 0x07, id="no_override"),
+            pytest.param(3, {3: 0x29}, 0x29, id="override_match"),
+            pytest.param(2, {3: 0x29}, 0x07, id="override_not_matching"),
+        ],
+    )
+    def test_body_mode(
+        self,
+        mode: int,
+        mode_set_overrides: dict[int, int] | None,
+        expected: int,
+    ) -> None:
+        """Test set body mode, with and without a customized override table."""
         msg = MessageSet(ProtocolVersion.V1, 1)
-        msg.mode = 2
-        assert msg._body[3] == 0x07
+        msg.mode = mode
+        msg.mode_set_overrides = mode_set_overrides
+        assert msg._body[3] == expected
 
     def test_body_fan_speed_valid(self) -> None:
         """Test set body with a valid fan speed."""
