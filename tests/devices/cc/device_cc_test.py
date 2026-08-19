@@ -179,6 +179,14 @@ class TestMideaCCDevice:
         assert message.mode == 4
         assert message.target_temperature == 24.5
 
+    def test_make_message_set_unknown_fan_speed_keeps_default(self) -> None:
+        """An unresolved fan speed (None) does not crash make_message_set."""
+        self.device.process_message(_legacy_frame(fan_speed=0x08, byte13=0x40))
+        self.device.process_message(_legacy_frame(fan_speed=0x03, byte13=0x40))
+        assert self.device.attributes[DeviceAttributes.fan_speed] is None
+        message = self.device.make_message_set()
+        assert message.fan_speed == 0x80
+
     def test_set_attribute_power_without_fan_speeds(self) -> None:
         """Without a known fan table the default raw fan speed is kept."""
         with patch.object(self.device, "build_send") as mock_send:
