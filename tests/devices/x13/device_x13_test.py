@@ -42,7 +42,7 @@ class TestMidea13Device:
     def test_effects(self) -> None:
         """Test effects property."""
         assert self.device.effects == [
-            "manual",
+            "none",
             "living",
             "reading",
             "mildly",
