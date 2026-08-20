@@ -494,6 +494,8 @@ class MideaDevice(threading.Thread):
             result = self.parse_message(msg)
             # Prevent infinite loop
             if result == MessageResult.SUCCESS:
+                # recovery SOCKET_TIMEOUT after recv msg
+                self._socket.settimeout(SOCKET_TIMEOUT)
                 return
             if result != MessageResult.PADDING:
                 raise ResponseException
@@ -529,20 +531,19 @@ class MideaDevice(threading.Thread):
                     # only catch TimoutError for check_protocol
                     # unexpected exception in recv/settimeout, catch by main loop
                     try:
-                        for attempt in range(QUERY_PROBE_RETRIES):
+                        attempt = 0
+                        while True:
                             try:
                                 self._wait_for_query_response()
                                 break
                             except TimeoutError:
+                                attempt += 1
+                                if attempt >= QUERY_PROBE_RETRIES:
+                                    raise
                                 # retry once before blacklisting: a single timeout
                                 # during the probe can be a slow device, not proof
                                 # the protocol is unsupported
-                                if attempt == QUERY_PROBE_RETRIES - 1:
-                                    raise
                                 self.build_send(cmd, query=True)
-                        # recovery SOCKET_TIMEOUT after recv msg
-                        if self._socket:
-                            self._socket.settimeout(SOCKET_TIMEOUT)
                     except TimeoutError:
                         error_count += 1
                         self._unsupported_protocol.append(cmd.__class__.__name__)
