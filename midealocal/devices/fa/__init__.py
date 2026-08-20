@@ -12,6 +12,9 @@ from .message import MessageFAResponse, MessageQuery, MessageSet
 
 _LOGGER = logging.getLogger(__name__)
 
+MIN_MODE_SET_OVERRIDE = 0x00
+MAX_MODE_SET_OVERRIDE = 0xFF
+
 
 class DeviceAttributes(StrEnum):
     """Midea FA device attributes."""
@@ -327,6 +330,30 @@ class MideaFADevice(MideaDevice):
             message.mode_set_overrides = self._mode_set_overrides
         self.build_send(message)
 
+    def _parse_mode_set_overrides(
+        self,
+        overrides: dict[str, Any],
+    ) -> dict[int, int]:
+        """Return the {mode index: body[3]} table, or {} if a value is not a byte.
+
+        Each value is written straight into the set body, so one outside 0..255
+        would raise on the bytearray assignment and lose the command.
+        """
+        parsed = {int(k): int(v) for k, v in overrides.items()}
+        out_of_range = {
+            mode: value
+            for mode, value in parsed.items()
+            if not MIN_MODE_SET_OVERRIDE <= value <= MAX_MODE_SET_OVERRIDE
+        }
+        if out_of_range:
+            _LOGGER.error(
+                "[%s] mode_set_overrides values must be 0..255, ignoring the table: %s",
+                self.device_id,
+                out_of_range,
+            )
+            return {}
+        return parsed
+
     def set_customize(self, customize: str) -> None:
         """Set customize."""
         self._speed_count = self._default_speed_count
@@ -337,10 +364,9 @@ class MideaFADevice(MideaDevice):
                 if params and "speed_count" in params:
                     self._speed_count = params.get("speed_count")
                 if params and "mode_set_overrides" in params:
-                    self._mode_set_overrides = {
-                        int(k): int(v)
-                        for k, v in params.get("mode_set_overrides").items()
-                    }
+                    self._mode_set_overrides = self._parse_mode_set_overrides(
+                        params.get("mode_set_overrides"),
+                    )
             except Exception:
                 _LOGGER.exception("[%s] Set customize error", self.device_id)
             self.update_all({"speed_count": self._speed_count})
