@@ -336,20 +336,30 @@ class MideaFADevice(MideaDevice):
     ) -> dict[int, int]:
         """Return the {mode index: body[3]} table, or {} if a value is not a byte.
 
-        Each value is written straight into the set body, so one outside 0..255
-        would raise on the bytearray assignment and lose the command.
+        Each value is written straight into the set body, so anything `int()`
+        would silently reshape into a byte - a fraction, a bool, a number
+        outside 0..255 - is rejected here rather than sent as some other byte
+        or raised on the bytearray assignment, losing the command.
         """
-        parsed = {int(k): int(v) for k, v in overrides.items()}
-        out_of_range = {
-            mode: value
-            for mode, value in parsed.items()
-            if not MIN_MODE_SET_OVERRIDE <= value <= MAX_MODE_SET_OVERRIDE
-        }
-        if out_of_range:
+        parsed: dict[int, int] = {}
+        rejected: dict[str, Any] = {}
+        for key, value in overrides.items():
+            if isinstance(value, bool) or (
+                isinstance(value, float) and not value.is_integer()
+            ):
+                rejected[key] = value
+                continue
+            converted = int(value)
+            if not MIN_MODE_SET_OVERRIDE <= converted <= MAX_MODE_SET_OVERRIDE:
+                rejected[key] = value
+                continue
+            parsed[int(key)] = converted
+        if rejected:
             _LOGGER.error(
-                "[%s] mode_set_overrides values must be 0..255, ignoring the table: %s",
+                "[%s] mode_set_overrides values must be whole numbers in 0..255, "
+                "ignoring the table: %s",
                 self.device_id,
-                out_of_range,
+                rejected,
             )
             return {}
         return parsed
