@@ -589,6 +589,7 @@ class TestMideaDevice:
                     bytearray([0x0]),
                     bytearray([0x0]),
                     TimeoutError(),
+                    TimeoutError(),
                 ],
             ),
             patch.object(self.device, "build_send", return_value=None),
@@ -620,6 +621,29 @@ class TestMideaDevice:
                 self.device.refresh_status(True)  # Timeout
             with pytest.raises(NoSupportedProtocol):
                 self.device.refresh_status(True)  # Unsupported protocol
+
+    def test_refresh_status_recovers_after_single_timeout(self) -> None:
+        """A single timeout during the probe must not blacklist the protocol."""
+        socket_mock = MagicMock()
+        with (
+            patch.object(self.device, "build_query", return_value=[]),
+            patch.object(
+                socket_mock,
+                "recv",
+                side_effect=[TimeoutError(), bytearray([0x0])],
+            ),
+            patch.object(self.device, "build_send", return_value=None) as build_send,
+            patch.object(
+                self.device,
+                "parse_message",
+                return_value=MessageResult.SUCCESS,
+            ),
+        ):
+            self.device._socket = socket_mock
+            self.device.refresh_status(True)
+
+        assert self.device._unsupported_protocol == []
+        assert build_send.call_count == 2
 
     def test_parse_message(self) -> None:
         """Test parse message."""
