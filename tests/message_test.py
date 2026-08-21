@@ -7,6 +7,7 @@ from midealocal.message import (
     BodyParser,
     BodyType,
     BoolParser,
+    FloatParser,
     IntEnumParser,
     IntParser,
     ListTypes,
@@ -177,6 +178,22 @@ class TestIntParser:
                 assert parser._parse(i) == 255
             else:
                 assert parser._parse(i) == i
+
+
+class TestFloatParser:
+    """Test FloatParser."""
+
+    def test_float_default(self) -> None:
+        """Test default behaviour."""
+        parser = FloatParser("temperature", 0)
+        for i in range(-10, 260):
+            assert parser._parse(i) == float(i)
+
+    def test_float_transform(self) -> None:
+        """Test float with transform."""
+        parser = FloatParser("temperature", 0, transform_func=lambda x: (x - 50) / 2)
+        for i in range(50, 100):
+            assert parser.get_value(bytearray([i])) == (i - 50) / 2
 
 
 class TestMessageBody:
