@@ -351,17 +351,26 @@ class MessageB8GenericBody(MessageBody):
             | B8ErrorWarningDescription
         ) = B8ErrorCanFixDescription.NO
         if self.error_type == B8ErrorType.CAN_FIX:
-            self.error_desc = B8ErrorCanFixDescription(
-                self.read_byte(body, 15 + offset),
-            )
+            try:
+                self.error_desc = B8ErrorCanFixDescription(
+                    self.read_byte(body, 15 + offset),
+                )
+            except ValueError:
+                self.error_desc = B8ErrorCanFixDescription.NO
         elif self.error_type == B8ErrorType.REBOOT:
-            self.error_desc = B8ErrorRebootDescription(
-                self.read_byte(body, 15 + offset),
-            )
+            try:
+                self.error_desc = B8ErrorRebootDescription(
+                    self.read_byte(body, 15 + offset),
+                )
+            except ValueError:
+                self.error_desc = B8ErrorRebootDescription.NO
         elif self.error_type == B8ErrorType.WARNING:
-            self.error_desc = B8ErrorWarningDescription(
-                self.read_byte(body, 15 + offset),
-            )
+            try:
+                self.error_desc = B8ErrorWarningDescription(
+                    self.read_byte(body, 15 + offset),
+                )
+            except ValueError:
+                self.error_desc = B8ErrorWarningDescription.NO
 
 
 class MessageB8WorkStatusBody(MessageB8GenericBody):
