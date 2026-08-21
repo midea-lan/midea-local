@@ -27,7 +27,7 @@ class Midea13Device(MideaDevice):
     """Midea x13 Device."""
 
     _effects: ClassVar[list[str]] = [
-        "manual",
+        "none",
         "living",
         "reading",
         "mildly",

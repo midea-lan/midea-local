@@ -336,6 +336,53 @@ class TestMideaB8Device:
         )
         assert self.device.attributes[DeviceAttributes.speed] == "low"
 
+    @pytest.mark.parametrize(
+        ("error_type", "error_type_name"),
+        [
+            pytest.param(B8ErrorType.CAN_FIX, "can_fix", id="can_fix"),
+            pytest.param(B8ErrorType.REBOOT, "reboot", id="reboot"),
+            pytest.param(B8ErrorType.WARNING, "warning", id="warning"),
+        ],
+    )
+    def test_query_response_unknown_error_desc(
+        self,
+        error_type: B8ErrorType,
+        error_type_name: str,
+    ) -> None:
+        """Test query response falls back to 'no' for unknown error sub-codes."""
+        header = bytearray(
+            [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.query],
+        )
+        body = bytearray(
+            [
+                0x32,
+                0x1,
+                B8WorkStatus.CHARGING_WITH_WIRE,
+                B8FunctionType.NONE,
+                B8ControlType.AUTO,
+                B8Moviment.NONE,
+                B8CleanMode.AUTO,
+                B8FanLevel.NORMAL,
+                0,
+                B8WaterLevel.NORMAL,
+                40,
+                0,
+                80,
+                20,
+                0xC7,
+                error_type,
+                0xFF,  # unknown sub-code
+                B8MopState.ON,
+                0x01,
+                0x07,
+                B8Speed.HIGH,
+                0x0,  # CRC
+            ],
+        )
+        self.device.process_message(bytes(header + body))
+        assert self.device.attributes[DeviceAttributes.error_type] == error_type_name
+        assert self.device.attributes[DeviceAttributes.error_desc] == "no"
+
     def test_query_response_no_error(self) -> None:
         """Test query response."""
         header = bytearray(
@@ -455,6 +502,66 @@ class TestMideaB8Device:
             self.device.attributes[DeviceAttributes.board_communication_error] is False
         )
         assert self.device.attributes[DeviceAttributes.speed] == "high"
+
+    def test_query_response_invalid_enums_preserve_valid_fields(self) -> None:
+        """Test invalid enum fallback does not discard valid scalar/flag fields."""
+        header = bytearray(
+            [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.query],
+        )
+        body = bytearray(
+            [
+                0x32,
+                0x1,
+                0x13,  # Invalid work status
+                0x03,  # Invalid function type
+                0x03,  # Invalid control type
+                0x05,  # Invalid move direction
+                0x0D,  # Invalid clean mode
+                0x05,  # Invalid fan level
+                55,  # area
+                0x04,  # Invalid water level
+                65,  # voice_volume
+                1,  # have_reserve_task
+                77,  # battery_percent
+                33,  # work_time
+                0xC7,  # status flags: uv/wifi/voice/command_source/device_error
+                0x04,  # Invalid error type
+                0x04,  # Invalid error description
+                0x03,  # Invalid mop state
+                1,  # carpet_switch
+                0x07,  # error flags: laser_sensor_error/shelter/board_communication
+                0x02,  # Invalid speed
+                0x0,  # CRC
+            ],
+        )
+        self.device.process_message(bytes(header + body))
+        assert self.device.attributes[DeviceAttributes.work_status] == "none"
+        assert self.device.attributes[DeviceAttributes.function_type] == "none"
+        assert self.device.attributes[DeviceAttributes.control_type] == "none"
+        assert self.device.attributes[DeviceAttributes.move_direction] == "none"
+        assert self.device.attributes[DeviceAttributes.clean_mode] == "none"
+        assert self.device.attributes[DeviceAttributes.fan_level] == "off"
+        assert self.device.attributes[DeviceAttributes.water_level] == "off"
+        assert self.device.attributes[DeviceAttributes.error_type] == "no"
+        assert self.device.attributes[DeviceAttributes.error_desc] == "no"
+        assert self.device.attributes[DeviceAttributes.mop] == "lack_water"
+        assert self.device.attributes[DeviceAttributes.speed] == "high"
+        assert self.device.attributes[DeviceAttributes.area] == 55
+        assert self.device.attributes[DeviceAttributes.voice_volume] == 65
+        assert self.device.attributes[DeviceAttributes.have_reserve_task] is True
+        assert self.device.attributes[DeviceAttributes.battery_percent] == 77
+        assert self.device.attributes[DeviceAttributes.work_time] == 33
+        assert self.device.attributes[DeviceAttributes.uv_switch] is True
+        assert self.device.attributes[DeviceAttributes.wifi_switch] is True
+        assert self.device.attributes[DeviceAttributes.voice_switch] is True
+        assert self.device.attributes[DeviceAttributes.command_source] is True
+        assert self.device.attributes[DeviceAttributes.device_error] is True
+        assert self.device.attributes[DeviceAttributes.carpet_switch] is True
+        assert self.device.attributes[DeviceAttributes.laser_sensor_error] is True
+        assert self.device.attributes[DeviceAttributes.laser_sensor_shelter] is True
+        assert (
+            self.device.attributes[DeviceAttributes.board_communication_error] is True
+        )
 
     def test_unexpected_response(self) -> None:
         """Test unexpected response."""

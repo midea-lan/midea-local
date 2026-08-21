@@ -479,9 +479,10 @@ class MideaDevice(threading.Thread):
 
     def refresh_status(self, check_protocol: bool = False) -> None:
         """Refresh device status."""
-        cmds: list = self.build_query()
+        real_cmds: list = self.build_query()
+        cmds = real_cmds
         if self._appliance_query:
-            cmds = [MessageQueryAppliance(self.device_type), *cmds]
+            cmds = [MessageQueryAppliance(self.device_type), *real_cmds]
         error_count = 0
         _LOGGER.debug(
             "[%s] refresh_status with cmds: %s, check_protocol %s, \
@@ -530,7 +531,8 @@ class MideaDevice(threading.Thread):
                     # only catch TimoutError for check_protocol
                     # unexpected exception in recv/settimeout, catch by main loop
                     except TimeoutError:
-                        error_count += 1
+                        if cmd in real_cmds:
+                            error_count += 1
                         self._unsupported_protocol.append(cmd.__class__.__name__)
                         _LOGGER.debug(
                             "[%s] Does not supports the protocol %s, cmd %s, ignored",
@@ -540,7 +542,8 @@ class MideaDevice(threading.Thread):
                         )
                     except ResponseException:
                         # parse msg error
-                        error_count += 1
+                        if cmd in real_cmds:
+                            error_count += 1
                         _LOGGER.debug(
                             "[%s] refresh_status ResponseException %s, cmd %s",
                             self._device_id,
@@ -553,9 +556,12 @@ class MideaDevice(threading.Thread):
                     self._device_id,
                     cmd,
                 )
-                error_count += 1
-            # all the query failed
-            if error_count == len(cmds):
+                if cmd in real_cmds:
+                    error_count += 1
+            # A successful appliance query is not device status: it must not mask
+            # every real status query failing. Guard against a subclass whose
+            # build_query() returns [], where "all failed" would be vacuous.
+            if real_cmds and error_count == len(real_cmds):
                 _LOGGER.debug(
                     "[%s] all the query cmds failed %s, please report bug",
                     self._device_id,
