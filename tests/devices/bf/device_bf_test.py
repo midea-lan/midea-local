@@ -70,7 +70,7 @@ class TestMideaBFDevice:
         assert self.device.attributes[DeviceAttributes.current_temperature] == 300
         assert self.device.attributes[DeviceAttributes.tank_ejected] is True
         assert self.device.attributes[DeviceAttributes.water_change_reminder] is True
-        assert self.device.attributes[DeviceAttributes.water_shortage] is None
+        assert self.device.attributes[DeviceAttributes.water_shortage] is False
         assert result[DeviceAttributes.status.value] == "working"
 
     def test_notify_response_fallback_temperature(self) -> None:
