@@ -576,9 +576,11 @@ class TestMideaDevice:
         with pytest.raises(NotImplementedError):
             self.device.refresh_status()  # build_query not implemented
 
+        self.device._appliance_query = False
+        real_cmd = MagicMock()
         socket_mock = MagicMock()
         with (
-            patch.object(self.device, "build_query", return_value=[]),
+            patch.object(self.device, "build_query", return_value=[real_cmd]),
             patch.object(
                 socket_mock,
                 "recv",
@@ -644,6 +646,71 @@ class TestMideaDevice:
 
         assert self.device._unsupported_protocol == []
         assert build_send.call_count == 2
+
+    def test_refresh_status_appliance_success_does_not_mask_query_failure(self) -> None:
+        """Regression test for #575: appliance success must not mask query timeouts."""
+        real_cmd = MagicMock()
+        self.device._socket = MagicMock()
+        with (
+            patch.object(self.device, "build_query", return_value=[real_cmd]),
+            patch.object(
+                self.device._socket,
+                "recv",
+                side_effect=[
+                    bytearray([0x0]),  # appliance query: success
+                    TimeoutError(),  # real_cmd: timeout (attempt 1)
+                    TimeoutError(),  # real_cmd: timeout (attempt 2, blacklisted)
+                ],
+            ),
+            patch.object(self.device, "build_send", return_value=None),
+            patch.object(
+                self.device,
+                "parse_message",
+                side_effect=[MessageResult.SUCCESS],
+            ),
+        ):
+            assert self.device._appliance_query is True
+            with pytest.raises(NoSupportedProtocol):
+                self.device.refresh_status(True)
+
+    def test_refresh_status_appliance_query_failure_is_not_a_real_error(self) -> None:
+        """An appliance-query timeout, error, or skip must not count as a real error."""
+        real_cmd = MagicMock()
+        self.device._socket = MagicMock()
+        with (
+            patch.object(self.device, "build_query", return_value=[real_cmd]),
+            patch.object(
+                self.device._socket,
+                "recv",
+                side_effect=[
+                    TimeoutError(),  # appliance query: timeout (attempt 1)
+                    TimeoutError(),  # appliance query: timeout (attempt 2, blacklisted)
+                    bytearray([0x0]),  # real_cmd: success
+                    bytearray([0x0]),  # real_cmd: success (appliance is SKIPped)
+                    bytearray([0x0]),  # appliance query: ResponseException
+                    bytearray([0x0]),  # real_cmd: success
+                ],
+            ),
+            patch.object(self.device, "build_send", return_value=None),
+            patch.object(
+                self.device,
+                "parse_message",
+                side_effect=[
+                    MessageResult.SUCCESS,  # real_cmd
+                    MessageResult.SUCCESS,  # real_cmd
+                    MessageResult.ERROR,  # appliance query
+                    MessageResult.SUCCESS,  # real_cmd
+                ],
+            ),
+        ):
+            assert self.device._appliance_query is True
+            self.device.refresh_status(True)  # appliance times out, ignored
+            assert "MessageQueryAppliance" in self.device._unsupported_protocol
+
+            self.device.refresh_status(True)  # appliance SKIPped, ignored
+
+            self.device._unsupported_protocol = []
+            self.device.refresh_status(True)  # appliance ResponseException, ignored
 
     def test_parse_message(self) -> None:
         """Test parse message."""
