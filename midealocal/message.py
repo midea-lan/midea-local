@@ -492,10 +492,8 @@ class MessageRequest(MessageBase):
     def body(self) -> bytearray:
         """Message body."""
         body = bytearray([])
-        if self.body_type is not None:
-            body.append(self.body_type)
-        if self._body is not None:
-            body.extend(self._body)
+        body.append(self.body_type)
+        body.extend(self._body)
         return body
 
     def serialize(self) -> bytearray:
@@ -625,6 +623,7 @@ class BoolParser(BodyParser[bool]):
         self._true_value = true_value
         self._default_value = default_value
         self._false_value = false_value
+        self._default_raw_value = 1 if default_value else 0
 
     def _parse(self, raw_value: int) -> bool:
         if raw_value not in [self._true_value, self._false_value]:
@@ -666,7 +665,7 @@ class IntEnumParser[E: IntEnum](BodyParser[E]):
 
 
 class IntParser(BodyParser[int]):
-    """IntEnum message body parser."""
+    """Int message body parser."""
 
     def __init__(
         self,
@@ -677,7 +676,7 @@ class IntParser(BodyParser[int]):
         length_in_bytes: int = 1,
         first_upper: bool = False,
     ) -> None:
-        """Init IntEnum body parser."""
+        """Init Int body parser."""
         super().__init__(
             name,
             byte,
@@ -698,10 +697,17 @@ class IntParser(BodyParser[int]):
 class MessageBody:
     """Message body."""
 
-    def __init__(self, body: bytearray) -> None:
+    def __init__(
+        self,
+        body: bytearray,
+        parser_list: list[BodyParser[Any]] | None = None,
+    ) -> None:
         """Initialize message body."""
         self._data = body
-        self.parser_list: list[BodyParser] = []
+        self.parser_list: list[BodyParser[Any]] = (
+            parser_list if parser_list is not None else []
+        )
+        self.parse_all()
 
     @property
     def data(self) -> bytearray:
