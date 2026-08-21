@@ -184,7 +184,6 @@ class B6NewProtocolBody(MessageBody):
         if body[1] == 0x01:
             pack_bytes = body[3 : 3 + body[2]]
             if pack_bytes[1] != MAX_BYTE_VALUE:
-                self.power = True
                 self.power = pack_bytes[1] not in [0x00, 0x01, 0x05, 0x07]
             if pack_bytes[2] != MAX_BYTE_VALUE:
                 self.fan_level = pack_bytes[2]
