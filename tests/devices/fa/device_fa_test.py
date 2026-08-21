@@ -518,3 +518,36 @@ class TestMideaFADevice:
 
         self.device.set_customize("{}")
         assert self.device._mode_set_overrides == {}
+
+    @pytest.mark.parametrize(
+        "customize",
+        [
+            pytest.param('{"mode_set_overrides": {"3": 256}}', id="above_a_byte"),
+            pytest.param('{"mode_set_overrides": {"3": -1}}', id="below_a_byte"),
+            pytest.param('{"mode_set_overrides": {"3": 1.5}}', id="fraction"),
+            pytest.param('{"mode_set_overrides": {"3": true}}', id="bool"),
+            pytest.param(
+                '{"mode_set_overrides": {"3": 41, "4": 256}}',
+                id="one_entry_out_of_range",
+            ),
+        ],
+    )
+    def test_set_customize_mode_set_overrides_not_a_byte(
+        self,
+        customize: str,
+    ) -> None:
+        """Test an override that is not a byte is rejected, not carried into a set."""
+        self.device.set_customize(customize)
+        assert self.device._mode_set_overrides == {}
+
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.mode.value, "comfort")
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.mode_set_overrides == {}
+            assert message._body[3] == 0x09
+
+    def test_set_customize_mode_set_overrides_integral_float(self) -> None:
+        """Test a float that is a whole number is still a usable byte."""
+        self.device.set_customize('{"mode_set_overrides": {"3": 41.0}}')
+        assert self.device._mode_set_overrides == {3: 41}
