@@ -2,6 +2,7 @@
 
 import logging
 import warnings
+from collections.abc import Callable
 from enum import IntEnum
 from typing import Any, SupportsIndex, cast
 
@@ -565,6 +566,7 @@ class BodyParser[T]:
         length_in_bytes: int = 1,
         first_upper: bool = True,
         default_raw_value: int = 0,
+        transform_func: Callable[[T], T] = lambda data: data,
     ) -> None:
         """Init body parser with attribute name."""
         self.name = name
@@ -573,6 +575,7 @@ class BodyParser[T]:
         self._length_in_bytes = length_in_bytes
         self._first_upper = first_upper
         self._default_raw_value = default_raw_value
+        self._transform_func = transform_func
         if length_in_bytes < 0:
             raise ValueError("Length in bytes must be a positive value.")
         if bit is not None and (bit < 0 or bit >= length_in_bytes * 8):
@@ -599,7 +602,7 @@ class BodyParser[T]:
 
     def get_value(self, body: bytearray) -> T:
         """Get attribute value."""
-        return self._parse(self._get_raw_value(body))
+        return self._transform_func(self._parse(self._get_raw_value(body)))
 
     def _parse(self, raw_value: int) -> T:
         """Convert raw value to attribute value."""
@@ -623,7 +626,6 @@ class BoolParser(BodyParser[bool]):
         self._true_value = true_value
         self._default_value = default_value
         self._false_value = false_value
-        self._default_raw_value = 1 if default_value else 0
 
     def _parse(self, raw_value: int) -> bool:
         if raw_value not in [self._true_value, self._false_value]:
@@ -675,6 +677,7 @@ class IntParser(BodyParser[int]):
         min_value: int = 0,
         length_in_bytes: int = 1,
         first_upper: bool = False,
+        transform_func: Callable[[int], int] = lambda x: x,
     ) -> None:
         """Init Int body parser."""
         super().__init__(
@@ -682,6 +685,7 @@ class IntParser(BodyParser[int]):
             byte,
             length_in_bytes=length_in_bytes,
             first_upper=first_upper,
+            transform_func=transform_func,
         )
         self._max_value = max_value
         self._min_value = min_value
@@ -692,6 +696,32 @@ class IntParser(BodyParser[int]):
         if raw_value < self._min_value:
             return self._min_value
         return raw_value
+
+
+class FloatParser(BodyParser[float]):
+    """Float message body parser."""
+
+    def __init__(
+        self,
+        name: str,
+        byte: int,
+        length_in_bytes: int = 1,
+        first_upper: bool = True,
+        default_raw_value: int = 0,
+        transform_func: Callable[[float], float] = lambda data: data,
+    ) -> None:
+        """Init Float body parser."""
+        super().__init__(
+            name,
+            byte,
+            length_in_bytes=length_in_bytes,
+            first_upper=first_upper,
+            default_raw_value=default_raw_value,
+            transform_func=transform_func,
+        )
+
+    def _parse(self, raw_value: int) -> float:
+        return float(raw_value)
 
 
 class MessageBody:
