@@ -182,9 +182,9 @@ class TestMideaC3Device:
             assert result[DeviceAttributes.disinfect.value] is False
             assert result[DeviceAttributes.fast_dhw.value] is True
             assert result[DeviceAttributes.zone_temp_type.value] == [True, False]
-            assert result[DeviceAttributes.zone1_room_temp_mode.value] is True
+            assert result[DeviceAttributes.zone1_room_temp_mode.value] is False
             assert result[DeviceAttributes.zone2_room_temp_mode.value] is False
-            assert result[DeviceAttributes.zone1_water_temp_mode.value] is False
+            assert result[DeviceAttributes.zone1_water_temp_mode.value] is True
             assert result[DeviceAttributes.zone2_water_temp_mode.value] is False
             assert result[DeviceAttributes.mode.value] == 2
             assert result[DeviceAttributes.mode_auto.value] == 2
