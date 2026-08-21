@@ -231,9 +231,7 @@ class FCNotifyMessageBody(MessageBody):
             self.tvoc = body[15]
         self.anion = (body[10] & 0x20 > 0) if len(body) > ANION_NOTIFY_BYTE else False
         self.standby = (
-            ((body[27] & 0xFF) == STANDBY_VALUE)
-            if len(body) > STANDBY_NOTIFY_BYTE
-            else False
+            (body[27] == STANDBY_VALUE) if len(body) > STANDBY_NOTIFY_BYTE else False
         )
         self.child_lock = (
             (body[10] & 0x10 > 0) if len(body) > CHILD_LOCK_NOTIFY_BYTE else False
