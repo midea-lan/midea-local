@@ -11,7 +11,7 @@ from midealocal.message import (
     MessageType,
 )
 
-MIN_RESPONSE_BODY_LENGTH = 6
+MIN_RESPONSE_BODY_LENGTH = 43
 
 
 class SubCommand(IntEnum):
