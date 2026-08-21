@@ -217,7 +217,7 @@ class MideaC3Device(MideaDevice):
                         self._attributes[DeviceAttributes.room_temp_min]
                     )
             if self._attributes[DeviceAttributes.zone1_power]:
-                if self._attributes[DeviceAttributes.zone_temp_type][zone]:
+                if self._attributes[DeviceAttributes.zone_temp_type][0]:
                     self._attributes[DeviceAttributes.zone1_water_temp_mode] = True
                     self._attributes[DeviceAttributes.zone1_room_temp_mode] = False
                 else:
@@ -227,7 +227,7 @@ class MideaC3Device(MideaDevice):
                 self._attributes[DeviceAttributes.zone1_water_temp_mode] = False
                 self._attributes[DeviceAttributes.zone1_room_temp_mode] = False
             if self._attributes[DeviceAttributes.zone2_power]:
-                if self._attributes[DeviceAttributes.zone_temp_type][zone]:
+                if self._attributes[DeviceAttributes.zone_temp_type][1]:
                     self._attributes[DeviceAttributes.zone2_water_temp_mode] = True
                     self._attributes[DeviceAttributes.zone2_room_temp_mode] = False
                 else:
