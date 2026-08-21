@@ -11,8 +11,6 @@ from midealocal.message import (
     MessageType,
 )
 
-MIN_RESPONSE_BODY_LENGTH = 43
-
 
 class SubCommand(IntEnum):
     """Sub Command."""
@@ -66,14 +64,26 @@ class E8MessageBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         """Initialize E8 message body."""
         super().__init__(body)
-        self.status = body[11]
-        self.time_remaining = body[16] * 3600 + body[17] * 60 + body[18]
-        self.keep_warm_remaining = body[19] * 3600 + body[20] * 60 + body[21]
-        self.working_time = body[28] * 3600 + body[29] * 60 + body[30]
-        self.target_temperature = body[39]
-        self.current_temperature = body[39]
-        self.finished = (body[41] & 0x01) > 0
-        self.water_shortage = body[43] > 0
+        self.status = self.read_byte(body, 11)
+        self.time_remaining = (
+            self.read_byte(body, 16) * 3600
+            + self.read_byte(body, 17) * 60
+            + self.read_byte(body, 18)
+        )
+        self.keep_warm_remaining = (
+            self.read_byte(body, 19) * 3600
+            + self.read_byte(body, 20) * 60
+            + self.read_byte(body, 21)
+        )
+        self.working_time = (
+            self.read_byte(body, 28) * 3600
+            + self.read_byte(body, 29) * 60
+            + self.read_byte(body, 30)
+        )
+        self.target_temperature = self.read_byte(body, 39)
+        self.current_temperature = self.read_byte(body, 39)
+        self.finished = (self.read_byte(body, 41) & 0x01) > 0
+        self.water_shortage = self.read_byte(body, 43) > 0
 
 
 class MessageE8Response(MessageResponse):
@@ -82,15 +92,14 @@ class MessageE8Response(MessageResponse):
     def __init__(self, message: bytes) -> None:
         """Initialize E8 message response."""
         super().__init__(bytearray(message))
-        if len(super().body) > MIN_RESPONSE_BODY_LENGTH:
-            sub_cmd = super().body[6]
-            if (
-                (
-                    self.message_type == MessageType.set
-                    and sub_cmd in [SubCommand.X02, SubCommand.X04, SubCommand.X06]
-                )
-                or self.message_type in [MessageType.query, MessageType.notify1]
-                and sub_cmd == SubCommand.X02
-            ):
-                self.set_body(E8MessageBody(super().body))
+        sub_cmd = MessageBody.read_byte(super().body, 6)
+        if (
+            (
+                self.message_type == MessageType.set
+                and sub_cmd in [SubCommand.X02, SubCommand.X04, SubCommand.X06]
+            )
+            or self.message_type in [MessageType.query, MessageType.notify1]
+            and sub_cmd == SubCommand.X02
+        ):
+            self.set_body(E8MessageBody(super().body))
         self.set_attr()
