@@ -89,7 +89,7 @@ class MessageBFBody(MessageBody):
         self.child_lock = (body[32] & 0x01) > 0
         self.door = (body[32] & 0x02) > 0
         self.tank_ejected = (body[32] & 0x04) > 0
-        self.water_state = (body[32] & 0x08) > 0
+        self.water_shortage = (body[32] & 0x08) > 0
         self.water_change_reminder = (body[32] & 0x10) > 0
 
 

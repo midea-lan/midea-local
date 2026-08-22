@@ -138,8 +138,11 @@ class Midea26Device(MideaDevice):
             message.fields = self._fields
             message.main_light = self._attributes[DeviceAttributes.main_light]
             message.night_light = self._attributes[DeviceAttributes.night_light]
-            message.mode = Midea26Device._modes.index(
-                self._attributes[DeviceAttributes.mode],
+            current_mode = self._attributes[DeviceAttributes.mode]
+            message.mode = (
+                Midea26Device._modes.index(current_mode)
+                if current_mode in Midea26Device._modes
+                else 0
             )
             message.direction = self._convert_to_midea_direction(
                 self._attributes[DeviceAttributes.direction],

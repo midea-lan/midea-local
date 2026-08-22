@@ -18,6 +18,8 @@ from midealocal.message import (
 
 _LOGGER = logging.getLogger(__name__)
 
+A1_MIN_BODY_LENGTH = 18
+
 BB_AC_MODES = [0, 3, 1, 2, 4, 5]
 BB_MIN_BODY_LENGTH = 21
 BB_FRESH_AIR_SWITCH_INDEX = 45
@@ -1590,9 +1592,20 @@ class MessageACResponse(MessageResponse):
             self.set_body(XA0MessageBody(super().body))
         # dataType 0x04 and messageBytes[0] 0xA1
         elif (
-            self.message_type == MessageType.notify1 and self.body_type == ListTypes.A1
+            self.message_type == MessageType.notify1
+            and self.body_type == ListTypes.A1
+            and len(super().body) >= A1_MIN_BODY_LENGTH
         ):
             self.set_body(XA1MessageBody(super().body))
+        elif (
+            self.message_type == MessageType.notify1 and self.body_type == ListTypes.A1
+        ):
+            _LOGGER.debug(
+                "Skipping notify1 A1 body too short to parse (%d < %d bytes): %s",
+                len(super().body),
+                A1_MIN_BODY_LENGTH,
+                super().body.hex(),
+            )
         # parse MessageCapabilitiesQuery/MessageCapabilitiesAdditionalQuery response
         # dataType 0x03 and messageBytes[0] 0xB5
         elif self.message_type == MessageType.query and self.body_type == ListTypes.B5:

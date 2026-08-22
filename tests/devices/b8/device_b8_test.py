@@ -336,6 +336,53 @@ class TestMideaB8Device:
         )
         assert self.device.attributes[DeviceAttributes.speed] == "low"
 
+    @pytest.mark.parametrize(
+        ("error_type", "error_type_name"),
+        [
+            pytest.param(B8ErrorType.CAN_FIX, "can_fix", id="can_fix"),
+            pytest.param(B8ErrorType.REBOOT, "reboot", id="reboot"),
+            pytest.param(B8ErrorType.WARNING, "warning", id="warning"),
+        ],
+    )
+    def test_query_response_unknown_error_desc(
+        self,
+        error_type: B8ErrorType,
+        error_type_name: str,
+    ) -> None:
+        """Test query response falls back to 'no' for unknown error sub-codes."""
+        header = bytearray(
+            [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.query],
+        )
+        body = bytearray(
+            [
+                0x32,
+                0x1,
+                B8WorkStatus.CHARGING_WITH_WIRE,
+                B8FunctionType.NONE,
+                B8ControlType.AUTO,
+                B8Moviment.NONE,
+                B8CleanMode.AUTO,
+                B8FanLevel.NORMAL,
+                0,
+                B8WaterLevel.NORMAL,
+                40,
+                0,
+                80,
+                20,
+                0xC7,
+                error_type,
+                0xFF,  # unknown sub-code
+                B8MopState.ON,
+                0x01,
+                0x07,
+                B8Speed.HIGH,
+                0x0,  # CRC
+            ],
+        )
+        self.device.process_message(bytes(header + body))
+        assert self.device.attributes[DeviceAttributes.error_type] == error_type_name
+        assert self.device.attributes[DeviceAttributes.error_desc] == "no"
+
     def test_query_response_no_error(self) -> None:
         """Test query response."""
         header = bytearray(
