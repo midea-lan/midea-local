@@ -36,6 +36,10 @@ SOCKET_TIMEOUT = 10  # socket connection default timeout
 QUERY_TIMEOUT = (
     5  # default is 1s, 0xAC have more queries, set to 2s, latest: increase to 5s
 )
+# A single timeout during the initial protocol probe blacklists the command for
+# the whole connection, even when it was just a slow/not-yet-ready device rather
+# than a genuinely unsupported protocol. Give it one more try before giving up on it.
+QUERY_PROBE_RETRIES = 2
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -477,6 +481,25 @@ class MideaDevice(threading.Thread):
         msg = PacketBuilder(self._device_id, data).finalize()
         self.send_message(msg, query=query)
 
+    def _wait_for_query_response(self) -> None:
+        """Wait for one query response, raising on timeout or bad data."""
+        while True:
+            if not self._socket:
+                _LOGGER.debug("[%s] device socket is none", self._device_id)
+                # raise exception to connect/main loop
+                raise SocketException
+            msg = self._socket.recv(512)
+            if len(msg) == 0:
+                raise ConnectionResetError("Connection closed by peer.")
+            result = self.parse_message(msg)
+            # Prevent infinite loop
+            if result == MessageResult.SUCCESS:
+                # recovery SOCKET_TIMEOUT after recv msg
+                self._socket.settimeout(SOCKET_TIMEOUT)
+                return
+            if result != MessageResult.PADDING:
+                raise ResponseException
+
     def refresh_status(self, check_protocol: bool = False) -> None:
         """Refresh device status."""
         real_cmds: list = self.build_query()
@@ -506,30 +529,22 @@ class MideaDevice(threading.Thread):
                 self.build_send(cmd, query=True)
                 # init check_protocol, skip timeout exception
                 if check_protocol:
-                    try:
-                        while True:
-                            if not self._socket:
-                                _LOGGER.debug(
-                                    "[%s] device socket is none",
-                                    self._device_id,
-                                )
-                                # raise exception to connect/main loop
-                                raise SocketException
-                            msg = self._socket.recv(512)
-                            if len(msg) == 0:
-                                raise ConnectionResetError("Connection closed by peer.")
-                            result = self.parse_message(msg)
-                            # Prevent infinite loop
-                            if result == MessageResult.SUCCESS:
-                                break
-                            elif result == MessageResult.PADDING:  # noqa: RET508
-                                continue
-                            else:
-                                raise ResponseException  # noqa: TRY301
-                        # recovery SOCKET_TIMEOUT after recv msg
-                        self._socket.settimeout(SOCKET_TIMEOUT)
                     # only catch TimoutError for check_protocol
                     # unexpected exception in recv/settimeout, catch by main loop
+                    try:
+                        attempt = 0
+                        while True:
+                            try:
+                                self._wait_for_query_response()
+                                break
+                            except TimeoutError:
+                                attempt += 1
+                                if attempt >= QUERY_PROBE_RETRIES:
+                                    raise
+                                # retry once before blacklisting: a single timeout
+                                # during the probe can be a slow device, not proof
+                                # the protocol is unsupported
+                                self.build_send(cmd, query=True)
                     except TimeoutError:
                         if cmd in real_cmds:
                             error_count += 1

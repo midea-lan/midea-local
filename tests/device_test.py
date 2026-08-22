@@ -591,6 +591,7 @@ class TestMideaDevice:
                     bytearray([0x0]),
                     bytearray([0x0]),
                     TimeoutError(),
+                    TimeoutError(),
                 ],
             ),
             patch.object(self.device, "build_send", return_value=None),
@@ -623,6 +624,29 @@ class TestMideaDevice:
             with pytest.raises(NoSupportedProtocol):
                 self.device.refresh_status(True)  # Unsupported protocol
 
+    def test_refresh_status_recovers_after_single_timeout(self) -> None:
+        """A single timeout during the probe must not blacklist the protocol."""
+        socket_mock = MagicMock()
+        with (
+            patch.object(self.device, "build_query", return_value=[]),
+            patch.object(
+                socket_mock,
+                "recv",
+                side_effect=[TimeoutError(), bytearray([0x0])],
+            ),
+            patch.object(self.device, "build_send", return_value=None) as build_send,
+            patch.object(
+                self.device,
+                "parse_message",
+                return_value=MessageResult.SUCCESS,
+            ),
+        ):
+            self.device._socket = socket_mock
+            self.device.refresh_status(True)
+
+        assert self.device._unsupported_protocol == []
+        assert build_send.call_count == 2
+
     def test_refresh_status_appliance_success_does_not_mask_query_failure(self) -> None:
         """Regression test for #575: appliance success must not mask query timeouts."""
         real_cmd = MagicMock()
@@ -632,9 +656,13 @@ class TestMideaDevice:
             patch.object(
                 self.device._socket,
                 "recv",
-                side_effect=[bytearray([0x0]), TimeoutError()],
+                side_effect=[
+                    bytearray([0x0]),  # appliance query: success
+                    TimeoutError(),  # real_cmd: timeout (attempt 1)
+                    TimeoutError(),  # real_cmd: timeout (attempt 2, blacklisted)
+                ],
             ),
-            patch.object(self.device, "build_send", return_value=None),
+            patch.object(self.device, "build_send", return_value=None) as build_send,
             patch.object(
                 self.device,
                 "parse_message",
@@ -644,6 +672,8 @@ class TestMideaDevice:
             assert self.device._appliance_query is True
             with pytest.raises(NoSupportedProtocol):
                 self.device.refresh_status(True)
+
+        assert build_send.call_count == 3
 
     def test_refresh_status_appliance_query_failure_is_not_a_real_error(self) -> None:
         """An appliance-query timeout, error, or skip must not count as a real error."""
@@ -655,7 +685,8 @@ class TestMideaDevice:
                 self.device._socket,
                 "recv",
                 side_effect=[
-                    TimeoutError(),  # appliance query: timeout
+                    TimeoutError(),  # appliance query: timeout (attempt 1)
+                    TimeoutError(),  # appliance query: timeout (attempt 2, blacklisted)
                     bytearray([0x0]),  # real_cmd: success
                     bytearray([0x0]),  # real_cmd: success (appliance is SKIPped)
                     bytearray([0x0]),  # appliance query: ResponseException
