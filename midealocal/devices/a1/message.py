@@ -226,11 +226,10 @@ class A1GeneralMessageBody(MessageBody):
             body,
             [
                 BoolParser("power", 1, 0),
-                IntParser("mode", 2, 0x0F, transform_func=lambda x: x & 0x0F),
+                IntParser("mode", 2, transform_func=lambda x: x & 0x0F),
                 IntParser(
                     "fan_speed",
                     3,
-                    0x7F,
                     transform_func=lambda x: (
                         (x & 0x7F) if (x & 0x7F) >= MIN_FAN_SPEED else 1
                     ),
@@ -240,7 +239,7 @@ class A1GeneralMessageBody(MessageBody):
                 BoolParser("anion", 9, 6),
                 BoolParser("pump", 9, 3),
                 BoolParser("pump_enable", 9, 4),
-                IntParser("tank", 10, 0x7F, transform_func=lambda x: x & 0x7F),
+                IntParser("tank", 10, transform_func=lambda x: x & 0x7F),
                 IntParser("water_level_set", 15),
                 IntParser("current_humidity", 16),
                 FloatParser(
