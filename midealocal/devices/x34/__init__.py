@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, Unpack
+from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
@@ -51,6 +51,40 @@ class DeviceAttributes(StrEnum):
 class Midea34Device(MideaDevice):
     """Midea x34 device."""
 
+    _modes: ClassVar[dict[int, str]] = {
+        0x0: "none",  # BYTE_MODE_NEUTRAL_GEAR
+        0x1: "auto",  # BYTE_MODE_AUTO_WASH
+        0x2: "heavy",  # BYTE_MODE_STRONG_WASH
+        0x3: "normal",  # BYTE_MODE_STANDARD_WASH
+        0x4: "energy_saving",  # BYTE_MODE_ECO_WASH
+        0x5: "delicate",  # BYTE_MODE_GLASS_WASH
+        0x6: "hour",  # BYTE_MODE_HOUR_WASH
+        0x7: "quick",  # BYTE_MODE_FAST_WASH
+        0x8: "rinse",  # BYTE_MODE_SOAK_WASH
+        0x9: "90min",  # BYTE_MODE_90MIN_WASH
+        0xA: "self_clean",  # BYTE_MODE_SELF_CLEAN
+        0xB: "fruit_wash",  # BYTE_MODE_FRUIT_WASH
+        0xC: "self_define",  # BYTE_MODE_SELF_DEFINE
+        0xD: "germ",  # BYTE_MODE_GERM ???
+        0xE: "bowl_wash",  # BYTE_MODE_BOWL_WASH
+        0xF: "kill_germ",  # BYTE_MODE_KILL_GERM
+        0x10: "sea_food_wash",  # BYTE_MODE_SEA_FOOD_WASH
+        0x12: "hot_pot_wash",  # BYTE_MODE_HOT_POT_WASH
+        0x13: "quiet",  # BYTE_MODE_QUIET_NIGHT_WASH
+        0x14: "less_wash",  # BYTE_MODE_LESS_WASH
+        0x16: "oil_net_wash",  # BYTE_MODE_OIL_NET_WASH
+        0x19: "cloud_wash",  # BYTE_MODE_CLOUD_WASH
+    }
+    _status: ClassVar[list[str]] = ["off", "idle", "delay", "running", "error"]
+    _progress: ClassVar[list[str]] = [
+        "idle",
+        "pre_wash",
+        "wash",
+        "rinse",
+        "dry",
+        "complete",
+    ]
+
     def __init__(
         self,
         *,
@@ -88,32 +122,6 @@ class Midea34Device(MideaDevice):
                 DeviceAttributes.bright: 0,
             },
         )
-        self._modes = {
-            0x0: "neutral_gear",  # BYTE_MODE_NEUTRAL_GEAR
-            0x1: "auto",  # BYTE_MODE_AUTO_WASH
-            0x2: "heavy",  # BYTE_MODE_STRONG_WASH
-            0x3: "normal",  # BYTE_MODE_STANDARD_WASH
-            0x4: "energy_saving",  # BYTE_MODE_ECO_WASH
-            0x5: "delicate",  # BYTE_MODE_GLASS_WASH
-            0x6: "hour",  # BYTE_MODE_HOUR_WASH
-            0x7: "quick",  # BYTE_MODE_FAST_WASH
-            0x8: "rinse",  # BYTE_MODE_SOAK_WASH
-            0x9: "90min",  # BYTE_MODE_90MIN_WASH
-            0xA: "self_clean",  # BYTE_MODE_SELF_CLEAN
-            0xB: "fruit_wash",  # BYTE_MODE_FRUIT_WASH
-            0xC: "self_define",  # BYTE_MODE_SELF_DEFINE
-            0xD: "germ",  # BYTE_MODE_GERM ???
-            0xE: "bowl_wash",  # BYTE_MODE_BOWL_WASH
-            0xF: "kill_germ",  # BYTE_MODE_KILL_GERM
-            0x10: "sea_food_wash",  # BYTE_MODE_SEA_FOOD_WASH
-            0x12: "hot_pot_wash",  # BYTE_MODE_HOT_POT_WASH
-            0x13: "quiet",  # BYTE_MODE_QUIET_NIGHT_WASH
-            0x14: "less_wash",  # BYTE_MODE_LESS_WASH
-            0x16: "oil_net_wash",  # BYTE_MODE_OIL_NET_WASH
-            0x19: "cloud_wash",  # BYTE_MODE_CLOUD_WASH
-        }
-        self._status = ["off", "idle", "delay", "running", "error"]
-        self._progress = ["idle", "pre_wash", "wash", "rinse", "dry", "complete"]
 
     def build_query(self) -> list[MessageQuery]:
         """Midea x34 device build query."""
@@ -126,9 +134,9 @@ class Midea34Device(MideaDevice):
         return self.update_attributes_from_message(
             message,
             {
-                DeviceAttributes.status: list_translator(self._status),
-                DeviceAttributes.progress: list_translator(self._progress),
-                DeviceAttributes.mode: self._modes.get,
+                DeviceAttributes.status: list_translator(Midea34Device._status),
+                DeviceAttributes.progress: list_translator(Midea34Device._progress),
+                DeviceAttributes.mode: Midea34Device._modes.get,
             },
         )
 
