@@ -91,7 +91,7 @@ class TestMideaFADevice:
             "both",
         ]
         assert self.device.preset_modes == [
-            "normal",
+            "none",
             "natural",
             "sleep",
             "comfort",
@@ -116,7 +116,7 @@ class TestMideaFADevice:
         """Test query response with a full-length body and valid values."""
         body = bytearray(36)
         body[3] = 0x01  # child lock on
-        body[4] = 0x03  # power on, mode raw 1 -> Normal
+        body[4] = 0x03  # power on, mode raw 1 -> "none"
         body[5] = 0x03  # fan speed 3
         body[8] = 0x33  # oscillate on, angle 3 -> 90, mode 1 -> Oscillation
         body[9] = 0x20  # humidify on
@@ -128,7 +128,7 @@ class TestMideaFADevice:
         )
         assert self.device.attributes[DeviceAttributes.power] is True
         assert self.device.attributes[DeviceAttributes.child_lock] is True
-        assert self.device.attributes[DeviceAttributes.mode] == "normal"
+        assert self.device.attributes[DeviceAttributes.mode] == "none"
         assert self.device.attributes[DeviceAttributes.fan_speed] == 3
         assert self.device.attributes[DeviceAttributes.oscillate] is True
         assert self.device.attributes[DeviceAttributes.oscillation_angle] == "90"
@@ -139,7 +139,7 @@ class TestMideaFADevice:
         assert self.device.attributes[DeviceAttributes.humidify] is True
         assert self.device.attributes[DeviceAttributes.waterions] is True
         assert self.device.attributes[DeviceAttributes.display_on_off] is True
-        assert new_status[DeviceAttributes.mode.value] == "normal"
+        assert new_status[DeviceAttributes.mode.value] == "none"
         assert new_status[DeviceAttributes.fan_speed.value] == 3
 
     def test_notify_response_out_of_range_values(self) -> None:
@@ -482,7 +482,7 @@ class TestMideaFADevice:
             assert message.mode is None
             mock_build_send.reset_mock()
 
-            self.device.turn_on(fan_speed=3, mode="normal")
+            self.device.turn_on(fan_speed=3, mode="none")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.power is True
