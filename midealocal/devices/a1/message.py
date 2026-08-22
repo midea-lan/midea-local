@@ -5,6 +5,9 @@ from enum import IntEnum
 from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.crc8 import calculate
 from midealocal.message import (
+    BoolParser,
+    FloatParser,
+    IntParser,
     ListTypes,
     MessageBody,
     MessageRequest,
@@ -219,25 +222,36 @@ class A1GeneralMessageBody(MessageBody):
 
     def __init__(self, body: bytearray) -> None:
         """Initialize A1 general message body."""
-        super().__init__(body)
-        self.power = (body[1] & 0x01) > 0
-        self.mode = body[2] & 0x0F
-        self.fan_speed = body[3] & 0x7F
-        self.target_humidity = max(body[7], MIN_TARGET_HUMIDITY)
-        self.child_lock = (body[8] & 0x80) > 0
-        self.anion = (body[9] & 0x40) > 0
-        self.pump = (body[9] & 0x08) > 0
-        self.pump_enable = (body[9] & 0x10) > 0
-        self.tank = body[10] & 0x7F
-        self.water_level_set = body[15]
-        self.current_humidity = body[16]
-        self.current_temperature = (body[17] - 50) / 2
-        self.swing = (body[19] & 0x20) > 0
-        if self.fan_speed < MIN_FAN_SPEED:
-            self.fan_speed = 1
-
-        # add filter cleaning reminder attribute
-        self.filter_cleaning_reminder = (body[9] & 0x80) > 0
+        super().__init__(
+            body,
+            [
+                BoolParser("power", 1, 0),
+                IntParser("mode", 2, 0x0F, transform_func=lambda x: x & 0x0F),
+                IntParser(
+                    "fan_speed",
+                    3,
+                    0x7F,
+                    transform_func=lambda x: (
+                        (x & 0x7F) if (x & 0x7F) >= MIN_FAN_SPEED else 1
+                    ),
+                ),
+                IntParser("target_humidity", 7, min_value=MIN_TARGET_HUMIDITY),
+                BoolParser("child_lock", 8, 7),
+                BoolParser("anion", 9, 6),
+                BoolParser("pump", 9, 3),
+                BoolParser("pump_enable", 9, 4),
+                IntParser("tank", 10, 0x7F, transform_func=lambda x: x & 0x7F),
+                IntParser("water_level_set", 15),
+                IntParser("current_humidity", 16),
+                FloatParser(
+                    "current_temperature",
+                    17,
+                    transform_func=lambda x: (x - 50) / 2,
+                ),
+                BoolParser("swing", 19, 5),
+                BoolParser("filter_cleaning_reminder", 9, 7),
+            ],
+        )
 
 
 class A1NewProtocolMessageBody(NewProtocolMessageBody):
