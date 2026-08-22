@@ -3,7 +3,7 @@
 import json
 import logging
 from enum import StrEnum
-from typing import Any, Unpack
+from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
 from midealocal.device import (
@@ -39,6 +39,8 @@ class DeviceAttributes(StrEnum):
 class MideaE3Device(MideaDevice):
     """Midea E3 device."""
 
+    _old_subtypes: ClassVar[list[int]] = [32, 33, 34, 35, 36, 37, 40, 43, 48, 49, 80]
+
     def __init__(
         self,
         *,
@@ -60,7 +62,6 @@ class MideaE3Device(MideaDevice):
                 DeviceAttributes.target_temperature: 40.0,
             },
         )
-        self._old_subtypes = [32, 33, 34, 35, 36, 37, 40, 43, 48, 49, 80]
         self._precision_halves: bool | None = None
         self._default_precision_halves = False
         # target_temperature step
@@ -122,7 +123,7 @@ class MideaE3Device(MideaDevice):
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._message_protocol_version)
                 message.power = bool(value)
-            elif self.subtype in self._old_subtypes:
+            elif self.subtype in MideaE3Device._old_subtypes:
                 message = self.make_message_set()
                 setattr(message, str(attr), value)
             else:
