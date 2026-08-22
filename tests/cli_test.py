@@ -269,13 +269,26 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "model": "ABCD1234",
             "sn": "0000AC000ABCD1234000000000000000",
         }
+        # An AC serial number: the type byte at sn[4:6] is "00", so the type
+        # must come from the cloud appliance list, not the serial number.
+        cloud_sn = "00000051222270043261305102930000"
+        cloud_appliance = {
+            "name": "AC",
+            "type": 0xAC,
+            "sn": cloud_sn,
+            "sn8": "22270043",
+            "model_number": 44204,
+            "manufacturer_code": "0000",
+            "model": "KFR-72L",
+            "online": True,
+        }
         mock_cloud_instance = AsyncMock()
+        mock_cloud_instance.list_appliances.return_value = {1: cloud_appliance}
         with (
             patch(
                 "midealocal.cli.discover",
                 side_effect=[
                     {},  # test no device
-                    {1: mock_device},  # test cloud login failed
                     {1: mock_device},  # test download lua with host ip
                 ],
             ) as mock_discover,
@@ -285,38 +298,32 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 return_value=mock_cloud_instance,
             ),
         ):
-            await self.cli.download()  # No device found
-            # default is discover with host ip, test result is None
-            mock_discover.assert_called_once_with(ip_address=self.namespace.host)
-            mock_discover.reset_mock()
-
-            mock_cloud_instance.login.side_effect = [
-                False,  # test cloud login failed
-                True,  # test download lua with host ip
-                True,  # test download lua with SN
-                True,  # test download lua with SN
-            ]
-            await self.cli.download()  # Cloud login failed
-            # default is discover with host ip
-            mock_discover.assert_called_once_with(ip_address=self.namespace.host)
-            mock_discover.reset_mock()
-            # test cloud login failed
-            mock_cloud_instance.login.assert_called_once()
-            mock_cloud_instance.login.reset_mock()
-
-            # download lua with host (default is host)
+            # cloud login failed: nothing is discovered or downloaded
+            mock_cloud_instance.login.return_value = False
             await self.cli.download()
-            # default is discover with host ip
+            mock_cloud_instance.login.assert_called_once()
+            mock_discover.assert_not_called()
+            mock_cloud_instance.download_lua.assert_not_called()
+            mock_cloud_instance.login.reset_mock()
+
+            mock_cloud_instance.login.return_value = True
+
+            # host mode but no device found
+            await self.cli.download()
             mock_discover.assert_called_once_with(ip_address=self.namespace.host)
             mock_discover.reset_mock()
-            # cloud login pass
-            mock_cloud_instance.login.assert_called_once()
-            mock_cloud_instance.login.reset_mock()
+            mock_cloud_instance.download_lua.assert_not_called()
+
+            # download lua with host (device type comes from discovery)
+            await self.cli.download()
+            mock_discover.assert_called_once_with(ip_address=self.namespace.host)
+            mock_discover.reset_mock()
             mock_cloud_instance.download_lua.assert_called_once_with(
                 str(Path()),
                 mock_device["type"],
                 mock_device["sn"],
                 mock_device["model"],
+                "0000",
             )
             mock_cloud_instance.download_lua.reset_mock()
             mock_cloud_instance.download_plugin.assert_called_once_with(
@@ -326,54 +333,125 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             )
             mock_cloud_instance.download_plugin.reset_mock()
 
-            # download lua with SN (set host to None and match elif)
+            # download lua with SN: type and model resolved from the cloud list
+            # (the AC serial's sn[4:6] is "00", so the cloud value fixes it)
             self.namespace.host = None
-            self.namespace.device_sn = mock_device["sn"]
+            self.namespace.device_sn = cloud_sn
             await self.cli.download()
-            # skip discover and cloud login pass
-            mock_cloud_instance.login.assert_called_once()
-            mock_cloud_instance.login.reset_mock()
             mock_cloud_instance.download_lua.assert_called_once_with(
                 str(Path()),
-                mock_device["type"],
-                mock_device["sn"],
-                mock_device["model"],
+                cloud_appliance["type"],
+                cloud_sn,
+                cloud_appliance["model"],
+                cloud_appliance["manufacturer_code"],
             )
             mock_cloud_instance.download_lua.reset_mock()
             mock_cloud_instance.download_plugin.assert_called_once_with(
                 str(Path()),
-                mock_device["type"],
-                mock_device["sn"],
+                cloud_appliance["type"],
+                cloud_sn,
             )
             mock_cloud_instance.download_plugin.reset_mock()
 
-            # download lua with SN and device_type
-            self.namespace.host = None
-            self.namespace.device_sn = mock_device["sn"]
+            # download lua with SN and explicit device_type override: the legacy
+            # path, which uses the argument and derives the model from the SN
+            # without consulting the cloud account.
+            self.namespace.device_sn = cloud_sn
             self.namespace.device_type = bytes.fromhex("AC")
             await self.cli.download()
-            # skip discover and cloud login pass
-            mock_cloud_instance.login.assert_called_once()
-            mock_cloud_instance.login.reset_mock()
             mock_cloud_instance.download_lua.assert_called_once_with(
                 str(Path()),
-                mock_device["type"],
-                mock_device["sn"],
-                mock_device["model"],
+                0xAC,
+                cloud_sn,
+                cloud_sn[9:17],
+                "0000",
             )
             mock_cloud_instance.download_lua.reset_mock()
-            mock_cloud_instance.download_plugin.assert_called_once_with(
-                str(Path()),
-                mock_device["type"],
-                mock_device["sn"],
-            )
-            mock_cloud_instance.download_plugin.reset_mock()
+            self.namespace.device_type = bytearray()
 
-            # test no host and no device_sn
+            # SN not on the account and no device_type: legacy fallback derives
+            # the type from sn[4:6] (0xFF here) and the model from sn[9:17].
+            unknown_sn = "0000FF00UNKNOWN00000000000000000"
+            self.namespace.device_sn = unknown_sn
+            await self.cli.download()
+            mock_cloud_instance.download_lua.assert_called_once_with(
+                str(Path()),
+                0xFF,
+                unknown_sn,
+                unknown_sn[9:17],
+                "0000",
+            )
+            mock_cloud_instance.download_lua.reset_mock()
+
+            # SN not on the account with explicit device_type: honored as-is
+            self.namespace.device_sn = unknown_sn
+            self.namespace.device_type = bytes.fromhex("B0")
+            await self.cli.download()
+            mock_cloud_instance.download_lua.assert_called_once_with(
+                str(Path()),
+                0xB0,
+                unknown_sn,
+                unknown_sn[9:17],
+                "0000",
+            )
+            mock_cloud_instance.download_lua.reset_mock()
+            self.namespace.device_type = bytearray()
+
+            # no host and no SN: download every device in the cloud account
             self.namespace.host = None
             self.namespace.device_sn = None
-            # result is None
             await self.cli.download()
+            mock_cloud_instance.download_lua.assert_called_once_with(
+                str(Path()),
+                cloud_appliance["type"],
+                cloud_sn,
+                cloud_appliance["model"],
+                cloud_appliance["manufacturer_code"],
+            )
+            mock_cloud_instance.download_lua.reset_mock()
+
+            # no host, no SN, and no devices on the account
+            mock_cloud_instance.list_appliances.return_value = {}
+            await self.cli.download()
+            mock_cloud_instance.download_lua.assert_not_called()
+
+    async def test_download_not_supported(self) -> None:
+        """Download on a cloud without lua/plugin support is handled cleanly."""
+        cloud_sn = "0000FA00ABCD1234000000000000000A"
+        mock_cloud_instance = AsyncMock()
+        mock_cloud_instance.login.return_value = True
+        mock_cloud_instance.list_appliances.return_value = {}
+        # MideaAirCloud raises NotImplementedError for these downloads.
+        mock_cloud_instance.download_lua.side_effect = NotImplementedError
+        mock_cloud_instance.download_plugin.side_effect = NotImplementedError
+        with patch.object(self.cli, "_get_cloud", return_value=mock_cloud_instance):
+            self.namespace.host = None
+            self.namespace.device_sn = cloud_sn
+            self.namespace.device_type = bytes.fromhex("FA")
+            # Must not raise: the NotImplementedError is caught and logged.
+            await self.cli.download()
+            mock_cloud_instance.download_lua.assert_called_once()
+            # lua download failed, so the plugin download is not attempted.
+            mock_cloud_instance.download_plugin.assert_not_called()
+
+    async def test_download_lua_only(self) -> None:
+        """A cloud with lua but no plugin support downloads lua and warns."""
+        cloud_sn = "0000FA00ABCD1234000000000000000A"
+        mock_cloud_instance = AsyncMock()
+        mock_cloud_instance.login.return_value = True
+        mock_cloud_instance.list_appliances.return_value = {}
+        # Legacy MideaAirCloud: lua downloads, plugin is not supported.
+        mock_cloud_instance.download_lua.return_value = "fileName.lua"
+        mock_cloud_instance.download_plugin.side_effect = NotImplementedError
+        with patch.object(self.cli, "_get_cloud", return_value=mock_cloud_instance):
+            self.namespace.host = None
+            self.namespace.device_sn = cloud_sn
+            self.namespace.device_type = bytes.fromhex("FA")
+            # Must not raise: the plugin NotImplementedError is caught and the
+            # successful lua download stands.
+            await self.cli.download()
+            mock_cloud_instance.download_lua.assert_called_once()
+            mock_cloud_instance.download_plugin.assert_called_once()
 
     async def test_set_attribute(self) -> None:
         """Test set attribute."""
