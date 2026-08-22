@@ -662,7 +662,7 @@ class TestMideaDevice:
                     TimeoutError(),  # real_cmd: timeout (attempt 2, blacklisted)
                 ],
             ),
-            patch.object(self.device, "build_send", return_value=None),
+            patch.object(self.device, "build_send", return_value=None) as build_send,
             patch.object(
                 self.device,
                 "parse_message",
@@ -672,6 +672,8 @@ class TestMideaDevice:
             assert self.device._appliance_query is True
             with pytest.raises(NoSupportedProtocol):
                 self.device.refresh_status(True)
+
+        assert build_send.call_count == 3
 
     def test_refresh_status_appliance_query_failure_is_not_a_real_error(self) -> None:
         """An appliance-query timeout, error, or skip must not count as a real error."""
