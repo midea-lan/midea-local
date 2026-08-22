@@ -75,7 +75,7 @@ class TestMideaE1Device:
         assert isinstance(message, MessageWork)
         assert message.mode == 0x04
 
-    @pytest.mark.parametrize("mode", [None, 0, "neutral_gear"])
+    @pytest.mark.parametrize("mode", [None, 0, "none"])
     def test_start_work_requires_selected_mode(self, mode: str | int | None) -> None:
         """Test starting requires a non-neutral selected mode."""
         self.device._attributes[DeviceAttributes.mode] = mode
