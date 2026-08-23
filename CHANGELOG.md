@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.0.1](https://github.com/midea-lan/midea-local/compare/v10.0.0...v10.0.1) (2026-08-23)
+
+
+### Bug Fixes
+
+* **e1:** align modes,status,progress style ([#714](https://github.com/midea-lan/midea-local/issues/714)) ([4188142](https://github.com/midea-lan/midea-local/commit/418814280c94172083edca8bb742ca884ba82ea6))
+* **e3:** align old_subtypes style ([#713](https://github.com/midea-lan/midea-local/issues/713)) ([f30fb15](https://github.com/midea-lan/midea-local/commit/f30fb1566947d44f00a0212e38129bf957bcf005))
+* **fa:** align fan modes ([#712](https://github.com/midea-lan/midea-local/issues/712)) ([264ab1c](https://github.com/midea-lan/midea-local/commit/264ab1ce9a2a1a80d7d93a0c8763c3bf7ad7a03d))
+* **x34:** align modes,status,progress style ([#715](https://github.com/midea-lan/midea-local/issues/715)) ([bd1b3d0](https://github.com/midea-lan/midea-local/commit/bd1b3d08b4614f44b8a4669944f1330c73f78656))
+
 ## [10.0.0](https://github.com/midea-lan/midea-local/compare/v9.0.0...v10.0.0) (2026-08-22)
 
 
