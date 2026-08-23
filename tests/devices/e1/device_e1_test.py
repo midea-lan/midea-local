@@ -78,6 +78,7 @@ class TestMideaE1Device:
     @pytest.mark.parametrize("mode", [None, 0, "none"])
     def test_start_work_requires_selected_mode(self, mode: str | int | None) -> None:
         """Test starting requires a non-neutral selected mode."""
+        assert self.device.modes[0x00] == "none"
         self.device._attributes[DeviceAttributes.mode] = mode
         with pytest.raises(ValueWrongType, match="No work mode selected"):
             self.device.start_work()
