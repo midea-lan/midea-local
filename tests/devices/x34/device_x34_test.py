@@ -156,7 +156,7 @@ class TestMidea34Device:
         self.device.process_message(bytes(header + body + crc))
         assert self.device.attributes[DeviceAttributes.power] is True
         assert self.device.attributes[DeviceAttributes.status] is None
-        assert self.device.attributes[DeviceAttributes.mode] == "neutral_gear"
+        assert self.device.attributes[DeviceAttributes.mode] == "none"
         assert self.device.attributes[DeviceAttributes.progress] == "idle"
 
     @pytest.mark.parametrize(
