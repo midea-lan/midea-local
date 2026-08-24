@@ -448,6 +448,66 @@ class MeijuCloud(MideaCloud):
             return homes
         return None
 
+    async def get_cloud_keys(self, appliance_id: int) -> dict[int, dict[str, Any]]:
+        """Get keys for device from the Meiju cloud.
+
+        Meiju retired the `/v1/iot/secure/getToken` endpoint the base class uses:
+        its gateway now answers `{"code": 40404}` / "the access address does not
+        exist", so no keys come back at all and every V3 device fails to
+        authenticate with "Can't get available token from Midea server".
+
+        The replacement is `/v2/iot/secure/getToken`, which additionally requires
+        `homegroupId` and expects `applianceCodes` as a list -- passing the plain
+        string the v1 endpoint accepted makes it answer `1002 none parameter is
+        found`.
+
+        Falls back to the inherited v1 implementation when v2 yields nothing, so
+        this stays a no-op for clouds or accounts the old endpoint still serves.
+        """
+        homes = await self.list_home()
+        result: dict[int, dict[str, Any]] = {}
+        for home_id in homes or {}:
+            for method in [1, 2]:
+                udp_id = self._security.get_udp_id(appliance_id, method)
+                data = self._make_general_data()
+                data.update(
+                    {
+                        "homegroupId": str(home_id),
+                        "udpid": udp_id,
+                        "applianceCodes": [str(appliance_id)],
+                    },
+                )
+                response = await self._api_request(
+                    endpoint="/v2/iot/secure/getToken",
+                    data=data,
+                )
+                # Log only the entry count: the payload carries token/key material.
+                tokens = (response or {}).get("tokenlist") or []
+                _LOGGER.debug(
+                    "get_cloud_keys() v2 for appliance_id %s in home %s "
+                    "with method %s returned %s token entries",
+                    appliance_id,
+                    home_id,
+                    method,
+                    len(tokens),
+                )
+                for token in tokens:
+                    if token["udpId"] == udp_id:
+                        result[method] = {
+                            "token": token["token"].lower(),
+                            "key": token["key"].lower(),
+                        }
+            if result:
+                break
+        if not result:
+            _LOGGER.debug(
+                "v2 getToken returned no keys for appliance_id %s, "
+                "falling back to the v1 endpoint",
+                appliance_id,
+            )
+            return await super().get_cloud_keys(appliance_id)
+        return result
+
     async def list_appliances(
         self,
         home_id: str | None,

@@ -1,5 +1,6 @@
 """Test cloud."""
 
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import ClassVar
@@ -22,6 +23,30 @@ from midealocal.cloud import (
     get_preset_account_cloud,
 )
 from midealocal.exceptions import ElementMissing
+
+# ``CloudSecurity.get_udp_id(100, method)``. Hard-coded on purpose: deriving them
+# with the same helper the implementation calls would not catch a request that
+# sends the wrong method's UDP ID.
+UDP_IDS = {
+    1: "dec4da86e0aeefadde14a4e553680b9b",
+    2: "b2dd199071d527a33c8239833a5bf5fb",
+}
+
+
+def _token_requests(session: Mock) -> list[tuple[str, dict]]:
+    """Return (url, payload) for every getToken request the client actually sent.
+
+    The response side_effect only controls what comes back; these assertions
+    pin down what goes out, so a regression to the v1 endpoint or to a
+    string-valued ``applianceCodes`` cannot pass silently.
+    """
+    out = []
+    for call in session.request.await_args_list:
+        url = call.args[1] if len(call.args) > 1 else call.kwargs.get("url", "")
+        if "getToken" not in url:
+            continue
+        out.append((url, json.loads(call.kwargs["data"])))
+    return out
 
 
 class CloudTest(IsolatedAsyncioTestCase):
@@ -221,14 +246,17 @@ class CloudTest(IsolatedAsyncioTestCase):
         response = Mock()
         response.read = AsyncMock(
             side_effect=[
+                # get_cloud_keys() lists homes first, then queries the v2
+                # endpoint per method until one home returns keys.
+                self.responses["meijucloud_list_home.json"],
                 self.responses["meijucloud_get_keys1.json"],
                 self.responses["meijucloud_get_keys2.json"],
+                self.responses["meijucloud_list_home.json"],
                 self.responses["meijucloud_get_keys1.json"],
                 self.responses["cloud_invalid_response.json"],
+                self.responses["meijucloud_list_home.json"],
                 self.responses["cloud_invalid_response.json"],
                 self.responses["meijucloud_get_keys2.json"],
-                self.responses["cloud_invalid_response.json"],
-                self.responses["cloud_invalid_response.json"],
             ],
         )
         session.request = AsyncMock(return_value=response)
@@ -270,6 +298,106 @@ class CloudTest(IsolatedAsyncioTestCase):
         keys = await cloud.get_default_keys()
         assert len(keys) == 1
         assert keys == DEFAULT_KEYS
+
+        # Pin the outbound contract: every lookup must hit v2 and send
+        # homegroupId + udpid + a list-valued applianceCodes.
+        requests = _token_requests(session)
+        assert requests
+        for url, payload in requests:
+            assert url.endswith("/v2/iot/secure/getToken")
+            assert payload["applianceCodes"] == ["100"]
+        # Each of the three lookups stops at the first home that returns a key,
+        # so the exact sequence is home "1" x method 1, method 2 -- three times.
+        assert [(p["homegroupId"], p["udpid"]) for _url, p in requests] == [
+            ("1", UDP_IDS[1]),
+            ("1", UDP_IDS[2]),
+        ] * 3
+
+    async def test_meijucloud_get_keys_v2_fallback_to_v1(self) -> None:
+        """Test MeijuCloud falls back to the v1 endpoint when v2 returns nothing."""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["meijucloud_list_home.json"],
+                # v2, home 1: both methods come back empty
+                self.responses["cloud_invalid_response.json"],
+                self.responses["cloud_invalid_response.json"],
+                # v2, home 2: same
+                self.responses["cloud_invalid_response.json"],
+                self.responses["cloud_invalid_response.json"],
+                # v1 fallback
+                self.responses["meijucloud_get_keys1.json"],
+                self.responses["meijucloud_get_keys2.json"],
+            ],
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "美的美居",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert cloud is not None
+
+        keys: dict = await cloud.get_cloud_keys(100)
+        assert keys[1]["token"] == "method1_return_token1"
+        assert keys[1]["key"] == "method1_return_key1"
+        assert keys[2]["token"] == "method2_return_token2"
+        assert keys[2]["key"] == "method2_return_key2"
+        assert len(keys) == 2
+
+        # v2 is tried for both homes x both methods, then v1 once per method.
+        requests = _token_requests(session)
+        v2 = [r for r in requests if r[0].endswith("/v2/iot/secure/getToken")]
+        v1 = [r for r in requests if r[0].endswith("/v1/iot/secure/getToken")]
+        for _url, payload in v2:
+            assert payload["applianceCodes"] == ["100"]
+        for _url, payload in v1:
+            # the inherited v1 implementation sends the plain string form
+            assert payload["applianceCodes"] == "100"
+        # Both homes are tried, each with both methods, in order.
+        assert [(p["homegroupId"], p["udpid"]) for _url, p in v2] == [
+            ("1", UDP_IDS[1]),
+            ("1", UDP_IDS[2]),
+            ("2", UDP_IDS[1]),
+            ("2", UDP_IDS[2]),
+        ]
+        # v1 keeps the method-specific UDP ID but carries no home.
+        assert [p["udpid"] for _url, p in v1] == [UDP_IDS[1], UDP_IDS[2]]
+        assert all("homegroupId" not in p for _url, p in v1)
+
+    async def test_meijucloud_get_keys_no_home(self) -> None:
+        """Test MeijuCloud get_cloud_keys when the home list is unavailable."""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                # list_home fails, so v2 is skipped entirely
+                self.responses["cloud_invalid_response.json"],
+                # v1 fallback
+                self.responses["meijucloud_get_keys1.json"],
+                self.responses["cloud_invalid_response.json"],
+            ],
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "美的美居",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert cloud is not None
+
+        keys: dict = await cloud.get_cloud_keys(100)
+        assert keys[1]["token"] == "method1_return_token1"
+        assert len(keys) == 1
+
+        # No home list means v2 is skipped entirely; only v1 is called.
+        requests = _token_requests(session)
+        assert requests
+        for url, _payload in requests:
+            assert url.endswith("/v1/iot/secure/getToken")
 
     async def test_meijucloud_list_home(self) -> None:
         """Test MeijuCloud list_home."""
