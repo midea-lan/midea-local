@@ -891,6 +891,17 @@ class TestMideaDevice:
         socket_mock.close.assert_called_once()
         assert self.device._socket is None
 
+    def test_close_socket_rearms_appliance_query(self) -> None:
+        """close_socket must re-arm the appliance query for the next connection.
+
+        _appliance_query is cleared in pre_process_message and was never set
+        back, so a reconnected device skipped protocol detection entirely.
+        """
+        self.device._socket = None
+        self.device._appliance_query = False
+        self.device.close_socket()
+        assert self.device._appliance_query is True
+
     def test_set_ip(self) -> None:
         """Test set ip."""
         with patch.object(self.device, "_socket") as socket_mock:
@@ -1009,21 +1020,25 @@ class TestMideaDevice:
 
         def fake_connect_loop() -> None:
             connect_loop_calls["n"] += 1
-            if connect_loop_calls["n"] > 5:
+            if connect_loop_calls["n"] > 6:
                 self.device._is_run = False
 
+        # NoSupportedProtocol now closes the socket and breaks rather than
+        # continuing on the same one, so it gets its own pass at the end --
+        # if it stayed mid-pass it would end that pass early and the
+        # SUCCESS/heartbeat-timeout script below would never run.
         check_refresh_side_effect = (
             [None, None, None, None]  # passes 1-4: no refresh due
-            + [NoSupportedProtocol()]  # pass 5, iter a: continue
-            + [None]  # pass 5, iter b: refresh ok, then SUCCESS recv
-            + [None] * RESPONSE_TIMEOUT  # pass 5, iters c..: timeouts
+            + [None]  # pass 5, iter a: refresh ok, then SUCCESS recv
+            + [None] * RESPONSE_TIMEOUT  # pass 5, iters b..: timeouts
+            + [NoSupportedProtocol()]  # pass 6: close_socket + break
         )
         recv_side_effect = [
             b"",  # pass 1: empty -> ConnectionResetError
             b"\x01",  # pass 2: parsed as ERROR
             OSError("boom"),  # pass 3
             ValueError("boom"),  # pass 4
-            b"\x01",  # pass 5, iter b: parsed as SUCCESS
+            b"\x01",  # pass 5, iter a: parsed as SUCCESS
             *([TimeoutError()] * RESPONSE_TIMEOUT),  # pass 5: hits the threshold
         ]
         parse_message_side_effect = [MessageResult.ERROR, MessageResult.SUCCESS]
@@ -1047,8 +1062,54 @@ class TestMideaDevice:
         ):
             self.device.run()
 
-        assert connect_loop_calls["n"] == 6
+        assert connect_loop_calls["n"] == 7
         assert self.device._is_run is False
+
+    def test_run_loop_reconnects_when_no_protocol_is_supported(self) -> None:
+        """NoSupportedProtocol must drop the socket, like every other error here.
+
+        Continuing on the same socket could never recover: once every command
+        is in _unsupported_protocol, refresh_status takes the SKIP branch for
+        all of them and performs no socket I/O, so no socket error can ever
+        be raised to break the loop. The device stayed stuck until Home
+        Assistant restarted.
+
+        The discriminator is how many times the refresh is attempted:
+        breaking out reconnects after one, whereas continuing spins on the
+        same dead socket.
+        """
+        attempts = 0
+        connects = 0
+
+        def refresh(_now: float) -> None:
+            nonlocal attempts
+            attempts += 1
+            # Guarantee termination if the break is ever removed: the inner
+            # `while True` never consults _is_run, so clearing that would
+            # spin forever instead of failing.
+            if attempts > 3:
+                raise SystemExit
+            raise NoSupportedProtocol
+
+        def connect_loop() -> None:
+            nonlocal connects
+            connects += 1
+            if connects == 2:
+                self.device._is_run = False
+
+        with (
+            patch.object(self.device, "_connect_loop", side_effect=connect_loop),
+            patch.object(self.device, "_check_refresh", side_effect=refresh),
+            patch.object(self.device, "close_socket") as close_mock,
+        ):
+            self.device._socket = MagicMock()
+            self.device._is_run = True
+            self.device.run()
+
+        assert attempts == 1
+        # The point of the fix: the socket is dropped AND the loop dials again.
+        assert connects == 2
+        close_mock.assert_called_once()
 
     def test_set_attribute(self) -> None:
         """Test set_attribute raises NotImplementedError."""
