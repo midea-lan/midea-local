@@ -2,6 +2,7 @@
 
 import json
 from collections.abc import Callable
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import ClassVar
@@ -72,6 +73,30 @@ _TOSHIBA_ENCRYPTED_SN = (
     "a433df71998b41d4dc354e9bdf78902a"
 )
 _TOSHIBA_EXPECTED_SN = "0008AC0000000000000000000000BEEF"
+
+# ``CloudSecurity.get_udp_id(100, method)``. Hard-coded on purpose: deriving them
+# with the same helper the implementation calls would not catch a request that
+# sends the wrong method's UDP ID.
+UDP_IDS = {
+    1: "dec4da86e0aeefadde14a4e553680b9b",
+    2: "b2dd199071d527a33c8239833a5bf5fb",
+}
+
+
+def _token_requests(session: Mock) -> list[tuple[str, dict]]:
+    """Return (url, payload) for every getToken request the client actually sent.
+
+    The response side_effect only controls what comes back; these assertions
+    pin down what goes out, so a regression to the v1 endpoint or to a
+    string-valued ``applianceCodes`` cannot pass silently.
+    """
+    out = []
+    for call in session.request.await_args_list:
+        url = call.args[1] if len(call.args) > 1 else call.kwargs.get("url", "")
+        if "getToken" not in url:
+            continue
+        out.append((url, json.loads(call.kwargs["data"])))
+    return out
 
 
 class CloudTest(IsolatedAsyncioTestCase):
@@ -161,7 +186,10 @@ class CloudTest(IsolatedAsyncioTestCase):
         response = Mock()
         response.read = AsyncMock(
             side_effect=[
+<<<<<<< HEAD
                 # get_cloud_keys() lists homes first, then queries v2 per method
+=======
+>>>>>>> 3527bbc (fix(cloud): use the v2 getToken endpoint for the Meiju cloud)
                 self.responses["meijucloud_list_home.json"],
                 self.responses["meijucloud_get_keys1.json"],
                 self.responses["meijucloud_get_keys2.json"],
@@ -330,6 +358,7 @@ class CloudTest(IsolatedAsyncioTestCase):
             ("1", UDP_IDS[2]),
         ] * 3
 
+<<<<<<< HEAD
     async def test_meijucloud_get_keys_skips_foreign_udpid(self) -> None:
         """Test get_cloud_keys ignores tokenlist entries for other devices.
 
@@ -366,6 +395,8 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert keys[1]["key"] == "method1_return_key1"
         assert all(k["token"] != "other_device_token" for k in keys.values())
 
+=======
+>>>>>>> 3527bbc (fix(cloud): use the v2 getToken endpoint for the Meiju cloud)
     async def test_meijucloud_get_keys_v2_fallback_to_v1(self) -> None:
         """Test MeijuCloud falls back to the v1 endpoint when v2 returns nothing."""
         session = Mock()

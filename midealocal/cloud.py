@@ -521,12 +521,21 @@ class MeijuCloud(MideaCloud):
                     method,
                     len(tokens),
                 )
+<<<<<<< HEAD
                 self._store_matching_tokens(
                     result=result,
                     tokens=tokens,
                     udp_id=udp_id,
                     method=method,
                 )
+=======
+                for token in tokens:
+                    if token["udpId"] == udp_id:
+                        result[method] = {
+                            "token": token["token"].lower(),
+                            "key": token["key"].lower(),
+                        }
+>>>>>>> 3527bbc (fix(cloud): use the v2 getToken endpoint for the Meiju cloud)
             if result:
                 break
         if not result:
