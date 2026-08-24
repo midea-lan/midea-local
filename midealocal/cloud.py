@@ -123,8 +123,19 @@ def _mask_token(token: str) -> str:
     return visible + block * max(0, len(token) - len(visible))
 
 
+# ``"token": "..."`` / ``"key": "..."`` as they appear in a getToken response,
+# tolerating escaped quotes from ``str(bytes)`` rendering.
+_CREDENTIAL_FIELD = re.compile(
+    r'(\\?["\'](?:token|key)\\?["\']\s*:\s*\\?["\'])([^"\'\\]+)',
+    re.IGNORECASE,
+)
+
+
 def _redact_data(data: str) -> str:
     """Redact sensitive data."""
+    # Do this first: the generic patterns below only chew up parts of a token,
+    # which leaves most of the credential readable and looks redacted.
+    data = _CREDENTIAL_FIELD.sub(lambda m: m.group(1) + _mask_token(m.group(2)), data)
     patterns = [
         # Email
         r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
@@ -277,14 +288,17 @@ class MideaCloud:
                 endpoint="/v1/iot/secure/getToken",
                 data=data,
             )
+            # Log only the entry count: the payload carries token/key material.
+            tokens = (response or {}).get("tokenlist") or []
             _LOGGER.debug(
-                "Response from get_keys() for appliance_id %s with method %s: %s",
+                "get_keys() for appliance_id %s with method %s returned "
+                "%s token entries",
                 appliance_id,
                 method,
-                response,
+                len(tokens),
             )
-            if response and "tokenlist" in response:
-                for token in response["tokenlist"]:
+            if tokens:
+                for token in tokens:
                     if token["udpId"] == udp_id:
                         result[method] = {
                             "token": token["token"].lower(),
