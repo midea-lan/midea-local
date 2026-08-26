@@ -66,7 +66,7 @@ class MideaFADevice(MideaDevice):
         "both",
     ]
     _modes: ClassVar[list[str]] = [
-        "normal",
+        "none",
         "natural",
         "sleep",
         "comfort",
