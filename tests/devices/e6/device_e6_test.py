@@ -86,6 +86,15 @@ class TestMideaE6Device:
             "sleep",
         ]
 
+    def test_preset_modes(self) -> None:
+        """Test preset_modes property returns available modes."""
+        assert self.device.preset_modes == [
+            "normal",
+            "out",
+            "home",
+            "sleep",
+        ]
+
     @pytest.mark.parametrize(
         ("attr", "value"),
         [
