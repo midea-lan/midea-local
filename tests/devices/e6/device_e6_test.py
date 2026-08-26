@@ -79,12 +79,13 @@ class TestMideaE6Device:
 
     def test_heating_modes(self) -> None:
         """Test heating_modes property returns available modes."""
-        assert self.device.heating_modes == [
-            "normal",
-            "out",
-            "home",
-            "sleep",
-        ]
+        with pytest.warns(DeprecationWarning, match="Use preset_modes instead."):
+            assert self.device.heating_modes == [
+                "normal",
+                "out",
+                "home",
+                "sleep",
+            ]
 
     def test_preset_modes(self) -> None:
         """Test preset_modes property returns available modes."""
