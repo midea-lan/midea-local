@@ -831,6 +831,10 @@ class MideaDevice(threading.Thread):
     def close_socket(self) -> None:
         """Close socket."""
         self._unsupported_protocol = []
+        # Re-arm the appliance query too. It is cleared in pre_process_message
+        # and was never set back, so a reconnected device would skip protocol
+        # detection and re-probe with build_query() alone.
+        self._appliance_query = True
         self._buffer = b""
         if self._socket:
             try:
@@ -939,6 +943,8 @@ class MideaDevice(threading.Thread):
             self._previous_refresh = self._previous_heartbeat = start
             # refresh/recv msg loop after connected
             while True:
+                should_reconnect = False
+                error_msg: str | None = None
                 try:
                     if not self._socket:
                         _LOGGER.debug("[%s] Socket is none", self._device_id)
@@ -958,39 +964,35 @@ class MideaDevice(threading.Thread):
                     if result == MessageResult.SUCCESS:
                         timeout_counter = 0
                     if result == MessageResult.ERROR:
-                        _LOGGER.debug("[%s] Message 'ERROR' received", self._device_id)
-                        self.close_socket()
-                        break
+                        error_msg = "Message 'ERROR' received"
+                        should_reconnect = True
                 except TimeoutError:
                     timeout_counter += 1
                     if timeout_counter >= RESPONSE_TIMEOUT:
-                        _LOGGER.debug("[%s] Heartbeat timed out", self._device_id)
-                        self.close_socket()
-                        break
+                        error_msg = "Heartbeat timed out"
+                        should_reconnect = True
                 except SocketException:  # refresh_status
-                    _LOGGER.debug("[%s] Socket Exception", self._device_id)
-                    self.close_socket()
-                    break
+                    error_msg = "Socket Exception"
+                    should_reconnect = True
                 except NoSupportedProtocol:
-                    _LOGGER.debug("[%s] No Supported protocol", self._device_id)
-                    # sleep 1 seconds to prevent high cpu usage in for loop
-                    time.sleep(1)
-                    # ignore and continue loop
-                    continue
+                    error_msg = "No Supported protocol"
+                    should_reconnect = True
                 except ConnectionResetError:  # refresh_status -> build_send exception
-                    _LOGGER.debug("[%s] Connection reset by peer", self._device_id)
-                    self.close_socket()
-                    break
+                    error_msg = "Connection reset by peer"
+                    should_reconnect = True
                 except OSError:  # refresh_status
-                    _LOGGER.debug("[%s] OS error", self._device_id)
-                    self.close_socket()
-                    break
+                    error_msg = "OS error"
+                    should_reconnect = True
                 except Exception as e:
                     _LOGGER.exception(
                         "[%s] Unexpected error",
                         self._device_id,
                         exc_info=e,
                     )
+                    should_reconnect = True
+                if error_msg:
+                    _LOGGER.debug("[%s] %s", self._device_id, error_msg)
+                if should_reconnect:
                     self.close_socket()
                     break
 
