@@ -46,6 +46,8 @@ class DeviceAttributes(StrEnum):
     protection = "protection"
     current_temperature = "current_temperature"
     target_temperature = "target_temperature"
+    temperature_min = "temperature_min"
+    temperature_max = "temperature_max"
     whole_tank_heating = "whole_tank_heating"
     variable_heating = "variable_heating"
     heating_time_remaining = "heating_time_remaining"
@@ -109,6 +111,8 @@ class MideaE2Device(MideaDevice):
                 DeviceAttributes.protection: False,
                 DeviceAttributes.current_temperature: None,
                 DeviceAttributes.target_temperature: 40.0,
+                DeviceAttributes.temperature_min: 30.0,
+                DeviceAttributes.temperature_max: 75.0,
                 DeviceAttributes.whole_tank_heating: False,
                 DeviceAttributes.variable_heating: False,
                 DeviceAttributes.heating_time_remaining: 0,
