@@ -718,6 +718,7 @@ class FloatParser(BodyParser[float]):
         first_upper: bool = True,
         default_raw_value: int = 0,
         transform_func: Callable[[float], float] = lambda data: data,
+        byte_mask: int | None = None,
     ) -> None:
         """Init Float body parser."""
         super().__init__(
@@ -727,6 +728,7 @@ class FloatParser(BodyParser[float]):
             first_upper=first_upper,
             default_raw_value=default_raw_value,
             transform_func=transform_func,
+            byte_mask=byte_mask,
         )
 
     def _parse(self, raw_value: int) -> float:
