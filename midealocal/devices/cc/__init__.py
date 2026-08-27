@@ -71,6 +71,18 @@ class MideaCCDevice(MideaDevice):
         0x08: "auto",
     }
 
+    # Generic HVAC mode names, ordered to match the protocol's mode index.
+    hvac_modes: ClassVar[list[str]] = [
+        "off",
+        "fan_only",
+        "dry",
+        "heat",
+        "cool",
+        "auto",
+    ]
+
+    swing_modes: ClassVar[list[str]] = ["off", "on"]
+
     def __init__(
         self,
         *,
@@ -108,6 +120,36 @@ class MideaCCDevice(MideaDevice):
     def fan_modes(self) -> list[str] | None:
         """Midea CC device fan modes."""
         return None if self._fan_speeds is None else list(self._fan_speeds.values())
+
+    @property
+    def fan_mode(self) -> str | None:
+        """Midea CC device fan mode."""
+        value = self._attributes[DeviceAttributes.fan_speed]
+        return value if isinstance(value, str) else None
+
+    def set_fan_mode(self, fan_mode: str) -> None:
+        """Midea CC device set fan mode."""
+        self.set_attribute(attr=DeviceAttributes.fan_speed, value=fan_mode)
+
+    @property
+    def swing_mode(self) -> str | None:
+        """Midea CC device swing mode."""
+        swing = self._attributes[DeviceAttributes.swing]
+        if not isinstance(swing, bool):
+            return None
+        return "on" if swing else "off"
+
+    def set_swing_mode(self, swing_mode: str) -> None:
+        """Midea CC device set swing mode."""
+        self.set_attribute(attr=DeviceAttributes.swing, value=swing_mode == "on")
+
+    @property
+    def temperature_step(self) -> float | None:
+        """Midea CC device temperature step."""
+        value = self._attributes[DeviceAttributes.temperature_precision]
+        if not isinstance(value, (int, float, str)):
+            return None
+        return float(value)
 
     def build_query(self) -> list[MessageQuery]:
         """Midea CC device build query."""

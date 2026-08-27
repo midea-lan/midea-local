@@ -290,6 +290,58 @@ class TestMideaCCDevice:
             assert msg.target_temperature == 21.0
             assert msg.power is False
 
+    def test_hvac_modes(self) -> None:
+        """Test hvac_modes lists every generic HVAC mode name."""
+        assert self.device.hvac_modes == [
+            "off",
+            "fan_only",
+            "dry",
+            "heat",
+            "cool",
+            "auto",
+        ]
+
+    def test_fan_mode_before_and_after_speed_table_resolved(self) -> None:
+        """Test fan_mode is None until the fan speed table is known."""
+        assert self.device.fan_mode is None
+        self.device.process_message(_legacy_frame(fan_speed=0x08))
+        assert (
+            self.device.fan_mode == self.device.attributes[DeviceAttributes.fan_speed]
+        )
+        assert isinstance(self.device.fan_mode, str)
+
+    def test_set_fan_mode(self) -> None:
+        """Test set_fan_mode writes the fan_speed attribute."""
+        self.device.process_message(_legacy_frame(fan_speed=0x08))
+        fan_modes = self.device.fan_modes
+        assert fan_modes is not None
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_fan_mode(fan_modes[0])
+            mock_send.assert_called_once()
+
+    def test_swing_mode(self) -> None:
+        """Test swing_mode is derived from the swing attribute."""
+        self.device._attributes[DeviceAttributes.swing] = False
+        assert self.device.swing_mode == "off"
+        self.device._attributes[DeviceAttributes.swing] = True
+        assert self.device.swing_mode == "on"
+
+    def test_swing_modes(self) -> None:
+        """Test swing_modes lists off/on."""
+        assert self.device.swing_modes == ["off", "on"]
+
+    def test_set_swing_mode(self) -> None:
+        """Test set_swing_mode writes the swing attribute."""
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_swing_mode("on")
+            msg = mock_send.call_args[0][0]
+            assert msg.swing is True
+
+    def test_temperature_step(self) -> None:
+        """Test temperature_step mirrors temperature_precision."""
+        self.device._attributes[DeviceAttributes.temperature_precision] = 1
+        assert self.device.temperature_step == 1.0
+
 
 class TestMideaCCDeviceFEControl:
     """Test Midea CC Device 0xFE VRF control path."""
