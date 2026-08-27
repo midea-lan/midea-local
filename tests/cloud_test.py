@@ -743,6 +743,8 @@ class CloudTest(IsolatedAsyncioTestCase):
                 self.responses["mideaaircloud_login.json"],
                 self.responses["mideaaircloud_download_lua.json"],
                 self.responses["mideaaircloud_download_lua.json"],
+                b'{"errorCode": 0}',
+                self.responses["mideaaircloud_download_lua.json"],
             ],
         )
         session.request = AsyncMock(return_value=response)
@@ -776,6 +778,19 @@ class CloudTest(IsolatedAsyncioTestCase):
             Path.unlink(file_path)
 
             res.status = 404
+            assert (
+                await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010") is None
+            )
+
+            # luaGet answers with errorCode 0 but no payload: _api_request
+            # returns None and download_lua bails out.
+            res.status = 200
+            assert (
+                await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010") is None
+            )
+
+            # The lua file server returns an empty body.
+            res.text = AsyncMock(return_value="")
             assert (
                 await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010") is None
             )
