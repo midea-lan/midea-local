@@ -26,6 +26,9 @@ class DeviceAttributes(StrEnum):
 class MideaFBDevice(MideaDevice):
     """Midea FB device."""
 
+    # Generic HVAC mode names; FB only distinguishes power on/off.
+    hvac_modes: ClassVar[list[str]] = ["off", "heat"]
+
     _modes: ClassVar[dict[int, str]] = {
         0x01: "auto",
         0x02: "eco",
@@ -92,12 +95,14 @@ class MideaFBDevice(MideaDevice):
     def set_target_temperature(
         self,
         target_temperature: float,
-        mode: int | None,  # noqa: ARG002
+        mode: int | None,
         zone: int | None = None,  # noqa: ARG002
     ) -> None:
         """Midea FB device set target temperature."""
         message = MessageSet(self._message_protocol_version, self.subtype)
         setattr(message, DeviceAttributes.target_temperature, target_temperature)
+        if mode is not None:
+            message.power = True
         self.build_send(message)
 
 
