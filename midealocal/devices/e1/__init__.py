@@ -2,10 +2,10 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, Unpack
+from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
 from midealocal.exceptions import ValueWrongType
 
 from .message import (
@@ -52,6 +52,47 @@ class DeviceAttributes(StrEnum):
 class MideaE1Device(MideaDevice):
     """Midea E1 device."""
 
+    _modes: ClassVar[dict[int, str]] = {
+        0x00: "none",  # BYTE_MODE_NEUTRAL_GEAR
+        0x01: "auto_wash",  # BYTE_MODE_AUTO_WASH
+        0x02: "strong_wash",  # BYTE_MODE_STRONG_WASH
+        0x03: "standard_wash",  # BYTE_MODE_STANDARD_WASH
+        0x04: "eco_wash",  # BYTE_MODE_ECO_WASH
+        0x05: "glass_wash",  # BYTE_MODE_GLASS_WASH
+        0x06: "hour_wash",  # BYTE_MODE_HOUR_WASH
+        0x07: "fast_wash",  # BYTE_MODE_FAST_WASH
+        0x08: "soak_wash",  # BYTE_MODE_SOAK_WASH
+        0x09: "90min",  # BYTE_MODE_90MIN_WASH
+        0x0A: "self_clean",  # BYTE_MODE_SELF_CLEAN
+        0x0B: "fruit_wash",  # BYTE_MODE_FRUIT_WASH
+        0x0C: "self_define",  # BYTE_MODE_SELF_DEFINE
+        0x0D: "germ",  # BYTE_MODE_GERM ???
+        0x0E: "bowl_wash",  # BYTE_MODE_BOWL_WASH
+        0x0F: "kill_germ",  # BYTE_MODE_KILL_GERM
+        0x10: "sea_food_wash",  # BYTE_MODE_SEA_FOOD_WASH
+        0x12: "hot_pot_wash",  # BYTE_MODE_HOT_POT_WASH
+        0x13: "quiet_night_wash",  # BYTE_MODE_QUIET_NIGHT_WASH
+        0x14: "less_wash",  # BYTE_MODE_LESS_WASH
+        0x16: "oil_net_wash",  # BYTE_MODE_OIL_NET_WASH
+        0x19: "cloud_wash",  # BYTE_MODE_CLOUD_WASH
+    }
+    _status: ClassVar[dict[int, str]] = {
+        0x00: "off",
+        0x01: "cancel",
+        0x02: "delay",
+        0x03: "running",
+        0x04: "error",
+        0x05: "soft_gear",
+    }
+    _progress: ClassVar[list[str]] = [
+        "idle",
+        "pre_wash",
+        "wash",
+        "rinse",
+        "dry",
+        "complete",
+    ]
+
     def __init__(
         self,
         *,
@@ -89,39 +130,6 @@ class MideaE1Device(MideaDevice):
                 DeviceAttributes.bright: 0,
             },
         )
-        self._modes = {
-            0x00: "Neutral Gear",  # BYTE_MODE_NEUTRAL_GEAR
-            0x01: "Auto Wash",  # BYTE_MODE_AUTO_WASH
-            0x02: "Strong Wash",  # BYTE_MODE_STRONG_WASH
-            0x03: "Standard Wash",  # BYTE_MODE_STANDARD_WASH
-            0x04: "ECO Wash",  # BYTE_MODE_ECO_WASH
-            0x05: "Glass Wash",  # BYTE_MODE_GLASS_WASH
-            0x06: "Hour Wash",  # BYTE_MODE_HOUR_WASH
-            0x07: "Fast Wash",  # BYTE_MODE_FAST_WASH
-            0x08: "Soak Wash",  # BYTE_MODE_SOAK_WASH
-            0x09: "90Min",  # BYTE_MODE_90MIN_WASH
-            0x0A: "Self Clean",  # BYTE_MODE_SELF_CLEAN
-            0x0B: "Fruit Wash",  # BYTE_MODE_FRUIT_WASH
-            0x0C: "Self Define",  # BYTE_MODE_SELF_DEFINE
-            0x0D: "Germ",  # BYTE_MODE_GERM ???
-            0x0E: "Bowl Wash",  # BYTE_MODE_BOWL_WASH
-            0x0F: "Kill Germ",  # BYTE_MODE_KILL_GERM
-            0x10: "Sea Food Wash",  # BYTE_MODE_SEA_FOOD_WASH
-            0x12: "Hot Pot Wash",  # BYTE_MODE_HOT_POT_WASH
-            0x13: "Quiet Night Wash",  # BYTE_MODE_QUIET_NIGHT_WASH
-            0x14: "Less Wash",  # BYTE_MODE_LESS_WASH
-            0x16: "Oil Net Wash",  # BYTE_MODE_OIL_NET_WASH
-            0x19: "Cloud Wash",  # BYTE_MODE_CLOUD_WASH
-        }
-        self._status = {
-            0x00: "Power Off",
-            0x01: "Cancel",
-            0x02: "Delay",
-            0x03: "Running",
-            0x04: "Error",
-            0x05: "Soft Gear",
-        }
-        self._progress = ["Idle", "Pre-wash", "Wash", "Rinse", "Dry", "Complete"]
 
     @property
     def modes(self) -> dict[int, str]:
@@ -132,7 +140,7 @@ class MideaE1Device(MideaDevice):
         Mapping of mode codes to names.
 
         """
-        return self._modes.copy()
+        return MideaE1Device._modes.copy()
 
     def build_query(self) -> list[MessageQuery]:
         """Midea E1 device build query."""
@@ -147,7 +155,7 @@ class MideaE1Device(MideaDevice):
             If the mode code is not supported.
 
         """
-        if mode not in self._modes:
+        if mode not in MideaE1Device._modes:
             msg = f"[e1] Unsupported work mode: {mode}"
             raise ValueWrongType(msg)
 
@@ -174,7 +182,7 @@ class MideaE1Device(MideaDevice):
             raise ValueWrongType(msg)
 
         mode = next(
-            (code for code, name in self._modes.items() if name == mode_name),
+            (code for code, name in MideaE1Device._modes.items() if name == mode_name),
             None,
         )
         if mode is None or mode == 0:
@@ -186,23 +194,14 @@ class MideaE1Device(MideaDevice):
         """Midea E1 device process message."""
         message = MessageE1Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.status:
-                    self._attributes[status] = self._status.get(value)
-                elif status == DeviceAttributes.progress:
-                    if value < len(self._progress):
-                        self._attributes[status] = self._progress[value]
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.mode:
-                    self._attributes[status] = self._modes.get(value)
-                else:
-                    self._attributes[status] = getattr(message, str(status))
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.status: MideaE1Device._status.get,
+                DeviceAttributes.progress: list_translator(MideaE1Device._progress),
+                DeviceAttributes.mode: MideaE1Device._modes.get,
+            },
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea E1 device set attribute."""

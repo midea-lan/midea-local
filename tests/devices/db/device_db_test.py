@@ -96,7 +96,7 @@ class TestMideaDBDevice:
         assert self.device.attributes[DeviceAttributes.status] == "start"
         assert self.device.attributes[DeviceAttributes.mode] == "normal"
         assert self.device.attributes[DeviceAttributes.program] == "fast_wash"
-        assert self.device.attributes[DeviceAttributes.water_level] == "High"
+        assert self.device.attributes[DeviceAttributes.water_level] == "high"
         assert self.device.attributes[DeviceAttributes.temperature] == "40"
         assert self.device.attributes[DeviceAttributes.dehydration_speed] == "1200"
         assert self.device.attributes[DeviceAttributes.wash_time] == 0x28
@@ -104,7 +104,7 @@ class TestMideaDBDevice:
         assert self.device.attributes[DeviceAttributes.detergent] == 1
         assert self.device.attributes[DeviceAttributes.softener] == 2
         assert self.device.attributes[DeviceAttributes.washing_data] == body[3:16]
-        assert self.device.attributes[DeviceAttributes.progress] == "Spin"
+        assert self.device.attributes[DeviceAttributes.progress] == "spin"
         assert self.device.attributes[DeviceAttributes.stains] == 3
         assert self.device.attributes[DeviceAttributes.time_remaining] == 286
         assert self.device.attributes[DeviceAttributes.wash_time_value] == 0x28
@@ -134,7 +134,7 @@ class TestMideaDBDevice:
         assert self.device.attributes[DeviceAttributes.water_level] == 6
         assert self.device.attributes[DeviceAttributes.temperature] == 0x10
         assert self.device.attributes[DeviceAttributes.dehydration_speed] == 9
-        assert self.device.attributes[DeviceAttributes.progress] == "Idle"
+        assert self.device.attributes[DeviceAttributes.progress] == "idle"
         assert self.device.attributes[DeviceAttributes.time_remaining] is None
 
     def test_unexpected_response(self) -> None:

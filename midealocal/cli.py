@@ -97,7 +97,7 @@ class MideaCLI:
         # Dump only basic device info from the base class
         _LOGGER.info("Found %d devices.", len(devices))
         # get sn
-        if self.namespace.get_sn:
+        if getattr(self.namespace, "get_sn", False):
             _LOGGER.info("Found devices: %s", devices)
             return device_list
         for device in devices.values():

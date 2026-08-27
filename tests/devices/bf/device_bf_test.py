@@ -65,13 +65,13 @@ class TestMideaBFDevice:
         body[32] = 0x16  # door + tank_ejected + change_reminder
         result = self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.door] is True
-        assert self.device.attributes[DeviceAttributes.status] == "Working"
+        assert self.device.attributes[DeviceAttributes.status] == "working"
         assert self.device.attributes[DeviceAttributes.time_remaining] == 3661
         assert self.device.attributes[DeviceAttributes.current_temperature] == 300
         assert self.device.attributes[DeviceAttributes.tank_ejected] is True
         assert self.device.attributes[DeviceAttributes.water_change_reminder] is True
-        assert self.device.attributes[DeviceAttributes.water_shortage] is None
-        assert result[DeviceAttributes.status.value] == "Working"
+        assert self.device.attributes[DeviceAttributes.water_shortage] is False
+        assert result[DeviceAttributes.status.value] == "working"
 
     def test_notify_response_fallback_temperature(self) -> None:
         """Test notify1 response with fallback temperature and unknown status."""
@@ -88,7 +88,7 @@ class TestMideaBFDevice:
         body[31] = 0x07  # unknown status
         self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.door] is False
-        assert self.device.attributes[DeviceAttributes.status] == "Unknown"
+        assert self.device.attributes[DeviceAttributes.status] == "unknown"
         assert self.device.attributes[DeviceAttributes.time_remaining] == 0
         assert self.device.attributes[DeviceAttributes.current_temperature] == 100
         assert self.device.attributes[DeviceAttributes.tank_ejected] is False

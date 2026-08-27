@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
 
 from .message import MessageEAResponse, MessageQuery
 
@@ -130,7 +130,7 @@ class MideaEADevice(MideaDevice):
         + ["unknown"] * 5
         + ["keep_warm"]
     )
-    _progress: ClassVar[list[str]] = ["Idle", "Delay", "Cooking", "Keep-warm"]
+    _progress: ClassVar[list[str]] = ["idle", "delay", "cooking", "keep_warm"]
 
     def __init__(
         self,
@@ -150,7 +150,7 @@ class MideaEADevice(MideaDevice):
                 DeviceAttributes.top_temperature: None,
                 DeviceAttributes.bottom_temperature: None,
                 DeviceAttributes.keep_warm_time: None,
-                DeviceAttributes.progress: "Unknown",
+                DeviceAttributes.progress: "unknown",
             },
         )
 
@@ -162,24 +162,19 @@ class MideaEADevice(MideaDevice):
         """Midea EA device process message."""
         message = MessageEAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.progress:
-                    if value < len(MideaEADevice._progress):
-                        self._attributes[status] = MideaEADevice._progress[value]
-                    else:
-                        self._attributes[status] = "Unknown"
-                elif status == DeviceAttributes.mode:
-                    if value < len(MideaEADevice._mode_list):
-                        self._attributes[status] = MideaEADevice._mode_list[value]
-                    else:
-                        self._attributes[status] = "Cloud"
-                else:
-                    self._attributes[status] = value
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.progress: list_translator(
+                    MideaEADevice._progress,
+                    default="unknown",
+                ),
+                DeviceAttributes.mode: list_translator(
+                    MideaEADevice._mode_list,
+                    default="cloud",
+                ),
+            },
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea EA device set attribute."""

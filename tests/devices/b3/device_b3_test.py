@@ -104,19 +104,19 @@ class TestMideaB3Device:
         )
         body = bytearray(26)
         body[0] = 0x31  # Body type
-        body[1] = 0x02  # top status Working
+        body[1] = 0x02  # top status working
         body[2] = 0x01  # top mode
         body[3] = 50  # top temperature
         body[4] = 0xFF
         body[5] = 0xFF
-        body[6] = 0x01  # bottom status Standby
+        body[6] = 0x01  # bottom status standby
         body[7] = 0x02  # bottom mode
         body[8] = 60  # bottom temperature
         body[9] = 0xFF
         body[10] = 0xFF
         body[11] = 0x17  # lock + bottom door + top door + middle door
         body[16] = 0x3F  # all preheating + cooling
-        body[17] = 0x03  # middle status Delay
+        body[17] = 0x03  # middle status delay
         body[18] = 0x03  # middle mode
         body[19] = 70  # middle temperature
         body[20] = 0xFF
@@ -127,7 +127,7 @@ class TestMideaB3Device:
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
         assert (
-            self.device.attributes[DeviceAttributes.top_compartment_status] == "Working"
+            self.device.attributes[DeviceAttributes.top_compartment_status] == "working"
         )
         assert self.device.attributes[DeviceAttributes.top_compartment_mode] == 1
         assert (
@@ -143,7 +143,7 @@ class TestMideaB3Device:
         assert self.device.attributes[DeviceAttributes.top_compartment_cooling] is True
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_status]
-            == "Standby"
+            == "standby"
         )
         assert self.device.attributes[DeviceAttributes.bottom_compartment_mode] == 2
         assert (
@@ -164,7 +164,7 @@ class TestMideaB3Device:
         )
         assert (
             self.device.attributes[DeviceAttributes.middle_compartment_status]
-            == "Delay"
+            == "delay"
         )
         assert self.device.attributes[DeviceAttributes.middle_compartment_mode] == 3
         assert (
@@ -192,12 +192,12 @@ class TestMideaB3Device:
         )
         body = bytearray(22)
         body[0] = 0x41  # Body type
-        body[1] = 0x00  # top status Off
+        body[1] = 0x00  # top status off
         body[2] = 0x00  # top mode
         body[3] = 0  # top temperature
         body[4] = 2  # top remaining minutes -> 120
         body[5] = 0xFF
-        body[6] = 0x04  # bottom status Finished
+        body[6] = 0x04  # bottom status finished
         body[7] = 1  # bottom mode
         body[8] = 30  # bottom temperature
         body[9] = 0xFF
@@ -209,11 +209,11 @@ class TestMideaB3Device:
         body[21] = 0xFF  # middle remaining -> 0
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
-        assert self.device.attributes[DeviceAttributes.top_compartment_status] == "Off"
+        assert self.device.attributes[DeviceAttributes.top_compartment_status] == "off"
         assert self.device.attributes[DeviceAttributes.top_compartment_remaining] == 120
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_status]
-            == "Finished"
+            == "finished"
         )
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_remaining] == 5
@@ -240,19 +240,19 @@ class TestMideaB3Device:
         )
         body = bytearray(32)
         body[0] = 0x00  # Body type
-        body[1] = 0x02  # top status Working
+        body[1] = 0x02  # top status working
         body[2] = 1  # top mode
         body[3] = 50  # top temperature
         body[4] = 1  # top hours -> 60
         body[5] = 2  # top minutes -> 2
         body[6] = 60  # top seconds -> 1.0
-        body[10] = 0x01  # bottom status Standby
+        body[10] = 0x01  # bottom status standby
         body[11] = 2  # bottom mode
         body[12] = 65  # bottom temperature
         body[13] = 0  # bottom hours -> 0
         body[14] = 10  # bottom minutes -> 10
         body[15] = 120  # bottom seconds -> 2.0
-        body[19] = 0x03  # middle status Delay
+        body[19] = 0x03  # middle status delay
         body[20] = 1  # middle mode
         body[21] = 70  # middle temperature
         body[30] = 0x0F  # lock + all doors
@@ -260,14 +260,14 @@ class TestMideaB3Device:
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
         assert (
-            self.device.attributes[DeviceAttributes.top_compartment_status] == "Working"
+            self.device.attributes[DeviceAttributes.top_compartment_status] == "working"
         )
         assert (
             self.device.attributes[DeviceAttributes.top_compartment_remaining] == 63.0
         )
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_status]
-            == "Standby"
+            == "standby"
         )
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_remaining]
@@ -275,7 +275,7 @@ class TestMideaB3Device:
         )
         assert (
             self.device.attributes[DeviceAttributes.middle_compartment_status]
-            == "Delay"
+            == "delay"
         )
         assert (
             self.device.attributes[DeviceAttributes.middle_compartment_remaining] == 0.0
@@ -310,11 +310,11 @@ class TestMideaB3Device:
         )
         body = bytearray(32)
         body[0] = 0x00  # Body type
-        body[1] = 0x04  # top status Finished
+        body[1] = 0x04  # top status finished
         body[4] = 0xFF
         body[5] = 0xFF
         body[6] = 0xFF
-        body[10] = 0x00  # bottom status Off
+        body[10] = 0x00  # bottom status off
         body[13] = 0xFF
         body[14] = 0xFF
         body[15] = 0xFF
@@ -326,11 +326,11 @@ class TestMideaB3Device:
         self.device.process_message(bytes(header + body + crc))
         assert (
             self.device.attributes[DeviceAttributes.top_compartment_status]
-            == "Finished"
+            == "finished"
         )
         assert self.device.attributes[DeviceAttributes.top_compartment_remaining] == 0
         assert (
-            self.device.attributes[DeviceAttributes.bottom_compartment_status] == "Off"
+            self.device.attributes[DeviceAttributes.bottom_compartment_status] == "off"
         )
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_remaining] == 0
@@ -354,39 +354,39 @@ class TestMideaB3Device:
         )
         body = bytearray(20)
         body[0] = 0x21  # Body type
-        body[1] = 0x01  # top status Standby
+        body[1] = 0x01  # top status standby
         body[2] = 1  # top mode
         body[3] = 40  # top temperature
         body[4] = 0xFF
         body[5] = 0xFF
-        body[6] = 0x02  # bottom status Working
+        body[6] = 0x02  # bottom status working
         body[7] = 2  # bottom mode
         body[8] = 50  # bottom temperature
         body[9] = 0xFF
         body[10] = 0xFF
         body[11] = 0x01  # lock
-        body[12] = 0x00  # middle status Off
+        body[12] = 0x00  # middle status off
         body[17] = 1  # top remaining hours
         body[18] = 2  # bottom remaining hours
         body[19] = 3  # middle remaining hours
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
         assert (
-            self.device.attributes[DeviceAttributes.top_compartment_status] == "Standby"
+            self.device.attributes[DeviceAttributes.top_compartment_status] == "standby"
         )
         assert (
             self.device.attributes[DeviceAttributes.top_compartment_remaining] == 3600
         )
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_status]
-            == "Working"
+            == "working"
         )
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_remaining]
             == 7200
         )
         assert (
-            self.device.attributes[DeviceAttributes.middle_compartment_status] == "Off"
+            self.device.attributes[DeviceAttributes.middle_compartment_status] == "off"
         )
         assert (
             self.device.attributes[DeviceAttributes.middle_compartment_remaining]
@@ -401,29 +401,29 @@ class TestMideaB3Device:
         )
         body = bytearray(17)
         body[0] = 0x24  # Body type
-        body[1] = 0x00  # top status Off
+        body[1] = 0x00  # top status off
         body[4] = 0xFF
         body[5] = 3  # top remaining -> 3
-        body[6] = 0x04  # bottom status Finished
+        body[6] = 0x04  # bottom status finished
         body[9] = 1  # bottom remaining minutes -> 60
         body[11] = 0x00  # lock off
-        body[12] = 0x03  # middle status Delay
+        body[12] = 0x03  # middle status delay
         body[15] = 0xFF
         body[16] = 0xFF  # middle remaining -> 0
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
-        assert self.device.attributes[DeviceAttributes.top_compartment_status] == "Off"
+        assert self.device.attributes[DeviceAttributes.top_compartment_status] == "off"
         assert self.device.attributes[DeviceAttributes.top_compartment_remaining] == 3
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_status]
-            == "Finished"
+            == "finished"
         )
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_remaining] == 60
         )
         assert (
             self.device.attributes[DeviceAttributes.middle_compartment_status]
-            == "Delay"
+            == "delay"
         )
         assert (
             self.device.attributes[DeviceAttributes.middle_compartment_remaining] == 0

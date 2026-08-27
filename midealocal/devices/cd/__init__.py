@@ -2,11 +2,18 @@
 
 import json
 import logging
+from collections.abc import Callable
 from enum import IntEnum, StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import (
+    SKIP_ATTRIBUTE,
+    MideaDevice,
+    MideaDeviceInitKwargs,
+    dict_translator,
+    sentinel_translator,
+)
 
 from .message import (
     MessageCDBase,
@@ -94,14 +101,23 @@ class MideaCDDevice(MideaDevice):
     """Midea CD device."""
 
     _modes: ClassVar[dict[int, str]] = {
-        0x00: "None",
-        0x01: "Energy-save",
-        0x02: "Standard",
-        0x03: "Dual",
-        0x04: "Smart",
-        0x05: "Vacation",
+        0x00: "none",
+        0x01: "energy_save",
+        0x02: "standard",
+        0x03: "dual",
+        0x04: "smart",
+        0x05: "vacation",
     }
     _vacation_mode_key: ClassVar[int] = 0x05
+    # models that report over the new (raw °C) Lua protocol
+    _new_protocol_models: ClassVar[frozenset[str]] = frozenset(
+        {"RSJRAC01", "RSJRAC06", "RSJRAC07", "2530001N"},
+    )
+    # new-protocol models whose outdoor/current temps still need the old
+    # fahrenheit/°C decoding quirk (RSJRAC01 does not need this)
+    _forced_temperature_models: ClassVar[frozenset[str]] = frozenset(
+        {"RSJRAC06", "RSJRAC07", "2530001N"},
+    )
 
     def __init__(
         self,
@@ -209,18 +225,13 @@ class MideaCDDevice(MideaDevice):
             return_value = LuaProtocol(value)
             # auto mode, use model to set value as old or new
             if return_value == LuaProtocol.auto:
-                # new protocol: models RSJRAC01, RSJRAC06, RSJRAC07
                 # old protocol: RSJ18RD2 (subtype 186), confirmed by
                 # real-device messages. Raw body[3]=148 decodes to 59C
                 # only with old protocol: (148-30)/2=59.
                 # subtype 186 was previously mapped to new protocol from
                 # an unverified RSJ000CB assumption; subtype alone cannot
                 # distinguish models with different protocol versions.
-                check_device = self.model in {
-                    "RSJRAC01",
-                    "RSJRAC06",
-                    "RSJRAC07",
-                }
+                check_device = self.model in self._new_protocol_models
                 return_value = LuaProtocol.new if check_device else LuaProtocol.old
         if isinstance(value, bool | int):
             return_value = LuaProtocol.new if value else LuaProtocol.old
@@ -248,121 +259,122 @@ class MideaCDDevice(MideaDevice):
             MessageQueryDaily(self._message_protocol_version),
         ]
 
-    def process_message(self, msg: bytes) -> dict[str, Any]:  # noqa: C901
+    def _make_temperature_translator(
+        self,
+        attr: DeviceAttributes,
+    ) -> Callable[[float], Any]:
+        """Build a translator for one of the seven temperature-family attrs."""
+        force_fahrenheit = (
+            self.model in self._forced_temperature_models
+            and attr == DeviceAttributes.outdoor_temperature
+        )
+        force_old = (
+            self.model in self._forced_temperature_models
+            and attr == DeviceAttributes.current_temperature
+        )
+        is_bounded = attr in {
+            DeviceAttributes.max_temperature,
+            DeviceAttributes.min_temperature,
+            DeviceAttributes.target_temperature,
+            DeviceAttributes.current_temperature,
+        }
+
+        def _translate(raw_value: float) -> Any:  # noqa: ANN401
+            parsed = self._value_to_temperature(
+                raw_value,
+                force_fahrenheit=force_fahrenheit,
+                force_old=force_old,
+            )
+            if not is_bounded:
+                return parsed
+            # Defensive: ignore invalid zeros for min/max/target/current at
+            # startup, preserving any existing non-zero value instead.
+            try:
+                pv = float(parsed) if parsed is not None else None
+            except Exception:  # noqa: BLE001
+                pv = None
+            if pv is None or pv <= 0:
+                existing = self._attributes.get(attr)
+                if isinstance(existing, int | float) and existing > 0:
+                    # keep the existing valid reading, drop the invalid one
+                    return existing
+                # no valid existing reading either: store the invalid/zero
+                # value anyway, same as the non-bounded temperature attrs
+            return parsed
+
+        return _translate
+
+    @staticmethod
+    def _translate_sterilize_time(clamp: Callable[[int], int]) -> Callable[[Any], Any]:
+        """Build a translator that keeps only plausible schedule time values.
+
+        SET echoes may omit these fields, and status frames can carry
+        impossible values in these positions; never expose those as HA state
+        because later SET calls reuse the stored attributes.
+        """
+
+        def _translate(value: Any) -> Any:  # noqa: ANN401
+            if value is None:
+                return SKIP_ATTRIBUTE
+            value = int(value)
+            return value if value == clamp(value) else None
+
+        return _translate
+
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea CD device process message."""
         message = MessageCDResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status: dict[str, Any] = {}
         if hasattr(message, "fields"):
             self._fields = message.fields
         # parse fahrenheit switch for temperature value
         if hasattr(message, DeviceAttributes.fahrenheit):
             self._fahrenheit = getattr(message, DeviceAttributes.fahrenheit)
-        for attr in self._attributes:
-            if hasattr(message, str(attr)):
-                raw_value = getattr(message, str(attr))
-                # parse modes
-                if attr == DeviceAttributes.mode:
-                    mode_str = MideaCDDevice._modes.get(raw_value)
-                    if mode_str is not None:
-                        # Only update when the value is a recognised mode key
-                        # to prevent transient unrecognised values (e.g. 8)
-                        # from the SET-echo corrupting the displayed mode.
-                        self._attributes[attr] = mode_str
-                        new_status[str(attr)] = mode_str
-                    # Skip unknown values; the next device status notification
-                    # will correct the mode.
-                    continue
-                # process temperature family
-                if attr in [
-                    DeviceAttributes.max_temperature,
-                    DeviceAttributes.min_temperature,
-                    DeviceAttributes.target_temperature,
-                    DeviceAttributes.current_temperature,
-                    DeviceAttributes.outdoor_temperature,
-                    DeviceAttributes.condenser_temperature,
-                    DeviceAttributes.compressor_temperature,
-                ]:
-                    is_outdoor_temp = attr == DeviceAttributes.outdoor_temperature
-                    is_current_temp = attr == DeviceAttributes.current_temperature
-                    parsed = self._value_to_temperature(
-                        raw_value,
-                        force_fahrenheit=(
-                            self.model in ["RSJRAC06", "RSJRAC07"] and is_outdoor_temp
-                        ),
-                        force_old=(
-                            self.model in ["RSJRAC06", "RSJRAC07"] and is_current_temp
-                        ),
-                    )
-                    # Defensive: ignore invalid zeros for min/max/target/current
-                    # at startup
-                    if attr in [
-                        DeviceAttributes.max_temperature,
-                        DeviceAttributes.min_temperature,
-                        DeviceAttributes.target_temperature,
-                        DeviceAttributes.current_temperature,
-                    ]:
-                        try:
-                            pv = float(parsed) if parsed is not None else None
-                        except Exception:  # noqa: BLE001
-                            pv = None
-                        if pv is None or pv <= 0:
-                            # preserve existing non-zero value
-                            existing = self._attributes.get(attr)
-                            if isinstance(existing, int | float) and existing > 0:
-                                new_status[str(attr)] = existing
-                                continue
-                    self._attributes[attr] = parsed
-                    new_status[str(attr)] = self._attributes[attr]
-                    continue
+
+        temperature_attrs = [
+            DeviceAttributes.max_temperature,
+            DeviceAttributes.min_temperature,
+            DeviceAttributes.target_temperature,
+            DeviceAttributes.current_temperature,
+            DeviceAttributes.outdoor_temperature,
+            DeviceAttributes.condenser_temperature,
+            DeviceAttributes.compressor_temperature,
+        ]
+        return self.update_attributes_from_message(
+            message,
+            {
+                # Only update mode on a recognised mode key, to prevent
+                # transient unrecognised values (e.g. 8) from a SET-echo
+                # corrupting the displayed mode; the next status notification
+                # will correct it.
+                DeviceAttributes.mode: dict_translator(
+                    MideaCDDevice._modes,
+                    default=SKIP_ATTRIBUTE,
+                ),
+                **{
+                    attr: self._make_temperature_translator(attr)
+                    for attr in temperature_attrs
+                },
                 # disinfection_temperature is already decoded (°C) by the
-                # message body class; no protocol conversion needed.  Skip
-                # None values so that a previous valid reading is preserved
-                # (e.g. when sterilize is turned off the echo body sends an
-                # out-of-range value and the message class sets None).
-                if attr == DeviceAttributes.disinfection_temperature:
-                    if raw_value is not None:
-                        self._attributes[attr] = raw_value
-                        new_status[str(attr)] = raw_value
-                    continue
-                # SET echoes may omit week when body[3] is a temperature echo.
-                # Status frames can also carry impossible values in these
-                # positions; never expose those as HA state because later SET
-                # calls reuse the stored attributes.
-                if attr == DeviceAttributes.auto_sterilize_week:
-                    if raw_value is not None:
-                        value = int(raw_value)
-                        if value == MessageSetSterilize.clamp_week(value):
-                            self._attributes[attr] = value
-                            new_status[str(attr)] = value
-                        else:
-                            self._attributes[attr] = None
-                            new_status[str(attr)] = None
-                    continue
-                # Store only plausible schedule time values. Writes sanitize
-                # again, but HA state should not show impossible times.
-                if attr in [
-                    DeviceAttributes.auto_sterilize_hour,
-                    DeviceAttributes.auto_sterilize_minute,
-                ]:
-                    if raw_value is not None:
-                        value = int(raw_value)
-                        clamp = (
-                            MessageSetSterilize.clamp_hour
-                            if attr == DeviceAttributes.auto_sterilize_hour
-                            else MessageSetSterilize.clamp_minute
-                        )
-                        if value == clamp(value):
-                            self._attributes[attr] = value
-                            new_status[str(attr)] = value
-                        else:
-                            self._attributes[attr] = None
-                            new_status[str(attr)] = None
-                    continue
-                # non-temperature attributes
-                self._attributes[attr] = raw_value
-                new_status[str(attr)] = self._attributes[attr]
-        return new_status
+                # message body class; no protocol conversion needed. Skip
+                # None values so a previous valid reading is preserved (e.g.
+                # when sterilize is off the echo body sends an out-of-range
+                # value and the message class sets None).
+                DeviceAttributes.disinfection_temperature: sentinel_translator(
+                    None,
+                    SKIP_ATTRIBUTE,
+                ),
+                DeviceAttributes.auto_sterilize_week: self._translate_sterilize_time(
+                    MessageSetSterilize.clamp_week,
+                ),
+                DeviceAttributes.auto_sterilize_hour: self._translate_sterilize_time(
+                    MessageSetSterilize.clamp_hour,
+                ),
+                DeviceAttributes.auto_sterilize_minute: self._translate_sterilize_time(
+                    MessageSetSterilize.clamp_minute,
+                ),
+            },
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea CD device set attribute."""
@@ -457,9 +469,9 @@ class MideaCDDevice(MideaDevice):
             # Note: when vacation is active the stored mode is "Vacation" (0x05)
             # which is NOT a valid modeValue for the device.  We handle that
             # explicitly in the vacation branches below.
-            if current_mode is None or current_mode == "None":
+            if current_mode is None or current_mode == "none":
                 message.mode = 0x00
-            elif current_mode == "Vacation":
+            elif current_mode == "vacation":
                 # Do not send 0x05 as modeValue; the device does not support it.
                 # Fall back to 0x00 (no explicit operating mode).
                 message.mode = 0x00
@@ -492,6 +504,10 @@ class MideaCDDevice(MideaDevice):
                     )
                     return  # Don't send invalid mode
                 message.mode = mode_key
+                # None has no on-device meaning distinct from Off; selecting
+                # it powers the unit off, selecting any other mode powers it
+                # back on.
+                message.power = mode_key != 0x00
 
             elif attr == DeviceAttributes.power:
                 message.power = bool(value)

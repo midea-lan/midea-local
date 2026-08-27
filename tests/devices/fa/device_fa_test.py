@@ -61,7 +61,7 @@ class TestMideaFADevice:
         """Test properties."""
         assert self.device.speed_count == 3
         assert self.device.oscillation_angles == [
-            "Off",
+            "off",
             "30",
             "60",
             "90",
@@ -70,28 +70,41 @@ class TestMideaFADevice:
             "360",
         ]
         assert self.device.tilting_angles == [
-            "Off",
+            "off",
             "30",
             "60",
             "90",
             "120",
             "180",
             "360",
-            "+60",
-            "-60",
+            "plus_60",
+            "minus_60",
             "40",
         ]
         assert self.device.oscillation_modes == [
-            "Off",
-            "Oscillation",
-            "Tilting",
-            "Curve-W",
-            "Curve-8",
-            "Reserved",
-            "Both",
+            "off",
+            "oscillation",
+            "tilting",
+            "curve_w",
+            "curve_8",
+            "reserved",
+            "both",
         ]
-        assert self.device.preset_modes[0] == "Normal"
-        assert len(self.device.preset_modes) == 13
+        assert self.device.preset_modes == [
+            "none",
+            "natural",
+            "sleep",
+            "comfort",
+            "silent",
+            "baby",
+            "induction",
+            "circulation",
+            "strong",
+            "soft",
+            "customize",
+            "warm",
+            "smart",
+        ]
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -103,7 +116,7 @@ class TestMideaFADevice:
         """Test query response with a full-length body and valid values."""
         body = bytearray(36)
         body[3] = 0x01  # child lock on
-        body[4] = 0x03  # power on, mode raw 1 -> Normal
+        body[4] = 0x03  # power on, mode raw 1 -> "none"
         body[5] = 0x03  # fan speed 3
         body[8] = 0x33  # oscillate on, angle 3 -> 90, mode 1 -> Oscillation
         body[9] = 0x20  # humidify on
@@ -115,18 +128,18 @@ class TestMideaFADevice:
         )
         assert self.device.attributes[DeviceAttributes.power] is True
         assert self.device.attributes[DeviceAttributes.child_lock] is True
-        assert self.device.attributes[DeviceAttributes.mode] == "Normal"
+        assert self.device.attributes[DeviceAttributes.mode] == "none"
         assert self.device.attributes[DeviceAttributes.fan_speed] == 3
         assert self.device.attributes[DeviceAttributes.oscillate] is True
         assert self.device.attributes[DeviceAttributes.oscillation_angle] == "90"
         assert self.device.attributes[DeviceAttributes.tilting_angle] == "60"
         assert (
-            self.device.attributes[DeviceAttributes.oscillation_mode] == "Oscillation"
+            self.device.attributes[DeviceAttributes.oscillation_mode] == "oscillation"
         )
         assert self.device.attributes[DeviceAttributes.humidify] is True
         assert self.device.attributes[DeviceAttributes.waterions] is True
         assert self.device.attributes[DeviceAttributes.display_on_off] is True
-        assert new_status[DeviceAttributes.mode.value] == "Normal"
+        assert new_status[DeviceAttributes.mode.value] == "none"
         assert new_status[DeviceAttributes.fan_speed.value] == 3
 
     def test_notify_response_out_of_range_values(self) -> None:
@@ -159,13 +172,29 @@ class TestMideaFADevice:
         assert self.device.attributes[DeviceAttributes.child_lock] is False
         assert self.device.attributes[DeviceAttributes.fan_speed] == 0
         assert self.device.attributes[DeviceAttributes.oscillate] is False
-        assert self.device.attributes[DeviceAttributes.oscillation_angle] == "Off"
-        assert self.device.attributes[DeviceAttributes.tilting_angle] == "Off"
-        assert self.device.attributes[DeviceAttributes.oscillation_mode] == "Off"
+        assert self.device.attributes[DeviceAttributes.oscillation_angle] == "off"
+        assert self.device.attributes[DeviceAttributes.tilting_angle] == "off"
+        assert self.device.attributes[DeviceAttributes.oscillation_mode] == "off"
         assert self.device.attributes[DeviceAttributes.humidify] is False
         assert self.device.attributes[DeviceAttributes.waterions] is False
         assert self.device.attributes[DeviceAttributes.display_on_off] is False
         assert DeviceAttributes.mode.value not in new_status
+
+    def test_power_off_without_fan_speed_field_reports_reset(self) -> None:
+        """A power-off message lacking its own fan_speed field still reports it."""
+        self.device._attributes[DeviceAttributes.power] = True
+        self.device._attributes[DeviceAttributes.fan_speed] = 3
+
+        class _FakePowerOnlyMessage:
+            power = False
+
+        with patch(
+            "midealocal.devices.fa.MessageFAResponse",
+            return_value=_FakePowerOnlyMessage(),
+        ):
+            new_status = self.device.process_message(b"")
+        assert self.device.attributes[DeviceAttributes.fan_speed] == 0
+        assert new_status[DeviceAttributes.fan_speed.value] == 0
 
     def test_unexpected_response(self) -> None:
         """Test notify2 response is not parsed."""
@@ -198,15 +227,15 @@ class TestMideaFADevice:
     def test_set_attribute_oscillation_mode(self) -> None:
         """Test set attribute oscillation mode."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.oscillation_mode.value, "Off")
+            self.device.set_attribute(DeviceAttributes.oscillation_mode.value, "off")
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].oscillate is False
             mock_build_send.reset_mock()
 
-            self.device._attributes[DeviceAttributes.oscillation_angle] = "Off"
+            self.device._attributes[DeviceAttributes.oscillation_angle] = "off"
             self.device.set_attribute(
                 DeviceAttributes.oscillation_mode.value,
-                "Oscillation",
+                "oscillation",
             )
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
@@ -217,16 +246,16 @@ class TestMideaFADevice:
             self.device._attributes[DeviceAttributes.oscillation_angle] = "60"
             self.device.set_attribute(
                 DeviceAttributes.oscillation_mode.value,
-                "Oscillation",
+                "oscillation",
             )
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].oscillation_angle == 2
             mock_build_send.reset_mock()
 
-            self.device._attributes[DeviceAttributes.tilting_angle] = "Off"
+            self.device._attributes[DeviceAttributes.tilting_angle] = "off"
             self.device.set_attribute(
                 DeviceAttributes.oscillation_mode.value,
-                "Tilting",
+                "tilting",
             )
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
@@ -237,15 +266,15 @@ class TestMideaFADevice:
             self.device._attributes[DeviceAttributes.tilting_angle] = "30"
             self.device.set_attribute(
                 DeviceAttributes.oscillation_mode.value,
-                "Tilting",
+                "tilting",
             )
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].tilting_angle == 1
             mock_build_send.reset_mock()
 
-            self.device._attributes[DeviceAttributes.oscillation_angle] = "Off"
-            self.device._attributes[DeviceAttributes.tilting_angle] = "Off"
-            self.device.set_attribute(DeviceAttributes.oscillation_mode.value, "Both")
+            self.device._attributes[DeviceAttributes.oscillation_angle] = "off"
+            self.device._attributes[DeviceAttributes.tilting_angle] = "off"
+            self.device.set_attribute(DeviceAttributes.oscillation_mode.value, "both")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.oscillation_mode == 6
@@ -255,14 +284,14 @@ class TestMideaFADevice:
 
             self.device._attributes[DeviceAttributes.oscillation_angle] = "60"
             self.device._attributes[DeviceAttributes.tilting_angle] = "30"
-            self.device.set_attribute(DeviceAttributes.oscillation_mode.value, "Both")
+            self.device.set_attribute(DeviceAttributes.oscillation_mode.value, "both")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.oscillation_angle == 2
             assert message.tilting_angle == 1
             mock_build_send.reset_mock()
 
-            self.device._attributes[DeviceAttributes.oscillation_mode] = "Both"
+            self.device._attributes[DeviceAttributes.oscillation_mode] = "both"
             self.device.set_attribute(DeviceAttributes.oscillation_mode.value, "")
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].oscillate is False
@@ -277,15 +306,15 @@ class TestMideaFADevice:
     def test_set_attribute_oscillation_angle(self) -> None:
         """Test set attribute oscillation angle."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device._attributes[DeviceAttributes.tilting_angle] = "Off"
-            self.device.set_attribute(DeviceAttributes.oscillation_angle.value, "Off")
+            self.device._attributes[DeviceAttributes.tilting_angle] = "off"
+            self.device.set_attribute(DeviceAttributes.oscillation_angle.value, "off")
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].oscillate is False
             mock_build_send.reset_mock()
 
             self.device._attributes[DeviceAttributes.oscillation_angle] = "90"
             self.device._attributes[DeviceAttributes.tilting_angle] = "30"
-            self.device.set_attribute(DeviceAttributes.oscillation_angle.value, "Off")
+            self.device.set_attribute(DeviceAttributes.oscillation_angle.value, "off")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.oscillate is True
@@ -294,7 +323,7 @@ class TestMideaFADevice:
             mock_build_send.reset_mock()
 
             self.device._attributes[DeviceAttributes.oscillation_angle] = None
-            self.device._attributes[DeviceAttributes.tilting_angle] = "Off"
+            self.device._attributes[DeviceAttributes.tilting_angle] = "off"
             self.device.set_attribute(DeviceAttributes.oscillation_angle.value, "90")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
@@ -303,7 +332,7 @@ class TestMideaFADevice:
             mock_build_send.reset_mock()
 
             self.device._attributes[DeviceAttributes.tilting_angle] = "60"
-            self.device._attributes[DeviceAttributes.oscillation_mode] = "Tilting"
+            self.device._attributes[DeviceAttributes.oscillation_mode] = "tilting"
             self.device.set_attribute(DeviceAttributes.oscillation_angle.value, "90")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
@@ -311,7 +340,7 @@ class TestMideaFADevice:
             assert message.tilting_angle == 2
             mock_build_send.reset_mock()
 
-            self.device._attributes[DeviceAttributes.oscillation_mode] = "Both"
+            self.device._attributes[DeviceAttributes.oscillation_mode] = "both"
             self.device.set_attribute(DeviceAttributes.oscillation_angle.value, "120")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
@@ -325,15 +354,15 @@ class TestMideaFADevice:
     def test_set_attribute_tilting_angle(self) -> None:
         """Test set attribute tilting angle."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device._attributes[DeviceAttributes.oscillation_angle] = "Off"
-            self.device.set_attribute(DeviceAttributes.tilting_angle.value, "Off")
+            self.device._attributes[DeviceAttributes.oscillation_angle] = "off"
+            self.device.set_attribute(DeviceAttributes.tilting_angle.value, "off")
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].oscillate is False
             mock_build_send.reset_mock()
 
             self.device._attributes[DeviceAttributes.tilting_angle] = "60"
             self.device._attributes[DeviceAttributes.oscillation_angle] = "30"
-            self.device.set_attribute(DeviceAttributes.tilting_angle.value, "Off")
+            self.device.set_attribute(DeviceAttributes.tilting_angle.value, "off")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.oscillate is True
@@ -342,7 +371,7 @@ class TestMideaFADevice:
             mock_build_send.reset_mock()
 
             self.device._attributes[DeviceAttributes.tilting_angle] = None
-            self.device._attributes[DeviceAttributes.oscillation_angle] = "Off"
+            self.device._attributes[DeviceAttributes.oscillation_angle] = "off"
             self.device.set_attribute(DeviceAttributes.tilting_angle.value, "60")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
@@ -351,7 +380,7 @@ class TestMideaFADevice:
             mock_build_send.reset_mock()
 
             self.device._attributes[DeviceAttributes.oscillation_angle] = "90"
-            self.device._attributes[DeviceAttributes.oscillation_mode] = "Oscillation"
+            self.device._attributes[DeviceAttributes.oscillation_mode] = "oscillation"
             self.device.set_attribute(DeviceAttributes.tilting_angle.value, "60")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
@@ -359,7 +388,7 @@ class TestMideaFADevice:
             assert message.oscillation_angle == 3
             mock_build_send.reset_mock()
 
-            self.device._attributes[DeviceAttributes.oscillation_mode] = "Both"
+            self.device._attributes[DeviceAttributes.oscillation_mode] = "both"
             self.device.set_attribute(DeviceAttributes.tilting_angle.value, "40")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
@@ -388,12 +417,34 @@ class TestMideaFADevice:
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].fan_speed == 3
 
-    def test_set_attribute_mode(self) -> None:
-        """Test set attribute mode."""
+    @pytest.mark.parametrize(
+        ("customize", "mode_name", "expected_mode", "expected_overrides"),
+        [
+            pytest.param("", "sleep", 2, {}, id="no_override"),
+            pytest.param(
+                '{"mode_set_overrides": {"3": 41}}',
+                "comfort",
+                3,
+                {3: 41},
+                id="with_override",
+            ),
+        ],
+    )
+    def test_set_attribute_mode(
+        self,
+        customize: str,
+        mode_name: str,
+        expected_mode: int,
+        expected_overrides: dict[int, int],
+    ) -> None:
+        """Test set attribute mode, with and without a customized override table."""
+        self.device.set_customize(customize)
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.mode.value, "Sleep")
+            self.device.set_attribute(DeviceAttributes.mode.value, mode_name)
             mock_build_send.assert_called_once()
-            assert mock_build_send.call_args[0][0].mode == 2
+            message = mock_build_send.call_args[0][0]
+            assert message.mode == expected_mode
+            assert message.mode_set_overrides == expected_overrides
             mock_build_send.reset_mock()
 
             self.device.set_attribute(DeviceAttributes.mode.value, "invalid")
@@ -431,7 +482,7 @@ class TestMideaFADevice:
             assert message.mode is None
             mock_build_send.reset_mock()
 
-            self.device.turn_on(fan_speed=3, mode="Normal")
+            self.device.turn_on(fan_speed=3, mode="none")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.power is True
@@ -443,17 +494,60 @@ class TestMideaFADevice:
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].mode is None
 
-    def test_set_customize(self) -> None:
+    @pytest.mark.parametrize(
+        ("customize", "expected_speed_count"),
+        [
+            pytest.param('{"speed_count": 5}', 5, id="speed_count"),
+            pytest.param("{}", 3, id="empty_params"),
+            pytest.param("{", 3, id="invalid_json"),
+        ],
+    )
+    def test_set_customize(
+        self,
+        customize: str,
+        expected_speed_count: int,
+    ) -> None:
         """Test set customize."""
-        self.device.set_customize('{"speed_count": 5}')
-        assert self.device.speed_count == 5
+        self.device.set_customize(customize)
+        assert self.device.speed_count == expected_speed_count
 
-    def test_set_customize_empty_params(self) -> None:
-        """Test set customize with an empty JSON object."""
+    def test_set_customize_mode_set_overrides(self) -> None:
+        """Test set customize parses and resets the mode set override table."""
+        self.device.set_customize('{"mode_set_overrides": {"3": 41}}')
+        assert self.device._mode_set_overrides == {3: 41}
+
         self.device.set_customize("{}")
-        assert self.device.speed_count == 3
+        assert self.device._mode_set_overrides == {}
 
-    def test_set_customize_invalid(self) -> None:
-        """Test set customize with invalid JSON keeps defaults."""
-        self.device.set_customize("{")
-        assert self.device.speed_count == 3
+    @pytest.mark.parametrize(
+        "customize",
+        [
+            pytest.param('{"mode_set_overrides": {"3": 256}}', id="above_a_byte"),
+            pytest.param('{"mode_set_overrides": {"3": -1}}', id="below_a_byte"),
+            pytest.param('{"mode_set_overrides": {"3": 1.5}}', id="fraction"),
+            pytest.param('{"mode_set_overrides": {"3": true}}', id="bool"),
+            pytest.param(
+                '{"mode_set_overrides": {"3": 41, "4": 256}}',
+                id="one_entry_out_of_range",
+            ),
+        ],
+    )
+    def test_set_customize_mode_set_overrides_not_a_byte(
+        self,
+        customize: str,
+    ) -> None:
+        """Test an override that is not a byte is rejected, not carried into a set."""
+        self.device.set_customize(customize)
+        assert self.device._mode_set_overrides == {}
+
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.mode.value, "comfort")
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.mode_set_overrides == {}
+            assert message._body[3] == 0x09
+
+    def test_set_customize_mode_set_overrides_integral_float(self) -> None:
+        """Test a float that is a whole number is still a usable byte."""
+        self.device.set_customize('{"mode_set_overrides": {"3": 41.0}}')
+        assert self.device._mode_set_overrides == {3: 41}

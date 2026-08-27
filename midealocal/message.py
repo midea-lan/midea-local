@@ -2,6 +2,7 @@
 
 import logging
 import warnings
+from collections.abc import Callable
 from enum import IntEnum
 from typing import Any, SupportsIndex, cast
 
@@ -492,10 +493,8 @@ class MessageRequest(MessageBase):
     def body(self) -> bytearray:
         """Message body."""
         body = bytearray([])
-        if self.body_type is not None:
-            body.append(self.body_type)
-        if self._body is not None:
-            body.extend(self._body)
+        body.append(self.body_type)
+        body.extend(self._body)
         return body
 
     def serialize(self) -> bytearray:
@@ -567,6 +566,7 @@ class BodyParser[T]:
         length_in_bytes: int = 1,
         first_upper: bool = True,
         default_raw_value: int = 0,
+        transform_func: Callable[[T], T] = lambda data: data,
     ) -> None:
         """Init body parser with attribute name."""
         self.name = name
@@ -575,6 +575,7 @@ class BodyParser[T]:
         self._length_in_bytes = length_in_bytes
         self._first_upper = first_upper
         self._default_raw_value = default_raw_value
+        self._transform_func = transform_func
         if length_in_bytes < 0:
             raise ValueError("Length in bytes must be a positive value.")
         if bit is not None and (bit < 0 or bit >= length_in_bytes * 8):
@@ -601,7 +602,7 @@ class BodyParser[T]:
 
     def get_value(self, body: bytearray) -> T:
         """Get attribute value."""
-        return self._parse(self._get_raw_value(body))
+        return self._transform_func(self._parse(self._get_raw_value(body)))
 
     def _parse(self, raw_value: int) -> T:
         """Convert raw value to attribute value."""
@@ -666,7 +667,7 @@ class IntEnumParser[E: IntEnum](BodyParser[E]):
 
 
 class IntParser(BodyParser[int]):
-    """IntEnum message body parser."""
+    """Int message body parser."""
 
     def __init__(
         self,
@@ -676,13 +677,15 @@ class IntParser(BodyParser[int]):
         min_value: int = 0,
         length_in_bytes: int = 1,
         first_upper: bool = False,
+        transform_func: Callable[[int], int] = lambda x: x,
     ) -> None:
-        """Init IntEnum body parser."""
+        """Init Int body parser."""
         super().__init__(
             name,
             byte,
             length_in_bytes=length_in_bytes,
             first_upper=first_upper,
+            transform_func=transform_func,
         )
         self._max_value = max_value
         self._min_value = min_value
@@ -695,13 +698,46 @@ class IntParser(BodyParser[int]):
         return raw_value
 
 
+class FloatParser(BodyParser[float]):
+    """Float message body parser."""
+
+    def __init__(
+        self,
+        name: str,
+        byte: int,
+        length_in_bytes: int = 1,
+        first_upper: bool = True,
+        default_raw_value: int = 0,
+        transform_func: Callable[[float], float] = lambda data: data,
+    ) -> None:
+        """Init Float body parser."""
+        super().__init__(
+            name,
+            byte,
+            length_in_bytes=length_in_bytes,
+            first_upper=first_upper,
+            default_raw_value=default_raw_value,
+            transform_func=transform_func,
+        )
+
+    def _parse(self, raw_value: int) -> float:
+        return float(raw_value)
+
+
 class MessageBody:
     """Message body."""
 
-    def __init__(self, body: bytearray) -> None:
+    def __init__(
+        self,
+        body: bytearray,
+        parser_list: list[BodyParser[Any]] | None = None,
+    ) -> None:
         """Initialize message body."""
         self._data = body
-        self.parser_list: list[BodyParser] = []
+        self.parser_list: list[BodyParser[Any]] = (
+            parser_list if parser_list is not None else []
+        )
+        self.parse_all()
 
     @property
     def data(self) -> bytearray:

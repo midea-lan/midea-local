@@ -16,6 +16,7 @@ from midealocal.devices.ac.message import (
     MessageGroupZeroQuery,
     MessageHumidityQuery,
     MessageNewProtocolQuery,
+    MessageNewProtocolSelfCleanQuery,
     MessagePowerQuery,
     MessageQuery,
     MessageSubProtocolFreshAirSet,
@@ -24,6 +25,7 @@ from midealocal.devices.ac.message import (
     MessageSubProtocolQuery11,
     MessageSubProtocolQuery30,
     MessageToggleDisplay,
+    NewProtocolTags,
     PowerFormats,
 )
 from midealocal.message import ListTypes, MessageBase
@@ -262,6 +264,36 @@ class TestMideaACDevice:
             assert message.dry is False
             assert message.fan_speed == 102
 
+    def test_set_mode_then_temperature_keeps_unit_on(self) -> None:
+        """A mode change followed immediately by a temperature write stays on.
+
+        set_attribute("mode") only forced power=True on the outgoing packet, so
+        a rapid follow-up set_target_temperature (built from make_message_uniq_set)
+        reused the stale last-confirmed power=False and turned the unit back off.
+        The mode change now optimistically caches power=True + the new mode.
+        https://github.com/midea-lan/midea-local/issues/495
+        """
+        # Start from the confirmed "off" state, as after a fresh query.
+        self.device._attributes[DeviceAttributes.power] = False
+        self.device._attributes[DeviceAttributes.mode] = 0
+        with patch.object(self.device, "build_send") as mock_build_send:
+            # 1. set HVAC mode to cool (value 2)
+            self.device.set_attribute(DeviceAttributes.mode.value, 2)
+            mode_message = mock_build_send.call_args[0][0]
+            assert mode_message.power is True
+            assert mode_message.mode == 2
+            # Cache reflects the commanded state before the device responds.
+            assert self.device.attributes[DeviceAttributes.power] is True
+            assert self.device.attributes[DeviceAttributes.mode] == 2
+
+            # 2. immediately set target temperature (mode=None, as the climate
+            #    entity does) - must not resurrect the stale power=False.
+            self.device.set_target_temperature(21, None)
+            temp_message = mock_build_send.call_args[0][0]
+            assert temp_message.power is True
+            assert temp_message.mode == 2
+            assert temp_message.target_temperature == 21
+
     def test_customize_temperature_limits(self) -> None:
         """Test customize min/max temperature limits."""
         self.device.set_customize('{"min_temperature": 17, "max_temperature": 28}')
@@ -279,17 +311,39 @@ class TestMideaACDevice:
 
         self.device._used_subprotocol = False
         queries = self.device.build_query()
-        assert len(queries) == 10
+        assert len(queries) == 11
         assert isinstance(queries[0], MessageQuery)
         assert isinstance(queries[1], MessageNewProtocolQuery)
-        assert isinstance(queries[2], MessagePowerQuery)
-        assert isinstance(queries[3], MessageHumidityQuery)
-        assert isinstance(queries[4], MessageGroupZeroQuery)
-        assert isinstance(queries[5], MessageGroupOneQuery)
-        assert isinstance(queries[6], MessageGroupTwoQuery)
-        assert isinstance(queries[7], MessageGroupSevenQuery)
-        assert isinstance(queries[8], MessageCapabilitiesQuery)
-        assert isinstance(queries[9], MessageCapabilitiesAdditionalQuery)
+        assert isinstance(queries[2], MessageNewProtocolSelfCleanQuery)
+        assert isinstance(queries[3], MessagePowerQuery)
+        assert isinstance(queries[4], MessageHumidityQuery)
+        assert isinstance(queries[5], MessageGroupZeroQuery)
+        assert isinstance(queries[6], MessageGroupOneQuery)
+        assert isinstance(queries[7], MessageGroupTwoQuery)
+        assert isinstance(queries[8], MessageGroupSevenQuery)
+        assert isinstance(queries[9], MessageCapabilitiesQuery)
+        assert isinstance(queries[10], MessageCapabilitiesAdditionalQuery)
+
+    def test_build_query_omits_rate_select_until_capability_confirmed(self) -> None:
+        """Test rate_select stays out of the B1 query until b5_electricity confirms it.
+
+        Before any B5 capabilities response is seen, `_capabilities` is empty, so
+        the query built for the device must not ask for rate_select.
+        """
+        self.device._used_subprotocol = False
+        assert self.device.capabilities == {}
+        queries = self.device.build_query()
+        new_protocol_query = next(
+            q for q in queries if isinstance(q, MessageNewProtocolQuery)
+        )
+        assert NewProtocolTags.rate_select not in new_protocol_query._body
+
+        self.device._capabilities["rate_select"] = True
+        queries = self.device.build_query()
+        new_protocol_query = next(
+            q for q in queries if isinstance(q, MessageNewProtocolQuery)
+        )
+        assert NewProtocolTags.rate_select in new_protocol_query._body
 
     def test_bb_model_builds_distinct_queries_and_attributes(self) -> None:
         """Test verified BB model starts with independent BB queries."""
@@ -468,17 +522,17 @@ class TestMideaACDevice:
         assert self.device.wind_lr_angles == [
             "off",
             "left",
-            "left-mid",
+            "left_mid",
             "middle",
-            "right-mid",
+            "right_mid",
             "right",
         ]
         assert self.device.wind_ud_angles == [
             "off",
             "up",
-            "up-mid",
+            "up_mid",
             "middle",
-            "down-mid",
+            "down_mid",
             "down",
         ]
         assert self.device.rate_selects == ["1", "20", "40", "60", "80", "100"]
@@ -501,6 +555,31 @@ class TestMideaACDevice:
             "eco": True,
             "anion": True,
         }
+
+    def test_process_message_reports_capabilities_only_change(self) -> None:
+        """A capability-only frame must still produce a non-empty status delta.
+
+        `Device.parse_message` only calls `update_all` (and so notifies
+        callback-driven consumers, e.g. entities deriving state from
+        `capabilities`) when `process_message` returns a non-empty dict.
+        """
+        body = bytearray([0xB5, 0x01])
+        body += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode
+
+        status = self.device.process_message(self._response(body))
+
+        assert status.get("capabilities") == self.device.capabilities
+        assert self.device.capabilities["heat_mode"] is True
+
+    def test_process_message_capabilities_unchanged_is_a_no_op(self) -> None:
+        """A repeated, identical capability frame reports no delta the second time."""
+        body = bytearray([0xB5, 0x01])
+        body += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode
+
+        self.device.process_message(self._response(body))
+        status = self.device.process_message(self._response(body))
+
+        assert "capabilities" not in status
 
     def test_process_message(self) -> None:
         """Test process message."""
@@ -606,9 +685,9 @@ class TestMideaACDevice:
             mock_message.target_compressor_frequency = 25
             mock_message.compressor_current = 1
             mock_message.compressor_voltage = 232
-            mock_message.indoor_coil_temperature = 20.5
-            mock_message.evaporator_temperature = 4.0
-            mock_message.condenser_temperature = 26.0
+            mock_message.indoor_ambient_temperature = 20.5
+            mock_message.indoor_coil_temperature = 4.0
+            mock_message.outdoor_coil_temperature = 26.0
             mock_message.outdoor_ambient_temperature = 19.0
             mock_message.discharge_pipe_temperature = 36
             # group 2
@@ -624,9 +703,9 @@ class TestMideaACDevice:
             assert result[DeviceAttributes.target_compressor_frequency.value] == 25
             assert result[DeviceAttributes.compressor_current.value] == 1
             assert result[DeviceAttributes.compressor_voltage.value] == 232
-            assert result[DeviceAttributes.indoor_coil_temperature.value] == 20.5
-            assert result[DeviceAttributes.evaporator_temperature.value] == 4.0
-            assert result[DeviceAttributes.condenser_temperature.value] == 26.0
+            assert result[DeviceAttributes.indoor_ambient_temperature.value] == 20.5
+            assert result[DeviceAttributes.indoor_coil_temperature.value] == 4.0
+            assert result[DeviceAttributes.outdoor_coil_temperature.value] == 26.0
             assert result[DeviceAttributes.outdoor_ambient_temperature.value] == 19.0
             assert result[DeviceAttributes.discharge_pipe_temperature.value] == 36
             assert result[DeviceAttributes.indoor_fan_speed.value] == 424
@@ -642,9 +721,9 @@ class TestMideaACDevice:
                 DeviceAttributes.target_compressor_frequency,
                 DeviceAttributes.compressor_current,
                 DeviceAttributes.compressor_voltage,
+                DeviceAttributes.indoor_ambient_temperature,
                 DeviceAttributes.indoor_coil_temperature,
-                DeviceAttributes.evaporator_temperature,
-                DeviceAttributes.condenser_temperature,
+                DeviceAttributes.outdoor_coil_temperature,
                 DeviceAttributes.outdoor_ambient_temperature,
                 DeviceAttributes.discharge_pipe_temperature,
                 DeviceAttributes.indoor_fan_speed,
@@ -805,6 +884,133 @@ class TestMideaACDevice:
             result = self.device.process_message(b"")
             assert result[DeviceAttributes.self_clean.value] is False
             assert self.device.attributes[DeviceAttributes.self_clean] is False
+
+    def test_self_clean_ignores_stale_status_after_set(self) -> None:
+        """Test stale self-clean status does not undo a pending command."""
+        with patch("midealocal.devices.ac.MessageACResponse") as mock_message_response:
+            mock_message = mock_message_response.return_value
+            mock_message.used_subprotocol = False
+            mock_message.power = False
+            mock_message.fresh_air_power = False
+            mock_message.fresh_air_fan_speed = 0
+            mock_message.fresh_air_1 = None
+            mock_message.fresh_air_2 = None
+            mock_message.swing_vertical = False
+            mock_message.indoor_temperature = None
+            mock_message.outdoor_temperature = None
+            mock_message.indoor_humidity = None
+            mock_message.total_energy_consumption = None
+            mock_message.current_energy_consumption = None
+            mock_message.realtime_power = None
+            del mock_message.self_clean
+
+            self.device._pending_self_clean = (True, 100.0)
+            mock_message.self_clean_active = False
+            with patch("midealocal.devices.ac.time.monotonic", return_value=101.0):
+                result = self.device.process_message(b"")
+
+            assert DeviceAttributes.self_clean.value not in result
+            assert self.device.attributes[DeviceAttributes.self_clean] is False
+            assert self.device._pending_self_clean == (True, 100.0)
+
+            mock_message.self_clean_active = True
+            with patch("midealocal.devices.ac.time.monotonic", return_value=102.0):
+                result = self.device.process_message(b"")
+
+            assert result[DeviceAttributes.self_clean.value] is True
+            assert self.device.attributes[DeviceAttributes.self_clean] is True
+            assert self.device._pending_self_clean is None
+
+    def test_self_clean_accepts_status_after_refresh_interval(self) -> None:
+        """Test stale-status guard expires after the configured refresh interval."""
+        with patch("midealocal.devices.ac.MessageACResponse") as mock_message_response:
+            mock_message = mock_message_response.return_value
+            mock_message.used_subprotocol = False
+            mock_message.power = False
+            mock_message.fresh_air_power = False
+            mock_message.fresh_air_fan_speed = 0
+            mock_message.fresh_air_1 = None
+            mock_message.fresh_air_2 = None
+            mock_message.swing_vertical = False
+            mock_message.indoor_temperature = None
+            mock_message.outdoor_temperature = None
+            mock_message.indoor_humidity = None
+            mock_message.total_energy_consumption = None
+            mock_message.current_energy_consumption = None
+            mock_message.realtime_power = None
+            del mock_message.self_clean
+
+            self.device.set_refresh_interval(5)
+            self.device._pending_self_clean = (True, 100.0)
+            mock_message.self_clean_active = False
+            with patch("midealocal.devices.ac.time.monotonic", return_value=106.0):
+                result = self.device.process_message(b"")
+
+            assert result[DeviceAttributes.self_clean.value] is False
+            assert self.device.attributes[DeviceAttributes.self_clean] is False
+            assert self.device._pending_self_clean is None
+
+    def test_self_clean_accepts_status_at_refresh_interval_boundary(self) -> None:
+        """Test stale-status guard expires exactly at the refresh interval."""
+        with patch("midealocal.devices.ac.MessageACResponse") as mock_message_response:
+            mock_message = mock_message_response.return_value
+            mock_message.used_subprotocol = False
+            mock_message.power = False
+            mock_message.fresh_air_power = False
+            mock_message.fresh_air_fan_speed = 0
+            mock_message.fresh_air_1 = None
+            mock_message.fresh_air_2 = None
+            mock_message.swing_vertical = False
+            mock_message.indoor_temperature = None
+            mock_message.outdoor_temperature = None
+            mock_message.indoor_humidity = None
+            mock_message.total_energy_consumption = None
+            mock_message.current_energy_consumption = None
+            mock_message.realtime_power = None
+            del mock_message.self_clean
+
+            self.device.set_refresh_interval(5)
+            self.device._pending_self_clean = (True, 100.0)
+            mock_message.self_clean_active = False
+            with patch("midealocal.devices.ac.time.monotonic", return_value=105.0):
+                result = self.device.process_message(b"")
+
+            assert result[DeviceAttributes.self_clean.value] is False
+            assert self.device.attributes[DeviceAttributes.self_clean] is False
+            assert self.device._pending_self_clean is None
+
+    def test_set_self_clean_updates_status_after_send(self) -> None:
+        """Test self-clean command publishes its requested state after sending."""
+        updates: list[dict[str, bool]] = []
+        self.device.register_update(updates.append)
+
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.self_clean, True)
+
+        mock_build_send.assert_called_once()
+        assert self.device.attributes[DeviceAttributes.self_clean] is True
+        assert updates == [{DeviceAttributes.self_clean.value: True}]
+        assert self.device._pending_self_clean is not None
+        assert self.device._pending_self_clean[0] is True
+
+    def test_set_self_clean_does_not_update_when_send_fails(self) -> None:
+        """Test a failed self-clean command does not publish the requested state."""
+        updates: list[dict[str, bool]] = []
+        self.device.register_update(updates.append)
+
+        with (
+            patch.object(
+                self.device,
+                "build_send",
+                side_effect=OSError("send failed"),
+            ),
+            pytest.raises(OSError, match="send failed"),
+        ):
+            self.device.set_attribute(DeviceAttributes.self_clean, True)
+
+        assert self.device.attributes[DeviceAttributes.self_clean] is False
+        assert updates == []
+        assert self.device._pending_self_clean is None
 
     def test_invalid_customize_format(self) -> None:
         """Test invalid customize format."""

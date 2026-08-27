@@ -16,6 +16,7 @@ from midealocal.cloud import (
     MideaCloud,
     SmartHomeCloud,
     _mask_token,
+    _redact_data,
     get_default_cloud,
     get_midea_cloud,
     get_preset_account_cloud,
@@ -79,6 +80,69 @@ class CloudTest(IsolatedAsyncioTestCase):
         """Test _mask_token."""
         assert _mask_token("") == ""
         assert _mask_token("1234567890") == "12345*****"
+
+    def test_redact_data_masks_token_and_key(self) -> None:
+        """Test _redact_data masks getToken credentials.
+
+        Without an explicit rule the generic patterns only chew up the digit
+        runs inside a hex credential, which leaves most of it readable while
+        looking redacted.
+        """
+        token = "AABBCCDDEEFF00112233445566778899AABBCCDDEEFF00112233445566778899"
+        key = "0011223344556677889900112233445566778899001122334455667788990011"
+        raw = str(
+            (
+                '{"code":0,"data":{"tokenlist":[{'
+                f'"udpId":"abc","token":"{token}","key":"{key}"'
+                "}]}}"
+            ).encode(),
+        )
+
+        redacted = _redact_data(raw)
+
+        # exact masked form -- the generic patterns alone produce a different,
+        # mostly-readable string, so this is what makes the test discriminating
+        assert f'"token":"{_mask_token(token)}"' in redacted
+        assert f'"key":"{_mask_token(key)}"' in redacted
+        assert token not in redacted
+        assert key not in redacted
+        # unrelated fields are untouched
+        assert '"udpId":"abc"' in redacted
+
+    def test_redact_data_handles_escaped_quotes(self) -> None:
+        """Test _redact_data masks credentials rendered with escaped quotes."""
+        token = "DEADBEEFDEADBEEFDEADBEEFDEADBEEF"
+        redacted = _redact_data(f'{{\\"token\\": \\"{token}\\"}}')
+        assert token not in redacted
+
+    async def test_get_cloud_keys_does_not_log_credentials(self) -> None:
+        """Test get_cloud_keys keeps token material out of the debug log."""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["meijucloud_get_keys1.json"],
+                self.responses["meijucloud_get_keys2.json"],
+            ],
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "美的美居",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert cloud is not None
+
+        with self.assertLogs("midealocal.cloud", level="DEBUG") as logs:
+            keys = await cloud.get_cloud_keys(100)
+
+        assert keys[1]["token"] == "method1_return_token1"
+        blob = "\n".join(logs.output)
+        assert "method1_return_token1" not in blob
+        assert "method1_return_key1" not in blob
+        # the replacement line still says something useful
+        assert "token entries" in blob
 
     async def test_get_cloud_servers(self) -> None:
         """Test get cloud servers."""

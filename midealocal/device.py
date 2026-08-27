@@ -4,7 +4,7 @@ import logging
 import socket
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 from enum import IntEnum, StrEnum
 from typing import Any, ClassVar, NotRequired, TypedDict, Unpack
 
@@ -36,8 +36,106 @@ SOCKET_TIMEOUT = 10  # socket connection default timeout
 QUERY_TIMEOUT = (
     5  # default is 1s, 0xAC have more queries, set to 2s, latest: increase to 5s
 )
+# A single timeout during the initial protocol probe blacklists the command for
+# the whole connection, even when it was just a slow/not-yet-ready device rather
+# than a genuinely unsupported protocol. Give it one more try before giving up on it.
+QUERY_PROBE_RETRIES = 2
 
 _LOGGER = logging.getLogger(__name__)
+
+# Sentinel returned by translators to preserve the stored attribute value.
+SKIP_ATTRIBUTE = object()
+
+# Private marker that distinguishes an omitted default from an explicit default.
+_NO_DEFAULT = object()
+
+
+def list_translator(
+    values: Sequence[str],
+    *,
+    offset: int = 0,
+    min_index: int = 0,
+    default: str | None = None,
+    key: Callable[[int], int] | None = None,
+) -> Callable[[int], str | None]:
+    """Build an update_attributes_from_message() translator for enum-style values.
+
+    Returns a callable that maps a raw index into ``values``, or ``default``
+    if the index falls outside ``[min_index, len(values))``, instead of
+    raising or wrapping around on a negative index. ``offset`` shifts the raw
+    value before indexing, for devices that report 1-based (or otherwise
+    offset) indices; ``min_index`` excludes otherwise-valid low indices some
+    devices reserve (e.g. 0 meaning "no value"). ``key``, if given, is applied
+    to the raw value first, for devices that encode the index indirectly
+    (e.g. a physical angle that first needs converting to a list position).
+    """
+
+    def _translate(index: int) -> str | None:
+        i = (key(index) if key is not None else index) - offset
+        return values[i] if min_index <= i < len(values) else default
+
+    return _translate
+
+
+def dict_translator(
+    mapping: Mapping[Any, Any],
+    default: Any = _NO_DEFAULT,  # noqa: ANN401
+) -> Callable[[Any], Any]:
+    """Build an update_attributes_from_message() translator for coded values.
+
+    Looks up the raw value in ``mapping``. If absent, returns ``default`` when
+    given, otherwise passes the raw value through unchanged.
+    """
+
+    def _translate(value: Any) -> Any:  # noqa: ANN401
+        return mapping.get(value, value if default is _NO_DEFAULT else default)
+
+    return _translate
+
+
+def precision_halves_translator(
+    precision_halves: bool | None,
+) -> Callable[[float], float]:
+    """Build an update_attributes_from_message() translator for halved readings.
+
+    Some devices report values doubled (in 0.5-unit steps) when their
+    ``precision_halves`` customize flag is enabled. Returns a callable that
+    divides by 2 when ``precision_halves`` is truthy, otherwise passes the
+    value through unchanged.
+    """
+
+    def _translate(value: float) -> float:
+        return value / 2 if precision_halves else value
+
+    return _translate
+
+
+def multiplier_translator(multiplier: float) -> Callable[[float | None], float | None]:
+    """Build an update_attributes_from_message() translator that scales a reading.
+
+    Rounds ``value * multiplier`` to the nearest int, unless ``multiplier`` is
+    1.0 (a no-op) or the raw value is ``None`` (unknown).
+    """
+
+    def _translate(value: float | None) -> float | None:
+        if value is None or multiplier == 1.0:
+            return value
+        return round(value * multiplier)
+
+    return _translate
+
+
+def sentinel_translator(sentinel: Any, replacement: Any) -> Callable[[Any], Any]:  # noqa: ANN401
+    """Build an update_attributes_from_message() translator for sentinel values.
+
+    Swaps a device-specific "unset" sentinel raw value for a display
+    placeholder, passing every other value through unchanged.
+    """
+
+    def _translate(value: Any) -> Any:  # noqa: ANN401
+        return replacement if value == sentinel else value
+
+    return _translate
 
 
 class AuthException(Exception):
@@ -383,11 +481,31 @@ class MideaDevice(threading.Thread):
         msg = PacketBuilder(self._device_id, data).finalize()
         self.send_message(msg, query=query)
 
+    def _wait_for_query_response(self) -> None:
+        """Wait for one query response, raising on timeout or bad data."""
+        while True:
+            if not self._socket:
+                _LOGGER.debug("[%s] device socket is none", self._device_id)
+                # raise exception to connect/main loop
+                raise SocketException
+            msg = self._socket.recv(512)
+            if len(msg) == 0:
+                raise ConnectionResetError("Connection closed by peer.")
+            result = self.parse_message(msg)
+            # Prevent infinite loop
+            if result == MessageResult.SUCCESS:
+                # recovery SOCKET_TIMEOUT after recv msg
+                self._socket.settimeout(SOCKET_TIMEOUT)
+                return
+            if result != MessageResult.PADDING:
+                raise ResponseException
+
     def refresh_status(self, check_protocol: bool = False) -> None:
         """Refresh device status."""
-        cmds: list = self.build_query()
+        real_cmds: list = self.build_query()
+        cmds = real_cmds
         if self._appliance_query:
-            cmds = [MessageQueryAppliance(self.device_type), *cmds]
+            cmds = [MessageQueryAppliance(self.device_type), *real_cmds]
         error_count = 0
         _LOGGER.debug(
             "[%s] refresh_status with cmds: %s, check_protocol %s, \
@@ -411,32 +529,25 @@ class MideaDevice(threading.Thread):
                 self.build_send(cmd, query=True)
                 # init check_protocol, skip timeout exception
                 if check_protocol:
-                    try:
-                        while True:
-                            if not self._socket:
-                                _LOGGER.debug(
-                                    "[%s] device socket is none",
-                                    self._device_id,
-                                )
-                                # raise exception to connect/main loop
-                                raise SocketException
-                            msg = self._socket.recv(512)
-                            if len(msg) == 0:
-                                raise ConnectionResetError("Connection closed by peer.")
-                            result = self.parse_message(msg)
-                            # Prevent infinite loop
-                            if result == MessageResult.SUCCESS:
-                                break
-                            elif result == MessageResult.PADDING:  # noqa: RET508
-                                continue
-                            else:
-                                raise ResponseException  # noqa: TRY301
-                        # recovery SOCKET_TIMEOUT after recv msg
-                        self._socket.settimeout(SOCKET_TIMEOUT)
                     # only catch TimoutError for check_protocol
                     # unexpected exception in recv/settimeout, catch by main loop
+                    try:
+                        attempt = 0
+                        while True:
+                            try:
+                                self._wait_for_query_response()
+                                break
+                            except TimeoutError:
+                                attempt += 1
+                                if attempt >= QUERY_PROBE_RETRIES:
+                                    raise
+                                # retry once before blacklisting: a single timeout
+                                # during the probe can be a slow device, not proof
+                                # the protocol is unsupported
+                                self.build_send(cmd, query=True)
                     except TimeoutError:
-                        error_count += 1
+                        if cmd in real_cmds:
+                            error_count += 1
                         self._unsupported_protocol.append(cmd.__class__.__name__)
                         _LOGGER.debug(
                             "[%s] Does not supports the protocol %s, cmd %s, ignored",
@@ -446,7 +557,8 @@ class MideaDevice(threading.Thread):
                         )
                     except ResponseException:
                         # parse msg error
-                        error_count += 1
+                        if cmd in real_cmds:
+                            error_count += 1
                         _LOGGER.debug(
                             "[%s] refresh_status ResponseException %s, cmd %s",
                             self._device_id,
@@ -459,9 +571,12 @@ class MideaDevice(threading.Thread):
                     self._device_id,
                     cmd,
                 )
-                error_count += 1
-            # all the query failed
-            if error_count == len(cmds):
+                if cmd in real_cmds:
+                    error_count += 1
+            # A successful appliance query is not device status: it must not mask
+            # every real status query failing. Guard against a subclass whose
+            # build_query() returns [], where "all failed" would be vacuous.
+            if real_cmds and error_count == len(real_cmds):
                 _LOGGER.debug(
                     "[%s] all the query cmds failed %s, please report bug",
                     self._device_id,
@@ -535,13 +650,18 @@ class MideaDevice(threading.Thread):
                                 self._message_protocol_version,
                             )
                             status = self.process_message(bytes(decrypted))
-                            if len(status) > 0:
-                                self.update_all(status)
-                            else:
+                            if len(status) == 0:
                                 _LOGGER.debug(
                                     "[%s] Unidentified protocol",
                                     self._device_id,
                                 )
+                                continue
+                            if self._should_run():
+                                # Closing (e.g. Home Assistant shutting down
+                                # or reloading) may already have torn down
+                                # whatever these callbacks depend on; don't
+                                # propagate stale reads.
+                                self.update_all(status)
                     except Exception:
                         _LOGGER.exception(
                             "[%s] Error in process message %s, \
@@ -629,7 +749,46 @@ class MideaDevice(threading.Thread):
         """Update all."""
         _LOGGER.debug("[%s] Status update: %s", self._device_id, status)
         for update in self._updates:
-            update(status)
+            try:
+                update(status)
+            except Exception:
+                _LOGGER.exception(
+                    "[%s] Error in update callback %s",
+                    self._device_id,
+                    update,
+                )
+
+    def update_attributes_from_message(
+        self,
+        message: object,
+        translators: dict[str, Callable[[Any], str | float | bool | None]]
+        | None = None,
+        default_transform: Callable[[Any], str | float | bool | None] | None = None,
+    ) -> dict[str, Any]:
+        """Copy matching attributes from a parsed response into self._attributes.
+
+        For each attribute the device declares, if ``message`` carries a
+        same-named field, run it through ``translators[attr]`` (if present) or
+        ``default_transform`` (if given and no specific translator matched),
+        then store the result in both ``self._attributes`` and the returned
+        status dict -- so pushed updates and ``device.attributes`` reads can
+        never disagree on the value. A translator may return ``SKIP_ATTRIBUTE``
+        to leave the attribute's stored value untouched for this message.
+        """
+        new_status: dict[str, Any] = {}
+        translators = translators or {}
+        for status in self._attributes:
+            if hasattr(message, str(status)):
+                value = getattr(message, str(status))
+                if status in translators:
+                    value = translators[status](value)
+                elif default_transform is not None:
+                    value = default_transform(value)
+                if value is SKIP_ATTRIBUTE:
+                    continue
+                self._attributes[status] = value
+                new_status[str(status)] = value
+        return new_status
 
     def set_available(self, available: bool = True) -> None:
         """Set available value."""
@@ -672,6 +831,10 @@ class MideaDevice(threading.Thread):
     def close_socket(self) -> None:
         """Close socket."""
         self._unsupported_protocol = []
+        # Re-arm the appliance query too. It is cleared in pre_process_message
+        # and was never set back, so a reconnected device would skip protocol
+        # detection and re-probe with build_query() alone.
+        self._appliance_query = True
         self._buffer = b""
         if self._socket:
             try:
@@ -780,6 +943,8 @@ class MideaDevice(threading.Thread):
             self._previous_refresh = self._previous_heartbeat = start
             # refresh/recv msg loop after connected
             while True:
+                should_reconnect = False
+                error_msg: str | None = None
                 try:
                     if not self._socket:
                         _LOGGER.debug("[%s] Socket is none", self._device_id)
@@ -799,39 +964,35 @@ class MideaDevice(threading.Thread):
                     if result == MessageResult.SUCCESS:
                         timeout_counter = 0
                     if result == MessageResult.ERROR:
-                        _LOGGER.debug("[%s] Message 'ERROR' received", self._device_id)
-                        self.close_socket()
-                        break
+                        error_msg = "Message 'ERROR' received"
+                        should_reconnect = True
                 except TimeoutError:
                     timeout_counter += 1
                     if timeout_counter >= RESPONSE_TIMEOUT:
-                        _LOGGER.debug("[%s] Heartbeat timed out", self._device_id)
-                        self.close_socket()
-                        break
+                        error_msg = "Heartbeat timed out"
+                        should_reconnect = True
                 except SocketException:  # refresh_status
-                    _LOGGER.debug("[%s] Socket Exception", self._device_id)
-                    self.close_socket()
-                    break
+                    error_msg = "Socket Exception"
+                    should_reconnect = True
                 except NoSupportedProtocol:
-                    _LOGGER.debug("[%s] No Supported protocol", self._device_id)
-                    # sleep 1 seconds to prevent high cpu usage in for loop
-                    time.sleep(1)
-                    # ignore and continue loop
-                    continue
+                    error_msg = "No Supported protocol"
+                    should_reconnect = True
                 except ConnectionResetError:  # refresh_status -> build_send exception
-                    _LOGGER.debug("[%s] Connection reset by peer", self._device_id)
-                    self.close_socket()
-                    break
+                    error_msg = "Connection reset by peer"
+                    should_reconnect = True
                 except OSError:  # refresh_status
-                    _LOGGER.debug("[%s] OS error", self._device_id)
-                    self.close_socket()
-                    break
+                    error_msg = "OS error"
+                    should_reconnect = True
                 except Exception as e:
                     _LOGGER.exception(
                         "[%s] Unexpected error",
                         self._device_id,
                         exc_info=e,
                     )
+                    should_reconnect = True
+                if error_msg:
+                    _LOGGER.debug("[%s] %s", self._device_id, error_msg)
+                if should_reconnect:
                     self.close_socket()
                     break
 

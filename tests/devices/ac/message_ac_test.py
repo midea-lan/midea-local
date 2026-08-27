@@ -5,6 +5,7 @@ import pytest
 from midealocal.const import ProtocolVersion
 from midealocal.crc8 import calculate
 from midealocal.devices.ac.message import (
+    A1_MIN_BODY_LENGTH,
     MessageA0LongQuery,
     MessageA0Query,
     MessageACBase,
@@ -18,6 +19,7 @@ from midealocal.devices.ac.message import (
     MessageGroupZeroQuery,
     MessageHumidityQuery,
     MessageNewProtocolQuery,
+    MessageNewProtocolSelfCleanQuery,
     MessageNewProtocolSet,
     MessagePowerQuery,
     MessageQuery,
@@ -28,7 +30,6 @@ from midealocal.devices.ac.message import (
     MessageSubProtocolQuery30,
     MessageSubProtocolSet,
     MessageToggleDisplay,
-    NewProtocolQuery,
     NewProtocolTags,
     PowerFormats,
 )
@@ -259,12 +260,17 @@ class TestMessageNewProtocolQuery:
     """Test Message New Protocol Query."""
 
     def test_new_protocol_query_body(self) -> None:
-        """Test new protocol query body."""
+        """Test new protocol query body excludes rate_select by default.
+
+        rate_select is only queried once the device has advertised support
+        via the B5 b5_electricity capability; devices that never advertise it
+        don't answer the query.
+        """
         msg = MessageNewProtocolQuery(protocol_version=ProtocolVersion.V1)
         expected_body = bytearray(
             [
                 0xB1,
-                0x0D,
+                0x0B,
                 NewProtocolTags.indirect_wind & 0xFF,
                 NewProtocolTags.indirect_wind >> 8,
                 NewProtocolTags.breezeless & 0xFF,
@@ -281,16 +287,67 @@ class TestMessageNewProtocolQuery:
                 NewProtocolTags.wind_lr_angle >> 8,
                 NewProtocolTags.wind_ud_angle & 0xFF,
                 NewProtocolTags.wind_ud_angle >> 8,
-                NewProtocolTags.rate_select & 0xFF,
-                NewProtocolTags.rate_select >> 8,
                 NewProtocolTags.out_silent & 0xFF,
                 NewProtocolTags.out_silent >> 8,
                 NewProtocolTags.buzzer_all & 0xFF,
                 NewProtocolTags.buzzer_all >> 8,
-                NewProtocolQuery.error_code_query & 0xFF,
-                NewProtocolQuery.error_code_query >> 8,
-                NewProtocolTags.b5_self_clean_active & 0xFF,
-                NewProtocolTags.b5_self_clean_active >> 8,
+                NewProtocolTags.error_code_query & 0xFF,
+                NewProtocolTags.error_code_query >> 8,
+            ],
+        )
+
+        assert msg.body[:-2] == expected_body
+
+    def test_new_protocol_query_body_includes_rate_select_when_supported(
+        self,
+    ) -> None:
+        """Test rate_select is appended once the device has advertised support."""
+        msg = MessageNewProtocolQuery(
+            protocol_version=ProtocolVersion.V1,
+            supports_rate_select=True,
+        )
+        expected_body = bytearray(
+            [
+                0xB1,
+                0x0C,
+                NewProtocolTags.indirect_wind & 0xFF,
+                NewProtocolTags.indirect_wind >> 8,
+                NewProtocolTags.breezeless & 0xFF,
+                NewProtocolTags.breezeless >> 8,
+                NewProtocolTags.indoor_humidity & 0xFF,
+                NewProtocolTags.indoor_humidity >> 8,
+                NewProtocolTags.screen_display & 0xFF,
+                NewProtocolTags.screen_display >> 8,
+                NewProtocolTags.fresh_air_1 & 0xFF,
+                NewProtocolTags.fresh_air_1 >> 8,
+                NewProtocolTags.fresh_air_2 & 0xFF,
+                NewProtocolTags.fresh_air_2 >> 8,
+                NewProtocolTags.wind_lr_angle & 0xFF,
+                NewProtocolTags.wind_lr_angle >> 8,
+                NewProtocolTags.wind_ud_angle & 0xFF,
+                NewProtocolTags.wind_ud_angle >> 8,
+                NewProtocolTags.out_silent & 0xFF,
+                NewProtocolTags.out_silent >> 8,
+                NewProtocolTags.buzzer_all & 0xFF,
+                NewProtocolTags.buzzer_all >> 8,
+                NewProtocolTags.error_code_query & 0xFF,
+                NewProtocolTags.error_code_query >> 8,
+                NewProtocolTags.rate_select & 0xFF,
+                NewProtocolTags.rate_select >> 8,
+            ],
+        )
+
+        assert msg.body[:-2] == expected_body
+
+    def test_new_protocol_self_clean_query_body(self) -> None:
+        """Test new protocol self-clean query body."""
+        msg = MessageNewProtocolSelfCleanQuery(protocol_version=ProtocolVersion.V1)
+        expected_body = bytearray(
+            [
+                0xB1,
+                0x01,
+                NewProtocolTags.self_clean & 0xFF,
+                NewProtocolTags.self_clean >> 8,
             ],
         )
         assert msg.body[:-2] == expected_body
@@ -741,6 +798,42 @@ class TestMessageACResponse:
         assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == -6.5  # ((40 - 50) / 2) - 1.5 = -6.5
 
+    def test_message_notify1_a1_short_body(self) -> None:
+        """Test Message parse notify1 A1 with a body too short to parse."""
+        self.header[9] = 0x04
+        # Real frame from a 00000Q1B / subtype 44204 unit: 7-byte body.
+        body = bytearray([0xA1, 0x00, 0x03, 0x8A, 0x95, 0xB6, 0xC1, 0x02])
+        response = MessageACResponse(self.header + body)
+
+        assert not hasattr(response, "indoor_temperature")
+        assert not hasattr(response, "outdoor_temperature")
+        assert not hasattr(response, "indoor_humidity")
+        assert not hasattr(response, "current_work_time")
+
+    def test_message_notify1_a1_body_length_boundary(self) -> None:
+        """Test Message parse notify1 A1 boundary at A1_MIN_BODY_LENGTH."""
+        self.header[9] = 0x04
+
+        # +1 accounts for the trailing checksum byte stripped by MessageResponse.
+        body = bytearray(A1_MIN_BODY_LENGTH - 1 + 1)
+        body[0] = 0xA1
+        response = MessageACResponse(self.header + body)
+        assert not hasattr(response, "indoor_temperature")
+
+        body = bytearray(A1_MIN_BODY_LENGTH + 1)
+        body[0] = 0xA1
+        body[13] = 100  # Indoor temperature byte
+        body[14] = 60  # Outdoor temperature byte
+        body[17] = 50  # Indoor humidity byte
+        response = MessageACResponse(self.header + body)
+
+        assert hasattr(response, "indoor_temperature")
+        assert response.indoor_temperature == 25.0  # (100 - 50) / 2
+        assert hasattr(response, "outdoor_temperature")
+        assert response.outdoor_temperature == 5.0  # (60 - 50) / 2
+        assert hasattr(response, "indoor_humidity")
+        assert response.indoor_humidity == 50
+
     def test_message_query_b5(self) -> None:
         """Test message query b5."""
         body = bytearray(
@@ -915,6 +1008,30 @@ class TestMessageACResponse:
             "display_control": True,
         }
 
+    @pytest.mark.parametrize(
+        ("raw_value", "expected"),
+        [(4, True), (1, True), (0, False)],
+    )
+    def test_message_query_b5_electricity_gates_rate_select(
+        self,
+        raw_value: int,
+        expected: bool,
+    ) -> None:
+        """Test b5_electricity capability gates the rate_select capability flag.
+
+        A nonzero value (rate level count) means the device supports
+        rate_select; 0 means unsupported.
+        """
+        self.header[9] = 0x03
+        body = bytearray([0xB5, 0x01])  # Body type, params count
+        body += bytearray([0x16, 0x02, 0x01, raw_value])  # b5_electricity
+        body += bytearray(1)  # trailing checksum byte (stripped by MessageResponse)
+
+        response = MessageACResponse(self.header + body)
+
+        assert hasattr(response, "capabilities")
+        assert response.capabilities == {"rate_select": expected}
+
     def test_message_query_b5_custom_fan_supports_named_speeds(self) -> None:
         """Test B5 fan custom profile includes named fan speeds."""
         self.header[9] = 0x03
@@ -979,34 +1096,52 @@ class TestMessageACResponse:
         assert response.out_silent is expected
 
     @pytest.mark.parametrize(
-        ("byte12", "expected"),
-        [(0x3C, True), (0x00, False)],
+        ("raw_value", "expected"),
+        [(0x01, True), (0x00, False)],
     )
-    def test_message_notify2_b5_self_clean_active(
+    def test_message_query_b1_self_clean_active(
         self,
-        byte12: int,
+        raw_value: int,
         expected: bool,
     ) -> None:
-        """Test Message parse notify2 B5 with self_clean_active."""
-        # B5 push body: body_type(1) + count(1) + tag(2) + length(1) + value(39)
-        payload = bytearray(39)
-        payload[12] = byte12
-        body = bytearray(2)
-        body[0] = 0xB5  # Body type
-        body[1] = 0x01  # Params count
-        body += bytearray(
+        """Test Message parse query B1 reports live self-clean state."""
+        # B1 body: body_type(1) + count(1) + tag(2) + 0x00 + length(1) + value(1)
+        self.header[9] = 0x03
+        body = bytearray(
             [
-                NewProtocolTags.b5_self_clean_active & 0xFF,  # tag low 0xE2
-                NewProtocolTags.b5_self_clean_active >> 8,  # tag high 0x00
-                len(payload),  # length 39
+                0xB1,  # Body type
+                0x01,  # Params count
+                NewProtocolTags.self_clean & 0xFF,
+                NewProtocolTags.self_clean >> 8,
+                0x00,
+                0x01,  # Value length
+                raw_value,
+                0x00,  # trailing checksum byte (stripped by MessageResponse)
             ],
         )
-        body += payload
-        body += bytearray(1)  # trailing checksum byte (stripped by MessageResponse)
 
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "self_clean_active")
         assert response.self_clean_active is expected
+
+    def test_message_notify2_b5_self_clean_is_capability_only(self) -> None:
+        """Test that tag 0x0039 in a B5 body is not read as live state."""
+        # B5 advertises self-clean support with a constant 0x01, so it must not
+        # be mistaken for the running state.
+        body = bytearray(
+            [
+                0xB5,  # Body type
+                0x01,  # Params count
+                NewProtocolTags.self_clean & 0xFF,
+                NewProtocolTags.self_clean >> 8,
+                0x01,  # Value length
+                0x01,  # Capability: supported
+                0x00,  # trailing checksum byte (stripped by MessageResponse)
+            ],
+        )
+
+        response = MessageACResponse(self.header + body)
+        assert not hasattr(response, "self_clean_active")
 
     def test_message_query_c0(self) -> None:
         """Test Message parse query C0."""
@@ -1319,12 +1454,12 @@ class TestMessageACResponse:
         assert response.compressor_current == 1
         assert hasattr(response, "compressor_voltage")
         assert response.compressor_voltage == 232
+        assert hasattr(response, "indoor_ambient_temperature")
+        assert response.indoor_ambient_temperature == 20.5
         assert hasattr(response, "indoor_coil_temperature")
-        assert response.indoor_coil_temperature == 20.5
-        assert hasattr(response, "evaporator_temperature")
-        assert response.evaporator_temperature == 4.0
-        assert hasattr(response, "condenser_temperature")
-        assert response.condenser_temperature == 26.0
+        assert response.indoor_coil_temperature == 4.0
+        assert hasattr(response, "outdoor_coil_temperature")
+        assert response.outdoor_coil_temperature == 26.0
         assert hasattr(response, "outdoor_ambient_temperature")
         assert response.outdoor_ambient_temperature == 19.0
         assert hasattr(response, "discharge_pipe_temperature")
@@ -1645,8 +1780,8 @@ class TestMessageACResponse:
         body = bytearray(10)
         body[0] = 0xB1
         body[1] = 0x01  # 1 param
-        body[2] = NewProtocolQuery.error_code_query & 0xFF
-        body[3] = NewProtocolQuery.error_code_query >> 8
+        body[2] = NewProtocolTags.error_code_query & 0xFF
+        body[3] = NewProtocolTags.error_code_query >> 8
         body[4] = 0x00  # padding
         body[5] = 0x01  # length
         body[6] = 0x05  # error code 5

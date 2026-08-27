@@ -9,6 +9,7 @@ from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 from midealocal.message import ListTypes
 
 from .message import (
+    TEA_BAR_SUBTYPE,
     MessageEDResponse,
     MessageNewSet,
     MessageOldSet,
@@ -25,6 +26,14 @@ from .message import (
 
 _LOGGER = logging.getLogger(__name__)
 
+TEA_BAR_MIN_TARGET_TEMPERATURE = 40
+TEA_BAR_MAX_TARGET_TEMPERATURE = 100
+TEA_BAR_DEFAULT_TARGET_TEMPERATURE = 100
+TEA_BAR_MIN_KEEP_WARM_HOURS = 1.0
+TEA_BAR_MAX_KEEP_WARM_HOURS = 12.0
+TEA_BAR_DEFAULT_KEEP_WARM_HOURS = 12.0
+TEA_BAR_MODEL = "63000622"
+
 
 class DeviceAttributes(StrEnum):
     """Midea ED device attributes."""
@@ -40,6 +49,23 @@ class DeviceAttributes(StrEnum):
     life2 = "life2"
     life3 = "life3"
     child_lock = "child_lock"
+    current_temperature = "current_temperature"
+    target_temperature = "target_temperature"
+    heating = "heating"
+    dispensing = "dispensing"
+    boil_temperature = "boil_temperature"
+    boiling = "boiling"
+    keep_warm = "keep_warm"
+    keep_warm_time = "keep_warm_time"
+    keep_warm_remaining = "keep_warm_remaining"
+    sleep = "sleep"
+    screen_display = "screen_display"
+    cooling = "cooling"
+    lack_water = "lack_water"
+    standby = "standby"
+    hot_water_dispensing = "hot_water_dispensing"
+    fault_code = "fault_code"
+    fault = "fault"
     # Soft water machine (water softener) attributes
     velocity = "velocity"
     soft_available = "soft_available"
@@ -117,11 +143,38 @@ class MideaEDDevice(MideaDevice):
                 DeviceAttributes.error: None,
             },
         )
+        if self._is_tea_bar():
+            self._tea_bar_cancel_after_dispensing = False
+            self._attributes.update(
+                {
+                    DeviceAttributes.current_temperature: None,
+                    DeviceAttributes.target_temperature: None,
+                    DeviceAttributes.heating: False,
+                    DeviceAttributes.dispensing: False,
+                    DeviceAttributes.boil_temperature: None,
+                    DeviceAttributes.boiling: False,
+                    DeviceAttributes.keep_warm: False,
+                    DeviceAttributes.keep_warm_time: None,
+                    DeviceAttributes.keep_warm_remaining: None,
+                    DeviceAttributes.sleep: False,
+                    DeviceAttributes.screen_display: True,
+                    DeviceAttributes.cooling: False,
+                    DeviceAttributes.lack_water: False,
+                    DeviceAttributes.standby: False,
+                    DeviceAttributes.hot_water_dispensing: False,
+                    DeviceAttributes.fault_code: 0,
+                    DeviceAttributes.fault: False,
+                },
+            )
         self._device_class = ListTypes.X00
 
     def _use_new_set(self) -> bool:
         # if (self.sub_type > 342 or self.sub_type == 340) else False
         return True
+
+    def _is_tea_bar(self) -> bool:
+        """Return whether this device matches the verified tea-bar model."""
+        return self.subtype == TEA_BAR_SUBTYPE and self.model == TEA_BAR_MODEL
 
     def build_query(
         self,
@@ -160,6 +213,8 @@ class MideaEDDevice(MideaDevice):
             # remove MessageQuery03 as it return 0
             775: MessageQuery01,
         }
+        if self._is_tea_bar():
+            return [MessageQuery06(pv)]
         query_cls = subtype_query.get(self.subtype)
         if query_cls is not None:
             return [query_cls(pv)]
@@ -171,19 +226,177 @@ class MideaEDDevice(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea ED device process message."""
-        message = MessageEDResponse(msg)
+        response_subtype = self.subtype if self._is_tea_bar() else 0
+        message = MessageEDResponse(msg, response_subtype)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        if hasattr(message, "device_class"):
-            self._device_class = message.device_class
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                new_status[str(status)] = getattr(message, str(status))
-                self._attributes[status] = getattr(message, str(status))
+        new_status = self.update_attributes_from_message(message)
+        if self._is_tea_bar():
+            if DeviceAttributes.target_temperature in new_status:
+                target_temperature = new_status[DeviceAttributes.target_temperature]
+                new_status[DeviceAttributes.boil_temperature] = target_temperature
+                self._attributes[DeviceAttributes.boil_temperature] = target_temperature
+            if DeviceAttributes.heating in new_status:
+                heating = new_status[DeviceAttributes.heating]
+                new_status[DeviceAttributes.boiling] = heating
+                self._attributes[DeviceAttributes.boiling] = heating
+            if (
+                self._tea_bar_cancel_after_dispensing
+                and DeviceAttributes.dispensing in new_status
+                and DeviceAttributes.heating in new_status
+                and new_status[DeviceAttributes.dispensing] is False
+            ):
+                self._tea_bar_cancel_after_dispensing = False
+                if new_status[DeviceAttributes.heating] is True:
+                    # Model 63000622 queues heating while it dispenses water.
+                    # Its first heat-stop command is acknowledged but does not
+                    # cancel that queued phase, so repeat the same verified
+                    # command once when the device transitions into heating.
+                    stop_message = MessageNewSet(self._message_protocol_version)
+                    stop_message.heating = False
+                    self.build_send(stop_message)
         return new_status
+
+    def _set_tea_bar_attribute(
+        self,
+        attr: str,
+        value: bool | float | str,
+    ) -> bool:
+        """Build and send a subtype-395 tea bar control command."""
+        if not self._is_tea_bar() or attr not in [
+            DeviceAttributes.boil_temperature,
+            DeviceAttributes.boiling,
+            DeviceAttributes.child_lock,
+            DeviceAttributes.keep_warm,
+            DeviceAttributes.keep_warm_time,
+            DeviceAttributes.sleep,
+            DeviceAttributes.screen_display,
+            DeviceAttributes.cooling,
+        ]:
+            return False
+
+        message = MessageNewSet(self._message_protocol_version)
+        stored_value: bool | float | str
+        if attr == DeviceAttributes.boil_temperature:
+            if isinstance(value, float) and not value.is_integer():
+                msg = "Tea bar target temperature must be a whole number"
+                raise ValueError(msg)
+            target_temperature = int(value)
+            if not (
+                TEA_BAR_MIN_TARGET_TEMPERATURE
+                <= target_temperature
+                <= TEA_BAR_MAX_TARGET_TEMPERATURE
+            ):
+                msg = (
+                    "Tea bar target temperature must be between "
+                    f"{TEA_BAR_MIN_TARGET_TEMPERATURE} and "
+                    f"{TEA_BAR_MAX_TARGET_TEMPERATURE}"
+                )
+                raise ValueError(msg)
+            self._validate_tea_bar_target(target_temperature)
+            self._tea_bar_cancel_after_dispensing = False
+            message.target_temperature = target_temperature
+            message.heating = True
+            stored_value = target_temperature
+        elif attr == DeviceAttributes.boiling:
+            boiling = bool(value)
+            # Starting a normal cycle uses the appliance's 100-degree target
+            # together with heat_start. Stopping must send heat_start off on
+            # its own: resending a target while the appliance is filling can
+            # leave that target queued and start heating after filling ends.
+            if boiling:
+                self._tea_bar_cancel_after_dispensing = False
+                message.target_temperature = TEA_BAR_DEFAULT_TARGET_TEMPERATURE
+            elif self._attributes.get(DeviceAttributes.dispensing) is True:
+                self._tea_bar_cancel_after_dispensing = True
+            message.heating = boiling
+            stored_value = boiling
+        elif attr == DeviceAttributes.child_lock:
+            # Model 63000622's official Lua lock control is
+            # setbytes(0x01, 0x02, 0x01/0x00, 0x00, 0x00).
+            child_lock = bool(value)
+            message.lock = child_lock
+            stored_value = child_lock
+        elif attr == DeviceAttributes.sleep:
+            sleep = bool(value)
+            message.sleep = sleep
+            stored_value = sleep
+        elif attr == DeviceAttributes.screen_display:
+            screen_display = bool(value)
+            message.sleep = not screen_display
+            stored_value = screen_display
+        elif attr == DeviceAttributes.cooling:
+            cooling = bool(value)
+            if (
+                not cooling
+                and self._attributes.get(DeviceAttributes.dispensing) is True
+            ):
+                msg = "Tea bar cooling cannot be stopped while dispensing water"
+                raise ValueError(msg)
+            message.cooling = cooling
+            stored_value = cooling
+        else:
+            keep_warm = (
+                bool(value)
+                if attr == DeviceAttributes.keep_warm
+                else bool(self._attributes.get(DeviceAttributes.keep_warm))
+            )
+            keep_warm_time = (
+                float(value)
+                if attr == DeviceAttributes.keep_warm_time
+                else self._attributes.get(DeviceAttributes.keep_warm_time)
+            )
+            # A zero addition means "use the appliance default" for model
+            # 63000622. The appliance has no user-adjustable keep-warm duration
+            # and defaults to 12 hours, so normal keep-warm toggles must not
+            # invent or require a duration. Keep explicit non-default values
+            # only for low-level backward compatibility.
+            raw_keep_warm_time = 0
+            if (
+                isinstance(keep_warm_time, int | float)
+                and float(keep_warm_time) != TEA_BAR_DEFAULT_KEEP_WARM_HOURS
+            ):
+                if not (
+                    TEA_BAR_MIN_KEEP_WARM_HOURS
+                    <= keep_warm_time
+                    <= TEA_BAR_MAX_KEEP_WARM_HOURS
+                    and (float(keep_warm_time) * 2).is_integer()
+                ):
+                    msg = (
+                        "Tea bar keep-warm time must be between "
+                        f"{TEA_BAR_MIN_KEEP_WARM_HOURS:g} and "
+                        f"{TEA_BAR_MAX_KEEP_WARM_HOURS:g} hours in 0.5-hour steps"
+                    )
+                    raise ValueError(msg)
+                raw_keep_warm_time = int(keep_warm_time * 2)
+            message.keep_warm = keep_warm
+            message.keep_warm_time = raw_keep_warm_time
+            stored_value = (
+                keep_warm if attr == DeviceAttributes.keep_warm else float(value)
+            )
+
+        self._attributes[attr] = stored_value
+        self.build_send(message)
+        return True
+
+    def _validate_tea_bar_target(self, target_temperature: int) -> None:
+        """Reject a target that cannot increase the current temperature."""
+        current_temperature = self._attributes.get(
+            DeviceAttributes.current_temperature,
+        )
+        if (
+            isinstance(current_temperature, int | float)
+            and current_temperature >= target_temperature
+        ):
+            msg = (
+                f"Tea bar current temperature {current_temperature} is not "
+                f"below target temperature {target_temperature}"
+            )
+            raise ValueError(msg)
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea ED device set attribute."""
+        if self._set_tea_bar_attribute(attr, value):
+            return
         message: MessageNewSet | MessageOldSet | None = None
         if self._use_new_set():
             if attr in [

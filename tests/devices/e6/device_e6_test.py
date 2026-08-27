@@ -80,10 +80,10 @@ class TestMideaE6Device:
     def test_heating_modes(self) -> None:
         """Test heating_modes property returns available modes."""
         assert self.device.heating_modes == [
-            "normal_mode",
-            "out_mode",
-            "home_mode",
-            "sleep_mode",
+            "normal",
+            "out",
+            "home",
+            "sleep",
         ]
 
     @pytest.mark.parametrize(
@@ -93,7 +93,7 @@ class TestMideaE6Device:
             (DeviceAttributes.heating_power, True),
             (DeviceAttributes.heating_temperature, 50.0),
             (DeviceAttributes.bathing_temperature, 40.0),
-            (DeviceAttributes.heating_modes, "normal_mode"),
+            (DeviceAttributes.heating_modes, "normal"),
             (DeviceAttributes.cold_water_single, True),
             (DeviceAttributes.cold_water_dot, True),
         ],

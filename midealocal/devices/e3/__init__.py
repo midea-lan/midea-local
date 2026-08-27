@@ -3,10 +3,14 @@
 import json
 import logging
 from enum import StrEnum
-from typing import Any, Unpack
+from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import (
+    MideaDevice,
+    MideaDeviceInitKwargs,
+    precision_halves_translator,
+)
 
 from .message import (
     MessageE3Response,
@@ -30,10 +34,14 @@ class DeviceAttributes(StrEnum):
     smart_volume = "smart_volume"
     current_temperature = "current_temperature"
     target_temperature = "target_temperature"
+    temperature_min = "temperature_min"
+    temperature_max = "temperature_max"
 
 
 class MideaE3Device(MideaDevice):
     """Midea E3 device."""
+
+    _old_subtypes: ClassVar[list[int]] = [32, 33, 34, 35, 36, 37, 40, 43, 48, 49, 80]
 
     def __init__(
         self,
@@ -54,9 +62,10 @@ class MideaE3Device(MideaDevice):
                 DeviceAttributes.smart_volume: False,
                 DeviceAttributes.current_temperature: None,
                 DeviceAttributes.target_temperature: 40.0,
+                DeviceAttributes.temperature_min: 35.0,
+                DeviceAttributes.temperature_max: 65.0,
             },
         )
-        self._old_subtypes = [32, 33, 34, 35, 36, 37, 40, 43, 48, 49, 80]
         self._precision_halves: bool | None = None
         self._default_precision_halves = False
         # target_temperature step
@@ -82,19 +91,16 @@ class MideaE3Device(MideaDevice):
         """Midea E3 device process message."""
         message = MessageE3Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                if self._precision_halves and status in [
+        return self.update_attributes_from_message(
+            message,
+            dict.fromkeys(
+                [
                     DeviceAttributes.current_temperature,
                     DeviceAttributes.target_temperature,
-                ]:
-                    self._attributes[status] = getattr(message, str(status)) / 2
-                else:
-                    self._attributes[status] = getattr(message, str(status))
-                new_status[str(status)] = self._attributes[status]
-
-        return new_status
+                ],
+                precision_halves_translator(self._precision_halves),
+            ),
+        )
 
     def make_message_set(self) -> MessageSet:
         """Midea E3 device make message set."""
@@ -121,7 +127,7 @@ class MideaE3Device(MideaDevice):
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._message_protocol_version)
                 message.power = bool(value)
-            elif self.subtype in self._old_subtypes:
+            elif self.subtype in MideaE3Device._old_subtypes:
                 message = self.make_message_set()
                 setattr(message, str(attr), value)
             else:

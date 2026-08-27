@@ -111,10 +111,10 @@ class TestMideaCCDevice:
         assert self.device.attributes[DeviceAttributes.mode] == 4
         assert self.device.attributes[DeviceAttributes.target_temperature] == 24.5
         assert self.device.attributes[DeviceAttributes.indoor_temperature] == 25.0
-        assert self.device.attributes[DeviceAttributes.fan_speed] == "Level 5"
+        assert self.device.attributes[DeviceAttributes.fan_speed] == "level_5"
         assert self.device.attributes[DeviceAttributes.temperature_precision] == 1
         assert self.device.attributes[DeviceAttributes.aux_heating] is False
-        assert new_status[DeviceAttributes.fan_speed.value] == "Level 5"
+        assert new_status[DeviceAttributes.fan_speed.value] == "level_5"
         assert self.device.fan_modes == list(
             MideaCCDevice._fan_speeds_7level.values(),
         )
@@ -125,7 +125,7 @@ class TestMideaCCDevice:
             _legacy_frame(fan_speed=0x08, byte13=0x40, byte14=0x20),
         )
         assert self.device.attributes[DeviceAttributes.fan_speed_level] is True
-        assert self.device.attributes[DeviceAttributes.fan_speed] == "Medium"
+        assert self.device.attributes[DeviceAttributes.fan_speed] == "medium"
         assert self.device.attributes[DeviceAttributes.aux_heat_status] == 1
         assert self.device.attributes[DeviceAttributes.aux_heating] is True
         assert new_status[DeviceAttributes.aux_heating.value] is True
@@ -164,9 +164,9 @@ class TestMideaCCDevice:
         assert self.device.attributes[DeviceAttributes.mode] == 4
         assert self.device.attributes[DeviceAttributes.target_temperature] == 24.0
         assert self.device.attributes[DeviceAttributes.indoor_temperature] == 23.5
-        assert self.device.attributes[DeviceAttributes.fan_speed] == "Level 5"
+        assert self.device.attributes[DeviceAttributes.fan_speed] == "level_5"
         assert self.device.attributes[DeviceAttributes.swing] is True
-        assert new_status[DeviceAttributes.fan_speed.value] == "Level 5"
+        assert new_status[DeviceAttributes.fan_speed.value] == "level_5"
         assert self.device.fan_modes == list(MideaCCDevice._fan_speeds_fe.values())
 
     def test_make_message_set_maps_fan_speed(self) -> None:
@@ -178,6 +178,14 @@ class TestMideaCCDevice:
         assert message.power is True
         assert message.mode == 4
         assert message.target_temperature == 24.5
+
+    def test_make_message_set_unknown_fan_speed_keeps_default(self) -> None:
+        """An unresolved fan speed (None) does not crash make_message_set."""
+        self.device.process_message(_legacy_frame(fan_speed=0x08, byte13=0x40))
+        self.device.process_message(_legacy_frame(fan_speed=0x03, byte13=0x40))
+        assert self.device.attributes[DeviceAttributes.fan_speed] is None
+        message = self.device.make_message_set()
+        assert message.fan_speed == 0x80
 
     def test_set_attribute_power_without_fan_speeds(self) -> None:
         """Without a known fan table the default raw fan speed is kept."""
@@ -238,7 +246,7 @@ class TestMideaCCDevice:
         """A known fan speed name is mapped to its raw key."""
         self.device.process_message(_legacy_frame(fan_speed=0x08, byte13=0x40))
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.fan_speed.value, "High")
+            self.device.set_attribute(DeviceAttributes.fan_speed.value, "high")
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
             assert msg.fan_speed == 0x40
@@ -369,7 +377,7 @@ class TestMideaCCDeviceFEControl:
     def test_set_attribute_fan_speed_valid(self) -> None:
         """FE fan speed name maps to the numeric FE speed value."""
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.fan_speed.value, "Level 3")
+            self.device.set_attribute(DeviceAttributes.fan_speed.value, "level_3")
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
             assert msg._controls == [(CCControlId.FAN_SPEED, 3)]

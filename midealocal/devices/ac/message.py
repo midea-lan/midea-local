@@ -18,6 +18,8 @@ from midealocal.message import (
 
 _LOGGER = logging.getLogger(__name__)
 
+A1_MIN_BODY_LENGTH = 18
+
 BB_AC_MODES = [0, 3, 1, 2, 4, 5]
 BB_MIN_BODY_LENGTH = 21
 BB_FRESH_AIR_SWITCH_INDEX = 45
@@ -44,7 +46,6 @@ INDIRECT_WIND_VALUE = 0x02
 MAX_MSG_SERIAL_NUM = 254
 OUT_SILENT_VALUE = 0x03
 POWER_SAVING_VALUE = 0x08
-SELF_CLEAN_ACTIVE_STATUS_BYTE = 12
 SCREEN_DISPLAY_BYTE_CHECK = 0x07
 SUB_PROTOCOL_BODY_TEMP_CHECK = 0x80
 TEMP_DECIMAL_MIN_BODY_LENGTH = 20
@@ -68,7 +69,7 @@ XC1_GROUP_ONE_MIN_LENGTH = 15
 XC1_GROUP_TWO_MIN_LENGTH = 9
 XC1_GROUP_SEVEN_MIN_LENGTH = 12
 # Refrigerant circuit temperatures are reported as half degrees with an offset:
-# T1/T2 (indoor coil / evaporator) use 30, T3/T4 (condenser / outdoor) use 50.
+# T1/T2 (indoor ambient / indoor coil) use 30, T3/T4 (outdoor coil / ambient) use 50.
 XC1_TEMP_INDOOR_OFFSET = 30
 XC1_TEMP_OUTDOOR_OFFSET = 50
 XC1_TEMP_DIVISOR = 2
@@ -115,6 +116,7 @@ B5_ECO_VALUES = frozenset({1, 2})
 B5_ANION_ON_VALUE = 1
 B5_TURBO_HEAT_VALUES = frozenset({1, 3})
 B5_DISPLAY_VALUES = frozenset({1, 2, 100})
+B5_ELECTRICITY_UNSUPPORTED_VALUE = 0  # 0 = unsupported; nonzero = rate level count
 
 
 class PowerFormats(IntEnum):
@@ -128,90 +130,83 @@ class PowerFormats(IntEnum):
     BCD_ENERGY_BINARY_POWER = 101
 
 
-class NewProtocolQuery(IntEnum):
-    """New protocol tags in query."""
-
-    error_code_query = 0x003F
-    mode_query = 0x0041
-    high_temperature_monitor = 0x0047
-    rate_select = 0x0048
-
-
 class NewProtocolTags(IntEnum):
     """New protocol tags in query and response."""
 
-    indoor_humidity = 0x0015  # queryType == "indoor_humidity"
-    screen_display = 0x0017
+    arom = 0x0069
+    auto_prevent_straight_wind = 0x0226
+    b5_anion = 0x021E
+    b5_eco = 0x0212
+    b5_electricity = 0x0216
+    b5_fahrenheit = 0x0222
+    b5_filter_check = 0x0221
+    b5_filter_remind = 0x0217
+    b5_humidity = 0x021F
+    b5_mode = 0x0214
+    b5_ptc = 0x0219
+    b5_screen_display = 0x0224
+    b5_sound = 0x022C
+    b5_strong_wind = 0x021A
+    b5_temperature = 0x0225
+    b5_wind_speed = 0x0210
+    b5_wind_swing = 0x0215
     breezeless = 0x0018  # queryType == "fn_no_wind_sense"
-    prompt_tone = 0x001A  # buzzerValue
-    indirect_wind = 0x0042  # prevent_straight_wind
+    buzzer_all = 0x022C
+    child_lock = 0x005C
+    child_prevent_cold_wind = 0x003A
+    cool_hot_sense = 0x0021
+    degerming = 0x005A
+    error_code_query = 0x003F
+    even_wind = 0x004E
+    extreme_wind = 0x004C
+    face_register = 0x0044
+    filter_level = 0x0409
     fresh_air_1 = 0x0233
     fresh_air_2 = 0x004B  # queryType == "fresh_air"
-    prevent_super_cool = 0x0049
-    auto_prevent_straight_wind = 0x0226
-    self_clean = 0x0039  # self_clean query can't return response
-    wind_straight = 0x0032
-    wind_avoid = 0x0033
-    intelligent_wind = 0x0034
-    child_prevent_cold_wind = 0x003A
-    little_angel = 0x021B
-    cool_hot_sense = 0x0021
-    even_wind = 0x004E
-    security = 0x0029
-    voice_control = 0x0020
-    single_tuyere = 0x004F
-    extreme_wind = 0x004C
-    pre_cool_hot = 0x0201
-    water_washing = 0x004A
+    fresh_air_parm = 0x0250
     gentle_wind_sense = 0x0043
-    parent_control = 0x0051
-    nobody_energy_save = 0x0030
-    filter_level = 0x0409
-    prevent_straight_wind_lr = 0x0058
-    pm25_value = 0x020B
-    water_pump = 0x0050
+    high_temp_remove_odor_alone = 0x005E
+    high_temperature_monitor = 0x0047
+    indirect_wind = 0x0042  # prevent_straight_wind
+    indoor_humidity = 0x0015  # queryType == "indoor_humidity"
     intelligent_control = 0x0031
-    volume_control = 0x0024
-    wind_ud_angle = 0x0009
-    wind_lr_angle = 0x000A
-    face_register = 0x0044
-    degerming = 0x005A
+    intelligent_wind = 0x0034
     light = 0x005B
-    wind_top = 0x0061
-    wind_around = 0x0059
-    remote_control_lock = 0x0227  # power_lock?
-    ptc_lock = 0x0229
+    little_angel = 0x021B
+    mode_query = 0x0041
+    nobody_energy_save = 0x0030
     offline_operating_time = 0x022B
     operating_time = 0x0228
-    child_lock = 0x005C
-    buzzer_all = 0x022C
-    self_remove_odor_phase = 0x005D
-    high_temp_remove_odor_alone = 0x005E
-    ozone = 0x005F
-    soft_warm = 0x0063
-    fresh_air_parm = 0x0250
-    rewarming_dry = 0x0068
-    arom = 0x0069
-    # b5 device
-    b5_mode = 0x0214
-    b5_strong_wind = 0x021A
-    b5_wind_speed = 0x0210
-    b5_humidity = 0x021F
-    b5_temperature = 0x0225
-    b5_eco = 0x0212
-    b5_filter_remind = 0x0217
-    b5_filter_check = 0x0221
-    b5_fahrenheit = 0x0222
-    b5_electricity = 0x0216
-    b5_ptc = 0x0219
-    b5_wind_swing = 0x0215
-    b5_screen_display = 0x0224
-    b5_anion = 0x021E
-    b5_sound = 0x022C
-    rate_select = 0x0048
-    # AC outdoor silent mode (PortaSplit)
     out_silent = 0x00CD
-    b5_self_clean_active = 0x00E2
+    ozone = 0x005F
+    parent_control = 0x0051
+    pm25_value = 0x020B
+    pre_cool_hot = 0x0201
+    prevent_straight_wind_lr = 0x0058
+    prevent_super_cool = 0x0049
+    prompt_tone = 0x001A  # buzzerValue
+    ptc_lock = 0x0229
+    rate_select = 0x0048
+    remote_control_lock = 0x0227  # power_lock?
+    rewarming_dry = 0x0068
+    screen_display = 0x0017
+    security = 0x0029
+    # Live self-clean status. Reported in B0 (set echo) and B1 (query) bodies.
+    # The same tag in a B5 capability body only advertises support, not state.
+    self_clean = 0x0039
+    self_remove_odor_phase = 0x005D
+    single_tuyere = 0x004F
+    soft_warm = 0x0063
+    voice_control = 0x0020
+    volume_control = 0x0024
+    water_pump = 0x0050
+    water_washing = 0x004A
+    wind_around = 0x0059
+    wind_avoid = 0x0033
+    wind_lr_angle = 0x000A
+    wind_straight = 0x0032
+    wind_top = 0x0061
+    wind_ud_angle = 0x0009
 
 
 class MessageACBase(MessageRequest):
@@ -448,36 +443,62 @@ class MessageToggleDisplay(MessageACBase):
 class MessageNewProtocolQuery(MessageACBase):
     """AC message new protocol query."""
 
-    def __init__(self, protocol_version: int) -> None:
-        """Initialize AC message new protocol query."""
+    _query_params: tuple[int, ...] = (
+        NewProtocolTags.indirect_wind,
+        NewProtocolTags.breezeless,
+        NewProtocolTags.indoor_humidity,
+        NewProtocolTags.screen_display,
+        NewProtocolTags.fresh_air_1,
+        NewProtocolTags.fresh_air_2,
+        NewProtocolTags.wind_lr_angle,
+        NewProtocolTags.wind_ud_angle,
+        NewProtocolTags.out_silent,
+        NewProtocolTags.buzzer_all,
+        NewProtocolTags.error_code_query,
+    )
+
+    def __init__(
+        self,
+        protocol_version: int,
+        *,
+        supports_rate_select: bool = False,
+    ) -> None:
+        """Initialize AC message new protocol query.
+
+        `supports_rate_select` gates the rate_select (0x0048) query param on
+        the device having advertised it via the B5 b5_electricity capability
+        (tag 0x0216). Devices that don't report it never answer the query, so
+        it's left out until support is confirmed.
+        """
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
             body_type=ListTypes.B1,
         )
+        self._supports_rate_select = supports_rate_select
 
     @property
     def _body(self) -> bytearray:
-        query_params = [
-            NewProtocolTags.indirect_wind,
-            NewProtocolTags.breezeless,
-            NewProtocolTags.indoor_humidity,
-            NewProtocolTags.screen_display,
-            NewProtocolTags.fresh_air_1,
-            NewProtocolTags.fresh_air_2,
-            NewProtocolTags.wind_lr_angle,
-            NewProtocolTags.wind_ud_angle,
-            NewProtocolTags.rate_select,
-            NewProtocolTags.out_silent,
-            NewProtocolTags.buzzer_all,
-            NewProtocolQuery.error_code_query,
-            NewProtocolTags.b5_self_clean_active,
-        ]
 
-        _body = bytearray([len(query_params)])
-        for param in query_params:
+        params = list(self._query_params)
+        if self._supports_rate_select:
+            params.append(NewProtocolTags.rate_select)
+
+        _body = bytearray([len(params)])
+        for param in params:
             _body.extend([param & 0xFF, param >> 8])
         return _body
+
+
+class MessageNewProtocolSelfCleanQuery(MessageNewProtocolQuery):
+    """AC message new protocol self-clean query.
+
+    A device answers with an empty parameter list when a query carries a tag it
+    does not support, which suppresses every other tag in the same request. The
+    self-clean state is therefore asked for as an independent status group.
+    """
+
+    _query_params = (NewProtocolTags.self_clean,)
 
 
 class MessageSubProtocol(MessageACBase):
@@ -1086,14 +1107,12 @@ class XBXMessageBody(NewProtocolMessageBody):
             self.out_silent = params[NewProtocolTags.out_silent][0] == OUT_SILENT_VALUE
         if NewProtocolTags.buzzer_all in params:
             self.sound = params[NewProtocolTags.buzzer_all][0] > 0
-        if NewProtocolQuery.error_code_query in params:
-            self.error_code = params[NewProtocolQuery.error_code_query][0]
-        if NewProtocolTags.b5_self_clean_active in params:
-            data = params[NewProtocolTags.b5_self_clean_active]
-            self.self_clean_active: bool = (
-                len(data) > SELF_CLEAN_ACTIVE_STATUS_BYTE
-                and data[SELF_CLEAN_ACTIVE_STATUS_BYTE] != 0
-            )
+        if NewProtocolTags.error_code_query in params:
+            self.error_code = params[NewProtocolTags.error_code_query][0]
+        if NewProtocolTags.self_clean in params and bt != ListTypes.B5:
+            # A B5 body carries this tag as a capability flag (always 1 when the
+            # model supports self-clean), so only B0/B1 bodies report live state.
+            self.self_clean_active: bool = params[NewProtocolTags.self_clean][0] > 0
         if (
             new_protocol_temperature
             and NEW_PROTOCOL_TEMPERATURE_TAG in params
@@ -1241,6 +1260,9 @@ class XB5MessageBody(NewProtocolMessageBody):
         if NewProtocolTags.b5_screen_display in params:
             value = params[NewProtocolTags.b5_screen_display][0]
             caps["display_control"] = value in B5_DISPLAY_VALUES
+        if NewProtocolTags.b5_electricity in params:
+            value = params[NewProtocolTags.b5_electricity][0]
+            caps["rate_select"] = value > B5_ELECTRICITY_UNSUPPORTED_VALUE
         self.capabilities = caps
 
 
@@ -1392,15 +1414,15 @@ class XC1MessageBody(MessageBody):
         self.target_compressor_frequency = body[5]
         self.compressor_current = body[7]
         self.compressor_voltage = body[8]
-        # T1: indoor coil, T2: evaporator outlet
-        self.indoor_coil_temperature = (
+        # T1: indoor return air, T2: indoor coil
+        self.indoor_ambient_temperature = (
             body[10] - XC1_TEMP_INDOOR_OFFSET
         ) / XC1_TEMP_DIVISOR
-        self.evaporator_temperature = (
+        self.indoor_coil_temperature = (
             body[11] - XC1_TEMP_INDOOR_OFFSET
         ) / XC1_TEMP_DIVISOR
-        # T3: condenser, T4: outdoor ambient
-        self.condenser_temperature = (
+        # T3: outdoor coil, T4: outdoor ambient
+        self.outdoor_coil_temperature = (
             body[12] - XC1_TEMP_OUTDOOR_OFFSET
         ) / XC1_TEMP_DIVISOR
         self.outdoor_ambient_temperature = (
@@ -1570,9 +1592,20 @@ class MessageACResponse(MessageResponse):
             self.set_body(XA0MessageBody(super().body))
         # dataType 0x04 and messageBytes[0] 0xA1
         elif (
-            self.message_type == MessageType.notify1 and self.body_type == ListTypes.A1
+            self.message_type == MessageType.notify1
+            and self.body_type == ListTypes.A1
+            and len(super().body) >= A1_MIN_BODY_LENGTH
         ):
             self.set_body(XA1MessageBody(super().body))
+        elif (
+            self.message_type == MessageType.notify1 and self.body_type == ListTypes.A1
+        ):
+            _LOGGER.debug(
+                "Skipping notify1 A1 body too short to parse (%d < %d bytes): %s",
+                len(super().body),
+                A1_MIN_BODY_LENGTH,
+                super().body.hex(),
+            )
         # parse MessageCapabilitiesQuery/MessageCapabilitiesAdditionalQuery response
         # dataType 0x03 and messageBytes[0] 0xB5
         elif self.message_type == MessageType.query and self.body_type == ListTypes.B5:

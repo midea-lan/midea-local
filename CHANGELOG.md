@@ -1,5 +1,154 @@
 # Changelog
 
+## [10.0.1](https://github.com/midea-lan/midea-local/compare/v10.0.0...v10.0.1) (2026-08-23)
+
+
+### Bug Fixes
+
+* **e1:** align modes,status,progress style ([#714](https://github.com/midea-lan/midea-local/issues/714)) ([4188142](https://github.com/midea-lan/midea-local/commit/418814280c94172083edca8bb742ca884ba82ea6))
+* **e3:** align old_subtypes style ([#713](https://github.com/midea-lan/midea-local/issues/713)) ([f30fb15](https://github.com/midea-lan/midea-local/commit/f30fb1566947d44f00a0212e38129bf957bcf005))
+* **fa:** align fan modes ([#712](https://github.com/midea-lan/midea-local/issues/712)) ([264ab1c](https://github.com/midea-lan/midea-local/commit/264ab1ce9a2a1a80d7d93a0c8763c3bf7ad7a03d))
+* **x34:** align modes,status,progress style ([#715](https://github.com/midea-lan/midea-local/issues/715)) ([bd1b3d0](https://github.com/midea-lan/midea-local/commit/bd1b3d08b4614f44b8a4669944f1330c73f78656))
+
+## [10.0.0](https://github.com/midea-lan/midea-local/compare/v9.0.0...v10.0.0) (2026-08-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **x13:** improve effects naming ([#689](https://github.com/midea-lan/midea-local/issues/689))
+
+### Bug Fixes
+
+* **ac:** guard XA1MessageBody parsing against short notify bodies ([#691](https://github.com/midea-lan/midea-local/issues/691)) ([3297742](https://github.com/midea-lan/midea-local/commit/3297742ed593e0e38d269445a449068cb5fb3bea)), closes [#688](https://github.com/midea-lan/midea-local/issues/688)
+* **ac:** keep unit on when a mode change is followed by a temperature write ([#601](https://github.com/midea-lan/midea-local/issues/601)) ([065ad21](https://github.com/midea-lan/midea-local/commit/065ad214b2a71c2802a94bd67ed9f118ace72fea))
+* **ac:** missing B5-derived modes ([#681](https://github.com/midea-lan/midea-local/issues/681)) ([9e4b513](https://github.com/midea-lan/midea-local/commit/9e4b513b8c6eb96444a6632d319e6cd4226086a5))
+* **b8:** handle unknown error sub-codes in MessageB8GenericBody ([#696](https://github.com/midea-lan/midea-local/issues/696)) ([dc12e8f](https://github.com/midea-lan/midea-local/commit/dc12e8f9114140534bb5a333173ba6902ddb06e2))
+* **bf:** align water state attribute name ([#708](https://github.com/midea-lan/midea-local/issues/708)) ([bd6baa3](https://github.com/midea-lan/midea-local/commit/bd6baa3a692595e650df215b25f8ccafa3885f92))
+* **c3:** use correct zone when reading temperature type ([#707](https://github.com/midea-lan/midea-local/issues/707)) ([c17fb6e](https://github.com/midea-lan/midea-local/commit/c17fb6e488430fbd4f30170517ba7ff99ba44d9f))
+* **cc:** avoid crash on stale fan speed ([#682](https://github.com/midea-lan/midea-local/issues/682)) ([6ca3f1c](https://github.com/midea-lan/midea-local/commit/6ca3f1c90d7b8dd04a2f7b81ab2a40e191ab10ea))
+* **cd:** support Kosner 2530001N and sync power with mode selection ([#684](https://github.com/midea-lan/midea-local/issues/684)) ([d9f3a9b](https://github.com/midea-lan/midea-local/commit/d9f3a9bae70b299e593aec1ffda9551669f9c0a9))
+* **ce:** improve modes naming ([#680](https://github.com/midea-lan/midea-local/issues/680)) ([08b5c11](https://github.com/midea-lan/midea-local/commit/08b5c116754764c2dee6feb668a86b6e9c6f8430))
+* **device:** prevent appliance query from masking failed status queries ([#690](https://github.com/midea-lan/midea-local/issues/690)) ([c64d977](https://github.com/midea-lan/midea-local/commit/c64d9778aba9e9c96c2ac64b8960746b23926317))
+* **device:** retry query once before marking protocol unsupported ([#694](https://github.com/midea-lan/midea-local/issues/694)) ([922e27c](https://github.com/midea-lan/midea-local/commit/922e27c579d6871080bf31581aaac20d3264af40))
+* **fa:** add opt-in mode override for fan devices ([#686](https://github.com/midea-lan/midea-local/issues/686)) ([2e5c07e](https://github.com/midea-lan/midea-local/commit/2e5c07e27d9bacec42c68875df70129642082c10))
+* **fa:** validate mode_set_overrides values are bytes ([#693](https://github.com/midea-lan/midea-local/issues/693)) ([c4c0693](https://github.com/midea-lan/midea-local/commit/c4c0693502849a955f3fab9d51dbc2ea990cc228))
+* **fc:** correct FCNotifyMessageBody standby bitmask check ([#698](https://github.com/midea-lan/midea-local/issues/698)) ([8fe1c6d](https://github.com/midea-lan/midea-local/commit/8fe1c6d92829f5f6da4cdfc7d0fc533821bf605b))
+* skip updates on shutdown ([#683](https://github.com/midea-lan/midea-local/issues/683)) ([14364d2](https://github.com/midea-lan/midea-local/commit/14364d2dbb3500378d5c534ae90dfe444cf63314))
+* **x13:** improve effects naming ([#689](https://github.com/midea-lan/midea-local/issues/689)) ([ed3fc6a](https://github.com/midea-lan/midea-local/commit/ed3fc6ad628615a27fb303843935601e5a44c546))
+* **x26:** handle set_attribute before initial status update ([#701](https://github.com/midea-lan/midea-local/issues/701)) ([5654d02](https://github.com/midea-lan/midea-local/commit/5654d02fa5743140ef2bc0bd1f86f1cb8dcf3099))
+
+## [9.0.0](https://github.com/midea-lan/midea-local/compare/v8.0.1...v9.0.0) (2026-08-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **cd:** modes snakecase ([#652](https://github.com/midea-lan/midea-local/issues/652))
+* **b0:** standard to snake_case attributes ([#642](https://github.com/midea-lan/midea-local/issues/642))
+* **ce:** snakecase modes ([#653](https://github.com/midea-lan/midea-local/issues/653))
+* **e1:** snakecase standard ([#657](https://github.com/midea-lan/midea-local/issues/657))
+* **e8:** snakecase status ([#659](https://github.com/midea-lan/midea-local/issues/659))
+* **da:** multiple snakecase standard ([#654](https://github.com/midea-lan/midea-local/issues/654))
+* **e6:** snakecase heatingmode ([#658](https://github.com/midea-lan/midea-local/issues/658))
+* **db:** multiple snakecase standard ([#655](https://github.com/midea-lan/midea-local/issues/655))
+* **x13:** snakecase effects ([#668](https://github.com/midea-lan/midea-local/issues/668))
+* **ea:** snakecase progress ([#660](https://github.com/midea-lan/midea-local/issues/660))
+* **x40:** snakecase directions ([#671](https://github.com/midea-lan/midea-local/issues/671))
+* **x34:** snakecase modes, status and progress ([#670](https://github.com/midea-lan/midea-local/issues/670))
+* **fd:** snakecase modes, speeds, screen_display and detect_modes ([#666](https://github.com/midea-lan/midea-local/issues/666))
+* **fc:** snakecase modes, speeds, screen_display and detect_modes ([#665](https://github.com/midea-lan/midea-local/issues/665))
+* **fb:** snakecase modes ([#664](https://github.com/midea-lan/midea-local/issues/664))
+* **fa:** snakecase mode and oscillation ([#663](https://github.com/midea-lan/midea-local/issues/663))
+* **x26:** snakecase modes and directions ([#669](https://github.com/midea-lan/midea-local/issues/669))
+* **c3:** snake_case silent level ([#649](https://github.com/midea-lan/midea-local/issues/649))
+* **dc:** snakecase progress ([#656](https://github.com/midea-lan/midea-local/issues/656))
+* **ec:** progress snakecase ([#662](https://github.com/midea-lan/midea-local/issues/662))
+* **b6:** snake_case speeds ([#647](https://github.com/midea-lan/midea-local/issues/647))
+* **b4:** status snake_case format ([#646](https://github.com/midea-lan/midea-local/issues/646))
+* **cc:** fan_speed snake_case ([#650](https://github.com/midea-lan/midea-local/issues/650))
+* **b3:** snake_case status ([#645](https://github.com/midea-lan/midea-local/issues/645))
+* **b1:** snake_case status ([#644](https://github.com/midea-lan/midea-local/issues/644))
+* **bf:** status snake_case ([#648](https://github.com/midea-lan/midea-local/issues/648))
+* **ac:** standard snake_case for wind_angles ([#641](https://github.com/midea-lan/midea-local/issues/641))
+* **a1:** standard snakecase for fan_speed and mode ([#640](https://github.com/midea-lan/midea-local/issues/640))
+
+### Bug Fixes
+
+* **a1:** standard snakecase for fan_speed and mode ([#640](https://github.com/midea-lan/midea-local/issues/640)) ([acd737a](https://github.com/midea-lan/midea-local/commit/acd737ab84e60158858d451eb50c8418a3c6e5b7))
+* **ac:** standard snake_case for wind_angles ([#641](https://github.com/midea-lan/midea-local/issues/641)) ([988cf2b](https://github.com/midea-lan/midea-local/commit/988cf2b450c4ea382f991ae8920afabadbf7f23c))
+* **b0:** standard to snake_case attributes ([#642](https://github.com/midea-lan/midea-local/issues/642)) ([10b8c8a](https://github.com/midea-lan/midea-local/commit/10b8c8a03f445a4e1536e47d30c1f58c762621e9))
+* **b1:** snake_case status ([#644](https://github.com/midea-lan/midea-local/issues/644)) ([b1d561c](https://github.com/midea-lan/midea-local/commit/b1d561c38bc333624597bde7ed56ac8117f757b8))
+* **b3:** snake_case status ([#645](https://github.com/midea-lan/midea-local/issues/645)) ([57aa0c9](https://github.com/midea-lan/midea-local/commit/57aa0c947994f0e84621ea634e59f8a6ec144a03))
+* **b4:** status snake_case format ([#646](https://github.com/midea-lan/midea-local/issues/646)) ([bf782dc](https://github.com/midea-lan/midea-local/commit/bf782dc79d8532e876040e2c1ea04e9e5950a9b5))
+* **b6:** snake_case speeds ([#647](https://github.com/midea-lan/midea-local/issues/647)) ([b5e451f](https://github.com/midea-lan/midea-local/commit/b5e451f85d85fd6abf5d9b471e635b6a672e4531))
+* **bf:** status snake_case ([#648](https://github.com/midea-lan/midea-local/issues/648)) ([bcdf74e](https://github.com/midea-lan/midea-local/commit/bcdf74ea34ea5e9fab5873c9dd21f402edd4f28d))
+* **c3:** eco message index out of bounds ([#661](https://github.com/midea-lan/midea-local/issues/661)) ([a487d63](https://github.com/midea-lan/midea-local/commit/a487d630ca39d4f3f7326c7a42a96545a32448da))
+* **c3:** snake_case silent level ([#649](https://github.com/midea-lan/midea-local/issues/649)) ([9b4f9b5](https://github.com/midea-lan/midea-local/commit/9b4f9b5a7df381ce35098e2b11017f76639f9e1b))
+* **cc:** fan_speed snake_case ([#650](https://github.com/midea-lan/midea-local/issues/650)) ([373d9b5](https://github.com/midea-lan/midea-local/commit/373d9b57d5723d9f0099c130ff13eb23ae8dfd10))
+* **cd:** modes snakecase ([#652](https://github.com/midea-lan/midea-local/issues/652)) ([5ddc6de](https://github.com/midea-lan/midea-local/commit/5ddc6de864c39268e4e5b42f24d10c891999720c))
+* **ce:** snakecase modes ([#653](https://github.com/midea-lan/midea-local/issues/653)) ([55168a1](https://github.com/midea-lan/midea-local/commit/55168a1d5854a98202612499d41cf4a0957a2fa7))
+* **da:** multiple snakecase standard ([#654](https://github.com/midea-lan/midea-local/issues/654)) ([21fe472](https://github.com/midea-lan/midea-local/commit/21fe472d3031798a6f28d695d90c766841225f5d))
+* **db:** multiple snakecase standard ([#655](https://github.com/midea-lan/midea-local/issues/655)) ([1119836](https://github.com/midea-lan/midea-local/commit/1119836cf4f5031a88a00c07c17ea2db40b8b29d))
+* **dc:** snakecase progress ([#656](https://github.com/midea-lan/midea-local/issues/656)) ([d96490b](https://github.com/midea-lan/midea-local/commit/d96490beabae9ace1da3ce8fd76739a056c9b496))
+* **e1:** snakecase standard ([#657](https://github.com/midea-lan/midea-local/issues/657)) ([3ea015b](https://github.com/midea-lan/midea-local/commit/3ea015bcf5f8f0f5fdde1a333843c5fc04ddb7b6))
+* **e6:** snakecase heatingmode ([#658](https://github.com/midea-lan/midea-local/issues/658)) ([6f5070b](https://github.com/midea-lan/midea-local/commit/6f5070b1c18466c9b1981fefaa96c953bb2e8065))
+* **e8:** snakecase status ([#659](https://github.com/midea-lan/midea-local/issues/659)) ([2906885](https://github.com/midea-lan/midea-local/commit/2906885d2a71f939b0cc379436ae145ed93a5e1b))
+* **ea:** snakecase progress ([#660](https://github.com/midea-lan/midea-local/issues/660)) ([947ee84](https://github.com/midea-lan/midea-local/commit/947ee84303c8d07a436bc99f3ed38df962ff92f3))
+* **ec:** progress snakecase ([#662](https://github.com/midea-lan/midea-local/issues/662)) ([2e95f91](https://github.com/midea-lan/midea-local/commit/2e95f91a2e6dc6b442c7abcb149480d982e1218d))
+* **fa:** snakecase mode and oscillation ([#663](https://github.com/midea-lan/midea-local/issues/663)) ([633ca30](https://github.com/midea-lan/midea-local/commit/633ca30389b4448554044f7f1365e55b80298129))
+* **fb:** snakecase modes ([#664](https://github.com/midea-lan/midea-local/issues/664)) ([356d652](https://github.com/midea-lan/midea-local/commit/356d6525fe984d7ae8ca2e02246977f96c574985))
+* **fc:** snakecase modes, speeds, screen_display and detect_modes ([#665](https://github.com/midea-lan/midea-local/issues/665)) ([9254b23](https://github.com/midea-lan/midea-local/commit/9254b23c4642350f0bfd4ea27faeee76f5786eec))
+* **fd:** snakecase modes, speeds, screen_display and detect_modes ([#666](https://github.com/midea-lan/midea-local/issues/666)) ([36743ce](https://github.com/midea-lan/midea-local/commit/36743ce0949e5ff300065af9e673dc3048f0f445))
+* **x13:** snakecase effects ([#668](https://github.com/midea-lan/midea-local/issues/668)) ([3e82844](https://github.com/midea-lan/midea-local/commit/3e82844a295d28d6acf6e7cfae1d99d19bfbfbdd))
+* **x26:** snakecase modes and directions ([#669](https://github.com/midea-lan/midea-local/issues/669)) ([f1e840f](https://github.com/midea-lan/midea-local/commit/f1e840f3d17bf7b40321f7e144dc1b8e441f4152))
+* **x34:** snakecase modes, status and progress ([#670](https://github.com/midea-lan/midea-local/issues/670)) ([11273c1](https://github.com/midea-lan/midea-local/commit/11273c1b0ab566f2488da5f753ba6996f76b6580))
+* **x40:** snakecase directions ([#671](https://github.com/midea-lan/midea-local/issues/671)) ([a47b587](https://github.com/midea-lan/midea-local/commit/a47b587e0f35d4828bf3a02c9a08fcbaabc041b2))
+
+## [8.0.1](https://github.com/midea-lan/midea-local/compare/midea-local-v8.0.0...midea-local-v8.0.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* **b0:** correct status labels 0x02/0x03 (Idle/Working, not Working/Pause) on subtype zero ([#634](https://github.com/midea-lan/midea-local/issues/634)) ([7b4b856](https://github.com/midea-lan/midea-local/commit/7b4b856151b55a015f0d3384f3664ec8dbf214e6))
+* **ed:** cancel queued tea bar heating after filling ([#638](https://github.com/midea-lan/midea-local/issues/638)) ([5297dce](https://github.com/midea-lan/midea-local/commit/5297dce739ff88c46f22b656f1f0dbd8c7ceed59))
+* **x40:** align with other device fan implementations ([#637](https://github.com/midea-lan/midea-local/issues/637)) ([4564297](https://github.com/midea-lan/midea-local/commit/4564297408a21bf29b30b233b23882d58f08bebf))
+
+## [8.0.0](https://github.com/midea-lan/midea-local/compare/midea-local-v7.0.0...midea-local-v8.0.0) (2026-08-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **ac:** rename T1/T2/T3 group 1 temperature attributes ([#630](https://github.com/midea-lan/midea-local/issues/630))
+* **ac:** rename subtype8 temperature names to new_protocol ([#605](https://github.com/midea-lan/midea-local/issues/605))
+* **c3:** normalize silent_level attribute naming ([#620](https://github.com/midea-lan/midea-local/issues/620))
+* **b8:** rename B8DeviceAttributes for consistency ([#615](https://github.com/midea-lan/midea-local/issues/615))
+
+### Features
+
+* **ac:** gate rate_select query behind b5_electricity capability ([#632](https://github.com/midea-lan/midea-local/issues/632)) ([30bd23b](https://github.com/midea-lan/midea-local/commit/30bd23bdf427b5fe109d567011d3825f1d046044))
+* **b1:** decode X01 fallback query responses ([#633](https://github.com/midea-lan/midea-local/issues/633)) ([3ba0908](https://github.com/midea-lan/midea-local/commit/3ba09086e5d62769da8cf889e7aa5271448c60da))
+* **ed:** support subtype 395 tea bar appliances ([#628](https://github.com/midea-lan/midea-local/issues/628)) ([b4c811b](https://github.com/midea-lan/midea-local/commit/b4c811b812de0ee49fe65a5fae83367ce26de741))
+
+
+### Bug Fixes
+
+* **ac:** report self-clean status correcly ([#619](https://github.com/midea-lan/midea-local/issues/619)) ([1804c5a](https://github.com/midea-lan/midea-local/commit/1804c5ac6ed38f553beaf3a051730e611625712b))
+* **b0:** ignore 31 body on subtype zero devices ([#629](https://github.com/midea-lan/midea-local/issues/629)) ([569cc83](https://github.com/midea-lan/midea-local/commit/569cc83d8fcc94861ee3931af34e1d538e146195))
+* **b6:** turn_on evaluation ([#613](https://github.com/midea-lan/midea-local/issues/613)) ([14ecf24](https://github.com/midea-lan/midea-local/commit/14ecf246deb779f21a4be72c4e52a2157a49cebd))
+* **ca:** transmit translated values ([#611](https://github.com/midea-lan/midea-local/issues/611)) ([4a387ed](https://github.com/midea-lan/midea-local/commit/4a387ed248eb589e62fc26ceea2c9253ae44aa99))
+* **cf:** attribute values validation ([#612](https://github.com/midea-lan/midea-local/issues/612)) ([f41758c](https://github.com/midea-lan/midea-local/commit/f41758c9ec11da0cb45c61d411c5804bdcd62fd5))
+* **cli:** namespace guard to get_sn attr ([#627](https://github.com/midea-lan/midea-local/issues/627)) ([cb87bf4](https://github.com/midea-lan/midea-local/commit/cb87bf4bc4ecf9550fd0e6857cb95f46dbc771fa))
+* **e2:** encode subtype 255 temperature literally ([#621](https://github.com/midea-lan/midea-local/issues/621)) ([f87b89d](https://github.com/midea-lan/midea-local/commit/f87b89dc9fd1fbe8a51f4e1c26a2ba5496f6421b))
+* **fa:** turn_on evaluation ([#614](https://github.com/midea-lan/midea-local/issues/614)) ([61c3ee6](https://github.com/midea-lan/midea-local/commit/61c3ee6bffda8eca4c26a540e25514864cac7aaa))
+* included typing_extensions to requirements ([#604](https://github.com/midea-lan/midea-local/issues/604)) ([35ec51e](https://github.com/midea-lan/midea-local/commit/35ec51ebe59d86106038d8d006a5ae4f4445e191))
+
+
+### Code Refactoring
+
+* **ac:** rename subtype8 temperature names to new_protocol ([#605](https://github.com/midea-lan/midea-local/issues/605)) ([4e7edd8](https://github.com/midea-lan/midea-local/commit/4e7edd81c25ff9f2961e896406b78960b5ecf2bd))
+* **ac:** rename T1/T2/T3 group 1 temperature attributes ([#630](https://github.com/midea-lan/midea-local/issues/630)) ([ea91809](https://github.com/midea-lan/midea-local/commit/ea918097708cb07597623807af80208c87635d6c))
+* **b8:** rename B8DeviceAttributes for consistency ([#615](https://github.com/midea-lan/midea-local/issues/615)) ([69889e1](https://github.com/midea-lan/midea-local/commit/69889e1168d34b4184272634679daea125ca6947))
+* **c3:** normalize silent_level attribute naming ([#620](https://github.com/midea-lan/midea-local/issues/620)) ([049f750](https://github.com/midea-lan/midea-local/commit/049f750b584424da0de11132afc102f94e9296ed))
+
 ## [7.0.0](https://github.com/midea-lan/midea-local/compare/midea-local-v6.11.1...midea-local-v7.0.0) (2026-08-05)
 
 

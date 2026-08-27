@@ -42,12 +42,12 @@ class TestMidea13Device:
     def test_effects(self) -> None:
         """Test effects property."""
         assert self.device.effects == [
-            "Manual",
-            "Living",
-            "Reading",
-            "Mildly",
-            "Cinema",
-            "Night",
+            "none",
+            "living",
+            "reading",
+            "mildly",
+            "cinema",
+            "night",
         ]
 
     def test_color_temp_range(self) -> None:
@@ -72,9 +72,9 @@ class TestMidea13Device:
     @pytest.mark.parametrize(
         ("effect_raw", "expected_effect"),
         [
-            (3, "Reading"),
-            (7, "Living"),  # out of range raw value falls back to index 1
-            (0, "Night"),  # raw 0 becomes index -1, the last effect
+            (3, "reading"),
+            (7, "living"),  # out of range raw value falls back to index 1
+            (0, "night"),  # raw 0 becomes index -1, the last effect
         ],
     )
     def test_process_message_main_light(
@@ -162,7 +162,7 @@ class TestMidea13Device:
     def test_set_attribute_effect(self) -> None:
         """Test set attribute effect converts the name to its index."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.effect.value, "Reading")
+            self.device.set_attribute(DeviceAttributes.effect.value, "reading")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageSet)

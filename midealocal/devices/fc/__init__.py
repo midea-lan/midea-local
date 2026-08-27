@@ -6,7 +6,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
 
 from .message import MessageFCResponse, MessageQuery, MessageSet
 
@@ -38,22 +38,22 @@ class MideaFCDevice(MideaDevice):
     """Midea FC device."""
 
     _modes: ClassVar[dict[int, str]] = {
-        0x00: "Standby",
-        0x10: "Auto",
-        0x20: "Manual",
-        0x30: "Sleep",
-        0x40: "Fast",
-        0x50: "Smoke",
+        0x00: "standby",
+        0x10: "auto",
+        0x20: "manual",
+        0x30: "sleep",
+        0x40: "fast",
+        0x50: "smoke",
     }
     _speeds: ClassVar[dict[int, str]] = {
-        1: "Auto",
-        4: "Standby",
-        39: "Low",
-        59: "Medium",
-        80: "High",
+        1: "auto",
+        4: "standby",
+        39: "low",
+        59: "medium",
+        80: "high",
     }
-    _screen_displays: ClassVar[dict[int, str]] = {0: "Bright", 6: "Dim", 7: "Off"}
-    _detect_modes: ClassVar[list[str]] = ["Off", "PM 2.5", "Methanal"]
+    _screen_displays: ClassVar[dict[int, str]] = {0: "bright", 6: "dim", 7: "off"}
+    _detect_modes: ClassVar[list[str]] = ["off", "pm_25", "methanal"]
 
     def __init__(
         self,
@@ -115,36 +115,17 @@ class MideaFCDevice(MideaDevice):
         """Midea FC device process message."""
         message = MessageFCResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.mode:
-                    if value in MideaFCDevice._modes:
-                        self._attributes[status] = MideaFCDevice._modes.get(value)
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.fan_speed:
-                    if value in MideaFCDevice._speeds:
-                        self._attributes[status] = MideaFCDevice._speeds.get(value)
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.screen_display:
-                    if value in MideaFCDevice._screen_displays:
-                        self._attributes[status] = MideaFCDevice._screen_displays.get(
-                            value,
-                        )
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.detect_mode:
-                    if value < len(MideaFCDevice._detect_modes):
-                        self._attributes[status] = MideaFCDevice._detect_modes[value]
-                    else:
-                        self._attributes[status] = None
-                else:
-                    self._attributes[status] = value
-                new_status[str(status)] = self._attributes[status]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.mode: MideaFCDevice._modes.get,
+                DeviceAttributes.fan_speed: MideaFCDevice._speeds.get,
+                DeviceAttributes.screen_display: MideaFCDevice._screen_displays.get,
+                DeviceAttributes.detect_mode: list_translator(
+                    MideaFCDevice._detect_modes,
+                ),
+            },
+        )
 
     def make_message_set(self) -> MessageSet:
         """Midea FC device make message set."""

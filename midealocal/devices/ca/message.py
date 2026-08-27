@@ -9,7 +9,7 @@ from midealocal.message import (
     MessageType,
 )
 
-MIN_CA_GENERAL_BODY_LENGTH = 20
+MIN_CA_GENERAL_BODY_LENGTH = 24
 CA_GENERAL_BODY_LENGTH1 = 25
 CA_GENERAL_BODY_LENGTH2 = 30
 CA_GENERAL_BODY_LENGTH3 = 31
@@ -64,22 +64,22 @@ class CAGeneralMessageBody(MessageBody):
         """Initialize CA message general body."""
         super().__init__(body)
 
-        self.code_mode = (body[1] & 0x01) > 0
-        self.freezing_mode = (body[1] & 0x02) > 0
-        self.smart_mode = (body[1] & 0x04) > 0
-        self.energy_saving_mode = (body[1] & 0x08) > 0
-        self.holiday_mode = (body[1] & 0x10) > 0
-        self.moisturize_mode = (body[1] & 0x20) > 0
-        self.preservation_mode = (body[1] & 0x40) > 0
-        self.acmeFreezing_mode = (body[1] & 0x80) > 0
+        self.code_mode = (self.read_byte(body, 1) & 0x01) > 0
+        self.freezing_mode = (self.read_byte(body, 1) & 0x02) > 0
+        self.smart_mode = (self.read_byte(body, 1) & 0x04) > 0
+        self.energy_saving_mode = (self.read_byte(body, 1) & 0x08) > 0
+        self.holiday_mode = (self.read_byte(body, 1) & 0x10) > 0
+        self.moisturize_mode = (self.read_byte(body, 1) & 0x20) > 0
+        self.preservation_mode = (self.read_byte(body, 1) & 0x40) > 0
+        self.acmeFreezing_mode = (self.read_byte(body, 1) & 0x80) > 0
         # refrigerationTemperature
-        self.refrigerator_setting_temp = body[2] & 0x0F
+        self.refrigerator_setting_temp = self.read_byte(body, 2) & 0x0F
         # freezingTemperature
-        self.freezer_setting_temp = -12 - ((body[2] & 0xF0) >> 4)
+        self.freezer_setting_temp = -12 - ((self.read_byte(body, 2) & 0xF0) >> 4)
         # lVariableTemperature
-        flex_zone_setting_temp = body[3]
+        flex_zone_setting_temp = self.read_byte(body, 3)
         # rVariableTemperature
-        right_flex_zone_setting_temp = body[4]
+        right_flex_zone_setting_temp = self.read_byte(body, 4)
 
         if TEMP_POS_LOWER_VALUE <= flex_zone_setting_temp <= TEMP_POS_UPPER_VALUE:
             self.flex_zone_setting_temp = flex_zone_setting_temp - 19
@@ -96,69 +96,104 @@ class CAGeneralMessageBody(MessageBody):
         else:
             self.right_flex_zone_setting_temp = 0
 
-        self.variable_mode = body[5]  # variableModeValue
+        self.variable_mode = self.read_byte(body, 5)  # variableModeValue
         # *powerValue 0x00 is on, 0x04/0x08/0x10/20 is off
-        self.refrigeration_power = (body[6] & 0x01) < 1  # refrigerationPowerValue
-        self.l_variable_power = (body[6] & 0x04) < 1  # lVariablePowerValue
-        self.r_variable_power = (body[6] & 0x08) < 1  # rVariablePowerValue
-        self.freezing_power = (body[6] & 0x10) < 1  # freezingPowerValue
-        self.cross_peak_electricity_enter = body[6] & 0x20  # crossPeakElectricityEnter
-        self.cross_peak_electricity = (body[6] & 0x40) > 0  # crossPeakElectricity
-        self.all_refrigeration_power = (body[6] & 0x80) > 0  # allRefrigerationPower
-        self.remove_dew = body[7] & 0x01  # removeDew
-        self.humidify = body[7] & 0x02  # humidify
-        self.unfreeze = body[7] & 0x04  # unfreeze
+        self.refrigeration_power = (
+            self.read_byte(body, 6) & 0x01
+        ) < 1  # refrigerationPowerValue
+        self.l_variable_power = (
+            self.read_byte(body, 6) & 0x04
+        ) < 1  # lVariablePowerValue
+        self.r_variable_power = (
+            self.read_byte(body, 6) & 0x08
+        ) < 1  # rVariablePowerValue
+        self.freezing_power = (self.read_byte(body, 6) & 0x10) < 1  # freezingPowerValue
+        self.cross_peak_electricity_enter = (
+            self.read_byte(body, 6) & 0x20
+        )  # crossPeakElectricityEnter
+        self.cross_peak_electricity = (
+            self.read_byte(body, 6) & 0x40
+        ) > 0  # crossPeakElectricity
+        self.all_refrigeration_power = (
+            self.read_byte(body, 6) & 0x80
+        ) > 0  # allRefrigerationPower
+        self.remove_dew = self.read_byte(body, 7) & 0x01  # removeDew
+        self.humidify = self.read_byte(body, 7) & 0x02  # humidify
+        self.unfreeze = self.read_byte(body, 7) & 0x04  # unfreeze
         # 0x08 fahrenheit, 0x00 celsius
-        self.temperature_unit = body[7] & 0x08  # temperatureUnit
-        self.flood_light = body[7] & 0x10  # floodlight
+        self.temperature_unit = self.read_byte(body, 7) & 0x08  # temperatureUnit
+        self.flood_light = self.read_byte(body, 7) & 0x10  # floodlight
         # functionSwitch for icea_bar_function_switch
-        self.function_switch = body[7] & 0xC0  # functionSwitch
-        self.radar_mode = body[8] & 0x01  # radarMode
-        self.milk_mode = body[8] & 0x02  # milkMode
-        self.iced_mode = body[8] & 0x04  # icedMode
-        self.plasma_aseptic_mode = body[8] & 0x08  # plasmaAsepticMode
-        self.acquire_icea_mode = body[8] & 0x10  # acquireIceaMode
-        self.brash_icea_mode = body[8] & 0x20  # brashIceaMode
-        self.acquire_water_mode = body[8] & 0x40  # acquireWaterMode
-        self.freezing_ice_machine_power = body[8] & 0x80  # freezingIceMachinePower
-        self.freezing_fahrenheit = body[9]  # freezingFahrenheit
-        self.refrigeration_fahrenheit = body[10] & 0xFC  # refrigerationFahrenheit
-        self.leach_expire_day = body[11]  # leachExpireDay
+        self.function_switch = self.read_byte(body, 7) & 0xC0  # functionSwitch
+        self.radar_mode = self.read_byte(body, 8) & 0x01  # radarMode
+        self.milk_mode = self.read_byte(body, 8) & 0x02  # milkMode
+        self.iced_mode = self.read_byte(body, 8) & 0x04  # icedMode
+        self.plasma_aseptic_mode = self.read_byte(body, 8) & 0x08  # plasmaAsepticMode
+        self.acquire_icea_mode = self.read_byte(body, 8) & 0x10  # acquireIceaMode
+        self.brash_icea_mode = self.read_byte(body, 8) & 0x20  # brashIceaMode
+        self.acquire_water_mode = self.read_byte(body, 8) & 0x40  # acquireWaterMode
+        self.freezing_ice_machine_power = (
+            self.read_byte(body, 8) & 0x80
+        )  # freezingIceMachinePower
+        self.freezing_fahrenheit = self.read_byte(body, 9)  # freezingFahrenheit
+        self.refrigeration_fahrenheit = (
+            self.read_byte(body, 10) & 0xFC
+        )  # refrigerationFahrenheit
+        self.leach_expire_day = self.read_byte(body, 11)  # leachExpireDay
 
         # powerConsumptionLow & powerConsumptionHigh
-        self.energy_consumption = (body[13] << 8) + body[12]
+        self.energy_consumption = (self.read_byte(body, 13) << 8) + self.read_byte(
+            body,
+            12,
+        )
 
-        self.freezing_motor_reset_status = body[14] & 0x01  # freezingMotorResetStatus
+        self.freezing_motor_reset_status = (
+            self.read_byte(body, 14) & 0x01
+        )  # freezingMotorResetStatus
         self.freezing_motor_deicing_status = (
-            body[14] & 0x02
+            self.read_byte(body, 14) & 0x02
         )  # freezingMotorDeicingStatus
         self.freezing_ice_machine_water_status = (
-            body[14] & 0x04
+            self.read_byte(body, 14) & 0x04
         )  # freezingIceMachineWaterStatus
-        self.freezing_all_ice_status = body[14] & 0x08  # freezingAllIceStatus
-        self.human_induction = body[14] & 0x10  # humanInduction
-        self.refrigeration_door_power = body[15] & 0x01  # refrigerationDoorPower
-        self.freezing_door_power = body[15] & 0x02  # freezingDoorPower
-        self.variable_door_power = body[15] & 0x10  # variableDoorPower
-        self.storage_iceHome_door_state = body[15] & 0x20  # storageIceHomeDoorState
-        self.bar_door_power = body[15] & 0x04  # barDoorPower
-        self.ice_mouth_power = body[15] & 0x08  # iceMouthPower
-        self.is_error = body[16] & 0x01  # isError
-        self.interval_room_humidity_level = body[16] & 0xFE  # intervalRoomHumidityLevel
+        self.freezing_all_ice_status = (
+            self.read_byte(body, 14) & 0x08
+        )  # freezingAllIceStatus
+        self.human_induction = self.read_byte(body, 14) & 0x10  # humanInduction
+        self.refrigeration_door_power = (
+            self.read_byte(body, 15) & 0x01
+        )  # refrigerationDoorPower
+        self.freezing_door_power = self.read_byte(body, 15) & 0x02  # freezingDoorPower
+        self.variable_door_power = self.read_byte(body, 15) & 0x10  # variableDoorPower
+        self.storage_iceHome_door_state = (
+            self.read_byte(body, 15) & 0x20
+        )  # storageIceHomeDoorState
+        self.bar_door_power = self.read_byte(body, 15) & 0x04  # barDoorPower
+        self.ice_mouth_power = self.read_byte(body, 15) & 0x08  # iceMouthPower
+        self.is_error = self.read_byte(body, 16) & 0x01  # isError
+        self.interval_room_humidity_level = (
+            self.read_byte(body, 16) & 0xFE
+        )  # intervalRoomHumidityLevel
 
         # refrigerationRealTemperature
-        self.refrigerator_actual_temp = (body[17] - 100) / 2
+        self.refrigerator_actual_temp = (self.read_byte(body, 17) - 100) / 2
         # freezingRealTemperature
-        self.freezer_actual_temp = (body[18] - 100) / 2
+        self.freezer_actual_temp = (self.read_byte(body, 18) - 100) / 2
         # lVariableRealTemperature
-        self.flex_zone_actual_temp = (body[19] - 100) / 2
+        self.flex_zone_actual_temp = (self.read_byte(body, 19) - 100) / 2
         # rVariableRealTemperature
-        self.right_flex_zone_actual_temp = (body[20] - 100) / 2
+        self.right_flex_zone_actual_temp = (self.read_byte(body, 20) - 100) / 2
 
         # fastColdMinuteLow & fastColdMinuteHigh
-        self.fast_cold_minute = (body[22] << 8) + body[21]
+        self.fast_cold_minute = (self.read_byte(body, 22) << 8) + self.read_byte(
+            body,
+            21,
+        )
         # fastFreezeMinuteLow & fastFreezeMinuteHigh
-        self.fast_freeze_minute = (body[24] << 8) + body[23]
+        self.fast_freeze_minute = (self.read_byte(body, 24) << 8) + self.read_byte(
+            body,
+            23,
+        )
 
         if len(body) > CA_GENERAL_BODY_LENGTH1:
             self.microcrystal_fresh = (body[27] & 0x01) > 0

@@ -57,7 +57,7 @@ class TestMideaC3Device:
         assert self.device.attributes[DeviceAttributes.silent_mode] is False
         assert (
             self.device.attributes[DeviceAttributes.silent_level]
-            == C3SilentLevel.OFF.name
+            == C3SilentLevel.OFF.name.lower()
         )
         assert self.device.attributes[DeviceAttributes.eco_mode] is False
         assert self.device.attributes[DeviceAttributes.tbh] is False
@@ -118,7 +118,7 @@ class TestMideaC3Device:
 
             self.device.set_attribute(
                 DeviceAttributes.silent_level.value,
-                C3SilentLevel.SILENT.name,
+                C3SilentLevel.SILENT.name.lower(),
             )
 
     def test_build_query(self) -> None:
@@ -182,9 +182,9 @@ class TestMideaC3Device:
             assert result[DeviceAttributes.disinfect.value] is False
             assert result[DeviceAttributes.fast_dhw.value] is True
             assert result[DeviceAttributes.zone_temp_type.value] == [True, False]
-            assert result[DeviceAttributes.zone1_room_temp_mode.value] is True
+            assert result[DeviceAttributes.zone1_room_temp_mode.value] is False
             assert result[DeviceAttributes.zone2_room_temp_mode.value] is False
-            assert result[DeviceAttributes.zone1_water_temp_mode.value] is False
+            assert result[DeviceAttributes.zone1_water_temp_mode.value] is True
             assert result[DeviceAttributes.zone2_water_temp_mode.value] is False
             assert result[DeviceAttributes.mode.value] == 2
             assert result[DeviceAttributes.mode_auto.value] == 2

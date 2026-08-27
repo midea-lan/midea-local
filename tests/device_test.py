@@ -1,6 +1,8 @@
 """Midea Local device test."""
 
-from typing import ClassVar
+from collections.abc import Callable
+from types import SimpleNamespace
+from typing import Any, ClassVar
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -11,10 +13,16 @@ from midealocal.device import (
     MESSAGE_TYPE_INDEX,
     QUERY_TIMEOUT,
     RESPONSE_TIMEOUT,
+    SKIP_ATTRIBUTE,
     AuthException,
     MessageResult,
     MideaDevice,
     NoSupportedProtocol,
+    dict_translator,
+    list_translator,
+    multiplier_translator,
+    precision_halves_translator,
+    sentinel_translator,
 )
 from midealocal.exceptions import SocketException
 from midealocal.message import MessageType
@@ -24,6 +32,137 @@ class _DictDevice(MideaDevice):
     """MideaDevice subclass exposing a class-level dict for lookup tests."""
 
     modes: ClassVar[dict[int, str]] = {1: "auto", 2: "cool"}
+
+
+def _skip_attribute_translator(_: int) -> Any:  # noqa: ANN401
+    return SKIP_ATTRIBUTE
+
+
+@pytest.mark.parametrize(
+    ("values", "kwargs", "index", "expected"),
+    [
+        pytest.param(["a", "b", "c"], {}, 1, "b", id="in_range"),
+        pytest.param(["a", "b", "c"], {}, 5, None, id="out_of_range_defaults_to_none"),
+        pytest.param(
+            ["a", "b", "c"],
+            {},
+            -1,
+            None,
+            id="negative_index_does_not_wrap",
+        ),
+        pytest.param(
+            ["a", "b", "c"],
+            {"default": "unknown"},
+            5,
+            "unknown",
+            id="custom_default",
+        ),
+        pytest.param(
+            ["a", "b", "c"],
+            {"offset": 1},
+            1,
+            "a",
+            id="offset_shifts_raw_value",
+        ),
+        pytest.param(
+            ["a", "b", "c"],
+            {"min_index": 1},
+            0,
+            None,
+            id="min_index_excludes_low_index",
+        ),
+        pytest.param(
+            ["a", "b", "c"],
+            {"key": lambda v: v // 10},
+            20,
+            "c",
+            id="key_transforms_raw_value_first",
+        ),
+    ],
+)
+def test_list_translator(
+    values: list[str],
+    kwargs: dict[str, Any],
+    index: int,
+    expected: str | None,
+) -> None:
+    """Test list_translator's offset, min_index, default, and key arguments."""
+    assert list_translator(values, **kwargs)(index) == expected
+
+
+def test_dict_translator_found_returns_mapped_value() -> None:
+    """Test dict_translator looks up a present key in the mapping."""
+    assert dict_translator({1: "a", 2: "b"})(1) == "a"
+
+
+def test_dict_translator_not_found_passes_value_through_by_default() -> None:
+    """Test dict_translator with no default passes an absent key through."""
+    assert dict_translator({1: "a"})(99) == 99
+
+
+@pytest.mark.parametrize(
+    "default",
+    [
+        pytest.param("unknown", id="explicit_string_default"),
+        pytest.param(None, id="explicit_none_default_distinct_from_unset"),
+    ],
+)
+def test_dict_translator_not_found_uses_explicit_default(
+    default: Any,  # noqa: ANN401
+) -> None:
+    """Test dict_translator returns an explicit default for an absent key."""
+    assert dict_translator({1: "a"}, default=default)(99) == default
+
+
+@pytest.mark.parametrize(
+    ("precision_halves", "value", "expected"),
+    [
+        pytest.param(True, 10, 5, id="halves_when_enabled"),
+        pytest.param(False, 10, 10, id="passes_through_when_disabled"),
+        pytest.param(None, 10, 10, id="passes_through_when_unset"),
+    ],
+)
+def test_precision_halves_translator(
+    precision_halves: bool | None,
+    value: float,
+    expected: float,
+) -> None:
+    """Test precision_halves_translator's enabled, disabled, and unset states."""
+    assert precision_halves_translator(precision_halves)(value) == expected
+
+
+@pytest.mark.parametrize(
+    ("multiplier", "value", "expected"),
+    [
+        pytest.param(3.0, 2, 6, id="scales_and_rounds"),
+        pytest.param(1.0, 2, 2, id="no_op_multiplier_skips_rounding"),
+        pytest.param(3.0, None, None, id="none_value_passes_through"),
+    ],
+)
+def test_multiplier_translator(
+    multiplier: float,
+    value: float | None,
+    expected: float | None,
+) -> None:
+    """Test multiplier_translator's scaling, no-op, and None-value arguments."""
+    assert multiplier_translator(multiplier)(value) == expected
+
+
+@pytest.mark.parametrize(
+    ("sentinel", "replacement", "value", "expected"),
+    [
+        pytest.param(0xFF, None, 0xFF, None, id="sentinel_value_is_replaced"),
+        pytest.param(0xFF, None, 5, 5, id="other_values_pass_through"),
+    ],
+)
+def test_sentinel_translator(
+    sentinel: int,
+    replacement: Any,  # noqa: ANN401
+    value: int,
+    expected: Any,  # noqa: ANN401
+) -> None:
+    """Test sentinel_translator's replacement and passthrough arguments."""
+    assert sentinel_translator(sentinel, replacement)(value) == expected
 
 
 def test_get_dict_key_by_value() -> None:
@@ -151,6 +290,83 @@ class TestMideaDevice:
         """Test attributes property stringifies keys from the internal dict."""
         self.device._attributes[DeviceType.AC] = True
         assert self.device.attributes == {str(DeviceType.AC): True}
+
+    @pytest.mark.parametrize(
+        (
+            "initial_value",
+            "message_kwargs",
+            "translators",
+            "default_transform",
+            "expected_status",
+            "expected_attribute",
+        ),
+        [
+            pytest.param(
+                None,
+                {"mode": 2},
+                {"mode": lambda v: f"translator-{v}"},
+                lambda v: f"default-{v}",
+                {"mode": "translator-2"},
+                "translator-2",
+                id="translator_wins_over_default_transform",
+            ),
+            pytest.param(
+                None,
+                {"mode": 2},
+                None,
+                lambda v: f"default-{v}",
+                {"mode": "default-2"},
+                "default-2",
+                id="default_transform_used_when_no_translator",
+            ),
+            pytest.param(
+                "previous",
+                {},
+                None,
+                None,
+                {},
+                "previous",
+                id="missing_field_is_ignored",
+            ),
+            pytest.param(
+                None,
+                {"mode": 2},
+                None,
+                None,
+                {"mode": 2},
+                2,
+                id="status_and_attributes_stay_synchronized",
+            ),
+            pytest.param(
+                "previous",
+                {"mode": 2},
+                {"mode": _skip_attribute_translator},
+                None,
+                {},
+                "previous",
+                id="skip_attribute_preserves_stored_value",
+            ),
+        ],
+    )
+    def test_update_attributes_from_message(
+        self,
+        initial_value: Any,  # noqa: ANN401
+        message_kwargs: dict[str, Any],
+        translators: dict[str, Callable[[Any], Any]] | None,
+        default_transform: Callable[[Any], Any] | None,
+        expected_status: dict[str, Any],
+        expected_attribute: Any,  # noqa: ANN401
+    ) -> None:
+        """Test translator precedence, defaults, missing fields, and SKIP_ATTRIBUTE."""
+        self.device._attributes = {"mode": initial_value}
+        message = SimpleNamespace(**message_kwargs)
+        new_status = self.device.update_attributes_from_message(
+            message,
+            translators=translators,
+            default_transform=default_transform,
+        )
+        assert new_status == expected_status
+        assert self.device._attributes["mode"] == expected_attribute
 
     def test_celsius_to_fahrenheit(self) -> None:
         """Test celsius_to_fahrenheit conversion and pass-through branches."""
@@ -360,9 +576,11 @@ class TestMideaDevice:
         with pytest.raises(NotImplementedError):
             self.device.refresh_status()  # build_query not implemented
 
+        self.device._appliance_query = False
+        real_cmd = MagicMock()
         socket_mock = MagicMock()
         with (
-            patch.object(self.device, "build_query", return_value=[]),
+            patch.object(self.device, "build_query", return_value=[real_cmd]),
             patch.object(
                 socket_mock,
                 "recv",
@@ -372,6 +590,7 @@ class TestMideaDevice:
                     bytearray([0x0]),
                     bytearray([0x0]),
                     bytearray([0x0]),
+                    TimeoutError(),
                     TimeoutError(),
                 ],
             ),
@@ -404,6 +623,96 @@ class TestMideaDevice:
                 self.device.refresh_status(True)  # Timeout
             with pytest.raises(NoSupportedProtocol):
                 self.device.refresh_status(True)  # Unsupported protocol
+
+    def test_refresh_status_recovers_after_single_timeout(self) -> None:
+        """A single timeout during the probe must not blacklist the protocol."""
+        socket_mock = MagicMock()
+        with (
+            patch.object(self.device, "build_query", return_value=[]),
+            patch.object(
+                socket_mock,
+                "recv",
+                side_effect=[TimeoutError(), bytearray([0x0])],
+            ),
+            patch.object(self.device, "build_send", return_value=None) as build_send,
+            patch.object(
+                self.device,
+                "parse_message",
+                return_value=MessageResult.SUCCESS,
+            ),
+        ):
+            self.device._socket = socket_mock
+            self.device.refresh_status(True)
+
+        assert self.device._unsupported_protocol == []
+        assert build_send.call_count == 2
+
+    def test_refresh_status_appliance_success_does_not_mask_query_failure(self) -> None:
+        """Regression test for #575: appliance success must not mask query timeouts."""
+        real_cmd = MagicMock()
+        self.device._socket = MagicMock()
+        with (
+            patch.object(self.device, "build_query", return_value=[real_cmd]),
+            patch.object(
+                self.device._socket,
+                "recv",
+                side_effect=[
+                    bytearray([0x0]),  # appliance query: success
+                    TimeoutError(),  # real_cmd: timeout (attempt 1)
+                    TimeoutError(),  # real_cmd: timeout (attempt 2, blacklisted)
+                ],
+            ),
+            patch.object(self.device, "build_send", return_value=None) as build_send,
+            patch.object(
+                self.device,
+                "parse_message",
+                side_effect=[MessageResult.SUCCESS],
+            ),
+        ):
+            assert self.device._appliance_query is True
+            with pytest.raises(NoSupportedProtocol):
+                self.device.refresh_status(True)
+
+        assert build_send.call_count == 3
+
+    def test_refresh_status_appliance_query_failure_is_not_a_real_error(self) -> None:
+        """An appliance-query timeout, error, or skip must not count as a real error."""
+        real_cmd = MagicMock()
+        self.device._socket = MagicMock()
+        with (
+            patch.object(self.device, "build_query", return_value=[real_cmd]),
+            patch.object(
+                self.device._socket,
+                "recv",
+                side_effect=[
+                    TimeoutError(),  # appliance query: timeout (attempt 1)
+                    TimeoutError(),  # appliance query: timeout (attempt 2, blacklisted)
+                    bytearray([0x0]),  # real_cmd: success
+                    bytearray([0x0]),  # real_cmd: success (appliance is SKIPped)
+                    bytearray([0x0]),  # appliance query: ResponseException
+                    bytearray([0x0]),  # real_cmd: success
+                ],
+            ),
+            patch.object(self.device, "build_send", return_value=None),
+            patch.object(
+                self.device,
+                "parse_message",
+                side_effect=[
+                    MessageResult.SUCCESS,  # real_cmd
+                    MessageResult.SUCCESS,  # real_cmd
+                    MessageResult.ERROR,  # appliance query
+                    MessageResult.SUCCESS,  # real_cmd
+                ],
+            ),
+        ):
+            assert self.device._appliance_query is True
+            self.device.refresh_status(True)  # appliance times out, ignored
+            assert "MessageQueryAppliance" in self.device._unsupported_protocol
+
+            self.device.refresh_status(True)  # appliance SKIPped, ignored
+
+            self.device._unsupported_protocol = []
+            self.device.refresh_status(True)  # appliance ResponseException, ignored
 
     def test_parse_message(self) -> None:
         """Test parse message."""
@@ -507,6 +816,55 @@ class TestMideaDevice:
         self.device.unregister_update(other_upd)
         assert len(self.device._updates) == 0
 
+    def test_update_all_isolates_callback_errors(self) -> None:
+        """Test a failing callback does not prevent others from being called."""
+        failing_upd = MagicMock(side_effect=RuntimeError("event loop is closed"))
+        ok_upd = MagicMock()
+        self.device.register_update(failing_upd)
+        self.device.register_update(ok_upd)
+        self.device.update_all({"status": True})
+        failing_upd.assert_called_once_with({"status": True})
+        ok_upd.assert_called_once_with({"status": True})
+
+    def test_parse_message_skips_update_all_when_not_running(self) -> None:
+        """Test parse_message does not propagate status once device is closed.
+
+        A message can already be in flight when close() is called from
+        another thread; propagating it further (e.g. into a callback that
+        touches an asyncio loop the consumer is tearing down) must be
+        avoided.
+        """
+        upd = MagicMock()
+        self.device.register_update(upd)
+        self.device._device_protocol_version = ProtocolVersion.V2
+        with (
+            patch.object(
+                self.device._security,
+                "aes_decrypt",
+                return_value=bytearray([0x1] * 16),
+            ),
+            patch.object(
+                self.device,
+                "fetch_v2_message",
+                return_value=(
+                    [bytearray([0x0] * 4 + [0x8, 0x1] + [0x1] * 56)],
+                    b"",
+                ),
+            ),
+            patch.object(
+                self.device,
+                "process_message",
+                return_value={"power": True},
+            ),
+        ):
+            self.device._is_run = False
+            assert self.device.parse_message(bytes([])) == MessageResult.SUCCESS
+            upd.assert_not_called()
+
+            self.device._is_run = True
+            assert self.device.parse_message(bytes([])) == MessageResult.SUCCESS
+            upd.assert_called_once_with({"power": True})
+
     def test_open(self) -> None:
         """Test open."""
         with (
@@ -532,6 +890,17 @@ class TestMideaDevice:
         self.device.close_socket()
         socket_mock.close.assert_called_once()
         assert self.device._socket is None
+
+    def test_close_socket_rearms_appliance_query(self) -> None:
+        """close_socket must re-arm the appliance query for the next connection.
+
+        _appliance_query is cleared in pre_process_message and was never set
+        back, so a reconnected device skipped protocol detection entirely.
+        """
+        self.device._socket = None
+        self.device._appliance_query = False
+        self.device.close_socket()
+        assert self.device._appliance_query is True
 
     def test_set_ip(self) -> None:
         """Test set ip."""
@@ -651,21 +1020,25 @@ class TestMideaDevice:
 
         def fake_connect_loop() -> None:
             connect_loop_calls["n"] += 1
-            if connect_loop_calls["n"] > 5:
+            if connect_loop_calls["n"] > 6:
                 self.device._is_run = False
 
+        # NoSupportedProtocol now closes the socket and breaks rather than
+        # continuing on the same one, so it gets its own pass at the end --
+        # if it stayed mid-pass it would end that pass early and the
+        # SUCCESS/heartbeat-timeout script below would never run.
         check_refresh_side_effect = (
             [None, None, None, None]  # passes 1-4: no refresh due
-            + [NoSupportedProtocol()]  # pass 5, iter a: continue
-            + [None]  # pass 5, iter b: refresh ok, then SUCCESS recv
-            + [None] * RESPONSE_TIMEOUT  # pass 5, iters c..: timeouts
+            + [None]  # pass 5, iter a: refresh ok, then SUCCESS recv
+            + [None] * RESPONSE_TIMEOUT  # pass 5, iters b..: timeouts
+            + [NoSupportedProtocol()]  # pass 6: close_socket + break
         )
         recv_side_effect = [
             b"",  # pass 1: empty -> ConnectionResetError
             b"\x01",  # pass 2: parsed as ERROR
             OSError("boom"),  # pass 3
             ValueError("boom"),  # pass 4
-            b"\x01",  # pass 5, iter b: parsed as SUCCESS
+            b"\x01",  # pass 5, iter a: parsed as SUCCESS
             *([TimeoutError()] * RESPONSE_TIMEOUT),  # pass 5: hits the threshold
         ]
         parse_message_side_effect = [MessageResult.ERROR, MessageResult.SUCCESS]
@@ -689,8 +1062,54 @@ class TestMideaDevice:
         ):
             self.device.run()
 
-        assert connect_loop_calls["n"] == 6
+        assert connect_loop_calls["n"] == 7
         assert self.device._is_run is False
+
+    def test_run_loop_reconnects_when_no_protocol_is_supported(self) -> None:
+        """NoSupportedProtocol must drop the socket, like every other error here.
+
+        Continuing on the same socket could never recover: once every command
+        is in _unsupported_protocol, refresh_status takes the SKIP branch for
+        all of them and performs no socket I/O, so no socket error can ever
+        be raised to break the loop. The device stayed stuck until Home
+        Assistant restarted.
+
+        The discriminator is how many times the refresh is attempted:
+        breaking out reconnects after one, whereas continuing spins on the
+        same dead socket.
+        """
+        attempts = 0
+        connects = 0
+
+        def refresh(_now: float) -> None:
+            nonlocal attempts
+            attempts += 1
+            # Guarantee termination if the break is ever removed: the inner
+            # `while True` never consults _is_run, so clearing that would
+            # spin forever instead of failing.
+            if attempts > 3:
+                raise SystemExit
+            raise NoSupportedProtocol
+
+        def connect_loop() -> None:
+            nonlocal connects
+            connects += 1
+            if connects == 2:
+                self.device._is_run = False
+
+        with (
+            patch.object(self.device, "_connect_loop", side_effect=connect_loop),
+            patch.object(self.device, "_check_refresh", side_effect=refresh),
+            patch.object(self.device, "close_socket") as close_mock,
+        ):
+            self.device._socket = MagicMock()
+            self.device._is_run = True
+            self.device.run()
+
+        assert attempts == 1
+        # The point of the fix: the socket is dropped AND the loop dials again.
+        assert connects == 2
+        close_mock.assert_called_once()
 
     def test_set_attribute(self) -> None:
         """Test set_attribute raises NotImplementedError."""

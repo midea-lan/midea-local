@@ -84,13 +84,13 @@ class TestMideaCDDevice:
 
     def test_preset_modes_excludes_vacation_from_selectable_modes(self) -> None:
         """Vacation is readable state, not directly selectable operation mode."""
-        assert "Vacation" not in self.device.preset_modes
-        assert self.device._modes[0x05] == "Vacation"
+        assert "vacation" not in self.device.preset_modes
+        assert self.device._modes[0x05] == "vacation"
 
     def test_set_mode_vacation_is_rejected(self) -> None:
         """Direct Vacation operation mode writes are blocked."""
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.mode.value, "Vacation")
+            self.device.set_attribute(DeviceAttributes.mode.value, "vacation")
             mock_send.assert_not_called()
 
     def test_set_power_uses_ts_max_at_body_23(self) -> None:
@@ -115,7 +115,7 @@ class TestMideaCDDevice:
         self.device._attributes[DeviceAttributes.max_temperature] = 65.0
         self.device._attributes[DeviceAttributes.target_temperature] = 60.0
         self.device._attributes[DeviceAttributes.power] = True
-        self.device._attributes[DeviceAttributes.mode] = "Standard"
+        self.device._attributes[DeviceAttributes.mode] = "standard"
 
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.target_temperature.value, 63.0)
@@ -391,7 +391,7 @@ class TestMideaCDDevice:
             _build_message(MessageType.query, _general_body()),
         )
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.mode] == "Standard"
+        assert self.device.attributes[DeviceAttributes.mode] == "standard"
         assert self.device.attributes[DeviceAttributes.target_temperature] == 40
         assert self.device.attributes[DeviceAttributes.current_temperature] == 35
         assert self.device.attributes[DeviceAttributes.outdoor_temperature] == 20
@@ -405,7 +405,7 @@ class TestMideaCDDevice:
         assert self.device.attributes[DeviceAttributes.error_code] == 3
         assert self.device.attributes[DeviceAttributes.disinfection_temperature] == 65.0
         assert self.device.attributes[DeviceAttributes.fahrenheit] is False
-        assert new_status[DeviceAttributes.mode.value] == "Standard"
+        assert new_status[DeviceAttributes.mode.value] == "standard"
 
     def test_process_vacation_status_message(self) -> None:
         """Vacation bit in body[35] maps to Vacation mode and days."""
@@ -414,7 +414,7 @@ class TestMideaCDDevice:
         body[36] = 0x00
         body[37] = 30
         self.device.process_message(_build_message(MessageType.query, body))
-        assert self.device.attributes[DeviceAttributes.mode] == "Vacation"
+        assert self.device.attributes[DeviceAttributes.mode] == "vacation"
         assert self.device.attributes[DeviceAttributes.vacation_mode] is True
         assert self.device.attributes[DeviceAttributes.vacation_days] == 30
 
@@ -446,7 +446,7 @@ class TestMideaCDDevice:
             "byte8": 0x10,
         }
         assert self.device.attributes[DeviceAttributes.power] is True
-        assert self.device.attributes[DeviceAttributes.mode] == "Standard"
+        assert self.device.attributes[DeviceAttributes.mode] == "standard"
         assert self.device.attributes[DeviceAttributes.target_temperature] == 40
         assert self.device.attributes[DeviceAttributes.vacation_mode] is True
         assert self.device.attributes[DeviceAttributes.vacation_days] == 30
@@ -572,9 +572,14 @@ class TestMideaCDDevice:
         assert DeviceAttributes.disinfection_temperature.value not in status
         assert self.device.attributes[DeviceAttributes.disinfection_temperature] == 67.0
 
-    def test_process_message_forced_conversions_rsjrac06(self) -> None:
-        """RSJRAC06 forces fahrenheit outdoor and old-protocol current temps."""
-        device = _make_device(model="RSJRAC06")
+    @pytest.mark.parametrize(
+        "model",
+        ["RSJRAC06", "RSJRAC07", "2530001N"],
+        ids=["rsjrac06", "rsjrac07", "2530001n"],
+    )
+    def test_process_message_forced_conversions(self, model: str) -> None:
+        """Forced-temperature models decode outdoor F and old-protocol current temps."""
+        device = _make_device(model=model)
         assert device._lua_protocol == LuaProtocol.new
 
         class FakeMessage:
@@ -593,51 +598,47 @@ class TestMideaCDDevice:
     # set_attribute branches                                               #
     # ------------------------------------------------------------------ #
 
-    def test_set_power_target_temperature_fallback_to_min(self) -> None:
-        """Invalid stored target temperature falls back to min_temperature."""
+    @pytest.mark.parametrize(
+        ("min_temperature", "expected_target"),
+        [
+            pytest.param(35.0, 35.0, id="falls-back-to-min"),
+            pytest.param(None, 40.0, id="falls-back-to-default-when-min-also-invalid"),
+        ],
+    )
+    def test_set_power_target_temperature_fallback(
+        self,
+        min_temperature: float | None,
+        expected_target: float,
+    ) -> None:
+        """Invalid stored target temperature falls back to min, then default."""
         self.device._attributes[DeviceAttributes.target_temperature] = None
+        self.device._attributes[DeviceAttributes.min_temperature] = min_temperature
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.power.value, True)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
-            assert msg.target_temperature == 35.0
+            assert msg.target_temperature == expected_target
 
-    def test_set_power_target_temperature_fallback_default(self) -> None:
-        """Invalid target and min temperatures fall back to 40.0."""
-        self.device._attributes[DeviceAttributes.target_temperature] = None
-        self.device._attributes[DeviceAttributes.min_temperature] = None
+    @pytest.mark.parametrize(
+        ("mode", "expected_mode_byte"),
+        [
+            pytest.param("vacation", 0x00, id="vacation-never-sent-as-mode"),
+            pytest.param("standard", 0x02, id="known-mode-maps-to-key"),
+            pytest.param("none", 0x00, id="none-string-maps-to-0x00"),
+        ],
+    )
+    def test_set_power_with_mode_state(
+        self,
+        mode: str,
+        expected_mode_byte: int,
+    ) -> None:
+        """Stored mode state determines the modeValue sent with power on."""
+        self.device._attributes[DeviceAttributes.mode] = mode
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.power.value, True)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
-            assert msg.target_temperature == 40.0
-
-    def test_set_power_with_vacation_mode_state(self) -> None:
-        """Stored Vacation mode is never sent as a modeValue."""
-        self.device._attributes[DeviceAttributes.mode] = "Vacation"
-        with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.power.value, True)
-            mock_send.assert_called_once()
-            msg = mock_send.call_args[0][0]
-            assert msg.mode == 0x00
-
-    def test_set_power_with_known_mode_state(self) -> None:
-        """Stored Standard mode maps back to its key."""
-        self.device._attributes[DeviceAttributes.mode] = "Standard"
-        with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.power.value, True)
-            mock_send.assert_called_once()
-            msg = mock_send.call_args[0][0]
-            assert msg.mode == 0x02
-
-    def test_set_power_with_none_string_mode_state(self) -> None:
-        """Stored "None" mode maps to 0x00."""
-        self.device._attributes[DeviceAttributes.mode] = "None"
-        with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.power.value, True)
-            mock_send.assert_called_once()
-            msg = mock_send.call_args[0][0]
-            assert msg.mode == 0x00
+            assert msg.mode == expected_mode_byte
 
     def test_set_mode_invalid_value_not_sent(self) -> None:
         """Invalid mode values do not send a command."""
@@ -648,10 +649,27 @@ class TestMideaCDDevice:
     def test_set_mode_standard(self) -> None:
         """A valid mode value is mapped to its key and sent."""
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.mode.value, "Standard")
+            self.device.set_attribute(DeviceAttributes.mode.value, "standard")
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
             assert msg.mode == 0x02
+
+    @pytest.mark.parametrize(
+        ("mode", "expected_power"),
+        [
+            pytest.param("none", False, id="none-turns-power-off"),
+            pytest.param("standard", True, id="other-mode-turns-power-on"),
+            pytest.param("energy_save", True, id="energy-save-turns-power-on"),
+        ],
+    )
+    def test_set_mode_sets_power(self, mode: str, expected_power: bool) -> None:
+        """Selecting None turns the unit off, any other mode turns it on."""
+        self.device._attributes[DeviceAttributes.power] = not expected_power
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.mode.value, mode)
+            mock_send.assert_called_once()
+            msg = mock_send.call_args[0][0]
+            assert msg.power is expected_power
 
     def test_set_target_temperature_attribute(self) -> None:
         """Setting the target temperature places the value in the message."""
@@ -664,25 +682,26 @@ class TestMideaCDDevice:
             msg = mock_send.call_args[0][0]
             assert msg.target_temperature == 42.0
 
-    def test_enable_vacation_uses_current_days(self) -> None:
-        """Enabling vacation reuses the stored vacation days."""
-        self.device._attributes[DeviceAttributes.vacation_days] = 30
+    @pytest.mark.parametrize(
+        ("stored_days", "expected_days"),
+        [
+            pytest.param(30, 30, id="uses-stored-days"),
+            pytest.param(0, 100, id="falls-back-to-default"),
+        ],
+    )
+    def test_enable_vacation_days(
+        self,
+        stored_days: int,
+        expected_days: int,
+    ) -> None:
+        """Enabling vacation reuses stored days, or falls back to the default."""
+        self.device._attributes[DeviceAttributes.vacation_days] = stored_days
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.vacation_mode.value, True)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
             assert msg.vacation_flag is True
-            assert msg.vacation_days == 30
-
-    def test_enable_vacation_default_days(self) -> None:
-        """Enabling vacation without stored days uses the default."""
-        self.device._attributes[DeviceAttributes.vacation_days] = 0
-        with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.vacation_mode.value, True)
-            mock_send.assert_called_once()
-            msg = mock_send.call_args[0][0]
-            assert msg.vacation_flag is True
-            assert msg.vacation_days == 100
+            assert msg.vacation_days == expected_days
 
     # ------------------------------------------------------------------ #
     # set_customize                                                        #
@@ -693,20 +712,22 @@ class TestMideaCDDevice:
         self.device.set_customize('{"temperature_step": 0.5}')
         assert self.device.temperature_step == 0.5
 
-    def test_set_customize_lua_protocol_new(self) -> None:
-        """Customize can force the new lua protocol."""
-        self.device.set_customize('{"lua_protocol": "new"}')
-        assert self.device._lua_protocol == LuaProtocol.new
-
-    def test_set_customize_lua_protocol_bool_true(self) -> None:
-        """Boolean lua_protocol true maps to new."""
-        self.device.set_customize('{"lua_protocol": true}')
-        assert self.device._lua_protocol == LuaProtocol.new
-
-    def test_set_customize_lua_protocol_bool_false(self) -> None:
-        """Boolean lua_protocol false maps to old."""
-        self.device.set_customize('{"lua_protocol": false}')
-        assert self.device._lua_protocol == LuaProtocol.old
+    @pytest.mark.parametrize(
+        ("customize", "expected"),
+        [
+            pytest.param('{"lua_protocol": "new"}', LuaProtocol.new, id="string-new"),
+            pytest.param('{"lua_protocol": true}', LuaProtocol.new, id="bool-true"),
+            pytest.param('{"lua_protocol": false}', LuaProtocol.old, id="bool-false"),
+        ],
+    )
+    def test_set_customize_lua_protocol(
+        self,
+        customize: str,
+        expected: LuaProtocol,
+    ) -> None:
+        """Customize lua_protocol accepts a string or boolean value."""
+        self.device.set_customize(customize)
+        assert self.device._lua_protocol == expected
 
     def test_set_customize_invalid_json(self) -> None:
         """Invalid customize JSON keeps the defaults."""
@@ -714,7 +735,12 @@ class TestMideaCDDevice:
         assert self.device.temperature_step == 1.0
         assert self.device._lua_protocol == LuaProtocol.old
 
-    def test_auto_lua_protocol_resolves_new_for_rsjrac01(self) -> None:
-        """RSJRAC01 resolves the auto lua protocol to new."""
-        device = _make_device(model="RSJRAC01")
+    @pytest.mark.parametrize(
+        "model",
+        ["RSJRAC01", "RSJRAC06", "RSJRAC07", "2530001N"],
+        ids=["rsjrac01", "rsjrac06", "rsjrac07", "2530001n"],
+    )
+    def test_auto_lua_protocol_resolves_new(self, model: str) -> None:
+        """New-protocol models resolve the auto lua protocol to new."""
+        device = _make_device(model=model)
         assert device._lua_protocol == LuaProtocol.new

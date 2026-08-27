@@ -6,11 +6,14 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
 
 from .message import MessageFAResponse, MessageQuery, MessageSet
 
 _LOGGER = logging.getLogger(__name__)
+
+MIN_MODE_SET_OVERRIDE = 0x00
+MAX_MODE_SET_OVERRIDE = 0xFF
 
 
 class DeviceAttributes(StrEnum):
@@ -33,7 +36,7 @@ class MideaFADevice(MideaDevice):
     """Midea FA device."""
 
     _oscillation_angles: ClassVar[list[str]] = [
-        "Off",
+        "off",
         "30",
         "60",
         "90",
@@ -42,40 +45,40 @@ class MideaFADevice(MideaDevice):
         "360",
     ]
     _tilting_angles: ClassVar[list[str]] = [
-        "Off",
+        "off",
         "30",
         "60",
         "90",
         "120",
         "180",
         "360",
-        "+60",
-        "-60",
+        "plus_60",
+        "minus_60",
         "40",
     ]
     _oscillation_modes: ClassVar[list[str]] = [
-        "Off",
-        "Oscillation",
-        "Tilting",
-        "Curve-W",
-        "Curve-8",
-        "Reserved",
-        "Both",
+        "off",
+        "oscillation",
+        "tilting",
+        "curve_w",
+        "curve_8",
+        "reserved",
+        "both",
     ]
     _modes: ClassVar[list[str]] = [
-        "Normal",
-        "Natural",
-        "Sleep",
-        "Comfort",
-        "Silent",
-        "Baby",
-        "Induction",
-        "Circulation",
-        "Strong",
-        "Soft",
-        "Customize",
-        "Warm",
-        "Smart",
+        "none",
+        "natural",
+        "sleep",
+        "comfort",
+        "silent",
+        "baby",
+        "induction",
+        "circulation",
+        "strong",
+        "soft",
+        "customize",
+        "warm",
+        "smart",
     ]
 
     def __init__(
@@ -104,6 +107,7 @@ class MideaFADevice(MideaDevice):
         )
         self._default_speed_count = 3
         self._speed_count: int = self._default_speed_count
+        self._mode_set_overrides: dict[int, int] = {}
         self.set_customize(customize)
 
     @property
@@ -139,78 +143,72 @@ class MideaFADevice(MideaDevice):
         """Midea FA device process message."""
         message = MessageFAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-        for status in self._attributes:
-            if hasattr(message, str(status)):
-                value = getattr(message, str(status))
-                if status == DeviceAttributes.oscillation_angle:
-                    if value < len(MideaFADevice._oscillation_angles):
-                        self._attributes[status] = MideaFADevice._oscillation_angles[
-                            value
-                        ]
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.tilting_angle:
-                    if value < len(MideaFADevice._tilting_angles):
-                        self._attributes[status] = MideaFADevice._tilting_angles[value]
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.oscillation_mode:
-                    if value < len(MideaFADevice._oscillation_modes):
-                        self._attributes[status] = MideaFADevice._oscillation_modes[
-                            value
-                        ]
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.mode:
-                    if value < len(MideaFADevice._modes):
-                        self._attributes[status] = MideaFADevice._modes[value]
-                    else:
-                        self._attributes[status] = None
-                elif status == DeviceAttributes.power:
-                    self._attributes[status] = value
-                    if not value:
-                        self._attributes[DeviceAttributes.fan_speed] = 0
-                elif (
-                    status == DeviceAttributes.fan_speed
-                    and not self._attributes[DeviceAttributes.power]
-                ):
-                    self._attributes[status] = 0
-                else:
-                    self._attributes[status] = value
-                new_status[str(status)] = self._attributes[status]
+
+        forced_fan_speed_reset = False
+
+        def _translate_power(value: bool) -> bool:
+            # Powering off forces fan_speed to 0, even when this particular
+            # message doesn't carry a fan_speed field of its own.
+            nonlocal forced_fan_speed_reset
+            if not value:
+                self._attributes[DeviceAttributes.fan_speed] = 0
+                forced_fan_speed_reset = True
+            return value
+
+        def _translate_fan_speed(value: int) -> int:
+            return 0 if not self._attributes[DeviceAttributes.power] else value
+
+        new_status = self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.oscillation_angle: list_translator(
+                    MideaFADevice._oscillation_angles,
+                ),
+                DeviceAttributes.tilting_angle: list_translator(
+                    MideaFADevice._tilting_angles,
+                ),
+                DeviceAttributes.oscillation_mode: list_translator(
+                    MideaFADevice._oscillation_modes,
+                ),
+                DeviceAttributes.mode: list_translator(MideaFADevice._modes),
+                DeviceAttributes.power: _translate_power,
+                DeviceAttributes.fan_speed: _translate_fan_speed,
+            },
+        )
+        if forced_fan_speed_reset:
+            new_status[DeviceAttributes.fan_speed.value] = 0
         return new_status
 
     def _set_oscillation_mode(self, message: MessageSet, value: str) -> None:
-        if value == "Off" or not value:
+        if value == "off" or not value:
             message.oscillate = False
         else:
             message.oscillate = True
             message.oscillation_mode = MideaFADevice._oscillation_modes.index(
                 value,
             )
-            if value == "Oscillation":
-                if self._attributes[DeviceAttributes.oscillation_angle] == "Off":
+            if value == "oscillation":
+                if self._attributes[DeviceAttributes.oscillation_angle] == "off":
                     message.oscillation_angle = 3  # 90
                 else:
                     message.oscillation_angle = MideaFADevice._oscillation_angles.index(
                         self._attributes[DeviceAttributes.oscillation_angle],
                     )
-            elif value == "Tilting":
-                if self._attributes[DeviceAttributes.tilting_angle] == "Off":
+            elif value == "tilting":
+                if self._attributes[DeviceAttributes.tilting_angle] == "off":
                     message.tilting_angle = 3  # 90
                 else:
                     message.tilting_angle = MideaFADevice._tilting_angles.index(
                         self._attributes[DeviceAttributes.tilting_angle],
                     )
             else:
-                if self._attributes[DeviceAttributes.oscillation_angle] == "Off":
+                if self._attributes[DeviceAttributes.oscillation_angle] == "off":
                     message.oscillation_angle = 3  # 90
                 else:
                     message.oscillation_angle = MideaFADevice._oscillation_angles.index(
                         self._attributes[DeviceAttributes.oscillation_angle],
                     )
-                if self._attributes[DeviceAttributes.tilting_angle] == "Off":
+                if self._attributes[DeviceAttributes.tilting_angle] == "off":
                     message.tilting_angle = 3  # 90
                 else:
                     message.tilting_angle = MideaFADevice._tilting_angles.index(
@@ -218,8 +216,8 @@ class MideaFADevice(MideaDevice):
                     )
 
     def _set_oscillation_angle(self, message: MessageSet, value: str) -> None:
-        if value == "Off" or not value:
-            if self._attributes[DeviceAttributes.tilting_angle] == "Off":
+        if value == "off" or not value:
+            if self._attributes[DeviceAttributes.tilting_angle] == "off":
                 message.oscillate = False
             else:
                 message.oscillate = True
@@ -232,17 +230,17 @@ class MideaFADevice(MideaDevice):
                 value,
             )
             message.oscillate = True
-            if self._attributes[DeviceAttributes.tilting_angle] == "Off":
+            if self._attributes[DeviceAttributes.tilting_angle] == "off":
                 message.oscillation_mode = 1
-            elif self._attributes[DeviceAttributes.oscillation_mode] == "Tilting":
+            elif self._attributes[DeviceAttributes.oscillation_mode] == "tilting":
                 message.oscillation_mode = 6
                 message.tilting_angle = MideaFADevice._tilting_angles.index(
                     self._attributes[DeviceAttributes.tilting_angle],
                 )
 
     def _set_tilting_angle(self, message: MessageSet, value: str) -> None:
-        if value == "Off" or not value:
-            if self._attributes[DeviceAttributes.oscillation_angle] == "Off":
+        if value == "off" or not value:
+            if self._attributes[DeviceAttributes.oscillation_angle] == "off":
                 message.oscillate = False
             else:
                 message.oscillate = True
@@ -253,9 +251,9 @@ class MideaFADevice(MideaDevice):
         else:
             message.tilting_angle = MideaFADevice._tilting_angles.index(value)
             message.oscillate = True
-            if self._attributes[DeviceAttributes.oscillation_angle] == "Off":
+            if self._attributes[DeviceAttributes.oscillation_angle] == "off":
                 message.oscillation_mode = 2
-            elif self._attributes[DeviceAttributes.oscillation_mode] == "Oscillation":
+            elif self._attributes[DeviceAttributes.oscillation_mode] == "oscillation":
                 message.oscillation_mode = 6
                 message.oscillation_angle = MideaFADevice._oscillation_angles.index(
                     self._attributes[DeviceAttributes.oscillation_angle],
@@ -314,6 +312,7 @@ class MideaFADevice(MideaDevice):
             if value in MideaFADevice._modes:
                 message = MessageSet(self._message_protocol_version, self.subtype)
                 message.mode = MideaFADevice._modes.index(str(value))
+                message.mode_set_overrides = self._mode_set_overrides
         elif not (attr == DeviceAttributes.fan_speed and value == 0):
             message = MessageSet(self._message_protocol_version, self.subtype)
             setattr(message, str(attr), value)
@@ -328,16 +327,56 @@ class MideaFADevice(MideaDevice):
             message.fan_speed = fan_speed
         if mode is not None and mode in MideaFADevice._modes:
             message.mode = MideaFADevice._modes.index(mode)
+            message.mode_set_overrides = self._mode_set_overrides
         self.build_send(message)
+
+    def _parse_mode_set_overrides(
+        self,
+        overrides: dict[str, Any],
+    ) -> dict[int, int]:
+        """Return the {mode index: body[3]} table, or {} if a value is not a byte.
+
+        Each value is written straight into the set body, so anything `int()`
+        would silently reshape into a byte - a fraction, a bool, a number
+        outside 0..255 - is rejected here rather than sent as some other byte
+        or raised on the bytearray assignment, losing the command.
+        """
+        parsed: dict[int, int] = {}
+        rejected: dict[str, Any] = {}
+        for key, value in overrides.items():
+            if isinstance(value, bool) or (
+                isinstance(value, float) and not value.is_integer()
+            ):
+                rejected[key] = value
+                continue
+            converted = int(value)
+            if not MIN_MODE_SET_OVERRIDE <= converted <= MAX_MODE_SET_OVERRIDE:
+                rejected[key] = value
+                continue
+            parsed[int(key)] = converted
+        if rejected:
+            _LOGGER.error(
+                "[%s] mode_set_overrides values must be whole numbers in 0..255, "
+                "ignoring the table: %s",
+                self.device_id,
+                rejected,
+            )
+            return {}
+        return parsed
 
     def set_customize(self, customize: str) -> None:
         """Set customize."""
         self._speed_count = self._default_speed_count
+        self._mode_set_overrides = {}
         if customize and len(customize) > 0:
             try:
                 params = json.loads(customize)
                 if params and "speed_count" in params:
                     self._speed_count = params.get("speed_count")
+                if params and "mode_set_overrides" in params:
+                    self._mode_set_overrides = self._parse_mode_set_overrides(
+                        params.get("mode_set_overrides"),
+                    )
             except Exception:
                 _LOGGER.exception("[%s] Set customize error", self.device_id)
             self.update_all({"speed_count": self._speed_count})

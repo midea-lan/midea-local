@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDevice, MideaDeviceInitKwargs, dict_translator
 from midealocal.exceptions import ValueWrongType
 
 from .message import MessageDBResponse, MessagePower, MessageQuery, MessageStart
@@ -71,11 +71,11 @@ class MideaDBDevice(MideaDevice):
     }
 
     _water_level: ClassVar[dict[int, str]] = {
-        0x01: "Low",
-        0x02: "Mid",
-        0x03: "High",
+        0x01: "low",
+        0x02: "mid",
+        0x03: "high",
         0x04: "4",
-        0x05: "Auto",
+        0x05: "auto",
         0xFF: "default",
     }
 
@@ -183,15 +183,15 @@ class MideaDBDevice(MideaDevice):
     }
 
     _progress: ClassVar[list[str]] = [
-        "Idle",
-        "Spin",
-        "Rinse",
-        "Wash",
-        "Pre-wash",
-        "Dry",
-        "Weight",
-        "Hi-speed Spin",
-        "Unknown",
+        "idle",
+        "spin",
+        "rinse",
+        "wash",
+        "pre_wash",
+        "dry",
+        "weight",
+        "hi_speed_spin",
+        "unknown",
     ]
 
     def __init__(
@@ -235,49 +235,24 @@ class MideaDBDevice(MideaDevice):
         """Midea DB device process message."""
         message = MessageDBResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        new_status = {}
-
-        for attr in self._attributes:
-            if hasattr(message, str(attr)):
-                value = getattr(message, str(attr))
-                # parse mode
-                if attr == DeviceAttributes.mode:
-                    self._attributes[DeviceAttributes.mode] = MideaDBDevice._mode.get(
-                        value,
-                        value,
-                    )
-                # parse status
-                elif attr == DeviceAttributes.status:
-                    self._attributes[DeviceAttributes.status] = (
-                        MideaDBDevice._status.get(value, value)
-                    )
-                # parse dehydration_speed
-                elif attr == DeviceAttributes.dehydration_speed:
-                    self._attributes[DeviceAttributes.dehydration_speed] = (
-                        MideaDBDevice._dehydration_speed.get(value, value)
-                    )
-                # parse water_level
-                elif attr == DeviceAttributes.water_level:
-                    self._attributes[DeviceAttributes.water_level] = (
-                        MideaDBDevice._water_level.get(value, value)
-                    )
-                # parse program
-                elif attr == DeviceAttributes.program:
-                    self._attributes[DeviceAttributes.program] = (
-                        MideaDBDevice._program.get(value, value)
-                    )
-                # parse temperature
-                elif attr == DeviceAttributes.temperature:
-                    self._attributes[DeviceAttributes.temperature] = (
-                        MideaDBDevice._temperature.get(value, value)
-                    )
-                # parse progress
-                elif attr == DeviceAttributes.progress:
-                    self._attributes[attr] = MideaDBDevice._progress[value]
-                else:
-                    self._attributes[attr] = value
-                new_status[str(attr)] = self._attributes[attr]
-        return new_status
+        return self.update_attributes_from_message(
+            message,
+            {
+                DeviceAttributes.mode: dict_translator(MideaDBDevice._mode),
+                DeviceAttributes.status: dict_translator(MideaDBDevice._status),
+                DeviceAttributes.dehydration_speed: dict_translator(
+                    MideaDBDevice._dehydration_speed,
+                ),
+                DeviceAttributes.water_level: dict_translator(
+                    MideaDBDevice._water_level,
+                ),
+                DeviceAttributes.program: dict_translator(MideaDBDevice._program),
+                DeviceAttributes.temperature: dict_translator(
+                    MideaDBDevice._temperature,
+                ),
+                DeviceAttributes.progress: MideaDBDevice._progress.__getitem__,
+            },
+        )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea DB device set attribute."""
