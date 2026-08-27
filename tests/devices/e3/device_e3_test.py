@@ -61,6 +61,8 @@ class TestMideaE3Device:
         assert self.device.attributes[DeviceAttributes.smart_volume] is False
         assert self.device.attributes[DeviceAttributes.current_temperature] is None
         assert self.device.attributes[DeviceAttributes.target_temperature] == 40.0
+        assert self.device.attributes[DeviceAttributes.temperature_max] == 65.0
+        assert self.device.attributes[DeviceAttributes.temperature_min] == 35.0
         assert self.device.precision_halves is False
         assert self.device.temperature_step == 1.0
 

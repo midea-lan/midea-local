@@ -34,6 +34,8 @@ class DeviceAttributes(StrEnum):
     smart_volume = "smart_volume"
     current_temperature = "current_temperature"
     target_temperature = "target_temperature"
+    temperature_min = "temperature_min"
+    temperature_max = "temperature_max"
 
 
 class MideaE3Device(MideaDevice):
@@ -60,6 +62,8 @@ class MideaE3Device(MideaDevice):
                 DeviceAttributes.smart_volume: False,
                 DeviceAttributes.current_temperature: None,
                 DeviceAttributes.target_temperature: 40.0,
+                DeviceAttributes.temperature_min: 35.0,
+                DeviceAttributes.temperature_max: 65.0,
             },
         )
         self._precision_halves: bool | None = None
