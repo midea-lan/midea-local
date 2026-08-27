@@ -87,6 +87,12 @@ class TestBodyParser:
         value = parser._get_raw_value(self.body)
         assert value == 0
 
+    def test_get_raw_out_of_bounds_with_byte_mask(self) -> None:
+        """Test get raw value out of bounds with byte_mask."""
+        parser = BodyParser[int]("name", 6, default_raw_value=0xFF, byte_mask=0x07)
+        value = parser._get_raw_value(self.body)
+        assert value == 0x07
+
     def test_get_raw_data_size_out_of_bounds(self) -> None:
         """Test get raw value out of bounds."""
         parser = BodyParser[int]("name", 5, length_in_bytes=2)
@@ -99,6 +105,46 @@ class TestBodyParser:
             parser = BodyParser[int]("name", 4, length_in_bytes=2, bit=i)
             value = parser._get_raw_value(self.body)
             assert value == (1 if i in [0, 2, 10] else 0)
+
+    @pytest.mark.parametrize(
+        ("value", "mask", "expected_value"),
+        [
+            pytest.param(0b00000000, 0b00001111, 0b00000000, id="0x00_with_0x0F"),
+            pytest.param(0b00000001, 0b00001111, 0b00000001, id="0x01_with_0x0F"),
+            pytest.param(0b00000011, 0b00001111, 0b00000011, id="0x03_with_0x0F"),
+            pytest.param(0b00000111, 0b00001111, 0b00000111, id="0x07_with_0x0F"),
+            pytest.param(0b00001111, 0b00001111, 0b00001111, id="0x0F_with_0x0F"),
+            pytest.param(0b00011111, 0b00001111, 0b00001111, id="0x1F_with_0x0F"),
+            pytest.param(0b00111111, 0b00001111, 0b00001111, id="0x3F_with_0x0F"),
+            pytest.param(0b01111111, 0b00001111, 0b00001111, id="0x7F_with_0x0F"),
+            pytest.param(0b11111111, 0b00001111, 0b00001111, id="0xFF_with_0x0F"),
+        ],
+    )
+    def test_get_raw_data_byte_mask(
+        self,
+        value: int,
+        mask: int,
+        expected_value: int,
+    ) -> None:
+        """Test get raw value with byte_mask."""
+        parser = BodyParser[int]("name", 0, length_in_bytes=2, byte_mask=mask)
+        assert parser._get_raw_value(bytearray([0xFF, value])) == expected_value
+
+    def test_get_raw_data_with_0_byte_mask(
+        self,
+    ) -> None:
+        """Test get raw value with 0 byte_mask."""
+        parser = BodyParser[int]("name", 0, length_in_bytes=2, byte_mask=0x00)
+        for i in range(256):
+            assert parser._get_raw_value(bytearray([0xFF, i])) == 0
+
+    def test_get_raw_data_with_255_byte_mask(
+        self,
+    ) -> None:
+        """Test get raw value with 255 byte_mask."""
+        parser = BodyParser[int]("name", 0, length_in_bytes=2, byte_mask=0xFF)
+        for i in range(256):
+            assert parser._get_raw_value(bytearray([0xFF, i])) == i
 
     def test_parse_unimplemented(self) -> None:
         """Test parse unimplemented."""
@@ -178,6 +224,12 @@ class TestIntParser:
                 assert parser._parse(i) == 255
             else:
                 assert parser._parse(i) == i
+
+    def test_int_byte_mask(self) -> None:
+        """Test int parse with byte_mask."""
+        parser = IntParser("name", 0, byte_mask=0x7F)
+        for i in range(256):
+            assert parser._get_raw_value(bytearray([i])) == (i & 0x7F)
 
 
 class TestFloatParser:
