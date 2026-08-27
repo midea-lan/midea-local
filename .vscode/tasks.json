@@ -18,6 +18,20 @@
       "type": "shell",
       "command": "uv run python -m pytest --rootdir . --cov=midealocal --cov-report term-missing ./tests/",
       "problemMatcher": []
+    },
+    {
+      "label": "Lua conformance: run tests",
+      "detail": "Run the Lua protocol-conformance test suite (tests/lua_conformance/).",
+      "type": "shell",
+      "command": "uv run python -m pytest ./tests/lua_conformance/",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lua conformance: regenerate report",
+      "detail": "Regenerate GENERATED_MAPPING.md, GENERATED_REPORT.md and conformance_baseline.json.",
+      "type": "shell",
+      "command": "uv run python -m tests.lua_conformance --baseline",
+      "problemMatcher": []
     }
   ]
 }
