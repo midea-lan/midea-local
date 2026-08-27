@@ -87,6 +87,12 @@ class TestBodyParser:
         value = parser._get_raw_value(self.body)
         assert value == 0
 
+    def test_get_raw_out_of_bounds_with_byte_mask(self) -> None:
+        """Test get raw value out of bounds with byte_mask."""
+        parser = BodyParser[int]("name", 6, default_raw_value=0xFF, byte_mask=0x07)
+        value = parser._get_raw_value(self.body)
+        assert value == 0x07
+
     def test_get_raw_data_size_out_of_bounds(self) -> None:
         """Test get raw value out of bounds."""
         parser = BodyParser[int]("name", 5, length_in_bytes=2)
