@@ -589,6 +589,8 @@ class BodyParser[T]:
     def _get_raw_value(self, body: bytearray) -> int:
         """Get raw value from body."""
         if len(body) < self._byte + self._length_in_bytes:
+            if self._byte_mask is not None:
+                return self._default_raw_value & self._byte_mask
             return self._default_raw_value
         data = 0
         for i in range(self._length_in_bytes):
