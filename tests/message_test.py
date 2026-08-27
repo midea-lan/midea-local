@@ -135,7 +135,7 @@ class TestBodyParser:
     ) -> None:
         """Test get raw value with 0 byte_mask."""
         parser = BodyParser[int]("name", 0, length_in_bytes=2, byte_mask=0x00)
-        for i in range(255):
+        for i in range(256):
             assert parser._get_raw_value(bytearray([0xFF, i])) == 0
 
     def test_get_raw_data_with_255_byte_mask(
@@ -143,7 +143,7 @@ class TestBodyParser:
     ) -> None:
         """Test get raw value with 255 byte_mask."""
         parser = BodyParser[int]("name", 0, length_in_bytes=2, byte_mask=0xFF)
-        for i in range(255):
+        for i in range(256):
             assert parser._get_raw_value(bytearray([0xFF, i])) == i
 
     def test_parse_unimplemented(self) -> None:
@@ -228,7 +228,7 @@ class TestIntParser:
     def test_int_byte_mask(self) -> None:
         """Test int parse with byte_mask."""
         parser = IntParser("name", 0, byte_mask=0x7F)
-        for i in range(255):
+        for i in range(256):
             assert parser._get_raw_value(bytearray([i])) == (i & 0x7F)
 
 
