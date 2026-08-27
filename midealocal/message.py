@@ -567,6 +567,7 @@ class BodyParser[T]:
         first_upper: bool = True,
         default_raw_value: int = 0,
         transform_func: Callable[[T], T] = lambda data: data,
+        byte_mask: int | None = None,
     ) -> None:
         """Init body parser with attribute name."""
         self.name = name
@@ -576,6 +577,7 @@ class BodyParser[T]:
         self._first_upper = first_upper
         self._default_raw_value = default_raw_value
         self._transform_func = transform_func
+        self._byte_mask = byte_mask
         if length_in_bytes < 0:
             raise ValueError("Length in bytes must be a positive value.")
         if bit is not None and (bit < 0 or bit >= length_in_bytes * 8):
@@ -598,6 +600,8 @@ class BodyParser[T]:
             data += body[byte] << (8 * i)
         if self._bit is not None:
             data = (data & (1 << self._bit)) >> self._bit
+        if self._byte_mask is not None:
+            return data & self._byte_mask
         return data
 
     def get_value(self, body: bytearray) -> T:
@@ -620,9 +624,10 @@ class BoolParser(BodyParser[bool]):
         true_value: int = 1,
         false_value: int = 0,
         default_value: bool = True,
+        byte_mask: int | None = None,
     ) -> None:
         """Init bool body parser."""
-        super().__init__(name, byte, bit)
+        super().__init__(name, byte, bit, byte_mask=byte_mask)
         self._true_value = true_value
         self._default_value = default_value
         self._false_value = false_value
@@ -644,6 +649,7 @@ class IntEnumParser[E: IntEnum](BodyParser[E]):
         length_in_bytes: int = 1,
         first_upper: bool = False,
         default_value: E | None = None,
+        byte_mask: int | None = None,
     ) -> None:
         """Init IntEnum body parser."""
         super().__init__(
@@ -651,6 +657,7 @@ class IntEnumParser[E: IntEnum](BodyParser[E]):
             byte,
             length_in_bytes=length_in_bytes,
             first_upper=first_upper,
+            byte_mask=byte_mask,
         )
         self._enum_class = enum_class
         self._default_value = default_value
@@ -678,6 +685,7 @@ class IntParser(BodyParser[int]):
         length_in_bytes: int = 1,
         first_upper: bool = False,
         transform_func: Callable[[int], int] = lambda x: x,
+        byte_mask: int | None = None,
     ) -> None:
         """Init Int body parser."""
         super().__init__(
@@ -686,6 +694,7 @@ class IntParser(BodyParser[int]):
             length_in_bytes=length_in_bytes,
             first_upper=first_upper,
             transform_func=transform_func,
+            byte_mask=byte_mask,
         )
         self._max_value = max_value
         self._min_value = min_value
