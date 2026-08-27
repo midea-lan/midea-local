@@ -326,6 +326,11 @@ class TestMideaCCDevice:
         self.device._attributes[DeviceAttributes.swing] = True
         assert self.device.swing_mode == "on"
 
+    def test_swing_mode_invalid_type_returns_none(self) -> None:
+        """Test swing_mode returns None for an unexpected attribute type."""
+        self.device._attributes[DeviceAttributes.swing] = None
+        assert self.device.swing_mode is None
+
     def test_swing_modes(self) -> None:
         """Test swing_modes lists off/on."""
         assert self.device.swing_modes == ["off", "on"]
@@ -341,6 +346,11 @@ class TestMideaCCDevice:
         """Test temperature_step mirrors temperature_precision."""
         self.device._attributes[DeviceAttributes.temperature_precision] = 1
         assert self.device.temperature_step == 1.0
+
+    def test_temperature_step_invalid_type_returns_none(self) -> None:
+        """Test temperature_step returns None for an unexpected attribute type."""
+        self.device._attributes[DeviceAttributes.temperature_precision] = None
+        assert self.device.temperature_step is None
 
 
 class TestMideaCCDeviceFEControl:
