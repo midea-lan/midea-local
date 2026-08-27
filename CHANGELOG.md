@@ -1,5 +1,42 @@
 # Changelog
 
+## [10.0.1](https://github.com/midea-lan/midea-local/compare/v10.0.0...v10.0.1) (2026-08-23)
+
+
+### Bug Fixes
+
+* **e1:** align modes,status,progress style ([#714](https://github.com/midea-lan/midea-local/issues/714)) ([4188142](https://github.com/midea-lan/midea-local/commit/418814280c94172083edca8bb742ca884ba82ea6))
+* **e3:** align old_subtypes style ([#713](https://github.com/midea-lan/midea-local/issues/713)) ([f30fb15](https://github.com/midea-lan/midea-local/commit/f30fb1566947d44f00a0212e38129bf957bcf005))
+* **fa:** align fan modes ([#712](https://github.com/midea-lan/midea-local/issues/712)) ([264ab1c](https://github.com/midea-lan/midea-local/commit/264ab1ce9a2a1a80d7d93a0c8763c3bf7ad7a03d))
+* **x34:** align modes,status,progress style ([#715](https://github.com/midea-lan/midea-local/issues/715)) ([bd1b3d0](https://github.com/midea-lan/midea-local/commit/bd1b3d08b4614f44b8a4669944f1330c73f78656))
+
+## [10.0.0](https://github.com/midea-lan/midea-local/compare/v9.0.0...v10.0.0) (2026-08-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **x13:** improve effects naming ([#689](https://github.com/midea-lan/midea-local/issues/689))
+
+### Bug Fixes
+
+* **ac:** guard XA1MessageBody parsing against short notify bodies ([#691](https://github.com/midea-lan/midea-local/issues/691)) ([3297742](https://github.com/midea-lan/midea-local/commit/3297742ed593e0e38d269445a449068cb5fb3bea)), closes [#688](https://github.com/midea-lan/midea-local/issues/688)
+* **ac:** keep unit on when a mode change is followed by a temperature write ([#601](https://github.com/midea-lan/midea-local/issues/601)) ([065ad21](https://github.com/midea-lan/midea-local/commit/065ad214b2a71c2802a94bd67ed9f118ace72fea))
+* **ac:** missing B5-derived modes ([#681](https://github.com/midea-lan/midea-local/issues/681)) ([9e4b513](https://github.com/midea-lan/midea-local/commit/9e4b513b8c6eb96444a6632d319e6cd4226086a5))
+* **b8:** handle unknown error sub-codes in MessageB8GenericBody ([#696](https://github.com/midea-lan/midea-local/issues/696)) ([dc12e8f](https://github.com/midea-lan/midea-local/commit/dc12e8f9114140534bb5a333173ba6902ddb06e2))
+* **bf:** align water state attribute name ([#708](https://github.com/midea-lan/midea-local/issues/708)) ([bd6baa3](https://github.com/midea-lan/midea-local/commit/bd6baa3a692595e650df215b25f8ccafa3885f92))
+* **c3:** use correct zone when reading temperature type ([#707](https://github.com/midea-lan/midea-local/issues/707)) ([c17fb6e](https://github.com/midea-lan/midea-local/commit/c17fb6e488430fbd4f30170517ba7ff99ba44d9f))
+* **cc:** avoid crash on stale fan speed ([#682](https://github.com/midea-lan/midea-local/issues/682)) ([6ca3f1c](https://github.com/midea-lan/midea-local/commit/6ca3f1c90d7b8dd04a2f7b81ab2a40e191ab10ea))
+* **cd:** support Kosner 2530001N and sync power with mode selection ([#684](https://github.com/midea-lan/midea-local/issues/684)) ([d9f3a9b](https://github.com/midea-lan/midea-local/commit/d9f3a9bae70b299e593aec1ffda9551669f9c0a9))
+* **ce:** improve modes naming ([#680](https://github.com/midea-lan/midea-local/issues/680)) ([08b5c11](https://github.com/midea-lan/midea-local/commit/08b5c116754764c2dee6feb668a86b6e9c6f8430))
+* **device:** prevent appliance query from masking failed status queries ([#690](https://github.com/midea-lan/midea-local/issues/690)) ([c64d977](https://github.com/midea-lan/midea-local/commit/c64d9778aba9e9c96c2ac64b8960746b23926317))
+* **device:** retry query once before marking protocol unsupported ([#694](https://github.com/midea-lan/midea-local/issues/694)) ([922e27c](https://github.com/midea-lan/midea-local/commit/922e27c579d6871080bf31581aaac20d3264af40))
+* **fa:** add opt-in mode override for fan devices ([#686](https://github.com/midea-lan/midea-local/issues/686)) ([2e5c07e](https://github.com/midea-lan/midea-local/commit/2e5c07e27d9bacec42c68875df70129642082c10))
+* **fa:** validate mode_set_overrides values are bytes ([#693](https://github.com/midea-lan/midea-local/issues/693)) ([c4c0693](https://github.com/midea-lan/midea-local/commit/c4c0693502849a955f3fab9d51dbc2ea990cc228))
+* **fc:** correct FCNotifyMessageBody standby bitmask check ([#698](https://github.com/midea-lan/midea-local/issues/698)) ([8fe1c6d](https://github.com/midea-lan/midea-local/commit/8fe1c6d92829f5f6da4cdfc7d0fc533821bf605b))
+* skip updates on shutdown ([#683](https://github.com/midea-lan/midea-local/issues/683)) ([14364d2](https://github.com/midea-lan/midea-local/commit/14364d2dbb3500378d5c534ae90dfe444cf63314))
+* **x13:** improve effects naming ([#689](https://github.com/midea-lan/midea-local/issues/689)) ([ed3fc6a](https://github.com/midea-lan/midea-local/commit/ed3fc6ad628615a27fb303843935601e5a44c546))
+* **x26:** handle set_attribute before initial status update ([#701](https://github.com/midea-lan/midea-local/issues/701)) ([5654d02](https://github.com/midea-lan/midea-local/commit/5654d02fa5743140ef2bc0bd1f86f1cb8dcf3099))
+
 ## [9.0.0](https://github.com/midea-lan/midea-local/compare/v8.0.1...v9.0.0) (2026-08-15)
 
 

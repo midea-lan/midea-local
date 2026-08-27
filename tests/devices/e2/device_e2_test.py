@@ -99,6 +99,8 @@ class TestMideaE2Device:
         device = self._device()
         assert device.precision_halves is False
         assert device.temperature_step == 1.0
+        assert device.attributes[DeviceAttributes.temperature_max] == 75.0
+        assert device.attributes[DeviceAttributes.temperature_min] == 30.0
 
     def test_set_customize(self) -> None:
         """Test customize sets old protocol, step and precision halves."""
