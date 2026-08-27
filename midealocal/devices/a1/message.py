@@ -20,10 +20,6 @@ MAX_MSG_SERIAL_NUM = 100
 MIN_TARGET_HUMIDITY = 35
 MIN_FAN_SPEED = 5
 
-A1_GENERAL_MODE_MASK = 0x0F
-A1_GENERAL_FAN_SPEED_MASK = 0x7F
-A1_GENERAL_TANK_MASK = 0x7F
-
 
 class NewProtocolTags(IntEnum):
     """New protocol tags."""
@@ -230,26 +226,19 @@ class A1GeneralMessageBody(MessageBody):
             body,
             [
                 BoolParser("power", 1, 0),
-                IntParser("mode", 2, transform_func=lambda x: x & A1_GENERAL_MODE_MASK),
+                IntParser("mode", 2, byte_mask=0x0F),
                 IntParser(
                     "fan_speed",
                     3,
-                    transform_func=lambda x: (
-                        (x & A1_GENERAL_FAN_SPEED_MASK)
-                        if (x & A1_GENERAL_FAN_SPEED_MASK) >= MIN_FAN_SPEED
-                        else 1
-                    ),
+                    transform_func=lambda x: x if x >= MIN_FAN_SPEED else 1,
+                    byte_mask=0x7F,
                 ),
                 IntParser("target_humidity", 7, min_value=MIN_TARGET_HUMIDITY),
                 BoolParser("child_lock", 8, 7),
                 BoolParser("anion", 9, 6),
                 BoolParser("pump", 9, 3),
                 BoolParser("pump_enable", 9, 4),
-                IntParser(
-                    "tank",
-                    10,
-                    transform_func=lambda x: x & A1_GENERAL_TANK_MASK,
-                ),
+                IntParser("tank", 10, byte_mask=0x7F),
                 IntParser("water_level_set", 15),
                 IntParser("current_humidity", 16),
                 FloatParser(
