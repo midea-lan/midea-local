@@ -74,5 +74,4 @@ repos:
             "-sn", # Don't display the score
             "--rcfile=pylintrc",
             "--ignore-paths=tests",
-            "--jobs=1",
           ]
