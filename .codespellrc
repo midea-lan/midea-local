@@ -1,2 +1,2 @@
 [codespell]
-ignore-regex = .*mapp\.appsmb\.com.*
+ignore-regex = \bmapp\.appsmb\.com\b

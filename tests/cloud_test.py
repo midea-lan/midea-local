@@ -746,6 +746,7 @@ class CloudTest(IsolatedAsyncioTestCase):
                 b'{"errorCode": 0}',
                 self.responses["mideaaircloud_download_lua.json"],
                 b'{"errorCode": 0, "data": {"url": "u", "fileName": "../evil.lua"}}',
+                b'{"errorCode": 0, "data": {"url": "u", "fileName": "..\\\\evil.lua"}}',
             ],
         )
         session.request = AsyncMock(return_value=response)
@@ -804,6 +805,12 @@ class CloudTest(IsolatedAsyncioTestCase):
                     "f424cd84479c665a7e8a82d3b6bea6b67a1fdc95a7783791a6ff35b2953a158a"
                 ),
             )
+            assert (
+                await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010") is None
+            )
+            assert not (Path(tmpdir).parent / "evil.lua").exists()
+
+            # The same rule applies to a Windows-style separator.
             assert (
                 await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010") is None
             )

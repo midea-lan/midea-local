@@ -8,7 +8,7 @@ import time
 from asyncio import Lock
 from datetime import UTC, datetime
 from http import HTTPStatus
-from pathlib import PurePosixPath
+from pathlib import PurePosixPath, PureWindowsPath
 from secrets import token_hex
 from typing import Any, cast
 
@@ -1055,9 +1055,13 @@ class MideaAirCloud(MideaCloud):
                 lua = await res.text()
                 if lua:
                     file_name = response["fileName"]
-                    # The cloud controls fileName; keep it to a single component
-                    # so it cannot be written outside path.
-                    if PurePosixPath(file_name).name != file_name:
+                    # The cloud controls fileName; keep it to a single path
+                    # component so it cannot be written outside path. Check both
+                    # separator styles since Windows is a supported platform.
+                    if (
+                        PurePosixPath(file_name).name != file_name
+                        or PureWindowsPath(file_name).name != file_name
+                    ):
                         _LOGGER.error(
                             "Refusing lua file name with path components: %s",
                             file_name,
