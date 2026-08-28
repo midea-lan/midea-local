@@ -6,13 +6,16 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
 
 | lua file | package | MATCH | MISSING | DIFFERENT | UNKNOWN |
 | --- | --- | --- | --- | --- | --- |
-| lua/a1/T_0000_A1_00000Q1A_2023112201.lua | a1 | 2 | 0 | 0 | 16 |
-| lua/a1/T_0000_A1_00000Q1B_2023112201.lua | a1 | 2 | 0 | 0 | 16 |
-| lua/a1/T_0000_A1_00000Q1D_2023112201.lua | a1 | 2 | 0 | 0 | 16 |
-| lua/a1/T_0000_A1_3.lua | a1 | 10 | 1 | 1 | 9 |
-| lua/a1/T_0000_A1_5.lua | a1 | 5 | 0 | 0 | 16 |
+| lua/a1/T_0000_A1_00000Q1A_2023112201.lua | a1 | 2 | 0 | 0 | 2 |
+| lua/a1/T_0000_A1_00000Q1B_2023112201.lua | a1 | 2 | 0 | 0 | 2 |
+| lua/a1/T_0000_A1_00000Q1C_18.lua | a1 | 2 | 0 | 0 | 2 |
+| lua/a1/T_0000_A1_00000Q1D_2023112201.lua | a1 | 2 | 0 | 0 | 2 |
+| lua/a1/T_0000_A1_20104032_22.lua | a1 | 2 | 0 | 0 | 2 |
+| lua/a1/T_0000_A1_3.lua | a1 | 5 | 7 | 0 | 1 |
+| lua/a1/T_0000_A1_5.lua | a1 | 5 | 0 | 0 | 2 |
 | lua/ac/T_0000_AC_00000Q11_2023072401.lua | ac | 2 | 0 | 0 | 82 |
 | lua/ac/T_0000_AC_00000Q11_2024013001.lua | ac | 2 | 0 | 0 | 82 |
+| lua/ac/T_0000_AC_00000Q11_51.lua | ac | 2 | 0 | 0 | 82 |
 | lua/ac/T_0000_AC_00000Q14_2024013001.lua | ac | 2 | 0 | 0 | 82 |
 | lua/ac/T_0000_AC_00000Q15_2024013001.lua | ac | 2 | 0 | 0 | 82 |
 | lua/ac/T_0000_AC_00000Q17_2024013001.lua | ac | 2 | 0 | 0 | 82 |
@@ -42,6 +45,7 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
 | lua/ac/T_0000_AC_24.lua | ac | 2 | 0 | 0 | 82 |
 | lua/ac/T_0000_AC_24296529_2024022101.lua | ac | 0 | 1 | 0 | 82 |
 | lua/ac/T_0000_AC_24296693_2024071901.lua | ac | 0 | 1 | 0 | 82 |
+| lua/ac/T_0000_AC_26.lua | ac | 1 | 0 | 0 | 82 |
 | lua/ac/T_0000_AC_75.lua | ac | 2 | 0 | 0 | 82 |
 | lua/ac/T_0008_AC_24.lua | ac | 1 | 0 | 0 | 82 |
 | lua/ac/T_0008_AC_26.lua | ac | 1 | 0 | 0 | 82 |
@@ -50,6 +54,8 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
 | lua/b0/T_0000_B0_0EM34A2E_6.lua | b0 | 4 | 0 | 0 | 25 |
 | lua/b0/T_0000_B0_0TG025JG_2021070701.lua | b0 | 4 | 0 | 0 | 25 |
 | lua/b0/T_0000_B0_6.lua | b0 | 37 | 2 | 8 | 8 |
+| lua/b1/T_0000_B1_0TVN50R6_LATEST.lua | b1 | 3 | 5 | 0 | 8 |
+| lua/b1/T_0000_B1_0TVN50R6_NLU_LATEST.lua | b1 | 0 | 0 | 0 | 10 |
 | lua/b1/T_0000_B1_4.lua | b1 | 4 | 10 | 5 | 7 |
 | lua/b3/T_0000_B3_0090Q15S_2022012701.lua | b3 | 0 | 0 | 0 | 54 |
 | lua/b3/T_0000_B3_16.lua | b3 | 0 | 0 | 0 | 54 |
@@ -68,10 +74,13 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
 | lua/bf/T_0008_BF_3.lua | bf | 0 | 0 | 0 | 6 |
 | lua/bf/T_0008_BF_4.lua | bf | 0 | 0 | 0 | 5 |
 | lua/bf/T_0008_BF_5.lua | bf | 0 | 0 | 0 | 5 |
+| lua/c3/T_0000_C3_152832116442666_20.lua | c3 | 0 | 0 | 0 | 3 |
 | lua/c3/T_0000_C3_17100003_2024011601.lua | c3 | 2 | 0 | 0 | 3 |
 | lua/c3/T_0000_C3_171H120F_2023062601.lua | c3 | 0 | 0 | 0 | 3 |
 | lua/ca/T_0000_CA_16.lua | ca | 1 | 0 | 0 | 64 |
 | lua/ca/T_0000_CA_21.lua | ca | 1 | 0 | 0 | 64 |
+| lua/ca/T_0000_CA_310A1700_58.lua | ca | 1 | 0 | 0 | 64 |
+| lua/ca/T_0000_CA_310A2245_66.lua | ca | 1 | 0 | 0 | 64 |
 | lua/ca/T_0000_CA_5.lua | ca | 12 | 64 | 0 | 49 |
 | lua/ca/T_0008_CA_21.lua | ca | 0 | 0 | 0 | 4 |
 | lua/ca/T_0008_CA_22.lua | ca | 0 | 0 | 0 | 4 |
@@ -80,11 +89,13 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
 | lua/ca/T_0008_CA_27.lua | ca | 0 | 0 | 0 | 4 |
 | lua/ca/T_0008_CA_28.lua | ca | 0 | 0 | 0 | 4 |
 | lua/ca/T_0008_CA_29.lua | ca | 0 | 0 | 0 | 4 |
+| lua/cc/T_0000_CC_10011006_2025033001.lua | cc | 2 | 0 | 0 | 25 |
 | lua/cc/T_0000_CC_6.lua | cc | 5 | 0 | 0 | 27 |
 | lua/cd/T_0000_CD_000K86A2_3.lua | cd | 5 | 0 | 0 | 44 |
 | lua/cd/T_0000_CD_14.lua | cd | 3 | 0 | 0 | 45 |
 | lua/cd/T_0000_CD_3.lua | cd | 22 | 32 | 2 | 27 |
 | lua/cd/T_0000_CD_7.lua | cd | 5 | 0 | 0 | 44 |
+| lua/cd/T_0000_CD_RSJ000CB_2026042001.lua | cd | 5 | 0 | 0 | 44 |
 | lua/cd/T_0000_CD_RSJ000CB_8.lua | cd | 5 | 0 | 0 | 44 |
 | lua/cd/T_0000_CD_RSJRAC01_2023070401.lua | cd | 3 | 0 | 0 | 45 |
 | lua/cf/T_0000_CF_4.lua | cf | 0 | 1 | 0 | 2 |
@@ -148,20 +159,9 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
 | lua/x13/T_0000_13_M0200002_2025042802.lua | x13 | 4 | 0 | 0 | 3 |
 | lua/x26/T_0000_26_M0100032_2023091101.lua | x26 | 3 | 1 | 0 | 3 |
 | lua/x40/T_0000_40_M0100002_2024011701.lua | x40 | 3 | 1 | 0 | 9 |
-| **total** | | 451 | 266 | 56 | 4606 |
+| **total** | | 465 | 277 | 55 | 4928 |
 
 ## DIFFERENT
-
-### a1: fan_speed
-
-```
-[DIFFERENT] decode_field: fan_speed
-    field parsed from a different offset/mask/shift
-    lua source : lua/a1/T_0000_A1_3.lua:94
-    lua        : byte[3] & 0xFF >> 0
-    midealocal : byte[3] & 0x7F >> 0  (body[3] & 127)
-    example    : raw byte 0x24 -> lua 36, midealocal 36
-```
 
 ### ac: swing_lr
 
@@ -747,6 +747,60 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
 
 ## MISSING
 
+### a1: power
+
+```
+[MISSING] decode_field: power
+    Lua reads 'powerValue' from byte[1] (mask 0x01, shift 0); midealocal parses nothing there
+    lua source : lua/a1/T_0000_A1_3.lua:91
+    lua        : powerValue = byte[1] & 0x01 >> 0
+```
+
+### a1: mode
+
+```
+[MISSING] decode_field: mode
+    Lua reads 'modeValue' from byte[2] (mask 0x0F, shift 0); midealocal parses nothing there
+    lua source : lua/a1/T_0000_A1_3.lua:92
+    lua        : modeValue = byte[2] & 0x0F >> 0
+```
+
+### a1: anion
+
+```
+[MISSING] decode_field: anion
+    Lua reads 'anionValue' from byte[9] (mask 0x40, shift 0); midealocal parses nothing there
+    lua source : lua/a1/T_0000_A1_3.lua:93
+    lua        : anionValue = byte[9] & 0x40 >> 0
+```
+
+### a1: fan_speed
+
+```
+[MISSING] decode_field: fan_speed
+    Lua reads 'windSpeedValue' from byte[3] (mask 0xFF, shift 0); midealocal parses nothing there
+    lua source : lua/a1/T_0000_A1_3.lua:94
+    lua        : windSpeedValue = byte[3] & 0xFF >> 0
+```
+
+### a1: humidity
+
+```
+[MISSING] decode_field: humidity
+    Lua reads 'humidityValue' from byte[7] (mask 0xFF, shift 0); midealocal parses nothing there
+    lua source : lua/a1/T_0000_A1_3.lua:95
+    lua        : humidityValue = byte[7] & 0xFF >> 0
+```
+
+### a1: cur_humidity
+
+```
+[MISSING] decode_field: cur_humidity
+    Lua reads 'curHumidityValue' from byte[16] (mask 0xFF, shift 0); midealocal parses nothing there
+    lua source : lua/a1/T_0000_A1_3.lua:96
+    lua        : curHumidityValue = byte[16] & 0xFF >> 0
+```
+
 ### a1: tank_status
 
 ```
@@ -866,6 +920,46 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
     Lua reads 'second' from byte[3] (mask 0xFF, shift 0); midealocal parses nothing there
     lua source : lua/b0/T_0000_B0_6.lua:209
     lua        : second = byte[3] & 0xFF >> 0
+```
+
+### b1: body_type 0x23
+
+```
+[MISSING] command: body_type 0x23
+    Lua builds a request with body[0]=0x23 (trigger None); no midealocal Message* emits that body type
+    lua source : lua/b1/T_0000_B1_0TVN50R6_LATEST.lua:152
+```
+
+### b1: body_type 0x24
+
+```
+[MISSING] command: body_type 0x24
+    Lua builds a request with body[0]=0x24 (trigger 'control'); no midealocal Message* emits that body type
+    lua source : lua/b1/T_0000_B1_0TVN50R6_LATEST.lua:152
+```
+
+### b1: body_type 0x26
+
+```
+[MISSING] command: body_type 0x26
+    Lua builds a request with body[0]=0x26 (trigger 'control'); no midealocal Message* emits that body type
+    lua source : lua/b1/T_0000_B1_0TVN50R6_LATEST.lua:152
+```
+
+### b1: body_type 0x22
+
+```
+[MISSING] command: body_type 0x22
+    Lua builds a request with body[0]=0x22 (trigger 'control'); no midealocal Message* emits that body type
+    lua source : lua/b1/T_0000_B1_0TVN50R6_LATEST.lua:152
+```
+
+### b1: body_type 0x31
+
+```
+[MISSING] command: body_type 0x31
+    Lua builds a request with body[0]=0x31 (trigger 'query'); no midealocal Message* emits that body type
+    lua source : lua/b1/T_0000_B1_0TVN50R6_LATEST.lua:152
 ```
 
 ### b1: status[0xFF]
@@ -3113,83 +3207,25 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
 
 ## UNKNOWN (collapsed)
 
-- **lua/a1/T_0000_A1_00000Q1A_2023112201.lua** (16):
+- **lua/a1/T_0000_A1_00000Q1A_2023112201.lua** (2):
   - identity/device_type: could not read device-type byte on one side
-  - decode_field/power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/fan_speed: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/target_humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/child_lock: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/anion: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/pump: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/pump_enable: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/tank: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/water_level_set: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/current_humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/current_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/swing: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/filter_cleaning_reminder: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
   - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
-- **lua/a1/T_0000_A1_00000Q1B_2023112201.lua** (16):
+- **lua/a1/T_0000_A1_00000Q1B_2023112201.lua** (2):
   - identity/device_type: could not read device-type byte on one side
-  - decode_field/power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/fan_speed: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/target_humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/child_lock: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/anion: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/pump: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/pump_enable: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/tank: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/water_level_set: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/current_humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/current_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/swing: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/filter_cleaning_reminder: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
   - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
-- **lua/a1/T_0000_A1_00000Q1D_2023112201.lua** (16):
+- **lua/a1/T_0000_A1_00000Q1C_18.lua** (2):
   - identity/device_type: could not read device-type byte on one side
-  - decode_field/power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/fan_speed: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/target_humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/child_lock: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/anion: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/pump: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/pump_enable: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/tank: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/water_level_set: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/current_humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/current_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/swing: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/filter_cleaning_reminder: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
   - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
-- **lua/a1/T_0000_A1_3.lua** (9):
+- **lua/a1/T_0000_A1_00000Q1D_2023112201.lua** (2):
+  - identity/device_type: could not read device-type byte on one side
+  - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
+- **lua/a1/T_0000_A1_20104032_22.lua** (2):
+  - identity/device_type: could not read device-type byte on one side
+  - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
+- **lua/a1/T_0000_A1_3.lua** (1):
   - enum/mode: Lua defines a MODE enum with 6 values; midealocal exposes no equivalent {int: name} table (it may map these values implicitly in device code)
-  - decode_field/child_lock: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/pump: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/pump_enable: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/tank: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/water_level_set: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/current_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/swing: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/filter_cleaning_reminder: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-- **lua/a1/T_0000_A1_5.lua** (16):
+- **lua/a1/T_0000_A1_5.lua** (2):
   - enum/mode: Lua defines a MODE enum with 6 values; midealocal exposes no equivalent {int: name} table (it may map these values implicitly in device code)
-  - decode_field/power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/fan_speed: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/target_humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/child_lock: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/anion: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/pump: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/pump_enable: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/tank: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/water_level_set: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/current_humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/current_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/swing: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
-  - decode_field/filter_cleaning_reminder: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
   - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
 - **lua/ac/T_0000_AC_00000Q11_2023072401.lua** (82):
   - identity/device_type: could not read device-type byte on one side
@@ -3275,6 +3311,89 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
   - introspection/note: could not instantiate MessageSubProtocolQuery to capture request bytes
   - introspection/note: could not instantiate MessageSubProtocolFreshAirSet to capture request bytes
 - **lua/ac/T_0000_AC_00000Q11_2024013001.lua** (82):
+  - identity/device_type: could not read device-type byte on one side
+  - decode_field/power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/target_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fan_speed: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/swing_vertical: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/swing_horizontal: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/boost_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/power_saving: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/comfort_sleep: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/comfort_sleep_switch: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/pmv: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/screen_display: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/smart_eye: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/dry: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/aux_heating: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/purifier: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/anion: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/eco_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/sleep_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/natural_wind: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/smart_dry: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/kick_quilt: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/prevent_cold: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/full_dust: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/comfort_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/swing_lr_switch: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/swing_lr: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/frost_protect: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/current_work_time: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/indoor_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/outdoor_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/indoor_humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/target_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/comfort_sleep_switch: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/pmv: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/smart_eye: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/natural_wind: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/temp_fahrenheit: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/indoor_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/outdoor_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/prevent_cold: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/frost_protect: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/comfort_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/smart_dry: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/swing_lr: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/compressor_frequency: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/target_compressor_frequency: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/compressor_current: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/compressor_voltage: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/indoor_ambient_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/indoor_coil_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/outdoor_coil_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/outdoor_ambient_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/discharge_pipe_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/target_indoor_fan_speed: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/indoor_fan_speed: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/water_pump_running: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/compressor_power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fresh_filter_time_total: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fresh_filter_time_use: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fresh_filter_timeout: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fresh_air_power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fresh_air_fan_speed: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fresh_filter_time_use: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/electrify_time_day: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/electrify_time_hour: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/electrify_time_min: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/electrify_time_second: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/total_operating_time_day: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/total_operating_time_hour: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/total_operating_time_min: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/total_operating_time_second: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/current_operating_time_day: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/current_operating_time_hour: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/current_operating_time_min: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/current_operating_time_second: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/indoor_humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
+  - introspection/note: could not instantiate MessageSubProtocol to capture request bytes
+  - introspection/note: could not instantiate MessageSubProtocolQuery to capture request bytes
+  - introspection/note: could not instantiate MessageSubProtocolFreshAirSet to capture request bytes
+- **lua/ac/T_0000_AC_00000Q11_51.lua** (82):
   - identity/device_type: could not read device-type byte on one side
   - decode_field/power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
   - decode_field/target_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
@@ -5737,6 +5856,89 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
   - introspection/note: could not instantiate MessageSubProtocol to capture request bytes
   - introspection/note: could not instantiate MessageSubProtocolQuery to capture request bytes
   - introspection/note: could not instantiate MessageSubProtocolFreshAirSet to capture request bytes
+- **lua/ac/T_0000_AC_26.lua** (82):
+  - identity/device_type: could not read device-type byte on one side
+  - decode_field/power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/target_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fan_speed: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/swing_vertical: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/swing_horizontal: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/boost_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/power_saving: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/comfort_sleep: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/comfort_sleep_switch: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/pmv: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/screen_display: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/smart_eye: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/dry: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/aux_heating: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/purifier: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/anion: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/eco_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/sleep_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/natural_wind: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/smart_dry: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/kick_quilt: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/prevent_cold: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/full_dust: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/comfort_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/swing_lr_switch: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/swing_lr: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/frost_protect: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/current_work_time: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/indoor_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/outdoor_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/indoor_humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/target_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/comfort_sleep_switch: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/pmv: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/smart_eye: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/natural_wind: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/temp_fahrenheit: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/indoor_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/outdoor_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/prevent_cold: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/frost_protect: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/comfort_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/smart_dry: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/swing_lr: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/compressor_frequency: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/target_compressor_frequency: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/compressor_current: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/compressor_voltage: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/indoor_ambient_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/indoor_coil_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/outdoor_coil_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/outdoor_ambient_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/discharge_pipe_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/target_indoor_fan_speed: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/indoor_fan_speed: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/water_pump_running: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/compressor_power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fresh_filter_time_total: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fresh_filter_time_use: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fresh_filter_timeout: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fresh_air_power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fresh_air_fan_speed: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fresh_filter_time_use: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/electrify_time_day: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/electrify_time_hour: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/electrify_time_min: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/electrify_time_second: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/total_operating_time_day: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/total_operating_time_hour: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/total_operating_time_min: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/total_operating_time_second: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/current_operating_time_day: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/current_operating_time_hour: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/current_operating_time_min: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/current_operating_time_second: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/indoor_humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
+  - introspection/note: could not instantiate MessageSubProtocol to capture request bytes
+  - introspection/note: could not instantiate MessageSubProtocolQuery to capture request bytes
+  - introspection/note: could not instantiate MessageSubProtocolFreshAirSet to capture request bytes
 - **lua/ac/T_0000_AC_75.lua** (82):
   - identity/device_type: could not read device-type byte on one side
   - decode_field/power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
@@ -6213,6 +6415,26 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
   - decode_field/water_shortage: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
   - decode_field/water_change_reminder: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
   - decode_field/current_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+- **lua/b1/T_0000_B1_0TVN50R6_LATEST.lua** (8):
+  - decode_field/door: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/status: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/time_remaining: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/current_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/tank_ejected: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/water_shortage: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/water_change_reminder: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
+- **lua/b1/T_0000_B1_0TVN50R6_NLU_LATEST.lua** (10):
+  - identity/device_type: could not read device-type byte on one side
+  - decode_field/door: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/status: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/time_remaining: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/current_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/tank_ejected: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/water_shortage: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/water_change_reminder: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - extractor/unparsed: no jsonToData(): encode side not extracted
+  - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
 - **lua/b1/T_0000_B1_4.lua** (7):
   - enum/mode: Lua defines a MODE enum with 9 values; midealocal exposes no equivalent {int: name} table (it may map these values implicitly in device code)
   - decode_field/door: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
@@ -6495,6 +6717,10 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
   - decode_field/*: skipped byte-offset comparison: this Lua file frames bodies after a 16-byte header (T_0008 container), so its messageBytes[i] indices do not line up with midealocal's 10-byte-header body[i]
   - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
   - introspection/note: could not instantiate MessageBFBody to capture request bytes
+- **lua/c3/T_0000_C3_152832116442666_20.lua** (3):
+  - identity/device_type: could not read device-type byte on one side
+  - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
+  - introspection/note: could not instantiate MessageQuery to capture request bytes
 - **lua/c3/T_0000_C3_17100003_2024011601.lua** (3):
   - identity/device_type: could not read device-type byte on one side
   - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
@@ -6569,6 +6795,136 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
   - decode_field/storage_door_auto_control: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
   - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
 - **lua/ca/T_0000_CA_21.lua** (64):
+  - identity/device_type: could not read device-type byte on one side
+  - decode_field/refrigerator_door_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezer_door_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/bar_door_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/flex_zone_door_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ice_miachine_full: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/refrigeration_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/refrigeration_deforsting_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ring_temperature_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/flex_zone_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/right_flex_zone_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezing_high_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezing_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezing_defrosting_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ice_electrical_machinery_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/refrigeration_defrosting_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezing_defrosting_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/zero_crossing_check_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/eeprom_read_write_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/left_flexzone_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ice_room_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/main_display_correspond_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/flexzone_defrosting_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/flexzone_defrosting_sensor2_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/yogurt_machine_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ice_machine_fretting_switch_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ice_machine_pipe_filter_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ambient_humidity_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_humidity_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/radar_sensor1_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/radar_sensor2_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/radar_sensor3_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/radar_sensor4_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/radar_sensor5_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/function_zone_temperature_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/normal_zone_temperature_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/humidity_control_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/open_door_too_frequently: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_door_alone_open_frequently: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezing_door_alone_open_frequently: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/bar_door_alone_open_frequently: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_temperature_overheating: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_temperature_too_low: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_heating_wire_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/refrigerator_door: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezer_door: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/bar_door: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/flex_zone_door: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/refrigerator_setting_temp: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezer_setting_temp: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/microcrystal_fresh: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/dry_zone: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/electronic_smell: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/normal_temperature_level: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/function_zone_level: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/humidity_setting: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/smart_humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_left_door_auto: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_right_door_auto: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezer_door_auto: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezer_door_auto_control: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_door_auto_control: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
+- **lua/ca/T_0000_CA_310A1700_58.lua** (64):
+  - identity/device_type: could not read device-type byte on one side
+  - decode_field/refrigerator_door_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezer_door_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/bar_door_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/flex_zone_door_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ice_miachine_full: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/refrigeration_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/refrigeration_deforsting_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ring_temperature_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/flex_zone_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/right_flex_zone_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezing_high_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezing_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezing_defrosting_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ice_electrical_machinery_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/refrigeration_defrosting_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezing_defrosting_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/zero_crossing_check_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/eeprom_read_write_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/left_flexzone_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ice_room_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/main_display_correspond_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/flexzone_defrosting_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/flexzone_defrosting_sensor2_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/yogurt_machine_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ice_machine_fretting_switch_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ice_machine_pipe_filter_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ambient_humidity_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_humidity_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/radar_sensor1_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/radar_sensor2_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/radar_sensor3_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/radar_sensor4_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/radar_sensor5_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/function_zone_temperature_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/normal_zone_temperature_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/humidity_control_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/open_door_too_frequently: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_door_alone_open_frequently: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezing_door_alone_open_frequently: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/bar_door_alone_open_frequently: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_temperature_overheating: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_temperature_too_low: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_heating_wire_sensor_error: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/refrigerator_door: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezer_door: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/bar_door: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/flex_zone_door: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/refrigerator_setting_temp: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezer_setting_temp: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/microcrystal_fresh: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/dry_zone: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/electronic_smell: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/normal_temperature_level: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/function_zone_level: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/humidity_setting: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/smart_humidity: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_left_door_auto: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_right_door_auto: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezer_door_auto: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/freezer_door_auto_control: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/storage_door_auto_control: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
+- **lua/ca/T_0000_CA_310A2245_66.lua** (64):
   - identity/device_type: could not read device-type byte on one side
   - decode_field/refrigerator_door_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
   - decode_field/freezer_door_overtime: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
@@ -6718,6 +7074,32 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
   - framing/header_length: Lua uses a non-standard header length; its byte offsets are in a different coordinate system than midealocal's body
   - decode_field/*: skipped byte-offset comparison: this Lua file frames bodies after a 16-byte header (T_0008 container), so its messageBytes[i] indices do not line up with midealocal's 10-byte-header body[i]
   - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
+- **lua/cc/T_0000_CC_10011006_2025033001.lua** (25):
+  - identity/device_type: could not read device-type byte on one side
+  - decode_field/is_fe_format: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fan_speed: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/target_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/eco_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/sleep_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/night_light: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/ventilation: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/aux_heat_status: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/auto_aux_heat_running: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fan_speed_level: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/temperature_precision: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/swing: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/temp_fahrenheit: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/target_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fan_speed: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/eco_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/sleep_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/swing: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/temp_fahrenheit: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
+  - introspection/note: could not instantiate MessageFEControl to capture request bytes
 - **lua/cc/T_0000_CC_6.lua** (27):
   - enum/mode: Lua defines a MODE enum with 5 values; midealocal exposes no equivalent {int: name} table (it may map these values implicitly in device code)
   - enum/fanspeed: Lua defines a FANSPEED enum with 8 values; midealocal exposes no equivalent {int: name} table (it may map these values implicitly in device code)
@@ -6866,6 +7248,51 @@ Verdicts: **MATCH** (agree) / **MISSING** (in Lua, not in midealocal) / **DIFFER
   - decode_field/daily_timer_schedule: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
   - decode_field/vacation_days: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
 - **lua/cd/T_0000_CD_7.lua** (44):
+  - decode_field/power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/heat: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/dual_heat: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/eco: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/target_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/current_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/top_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/bottom_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/condenser_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/outdoor_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/compressor_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/max_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/min_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/error_code: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/bottom_elec_heat: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/top_elec_heat: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/water_pump: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/compressor_status: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/four_way: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/elec_heat: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/order1_effect: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/order2_effect: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/back_water: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/sterilize: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/typeinfo: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/water_level: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/smart_grid: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/multi_terminal: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/fahrenheit: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/maintain_warn_tag: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/maintain_warn: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/mute_effect: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/mute_status: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/vacation_start_year: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/vacation_start_month: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/vacation_start_day: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/vacation_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/target_temperature: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/vacation_mode: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/daily_timer_schedule: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/vacation_days: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - decode_field/vacation_days: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
+  - extractor/unparsed: no updateGlobalPropertyValueByByte()/binToModel(): decode side not extracted
+- **lua/cd/T_0000_CD_RSJ000CB_2026042001.lua** (44):
   - decode_field/power: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
   - decode_field/heat: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)
   - decode_field/dual_heat: midealocal parses this field but this Lua file does not (newer protocol, another model, or Lua omission)

@@ -2,19 +2,19 @@
 
 | device type | lua | midealocal | status | # lua files | evidence |
 | --- | --- | --- | --- | --- | --- |
-| a1 | lua/a1 | midealocal/devices/a1 | MATCHED | 5 | filename type token 'a1' == DeviceType byte 0xA1 |
-| ac | lua/ac | midealocal/devices/ac | MATCHED | 36 | filename type token 'ac' == DeviceType byte 0xAC |
+| a1 | lua/a1 | midealocal/devices/a1 | MATCHED | 7 | filename type token 'a1' == DeviceType byte 0xA1 |
+| ac | lua/ac | midealocal/devices/ac | MATCHED | 38 | filename type token 'ac' == DeviceType byte 0xAC |
 | b0 | lua/b0 | midealocal/devices/b0 | MATCHED | 3 | BYTE_DEVICE_TYPE == DeviceType.B0 (0xB0) |
-| b1 | lua/b1 | midealocal/devices/b1 | MATCHED | 1 | BYTE_DEVICE_TYPE == DeviceType.B1 (0xB1) |
+| b1 | lua/b1 | midealocal/devices/b1 | MATCHED | 3 | BYTE_DEVICE_TYPE == DeviceType.B1 (0xB1) |
 | b3 | lua/b3 | midealocal/devices/b3 | MATCHED | 3 | filename type token 'b3' == DeviceType byte 0xB3 |
 | b4 | lua/b4 | midealocal/devices/b4 | MATCHED | 1 | BYTE_DEVICE_TYPE == DeviceType.B4 (0xB4) |
 | b6 | lua/b6 | midealocal/devices/b6 | MATCHED | 5 | filename type token 'b6' == DeviceType byte 0xB6 |
 | b8 | lua/b8 | midealocal/devices/b8 | MATCHED | 3 | BYTE_DEVICE_TYPE == DeviceType.B8 (0xB8) |
 | bf | lua/bf | midealocal/devices/bf | MATCHED | 5 | BYTE_DEVICE_TYPE == DeviceType.BF (0xBF) |
-| c3 | lua/c3 | midealocal/devices/c3 | MATCHED | 2 | filename type token 'c3' == DeviceType byte 0xC3 |
-| ca | lua/ca | midealocal/devices/ca | MATCHED | 10 | filename type token 'ca' == DeviceType byte 0xCA |
-| cc | lua/cc | midealocal/devices/cc | MATCHED | 1 | BYTE_DEVICE_TYPE == DeviceType.CC (0xCC) |
-| cd | lua/cd | midealocal/devices/cd | MATCHED | 6 | BYTE_DEVICE_TYPE == DeviceType.CD (0xCD) |
+| c3 | lua/c3 | midealocal/devices/c3 | MATCHED | 3 | filename type token 'c3' == DeviceType byte 0xC3 |
+| ca | lua/ca | midealocal/devices/ca | MATCHED | 12 | filename type token 'ca' == DeviceType byte 0xCA |
+| cc | lua/cc | midealocal/devices/cc | MATCHED | 2 | filename type token 'cc' == DeviceType byte 0xCC |
+| cd | lua/cd | midealocal/devices/cd | MATCHED | 7 | BYTE_DEVICE_TYPE == DeviceType.CD (0xCD) |
 | cf | lua/cf | midealocal/devices/cf | MATCHED | 1 | filename type token 'cf' == DeviceType byte 0xCF |
 | da | lua/da | midealocal/devices/da | MATCHED | 1 | BYTE_DEVICE_TYPE == DeviceType.DA (0xDA) |
 | db | lua/db | midealocal/devices/db | MATCHED | 9 | BYTE_DEVICE_TYPE == DeviceType.DB (0xDB) |
@@ -60,4 +60,4 @@
 - MATCHED: 32
 - UNMATCHED_NO_PYTHON: 16
 - UNMATCHED_NO_LUA: 4
-- lua files under mapped device types: 142
+- lua files under mapped device types: 153
