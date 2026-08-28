@@ -453,6 +453,22 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             mock_cloud_instance.download_lua.assert_called_once()
             mock_cloud_instance.download_plugin.assert_called_once()
 
+    async def test_download_lua_returns_none(self) -> None:
+        """download_lua returning None skips the plugin download."""
+        cloud_sn = "0000FA00ABCD1234000000000000000A"
+        mock_cloud_instance = AsyncMock()
+        mock_cloud_instance.login.return_value = True
+        mock_cloud_instance.list_appliances.return_value = {}
+        # The cloud reports failure by returning None instead of raising.
+        mock_cloud_instance.download_lua.return_value = None
+        with patch.object(self.cli, "_get_cloud", return_value=mock_cloud_instance):
+            self.namespace.host = None
+            self.namespace.device_sn = cloud_sn
+            self.namespace.device_type = bytes.fromhex("FA")
+            await self.cli.download()
+            mock_cloud_instance.download_lua.assert_called_once()
+            mock_cloud_instance.download_plugin.assert_not_called()
+
     async def test_download_plugin_error_is_isolated(self) -> None:
         """A plugin download error is logged without discarding the lua file."""
         cloud_sn = "0000FA00ABCD1234000000000000000A"

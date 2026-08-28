@@ -215,7 +215,6 @@ class MideaCLI:
                 model,
                 manufacturer_code,
             )
-            _LOGGER.info("Downloaded lua file: %s", lua)
         except NotImplementedError:
             # Defensive: every supported cloud now implements lua download
             # (美的美居, SmartHome, and the MideaAirCloud variants), so only the
@@ -230,6 +229,12 @@ class MideaCLI:
             # Without lua there is no point attempting the plugin.
             _LOGGER.exception("Failed to download lua file for %s", device_sn)
             return
+
+        # A cloud can also signal failure by returning None without raising.
+        if lua is None:
+            _LOGGER.error("Failed to download lua file for %s", device_sn)
+            return
+        _LOGGER.info("Downloaded lua file: %s", lua)
 
         _LOGGER.debug(
             "Download plugin file for %s [%s]",

@@ -1,2 +1,2 @@
 [codespell]
-ignore-words-list = mapp
+ignore-regex = .*mapp\.appsmb\.com.*

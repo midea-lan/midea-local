@@ -8,6 +8,7 @@ import time
 from asyncio import Lock
 from datetime import UTC, datetime
 from http import HTTPStatus
+from pathlib import PurePosixPath
 from secrets import token_hex
 from typing import Any, cast
 
@@ -1053,12 +1054,21 @@ class MideaAirCloud(MideaCloud):
             if res.status == HTTPStatus.OK:
                 lua = await res.text()
                 if lua:
+                    file_name = response["fileName"]
+                    # The cloud controls fileName; keep it to a single component
+                    # so it cannot be written outside path.
+                    if PurePosixPath(file_name).name != file_name:
+                        _LOGGER.error(
+                            "Refusing lua file name with path components: %s",
+                            file_name,
+                        )
+                        return None
                     stream = 'local bit = require "bit"\n' + cast(
                         "MideaAirSecurity",
                         self._security,
                     ).decrypt_appliance_lua(lua)
                     stream = stream.replace("\r\n", "\n")
-                    fnm = f"{path}/{response['fileName']}"
+                    fnm = f"{path}/{file_name}"
                     async with aiofiles.open(fnm, "w") as fp:
                         await fp.write(stream)
         return str(fnm) if fnm else None
