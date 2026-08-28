@@ -1,14 +1,14 @@
 # Discrepancies found by the first full run
 
 Generated data lives in [`GENERATED_REPORT.md`](GENERATED_REPORT.md) and
-[`conformance_baseline.json`](conformance_baseline.json) (300 tracked
+[`conformance_baseline.json`](conformance_baseline.json) (308 tracked
 `MISSING`/`DIFFERENT` entries). This file is the **human triage** of that run:
 what looks like a real bug, what is a naming choice, what is a framework
 limitation, and what still needs a protocol expert.
 
-Run scope: 142 comparisons over 32 mapped device types.
-Totals — MATCH 451 (identity 43, framing 88, enum 48, decode 140, command 132),
-DIFFERENT 56, MISSING 266, UNKNOWN 4606 (mostly "newer Lua architecture, decode
+Run scope: 153 comparisons over 32 mapped device types.
+Totals — MATCH 465 (identity 45, framing 94, enum 48, decode 135, command 143),
+DIFFERENT 55, MISSING 277, UNKNOWN 4928 (mostly "newer Lua architecture, decode
 side not statically extractable").
 
 ---
