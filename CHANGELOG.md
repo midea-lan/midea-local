@@ -1,5 +1,22 @@
 # Changelog
 
+## [10.1.0](https://github.com/midea-lan/midea-local/compare/v10.0.1...v10.1.0) (2026-08-28)
+
+
+### Features
+
+* expose min and max temperature for E2 and E3 ([#721](https://github.com/midea-lan/midea-local/issues/721)) ([8f19801](https://github.com/midea-lan/midea-local/commit/8f19801af65729088638a59033d4ad3ad207e2ff))
+* **message:** add byte_mask to BodyParser ([#725](https://github.com/midea-lan/midea-local/issues/725)) ([7a75ab6](https://github.com/midea-lan/midea-local/commit/7a75ab6938c1038eb392351307996903cafd9e55))
+
+
+### Bug Fixes
+
+* **ca:** guard CAGeneralMessageBody against short payloads ([#700](https://github.com/midea-lan/midea-local/issues/700)) ([ab52b77](https://github.com/midea-lan/midea-local/commit/ab52b77d2f64756168999a382dbe680ae6d66733))
+* **cloud:** support legacy lua download for MideaAirCloud ([#599](https://github.com/midea-lan/midea-local/issues/599)) ([57f61d0](https://github.com/midea-lan/midea-local/commit/57f61d02a9da6216c378423a09c8f0db4851475f))
+* **device:** follow up of [#690](https://github.com/midea-lan/midea-local/issues/690) ([#719](https://github.com/midea-lan/midea-local/issues/719)) ([ad3f10c](https://github.com/midea-lan/midea-local/commit/ad3f10cddefb93351faaf9453288cf7a1a9cbe05))
+* **e6:** heating_modes must be named preset_modes for compatibility ([#722](https://github.com/midea-lan/midea-local/issues/722)) ([5632819](https://github.com/midea-lan/midea-local/commit/563281941bb3475d68ecd6561b47e584a9297ac5))
+* **e8:** guard E8MessageBody against short payloads ([#699](https://github.com/midea-lan/midea-local/issues/699)) ([002e0a4](https://github.com/midea-lan/midea-local/commit/002e0a45e90b5e3e7d73e5d32be571647de8b758))
+
 ## [10.0.1](https://github.com/midea-lan/midea-local/compare/v10.0.0...v10.0.1) (2026-08-23)
 
 
