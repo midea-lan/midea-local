@@ -10,11 +10,16 @@ from midealocal.device import SKIP_ATTRIBUTE, MideaDevice, MideaDeviceInitKwargs
 from .message import (
     INDEX_TO_FE_MODE,
     CCControlId,
+    CCFanSpeed3Level,
+    CCFanSpeed7Level,
+    CCFanSpeedFE,
     MessageCCResponse,
     MessageFEControl,
     MessageQuery,
     MessageSet,
 )
+
+type CCFanSpeedTable = type[CCFanSpeed7Level | CCFanSpeed3Level | CCFanSpeedFE]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,34 +47,6 @@ class DeviceAttributes(StrEnum):
 
 class MideaCCDevice(MideaDevice):
     """Midea CC device."""
-
-    _fan_speeds_7level: ClassVar[dict[int, str]] = {
-        0x01: "level_1",
-        0x02: "level_2",
-        0x04: "level_3",
-        0x08: "level_4",
-        0x10: "level_5",
-        0x20: "level_6",
-        0x40: "level_7",
-        0x80: "auto",
-    }
-    _fan_speeds_3level: ClassVar[dict[int, str]] = {
-        0x01: "low",
-        0x08: "medium",
-        0x40: "high",
-        0x80: "auto",
-    }
-    # 0xFE VRF panels report fan speed as 1-7 (+8=auto), not as a bitmask
-    _fan_speeds_fe: ClassVar[dict[int, str]] = {
-        0x01: "level_1",
-        0x02: "level_2",
-        0x03: "level_3",
-        0x04: "level_4",
-        0x05: "level_5",
-        0x06: "level_6",
-        0x07: "level_7",
-        0x08: "auto",
-    }
 
     # Generic HVAC mode names, ordered to match the protocol's mode index.
     hvac_modes: ClassVar[list[str]] = [
@@ -112,14 +89,16 @@ class MideaCCDevice(MideaDevice):
                 DeviceAttributes.temp_fahrenheit: False,
             },
         )
-        self._fan_speeds: dict[int, str] | None = None
+        self._fan_speeds: CCFanSpeedTable | None = None
         # set once a 0xFE-format response is seen; selects the VRF control path
         self._is_fe_format = False
 
     @property
     def fan_modes(self) -> list[str] | None:
         """Midea CC device fan modes."""
-        return None if self._fan_speeds is None else list(self._fan_speeds.values())
+        if self._fan_speeds is None:
+            return None
+        return [member.name.lower() for member in self._fan_speeds]
 
     @property
     def fan_mode(self) -> str | None:
@@ -127,8 +106,20 @@ class MideaCCDevice(MideaDevice):
         value = self._attributes[DeviceAttributes.fan_speed]
         return value if isinstance(value, str) else None
 
+    def _fan_speed_code(self, fan_mode: Any) -> int | None:  # noqa: ANN401
+        """Resolve a fan mode name to its raw protocol code, if valid."""
+        if not self._fan_speeds or not isinstance(fan_mode, str):
+            return None
+        try:
+            return int(self._fan_speeds[fan_mode.upper()])
+        except KeyError:
+            return None
+
     def set_fan_mode(self, fan_mode: str) -> None:
         """Midea CC device set fan mode."""
+        if self._fan_speed_code(fan_mode) is None:
+            msg = f"[cc] Unsupported fan mode: {fan_mode}"
+            raise ValueError(msg)
         self.set_attribute(attr=DeviceAttributes.fan_speed, value=fan_mode)
 
     @property
@@ -141,6 +132,9 @@ class MideaCCDevice(MideaDevice):
 
     def set_swing_mode(self, swing_mode: str) -> None:
         """Midea CC device set swing mode."""
+        if swing_mode not in self.swing_modes:
+            msg = f"[cc] Unsupported swing mode: {swing_mode}"
+            raise ValueError(msg)
         self.set_attribute(attr=DeviceAttributes.swing, value=swing_mode == "on")
 
     @property
@@ -183,17 +177,18 @@ class MideaCCDevice(MideaDevice):
             and self._attributes[DeviceAttributes.fan_speed_level] is not None
         ):
             if self._is_fe_format:
-                self._fan_speeds = MideaCCDevice._fan_speeds_fe
+                self._fan_speeds = CCFanSpeedFE
             elif self._fan_speeds is None:
-                if self._attributes[DeviceAttributes.fan_speed_level]:
-                    self._fan_speeds = MideaCCDevice._fan_speeds_3level
-                else:
-                    self._fan_speeds = MideaCCDevice._fan_speeds_7level
-            if fan_speed in self._fan_speeds:
-                self._attributes[DeviceAttributes.fan_speed] = self._fan_speeds.get(
-                    fan_speed,
+                self._fan_speeds = (
+                    CCFanSpeed3Level
+                    if self._attributes[DeviceAttributes.fan_speed_level]
+                    else CCFanSpeed7Level
                 )
-            else:
+            try:
+                self._attributes[DeviceAttributes.fan_speed] = self._fan_speeds(
+                    fan_speed,
+                ).name.lower()
+            except ValueError:
                 self._attributes[DeviceAttributes.fan_speed] = None
             new_status[DeviceAttributes.fan_speed.value] = self._attributes[
                 DeviceAttributes.fan_speed
@@ -218,10 +213,8 @@ class MideaCCDevice(MideaDevice):
             DeviceAttributes.target_temperature
         ]
         fan_speed = self._attributes[DeviceAttributes.fan_speed]
-        if self._fan_speeds and fan_speed in self._fan_speeds.values():
-            message.fan_speed = list(self._fan_speeds.keys())[
-                list(self._fan_speeds.values()).index(fan_speed)
-            ]
+        if (code := self._fan_speed_code(fan_speed)) is not None:
+            message.fan_speed = code
         message.eco_mode = self._attributes[DeviceAttributes.eco_mode]
         message.sleep_mode = self._attributes[DeviceAttributes.sleep_mode]
         message.night_light = self._attributes[DeviceAttributes.night_light]
@@ -278,10 +271,7 @@ class MideaCCDevice(MideaDevice):
                 ],
             )
         elif attr == DeviceAttributes.fan_speed:
-            if self._fan_speeds and value in self._fan_speeds.values():
-                speed = list(self._fan_speeds.keys())[
-                    list(self._fan_speeds.values()).index(str(value))
-                ]
+            if (speed := self._fan_speed_code(value)) is not None:
                 self._send_fe_control([(CCControlId.FAN_SPEED, speed)])
         elif attr == DeviceAttributes.eco_mode:
             self._send_fe_control([(CCControlId.ECO, 1 if value else 0)])
@@ -306,10 +296,8 @@ class MideaCCDevice(MideaDevice):
         ]:
             message = self.make_message_set()
             if attr == DeviceAttributes.fan_speed:
-                if self._fan_speeds and value in self._fan_speeds.values():
-                    message.fan_speed = list(self._fan_speeds.keys())[
-                        list(self._fan_speeds.values()).index(str(value))
-                    ]
+                if (code := self._fan_speed_code(value)) is not None:
+                    message.fan_speed = code
             else:
                 setattr(message, str(attr), value)
                 if attr == DeviceAttributes.mode:
