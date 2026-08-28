@@ -1,10 +1,9 @@
 # Discrepancies found by the first full run
 
-Generated data lives in [`GENERATED_REPORT.md`](GENERATED_REPORT.md) and
-[`conformance_baseline.json`](conformance_baseline.json) (308 tracked
-`MISSING`/`DIFFERENT` entries). This file is the **human triage** of that run:
-what looks like a real bug, what is a naming choice, what is a framework
-limitation, and what still needs a protocol expert.
+Generated data lives in [`GENERATED_REPORT.md`](GENERATED_REPORT.md). This file
+is the **human triage** of that run: what looks like a real bug, what is a
+naming choice, what is a framework limitation, and what still needs a protocol
+expert.
 
 Run scope: 153 comparisons over 32 mapped device types.
 Totals — MATCH 465 (identity 45, framing 94, enum 48, decode 135, command 143),
@@ -24,7 +23,7 @@ side not statically extractable").
 
 Same protocol value, different _name_. `midealocal` tends to normalise to
 Home-Assistant-style names; the Lua uses Midea marketing names. Not bugs, but
-each should be eyeballed once and then (if fine) accepted into the baseline.
+each should be eyeballed once and then documented per device.
 
 - `e1` `mode[0x00]` `neutral_gear`→`none`, `status` `work`/`running`,
   `order`/`delay`, `power_off`/`off` — the `none` rename is a known intentional
@@ -94,8 +93,7 @@ f1 x10 x14 x17 x51 x70 x9a x9b`); 4 packages have no Lua (`ad c2 ce x34`).
 1. Fix `b0` `host_steam` → `hot_steam` (isolated, safe).
 2. Review the **Category C** offset shifts device by device with someone who
    knows the frame layout — start with `ea` (+40 is large and suspicious).
-3. Decide the vocabulary question (Category B) once; add the accepted entries to
-   the baseline so only genuine regressions remain.
+3. Decide the vocabulary question (Category B) once and record the outcome here.
 4. Extend the extractor for the newer Lua architecture (biggest coverage win —
    it would light up `ac`, `e3`, `c3`, `cd` newer revisions).
 5. Add hand-written golden encode/decode vectors for the next few devices

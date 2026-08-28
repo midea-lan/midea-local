@@ -28,9 +28,9 @@
     },
     {
       "label": "Lua conformance: regenerate report",
-      "detail": "Regenerate GENERATED_MAPPING.md, GENERATED_REPORT.md and conformance_baseline.json.",
+      "detail": "Regenerate GENERATED_MAPPING.md and GENERATED_REPORT.md.",
       "type": "shell",
-      "command": "uv run python -m tests.lua_conformance --baseline",
+      "command": "uv run python -m tests.lua_conformance",
       "problemMatcher": []
     }
   ]

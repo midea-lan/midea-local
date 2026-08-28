@@ -60,11 +60,6 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="only compare the first N lua files of each device type",
     )
-    parser.add_argument(
-        "--baseline",
-        action="store_true",
-        help="also regenerate conformance_baseline.json (the regression gate)",
-    )
     args = parser.parse_args(argv)
 
     mapping = build_mapping()
@@ -86,10 +81,4 @@ def main(argv: list[str] | None = None) -> int:
         f"wrote GENERATED_MAPPING.md and GENERATED_REPORT.md "
         f"({len(comparisons)} comparisons: {counts})",
     )
-
-    if args.baseline:
-        from ._baseline import write_baseline  # noqa: PLC0415
-
-        n = write_baseline(limit_per_dir=args.limit_per_dir)
-        print(f"wrote conformance_baseline.json ({n} tracked discrepancies)")  # noqa: T201
     return 0
