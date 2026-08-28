@@ -853,11 +853,46 @@ class TestMideaCDExtendedDevice:
             self.device.set_attribute(DeviceAttributes.weekly_schedule.value, True)
             mock_send.assert_not_called()
 
+    @pytest.mark.parametrize(
+        ("attribute", "schedule"),
+        [
+            (DeviceAttributes.daily_timer_schedule, {"timers": None}),
+            (DeviceAttributes.daily_timer_schedule, {"timers": [None]}),
+            (DeviceAttributes.weekly_schedule, {0: None}),
+            (DeviceAttributes.weekly_schedule, {0: [None]}),
+        ],
+    )
+    def test_schedule_writes_reject_invalid_timer_data(
+        self,
+        attribute: DeviceAttributes,
+        schedule: dict[object, object],
+    ) -> None:
+        """Malformed nested timer collections never build a control frame."""
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(attribute.value, schedule)
+        mock_send.assert_not_called()
+
     def test_scalar_controls_reject_mappings(self) -> None:
         """Ordinary scalar controls never accept schedule-like mappings."""
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.power.value, {})
+            self.device.set_attribute(
+                DeviceAttributes.maintenance_reminder.value,
+                {"enabled": True},
+            )
+            self.device.set_attribute(
+                DeviceAttributes.maintain_warn_tag.value,
+                {"enabled": True},
+            )
         mock_send.assert_not_called()
+
+    def test_heat_pump_mode_is_not_confused_with_vacation(self) -> None:
+        """Protocol mode 0x05 remains selectable when heat-pump is supported."""
+        self.device._attributes[DeviceAttributes.support_heat_pump_mode] = True
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.mode.value, "heat_pump")
+        message = mock_send.call_args.args[0]
+        assert message.mode == 0x05
 
     def test_max_temperature_is_clamped_to_reported_limit(self) -> None:
         """Maximum target temperature uses BasicControl byte 23."""
