@@ -7,6 +7,7 @@ import pytest
 from midealocal.const import ProtocolVersion
 from midealocal.devices.cd.message import (
     CD01MessageBody,
+    CDB1MessageBody,
     CDDailyTimerBody,
     CDGeneralMessageBody,
     CDSterilizeSetBody,
@@ -14,9 +15,12 @@ from midealocal.devices.cd.message import (
     MessageCDBase,
     MessageCDResponse,
     MessageQuery,
+    MessageQueryB1,
     MessageQueryDaily,
     MessageQueryWeekly,
     MessageSet,
+    MessageSetDaily,
+    MessageSetMaintenance,
     MessageSetSterilize,
     MessageSetWeekly,
 )
@@ -54,6 +58,14 @@ class TestCDMessageQueries:
         """Daily query body uses body type 0x03."""
         msg = MessageQueryDaily(protocol_version=ProtocolVersion.V1)
         assert msg.body == bytearray([0x03, 0x01])
+
+    def test_query_b1_body_and_crc(self) -> None:
+        """B1 query requests all official water-heater function tags."""
+        body = MessageQueryB1(protocol_version=ProtocolVersion.V1).body
+        assert body[:-1] == bytearray.fromhex(
+            "b10810001100120013001400150006001600",
+        )
+        assert body[-1] == 0x6B
 
 
 class TestMessageSet:
@@ -112,6 +124,72 @@ class TestMessageSet:
         assert msg.read_field("trValue") == 5
         assert msg.read_field("openPTC") == 0
         assert msg.read_field("missing") == 0
+
+    def test_schedule_mode_uses_basic_control_byte_22(self) -> None:
+        """Timer/schedule selection is preserved in ordinary controls."""
+        msg = MessageSet(protocol_version=ProtocolVersion.V1)
+        msg.schedule_mode = 2
+        assert msg.body[22] == 2
+
+
+class TestMessageSetMaintenance:
+    """Test the dedicated B0 function flag control."""
+
+    def test_flags_are_preserved_and_crc_is_appended(self) -> None:
+        """B0 changes maintenance without dropping unrelated flag bits."""
+        msg = MessageSetMaintenance(protocol_version=ProtocolVersion.V1)
+        msg.ac_heater_priority = True
+        msg.high_temp_reminder = False
+        msg.maintenance_reminder = True
+        msg.reserved_flags = 0x18
+        assert msg.body == bytearray.fromhex("b0011000011d56")
+
+
+class TestMessageSetDaily:
+    """Test NetHome daily timer controls."""
+
+    def test_complete_timer_body(self) -> None:
+        """Daily timer uses body type 2 and the official forty-byte layout."""
+        msg = MessageSetDaily(protocol_version=ProtocolVersion.V1)
+        msg.daily_timer_schedule = {
+            "amount": 1,
+            "single_timer_on": True,
+            "single_timer_off": False,
+            "timers": [
+                {
+                    "effect": True,
+                    "openhour": 6,
+                    "openmin": 30,
+                    "closehour": 8,
+                    "closemin": 0,
+                    "temperature": 55,
+                    "mode": 1,
+                },
+            ],
+        }
+        body = msg.body
+        assert len(body) == 40
+        assert body[:10] == bytearray([2, 1, 1, 0x41, 6, 30, 8, 0, 55, 1])
+
+
+class TestCDB1MessageBody:
+    """Test B1 TLV parsing used to make B0 writes lossless."""
+
+    def test_function_and_capability_tlvs(self) -> None:
+        """Function flags and extended model metadata are decoded."""
+        body = bytearray.fromhex("b108000010011d0000110101")
+        parsed = CDB1MessageBody(body)
+        assert parsed.ac_heater_priority is True
+        assert parsed.high_temp_reminder is False
+        assert parsed.maintenance_reminder is True
+        assert parsed.b0_reserved_flags == 0x18
+        assert parsed.new_version_water_heater is True
+
+    def test_omitted_tlv_does_not_publish_unknown_values(self) -> None:
+        """Attributes for TLVs absent from a B1 response are not published."""
+        parsed = CDB1MessageBody(bytearray.fromhex("b1080000110101"))
+        assert parsed.new_version_water_heater is True
+        assert not hasattr(parsed, "maintenance_reminder")
 
 
 class TestMessageSetSterilizeClamp:
@@ -187,6 +265,38 @@ class TestMessageSetWeekly:
 
 class TestCDGeneralMessageBody:
     """Test CDGeneralMessageBody parsing of real-device status bytes."""
+
+    def test_extended_capabilities_and_limits(self) -> None:
+        """RSJRAC extended status bytes are exposed only when present."""
+        body = bytearray(69)
+        body[2] = 0x03
+        body[57:61] = bytearray([70, 35, 70, 60])
+        body[61] = 65
+        body[62] = 0x03
+        body[63:67] = bytearray([1, 2, 1, 0x7F])
+        body[67:69] = bytearray([100, 2])
+        parsed = CDGeneralMessageBody(body)
+        assert parsed.max_temperature_upper_limit == 70.0
+        assert parsed.max_temperature_lower_limit == 35.0
+        assert parsed.auto_disinfect is True
+        assert parsed.support_boost_mode is True
+        assert parsed.support_silent_mode is True
+        assert parsed.support_tou is True
+        assert parsed.remaining_hot_water_max == 100
+        assert parsed.force_e_heating_status == 2
+
+    def test_extended_boost_mode_flag(self) -> None:
+        """Extended status byte 52 exposes Boost without affecting legacy bits."""
+        body = bytearray(69)
+        body[52] = 0x10
+        body[53:56] = bytearray([1, 1, 1])
+        parsed = CDGeneralMessageBody(body)
+        assert parsed.mode == 0x09
+        assert parsed.holiday_mode is False
+        assert parsed.hybrid_motion_mode is False
+        assert parsed.support_heat_pump_mode is True
+        assert parsed.support_smart_mode is True
+        assert parsed.support_negative_temperature is True
 
     # Real-device status bodies (body_type=0x01):
     #   msg1: 70C disinfection, sterilize ON
@@ -448,6 +558,16 @@ class TestMessageSetSterilize:
         msg = MessageSetSterilize(protocol_version=1)
         msg.sterilize_on = True
         assert msg.body[2] == 0x80
+
+    def test_extended_body_appends_direct_temperature(self) -> None:
+        """Recognised new models use NetHome's seventh direct-Celsius byte."""
+        msg = MessageSetSterilize(protocol_version=1)
+        msg.extended_body = True
+        msg.week = 4
+        msg.hour = 14
+        msg.minute = 5
+        msg.disinfection_temperature = 67.0
+        assert msg.body == bytearray([0x06, 0x01, 0x00, 4, 14, 5, 67])
 
     def test_week_value_sent_when_no_temperature(self) -> None:
         """Week value is placed in body[3] when disinfection_temperature is None."""

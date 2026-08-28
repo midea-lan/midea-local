@@ -11,7 +11,6 @@ from midealocal.device import (
     SKIP_ATTRIBUTE,
     MideaDevice,
     MideaDeviceInitKwargs,
-    dict_translator,
     sentinel_translator,
 )
 
@@ -19,10 +18,14 @@ from .message import (
     MessageCDBase,
     MessageCDResponse,
     MessageQuery,
+    MessageQueryB1,
     MessageQueryDaily,
     MessageQueryWeekly,
     MessageSet,
+    MessageSetDaily,
+    MessageSetMaintenance,
     MessageSetSterilize,
+    MessageSetWeekly,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -68,6 +71,12 @@ class DeviceAttributes(StrEnum):
     sterilize = "sterilize"
     disinfect = "disinfect"
     disinfection_temperature = "disinfection_temperature"
+    auto_disinfect = "auto_disinfect"
+    schedule_mode = "schedule_mode"
+    max_temperature_upper_limit = "max_temperature_upper_limit"
+    max_temperature_lower_limit = "max_temperature_lower_limit"
+    disinfection_temperature_upper_limit = "disinfection_temperature_upper_limit"
+    disinfection_temperature_lower_limit = "disinfection_temperature_lower_limit"
     top_temperature = "top_temperature"
     bottom_temperature = "bottom_temperature"
     wind = "wind"
@@ -95,6 +104,33 @@ class DeviceAttributes(StrEnum):
     weekly_effects = "weekly_effects"
     weekly_schedule = "weekly_schedule"
     daily_timer_schedule = "daily_timer_schedule"
+    dr_enable = "dr_enable"
+    dr_option = "dr_option"
+    electric_rod_exception = "electric_rod_exception"
+    support_boost_mode = "support_boost_mode"
+    support_silent_mode = "support_silent_mode"
+    support_remaining_hot_water = "support_remaining_hot_water"
+    support_electric_mode = "support_electric_mode"
+    support_auto_disinfect = "support_auto_disinfect"
+    support_force_e_heating = "support_force_e_heating"
+    support_tou = "support_tou"
+    remaining_hot_water_max = "remaining_hot_water_max"
+    force_e_heating_status = "force_e_heating_status"
+    ac_heater_priority = "ac_heater_priority"
+    high_temp_reminder = "high_temp_reminder"
+    b0_reserved_flags = "b0_reserved_flags"
+    new_version_water_heater = "new_version_water_heater"
+    holiday_max = "holiday_max"
+    holiday_min = "holiday_min"
+    timer_step_gap = "timer_step_gap"
+    support_ac_heater_priority = "support_ac_heater_priority"
+    support_heat_recovery = "support_heat_recovery"
+    heat_recovery_status = "heat_recovery_status"
+    holiday_mode = "holiday_mode"
+    hybrid_motion_mode = "hybrid_motion_mode"
+    support_heat_pump_mode = "support_heat_pump_mode"
+    support_smart_mode = "support_smart_mode"
+    support_negative_temperature = "support_negative_temperature"
 
 
 class MideaCDDevice(MideaDevice):
@@ -109,6 +145,16 @@ class MideaCDDevice(MideaDevice):
         0x05: "vacation",
     }
     _vacation_mode_key: ClassVar[int] = 0x05
+    _extended_modes: ClassVar[dict[int, str]] = {
+        0x00: "none",
+        0x01: "energy_save",
+        0x02: "hybrid",
+        0x03: "e_heater",
+        0x04: "smart",
+        0x05: "heat_pump",
+        0x09: "boost",
+        0x0A: "silent",
+    }
     # models that report over the new (raw °C) Lua protocol
     _new_protocol_models: ClassVar[frozenset[str]] = frozenset(
         {"RSJRAC01", "RSJRAC06", "RSJRAC07", "2530001N"},
@@ -153,6 +199,12 @@ class MideaCDDevice(MideaDevice):
                 DeviceAttributes.sterilize: None,
                 DeviceAttributes.disinfect: None,
                 DeviceAttributes.disinfection_temperature: None,
+                DeviceAttributes.auto_disinfect: None,
+                DeviceAttributes.schedule_mode: None,
+                DeviceAttributes.max_temperature_upper_limit: None,
+                DeviceAttributes.max_temperature_lower_limit: None,
+                DeviceAttributes.disinfection_temperature_upper_limit: None,
+                DeviceAttributes.disinfection_temperature_lower_limit: None,
                 DeviceAttributes.top_temperature: None,
                 DeviceAttributes.bottom_temperature: None,
                 DeviceAttributes.wind: None,
@@ -180,6 +232,33 @@ class MideaCDDevice(MideaDevice):
                 DeviceAttributes.weekly_effects: None,
                 DeviceAttributes.weekly_schedule: None,
                 DeviceAttributes.daily_timer_schedule: None,
+                DeviceAttributes.dr_enable: None,
+                DeviceAttributes.dr_option: None,
+                DeviceAttributes.electric_rod_exception: None,
+                DeviceAttributes.support_boost_mode: None,
+                DeviceAttributes.support_silent_mode: None,
+                DeviceAttributes.support_remaining_hot_water: None,
+                DeviceAttributes.support_electric_mode: None,
+                DeviceAttributes.support_auto_disinfect: None,
+                DeviceAttributes.support_force_e_heating: None,
+                DeviceAttributes.support_tou: None,
+                DeviceAttributes.remaining_hot_water_max: None,
+                DeviceAttributes.force_e_heating_status: None,
+                DeviceAttributes.ac_heater_priority: None,
+                DeviceAttributes.high_temp_reminder: None,
+                DeviceAttributes.b0_reserved_flags: None,
+                DeviceAttributes.new_version_water_heater: None,
+                DeviceAttributes.holiday_max: None,
+                DeviceAttributes.holiday_min: None,
+                DeviceAttributes.timer_step_gap: None,
+                DeviceAttributes.support_ac_heater_priority: None,
+                DeviceAttributes.support_heat_recovery: None,
+                DeviceAttributes.heat_recovery_status: None,
+                DeviceAttributes.holiday_mode: None,
+                DeviceAttributes.hybrid_motion_mode: None,
+                DeviceAttributes.support_heat_pump_mode: None,
+                DeviceAttributes.support_smart_mode: None,
+                DeviceAttributes.support_negative_temperature: None,
             },
         )
         self._fields: dict[Any, Any] = {}
@@ -245,19 +324,88 @@ class MideaCDDevice(MideaDevice):
     @property
     def preset_modes(self) -> list[str]:
         """Midea CD selectable preset modes."""
-        return [
-            mode
-            for key, mode in MideaCDDevice._modes.items()
-            if key != MideaCDDevice._vacation_mode_key
-        ]
+        modes = self._mode_map()
+        selectable = ["energy_save", "hybrid", "e_heater", "smart"]
+        if self._attributes.get(DeviceAttributes.support_heat_pump_mode):
+            selectable.append("heat_pump")
+        if self._attributes.get(DeviceAttributes.support_boost_mode):
+            selectable.append("boost")
+        if self._attributes.get(DeviceAttributes.support_silent_mode):
+            selectable.append("silent")
+        if not self._is_extended_water_heater():
+            return [
+                mode for key, mode in modes.items() if key != self._vacation_mode_key
+            ]
+        return [mode for mode in selectable if mode in modes.values()]
+
+    def _is_extended_water_heater(self, message: object | None = None) -> bool:
+        """Detect extended CD support from reported protocol fields."""
+        source = message if message is not None else self._attributes
+
+        def _value(attribute: DeviceAttributes) -> Any:  # noqa: ANN401
+            if isinstance(source, dict):
+                return source.get(attribute)
+            return getattr(source, attribute, None)
+
+        if _value(DeviceAttributes.new_version_water_heater) is True or isinstance(
+            _value(DeviceAttributes.b0_reserved_flags),
+            int,
+        ):
+            return True
+        limits = (
+            DeviceAttributes.max_temperature_upper_limit,
+            DeviceAttributes.max_temperature_lower_limit,
+            DeviceAttributes.disinfection_temperature_upper_limit,
+            DeviceAttributes.disinfection_temperature_lower_limit,
+        )
+        if any(
+            isinstance(_value(attribute), int | float) and _value(attribute) > 0
+            for attribute in limits
+        ):
+            return True
+        capabilities = (
+            DeviceAttributes.support_boost_mode,
+            DeviceAttributes.support_silent_mode,
+            DeviceAttributes.support_remaining_hot_water,
+            DeviceAttributes.support_electric_mode,
+            DeviceAttributes.support_auto_disinfect,
+            DeviceAttributes.support_force_e_heating,
+            DeviceAttributes.support_tou,
+        )
+        return any(isinstance(_value(attribute), bool) for attribute in capabilities)
+
+    def _mode_map(self, message: object | None = None) -> dict[int, str]:
+        """Select the mode map from capabilities reported by the device."""
+        return (
+            self._extended_modes
+            if self._is_extended_water_heater(message)
+            else self._modes
+        )
+
+    def _make_mode_translator(self, message: object) -> Callable[[int], Any]:
+        """Build a mode translator using the capabilities in this response."""
+
+        def _translate(value: int) -> Any:  # noqa: ANN401
+            if self._is_extended_water_heater(message) and getattr(
+                message,
+                DeviceAttributes.vacation_mode,
+                False,
+            ):
+                return self._modes[self._vacation_mode_key]
+            return self._mode_map(message).get(value, SKIP_ATTRIBUTE)
+
+        return _translate
 
     def build_query(self) -> list[MessageCDBase]:
         """Midea CD device build query."""
-        return [
+        queries: list[MessageCDBase] = [
             MessageQuery(self._message_protocol_version),
             MessageQueryWeekly(self._message_protocol_version),
             MessageQueryDaily(self._message_protocol_version),
         ]
+        if self._is_extended_water_heater():
+            queries.append(MessageQueryB1(self._message_protocol_version))
+        return queries
 
     def _make_temperature_translator(
         self,
@@ -347,10 +495,7 @@ class MideaCDDevice(MideaDevice):
                 # transient unrecognised values (e.g. 8) from a SET-echo
                 # corrupting the displayed mode; the next status notification
                 # will correct it.
-                DeviceAttributes.mode: dict_translator(
-                    MideaCDDevice._modes,
-                    default=SKIP_ATTRIBUTE,
-                ),
+                DeviceAttributes.mode: self._make_mode_translator(message),
                 **{
                     attr: self._make_temperature_translator(attr)
                     for attr in temperature_attrs
@@ -361,6 +506,12 @@ class MideaCDDevice(MideaDevice):
                 # when sterilize is off the echo body sends an out-of-range
                 # value and the message class sets None).
                 DeviceAttributes.disinfection_temperature: sentinel_translator(
+                    None,
+                    SKIP_ATTRIBUTE,
+                ),
+                # B1 responses contain a subset of TLVs. Attributes omitted
+                # from a response must preserve their last valid value.
+                DeviceAttributes.maintenance_reminder: sentinel_translator(
                     None,
                     SKIP_ATTRIBUTE,
                 ),
@@ -376,26 +527,124 @@ class MideaCDDevice(MideaDevice):
             },
         )
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    def _set_maintenance_reminder(self, value: bool) -> None:
+        """Send the dedicated B0 maintenance flag without changing other flags."""
+        reserved = self._attributes.get(DeviceAttributes.b0_reserved_flags)
+        if not self._is_extended_water_heater() or not isinstance(reserved, int):
+            _LOGGER.warning(
+                "[%s] maintenance write postponed until B1 flags are known",
+                self.device_id,
+            )
+            return
+        message = MessageSetMaintenance(self._message_protocol_version)
+        message.ac_heater_priority = bool(
+            self._attributes.get(DeviceAttributes.ac_heater_priority, False),
+        )
+        message.high_temp_reminder = bool(
+            self._attributes.get(DeviceAttributes.high_temp_reminder, False),
+        )
+        message.maintenance_reminder = value
+        message.reserved_flags = reserved
+        self.build_send(message)
+
+    def _set_disinfection(
+        self,
+        attr: str,
+        value: bool | float | str,
+    ) -> None:
+        """Send the extended seven-byte disinfection payload."""
+        if not self._is_extended_water_heater():
+            _LOGGER.warning(
+                "[%s] extended disinfection write requires reported CD support",
+                self.device_id,
+            )
+            return
+        message = MessageSetSterilize(self._message_protocol_version)
+        message.extended_body = True
+        message.sterilize_on = (
+            bool(value)
+            if attr in {DeviceAttributes.disinfect, DeviceAttributes.sterilize}
+            else bool(self._attributes.get(DeviceAttributes.disinfect, False))
+        )
+        message.week = MessageSetSterilize.clamp_week(
+            self._attributes.get(DeviceAttributes.auto_sterilize_week),
+        )
+        message.hour = MessageSetSterilize.clamp_hour(
+            self._attributes.get(DeviceAttributes.auto_sterilize_hour),
+        )
+        message.minute = MessageSetSterilize.clamp_minute(
+            self._attributes.get(DeviceAttributes.auto_sterilize_minute),
+        )
+        temperature = (
+            value
+            if attr == DeviceAttributes.disinfection_temperature
+            else self._attributes.get(DeviceAttributes.disinfection_temperature)
+        )
+        if not isinstance(temperature, int | float):
+            temperature = MessageSetSterilize.DISINFECT_TEMP_MIN
+        lower = self._attributes.get(
+            DeviceAttributes.disinfection_temperature_lower_limit,
+        )
+        upper = self._attributes.get(
+            DeviceAttributes.disinfection_temperature_upper_limit,
+        )
+        minimum = int(lower) if isinstance(lower, int | float) else 60
+        maximum = int(upper) if isinstance(upper, int | float) else 70
+        message.disinfection_temperature = float(
+            max(minimum, min(maximum, float(temperature))),
+        )
+        self.build_send(message)
+
+    def set_attribute(  # noqa: C901, PLR0911
+        self,
+        attr: str,
+        value: bool | float | str | dict[Any, Any],
+    ) -> None:
         """Midea CD device set attribute."""
-        # Maintenance reminder is read-only until the weekly write payload is safe.
         if attr in [
             DeviceAttributes.maintenance_reminder,
             DeviceAttributes.maintain_warn_tag,
         ]:
-            _LOGGER.warning(
-                "[%s] maintenance reminder writes are disabled because the "
-                "weekly payload can disturb CD temperature values",
-                self.device_id,
-            )
+            self._set_maintenance_reminder(bool(value))
             return
 
-        # Disinfect is read-only until the exact app payload is known.
-        if attr == DeviceAttributes.disinfect:
+        if attr in [
+            DeviceAttributes.disinfect,
+            DeviceAttributes.sterilize,
+            DeviceAttributes.disinfection_temperature,
+        ]:
+            if isinstance(value, dict):
+                _LOGGER.warning("[%s] %s requires a scalar value", self.device_id, attr)
+                return
+            self._set_disinfection(attr, value)
+            return
+
+        if attr in [
+            DeviceAttributes.weekly_schedule,
+            DeviceAttributes.daily_timer_schedule,
+        ]:
+            if not self._is_extended_water_heater() or not isinstance(value, dict):
+                _LOGGER.warning(
+                    "[%s] %s write requires reported CD support and a mapping",
+                    self.device_id,
+                    attr,
+                )
+                return
+            if attr == DeviceAttributes.weekly_schedule:
+                weekly = MessageSetWeekly(self._message_protocol_version)
+                weekly.weekly_schedule = value
+                self.build_send(weekly)
+            else:
+                daily = MessageSetDaily(self._message_protocol_version)
+                daily.daily_timer_schedule = value
+                self.build_send(daily)
+            return
+
+        if isinstance(value, dict):
             _LOGGER.warning(
-                "[%s] immediate disinfection writes are disabled because the "
-                "known payload can corrupt the app disinfection temperature",
+                "[%s] %s requires a scalar value",
                 self.device_id,
+                attr,
             )
             return
 
@@ -406,11 +655,31 @@ class MideaCDDevice(MideaDevice):
             DeviceAttributes.target_temperature,
             DeviceAttributes.vacation_mode,
             DeviceAttributes.vacation_days,
+            DeviceAttributes.max_temperature,
+            DeviceAttributes.schedule_mode,
         ]:
+            if (
+                attr
+                in {
+                    DeviceAttributes.max_temperature,
+                    DeviceAttributes.schedule_mode,
+                }
+                and not self._is_extended_water_heater()
+            ):
+                _LOGGER.warning(
+                    "[%s] %s write requires reported CD support",
+                    self.device_id,
+                    attr,
+                )
+                return
             message = MessageSet(self._message_protocol_version)
             message.fields = dict(self._fields) if self._fields else {}
             # align temperature encoding with lua protocol selection
             message.use_old_protocol = self._lua_protocol == LuaProtocol.old
+            schedule_mode = self._attributes.get(DeviceAttributes.schedule_mode)
+            message.schedule_mode = (
+                int(schedule_mode) if isinstance(schedule_mode, int | float) else 0
+            )
 
             # Get safe current values
             current_power = self._attributes.get(DeviceAttributes.power, False)
@@ -476,25 +745,33 @@ class MideaCDDevice(MideaDevice):
                 # Fall back to 0x00 (no explicit operating mode).
                 message.mode = 0x00
             else:
-                mode_key = MideaCDDevice.get_dict_key_by_value(
-                    "_modes",
-                    str(current_mode),
+                mode_key = next(
+                    (
+                        key
+                        for key, name in self._mode_map().items()
+                        if name == str(current_mode)
+                    ),
+                    None,
                 )
                 message.mode = mode_key if mode_key is not None else 0x00
 
             # Update based on attribute being set
             if attr == DeviceAttributes.mode:
                 # get mode key from mode value
-                if value == MideaCDDevice._modes[MideaCDDevice._vacation_mode_key]:
+                if value == self._mode_map()[self._vacation_mode_key]:
                     _LOGGER.warning(
                         "[%s] Vacation mode cannot be selected directly; "
                         "use vacation_days/vacation_mode instead",
                         self.device_id,
                     )
                     return
-                mode_key = MideaCDDevice.get_dict_key_by_value(
-                    "_modes",
-                    str(value),
+                mode_key = next(
+                    (
+                        key
+                        for key, name in self._mode_map().items()
+                        if name == str(value)
+                    ),
+                    None,
                 )
                 if mode_key is None:
                     _LOGGER.warning(
@@ -540,6 +817,22 @@ class MideaCDDevice(MideaDevice):
                 days = max(1, min(360, int(value)))
                 message.vacation_flag = True
                 message.vacation_days = days
+
+            elif attr == DeviceAttributes.max_temperature:
+                lower = self._attributes.get(
+                    DeviceAttributes.max_temperature_lower_limit,
+                )
+                upper = self._attributes.get(
+                    DeviceAttributes.max_temperature_upper_limit,
+                )
+                minimum = int(lower) if isinstance(lower, int | float) else 35
+                maximum = int(upper) if isinstance(upper, int | float) else 70
+                message.ts_max = max(minimum, min(maximum, int(float(value))))
+                if message.target_temperature > message.ts_max:
+                    message.target_temperature = float(message.ts_max)
+
+            elif attr == DeviceAttributes.schedule_mode:
+                message.schedule_mode = max(0, min(2, int(value)))
 
             # persist only safe fields; SET echoes often return openPTC=1 / bad Tr
             self._fields = self._sanitize_set_fields(message.fields)

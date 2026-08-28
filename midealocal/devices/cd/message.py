@@ -3,6 +3,7 @@
 from typing import Any
 
 from midealocal.const import DeviceType
+from midealocal.crc8 import calculate
 from midealocal.message import (
     ListTypes,
     MessageBody,
@@ -27,6 +28,37 @@ BODY_TYPE_GENERAL = 0x01
 BODY_TYPE_WEEKLY = 0x02
 BODY_TYPE_DAILY = 0x03
 BODY_TYPE_STERILIZE = 0x06
+BODY_TYPE_B0 = 0xB0
+BODY_TYPE_B1 = 0xB1
+
+STATUS_SCHEDULE_MODE_INDEX = 56
+STATUS_MAX_TEMP_UPPER_INDEX = 57
+STATUS_MAX_TEMP_LOWER_INDEX = 58
+STATUS_DISINFECT_TEMP_UPPER_INDEX = 59
+STATUS_DISINFECT_TEMP_LOWER_INDEX = 60
+STATUS_DISINFECT_TEMP_INDEX = 61
+STATUS_DISINFECT_FLAGS_INDEX = 62
+STATUS_DR_ENABLE_INDEX = 63
+STATUS_DR_OPTION_INDEX = 64
+STATUS_ELECTRIC_ROD_EXCEPTION_INDEX = 65
+STATUS_CAPABILITY_FLAGS_INDEX = 66
+STATUS_REMAINING_WATER_MAX_INDEX = 67
+STATUS_FORCE_E_HEATING_INDEX = 68
+STATUS_EXTENDED_MODE_FLAGS_INDEX = 52
+STATUS_SUPPORT_HEAT_PUMP_INDEX = 53
+STATUS_SUPPORT_SMART_INDEX = 54
+STATUS_SUPPORT_NEGATIVE_INDEX = 55
+
+B1_FIRST_TLV_LENGTH_INDEX = 5
+B1_FUNCTION_FLAGS_TAG = 0x10
+B1_NEW_VERSION_TAG = 0x11
+B1_HOLIDAY_MAX_TAG = 0x12
+B1_HOLIDAY_MIN_TAG = 0x13
+B1_TIMER_STEP_TAG = 0x14
+B1_AC_HEATER_SUPPORT_TAG = 0x15
+B1_RESERVED_QUERY_TAG = 0x06
+B1_HEAT_RECOVERY_TAG = 0x16
+B1_HEAT_RECOVERY_ACTIVE = 0x02
 
 
 class MessageCDBase(MessageRequest):
@@ -109,6 +141,45 @@ class MessageQueryDaily(MessageCDBase):
         return bytearray([0x01])
 
 
+class MessageQueryB1(MessageCDBase):
+    """Query CD extended capabilities and function flags."""
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize the official NetHome B1 capability query."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.query,
+            body_type=ListTypes.B1,
+        )
+
+    @property
+    def _body(self) -> bytearray:
+        body = bytearray(
+            [
+                0x08,
+                B1_FUNCTION_FLAGS_TAG,
+                0x00,
+                B1_NEW_VERSION_TAG,
+                0x00,
+                B1_HOLIDAY_MAX_TAG,
+                0x00,
+                B1_HOLIDAY_MIN_TAG,
+                0x00,
+                B1_TIMER_STEP_TAG,
+                0x00,
+                B1_AC_HEATER_SUPPORT_TAG,
+                0x00,
+                B1_RESERVED_QUERY_TAG,
+                0x00,
+                B1_HEAT_RECOVERY_TAG,
+                0x00,
+            ],
+        )
+        crc_source = bytearray([BODY_TYPE_B1]) + body
+        body.append(calculate(crc_source))
+        return body
+
+
 class MessageSet(MessageCDBase):
     """CD message set (controlType=0x01).
 
@@ -164,6 +235,7 @@ class MessageSet(MessageCDBase):
         self.vacation_temperature: float = 0
         # device max temperature limit (full[23] / tsMax) — must be non-zero
         self.ts_max: int = 0
+        self.schedule_mode: int = 0
 
     def read_field(self, field: str) -> int:
         """CD message set read field."""
@@ -241,7 +313,7 @@ class MessageSet(MessageCDBase):
                 0,  # full[19]
                 0,  # full[20]
                 vacation_ts,  # full[21] vacationTsValue
-                0x00,  # full[22] timer_type
+                self.schedule_mode & 0xFF,  # full[22] schedule mode
                 self._ts_max_value(),  # full[23] tsMax (must be non-zero)
                 0x00,  # full[24] dr_switch
             ],
@@ -330,13 +402,14 @@ class MessageSetSterilize(MessageCDBase):
         self.week: int = 0
         self.hour: int = 0
         self.minute: int = 0
-        # Kept for read/diagnostic compatibility; not encoded in SET payloads.
+        # Appended only after the device reports extended protocol support.
+        self.extended_body: bool = False
         self.disinfection_temperature: float | None = None
 
     @property
     def _body(self) -> bytearray:
         sterilize_effect = 0x80 if self.sterilize_on else 0x00
-        return bytearray(
+        body = bytearray(
             [
                 0x01,  # bodyBytes[1] constant
                 sterilize_effect,  # bodyBytes[2] sterilizeEffect
@@ -345,6 +418,45 @@ class MessageSetSterilize(MessageCDBase):
                 self.clamp_minute(self.minute),  # bodyBytes[5] autoSterilizeMinute
             ],
         )
+        if self.extended_body:
+            value = self.disinfection_temperature
+            if not isinstance(value, int | float):
+                value = self.DISINFECT_TEMP_MIN
+            body.append(
+                self._clamp_int(
+                    value,
+                    int(self.DISINFECT_TEMP_MIN),
+                    int(self.DISINFECT_TEMP_MAX),
+                ),
+            )
+        return body
+
+
+class MessageSetMaintenance(MessageCDBase):
+    """Set B0 function flags while preserving unrelated device flags."""
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize a NetHome-compatible B0 function control."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.set,
+            body_type=ListTypes.B0,
+        )
+        self.ac_heater_priority = False
+        self.high_temp_reminder = False
+        self.maintenance_reminder = False
+        self.reserved_flags = 0
+
+    @property
+    def _body(self) -> bytearray:
+        flags = self.reserved_flags & 0x18
+        flags |= 0x01 if self.ac_heater_priority else 0x00
+        flags |= 0x02 if self.high_temp_reminder else 0x00
+        flags |= 0x04 if self.maintenance_reminder else 0x00
+        body = bytearray([0x01, B1_FUNCTION_FLAGS_TAG, 0x00, 0x01, flags])
+        crc_source = bytearray([BODY_TYPE_B0]) + body
+        body.append(calculate(crc_source))
+        return body
 
 
 class MessageSetWeekly(MessageCDBase):
@@ -396,10 +508,48 @@ class MessageSetWeekly(MessageCDBase):
         return body
 
 
+class MessageSetDaily(MessageCDBase):
+    """Set the six-slot NetHome daily timer programme (control type 0x02)."""
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize a daily timer control."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.set,
+            body_type=ListTypes.X02,
+        )
+        self.daily_timer_schedule: dict[str, Any] | None = None
+
+    @property
+    def _body(self) -> bytearray:
+        schedule = self.daily_timer_schedule or {}
+        timers = schedule.get("timers", [])
+        body = bytearray([0x01, int(schedule.get("amount", 0)) & 0xFF, 0x00])
+        body.extend([0x00] * 36)
+        effects = 0
+        for index in range(6):
+            timer = timers[index] if index < len(timers) else {}
+            if timer.get("effect", False):
+                effects |= 1 << index
+            offset = 3 + index * 6
+            body[offset] = int(timer.get("openhour", 0)) & 0xFF
+            body[offset + 1] = int(timer.get("openmin", 0)) & 0xFF
+            body[offset + 2] = int(timer.get("closehour", 0)) & 0xFF
+            body[offset + 3] = int(timer.get("closemin", 0)) & 0xFF
+            body[offset + 4] = int(timer.get("temperature", 0)) & 0xFF
+            body[offset + 5] = int(timer.get("mode", 0)) & 0xFF
+        if schedule.get("single_timer_on", False):
+            effects |= 0x40
+        if schedule.get("single_timer_off", False):
+            effects |= 0x80
+        body[2] = effects
+        return body
+
+
 class CDGeneralMessageBody(MessageBody):
     """CD message general body."""
 
-    def __init__(self, body: bytearray) -> None:
+    def __init__(self, body: bytearray) -> None:  # noqa: C901, PLR0915
         """Initialize CD message general body."""
         super().__init__(body)
         self.power = (body[2] & 0x01) > 0
@@ -476,7 +626,11 @@ class CDGeneralMessageBody(MessageBody):
         # sterilizeEffect: body[62] bit 0 (real-device status analysis shows
         # body[28] & 0x80 = 0x87 is constant across all messages regardless of
         # sterilize state and therefore cannot be the sterilize indicator).
-        self.sterilize = (body[62] & 0x01) > 0 if len(body) > 62 else False  # noqa: PLR2004
+        self.sterilize = (
+            (body[STATUS_DISINFECT_FLAGS_INDEX] & 0x01) > 0
+            if len(body) > STATUS_DISINFECT_FLAGS_INDEX
+            else False
+        )
         self.disinfect = self.sterilize
         self.typeinfo = body[29]
         # Conservative fallback: if no other mode flags and typeinfo==0x04,
@@ -485,6 +639,37 @@ class CDGeneralMessageBody(MessageBody):
             not smart_flag and self.mode == 0x00 and self.typeinfo == 0x04  # noqa: PLR2004
         ):
             self.mode = 0x04
+        extended_mode_flags = (
+            body[STATUS_EXTENDED_MODE_FLAGS_INDEX]
+            if len(body) > STATUS_EXTENDED_MODE_FLAGS_INDEX
+            else 0
+        )
+        self.holiday_mode = (extended_mode_flags & 0x01) > 0
+        self.hybrid_motion_mode = (extended_mode_flags & 0x02) > 0
+        self.support_heat_pump_mode = (
+            body[STATUS_SUPPORT_HEAT_PUMP_INDEX] == 0x01
+            if len(body) > STATUS_SUPPORT_HEAT_PUMP_INDEX
+            else None
+        )
+        self.support_smart_mode = (
+            body[STATUS_SUPPORT_SMART_INDEX] == 0x01
+            if len(body) > STATUS_SUPPORT_SMART_INDEX
+            else None
+        )
+        self.support_negative_temperature = (
+            body[STATUS_SUPPORT_NEGATIVE_INDEX] == 0x01
+            if len(body) > STATUS_SUPPORT_NEGATIVE_INDEX
+            else None
+        )
+        if self.mode == 0x00:
+            if (extended_mode_flags & 0x04) > 0:
+                self.mode = 0x05
+            elif (extended_mode_flags & 0x08) > 0:
+                self.mode = 0x04
+            elif (extended_mode_flags & 0x10) > 0:
+                self.mode = 0x09
+            elif (extended_mode_flags & 0x20) > 0:
+                self.mode = 0x0A
         # hotWater
         # Gate on the actual index read (body[34]) rather than
         # OLD_BODY_LENGTH (29), which previously allowed bodies of length
@@ -576,8 +761,8 @@ class CDGeneralMessageBody(MessageBody):
         # Stored regardless of whether sterilize is currently active so that the
         # set-point is preserved even when the function is turned off.
         self.disinfection_temperature: float | None = None
-        if len(body) > 61:  # noqa: PLR2004
-            raw_dt = float(body[61])
+        if len(body) > STATUS_DISINFECT_TEMP_INDEX:
+            raw_dt = float(body[STATUS_DISINFECT_TEMP_INDEX])
             if (
                 MessageSetSterilize.DISINFECT_TEMP_MIN
                 <= raw_dt
@@ -595,6 +780,123 @@ class CDGeneralMessageBody(MessageBody):
                 and raw_week % 2 == 0
             ):
                 self.disinfection_temperature = raw_week / 2.0
+
+        self.schedule_mode = (
+            body[STATUS_SCHEDULE_MODE_INDEX]
+            if len(body) > STATUS_SCHEDULE_MODE_INDEX
+            else None
+        )
+        self.max_temperature_upper_limit = (
+            float(body[STATUS_MAX_TEMP_UPPER_INDEX])
+            if len(body) > STATUS_MAX_TEMP_UPPER_INDEX
+            else None
+        )
+        self.max_temperature_lower_limit = (
+            float(body[STATUS_MAX_TEMP_LOWER_INDEX])
+            if len(body) > STATUS_MAX_TEMP_LOWER_INDEX
+            else None
+        )
+        self.disinfection_temperature_upper_limit = (
+            float(body[STATUS_DISINFECT_TEMP_UPPER_INDEX])
+            if len(body) > STATUS_DISINFECT_TEMP_UPPER_INDEX
+            else None
+        )
+        self.disinfection_temperature_lower_limit = (
+            float(body[STATUS_DISINFECT_TEMP_LOWER_INDEX])
+            if len(body) > STATUS_DISINFECT_TEMP_LOWER_INDEX
+            else None
+        )
+        self.auto_disinfect = (
+            (body[STATUS_DISINFECT_FLAGS_INDEX] & 0x02) > 0
+            if len(body) > STATUS_DISINFECT_FLAGS_INDEX
+            else None
+        )
+        self.dr_enable = (
+            body[STATUS_DR_ENABLE_INDEX] > 0
+            if len(body) > STATUS_DR_ENABLE_INDEX
+            else None
+        )
+        self.dr_option = (
+            body[STATUS_DR_OPTION_INDEX] if len(body) > STATUS_DR_OPTION_INDEX else None
+        )
+        self.electric_rod_exception = (
+            (body[STATUS_ELECTRIC_ROD_EXCEPTION_INDEX] & 0x01) > 0
+            if len(body) > STATUS_ELECTRIC_ROD_EXCEPTION_INDEX
+            else None
+        )
+        capability_flags = (
+            body[STATUS_CAPABILITY_FLAGS_INDEX]
+            if len(body) > STATUS_CAPABILITY_FLAGS_INDEX
+            else None
+        )
+        self.support_boost_mode = self._capability(capability_flags, 0x01)
+        self.support_silent_mode = self._capability(capability_flags, 0x02)
+        self.support_remaining_hot_water = self._capability(
+            capability_flags,
+            0x04,
+        )
+        self.support_electric_mode = self._capability(capability_flags, 0x08)
+        self.support_auto_disinfect = self._capability(capability_flags, 0x10)
+        self.support_force_e_heating = self._capability(capability_flags, 0x20)
+        self.support_tou = self._capability(capability_flags, 0x40)
+        self.remaining_hot_water_max = (
+            body[STATUS_REMAINING_WATER_MAX_INDEX]
+            if len(body) > STATUS_REMAINING_WATER_MAX_INDEX
+            else None
+        )
+        self.force_e_heating_status = (
+            body[STATUS_FORCE_E_HEATING_INDEX]
+            if len(body) > STATUS_FORCE_E_HEATING_INDEX
+            else None
+        )
+
+    @staticmethod
+    def _capability(flags: int | None, mask: int) -> bool | None:
+        """Decode a capability bit without inventing support on short frames."""
+        return (flags & mask) > 0 if flags is not None else None
+
+
+class CDB1MessageBody(MessageBody):
+    """Parse the official B1 TLV capability and function response."""
+
+    def __init__(self, body: bytearray) -> None:
+        """Initialize a B1 response, ignoring malformed or failed TLVs."""
+        super().__init__(body)
+        index = B1_FIRST_TLV_LENGTH_INDEX
+        while index < len(body):
+            length = body[index]
+            data_start = index + 1
+            data_end = data_start + length
+            if length == 0 or data_end > len(body):
+                break
+            result = body[index - 3]
+            group = body[index - 2]
+            tag = body[index - 1]
+            if result == 0 and group == 0:
+                self._set_tlv(tag, body[data_start:data_end])
+            index += length + 4
+
+    def _set_tlv(self, tag: int, data: bytearray) -> None:
+        """Apply one successful B1 TLV."""
+        value = data[0]
+        if tag == B1_FUNCTION_FLAGS_TAG:
+            self.ac_heater_priority = (value & 0x01) > 0
+            self.high_temp_reminder = (value & 0x02) > 0
+            self.maintenance_reminder = (value & 0x04) > 0
+            self.b0_reserved_flags = value & 0x18
+        elif tag == B1_NEW_VERSION_TAG:
+            self.new_version_water_heater = value == 0x01
+        elif tag == B1_HOLIDAY_MAX_TAG:
+            self.holiday_max = value * 5
+        elif tag == B1_HOLIDAY_MIN_TAG:
+            self.holiday_min = value
+        elif tag == B1_TIMER_STEP_TAG:
+            self.timer_step_gap = value
+        elif tag == B1_AC_HEATER_SUPPORT_TAG:
+            self.support_ac_heater_priority = (value & 0x01) > 0
+        elif tag == B1_HEAT_RECOVERY_TAG:
+            self.support_heat_recovery = value != 0
+            self.heat_recovery_status = value == B1_HEAT_RECOVERY_ACTIVE
 
 
 class CDWeeklyScheduleBody(MessageBody):
@@ -751,14 +1053,25 @@ class CDSterilizeSetBody(MessageBody):
         self.auto_sterilize_week = raw_byte3
         self.auto_sterilize_hour = raw_hour
         self.auto_sterilize_minute = raw_minute
-        # body[3] is ambiguous: some firmwares echo celsius x2 disinfection
+        self.disinfection_temperature: float | None = None
+        # Extended NetHome payloads carry direct °C in body[6].
+        if len(body) > 6:  # noqa: PLR2004
+            extended_temperature = float(body[6])
+            if (
+                MessageSetSterilize.DISINFECT_TEMP_MIN
+                <= extended_temperature
+                <= MessageSetSterilize.DISINFECT_TEMP_MAX
+            ):
+                self.disinfection_temperature = extended_temperature
+                return
+
+        # body[3] is ambiguous: some legacy firmwares echo celsius x2 disinfection
         # temperature, others echo autoSterilizeWeek.
         #
         # Real devices can encode temperature 60°C as 120 (<=127), so "value
         # >127 means temperature" is incorrect. We treat body[3] as
         # temperature when it lies in the exact encoded app range [120, 140]
         # and is even (x2 encoding), otherwise as week.
-        self.disinfection_temperature: float | None = None
         temp_raw_min = int(MessageSetSterilize.DISINFECT_TEMP_MIN * 2)
         temp_raw_max = int(MessageSetSterilize.DISINFECT_TEMP_MAX * 2)
         if (
@@ -792,6 +1105,8 @@ class MessageCDResponse(MessageResponse):
             elif self.body_type == BODY_TYPE_DAILY:
                 # daily timer query response (queryType=0x03)
                 self.set_body(CDDailyTimerBody(super().body))
+            elif self.body_type == BODY_TYPE_B1:
+                self.set_body(CDB1MessageBody(super().body))
         elif self.message_type == MessageType.set:
             if self.body_type == BODY_TYPE_GENERAL:
                 # controlType=0x01 SET response echo
