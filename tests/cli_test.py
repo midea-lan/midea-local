@@ -453,6 +453,138 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             mock_cloud_instance.download_lua.assert_called_once()
             mock_cloud_instance.download_plugin.assert_called_once()
 
+    async def test_download_plugin_error_is_isolated(self) -> None:
+        """A plugin download error is logged without discarding the lua file."""
+        cloud_sn = "0000FA00ABCD1234000000000000000A"
+        mock_cloud_instance = AsyncMock()
+        mock_cloud_instance.login.return_value = True
+        mock_cloud_instance.list_appliances.return_value = {}
+        mock_cloud_instance.download_lua.return_value = "fileName.lua"
+        mock_cloud_instance.download_plugin.side_effect = ValueError("boom")
+        with patch.object(self.cli, "_get_cloud", return_value=mock_cloud_instance):
+            self.namespace.host = None
+            self.namespace.device_sn = cloud_sn
+            self.namespace.device_type = bytes.fromhex("FA")
+            # Must not raise: the plugin error is caught and logged.
+            await self.cli.download()
+            mock_cloud_instance.download_lua.assert_called_once()
+            mock_cloud_instance.download_plugin.assert_called_once()
+
+    async def test_download_bulk_multiple_devices(self) -> None:
+        """Bulk download runs once for every device in the cloud account."""
+        appliance_a = {
+            "type": 0xAC,
+            "sn": "0000AC00AAAA1111000000000000000A",
+            "model": "MODEL-A",
+            "manufacturer_code": "0000",
+        }
+        appliance_b = {
+            "type": 0xC3,
+            "sn": "0000C300BBBB2222000000000000000B",
+            "model": "MODEL-B",
+            "manufacturer_code": "0011",
+        }
+        mock_cloud_instance = AsyncMock()
+        mock_cloud_instance.login.return_value = True
+        mock_cloud_instance.list_appliances.return_value = {
+            1: appliance_a,
+            2: appliance_b,
+        }
+        with patch.object(self.cli, "_get_cloud", return_value=mock_cloud_instance):
+            self.namespace.host = None
+            self.namespace.device_sn = None
+            await self.cli.download()
+
+        assert mock_cloud_instance.download_lua.call_count == 2
+        for appliance in (appliance_a, appliance_b):
+            mock_cloud_instance.download_lua.assert_any_call(
+                str(Path()),
+                appliance["type"],
+                appliance["sn"],
+                appliance["model"],
+                appliance["manufacturer_code"],
+            )
+        assert mock_cloud_instance.download_plugin.call_count == 2
+
+    async def test_download_bulk_isolates_device_failure(self) -> None:
+        """One device error must not abort the remaining bulk downloads."""
+        appliance_a = {
+            "type": 0xAC,
+            "sn": "0000AC00AAAA1111000000000000000A",
+            "model": "MODEL-A",
+            "manufacturer_code": "0000",
+        }
+        appliance_b = {
+            "type": 0xC3,
+            "sn": "0000C300BBBB2222000000000000000B",
+            "model": "MODEL-B",
+            "manufacturer_code": "0011",
+        }
+        mock_cloud_instance = AsyncMock()
+        mock_cloud_instance.login.return_value = True
+        mock_cloud_instance.list_appliances.return_value = {
+            1: appliance_a,
+            2: appliance_b,
+        }
+        # The first device raises a non-NotImplementedError; the second must
+        # still be processed.
+        mock_cloud_instance.download_lua.side_effect = [
+            ValueError("bad payload"),
+            "b.lua",
+        ]
+        with patch.object(self.cli, "_get_cloud", return_value=mock_cloud_instance):
+            self.namespace.host = None
+            self.namespace.device_sn = None
+            await self.cli.download()
+
+        assert mock_cloud_instance.download_lua.call_count == 2
+        # The failed device skips its plugin; only the healthy one downloads it.
+        mock_cloud_instance.download_plugin.assert_called_once_with(
+            str(Path()),
+            appliance_b["type"],
+            appliance_b["sn"],
+        )
+
+    async def test_download_by_sn_non_hex_type_byte(self) -> None:
+        """A --device-sn whose type byte is not hex falls back to type 0."""
+        # 32 chars (SERIAL_TYPE1_LENGTH) with a non-hex "ZZ" at sn[4:6].
+        bad_sn = "0000ZZ00ABCD1234000000000000000A"
+        mock_cloud_instance = AsyncMock()
+        mock_cloud_instance.login.return_value = True
+        mock_cloud_instance.list_appliances.return_value = {}
+        with patch.object(self.cli, "_get_cloud", return_value=mock_cloud_instance):
+            self.namespace.host = None
+            self.namespace.device_sn = bad_sn
+            # Must not raise a ValueError from bytes.fromhex.
+            await self.cli.download()
+
+        mock_cloud_instance.download_lua.assert_called_once_with(
+            str(Path()),
+            0,
+            bad_sn,
+            bad_sn[9:17],
+            "0000",
+        )
+
+    async def test_download_by_sn_short_serial(self) -> None:
+        """A --device-sn shorter than a type-1 serial defaults to type 0."""
+        short_sn = "SHORTSN"
+        mock_cloud_instance = AsyncMock()
+        mock_cloud_instance.login.return_value = True
+        mock_cloud_instance.list_appliances.return_value = {}
+        with patch.object(self.cli, "_get_cloud", return_value=mock_cloud_instance):
+            self.namespace.host = None
+            self.namespace.device_sn = short_sn
+            await self.cli.download()
+
+        mock_cloud_instance.download_lua.assert_called_once_with(
+            str(Path()),
+            0,
+            short_sn,
+            short_sn[9:17],
+            "0000",
+        )
+
     async def test_set_attribute(self) -> None:
         """Test set attribute."""
         mock_device_instance = MagicMock()

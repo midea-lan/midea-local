@@ -192,7 +192,12 @@ class MideaCLI:
         model: str | None,
         manufacturer_code: str = "0000",
     ) -> None:
-        """Download the lua and plugin files for a single device."""
+        """Download the lua and plugin files for a single device.
+
+        Any failure is confined to this device: bulk :meth:`download` iterates
+        over every appliance in the account, so a network, decryption, or
+        file-write error for one device must not abort the rest.
+        """
         _LOGGER.debug(
             "Download lua file for %s [%s] %s",
             device_sn,
@@ -221,6 +226,10 @@ class MideaCLI:
                 self.namespace.cloud_name,
             )
             return
+        except Exception:
+            # Without lua there is no point attempting the plugin.
+            _LOGGER.exception("Failed to download lua file for %s", device_sn)
+            return
 
         _LOGGER.debug(
             "Download plugin file for %s [%s]",
@@ -239,6 +248,8 @@ class MideaCLI:
                 "lua file downloaded only.",
                 self.namespace.cloud_name,
             )
+        except Exception:
+            _LOGGER.exception("Failed to download plugin file for %s", device_sn)
 
     async def _download_by_sn(self, cloud: MideaCloud, device_sn: str) -> None:
         """Download for a single serial number.
@@ -282,11 +293,12 @@ class MideaCLI:
             return
 
         # 3. legacy fallback: derive the type from the serial number
-        device_type = (
-            int.from_bytes(bytes.fromhex(device_sn[4:6]))
-            if len(device_sn) == SERIAL_TYPE1_LENGTH
-            else 0
-        )
+        device_type = 0
+        if len(device_sn) == SERIAL_TYPE1_LENGTH:
+            # --device-sn is an unvalidated string; a non-hex type byte would
+            # otherwise raise here.
+            with contextlib.suppress(ValueError):
+                device_type = int.from_bytes(bytes.fromhex(device_sn[4:6]))
         await self._download_device(
             cloud,
             device_type,
