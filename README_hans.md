@@ -17,12 +17,13 @@
 
 ```python3
 from midealocal.discover import discover
+
 # 未知 IP 地址时
 discover()
 # 已知 IP 地址时
 discover(ip_address="203.0.113.11")
 # 设备类型为十六进制，对应 midealocal/devices/TYPE
-type_code = hex(list(discover().values())[0]['type'])[2:]
+type_code = hex(list(discover().values())[0]["type"])[2:]
 ```
 
 ### 从设备获取数据
@@ -31,24 +32,24 @@ type_code = hex(list(discover().values())[0]['type'])[2:]
 from midealocal.discover import discover
 from midealocal.devices import device_selector
 
-token = '...'
-key = '...'
+token = "..."
+key = "..."
 
 # 获取第一个设备
 d = list(discover().values())[0]
 # 选择设备
 ac = device_selector(
-  name="AC",
-  device_id=d['device_id'],
-  device_type=d['type'],
-  ip_address=d['ip_address'],
-  port=d['port'],
-  token=token,
-  key=key,
-  device_protocol=d['protocol'],
-  model=d['model'],
-  subtype=0,
-  customize="",
+    name="AC",
+    device_id=d["device_id"],
+    device_type=d["type"],
+    ip_address=d["ip_address"],
+    port=d["port"],
+    token=token,
+    key=key,
+    device_protocol=d["protocol"],
+    model=d["model"],
+    subtype=0,
+    customize="",
 )
 
 # 连接并认证
