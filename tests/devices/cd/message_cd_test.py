@@ -171,6 +171,12 @@ class TestMessageSetDaily:
         assert len(body) == 40
         assert body[:10] == bytearray([2, 1, 1, 0x41, 6, 30, 8, 0, 55, 1])
 
+    def test_single_off_flag(self) -> None:
+        """The standalone off timer uses its dedicated effect bit."""
+        msg = MessageSetDaily(protocol_version=ProtocolVersion.V1)
+        msg.daily_timer_schedule = {"single_timer_off": True}
+        assert msg.body[3] == 0x80
+
 
 class TestCDB1MessageBody:
     """Test B1 TLV parsing used to make B0 writes lossless."""
@@ -191,6 +197,32 @@ class TestCDB1MessageBody:
         assert parsed.new_version_water_heater is True
         assert not hasattr(parsed, "maintenance_reminder")
 
+    def test_all_metadata_tlvs(self) -> None:
+        """Every supported B1 metadata tag is decoded."""
+        body = bytearray.fromhex(
+            "b10800001201030000130104000014010500001501010000160102",
+        )
+        parsed = CDB1MessageBody(body)
+        assert parsed.holiday_max == 15
+        assert parsed.holiday_min == 4
+        assert parsed.timer_step_gap == 5
+        assert parsed.support_ac_heater_priority is True
+        assert parsed.support_heat_recovery is True
+        assert parsed.heat_recovery_status is True
+
+    @pytest.mark.parametrize(
+        "body",
+        [
+            bytearray.fromhex("b10800001000"),
+            bytearray.fromhex("b1080000100201"),
+            bytearray.fromhex("b1080100100101"),
+        ],
+    )
+    def test_malformed_or_failed_tlv_is_ignored(self, body: bytearray) -> None:
+        """Malformed, failed, and incomplete records do not publish flags."""
+        parsed = CDB1MessageBody(body)
+        assert not hasattr(parsed, "maintenance_reminder")
+
 
 class TestMessageSetSterilizeClamp:
     """Test MessageSetSterilize clamp helpers with invalid inputs."""
@@ -204,6 +236,14 @@ class TestMessageSetSterilizeClamp:
         """Unsupported types fall back to the minimum."""
         assert MessageSetSterilize.clamp_week(None) == 0
         assert MessageSetSterilize.clamp_minute(object()) == 0
+
+    def test_extended_body_defaults_and_clamps_temperature(self) -> None:
+        """The seventh byte is safe even without a usable temperature."""
+        msg = MessageSetSterilize(protocol_version=ProtocolVersion.V1)
+        msg.extended_body = True
+        assert msg.body[6] == 60
+        msg.disinfection_temperature = 99.0
+        assert msg.body[6] == 70
 
 
 class TestMessageSetWeekly:
@@ -297,6 +337,16 @@ class TestCDGeneralMessageBody:
         assert parsed.support_heat_pump_mode is True
         assert parsed.support_smart_mode is True
         assert parsed.support_negative_temperature is True
+
+    @pytest.mark.parametrize(
+        ("flag", "mode"),
+        [(0x04, 0x05), (0x08, 0x04), (0x20, 0x0A)],
+    )
+    def test_other_extended_mode_flags(self, flag: int, mode: int) -> None:
+        """Each reported extended mode bit maps to its protocol mode."""
+        body = bytearray(69)
+        body[52] = flag
+        assert CDGeneralMessageBody(body).mode == mode
 
     # Real-device status bodies (body_type=0x01):
     #   msg1: 70C disinfection, sterilize ON
@@ -445,6 +495,12 @@ class TestCDSterilizeSetBody:
         """body[3]=132 sets disinfection_temperature=66.0 when on."""
         parsed = CDSterilizeSetBody(self._make_body(sterilize_on=True, byte3=132))
         assert parsed.disinfection_temperature == 66.0
+
+    def test_extended_temperature_byte_takes_precedence(self) -> None:
+        """The NetHome seventh byte carries direct Celsius."""
+        body = self._make_body(sterilize_on=True, byte3=4)
+        body.append(67)
+        assert CDSterilizeSetBody(body).disinfection_temperature == 67.0
 
     def test_temp_echo_on_keeps_raw_auto_sterilize_week(self) -> None:
         """body[3]=132 when sterilize ON also remains available as raw week."""
@@ -952,6 +1008,12 @@ class TestMessageCDResponse:
         body[0] = 0x03
         response = MessageCDResponse(_build_response(MessageType.query, body))
         assert getattr(response, "daily_timer_schedule", None) is not None
+
+    def test_query_b1(self) -> None:
+        """B1 query responses use the capability TLV parser."""
+        body = bytearray.fromhex("b1080000110101")
+        response = MessageCDResponse(_build_response(MessageType.query, body))
+        assert getattr(response, "new_version_water_heater", None) is True
 
     def test_set_general_echo(self) -> None:
         """Set responses with body type 0x01 use the SET echo body."""
