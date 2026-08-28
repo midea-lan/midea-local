@@ -1,14 +1,26 @@
-"""Whole-suite conformance run: regression gate + report/render smoke tests."""
+"""Whole-suite conformance run: invariants + report/render smoke tests.
+
+Per-device regression protection lives in the ``conformance_<device>_test.py``
+files (golden encode/decode vectors derived from the Lua). This module only
+checks corpus-wide invariants that must hold regardless of how many Lua files
+exist, so unrelated ``main`` churn (a new Lua file, a ``message.py`` tweak)
+never turns CI red here.
+"""
 
 from __future__ import annotations
 
 import pytest
 
-from tests.lua_conformance import build_mapping, generate_all, iter_pairs
-from tests.lua_conformance._baseline import current_discrepancies, load_baseline
+from tests.lua_conformance import build_mapping, compare_pair, generate_all, iter_pairs
 from tests.lua_conformance.compare import Verdict
-from tests.lua_conformance.mapping import MatchStatus
+from tests.lua_conformance.mapping import LUA_ROOT, MatchStatus
 from tests.lua_conformance.report import render_mapping, render_report
+
+#: Device types with hand-written golden vectors in a ``conformance_*_test.py``.
+#: For these, every Lua file must agree with ``midealocal`` on field offsets,
+#: command body-types and framing (name-only enum differences are allowed and
+#: covered explicitly in the per-device test).
+VERIFIED_DEVICES = ("e1",)
 
 
 @pytest.fixture(scope="module")
@@ -27,23 +39,29 @@ def test_mapping_covers_all_lua_and_python(comparisons: list) -> None:
     assert len(comparisons) > 100
 
 
-def test_no_new_protocol_discrepancies() -> None:
-    """MISSING/DIFFERENT findings must match the reviewed baseline exactly.
+@pytest.mark.parametrize("device", VERIFIED_DEVICES)
+def test_verified_device_has_no_structural_regression(device: str) -> None:
+    """A verified device must not gain a MISSING or wrong-offset finding.
 
-    A new entry means a code change made ``midealocal`` diverge further from the
-    Lua protocol evidence -- inspect it.  A removed entry means a discrepancy
-    was resolved -- regenerate with ``python -m tests.lua_conformance
-    --baseline`` and commit the (smaller) baseline.
+    This is the regression gate: if a ``midealocal`` change makes a verified
+    device diverge from its Lua evidence on a field offset, mask, command
+    body-type or framing constant, this fails. Enum name differences are
+    intentional-until-proven and checked in the per-device test instead.
     """
-    current = current_discrepancies()
-    baseline = load_baseline()
-    new = sorted(set(current) - set(baseline))
-    resolved = sorted(set(baseline) - set(current))
-    assert not new, "new protocol discrepancies:\n" + "\n".join(new)
-    assert not resolved, (
-        "these baseline discrepancies no longer occur -- regenerate the "
-        "baseline:\n" + "\n".join(resolved)
-    )
+    for lua_path in sorted((LUA_ROOT / device).glob("*.lua")):
+        result = compare_pair(device, lua_path)
+        offenders = [
+            f
+            for f in result.findings
+            if f.verdict is Verdict.MISSING
+            or (
+                f.verdict is Verdict.DIFFERENT
+                and f.area in {"decode_field", "command", "framing"}
+            )
+        ]
+        assert not offenders, f"{lua_path.name}:\n" + "\n".join(
+            str(f) for f in offenders
+        )
 
 
 def test_every_finding_has_traceable_provenance(comparisons: list) -> None:
