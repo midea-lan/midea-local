@@ -8,6 +8,7 @@ import time
 from asyncio import Lock
 from datetime import UTC, datetime
 from http import HTTPStatus
+from pathlib import PurePosixPath, PureWindowsPath
 from secrets import token_hex
 from typing import Any, cast
 
@@ -949,8 +950,13 @@ class MideaAirCloud(MideaCloud):
                     url,
                     repr(e),
                 )
-        if int(response["errorCode"]) == 0 and "result" in response:
-            return cast("dict[str, Any]", response["result"])
+        if int(response["errorCode"]) == 0:
+            if "result" in response:
+                return cast("dict[str, Any]", response["result"])
+            # The legacy lua endpoint returns its payload under "data" instead
+            # of "result"; fall back to it so download_lua can read the url.
+            if "data" in response:
+                return cast("dict[str, Any]", response["data"])
         return None
 
     async def login(self) -> bool:
@@ -1014,6 +1020,62 @@ class MideaAirCloud(MideaCloud):
                 appliances[int(appliance["id"])] = device_info
             return appliances
         return None
+
+    async def download_lua(
+        self,
+        path: str,
+        device_type: int,
+        sn: str,
+        model_number: str | None = None,  # noqa: ARG002
+        manufacturer_code: str = "0000",
+    ) -> str | None:
+        """Download lua integration.
+
+        The legacy ``mapp.appsmb.com`` backend returns the lua payload under
+        ``data`` (handled by :meth:`_api_request`) and serves a hex-encoded
+        AES-128-ECB file keyed by the app key (see
+        :meth:`MideaAirSecurity.decrypt_appliance_lua`).
+        """
+        data = self._make_general_data()
+        data.update(
+            {
+                "applianceSn": sn,
+                "applianceType": hex(device_type),
+                "applianceMFCode": manufacturer_code,
+                "version": "0",
+            },
+        )
+        fnm = None
+        if response := await self._api_request(
+            endpoint="/v1/appliance/protocol/lua/luaGet",
+            data=data,
+        ):
+            res = await self._session.get(response["url"])
+            if res.status == HTTPStatus.OK:
+                lua = await res.text()
+                if lua:
+                    file_name = response["fileName"]
+                    # The cloud controls fileName; keep it to a single path
+                    # component so it cannot be written outside path. Check both
+                    # separator styles since Windows is a supported platform.
+                    if (
+                        PurePosixPath(file_name).name != file_name
+                        or PureWindowsPath(file_name).name != file_name
+                    ):
+                        _LOGGER.error(
+                            "Refusing lua file name with path components: %s",
+                            file_name,
+                        )
+                        return None
+                    stream = 'local bit = require "bit"\n' + cast(
+                        "MideaAirSecurity",
+                        self._security,
+                    ).decrypt_appliance_lua(lua)
+                    stream = stream.replace("\r\n", "\n")
+                    fnm = f"{path}/{file_name}"
+                    async with aiofiles.open(fnm, "w") as fp:
+                        await fp.write(stream)
+        return str(fnm) if fnm else None
 
 
 def get_midea_cloud(
