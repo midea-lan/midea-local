@@ -5,6 +5,8 @@ import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
+from typing_extensions import deprecated
+
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
@@ -34,7 +36,7 @@ class DeviceAttributes(StrEnum):
 class MideaE6Device(MideaDevice):
     """Midea E6 device."""
 
-    _heating_modes: ClassVar[list[str]] = [
+    _preset_modes: ClassVar[list[str]] = [
         "normal",
         "out",
         "home",
@@ -103,9 +105,15 @@ class MideaE6Device(MideaDevice):
             self.build_send(message)
 
     @property
+    @deprecated("Use preset_modes instead.")
     def heating_modes(self) -> list[str]:
         """Return available heating modes."""
-        return self._heating_modes
+        return self.preset_modes
+
+    @property
+    def preset_modes(self) -> list[str]:
+        """Midea E6 preset modes."""
+        return self._preset_modes
 
     def set_customize(self, customize: str) -> None:
         """Midea E2 device set customize."""
