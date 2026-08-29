@@ -798,6 +798,8 @@ class TestMideaCDExtendedDevice:
         device._attributes[DeviceAttributes.support_silent_mode] = False
 
         assert device._is_extended_water_heater() is False
+        device._attributes[DeviceAttributes.new_version_water_heater] = True
+        assert device._is_extended_water_heater() is True
 
     def test_optional_modes_follow_reported_capabilities(self) -> None:
         """Optional modes appear only after their capability is reported."""
