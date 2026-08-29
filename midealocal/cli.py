@@ -184,57 +184,184 @@ class MideaCLI:
         with file.open(mode="w+", encoding="utf-8") as f:
             f.write(json_data)
 
-    async def download(self) -> None:
-        """Download lua from cloud."""
-        # model and device_type will be get from SN or host
-        model: str | None = None
-        device_type: int = 0
+    async def _download_device(
+        self,
+        cloud: MideaCloud,
+        device_type: int,
+        device_sn: str,
+        model: str | None,
+        manufacturer_code: str = "0000",
+    ) -> None:
+        """Download the lua and plugin files for a single device.
 
-        # download with host ip
-        if self.namespace.host:
-            devices = discover(ip_address=self.namespace.host)
-
-            if len(devices) == 0:
-                _LOGGER.error("No devices found.")
-                return
-
-            _, device = devices.popitem()
-            device_type = device["type"]
-            device_sn = device["sn"]
-            model = device["model"]
-        # download with SN
-        elif self.namespace.device_sn:
-            device_sn = str(self.namespace.device_sn)
-            # manual input device_type exist
-            if self.namespace.device_type:
-                device_type = int.from_bytes(self.namespace.device_type or bytearray())
-            # no device type input, parse device_type from SN
-            elif len(device_sn) == SERIAL_TYPE1_LENGTH:
-                device_type = int.from_bytes(bytes.fromhex(device_sn[4:6]))
-            # parse model from SN
-            model = str(device_sn[9:17])
-        else:
-            _LOGGER.error("host or sn is mandatory")
-            return
-
-        cloud = await self._get_cloud()
-        _LOGGER.debug("Try to authenticate to the cloud.")
-        if not await cloud.login():
-            _LOGGER.error("Failed to authenticate to the cloud.")
-            return
-
+        Any failure is confined to this device: bulk :meth:`download` iterates
+        over every appliance in the account, so a network, decryption, or
+        file-write error for one device must not abort the rest.
+        """
         _LOGGER.debug(
             "Download lua file for %s [%s] %s",
             device_sn,
             hex(device_type),
             model,
         )
-        lua = await cloud.download_lua(str(Path()), device_type, device_sn, model)
+        # A plain error (no traceback) is the right output for the expected
+        # NotImplementedError limitations below, so TRY400 (use
+        # logging.exception) does not apply to those handlers.
+        try:
+            lua = await cloud.download_lua(
+                str(Path()),
+                device_type,
+                device_sn,
+                model,
+                manufacturer_code,
+            )
+        except NotImplementedError:
+            # Defensive: every supported cloud now implements lua download
+            # (美的美居, SmartHome, and the MideaAirCloud variants), so only the
+            # abstract base class reaches here. Without lua there is no point
+            # attempting the plugin, so report and stop.
+            _LOGGER.error(  # noqa: TRY400
+                "The '%s' cloud does not support downloading lua files.",
+                self.namespace.cloud_name,
+            )
+            return
+        except Exception:
+            # Without lua there is no point attempting the plugin.
+            _LOGGER.exception("Failed to download lua file for %s", device_sn)
+            return
+
+        # A cloud can also signal failure by returning None without raising.
+        if lua is None:
+            _LOGGER.error("Failed to download lua file for %s", device_sn)
+            return
         _LOGGER.info("Downloaded lua file: %s", lua)
 
-        _LOGGER.debug("Download plugin file for %s [%s]", device_sn, hex(device_type))
-        plugin = await cloud.download_plugin(str(Path()), device_type, device_sn)
-        _LOGGER.info("Downloaded plugin file: %s", plugin)
+        _LOGGER.debug(
+            "Download plugin file for %s [%s]",
+            device_sn,
+            hex(device_type),
+        )
+        try:
+            plugin = await cloud.download_plugin(str(Path()), device_type, device_sn)
+            _LOGGER.info("Downloaded plugin file: %s", plugin)
+        except NotImplementedError:
+            # The legacy MideaAirCloud backend serves lua files but not plugins,
+            # so the lua download above still succeeds; report the plugin gap
+            # without discarding the lua result.
+            _LOGGER.warning(
+                "The '%s' cloud does not support downloading plugin files; "
+                "lua file downloaded only.",
+                self.namespace.cloud_name,
+            )
+        except Exception:
+            _LOGGER.exception("Failed to download plugin file for %s", device_sn)
+
+    async def _download_by_sn(self, cloud: MideaCloud, device_sn: str) -> None:
+        """Download for a single serial number.
+
+        Device type is resolved with the following precedence, chosen to keep
+        the legacy behavior intact while fixing device types the serial number
+        cannot express:
+
+        1. an explicit ``--device-type`` argument;
+        2. the device's entry in the cloud account -- authoritative, and needed
+           because some serials (e.g. air conditioners) carry ``00`` where the
+           type byte would be;
+        3. parsing the serial number itself -- the legacy fallback, which keeps
+           download-by-SN working for devices absent from the account.
+        """
+        # 1. explicit device type: legacy path, no cloud account lookup needed
+        if self.namespace.device_type:
+            device_type = int.from_bytes(self.namespace.device_type)
+            await self._download_device(
+                cloud,
+                device_type,
+                device_sn,
+                str(device_sn[9:17]),
+            )
+            return
+
+        # 2. resolve type/model from the cloud account (fixes AC-style serials)
+        appliances = await cloud.list_appliances(home_id=None) or {}
+        appliance = next(
+            (a for a in appliances.values() if a["sn"] == device_sn),
+            None,
+        )
+        if appliance is not None:
+            await self._download_device(
+                cloud,
+                appliance["type"],
+                device_sn,
+                appliance["model"],
+                appliance["manufacturer_code"],
+            )
+            return
+
+        # 3. legacy fallback: derive the type from the serial number
+        device_type = 0
+        if len(device_sn) == SERIAL_TYPE1_LENGTH:
+            # --device-sn is an unvalidated string; a non-hex type byte would
+            # otherwise raise here.
+            with contextlib.suppress(ValueError):
+                device_type = int.from_bytes(bytes.fromhex(device_sn[4:6]))
+        await self._download_device(
+            cloud,
+            device_type,
+            device_sn,
+            str(device_sn[9:17]),
+        )
+
+    async def download(self) -> None:
+        """Download lua and plugin files from the cloud.
+
+        The target device(s) are resolved in one of three ways:
+
+        * ``--host``: discover the device on the LAN; its type and model come
+          from the discovery reply.
+        * ``--device-sn``: download a single device by serial number (see
+          :meth:`_download_by_sn` for how the device type is resolved).
+        * neither: download for every device in the cloud account.
+        """
+        cloud = await self._get_cloud()
+        _LOGGER.debug("Try to authenticate to the cloud.")
+        if not await cloud.login():
+            _LOGGER.error("Failed to authenticate to the cloud.")
+            return
+
+        # download with host ip: LAN discovery provides the device type
+        if self.namespace.host:
+            devices = discover(ip_address=self.namespace.host)
+            if len(devices) == 0:
+                _LOGGER.error("No devices found.")
+                return
+            _, device = devices.popitem()
+            await self._download_device(
+                cloud,
+                device["type"],
+                device["sn"],
+                device["model"],
+            )
+            return
+
+        # download with SN
+        if self.namespace.device_sn:
+            await self._download_by_sn(cloud, str(self.namespace.device_sn))
+            return
+
+        # no host and no SN: download every device in the cloud account
+        appliances = await cloud.list_appliances(home_id=None) or {}
+        if not appliances:
+            _LOGGER.error("No devices found in the cloud account.")
+            return
+        _LOGGER.info("Found %d device(s) in the cloud account.", len(appliances))
+        for appliance in appliances.values():
+            await self._download_device(
+                cloud,
+                appliance["type"],
+                appliance["sn"],
+                appliance["model"],
+                appliance["manufacturer_code"],
+            )
 
     async def set_attribute(self) -> None:
         """Set attribute for device."""
