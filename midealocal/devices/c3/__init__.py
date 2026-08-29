@@ -85,6 +85,9 @@ class MideaC3Device(MideaDevice):
         C3SilentLevel.SUPER_SILENT.name.lower(),
     ]
 
+    # Generic HVAC mode names, ordered to match the protocol's mode index.
+    hvac_modes: ClassVar[list[str]] = ["off", "auto", "cool", "heat"]
+
     def __init__(
         self,
         *,
