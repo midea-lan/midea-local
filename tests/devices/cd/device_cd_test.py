@@ -858,8 +858,15 @@ class TestMideaCDExtendedDevice:
         [
             (DeviceAttributes.daily_timer_schedule, {"timers": None}),
             (DeviceAttributes.daily_timer_schedule, {"timers": [None]}),
+            (DeviceAttributes.daily_timer_schedule, {"amount": None}),
+            (
+                DeviceAttributes.daily_timer_schedule,
+                {"timers": [{"openhour": None}]},
+            ),
             (DeviceAttributes.weekly_schedule, {0: None}),
             (DeviceAttributes.weekly_schedule, {0: [None]}),
+            (DeviceAttributes.weekly_schedule, {"0": []}),
+            (DeviceAttributes.weekly_schedule, {0: [{"opentime": None}]}),
         ],
     )
     def test_schedule_writes_reject_invalid_timer_data(

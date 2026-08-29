@@ -608,16 +608,48 @@ class MideaCDDevice(MideaDevice):
         self.build_send(message)
 
     @staticmethod
-    def _has_valid_timer_data(attr: str, value: dict[Any, Any]) -> bool:
+    def _is_integer_compatible(value: Any) -> bool:  # noqa: ANN401
+        """Return whether a schedule value can be encoded as an integer."""
+        try:
+            int(value)
+        except (TypeError, ValueError, OverflowError):
+            return False
+        return True
+
+    @classmethod
+    def _has_valid_timer_data(cls, attr: str, value: dict[Any, Any]) -> bool:
         """Return whether a schedule contains safe timer collections."""
-        timer_groups = (
-            [value.get(day, []) for day in range(7)]
-            if attr == DeviceAttributes.weekly_schedule
-            else [value.get("timers", [])]
-        )
+        numeric_fields: tuple[str, ...]
+        if attr == DeviceAttributes.weekly_schedule:
+            if any(
+                not isinstance(day, int) or isinstance(day, bool) or day not in range(7)
+                for day in value
+            ):
+                return False
+            timer_groups = [value.get(day, []) for day in range(7)]
+            numeric_fields = ("opentime", "closetime", "temperature", "mode")
+        else:
+            if "amount" in value and not cls._is_integer_compatible(value["amount"]):
+                return False
+            timer_groups = [value.get("timers", [])]
+            numeric_fields = (
+                "openhour",
+                "openmin",
+                "closehour",
+                "closemin",
+                "temperature",
+                "mode",
+            )
         return all(
             isinstance(timers, list)
-            and all(isinstance(timer, dict) for timer in timers)
+            and all(
+                isinstance(timer, dict)
+                and all(
+                    field not in timer or cls._is_integer_compatible(timer[field])
+                    for field in numeric_fields
+                )
+                for timer in timers
+            )
             for timers in timer_groups
         )
 
