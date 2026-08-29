@@ -670,7 +670,7 @@ class TestMideaACDevice:
             assert not self.device.attributes[DeviceAttributes.screen_display]
 
     def test_process_message_group_data(self) -> None:
-        """Test that group 1/2/7 data is stored in the device attributes."""
+        """Test that group 1/2/5/7 data is stored in the device attributes."""
         with patch("midealocal.devices.ac.MessageACResponse") as mock_message_response:
             mock_message = mock_message_response.return_value
             mock_message.used_subprotocol = False
@@ -694,6 +694,10 @@ class TestMideaACDevice:
             mock_message.indoor_fan_speed = 424
             mock_message.target_indoor_fan_speed = 416
             mock_message.water_pump_running = False
+            # group 5
+            mock_message.target_outdoor_fan_speed = 600
+            mock_message.target_expansion_valve_angle = 248
+            mock_message.defrost_stage = 2
             # group 7
             mock_message.compressor_power = 269
 
@@ -711,6 +715,9 @@ class TestMideaACDevice:
             assert result[DeviceAttributes.indoor_fan_speed.value] == 424
             assert result[DeviceAttributes.target_indoor_fan_speed.value] == 416
             assert result[DeviceAttributes.water_pump_running.value] is False
+            assert result[DeviceAttributes.target_outdoor_fan_speed.value] == 600
+            assert result[DeviceAttributes.target_expansion_valve_angle.value] == 248
+            assert result[DeviceAttributes.defrost_stage.value] == 2
             assert result[DeviceAttributes.compressor_power.value] == 269
 
     def test_set_attribute_group_data_is_read_only(self) -> None:
@@ -729,6 +736,9 @@ class TestMideaACDevice:
                 DeviceAttributes.indoor_fan_speed,
                 DeviceAttributes.target_indoor_fan_speed,
                 DeviceAttributes.water_pump_running,
+                DeviceAttributes.target_outdoor_fan_speed,
+                DeviceAttributes.target_expansion_valve_angle,
+                DeviceAttributes.defrost_stage,
                 DeviceAttributes.compressor_power,
             ]:
                 self.device.set_attribute(attr.value, 1)

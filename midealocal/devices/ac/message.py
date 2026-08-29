@@ -60,6 +60,7 @@ XC1_SUBBODY_TYPE_47 = 0x47
 XC1_SUBBODY_TYPE_INDEX = 3
 XC1_HUMIDITY_INDEX = 4
 XC1_CONSUMPTION_MIN_LENGTH = 19
+XC1_GROUP_FIVE_DIAGNOSTICS_MIN_LENGTH = 11
 XC1_OPERATING_TIME_MIN_LENGTH = 19
 
 # Group data query: the third payload byte selects the group, 0x40 | group number.
@@ -1396,10 +1397,7 @@ class XC1MessageBody(MessageBody):
                 + (self.current_operating_time_second / 3600)
             )
         elif group_type == XC1_SUBBODY_TYPE_45:
-            if len(body) <= XC1_HUMIDITY_INDEX:
-                return
-            # indoor humidity, it should be the same value as XBB/XA1 message
-            self.indoor_humidity = body[4] if body[4] != 0 else None
+            self._parse_group_five(body)
 
     def _parse_group_one(self, body: bytearray) -> None:
         """Parse group 1 data: compressor and refrigerant circuit.
@@ -1439,6 +1437,18 @@ class XC1MessageBody(MessageBody):
         self.indoor_fan_speed = body[5] * XC1_FAN_SPEED_FACTOR
         # Could also be the float switch (tank full) that triggers the pump.
         self.water_pump_running = bool(body[8] & XC1_WATER_PUMP_MASK)
+
+    def _parse_group_five(self, body: bytearray) -> None:
+        """Parse group 5 data: humidity and outdoor-unit targets."""
+        if len(body) <= XC1_HUMIDITY_INDEX:
+            return
+        # Indoor humidity should match the XBB/XA1 message when available.
+        self.indoor_humidity = body[XC1_HUMIDITY_INDEX] or None
+        if len(body) < XC1_GROUP_FIVE_DIAGNOSTICS_MIN_LENGTH:
+            return
+        self.target_outdoor_fan_speed = body[8] * XC1_FAN_SPEED_FACTOR
+        self.target_expansion_valve_angle = body[9] * XC1_FAN_SPEED_FACTOR
+        self.defrost_stage = body[10]
 
     def _parse_group_seven(self, body: bytearray) -> None:
         """Parse group 7 data: real time compressor power."""

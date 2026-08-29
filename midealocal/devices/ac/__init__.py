@@ -124,6 +124,10 @@ class DeviceAttributes(StrEnum):
     indoor_fan_speed = "indoor_fan_speed"
     target_indoor_fan_speed = "target_indoor_fan_speed"
     water_pump_running = "water_pump_running"
+    # group 5: outdoor-unit targets and defrost state
+    target_outdoor_fan_speed = "target_outdoor_fan_speed"
+    target_expansion_valve_angle = "target_expansion_valve_angle"
+    defrost_stage = "defrost_stage"
     # group 7: real time compressor power
     compressor_power = "compressor_power"
 
@@ -301,6 +305,9 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.indoor_fan_speed: None,
                 DeviceAttributes.target_indoor_fan_speed: None,
                 DeviceAttributes.water_pump_running: None,
+                DeviceAttributes.target_outdoor_fan_speed: None,
+                DeviceAttributes.target_expansion_valve_angle: None,
+                DeviceAttributes.defrost_stage: None,
                 DeviceAttributes.compressor_power: None,
             },
         )
@@ -855,6 +862,9 @@ class MideaACDevice(MideaDevice):
             DeviceAttributes.indoor_fan_speed,
             DeviceAttributes.target_indoor_fan_speed,
             DeviceAttributes.water_pump_running,
+            DeviceAttributes.target_outdoor_fan_speed,
+            DeviceAttributes.target_expansion_valve_angle,
+            DeviceAttributes.defrost_stage,
             DeviceAttributes.compressor_power,
         ]:
             if attr == DeviceAttributes.prompt_tone:

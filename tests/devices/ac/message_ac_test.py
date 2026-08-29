@@ -1226,20 +1226,44 @@ class TestMessageACResponse:
         assert response.fresh_filter_timeout == 1
 
     def test_message_query_c1_0x45(self) -> None:
-        """Test Message parse query C1 0x45 indoor humidity."""
+        """Test Message parse query C1 0x45 group 5 diagnostics."""
         self.header[9] = 0x03
         body = bytearray(20)
         body[0] = 0xC1  # Body type
         body[3] = 0x45  # Set the type to 0x45
         body[4] = 55  # Indoor humidity
+        body[8] = 75  # Target outdoor fan speed: 75 * 8 = 600
+        body[9] = 31  # Target EEV opening: 31 * 8 = 248
+        body[10] = 2  # Defrost stage
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "indoor_humidity")
         assert response.indoor_humidity == 55
+        assert hasattr(response, "target_outdoor_fan_speed")
+        assert response.target_outdoor_fan_speed == 600
+        assert hasattr(response, "target_expansion_valve_angle")
+        assert response.target_expansion_valve_angle == 248
+        assert hasattr(response, "defrost_stage")
+        assert response.defrost_stage == 2
 
         body[4] = 0  # Indoor humidity unavailable
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "indoor_humidity")
         assert response.indoor_humidity is None
+
+    def test_message_query_c1_0x45_short_body(self) -> None:
+        """Test short group 5 responses retain humidity compatibility."""
+        self.header[9] = 0x03
+        body = bytearray(8)
+        body[0] = 0xC1
+        body[3] = 0x45
+        body[4] = 55
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "indoor_humidity")
+        assert response.indoor_humidity == 55
+        assert not hasattr(response, "target_outdoor_fan_speed")
+        assert not hasattr(response, "target_expansion_valve_angle")
+        assert not hasattr(response, "defrost_stage")
 
     def test_message_query_c1_unknown_method(self) -> None:
         """Test Message parse query C1 with an unknown analysis method."""
