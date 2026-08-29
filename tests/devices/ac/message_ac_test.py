@@ -15,6 +15,7 @@ from midealocal.devices.ac.message import (
     MessageGroupDataQuery,
     MessageGroupOneQuery,
     MessageGroupSevenQuery,
+    MessageGroupThreeQuery,
     MessageGroupTwoQuery,
     MessageGroupZeroQuery,
     MessageHumidityQuery,
@@ -161,6 +162,7 @@ class TestMessageGroupDataQuery:
             (MessageGroupZeroQuery, 0),
             (MessageGroupOneQuery, 1),
             (MessageGroupTwoQuery, 2),
+            (MessageGroupThreeQuery, 3),
             (MessagePowerQuery, 4),
             (MessageHumidityQuery, 5),
             (MessageGroupSevenQuery, 7),
@@ -1517,6 +1519,29 @@ class TestMessageACResponse:
         response = MessageACResponse(self.header + body)
         assert not hasattr(response, "indoor_fan_speed")
         assert not hasattr(response, "water_pump_running")
+
+    @pytest.mark.parametrize("group_discriminator", [0x03, 0x43])
+    def test_message_query_c1_group_three(self, group_discriminator: int) -> None:
+        """Test group 3 response with outdoor fan raw speed data."""
+        self.header[9] = 0x03
+        body = bytearray(20)
+        body[0] = 0xC1  # Body type
+        body[3] = group_discriminator
+        body[10] = 106  # Matches engineer display; physical scaling remains raw.
+
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "outdoor_fan_speed_raw")
+        assert response.outdoor_fan_speed_raw == 106
+
+    def test_message_query_c1_0x03_short_body(self) -> None:
+        """Test Message parse group 3 response with a truncated body."""
+        self.header[9] = 0x03
+        body = bytearray(10)
+        body[0] = 0xC1  # Body type
+        body[3] = 0x03  # group 3 response discriminator
+
+        response = MessageACResponse(self.header + body)
+        assert not hasattr(response, "outdoor_fan_speed_raw")
 
     def test_message_query_c1_0x47(self) -> None:
         """Test Message parse query C1 0x47, compressor power group data."""

@@ -18,6 +18,7 @@ from .message import (
     MessageGeneralSet,
     MessageGroupOneQuery,
     MessageGroupSevenQuery,
+    MessageGroupThreeQuery,
     MessageGroupTwoQuery,
     MessageGroupZeroQuery,
     MessageHumidityQuery,
@@ -45,6 +46,7 @@ ACQuery = (
     | MessageHumidityQuery
     | MessageGroupZeroQuery
     | MessageGroupOneQuery
+    | MessageGroupThreeQuery
     | MessageGroupTwoQuery
     | MessageGroupSevenQuery
     | MessageCapabilitiesQuery
@@ -124,6 +126,8 @@ class DeviceAttributes(StrEnum):
     indoor_fan_speed = "indoor_fan_speed"
     target_indoor_fan_speed = "target_indoor_fan_speed"
     water_pump_running = "water_pump_running"
+    # group 3: outdoor fan
+    outdoor_fan_speed_raw = "outdoor_fan_speed_raw"
     # group 7: real time compressor power
     compressor_power = "compressor_power"
 
@@ -301,6 +305,7 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.indoor_fan_speed: None,
                 DeviceAttributes.target_indoor_fan_speed: None,
                 DeviceAttributes.water_pump_running: None,
+                DeviceAttributes.outdoor_fan_speed_raw: None,
                 DeviceAttributes.compressor_power: None,
             },
         )
@@ -398,6 +403,7 @@ class MideaACDevice(MideaDevice):
             # initial protocol check and the query is skipped from then on.
             MessageGroupOneQuery(self._message_protocol_version),
             MessageGroupTwoQuery(self._message_protocol_version),
+            MessageGroupThreeQuery(self._message_protocol_version),
             MessageGroupSevenQuery(self._message_protocol_version),
             MessageCapabilitiesQuery(self._message_protocol_version),
             MessageCapabilitiesAdditionalQuery(self._message_protocol_version),
@@ -855,6 +861,7 @@ class MideaACDevice(MideaDevice):
             DeviceAttributes.indoor_fan_speed,
             DeviceAttributes.target_indoor_fan_speed,
             DeviceAttributes.water_pump_running,
+            DeviceAttributes.outdoor_fan_speed_raw,
             DeviceAttributes.compressor_power,
         ]:
             if attr == DeviceAttributes.prompt_tone:
