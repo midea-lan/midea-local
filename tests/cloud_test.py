@@ -186,10 +186,6 @@ class CloudTest(IsolatedAsyncioTestCase):
         response = Mock()
         response.read = AsyncMock(
             side_effect=[
-<<<<<<< HEAD
-                # get_cloud_keys() lists homes first, then queries v2 per method
-=======
->>>>>>> 3527bbc (fix(cloud): use the v2 getToken endpoint for the Meiju cloud)
                 self.responses["meijucloud_list_home.json"],
                 self.responses["meijucloud_get_keys1.json"],
                 self.responses["meijucloud_get_keys2.json"],
@@ -358,7 +354,6 @@ class CloudTest(IsolatedAsyncioTestCase):
             ("1", UDP_IDS[2]),
         ] * 3
 
-<<<<<<< HEAD
     async def test_meijucloud_get_keys_skips_foreign_udpid(self) -> None:
         """Test get_cloud_keys ignores tokenlist entries for other devices.
 
@@ -395,8 +390,6 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert keys[1]["key"] == "method1_return_key1"
         assert all(k["token"] != "other_device_token" for k in keys.values())
 
-=======
->>>>>>> 3527bbc (fix(cloud): use the v2 getToken endpoint for the Meiju cloud)
     async def test_meijucloud_get_keys_v2_fallback_to_v1(self) -> None:
         """Test MeijuCloud falls back to the v1 endpoint when v2 returns nothing."""
         session = Mock()
