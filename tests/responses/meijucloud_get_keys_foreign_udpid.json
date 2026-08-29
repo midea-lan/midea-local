@@ -1,0 +1,17 @@
+{
+  "code": 0,
+  "data": {
+    "tokenlist": [
+      {
+        "udpId": "dec4da86e0aeefadde14a4e553680b9b",
+        "token": "method1_return_token1",
+        "key": "method1_return_key1"
+      },
+      {
+        "udpId": "ffffffffffffffffffffffffffffffff",
+        "token": "other_device_token",
+        "key": "other_device_key"
+      }
+    ]
+  }
+}

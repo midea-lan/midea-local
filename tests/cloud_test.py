@@ -146,6 +146,8 @@ class CloudTest(IsolatedAsyncioTestCase):
         response = Mock()
         response.read = AsyncMock(
             side_effect=[
+                # get_cloud_keys() lists homes first, then queries v2 per method
+                self.responses["meijucloud_list_home.json"],
                 self.responses["meijucloud_get_keys1.json"],
                 self.responses["meijucloud_get_keys2.json"],
             ],
@@ -312,6 +314,42 @@ class CloudTest(IsolatedAsyncioTestCase):
             ("1", UDP_IDS[1]),
             ("1", UDP_IDS[2]),
         ] * 3
+
+    async def test_meijucloud_get_keys_skips_foreign_udpid(self) -> None:
+        """Test get_cloud_keys ignores tokenlist entries for other devices.
+
+        A home can hold several appliances, so ``tokenlist`` may carry entries
+        whose ``udpId`` belongs to a different device. Taking the first entry
+        instead of the matching one would hand the device someone else's
+        credentials, so the mismatching entry has to be skipped.
+        """
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["meijucloud_list_home.json"],
+                # method 1: our entry, followed by another device's
+                self.responses["meijucloud_get_keys_foreign_udpid.json"],
+                # method 2: nothing for us
+                self.responses["cloud_invalid_response.json"],
+            ],
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "美的美居",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert cloud is not None
+
+        keys = await cloud.get_cloud_keys(100)
+
+        # the matching entry wins; the foreign one never leaks in
+        assert len(keys) == 1
+        assert keys[1]["token"] == "method1_return_token1"
+        assert keys[1]["key"] == "method1_return_key1"
+        assert all(k["token"] != "other_device_token" for k in keys.values())
 
     async def test_meijucloud_get_keys_v2_fallback_to_v1(self) -> None:
         """Test MeijuCloud falls back to the v1 endpoint when v2 returns nothing."""
