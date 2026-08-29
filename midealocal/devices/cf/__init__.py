@@ -3,7 +3,7 @@
 import logging
 import math
 from enum import StrEnum
-from typing import Any, Unpack
+from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
@@ -30,6 +30,9 @@ class DeviceAttributes(StrEnum):
 
 class MideaCFDevice(MideaDevice):
     """Midea CF device."""
+
+    # Generic HVAC mode names, ordered to match the protocol's mode index.
+    hvac_modes: ClassVar[list[str]] = ["off", "auto", "cool", "heat"]
 
     def __init__(
         self,
