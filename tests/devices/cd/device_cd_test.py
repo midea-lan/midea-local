@@ -814,6 +814,13 @@ class TestMideaCDExtendedDevice:
             "silent",
         ]
 
+    def test_baseline_modes_follow_explicit_capabilities(self) -> None:
+        """Explicitly unsupported baseline modes are not advertised."""
+        self.device._attributes[DeviceAttributes.support_electric_mode] = False
+        self.device._attributes[DeviceAttributes.support_smart_mode] = False
+
+        assert self.device.preset_modes == ["energy_save", "hybrid"]
+
     def test_vacation_mode_and_missing_schedule_values_translate_safely(self) -> None:
         """Extended vacation and omitted schedule values use safe translators."""
         message = SimpleNamespace(
@@ -970,6 +977,18 @@ class TestMideaCDExtendedDevice:
         assert status[DeviceAttributes.maintenance_reminder.value] is True
         assert status[DeviceAttributes.maintain_warn.value] is True
         assert self.device.attributes[DeviceAttributes.maintain_warn] is True
+
+    def test_short_status_uses_persisted_extended_capabilities(self) -> None:
+        """Short responses retain learned mode and maintenance semantics."""
+        body = bytearray(57)
+        body[0] = 0x01
+        body[2] = 0x04
+        body[38] = 0x40
+
+        status = self.device.process_message(_build_message(MessageType.query, body))
+
+        assert status[DeviceAttributes.mode.value] == "hybrid"
+        assert status[DeviceAttributes.maintain_warn.value] is True
 
     def test_legacy_maintenance_warning_keeps_raw_bit(self) -> None:
         """Legacy heaters continue to expose the independent raw warning bit."""

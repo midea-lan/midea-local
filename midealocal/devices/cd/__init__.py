@@ -325,7 +325,11 @@ class MideaCDDevice(MideaDevice):
     def preset_modes(self) -> list[str]:
         """Midea CD selectable preset modes."""
         modes = self._mode_map()
-        selectable = ["energy_save", "hybrid", "e_heater", "smart"]
+        selectable = ["energy_save", "hybrid"]
+        if self._attributes.get(DeviceAttributes.support_electric_mode) is not False:
+            selectable.append("e_heater")
+        if self._attributes.get(DeviceAttributes.support_smart_mode) is not False:
+            selectable.append("smart")
         if self._attributes.get(DeviceAttributes.support_heat_pump_mode):
             selectable.append("heat_pump")
         if self._attributes.get(DeviceAttributes.support_boost_mode):
@@ -340,29 +344,18 @@ class MideaCDDevice(MideaDevice):
 
     def _is_extended_water_heater(self, message: object | None = None) -> bool:
         """Detect extended CD support from reported protocol fields."""
-        source = message if message is not None else self._attributes
 
-        def _value(attribute: DeviceAttributes) -> Any:  # noqa: ANN401
+        def _value(source: object, attribute: DeviceAttributes) -> Any:  # noqa: ANN401
             if isinstance(source, dict):
                 return source.get(attribute)
             return getattr(source, attribute, None)
 
-        if _value(DeviceAttributes.new_version_water_heater) is True or isinstance(
-            _value(DeviceAttributes.b0_reserved_flags),
-            int,
-        ):
-            return True
         limits = (
             DeviceAttributes.max_temperature_upper_limit,
             DeviceAttributes.max_temperature_lower_limit,
             DeviceAttributes.disinfection_temperature_upper_limit,
             DeviceAttributes.disinfection_temperature_lower_limit,
         )
-        if any(
-            isinstance(_value(attribute), int | float) and _value(attribute) > 0
-            for attribute in limits
-        ):
-            return True
         capabilities = (
             DeviceAttributes.support_heat_pump_mode,
             DeviceAttributes.support_smart_mode,
@@ -375,7 +368,23 @@ class MideaCDDevice(MideaDevice):
             DeviceAttributes.support_force_e_heating,
             DeviceAttributes.support_tou,
         )
-        return any(_value(attribute) is True for attribute in capabilities)
+
+        def _source_is_extended(source: object) -> bool:
+            if _value(source, DeviceAttributes.new_version_water_heater) is True:
+                return True
+            if isinstance(_value(source, DeviceAttributes.b0_reserved_flags), int):
+                return True
+            if any(
+                isinstance(_value(source, attribute), int | float)
+                and _value(source, attribute) > 0
+                for attribute in limits
+            ):
+                return True
+            return any(_value(source, attribute) is True for attribute in capabilities)
+
+        if message is None:
+            return _source_is_extended(self._attributes)
+        return _source_is_extended(message) or _source_is_extended(self._attributes)
 
     def _mode_map(self, message: object | None = None) -> dict[int, str]:
         """Select the mode map from capabilities reported by the device."""
@@ -491,6 +500,24 @@ class MideaCDDevice(MideaDevice):
             DeviceAttributes.condenser_temperature,
             DeviceAttributes.compressor_temperature,
         ]
+        persistent_capability_attrs = (
+            DeviceAttributes.new_version_water_heater,
+            DeviceAttributes.b0_reserved_flags,
+            DeviceAttributes.max_temperature_upper_limit,
+            DeviceAttributes.max_temperature_lower_limit,
+            DeviceAttributes.disinfection_temperature_upper_limit,
+            DeviceAttributes.disinfection_temperature_lower_limit,
+            DeviceAttributes.support_heat_pump_mode,
+            DeviceAttributes.support_smart_mode,
+            DeviceAttributes.support_negative_temperature,
+            DeviceAttributes.support_boost_mode,
+            DeviceAttributes.support_silent_mode,
+            DeviceAttributes.support_remaining_hot_water,
+            DeviceAttributes.support_electric_mode,
+            DeviceAttributes.support_auto_disinfect,
+            DeviceAttributes.support_force_e_heating,
+            DeviceAttributes.support_tou,
+        )
         new_status = self.update_attributes_from_message(
             message,
             {
@@ -518,6 +545,10 @@ class MideaCDDevice(MideaDevice):
                     None,
                     SKIP_ATTRIBUTE,
                 ),
+                **{
+                    attr: sentinel_translator(None, SKIP_ATTRIBUTE)
+                    for attr in persistent_capability_attrs
+                },
                 DeviceAttributes.auto_sterilize_week: self._translate_sterilize_time(
                     MessageSetSterilize.clamp_week,
                 ),

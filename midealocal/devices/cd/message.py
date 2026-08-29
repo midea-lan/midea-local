@@ -331,12 +331,11 @@ class MessageSetSterilize(MessageCDBase):
       bodyBytes[3] = autoSterilizeWeek
       bodyBytes[4] = autoSterilizeHour
       bodyBytes[5] = autoSterilizeMinute
+      bodyBytes[6] = disinfectionTemperature (extended protocol only)
 
-    The official Lua protocol names bodyBytes[3] autoSterilizeWeek, but the app
-    also displays the disinfection setpoint from nearby status bytes. Toggling
-    this command from HA has been observed to make the app show raw byte values
-    as temperatures, so callers must treat this command as read-only until the
-    exact immediate-disinfection write payload is known.
+    The extended 7-byte payload is writable after the device reports extended
+    protocol support. Legacy or unknown devices keep the 6-byte form and must
+    not receive the appended disinfection temperature.
     """
 
     # Valid range for disinfection temperature (°C)
