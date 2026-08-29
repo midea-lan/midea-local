@@ -928,6 +928,32 @@ class TestMideaCDExtendedDevice:
         assert isinstance(message, MessageSetMaintenance)
         assert message.body[5] == 0x1B
 
+    def test_maintenance_warning_uses_canonical_extended_flag(self) -> None:
+        """Extended heaters mirror the stable canonical maintenance flag."""
+        body = bytearray(69)
+        body[0] = 0x01
+        body[38] = 0x40  # canonical true, legacy 0x80 false
+        body[57] = 70
+        body[58] = 35
+
+        status = self.device.process_message(_build_message(MessageType.query, body))
+
+        assert status[DeviceAttributes.maintenance_reminder.value] is True
+        assert status[DeviceAttributes.maintain_warn.value] is True
+        assert self.device.attributes[DeviceAttributes.maintain_warn] is True
+
+    def test_legacy_maintenance_warning_keeps_raw_bit(self) -> None:
+        """Legacy heaters continue to expose the independent raw warning bit."""
+        device = _make_device()
+        body = bytearray(57)
+        body[0] = 0x01
+        body[38] = 0x40
+
+        status = device.process_message(_build_message(MessageType.query, body))
+
+        assert status[DeviceAttributes.maintenance_reminder.value] is True
+        assert status[DeviceAttributes.maintain_warn.value] is False
+
     def test_auto_disinfect_remains_read_only(self) -> None:
         """Automatic disinfection status is not exposed as an invented toggle."""
         with patch.object(self.device, "build_send") as mock_send:

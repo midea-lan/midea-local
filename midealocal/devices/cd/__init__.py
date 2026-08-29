@@ -488,7 +488,7 @@ class MideaCDDevice(MideaDevice):
             DeviceAttributes.condenser_temperature,
             DeviceAttributes.compressor_temperature,
         ]
-        return self.update_attributes_from_message(
+        new_status = self.update_attributes_from_message(
             message,
             {
                 # Only update mode on a recognised mode key, to prevent
@@ -526,6 +526,18 @@ class MideaCDDevice(MideaDevice):
                 ),
             },
         )
+        # Extended heaters report the stable maintenance state through the
+        # canonical 0x40/B1 flag; their legacy 0x80 bit can flap independently.
+        # Mirror the canonical value so existing HA entity IDs remain stable.
+        maintenance_reminder = new_status.get(
+            str(DeviceAttributes.maintenance_reminder),
+        )
+        if isinstance(maintenance_reminder, bool) and self._is_extended_water_heater(
+            message,
+        ):
+            self._attributes[DeviceAttributes.maintain_warn] = maintenance_reminder
+            new_status[str(DeviceAttributes.maintain_warn)] = maintenance_reminder
+        return new_status
 
     def _set_maintenance_reminder(self, value: bool) -> None:
         """Send the dedicated B0 maintenance flag without changing other flags."""
