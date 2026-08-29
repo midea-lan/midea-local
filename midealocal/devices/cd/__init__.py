@@ -364,6 +364,9 @@ class MideaCDDevice(MideaDevice):
         ):
             return True
         capabilities = (
+            DeviceAttributes.support_heat_pump_mode,
+            DeviceAttributes.support_smart_mode,
+            DeviceAttributes.support_negative_temperature,
             DeviceAttributes.support_boost_mode,
             DeviceAttributes.support_silent_mode,
             DeviceAttributes.support_remaining_hot_water,
@@ -372,7 +375,7 @@ class MideaCDDevice(MideaDevice):
             DeviceAttributes.support_force_e_heating,
             DeviceAttributes.support_tou,
         )
-        return any(isinstance(_value(attribute), bool) for attribute in capabilities)
+        return any(_value(attribute) is True for attribute in capabilities)
 
     def _mode_map(self, message: object | None = None) -> dict[int, str]:
         """Select the mode map from capabilities reported by the device."""

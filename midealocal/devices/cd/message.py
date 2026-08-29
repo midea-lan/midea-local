@@ -639,13 +639,6 @@ class CDGeneralMessageBody(MessageBody):
             not smart_flag and self.mode == 0x00 and self.typeinfo == 0x04  # noqa: PLR2004
         ):
             self.mode = 0x04
-        extended_mode_flags = (
-            body[STATUS_EXTENDED_MODE_FLAGS_INDEX]
-            if len(body) > STATUS_EXTENDED_MODE_FLAGS_INDEX
-            else 0
-        )
-        self.holiday_mode = (extended_mode_flags & 0x01) > 0
-        self.hybrid_motion_mode = (extended_mode_flags & 0x02) > 0
         self.support_heat_pump_mode = (
             body[STATUS_SUPPORT_HEAT_PUMP_INDEX] == 0x01
             if len(body) > STATUS_SUPPORT_HEAT_PUMP_INDEX
@@ -661,6 +654,26 @@ class CDGeneralMessageBody(MessageBody):
             if len(body) > STATUS_SUPPORT_NEGATIVE_INDEX
             else None
         )
+        extended_support_indices = (
+            STATUS_SUPPORT_HEAT_PUMP_INDEX,
+            STATUS_SUPPORT_SMART_INDEX,
+            STATUS_SUPPORT_NEGATIVE_INDEX,
+            STATUS_MAX_TEMP_UPPER_INDEX,
+            STATUS_MAX_TEMP_LOWER_INDEX,
+            STATUS_DISINFECT_TEMP_UPPER_INDEX,
+            STATUS_DISINFECT_TEMP_LOWER_INDEX,
+            STATUS_CAPABILITY_FLAGS_INDEX,
+        )
+        has_extended_support = any(
+            len(body) > index and body[index] > 0 for index in extended_support_indices
+        )
+        extended_mode_flags = (
+            body[STATUS_EXTENDED_MODE_FLAGS_INDEX]
+            if has_extended_support and len(body) > STATUS_EXTENDED_MODE_FLAGS_INDEX
+            else 0
+        )
+        self.holiday_mode = (extended_mode_flags & 0x01) > 0
+        self.hybrid_motion_mode = (extended_mode_flags & 0x02) > 0
         if self.mode == 0x00:
             if (extended_mode_flags & 0x04) > 0:
                 self.mode = 0x05

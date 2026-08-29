@@ -791,6 +791,14 @@ class TestMideaCDExtendedDevice:
         assert len(queries) == 4
         assert isinstance(queries[-1], MessageQueryB1)
 
+    def test_false_capabilities_do_not_enable_extended_protocol(self) -> None:
+        """Only positive capability evidence enables extended semantics."""
+        device = _make_device()
+        device._attributes[DeviceAttributes.support_boost_mode] = False
+        device._attributes[DeviceAttributes.support_silent_mode] = False
+
+        assert device._is_extended_water_heater() is False
+
     def test_optional_modes_follow_reported_capabilities(self) -> None:
         """Optional modes appear only after their capability is reported."""
         self.device._attributes[DeviceAttributes.support_heat_pump_mode] = True

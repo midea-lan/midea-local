@@ -346,7 +346,19 @@ class TestCDGeneralMessageBody:
         """Each reported extended mode bit maps to its protocol mode."""
         body = bytearray(69)
         body[52] = flag
+        body[53] = 0x01
         assert CDGeneralMessageBody(body).mode == mode
+
+    def test_extended_mode_flags_require_positive_support(self) -> None:
+        """Legacy-length padding does not activate extended mode semantics."""
+        body = bytearray(69)
+        body[52] = 0x10
+
+        parsed = CDGeneralMessageBody(body)
+
+        assert parsed.mode == 0x00
+        assert parsed.holiday_mode is False
+        assert parsed.hybrid_motion_mode is False
 
     # Real-device status bodies (body_type=0x01):
     #   msg1: 70C disinfection, sterilize ON
