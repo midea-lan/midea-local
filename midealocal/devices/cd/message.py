@@ -1,6 +1,6 @@
 """Midea local CD message."""
 
-from typing import Any
+from typing import Any, NotRequired, TypedDict
 
 from midealocal.const import DeviceType
 from midealocal.crc8 import calculate
@@ -30,6 +30,41 @@ BODY_TYPE_DAILY = 0x03
 BODY_TYPE_STERILIZE = 0x06
 BODY_TYPE_B0 = 0xB0
 BODY_TYPE_B1 = 0xB1
+
+
+class WeeklyTimer(TypedDict):
+    """One writable weekly timer slot."""
+
+    effect: NotRequired[bool]
+    opentime: NotRequired[int | float | str]
+    closetime: NotRequired[int | float | str]
+    temperature: NotRequired[int | float | str]
+    mode: NotRequired[int | float | str]
+
+
+WeeklySchedule = dict[int, list[WeeklyTimer]]
+
+
+class DailyTimer(TypedDict):
+    """One writable daily timer slot."""
+
+    effect: NotRequired[bool]
+    openhour: NotRequired[int | float | str]
+    openmin: NotRequired[int | float | str]
+    closehour: NotRequired[int | float | str]
+    closemin: NotRequired[int | float | str]
+    temperature: NotRequired[int | float | str]
+    mode: NotRequired[int | float | str]
+
+
+class DailyTimerSchedule(TypedDict):
+    """Writable daily timer programme."""
+
+    amount: NotRequired[int | float | str]
+    single_timer_on: NotRequired[bool]
+    single_timer_off: NotRequired[bool]
+    timers: NotRequired[list[DailyTimer]]
+
 
 STATUS_SCHEDULE_MODE_INDEX = 56
 STATUS_MAX_TEMP_UPPER_INDEX = 57
@@ -473,7 +508,7 @@ class MessageSetWeekly(MessageCDBase):
             message_type=MessageType.set,
             body_type=ListTypes.X07,
         )
-        self.weekly_schedule: dict[int, list[dict[str, Any]]] | None = None
+        self.weekly_schedule: WeeklySchedule | None = None
         self.maintenance_reminder: bool = False
         self.maintenance_warn: bool = False
 
@@ -517,7 +552,7 @@ class MessageSetDaily(MessageCDBase):
             message_type=MessageType.set,
             body_type=ListTypes.X02,
         )
-        self.daily_timer_schedule: dict[str, Any] | None = None
+        self.daily_timer_schedule: DailyTimerSchedule | None = None
 
     @property
     def _body(self) -> bytearray:
@@ -932,12 +967,12 @@ class CDWeeklyScheduleBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         """Initialize CD message weekly schedule body."""
         super().__init__(body)
-        self.weekly_schedule: dict | None = None
+        self.weekly_schedule: WeeklySchedule | None = None
         if len(body) > WEEKLY_SCHEDULE_BODY_LENGTH:
             _effect_masks = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20]
-            schedule: dict = {}
+            schedule: WeeklySchedule = {}
             for day in range(7):
-                slots = []
+                slots: list[WeeklyTimer] = []
                 effects_byte = body[2 + day]
                 for timer in range(6):
                     offset = 9 + day * 24 + timer * 4
@@ -990,10 +1025,10 @@ class CDDailyTimerBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         """Initialize CD message daily timer body."""
         super().__init__(body)
-        self.daily_timer_schedule: dict | None = None
+        self.daily_timer_schedule: DailyTimerSchedule | None = None
         if len(body) > DAILY_TIMER_BODY_LENGTH:
             _effect_masks = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20]
-            timers = []
+            timers: list[DailyTimer] = []
             for slot in range(6):
                 base = 4 + slot * 6
                 timers.append(
