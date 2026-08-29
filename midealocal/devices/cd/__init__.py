@@ -613,6 +613,8 @@ class MideaCDDevice(MideaDevice):
     @staticmethod
     def _is_integer_compatible(value: Any) -> bool:  # noqa: ANN401
         """Return whether a schedule value can be encoded as an integer."""
+        if isinstance(value, bool):
+            return False
         try:
             int(value)
         except (TypeError, ValueError, OverflowError):
