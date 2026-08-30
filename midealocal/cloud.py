@@ -80,6 +80,11 @@ SUPPORTED_CLOUDS: dict[str, Any] = {
         "app_id": "1203",
         "app_key": "09c4d09f0da1513bb62dc7b6b0af9c11",
         "api_url": "https://app.iolife.toshiba-lifestyle.com",
+        "app_version": "3.4.0",
+        # The API does not return an enterpriseCode, so this is the fallback.
+        # 0x0008 is Toshiba's code: the app ships it as APP_ENTERPRISE
+        # and it prefixes every T_0008_* protocol file.
+        "manufacturer_code": "0008",
     },
 }
 
@@ -1088,16 +1093,26 @@ class MideaAirCloud(MideaCloud):
         return str(fnm) if fnm else None
 
 
-_IOLIFE_APP_VERSION = "3.4.0"
-# All Toshiba IoLife devices carry manufacturer code 0x0008 -- the same value the
-# app ships as APP_ENTERPRISE and the prefix of its T_0008_* protocol files. The
-# IoLife appliance list does not return an enterpriseCode field, so this is the
-# fallback for it.
-_IOLIFE_MANUFACTURER_CODE = "0008"
-
-
 class ToshibaIOLife(MideaAirCloud):
     """Toshiba IOLife cloud."""
+
+    def __init__(
+        self,
+        cloud_name: str,
+        session: ClientSession,
+        account: str,
+        password: str,
+    ) -> None:
+        """Initialize Toshiba IOLife cloud."""
+        super().__init__(
+            cloud_name=cloud_name,
+            session=session,
+            account=account,
+            password=password,
+        )
+        cloud_data = cast("dict[str, Any]", SUPPORTED_CLOUDS[cloud_name])
+        self._app_version: str = cloud_data["app_version"]
+        self._manufacturer_code: str = cloud_data["manufacturer_code"]
 
     def _decrypt_sn(self, encrypted_sn: str) -> str:
         """Decrypt SN blob from home/page/list/info.
@@ -1126,7 +1141,8 @@ class ToshibaIOLife(MideaAirCloud):
             sn_bytes = bytes.fromhex(encrypted_sn)
             plain = unpad(AES.new(data_key[:16], AES.MODE_ECB).decrypt(sn_bytes), 16)
             return plain.decode()
-        except Exception:  # noqa: BLE001
+        except ValueError:
+            _LOGGER.debug("Failed to decrypt appliance SN")
             return ""
 
     async def list_appliances(
@@ -1135,7 +1151,7 @@ class ToshibaIOLife(MideaAirCloud):
     ) -> dict[int, dict[str, Any]]:
         """Get Toshiba IOLife devices."""
         data = self._make_general_data()
-        data["appVersion"] = _IOLIFE_APP_VERSION
+        data["appVersion"] = self._app_version
         # home/page/list/info returns result as a bare list, not {list: [...]}
         page_list: Any = await self._api_request(
             endpoint="/v1/appliance/user/home/page/list/info",
@@ -1174,7 +1190,7 @@ class ToshibaIOLife(MideaAirCloud):
                 "model_number": model_number,
                 "manufacturer_code": appliance.get(
                     "enterpriseCode",
-                    _IOLIFE_MANUFACTURER_CODE,
+                    self._manufacturer_code,
                 ),
                 "model": sn8,
                 "online": appliance.get("onlineStatus") == "1",

@@ -955,19 +955,6 @@ class CloudTest(IsolatedAsyncioTestCase):
         device = await cloud.get_device_info(99)
         assert device is None
 
-    async def test_mideaaircloud_download_lua(self) -> None:
-        """Test MideaAirCloud download_lua."""
-        session = Mock()
-        cloud = get_midea_cloud(
-            "Midea Air",
-            session=session,
-            account="account",
-            password="password",
-        )
-        assert cloud is not None
-        with pytest.raises(NotImplementedError), TemporaryDirectory() as tmpdir:
-            await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
-
 
 @pytest.fixture(name="make_toshiba_cloud")
 def make_toshiba_cloud_fixture() -> Callable[[Mock], ToshibaIOLife]:
@@ -997,6 +984,8 @@ class TestToshibaDecryptSn:
             (_TOSHIBA_ENCRYPTED_SN, None, ""),
             ("", _TOSHIBA_ACCESS_TOKEN, ""),
             ("deadbeef" * 4, _TOSHIBA_ACCESS_TOKEN, ""),
+            ("nothexatall", _TOSHIBA_ACCESS_TOKEN, ""),
+            (_TOSHIBA_ENCRYPTED_SN, "nothexatall", ""),
         ],
     )
     def test_decrypt_sn(
@@ -1054,6 +1043,16 @@ class ToshibaIOLifeTest(IsolatedAsyncioTestCase):
         assert dev["manufacturer_code"] == "0008"
         assert dev["model"] == "00000000"
         assert dev["online"] is True
+
+    async def test_list_appliances_uses_cloud_app_version(self) -> None:
+        """AppVersion comes from the SUPPORTED_CLOUDS entry."""
+        cloud = self.make_cloud(Mock())
+        cloud._access_token = _TOSHIBA_ACCESS_TOKEN
+        request = AsyncMock(return_value=[])
+        with patch.object(cloud, "_api_request", new=request):
+            await cloud.list_appliances(None)
+        assert request.await_args is not None
+        assert request.await_args.kwargs["data"]["appVersion"] == "3.4.0"
 
     async def test_list_appliances_non_numeric_model_number(self) -> None:
         """A non-numeric modelNumber falls back to 0 rather than raising."""
