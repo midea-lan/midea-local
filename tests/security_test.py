@@ -1,6 +1,6 @@
 """Midea local security test."""
 
-from hashlib import sha256
+from hashlib import md5, sha256
 
 import pytest
 from Crypto.Util.strxor import strxor
@@ -172,6 +172,16 @@ class TestMideaAirSecurity:
         assert (
             security.sign("http://host/v1/path", {"b": "2", "a": "1"}, "random")
             == "caf39a6385856d05eeb52e12657c753c95199834960a6b8ffdd69cd2c0b9c195"
+        )
+
+    def test_decrypt_appliance_lua(self) -> None:
+        """Test the legacy lua blob decrypts with the md5(app_key) ECB key."""
+        security = MideaAirSecurity("login_key")
+        # md5 mirrors the production key derivation; not used for security here.
+        key = md5(b"login_key").hexdigest()[:16].encode("ascii")  # noqa: S324
+        encrypted = security.aes_encrypt(b"function test() return 1 end", key).hex()
+        assert (
+            security.decrypt_appliance_lua(encrypted) == "function test() return 1 end"
         )
 
 
