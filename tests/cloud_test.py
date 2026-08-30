@@ -1054,6 +1054,33 @@ class ToshibaIOLifeTest(IsolatedAsyncioTestCase):
         assert request.await_args is not None
         assert request.await_args.kwargs["data"]["appVersion"] == "3.4.0"
 
+    async def test_list_appliances_skips_malformed_entries(self) -> None:
+        """Entries with an unusable id or type are skipped, not fatal."""
+        cloud = self.make_cloud(Mock())
+        cloud._access_token = _TOSHIBA_ACCESS_TOKEN
+        good = {
+            "id": "12345678",
+            "type": "0xAC",
+            "name": "Living Room AC",
+            "modelNumber": "10",
+            "onlineStatus": "1",
+        }
+        with patch.object(
+            cloud,
+            "_api_request",
+            new=AsyncMock(
+                return_value=[
+                    {"id": "not-a-number", "type": "0xAC"},
+                    {"id": "1", "type": "not-hex"},
+                    {"type": "0xAC"},
+                    {"id": "2", "type": None},
+                    good,
+                ],
+            ),
+        ):
+            appliances = await cloud.list_appliances(None)
+        assert list(appliances) == [12345678]
+
     async def test_list_appliances_non_numeric_model_number(self) -> None:
         """A non-numeric modelNumber falls back to 0 rather than raising."""
         cloud = self.make_cloud(Mock())
