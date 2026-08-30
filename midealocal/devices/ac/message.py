@@ -60,11 +60,13 @@ XC1_SUBBODY_TYPE_47 = 0x47
 XC1_SUBBODY_TYPE_INDEX = 3
 XC1_HUMIDITY_INDEX = 4
 XC1_CONSUMPTION_MIN_LENGTH = 19
-XC1_GROUP_FIVE_DIAGNOSTICS_MIN_LENGTH = 11
 XC1_OPERATING_TIME_MIN_LENGTH = 19
 
 # Group data query: the third payload byte selects the group, 0x40 | group number.
 XC1_GROUP_QUERY_BASE = 0x40
+XC1_GROUP_FIVE_TARGET_OUTDOOR_FAN_SPEED_INDEX = 8
+XC1_GROUP_FIVE_TARGET_EXPANSION_VALVE_ANGLE_INDEX = 9
+XC1_GROUP_FIVE_DEFROST_STAGE_INDEX = 10
 # Minimum body length required to parse each group data response.
 XC1_GROUP_ONE_MIN_LENGTH = 15
 XC1_GROUP_TWO_MIN_LENGTH = 9
@@ -1440,15 +1442,20 @@ class XC1MessageBody(MessageBody):
 
     def _parse_group_five(self, body: bytearray) -> None:
         """Parse group 5 data: humidity and outdoor-unit targets."""
-        if len(body) <= XC1_HUMIDITY_INDEX:
-            return
         # Indoor humidity should match the XBB/XA1 message when available.
-        self.indoor_humidity = body[XC1_HUMIDITY_INDEX] or None
-        if len(body) < XC1_GROUP_FIVE_DIAGNOSTICS_MIN_LENGTH:
-            return
-        self.target_outdoor_fan_speed = body[8] * XC1_FAN_SPEED_FACTOR
-        self.target_expansion_valve_angle = body[9] * XC1_FAN_SPEED_FACTOR
-        self.defrost_stage = body[10]
+        self.indoor_humidity = self.read_byte(body, XC1_HUMIDITY_INDEX) or None
+        self.target_outdoor_fan_speed = (
+            self.read_byte(body, XC1_GROUP_FIVE_TARGET_OUTDOOR_FAN_SPEED_INDEX)
+            * XC1_FAN_SPEED_FACTOR
+        )
+        self.target_expansion_valve_angle = (
+            self.read_byte(body, XC1_GROUP_FIVE_TARGET_EXPANSION_VALVE_ANGLE_INDEX)
+            * XC1_FAN_SPEED_FACTOR
+        )
+        self.defrost_stage = self.read_byte(
+            body,
+            XC1_GROUP_FIVE_DEFROST_STAGE_INDEX,
+        )
 
     def _parse_group_seven(self, body: bytearray) -> None:
         """Parse group 7 data: real time compressor power."""
