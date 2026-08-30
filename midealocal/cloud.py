@@ -79,7 +79,7 @@ SUPPORTED_CLOUDS: dict[str, Any] = {
         "class_name": "ToshibaIOLife",
         "app_id": "1203",
         "app_key": "09c4d09f0da1513bb62dc7b6b0af9c11",
-        "api_url": "https://app.iolife.toshiba-lifestyle.com",  # codespell:ignore
+        "api_url": "https://app.iolife.toshiba-lifestyle.com",
     },
 }
 
