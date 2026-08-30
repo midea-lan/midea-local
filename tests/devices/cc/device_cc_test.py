@@ -8,6 +8,9 @@ from midealocal.const import ProtocolVersion
 from midealocal.devices.cc import DeviceAttributes, MideaCCDevice
 from midealocal.devices.cc.message import (
     CCControlId,
+    CCFanSpeed3Level,
+    CCFanSpeed7Level,
+    CCFanSpeedFE,
     MessageFEControl,
     MessageQuery,
     MessageSet,
@@ -115,9 +118,7 @@ class TestMideaCCDevice:
         assert self.device.attributes[DeviceAttributes.temperature_precision] == 1
         assert self.device.attributes[DeviceAttributes.aux_heating] is False
         assert new_status[DeviceAttributes.fan_speed.value] == "level_5"
-        assert self.device.fan_modes == list(
-            MideaCCDevice._fan_speeds_7level.values(),
-        )
+        assert self.device.fan_modes == [m.name.lower() for m in CCFanSpeed7Level]
 
     def test_process_message_legacy_3level_and_aux(self) -> None:
         """3-level flag selects the 3-level table; aux heat status 1 sets aux."""
@@ -129,9 +130,7 @@ class TestMideaCCDevice:
         assert self.device.attributes[DeviceAttributes.aux_heat_status] == 1
         assert self.device.attributes[DeviceAttributes.aux_heating] is True
         assert new_status[DeviceAttributes.aux_heating.value] is True
-        assert self.device.fan_modes == list(
-            MideaCCDevice._fan_speeds_3level.values(),
-        )
+        assert self.device.fan_modes == [m.name.lower() for m in CCFanSpeed3Level]
 
     def test_process_message_aux_heating_reset(self) -> None:
         """Aux heating flips back to False when heat status clears."""
@@ -167,7 +166,7 @@ class TestMideaCCDevice:
         assert self.device.attributes[DeviceAttributes.fan_speed] == "level_5"
         assert self.device.attributes[DeviceAttributes.swing] is True
         assert new_status[DeviceAttributes.fan_speed.value] == "level_5"
-        assert self.device.fan_modes == list(MideaCCDevice._fan_speeds_fe.values())
+        assert self.device.fan_modes == [m.name.lower() for m in CCFanSpeedFE]
 
     def test_make_message_set_maps_fan_speed(self) -> None:
         """make_message_set maps the fan speed name back to its raw key."""
@@ -289,6 +288,97 @@ class TestMideaCCDevice:
             msg = mock_send.call_args[0][0]
             assert msg.target_temperature == 21.0
             assert msg.power is False
+
+    def test_hvac_modes(self) -> None:
+        """Test hvac_modes lists every generic HVAC mode name."""
+        assert self.device.hvac_modes == [
+            "off",
+            "fan_only",
+            "dry",
+            "heat",
+            "cool",
+            "auto",
+        ]
+
+    def test_fan_mode_before_and_after_speed_table_resolved(self) -> None:
+        """Test fan_mode is None until the fan speed table is known."""
+        assert self.device.fan_mode is None
+        self.device.process_message(_legacy_frame(fan_speed=0x08))
+        assert (
+            self.device.fan_mode == self.device.attributes[DeviceAttributes.fan_speed]
+        )
+        assert isinstance(self.device.fan_mode, str)
+
+    def test_set_fan_mode(self) -> None:
+        """Test set_fan_mode writes the fan_speed attribute."""
+        self.device.process_message(_legacy_frame(fan_speed=0x08))
+        fan_modes = self.device.fan_modes
+        assert fan_modes is not None
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_fan_mode(fan_modes[0])
+            mock_send.assert_called_once()
+
+    def test_set_fan_mode_unresolved_table_raises(self) -> None:
+        """Test set_fan_mode raises before the fan speed table is known."""
+        assert self.device.fan_modes is None
+        with (
+            patch.object(self.device, "build_send") as mock_send,
+            pytest.raises(ValueError, match="Unsupported fan mode"),
+        ):
+            self.device.set_fan_mode("medium")
+        mock_send.assert_not_called()
+
+    def test_set_fan_mode_unsupported_value_raises(self) -> None:
+        """Test set_fan_mode raises for a mode not in the resolved table."""
+        self.device.process_message(_legacy_frame(fan_speed=0x08))
+        with (
+            patch.object(self.device, "build_send") as mock_send,
+            pytest.raises(ValueError, match="Unsupported fan mode"),
+        ):
+            self.device.set_fan_mode("not_a_real_mode")
+        mock_send.assert_not_called()
+
+    def test_swing_mode(self) -> None:
+        """Test swing_mode is derived from the swing attribute."""
+        self.device._attributes[DeviceAttributes.swing] = False
+        assert self.device.swing_mode == "off"
+        self.device._attributes[DeviceAttributes.swing] = True
+        assert self.device.swing_mode == "on"
+
+    def test_swing_mode_invalid_type_returns_none(self) -> None:
+        """Test swing_mode returns None for an unexpected attribute type."""
+        self.device._attributes[DeviceAttributes.swing] = None
+        assert self.device.swing_mode is None
+
+    def test_swing_modes(self) -> None:
+        """Test swing_modes lists off/on."""
+        assert self.device.swing_modes == ["off", "on"]
+
+    def test_set_swing_mode(self) -> None:
+        """Test set_swing_mode writes the swing attribute."""
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_swing_mode("on")
+            msg = mock_send.call_args[0][0]
+            assert msg.swing is True
+
+    def test_set_swing_mode_unsupported_value_raises(self) -> None:
+        """Test set_swing_mode raises for a mode not in swing_modes."""
+        with (
+            patch.object(self.device, "build_send") as mock_send,
+            pytest.raises(ValueError, match="Unsupported swing mode"),
+        ):
+            self.device.set_swing_mode("auto")
+        mock_send.assert_not_called()
+
+    def test_temperature_step(self) -> None:
+        """Test temperature_step mirrors temperature_precision."""
+        self.device._attributes[DeviceAttributes.temperature_precision] = 1
+        assert self.device.temperature_step == 1.0
+
+    def test_temperature_step_invalid_type_returns_none(self) -> None:
+        """Test temperature_step returns None for an unexpected attribute type."""
+        self.device._attributes[DeviceAttributes.temperature_precision] = None
+        assert self.device.temperature_step is None
 
 
 class TestMideaCCDeviceFEControl:
