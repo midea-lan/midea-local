@@ -1037,6 +1037,28 @@ class ToshibaIOLifeTest(IsolatedAsyncioTestCase):
         assert dev["model"] == "00000000"
         assert dev["online"] is True
 
+    async def test_list_appliances_non_numeric_model_number(self) -> None:
+        """A non-numeric modelNumber falls back to 0 rather than raising."""
+        cloud = _make_toshiba_cloud(Mock())
+        cloud._access_token = _TOSHIBA_ACCESS_TOKEN
+        with patch.object(
+            cloud,
+            "_api_request",
+            new=AsyncMock(
+                return_value=[
+                    {
+                        "id": "12345678",
+                        "type": "0xAC",
+                        "name": "Living Room AC",
+                        "modelNumber": "RAS-X221DZ",
+                        "onlineStatus": "1",
+                    },
+                ],
+            ),
+        ):
+            appliances = await cloud.list_appliances(None)
+        assert appliances[12345678]["model_number"] == 0
+
     async def test_list_appliances_api_failure(self) -> None:
         """list_appliances returns empty dict when the API returns an error."""
         session = Mock()

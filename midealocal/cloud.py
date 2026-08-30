@@ -1154,25 +1154,29 @@ class ToshibaIOLife(MideaAirCloud):
                 or appliance.get("id") == "virtual_ag_0xAC"
             ):
                 continue
-            model_number = int(appliance.get("modelNumber", 0))
             try:
                 device_id = int(appliance["id"])
                 device_type = int(appliance["type"], 16)
             except (ValueError, KeyError, TypeError):
                 _LOGGER.debug("Skipping malformed appliance entry: %s", appliance)
                 continue
+            try:
+                model_number = int(appliance.get("modelNumber", 0))
+            except (ValueError, TypeError):
+                model_number = 0
             sn = self._decrypt_sn(appliance.get("sn", ""))
+            sn8 = sn[9:17] if len(sn) > SN8_MIN_SERIAL_LENGTH else ""
             appliances[device_id] = {
                 "name": appliance.get("name"),
                 "type": device_type,
                 "sn": sn,
-                "sn8": sn[9:17] if len(sn) > SN8_MIN_SERIAL_LENGTH else "",
+                "sn8": sn8,
                 "model_number": model_number,
                 "manufacturer_code": appliance.get(
                     "enterpriseCode",
                     _IOLIFE_MANUFACTURER_CODE,
                 ),
-                "model": sn[9:17] if len(sn) > SN8_MIN_SERIAL_LENGTH else "",
+                "model": sn8,
                 "online": appliance.get("onlineStatus") == "1",
             }
 
