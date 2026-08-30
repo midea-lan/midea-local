@@ -4,7 +4,7 @@ import logging
 import warnings
 from collections.abc import Callable
 from enum import IntEnum
-from typing import Any, SupportsIndex, cast
+from typing import Any, SupportsIndex, cast, overload
 
 from typing_extensions import deprecated
 
@@ -763,8 +763,24 @@ class MessageBody:
         return ListTypes(self._data[0])
 
     @staticmethod
-    def read_byte(body: bytearray, byte: int, default_value: int = 0) -> int:
-        """Read bytes for message body."""
+    @overload
+    def read_byte(
+        body: bytearray,
+        byte: int,
+        default_value: None = None,
+    ) -> int | None: ...
+
+    @staticmethod
+    @overload
+    def read_byte(body: bytearray, byte: int, default_value: int) -> int: ...
+
+    @staticmethod
+    def read_byte(
+        body: bytearray,
+        byte: int,
+        default_value: int | None = None,
+    ) -> int | None:
+        """Read a byte, returning the requested fallback when it is absent."""
         return body[byte] if len(body) > byte else default_value
 
     def parse_all(self) -> None:

@@ -1459,7 +1459,7 @@ class XC1MessageBody(MessageBody):
         # in units of 8 RPM. The engineer display labels the matching raw byte
         # as set speed, but group 5 exposes that target separately.
         self.outdoor_fan_speed = (
-            self.read_byte(body, XC1_GROUP_THREE_SPEED_OFFSET) * XC1_FAN_SPEED_FACTOR
+            self.read_byte(body, XC1_GROUP_THREE_SPEED_OFFSET, 0) * XC1_FAN_SPEED_FACTOR
         )
 
     def _parse_group_seven(self, body: bytearray) -> None:

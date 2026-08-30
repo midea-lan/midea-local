@@ -283,40 +283,40 @@ class MessageB8GenericBody(MessageBody):
         """Initialize B8 message generic body."""
         super().__init__(body)
         try:
-            self.work_status = B8WorkStatus(self.read_byte(body, 1 + offset))
+            self.work_status = B8WorkStatus(self.read_byte(body, 1 + offset, 0))
         except ValueError:
             self.work_status = B8WorkStatus.NONE
         try:
-            self.function_type = B8FunctionType(self.read_byte(body, 2 + offset))
+            self.function_type = B8FunctionType(self.read_byte(body, 2 + offset, 0))
         except ValueError:
             self.function_type = B8FunctionType.NONE
         try:
-            self.control_type = B8ControlType(self.read_byte(body, 3 + offset))
+            self.control_type = B8ControlType(self.read_byte(body, 3 + offset, 0))
         except ValueError:
             self.control_type = B8ControlType.NONE
         try:
-            self.move_direction = B8Moviment(self.read_byte(body, 4 + offset))
+            self.move_direction = B8Moviment(self.read_byte(body, 4 + offset, 0))
         except ValueError:
             self.move_direction = B8Moviment.NONE
         try:
-            self.clean_mode = B8CleanMode(self.read_byte(body, 5 + offset))
+            self.clean_mode = B8CleanMode(self.read_byte(body, 5 + offset, 0))
         except ValueError:
             self.clean_mode = B8CleanMode.NONE
         try:
-            self.fan_level = B8FanLevel(self.read_byte(body, 6 + offset))
+            self.fan_level = B8FanLevel(self.read_byte(body, 6 + offset, 0))
         except ValueError:
             self.fan_level = B8FanLevel.OFF
-        self.area = self.read_byte(body, 7 + offset)
+        self.area = self.read_byte(body, 7 + offset, 0)
         try:
-            self.water_level = B8WaterLevel(self.read_byte(body, 8 + offset))
+            self.water_level = B8WaterLevel(self.read_byte(body, 8 + offset, 0))
         except ValueError:
             self.water_level = B8WaterLevel.OFF
-        self.voice_volume = min(self.read_byte(body, 9 + offset), 100)
-        self.have_reserve_task = self.read_byte(body, 10 + offset) != 0
-        self.battery_percent = min(self.read_byte(body, 11 + offset), 100)
-        self.work_time = self.read_byte(body, 12 + offset)
+        self.voice_volume = min(self.read_byte(body, 9 + offset, 0), 100)
+        self.have_reserve_task = self.read_byte(body, 10 + offset, 0) != 0
+        self.battery_percent = min(self.read_byte(body, 11 + offset, 0), 100)
+        self.work_time = self.read_byte(body, 12 + offset, 0)
 
-        status_byte = self.read_byte(body, 13 + offset)
+        status_byte = self.read_byte(body, 13 + offset, 0)
         self.uv_switch = (status_byte & 0x01) > 0
         self.wifi_switch = (status_byte & 0x02) > 0
         self.voice_switch = (status_byte & 0x04) > 0
@@ -324,24 +324,24 @@ class MessageB8GenericBody(MessageBody):
         self.device_error = (status_byte & 0x80) > 0
 
         try:
-            self.error_type = B8ErrorType(self.read_byte(body, 14 + offset))
+            self.error_type = B8ErrorType(self.read_byte(body, 14 + offset, 0))
         except ValueError:
             self.error_type = B8ErrorType.NO
 
         try:
-            self.mop = B8MopState(self.read_byte(body, 16 + offset))
+            self.mop = B8MopState(self.read_byte(body, 16 + offset, 0))
         except ValueError:
             self.mop = B8MopState.LACK_WATER
 
-        self.carpet_switch = self.read_byte(body, 17 + offset) != 0
+        self.carpet_switch = self.read_byte(body, 17 + offset, 0) != 0
 
-        error_byte = self.read_byte(body, 18 + offset)
+        error_byte = self.read_byte(body, 18 + offset, 0)
         self.laser_sensor_error = (error_byte & 0x01) > 0
         self.laser_sensor_shelter = (error_byte & 0x02) > 0
         self.board_communication_error = (error_byte & 0x04) > 0
 
         try:
-            self.speed = B8Speed(self.read_byte(body, 19 + offset))
+            self.speed = B8Speed(self.read_byte(body, 19 + offset, 0))
         except ValueError:
             self.speed = B8Speed.HIGH
 
@@ -353,21 +353,21 @@ class MessageB8GenericBody(MessageBody):
         if self.error_type == B8ErrorType.CAN_FIX:
             try:
                 self.error_desc = B8ErrorCanFixDescription(
-                    self.read_byte(body, 15 + offset),
+                    self.read_byte(body, 15 + offset, 0),
                 )
             except ValueError:
                 self.error_desc = B8ErrorCanFixDescription.NO
         elif self.error_type == B8ErrorType.REBOOT:
             try:
                 self.error_desc = B8ErrorRebootDescription(
-                    self.read_byte(body, 15 + offset),
+                    self.read_byte(body, 15 + offset, 0),
                 )
             except ValueError:
                 self.error_desc = B8ErrorRebootDescription.NO
         elif self.error_type == B8ErrorType.WARNING:
             try:
                 self.error_desc = B8ErrorWarningDescription(
-                    self.read_byte(body, 15 + offset),
+                    self.read_byte(body, 15 + offset, 0),
                 )
             except ValueError:
                 self.error_desc = B8ErrorWarningDescription.NO

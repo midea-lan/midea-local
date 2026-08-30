@@ -89,12 +89,12 @@ class MessageMainLightBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         """Initialize X13 message main light body."""
         super().__init__(body)
-        self.brightness = self.read_byte(body, 1)
-        self.color_temperature = self.read_byte(body, 2)
-        self.effect = self.read_byte(body, 3) - 1
+        self.brightness = self.read_byte(body, 1, 0)
+        self.color_temperature = self.read_byte(body, 2, 0)
+        self.effect = self.read_byte(body, 3, 0) - 1
         if self.effect > MAX_EFFECT:
             self.effect = 1
-        self.power = self.read_byte(body, 8) > 0
+        self.power = self.read_byte(body, 8, 0) > 0
 
 
 class MessageMainLightResponseBody(MessageBody):
