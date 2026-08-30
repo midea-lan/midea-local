@@ -106,7 +106,7 @@ class MideaCCDevice(MideaDevice):
         value = self._attributes[DeviceAttributes.fan_speed]
         return value if isinstance(value, str) else None
 
-    def _fan_speed_code(self, fan_mode: Any) -> int | None:  # noqa: ANN401
+    def _fan_speed_code(self, fan_mode: str) -> int | None:
         """Resolve a fan mode name to its raw protocol code, if valid."""
         if not self._fan_speeds or not isinstance(fan_mode, str):
             return None
@@ -271,7 +271,7 @@ class MideaCCDevice(MideaDevice):
                 ],
             )
         elif attr == DeviceAttributes.fan_speed:
-            if (speed := self._fan_speed_code(value)) is not None:
+            if (speed := self._fan_speed_code(str(value))) is not None:
                 self._send_fe_control([(CCControlId.FAN_SPEED, speed)])
         elif attr == DeviceAttributes.eco_mode:
             self._send_fe_control([(CCControlId.ECO, 1 if value else 0)])
@@ -296,7 +296,7 @@ class MideaCCDevice(MideaDevice):
         ]:
             message = self.make_message_set()
             if attr == DeviceAttributes.fan_speed:
-                if (code := self._fan_speed_code(value)) is not None:
+                if (code := self._fan_speed_code(str(value))) is not None:
                     message.fan_speed = code
             else:
                 setattr(message, str(attr), value)
