@@ -1089,7 +1089,10 @@ class MideaAirCloud(MideaCloud):
 
 
 _IOLIFE_APP_VERSION = "3.4.0"
-# All Toshiba IoLife devices carry manufacturer code 0x0008.
+# All Toshiba IoLife devices carry manufacturer code 0x0008 -- the same value the
+# app ships as APP_ENTERPRISE and the prefix of its T_0008_* protocol files. The
+# IoLife appliance list does not return an enterpriseCode field, so this is the
+# fallback for it.
 _IOLIFE_MANUFACTURER_CODE = "0008"
 
 
@@ -1165,7 +1168,10 @@ class ToshibaIOLife(MideaAirCloud):
                 "sn": sn,
                 "sn8": sn[9:17] if len(sn) > SN8_MIN_SERIAL_LENGTH else "",
                 "model_number": model_number,
-                "manufacturer_code": _IOLIFE_MANUFACTURER_CODE,
+                "manufacturer_code": appliance.get(
+                    "enterpriseCode",
+                    _IOLIFE_MANUFACTURER_CODE,
+                ),
                 "model": sn[9:17] if len(sn) > SN8_MIN_SERIAL_LENGTH else "",
                 "online": appliance.get("onlineStatus") == "1",
             }
