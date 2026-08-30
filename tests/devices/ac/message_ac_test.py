@@ -1251,7 +1251,7 @@ class TestMessageACResponse:
         assert response.indoor_humidity is None
 
     def test_message_query_c1_0x45_short_body(self) -> None:
-        """Test missing group 5 fields use read-byte defaults."""
+        """Test missing group 5 fields remain unavailable."""
         self.header[9] = 0x03
         body = bytearray(8)
         body[0] = 0xC1
@@ -1261,12 +1261,9 @@ class TestMessageACResponse:
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "indoor_humidity")
         assert response.indoor_humidity == 55
-        assert hasattr(response, "target_outdoor_fan_speed")
-        assert response.target_outdoor_fan_speed == 0
-        assert hasattr(response, "target_expansion_valve_angle")
-        assert response.target_expansion_valve_angle == 0
-        assert hasattr(response, "defrost_stage")
-        assert response.defrost_stage == 0
+        assert not hasattr(response, "target_outdoor_fan_speed")
+        assert not hasattr(response, "target_expansion_valve_angle")
+        assert not hasattr(response, "defrost_stage")
 
     def test_message_query_c1_unknown_method(self) -> None:
         """Test Message parse query C1 with an unknown analysis method."""

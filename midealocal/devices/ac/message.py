@@ -1443,19 +1443,26 @@ class XC1MessageBody(MessageBody):
     def _parse_group_five(self, body: bytearray) -> None:
         """Parse group 5 data: humidity and outdoor-unit targets."""
         # Indoor humidity should match the XBB/XA1 message when available.
-        self.indoor_humidity = self.read_byte(body, XC1_HUMIDITY_INDEX) or None
-        self.target_outdoor_fan_speed = (
-            self.read_byte(body, XC1_GROUP_FIVE_TARGET_OUTDOOR_FAN_SPEED_INDEX)
-            * XC1_FAN_SPEED_FACTOR
-        )
-        self.target_expansion_valve_angle = (
-            self.read_byte(body, XC1_GROUP_FIVE_TARGET_EXPANSION_VALVE_ANGLE_INDEX)
-            * XC1_FAN_SPEED_FACTOR
-        )
-        self.defrost_stage = self.read_byte(
-            body,
-            XC1_GROUP_FIVE_DEFROST_STAGE_INDEX,
-        )
+        if len(body) > XC1_HUMIDITY_INDEX:
+            self.indoor_humidity = self.read_byte(body, XC1_HUMIDITY_INDEX) or None
+        if len(body) > XC1_GROUP_FIVE_TARGET_OUTDOOR_FAN_SPEED_INDEX:
+            self.target_outdoor_fan_speed = (
+                self.read_byte(body, XC1_GROUP_FIVE_TARGET_OUTDOOR_FAN_SPEED_INDEX)
+                * XC1_FAN_SPEED_FACTOR
+            )
+        if len(body) > XC1_GROUP_FIVE_TARGET_EXPANSION_VALVE_ANGLE_INDEX:
+            self.target_expansion_valve_angle = (
+                self.read_byte(
+                    body,
+                    XC1_GROUP_FIVE_TARGET_EXPANSION_VALVE_ANGLE_INDEX,
+                )
+                * XC1_FAN_SPEED_FACTOR
+            )
+        if len(body) > XC1_GROUP_FIVE_DEFROST_STAGE_INDEX:
+            self.defrost_stage = self.read_byte(
+                body,
+                XC1_GROUP_FIVE_DEFROST_STAGE_INDEX,
+            )
 
     def _parse_group_seven(self, body: bytearray) -> None:
         """Parse group 7 data: real time compressor power."""
