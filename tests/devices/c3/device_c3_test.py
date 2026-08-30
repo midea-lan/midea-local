@@ -267,3 +267,7 @@ class TestMideaC3Device:
         """Test invalid customize format."""
         self.device.set_customize("{")
         self.device.set_customize('{"temperature_step":"10"}')
+
+    def test_hvac_modes(self) -> None:
+        """Test hvac_modes lists every generic HVAC mode name."""
+        assert self.device.hvac_modes == ["off", "auto", "cool", "heat"]

@@ -51,9 +51,11 @@ SUB_PROTOCOL_BODY_TEMP_CHECK = 0x80
 TEMP_DECIMAL_MIN_BODY_LENGTH = 20
 TIMER_MIN_SUBPROTOCOL_LENGTH = 27
 XBB_SN8_BYTE_FLAG = 0x31
+XC1_SUBBODY_TYPE_03 = 0x03
 XC1_SUBBODY_TYPE_40 = 0x40
 XC1_SUBBODY_TYPE_41 = 0x41
 XC1_SUBBODY_TYPE_42 = 0x42
+XC1_SUBBODY_TYPE_43 = 0x43
 XC1_SUBBODY_TYPE_44 = 0x44
 XC1_SUBBODY_TYPE_45 = 0x45
 XC1_SUBBODY_TYPE_47 = 0x47
@@ -64,6 +66,7 @@ XC1_OPERATING_TIME_MIN_LENGTH = 19
 
 # Group data query: the third payload byte selects the group, 0x40 | group number.
 XC1_GROUP_QUERY_BASE = 0x40
+XC1_GROUP_THREE_SPEED_OFFSET = 10
 # Minimum body length required to parse each group data response.
 XC1_GROUP_ONE_MIN_LENGTH = 15
 XC1_GROUP_TWO_MIN_LENGTH = 9
@@ -380,6 +383,12 @@ class MessageGroupTwoQuery(MessageGroupDataQuery):
     """AC message indoor fan query(queryType == "group_data_two")."""
 
     _group = 2
+
+
+class MessageGroupThreeQuery(MessageGroupDataQuery):
+    """AC message outdoor fan query(queryType == "group_data_three")."""
+
+    _group = 3
 
 
 class MessagePowerQuery(MessageGroupDataQuery):
@@ -1357,6 +1366,10 @@ class XC1MessageBody(MessageBody):
             self._parse_group_one(body)
         elif group_type == XC1_SUBBODY_TYPE_42:
             self._parse_group_two(body)
+        elif group_type in (XC1_SUBBODY_TYPE_03, XC1_SUBBODY_TYPE_43):
+            # Midea references select group 3 by the low nibble; the tested
+            # device answered a 0x43 query with 0x03 here.
+            self._parse_group_three(body)
         elif group_type == XC1_SUBBODY_TYPE_47:
             self._parse_group_seven(body)
         elif group_type == XC1_SUBBODY_TYPE_40:
@@ -1439,6 +1452,15 @@ class XC1MessageBody(MessageBody):
         self.indoor_fan_speed = body[5] * XC1_FAN_SPEED_FACTOR
         # Could also be the float switch (tank full) that triggers the pump.
         self.water_pump_running = bool(body[8] & XC1_WATER_PUMP_MASK)
+
+    def _parse_group_three(self, body: bytearray) -> None:
+        """Parse group 3 data: outdoor fan speed."""
+        # Midea plugin references decode this byte as current outdoor fan speed
+        # in units of 8 RPM. The engineer display labels the matching raw byte
+        # as set speed, but group 5 exposes that target separately.
+        self.outdoor_fan_speed = (
+            self.read_byte(body, XC1_GROUP_THREE_SPEED_OFFSET) * XC1_FAN_SPEED_FACTOR
+        )
 
     def _parse_group_seven(self, body: bytearray) -> None:
         """Parse group 7 data: real time compressor power."""

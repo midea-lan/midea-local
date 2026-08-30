@@ -27,6 +27,41 @@ class CCHeatStatus(IntEnum):
     X20 = 2
 
 
+class CCFanSpeed7Level(IntEnum):
+    """CC legacy 7-level fan speed bitmask."""
+
+    LEVEL_1 = 0x01
+    LEVEL_2 = 0x02
+    LEVEL_3 = 0x04
+    LEVEL_4 = 0x08
+    LEVEL_5 = 0x10
+    LEVEL_6 = 0x20
+    LEVEL_7 = 0x40
+    AUTO = 0x80
+
+
+class CCFanSpeed3Level(IntEnum):
+    """CC legacy 3-level fan speed bitmask."""
+
+    LOW = 0x01
+    MEDIUM = 0x08
+    HIGH = 0x40
+    AUTO = 0x80
+
+
+class CCFanSpeedFE(IntEnum):
+    """CC 0xFE VRF panel fan speed (1-7, not a bitmask)."""
+
+    LEVEL_1 = 0x01
+    LEVEL_2 = 0x02
+    LEVEL_3 = 0x03
+    LEVEL_4 = 0x04
+    LEVEL_5 = 0x05
+    LEVEL_6 = 0x06
+    LEVEL_7 = 0x07
+    AUTO = 0x08
+
+
 class MessageCCBase(MessageRequest):
     """CC message base."""
 
