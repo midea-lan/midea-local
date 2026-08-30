@@ -1,5 +1,6 @@
 """Test cloud."""
 
+from collections.abc import Callable
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import ClassVar
@@ -968,17 +969,22 @@ class CloudTest(IsolatedAsyncioTestCase):
             await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010")
 
 
-def _make_toshiba_cloud(session: Mock) -> ToshibaIOLife:
-    """Create a ToshibaIOLife instance with a synthetic app key."""
-    cloud = get_midea_cloud(
-        "Toshiba Iolife",
-        session=session,
-        account="account",
-        password="password",
-    )
-    assert isinstance(cloud, ToshibaIOLife)
-    cloud._app_key = _TOSHIBA_APP_KEY
-    return cloud
+@pytest.fixture(name="make_toshiba_cloud")
+def make_toshiba_cloud_fixture() -> Callable[[Mock], ToshibaIOLife]:
+    """Return a factory for ToshibaIOLife clouds on a mocked session."""
+
+    def _make(session: Mock) -> ToshibaIOLife:
+        cloud = get_midea_cloud(
+            "Toshiba Iolife",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert isinstance(cloud, ToshibaIOLife)
+        cloud._app_key = _TOSHIBA_APP_KEY
+        return cloud
+
+    return _make
 
 
 class TestToshibaDecryptSn:
@@ -995,12 +1001,13 @@ class TestToshibaDecryptSn:
     )
     def test_decrypt_sn(
         self,
+        make_toshiba_cloud: Callable[[Mock], ToshibaIOLife],
         encrypted_sn: str,
         access_token: str | None,
         expected: str,
     ) -> None:
         """_decrypt_sn returns correct SN or '' on error/empty input."""
-        cloud = _make_toshiba_cloud(Mock())
+        cloud = make_toshiba_cloud(Mock())
         cloud._access_token = access_token
         assert cloud._decrypt_sn(encrypted_sn) == expected
 
@@ -1008,19 +1015,30 @@ class TestToshibaDecryptSn:
 class ToshibaIOLifeTest(IsolatedAsyncioTestCase):
     """ToshibaIOLife cloud async tests."""
 
+    responses: ClassVar[dict[str, bytes]] = _RESPONSES
+    make_cloud: Callable[[Mock], ToshibaIOLife]
+
+    @pytest.fixture(autouse=True)
+    def _inject_cloud_factory(
+        self,
+        make_toshiba_cloud: Callable[[Mock], ToshibaIOLife],
+    ) -> None:
+        """Share the cloud factory with these unittest-style tests."""
+        self.make_cloud = make_toshiba_cloud
+
     async def test_list_appliances_success(self) -> None:
         """list_appliances decrypts SN inline and skips virtual devices."""
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
             side_effect=[
-                _RESPONSES["mideaaircloud_login_id.json"],
-                _RESPONSES["mideaaircloud_login.json"],
-                _RESPONSES["toshibaiolife_list_appliances.json"],
+                self.responses["mideaaircloud_login_id.json"],
+                self.responses["mideaaircloud_login.json"],
+                self.responses["toshibaiolife_list_appliances.json"],
             ],
         )
         session.request = AsyncMock(return_value=response)
-        cloud = _make_toshiba_cloud(session)
+        cloud = self.make_cloud(session)
         assert await cloud.login()
         cloud._access_token = _TOSHIBA_ACCESS_TOKEN
 
@@ -1039,7 +1057,7 @@ class ToshibaIOLifeTest(IsolatedAsyncioTestCase):
 
     async def test_list_appliances_non_numeric_model_number(self) -> None:
         """A non-numeric modelNumber falls back to 0 rather than raising."""
-        cloud = _make_toshiba_cloud(Mock())
+        cloud = self.make_cloud(Mock())
         cloud._access_token = _TOSHIBA_ACCESS_TOKEN
         with patch.object(
             cloud,
@@ -1064,16 +1082,16 @@ class ToshibaIOLifeTest(IsolatedAsyncioTestCase):
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
-            return_value=_RESPONSES["mideaaircloud_invalid_response.json"],
+            return_value=self.responses["mideaaircloud_invalid_response.json"],
         )
         session.request = AsyncMock(return_value=response)
-        cloud = _make_toshiba_cloud(session)
+        cloud = self.make_cloud(session)
         cloud._access_token = _TOSHIBA_ACCESS_TOKEN
         assert await cloud.list_appliances(None) == {}
 
     async def test_list_appliances_non_list_response(self) -> None:
         """list_appliances returns empty dict when the API returns a non-list."""
-        cloud = _make_toshiba_cloud(Mock())
+        cloud = self.make_cloud(Mock())
         cloud._access_token = _TOSHIBA_ACCESS_TOKEN
         with patch.object(
             cloud,
@@ -1092,7 +1110,7 @@ class ToshibaIOLifeTest(IsolatedAsyncioTestCase):
             "onlineStatus": "1",
             "sn": _TOSHIBA_ENCRYPTED_SN,
         }
-        cloud = _make_toshiba_cloud(Mock())
+        cloud = self.make_cloud(Mock())
         cloud._access_token = _TOSHIBA_ACCESS_TOKEN
         with patch.object(
             cloud,
