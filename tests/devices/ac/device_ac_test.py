@@ -697,7 +697,7 @@ class TestMideaACDevice:
             mock_message.target_indoor_fan_speed = 416
             mock_message.water_pump_running = False
             # group 3
-            mock_message.outdoor_fan_speed_raw = 106
+            mock_message.outdoor_fan_speed = 848
             # group 7
             mock_message.compressor_power = 269
 
@@ -715,7 +715,7 @@ class TestMideaACDevice:
             assert result[DeviceAttributes.indoor_fan_speed.value] == 424
             assert result[DeviceAttributes.target_indoor_fan_speed.value] == 416
             assert result[DeviceAttributes.water_pump_running.value] is False
-            assert result[DeviceAttributes.outdoor_fan_speed_raw.value] == 106
+            assert result[DeviceAttributes.outdoor_fan_speed.value] == 848
             assert result[DeviceAttributes.compressor_power.value] == 269
 
     def test_set_attribute_group_data_is_read_only(self) -> None:
@@ -734,7 +734,7 @@ class TestMideaACDevice:
                 DeviceAttributes.indoor_fan_speed,
                 DeviceAttributes.target_indoor_fan_speed,
                 DeviceAttributes.water_pump_running,
-                DeviceAttributes.outdoor_fan_speed_raw,
+                DeviceAttributes.outdoor_fan_speed,
                 DeviceAttributes.compressor_power,
             ]:
                 self.device.set_attribute(attr.value, 1)

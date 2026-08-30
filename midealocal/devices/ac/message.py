@@ -70,7 +70,6 @@ XC1_GROUP_THREE_SPEED_OFFSET = 10
 # Minimum body length required to parse each group data response.
 XC1_GROUP_ONE_MIN_LENGTH = 15
 XC1_GROUP_TWO_MIN_LENGTH = 9
-XC1_GROUP_THREE_MIN_LENGTH = XC1_GROUP_THREE_SPEED_OFFSET + 1
 XC1_GROUP_SEVEN_MIN_LENGTH = 12
 # Refrigerant circuit temperatures are reported as half degrees with an offset:
 # T1/T2 (indoor ambient / indoor coil) use 30, T3/T4 (outdoor coil / ambient) use 50.
@@ -1456,12 +1455,12 @@ class XC1MessageBody(MessageBody):
 
     def _parse_group_three(self, body: bytearray) -> None:
         """Parse group 3 data: outdoor fan speed."""
-        if len(body) < XC1_GROUP_THREE_MIN_LENGTH:
-            return
         # Midea plugin references decode this byte as current outdoor fan speed
-        # using raw * 8. The tested unit's engineer display instead labels the
-        # matching raw byte as set speed, so preserve the unscaled value.
-        self.outdoor_fan_speed_raw = body[XC1_GROUP_THREE_SPEED_OFFSET]
+        # in units of 8 RPM. The engineer display labels the matching raw byte
+        # as set speed, but group 5 exposes that target separately.
+        self.outdoor_fan_speed = (
+            self.read_byte(body, XC1_GROUP_THREE_SPEED_OFFSET) * XC1_FAN_SPEED_FACTOR
+        )
 
     def _parse_group_seven(self, body: bytearray) -> None:
         """Parse group 7 data: real time compressor power."""

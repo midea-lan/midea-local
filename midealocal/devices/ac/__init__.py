@@ -127,7 +127,7 @@ class DeviceAttributes(StrEnum):
     target_indoor_fan_speed = "target_indoor_fan_speed"
     water_pump_running = "water_pump_running"
     # group 3: outdoor fan
-    outdoor_fan_speed_raw = "outdoor_fan_speed_raw"
+    outdoor_fan_speed = "outdoor_fan_speed"
     # group 7: real time compressor power
     compressor_power = "compressor_power"
 
@@ -305,7 +305,7 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.indoor_fan_speed: None,
                 DeviceAttributes.target_indoor_fan_speed: None,
                 DeviceAttributes.water_pump_running: None,
-                DeviceAttributes.outdoor_fan_speed_raw: None,
+                DeviceAttributes.outdoor_fan_speed: None,
                 DeviceAttributes.compressor_power: None,
             },
         )
@@ -861,7 +861,7 @@ class MideaACDevice(MideaDevice):
             DeviceAttributes.indoor_fan_speed,
             DeviceAttributes.target_indoor_fan_speed,
             DeviceAttributes.water_pump_running,
-            DeviceAttributes.outdoor_fan_speed_raw,
+            DeviceAttributes.outdoor_fan_speed,
             DeviceAttributes.compressor_power,
         ]:
             if attr == DeviceAttributes.prompt_tone:

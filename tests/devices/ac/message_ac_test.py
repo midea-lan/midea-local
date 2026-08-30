@@ -1527,21 +1527,22 @@ class TestMessageACResponse:
         body = bytearray(20)
         body[0] = 0xC1  # Body type
         body[3] = group_discriminator
-        body[10] = 106  # Matches engineer display; physical scaling remains raw.
+        body[10] = 106  # Current outdoor fan speed: 106 * 8 = 848 RPM.
 
         response = MessageACResponse(self.header + body)
-        assert hasattr(response, "outdoor_fan_speed_raw")
-        assert response.outdoor_fan_speed_raw == 106
+        assert hasattr(response, "outdoor_fan_speed")
+        assert response.outdoor_fan_speed == 848
 
     def test_message_query_c1_0x03_short_body(self) -> None:
-        """Test Message parse group 3 response with a truncated body."""
+        """Test a truncated group 3 response defaults fan speed to zero."""
         self.header[9] = 0x03
         body = bytearray(10)
         body[0] = 0xC1  # Body type
         body[3] = 0x03  # group 3 response discriminator
 
         response = MessageACResponse(self.header + body)
-        assert not hasattr(response, "outdoor_fan_speed_raw")
+        assert hasattr(response, "outdoor_fan_speed")
+        assert response.outdoor_fan_speed == 0
 
     def test_message_query_c1_0x47(self) -> None:
         """Test Message parse query C1 0x47, compressor power group data."""
