@@ -73,53 +73,6 @@ _TOSHIBA_ENCRYPTED_SN = (
 )
 _TOSHIBA_EXPECTED_SN = "0008AC0000000000000000000000BEEF"
 
-# ``CloudSecurity.get_udp_id(100, method)``. Hard-coded on purpose: deriving them
-# with the same helper the implementation calls would not catch a request that
-# sends the wrong method's UDP ID.
-UDP_IDS = {
-    1: "dec4da86e0aeefadde14a4e553680b9b",
-    2: "b2dd199071d527a33c8239833a5bf5fb",
-}
-
-
-def _token_requests(session: Mock) -> list[tuple[str, dict]]:
-    """Return (url, payload) for every getToken request the client actually sent.
-
-    The response side_effect only controls what comes back; these assertions
-    pin down what goes out, so a regression to the v1 endpoint or to a
-    string-valued ``applianceCodes`` cannot pass silently.
-    """
-    out = []
-    for call in session.request.await_args_list:
-        url = call.args[1] if len(call.args) > 1 else call.kwargs.get("url", "")
-        if "getToken" not in url:
-            continue
-        out.append((url, json.loads(call.kwargs["data"])))
-    return out
-
-
-def _load_responses() -> dict[str, bytes]:
-    """Load all JSON fixtures from tests/responses/ once."""
-    return {
-        fp.name: fp.read_bytes()
-        for fp in (Path(__file__).parent / "responses").iterdir()
-        if fp.is_file()
-    }
-
-
-_RESPONSES: dict[str, bytes] = _load_responses()
-
-_TOSHIBA_APP_KEY = "00000000000000000000000000000000"
-_TOSHIBA_ACCESS_TOKEN = (
-    "e4ddcc22d5ccc270e3b1c876df7c9a8d0a31b22810d0e532c2dd921bb9e0389f"
-)
-_TOSHIBA_ENCRYPTED_SN = (
-    "e1f17526c18d049e4862e19f5d6cd269"
-    "df9b09edd41d4b2627b35dbb2d47b963"
-    "a433df71998b41d4dc354e9bdf78902a"
-)
-_TOSHIBA_EXPECTED_SN = "0008AC0000000000000000000000BEEF"
-
 
 class CloudTest(IsolatedAsyncioTestCase):
     """Cloud test case."""
