@@ -2,7 +2,6 @@
 
 import json
 from collections.abc import Callable
-import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import ClassVar
@@ -97,6 +96,29 @@ def _token_requests(session: Mock) -> list[tuple[str, dict]]:
             continue
         out.append((url, json.loads(call.kwargs["data"])))
     return out
+
+
+def _load_responses() -> dict[str, bytes]:
+    """Load all JSON fixtures from tests/responses/ once."""
+    return {
+        fp.name: fp.read_bytes()
+        for fp in (Path(__file__).parent / "responses").iterdir()
+        if fp.is_file()
+    }
+
+
+_RESPONSES: dict[str, bytes] = _load_responses()
+
+_TOSHIBA_APP_KEY = "00000000000000000000000000000000"
+_TOSHIBA_ACCESS_TOKEN = (
+    "e4ddcc22d5ccc270e3b1c876df7c9a8d0a31b22810d0e532c2dd921bb9e0389f"
+)
+_TOSHIBA_ENCRYPTED_SN = (
+    "e1f17526c18d049e4862e19f5d6cd269"
+    "df9b09edd41d4b2627b35dbb2d47b963"
+    "a433df71998b41d4dc354e9bdf78902a"
+)
+_TOSHIBA_EXPECTED_SN = "0008AC0000000000000000000000BEEF"
 
 
 class CloudTest(IsolatedAsyncioTestCase):
