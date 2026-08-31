@@ -12,6 +12,7 @@ from midealocal.devices.ac.message import (
     MessageCapabilitiesQuery,
     MessageGroupOneQuery,
     MessageGroupSevenQuery,
+    MessageGroupThreeQuery,
     MessageGroupTwoQuery,
     MessageGroupZeroQuery,
     MessageHumidityQuery,
@@ -311,7 +312,7 @@ class TestMideaACDevice:
 
         self.device._used_subprotocol = False
         queries = self.device.build_query()
-        assert len(queries) == 11
+        assert len(queries) == 12
         assert isinstance(queries[0], MessageQuery)
         assert isinstance(queries[1], MessageNewProtocolQuery)
         assert isinstance(queries[2], MessageNewProtocolSelfCleanQuery)
@@ -320,9 +321,10 @@ class TestMideaACDevice:
         assert isinstance(queries[5], MessageGroupZeroQuery)
         assert isinstance(queries[6], MessageGroupOneQuery)
         assert isinstance(queries[7], MessageGroupTwoQuery)
-        assert isinstance(queries[8], MessageGroupSevenQuery)
-        assert isinstance(queries[9], MessageCapabilitiesQuery)
-        assert isinstance(queries[10], MessageCapabilitiesAdditionalQuery)
+        assert isinstance(queries[8], MessageGroupThreeQuery)
+        assert isinstance(queries[9], MessageGroupSevenQuery)
+        assert isinstance(queries[10], MessageCapabilitiesQuery)
+        assert isinstance(queries[11], MessageCapabilitiesAdditionalQuery)
 
     def test_build_query_omits_rate_select_until_capability_confirmed(self) -> None:
         """Test rate_select stays out of the B1 query until b5_electricity confirms it.
@@ -694,6 +696,8 @@ class TestMideaACDevice:
             mock_message.indoor_fan_speed = 424
             mock_message.target_indoor_fan_speed = 416
             mock_message.water_pump_running = False
+            # group 3
+            mock_message.outdoor_fan_speed = 848
             # group 7
             mock_message.compressor_power = 269
 
@@ -711,6 +715,7 @@ class TestMideaACDevice:
             assert result[DeviceAttributes.indoor_fan_speed.value] == 424
             assert result[DeviceAttributes.target_indoor_fan_speed.value] == 416
             assert result[DeviceAttributes.water_pump_running.value] is False
+            assert result[DeviceAttributes.outdoor_fan_speed.value] == 848
             assert result[DeviceAttributes.compressor_power.value] == 269
 
     def test_set_attribute_group_data_is_read_only(self) -> None:
@@ -729,6 +734,7 @@ class TestMideaACDevice:
                 DeviceAttributes.indoor_fan_speed,
                 DeviceAttributes.target_indoor_fan_speed,
                 DeviceAttributes.water_pump_running,
+                DeviceAttributes.outdoor_fan_speed,
                 DeviceAttributes.compressor_power,
             ]:
                 self.device.set_attribute(attr.value, 1)

@@ -159,3 +159,18 @@ class TestMideaFBDevice:
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageSet)
             assert message.target_temperature == 25
+            assert message.power is None
+
+    def test_set_target_temperature_with_mode_powers_on(self) -> None:
+        """Setting temperature alongside a mode also powers the device on."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_target_temperature(25, 1)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert isinstance(message, MessageSet)
+            assert message.target_temperature == 25
+            assert message.power is True
+
+    def test_hvac_modes(self) -> None:
+        """Test hvac_modes lists off/heat."""
+        assert self.device.hvac_modes == ["off", "heat"]
