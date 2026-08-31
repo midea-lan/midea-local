@@ -1,0 +1,20 @@
+{
+  "errorCode": "0",
+  "msg": "success",
+  "result": [
+    {
+      "id": "12345678",
+      "name": "Living Room AC",
+      "type": "0xAC",
+      "modelNumber": 10,
+      "sn": "e1f17526c18d049e4862e19f5d6cd269df9b09edd41d4b2627b35dbb2d47b963a433df71998b41d4dc354e9bdf78902a",
+      "onlineStatus": "1"
+    },
+    {
+      "id": "virtual_ag_0xAC",
+      "name": "Virtual Group",
+      "type": "0x_BATCH_AC",
+      "onlineStatus": "1"
+    }
+  ]
+}
