@@ -274,9 +274,24 @@ class MideaCloud:
         """Get default cloud keys."""
         return DEFAULT_KEYS
 
+    @staticmethod
+    def _store_matching_tokens(
+        result: dict[int, dict[str, Any]],
+        tokens: list[dict[str, Any]],
+        udp_id: str | None,
+        method: int,
+    ) -> None:
+        """Store the tokenlist entry that matches the method-specific udp id."""
+        for token in tokens:
+            if token["udpId"] == udp_id:
+                result[method] = {
+                    "token": token["token"].lower(),
+                    "key": token["key"].lower(),
+                }
+
     async def get_cloud_keys(self, appliance_id: int) -> dict[int, dict[str, Any]]:
         """Get keys for device."""
-        result = {}
+        result: dict[int, dict[str, Any]] = {}
         for method in [1, 2]:
             udp_id = self._security.get_udp_id(appliance_id, method)
             data = self._make_general_data()
@@ -299,12 +314,12 @@ class MideaCloud:
                 len(tokens),
             )
             if tokens:
-                for token in tokens:
-                    if token["udpId"] == udp_id:
-                        result[method] = {
-                            "token": token["token"].lower(),
-                            "key": token["key"].lower(),
-                        }
+                self._store_matching_tokens(
+                    result=result,
+                    tokens=tokens,
+                    udp_id=udp_id,
+                    method=method,
+                )
         return result
 
     @staticmethod
@@ -491,12 +506,12 @@ class MeijuCloud(MideaCloud):
                     method,
                     len(tokens),
                 )
-                for token in tokens:
-                    if token["udpId"] == udp_id:
-                        result[method] = {
-                            "token": token["token"].lower(),
-                            "key": token["key"].lower(),
-                        }
+                self._store_matching_tokens(
+                    result=result,
+                    tokens=tokens,
+                    udp_id=udp_id,
+                    method=method,
+                )
             if result:
                 break
         if not result:
