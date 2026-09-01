@@ -194,6 +194,11 @@ class MideaDBDevice(MideaDevice):
         "unknown",
     ]
 
+    @classmethod
+    def mode_options(cls) -> list[str]:
+        """Return the distinct modes this device can report, in order."""
+        return list(cls._mode.values())
+
     def __init__(
         self,
         *,

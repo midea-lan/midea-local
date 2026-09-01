@@ -60,6 +60,15 @@ class TestMideaDBDevice:
         assert len(queries) == 1
         assert isinstance(queries[0], MessageQuery)
 
+    def test_mode_options(self) -> None:
+        """mode_options lists the DB modes in enum order."""
+        assert MideaDBDevice.mode_options() == [
+            "normal",
+            "factory_test",
+            "service",
+            "normal_continus",
+        ]
+
     @pytest.mark.parametrize(
         "message_type",
         [MessageType.query, MessageType.set],

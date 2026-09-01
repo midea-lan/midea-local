@@ -59,6 +59,11 @@ class MideaCADevice(MideaDevice):
         0x20: "low",
     }
 
+    @classmethod
+    def mode_options(cls) -> list[str]:
+        """Return the distinct variable modes this device can report, in order."""
+        return list(dict.fromkeys(cls._variable_mode.values()))
+
     def __init__(
         self,
         *,

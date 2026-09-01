@@ -132,6 +132,11 @@ class MideaEADevice(MideaDevice):
     )
     _progress: ClassVar[list[str]] = ["idle", "delay", "cooking", "keep_warm"]
 
+    @classmethod
+    def mode_options(cls) -> list[str]:
+        """Return the distinct cooking modes this device can report, in order."""
+        return [mode for mode in cls._mode_list if mode != "unknown"]
+
     def __init__(
         self,
         *,

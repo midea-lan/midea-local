@@ -46,6 +46,14 @@ class TestMideaECDevice:
         assert len(queries) == 1
         assert isinstance(queries[0], MessageQuery)
 
+    def test_mode_options(self) -> None:
+        """mode_options drops "unknown" padding and keeps the EC-only tail entries."""
+        options = MideaECDevice.mode_options()
+        assert "unknown" not in options
+        assert len(options) == len(set(options))
+        assert options[0] == "smart"
+        assert options[-3:] == ["clean", "keep_warm", "diy"]
+
     def test_set_attribute(self) -> None:
         """Test set attribute is a no-op."""
         self.device.set_attribute(DeviceAttributes.cooking.value, True)
