@@ -48,6 +48,14 @@ class TestMideaEADevice:
         assert len(queries) == 1
         assert isinstance(queries[0], MessageQuery)
 
+    def test_mode_options(self) -> None:
+        """mode_options drops the "unknown" padding and stays unique and ordered."""
+        options = MideaEADevice.mode_options()
+        assert "unknown" not in options
+        assert len(options) == len(set(options))
+        assert options[0] == "smart"
+        assert options[-2:] == ["clean", "keep_warm"]
+
     def test_set_attribute_noop(self) -> None:
         """Test set attribute is a no-op for this device."""
         self.device.set_attribute(DeviceAttributes.mode.value, 1)

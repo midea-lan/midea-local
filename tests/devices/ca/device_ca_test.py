@@ -93,6 +93,21 @@ class TestMideaCADevice:
         assert len(queries) == 1
         assert isinstance(queries[0], MessageQuery)
 
+    def test_mode_options(self) -> None:
+        """variable_mode_options de-duplicates the repeated mapping value."""
+        options = MideaCADevice.mode_options()
+        assert options == [
+            "none",
+            "soft_freezing",
+            "zero_fresh",
+            "cold_drink",
+            "fresh_product",
+            "partial_freezing",
+            "dry_zone",
+            "freeze_warm",
+        ]
+        assert len(options) == len(set(options))
+
     def test_process_message_general(self) -> None:
         """Test process message with a full general body."""
         body = _general_body(32)
