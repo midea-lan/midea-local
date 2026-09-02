@@ -2,7 +2,7 @@
 
 import logging
 from collections.abc import Callable, Mapping
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 from types import MappingProxyType
 
 from midealocal.const import MAX_BYTE_VALUE, DeviceType
@@ -120,6 +120,37 @@ B5_ANION_ON_VALUE = 1
 B5_TURBO_HEAT_VALUES = frozenset({1, 3})
 B5_DISPLAY_VALUES = frozenset({1, 2, 100})
 B5_ELECTRICITY_UNSUPPORTED_VALUE = 0  # 0 = unsupported; nonzero = rate level count
+
+
+class ACFanSpeed(IntEnum):
+    """AC fan speed set-points.
+
+    fan_speed is reported as a 0-127 percentage-like value; a device only
+    ever commands one of these six set-points, but reported values are
+    bucketed by threshold (against the next-lower set-point) to tolerate
+    slightly-off readings from hardware.
+    """
+
+    SILENT = 20
+    LOW = 40
+    MEDIUM = 60
+    HIGH = 80
+    FULL = 100
+    AUTO = 102
+
+
+class ACSwingMode(StrEnum):
+    """AC swing mode names.
+
+    A StrEnum (not IntEnum, unlike ACFanSpeed): its members compare equal to
+    plain strings, which is required since Home Assistant's climate contract
+    checks membership with bare strings (e.g. "off" in device.swing_modes).
+    """
+
+    OFF = "off"
+    VERTICAL = "vertical"
+    HORIZONTAL = "horizontal"
+    BOTH = "both"
 
 
 class PowerFormats(IntEnum):

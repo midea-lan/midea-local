@@ -7,11 +7,14 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, cast
 
+from midealocal.base_classes import MideaClimateDevice
 from midealocal.const import DeviceType
-from midealocal.device import SKIP_ATTRIBUTE, MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs
 from midealocal.message import ListTypes
 
 from .message import (
+    ACFanSpeed,
+    ACSwingMode,
     MessageACResponse,
     MessageCapabilitiesAdditionalQuery,
     MessageCapabilitiesQuery,
@@ -179,7 +182,7 @@ STALE_C0_TEMPERATURE_ATTRIBUTES = (
 )
 
 
-class MideaACDevice(MideaDevice):
+class MideaACDevice(MideaClimateDevice):
     """Midea AC device."""
 
     _fresh_air_fan_speeds: ClassVar[dict[int, str]] = {
@@ -231,6 +234,36 @@ class MideaACDevice(MideaDevice):
         60: "60",
         80: "80",
         100: "100",
+    }
+
+    # Generic HVAC mode names, ordered to match the protocol's mode index.
+    # Fixed and never filtered: hvac_mode()/set_hvac_mode() index into this
+    # to convert to/from the wire's mode int, which is unaffected by which
+    # modes the B5 capability response says this unit actually supports.
+    _all_hvac_modes: ClassVar[list[str]] = [
+        "off",
+        "auto",
+        "cool",
+        "dry",
+        "heat",
+        "fan_only",
+    ]
+
+    # Bucket boundaries for the get-side threshold scan: each pair is the
+    # next-lower set-point's value paired with the bucket name above it.
+    _fan_speed_thresholds: ClassVar[tuple[tuple[int, str], ...]] = (
+        (ACFanSpeed.FULL, ACFanSpeed.AUTO.name.lower()),
+        (ACFanSpeed.HIGH, ACFanSpeed.FULL.name.lower()),
+        (ACFanSpeed.MEDIUM, ACFanSpeed.HIGH.name.lower()),
+        (ACFanSpeed.LOW, ACFanSpeed.MEDIUM.name.lower()),
+        (ACFanSpeed.SILENT, ACFanSpeed.LOW.name.lower()),
+    )
+
+    _swing_modes: ClassVar[dict[ACSwingMode, tuple[bool, bool]]] = {
+        ACSwingMode.OFF: (False, False),
+        ACSwingMode.VERTICAL: (True, False),
+        ACSwingMode.HORIZONTAL: (False, True),
+        ACSwingMode.BOTH: (True, True),
     }
 
     def __init__(
@@ -341,6 +374,111 @@ class MideaACDevice(MideaDevice):
         # fields to avoid brief UI flicker caused by query ordering.
         self._prefer_new_protocol_temperature: bool = False
         self.set_customize(customize)
+
+    @property
+    def hvac_modes(self) -> list[str]:
+        """Midea AC device HVAC modes, filtered by the device's B5 capabilities.
+
+        "off"/"fan_only" have no matching capability key (the B5 response
+        never reports one named "off_mode"/"fan_only_mode"), so they fall
+        through to the default and are always kept.
+        """
+        return [
+            mode
+            for mode in MideaACDevice._all_hvac_modes
+            if self._capabilities.get(f"{mode}_mode", True)
+        ]
+
+    def hvac_mode(self, zone: int | None = None) -> str | None:  # noqa: ARG002
+        """Midea AC device HVAC mode."""
+        power = self._attributes[DeviceAttributes.power]
+        if not isinstance(power, bool):
+            return None
+        if not power:
+            return "off"
+        mode = self._attributes[DeviceAttributes.mode]
+        if isinstance(mode, int) and 1 <= mode < len(MideaACDevice._all_hvac_modes):
+            return MideaACDevice._all_hvac_modes[mode]
+        return None
+
+    def set_hvac_mode(self, hvac_mode: str, zone: int | None = None) -> None:  # noqa: ARG002
+        """Midea AC device set HVAC mode."""
+        if hvac_mode == "off":
+            self.set_attribute(attr=DeviceAttributes.power, value=False)
+            return
+        if hvac_mode not in self.hvac_modes:
+            msg = f"[ac] Unsupported hvac mode: {hvac_mode}"
+            raise ValueError(msg)
+        self.set_attribute(
+            attr=DeviceAttributes.mode,
+            value=MideaACDevice._all_hvac_modes.index(hvac_mode),
+        )
+
+    @property
+    def fan_modes(self) -> list[str]:
+        """Midea AC device fan modes."""
+        return [member.name.lower() for member in ACFanSpeed]
+
+    @property
+    def fan_mode(self) -> str | None:
+        """Midea AC device fan mode."""
+        fan_speed = self._attributes[DeviceAttributes.fan_speed]
+        if not isinstance(fan_speed, int):
+            return None
+        for threshold, name in MideaACDevice._fan_speed_thresholds:
+            if fan_speed > threshold:
+                return name
+        return ACFanSpeed.SILENT.name.lower()
+
+    def set_fan_mode(self, fan_mode: str) -> None:
+        """Midea AC device set fan mode."""
+        try:
+            value = ACFanSpeed[fan_mode.upper()]
+        except KeyError as err:
+            msg = f"[ac] Unsupported fan mode: {fan_mode}"
+            raise ValueError(msg) from err
+        self.set_attribute(attr=DeviceAttributes.fan_speed, value=int(value))
+
+    @property
+    def swing_modes(self) -> list[ACSwingMode] | None:
+        """Midea AC device swing modes.
+
+        The BB subprotocol (MessageSubProtocolSet) has no swing fields at
+        all, so swing is not advertised for devices using it.
+        """
+        if self._used_subprotocol:
+            return None
+        return list(MideaACDevice._swing_modes.keys())
+
+    @property
+    def swing_mode(self) -> ACSwingMode | None:
+        """Midea AC device swing mode."""
+        if self._used_subprotocol:
+            return None
+        # bool() coercion guarantees a (bool, bool) pair, and _swing_modes
+        # covers all four, so this always matches.
+        vertical = bool(self._attributes[DeviceAttributes.swing_vertical])
+        horizontal = bool(self._attributes[DeviceAttributes.swing_horizontal])
+        return next(
+            name
+            for name, pair in MideaACDevice._swing_modes.items()
+            if pair == (vertical, horizontal)
+        )
+
+    def set_swing_mode(self, swing_mode: str) -> None:
+        """Midea AC device set swing mode."""
+        try:
+            mode = ACSwingMode(swing_mode)
+        except ValueError:
+            mode = None
+        if mode is None or self._used_subprotocol:
+            msg = f"[ac] Unsupported swing mode: {swing_mode}"
+            raise ValueError(msg)
+        swing_vertical, swing_horizontal = MideaACDevice._swing_modes[mode]
+        self._set_swing(
+            swing_vertical=swing_vertical,
+            swing_horizontal=swing_horizontal,
+        )
 
     @property
     def temperature_step(self) -> float | None:
@@ -597,11 +735,6 @@ class MideaACDevice(MideaDevice):
         self._attributes[DeviceAttributes.self_clean] = active
         return {DeviceAttributes.self_clean.value: active}
 
-    @property
-    def capabilities(self) -> dict[str, bool]:
-        """Return the decoded B5 capability flags reported by the device."""
-        return self._capabilities
-
     def _b5_temperature_limits(self) -> tuple[float, float] | None:
         """Return the B5 setpoint limits for the current mode, if any.
 
@@ -663,7 +796,7 @@ class MideaACDevice(MideaDevice):
         message.anion = self._attributes[DeviceAttributes.anion]
         return message
 
-    def make_newprotocol_message_set(
+    def _make_newprotocol_message_set(
         self,
         attr: str,
         value: bool | float | str,
@@ -740,7 +873,7 @@ class MideaACDevice(MideaDevice):
 
         return message
 
-    def make_subprotocol_message_set(self) -> MessageSubProtocolSet:
+    def _make_subprotocol_message_set(self) -> MessageSubProtocolSet:
         """Midea AC device make subprotocol message set."""
         message = MessageSubProtocolSet(self._message_protocol_version)
         message.power = self._attributes[DeviceAttributes.power]
@@ -759,7 +892,7 @@ class MideaACDevice(MideaDevice):
         message.timer = self._bb_timer
         return message
 
-    def make_subprotocol_fresh_air_set(
+    def _make_subprotocol_fresh_air_set(
         self,
         attr: str,
         value: bool | float | str,
@@ -820,11 +953,11 @@ class MideaACDevice(MideaDevice):
             exhaust=exhaust,
         )
 
-    def make_message_uniq_set(self) -> MessageSubProtocolSet | MessageGeneralSet:
+    def _make_message_uniq_set(self) -> MessageSubProtocolSet | MessageGeneralSet:
         """Midea AC device make message unique set."""
         message: MessageSubProtocolSet | MessageGeneralSet
         if self._used_subprotocol:
-            message = self.make_subprotocol_message_set()
+            message = self._make_subprotocol_message_set()
         else:
             message = self.make_message_set()
         return message
@@ -887,7 +1020,7 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.fresh_air_exhaust_speed,
                 DeviceAttributes.fresh_air_exhaust_mode,
             }:
-                message = self.make_subprotocol_fresh_air_set(attr, value)
+                message = self._make_subprotocol_fresh_air_set(attr, value)
             elif attr in [
                 DeviceAttributes.indirect_wind,
                 DeviceAttributes.breezeless,
@@ -902,7 +1035,7 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.sound,
                 DeviceAttributes.self_clean,
             ]:
-                message = self.make_newprotocol_message_set(attr=attr, value=value)
+                message = self._make_newprotocol_message_set(attr=attr, value=value)
                 if attr == DeviceAttributes.self_clean:
                     optimistic_self_clean = bool(value)
             elif attr == DeviceAttributes.power_saving and self._used_subprotocol:
@@ -911,7 +1044,7 @@ class MideaACDevice(MideaDevice):
                     self.device_id,
                 )
             elif attr in self._attributes:
-                message = self.make_message_uniq_set()
+                message = self._make_message_uniq_set()
                 if attr in [
                     DeviceAttributes.boost_mode,
                     DeviceAttributes.power_saving,
@@ -964,7 +1097,7 @@ class MideaACDevice(MideaDevice):
     ) -> None:
         """Midea AC device set target temperature."""
         message: MessageSubProtocolSet | MessageGeneralSet = (
-            self.make_message_uniq_set()
+            self._make_message_uniq_set()
         )
         message.target_temperature = target_temperature
         if mode is not None:
@@ -972,10 +1105,10 @@ class MideaACDevice(MideaDevice):
             message.mode = mode
         self.build_send(message)
 
-    def set_swing(self, swing_vertical: bool, swing_horizontal: bool) -> None:
+    def _set_swing(self, swing_vertical: bool, swing_horizontal: bool) -> None:
         """Midea AC device set swing."""
         message: MessageSubProtocolSet | MessageGeneralSet = (
-            self.make_message_uniq_set()
+            self._make_message_uniq_set()
         )
         if isinstance(message, MessageGeneralSet):
             message.swing_vertical = swing_vertical

@@ -4,8 +4,9 @@ import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
+from midealocal.base_classes import MideaClimateDevice
 from midealocal.const import DeviceType
-from midealocal.device import SKIP_ATTRIBUTE, MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs
 
 from .message import (
     INDEX_TO_FE_MODE,
@@ -45,7 +46,7 @@ class DeviceAttributes(StrEnum):
     temp_fahrenheit = "temp_fahrenheit"
 
 
-class MideaCCDevice(MideaDevice):
+class MideaCCDevice(MideaClimateDevice):
     """Midea CC device."""
 
     # Generic HVAC mode names, ordered to match the protocol's mode index.
@@ -92,6 +93,31 @@ class MideaCCDevice(MideaDevice):
         self._fan_speeds: CCFanSpeedTable | None = None
         # set once a 0xFE-format response is seen; selects the VRF control path
         self._is_fe_format = False
+
+    def hvac_mode(self, zone: int | None = None) -> str | None:  # noqa: ARG002
+        """Midea CC device HVAC mode."""
+        power = self._attributes[DeviceAttributes.power]
+        if not isinstance(power, bool):
+            return None
+        if not power:
+            return "off"
+        mode = self._attributes[DeviceAttributes.mode]
+        if isinstance(mode, int) and 1 <= mode < len(self.hvac_modes):
+            return self.hvac_modes[mode]
+        return None
+
+    def set_hvac_mode(self, hvac_mode: str, zone: int | None = None) -> None:  # noqa: ARG002
+        """Midea CC device set HVAC mode."""
+        if hvac_mode == "off":
+            self.set_attribute(attr=DeviceAttributes.power, value=False)
+            return
+        if hvac_mode not in self.hvac_modes:
+            msg = f"[cc] Unsupported hvac mode: {hvac_mode}"
+            raise ValueError(msg)
+        self.set_attribute(
+            attr=DeviceAttributes.mode,
+            value=self.hvac_modes.index(hvac_mode),
+        )
 
     @property
     def fan_modes(self) -> list[str] | None:

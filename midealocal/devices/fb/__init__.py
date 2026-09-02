@@ -4,8 +4,9 @@ import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
+from midealocal.base_classes import MideaClimateDevice
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDeviceInitKwargs
 
 from .message import MessageFBResponse, MessageQuery, MessageSet
 
@@ -23,7 +24,7 @@ class DeviceAttributes(StrEnum):
     child_lock = "child_lock"
 
 
-class MideaFBDevice(MideaDevice):
+class MideaFBDevice(MideaClimateDevice):
     """Midea FB device."""
 
     # Generic HVAC mode names; FB only distinguishes power on/off.
@@ -60,6 +61,20 @@ class MideaFBDevice(MideaDevice):
                 DeviceAttributes.child_lock: False,
             },
         )
+
+    def hvac_mode(self, zone: int | None = None) -> str | None:  # noqa: ARG002
+        """Midea FB device HVAC mode."""
+        power = self._attributes[DeviceAttributes.power]
+        if not isinstance(power, bool):
+            return None
+        return "heat" if power else "off"
+
+    def set_hvac_mode(self, hvac_mode: str, zone: int | None = None) -> None:  # noqa: ARG002
+        """Midea FB device set HVAC mode."""
+        if hvac_mode not in self.hvac_modes:
+            msg = f"[fb] Unsupported hvac mode: {hvac_mode}"
+            raise ValueError(msg)
+        self.set_attribute(attr=DeviceAttributes.power, value=hvac_mode != "off")
 
     @property
     def modes(self) -> list[str]:

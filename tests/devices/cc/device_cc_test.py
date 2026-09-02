@@ -300,6 +300,52 @@ class TestMideaCCDevice:
             "auto",
         ]
 
+    @pytest.mark.parametrize(
+        ("power", "mode", "expected"),
+        [
+            (True, 5, "auto"),
+            (True, 2, "dry"),
+            (False, 1, "off"),
+            (True, 999, None),
+            (True, 0, None),
+            ("not_a_bool", 1, None),
+            (True, "not_an_int", None),
+        ],
+    )
+    def test_hvac_mode(
+        self,
+        power: bool | str,
+        mode: int | str,
+        expected: str | None,
+    ) -> None:
+        """Test hvac_mode across power/mode edge cases."""
+        self.device._attributes[DeviceAttributes.power] = power
+        self.device._attributes[DeviceAttributes.mode] = mode
+        assert self.device.hvac_mode() == expected
+
+    def test_set_hvac_mode_off_powers_off(self) -> None:
+        """Test set_hvac_mode with off powers the device off."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_hvac_mode("off")
+            message = mock_build_send.call_args[0][0]
+            assert message.power is False
+
+    def test_set_hvac_mode_sets_mode_index(self) -> None:
+        """Test set_hvac_mode writes the matching protocol mode index."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_hvac_mode("heat")
+            message = mock_build_send.call_args[0][0]
+            assert message.mode == 3
+
+    def test_set_hvac_mode_unsupported_value_raises(self) -> None:
+        """Test set_hvac_mode raises for a mode not in hvac_modes."""
+        with (
+            patch.object(self.device, "build_send") as mock_build_send,
+            pytest.raises(ValueError, match="Unsupported hvac mode"),
+        ):
+            self.device.set_hvac_mode("not_a_real_mode")
+        mock_build_send.assert_not_called()
+
     def test_fan_mode_before_and_after_speed_table_resolved(self) -> None:
         """Test fan_mode is None until the fan speed table is known."""
         assert self.device.fan_mode is None

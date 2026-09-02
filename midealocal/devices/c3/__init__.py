@@ -5,8 +5,9 @@ import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
+from midealocal.base_classes import MideaClimateDevice
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDeviceInitKwargs
 
 from .message import (
     C3DeviceMode,
@@ -76,7 +77,7 @@ class DeviceAttributes(StrEnum):
     error_code = "error_code"
 
 
-class MideaC3Device(MideaDevice):
+class MideaC3Device(MideaClimateDevice):
     """Midea C3 device."""
 
     _silent_modes: ClassVar[list[str]] = [
@@ -87,6 +88,13 @@ class MideaC3Device(MideaDevice):
 
     # Generic HVAC mode names, ordered to match the protocol's mode index.
     hvac_modes: ClassVar[list[str]] = ["off", "auto", "cool", "heat"]
+
+    # C3 has two independently powered zones sharing one device connection;
+    # mode is shared, but power (and hence hvac_mode) is per-zone.
+    _power_attributes: ClassVar[tuple[DeviceAttributes, DeviceAttributes]] = (
+        DeviceAttributes.zone1_power,
+        DeviceAttributes.zone2_power,
+    )
 
     def __init__(
         self,
@@ -148,6 +156,32 @@ class MideaC3Device(MideaDevice):
         self._default_temperature_step: float = 0.5
         self._temperature_step: float = 0.5
         self.set_customize(customize)
+
+    def hvac_mode(self, zone: int | None = None) -> str | None:
+        """Midea C3 device HVAC mode."""
+        if zone is None:
+            raise ValueError("[C3] Parameter `zone` must be set")
+        power = self._attributes[MideaC3Device._power_attributes[zone]]
+        if not isinstance(power, bool):
+            return None
+        if not power:
+            return "off"
+        mode = self._attributes[DeviceAttributes.mode]
+        if isinstance(mode, int) and 1 <= mode < len(self.hvac_modes):
+            return self.hvac_modes[mode]
+        return None
+
+    def set_hvac_mode(self, hvac_mode: str, zone: int | None = None) -> None:
+        """Midea C3 device set HVAC mode."""
+        if zone is None:
+            raise ValueError("[C3] Parameter `zone` must be set")
+        if hvac_mode == "off":
+            self.set_attribute(attr=MideaC3Device._power_attributes[zone], value=False)
+            return
+        if hvac_mode not in self.hvac_modes:
+            msg = f"[C3] Unsupported hvac mode: {hvac_mode}"
+            raise ValueError(msg)
+        self._set_mode(zone, self.hvac_modes.index(hvac_mode))
 
     @property
     def temperature_step(self) -> float | None:
@@ -316,7 +350,7 @@ class MideaC3Device(MideaDevice):
         if message is not None:
             self.build_send(message)
 
-    def set_mode(self, zone: int, mode: int) -> None:
+    def _set_mode(self, zone: int, mode: int) -> None:
         """Midea C3 device set mode."""
         message = self.make_message_set()
         if zone == 0:

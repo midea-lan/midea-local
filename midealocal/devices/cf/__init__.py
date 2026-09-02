@@ -5,8 +5,9 @@ import math
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
+from midealocal.base_classes import MideaClimateDevice
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDeviceInitKwargs
 from midealocal.exceptions import ValueWrongType
 
 from .message import MessageCFResponse, MessageQuery, MessageSet
@@ -28,7 +29,7 @@ class DeviceAttributes(StrEnum):
     freeze = "freeze"
 
 
-class MideaCFDevice(MideaDevice):
+class MideaCFDevice(MideaClimateDevice):
     """Midea CF device."""
 
     # Generic HVAC mode names, ordered to match the protocol's mode index.
@@ -55,6 +56,39 @@ class MideaCFDevice(MideaDevice):
                 DeviceAttributes.max_temperature: 55,
                 DeviceAttributes.min_temperature: 5,
             },
+        )
+
+    def hvac_mode(self, zone: int | None = None) -> str | None:  # noqa: ARG002
+        """Midea CF device HVAC mode."""
+        power = self._attributes[DeviceAttributes.power]
+        if not isinstance(power, bool):
+            return None
+        if not power:
+            return "off"
+        mode = self._attributes[DeviceAttributes.mode]
+        if isinstance(mode, int) and 1 <= mode < len(self.hvac_modes):
+            return self.hvac_modes[mode]
+        return None
+
+    def set_hvac_mode(self, hvac_mode: str, zone: int | None = None) -> None:  # noqa: ARG002
+        """Midea CF device set HVAC mode.
+
+        Every mode-change message must carry a target_temperature, so this
+        supplies the current one (or the device's minimum as a fallback)
+        rather than sending mode alone via set_attribute.
+        """
+        if hvac_mode == "off":
+            self.set_attribute(attr=DeviceAttributes.power, value=False)
+            return
+        if hvac_mode not in self.hvac_modes:
+            msg = f"[cf] Unsupported hvac mode: {hvac_mode}"
+            raise ValueError(msg)
+        target_temperature = self._attributes[DeviceAttributes.target_temperature]
+        if target_temperature is None:
+            target_temperature = self._attributes[DeviceAttributes.min_temperature]
+        self.set_target_temperature(
+            target_temperature=target_temperature,
+            mode=self.hvac_modes.index(hvac_mode),
         )
 
     def build_query(self) -> list[MessageQuery]:
