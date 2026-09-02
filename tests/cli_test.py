@@ -23,7 +23,7 @@ from midealocal.cloud import MideaAirCloud, SmartHomeCloud
 from midealocal.const import ProtocolVersion
 from midealocal.device import AuthException, NoSupportedProtocol
 from midealocal.discover import _extract_mac
-from midealocal.exceptions import SocketException
+from midealocal.exceptions import NoDeviceRegistered, SocketException
 
 
 class TestMideaCLI(IsolatedAsyncioTestCase):
@@ -108,6 +108,27 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             assert keys[99]["token"] == "token99"
             mock_default_keys.assert_called_once()
             mock_cloud_keys.assert_not_called()
+
+    async def test_get_keys_no_paired_device(self) -> None:
+        """Test _get_keys falls back to default keys when the account owns none."""
+        mock_cloud = AsyncMock()
+        with (
+            patch("midealocal.cli.get_midea_cloud", return_value=mock_cloud),
+            patch.object(
+                mock_cloud,
+                "get_default_keys",
+                return_value={99: {"key": "key99", "token": "token99"}},
+            ),
+            patch.object(
+                mock_cloud,
+                "get_cloud_keys",
+                side_effect=NoDeviceRegistered(3201, "You have no permissions"),
+            ),
+            patch.object(mock_cloud, "login", return_value=True),
+        ):
+            keys = await self.cli._get_keys(0)
+
+        assert keys == {99: {"key": "key99", "token": "token99"}}
 
     def test_extract_mac(self) -> None:
         """Test _extract_mac."""

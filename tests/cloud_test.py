@@ -24,7 +24,13 @@ from midealocal.cloud import (
     get_midea_cloud,
     get_preset_account_cloud,
 )
-from midealocal.exceptions import ElementMissing
+from midealocal.exceptions import (
+    CloudLoginError,
+    ElementMissing,
+    MideaCloudError,
+    NoDeviceRegistered,
+    cloud_api_error,
+)
 
 # ``CloudSecurity.get_udp_id(100, method)``. Hard-coded on purpose: deriving them
 # with the same helper the implementation calls would not catch a request that
@@ -72,6 +78,43 @@ _TOSHIBA_ENCRYPTED_SN = (
     "a433df71998b41d4dc354e9bdf78902a"
 )
 _TOSHIBA_EXPECTED_SN = "0008AC0000000000000000000000BEEF"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("code", "msg"),
+    [
+        (3102, "Account or password incorrect, please re-enter"),
+        (3144, "login failed, loginId is empty, please login again"),
+        (7610, "Too many failed login attempts, please try again 5 minutes later"),
+        (65027, "该用户在线登录设备已超过上限,请更换账号登录"),
+    ],
+)
+async def test_msmartcloud_login_raises_cloud_login_error(code: int, msg: str) -> None:
+    """Test known login-step error codes surface as CloudLoginError.
+
+    3102/3144/7610/65027 are actionable failures of the login / loginId step;
+    callers need the code to show the right message, so login() must raise
+    rather than return a bare False.
+    """
+    session = Mock()
+    response = Mock()
+    response.read = AsyncMock(
+        side_effect=[
+            _RESPONSES["msmartcloud_reroute.json"],
+            json.dumps({"code": code, "msg": msg}).encode(),
+        ],
+    )
+    session.request = AsyncMock(return_value=response)
+    cloud = get_midea_cloud(
+        "SmartHome",
+        session=session,
+        account="account",
+        password="password",
+    )
+    with pytest.raises(CloudLoginError) as err:
+        await cloud.login()
+    assert err.value.code == code
 
 
 class CloudTest(IsolatedAsyncioTestCase):
@@ -705,6 +748,91 @@ class CloudTest(IsolatedAsyncioTestCase):
         )
         assert cloud is not None
         assert not await cloud.login()
+
+    async def test_msmartcloud_login_generic_error_returns_false(self) -> None:
+        """Test an unclassified error code keeps the old login() -> False contract."""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            return_value=json.dumps({"code": 9999, "msg": "system error"}).encode(),
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "SmartHome",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert not await cloud.login()
+
+    def test_cloud_api_error_factory(self) -> None:
+        """Test cloud_api_error picks the most specific subclass per code."""
+        assert type(cloud_api_error(3201, "")) is NoDeviceRegistered
+        assert type(cloud_api_error(7610, "")) is CloudLoginError
+        assert type(cloud_api_error(65027, "")) is CloudLoginError
+        # unknown code falls back to the base class, and the meaning table
+        # enriches the string for known-but-generic codes
+        generic = cloud_api_error(9999, "system error")
+        assert type(generic) is MideaCloudError
+        assert "transient" in str(generic)
+        assert cloud_api_error(4242, "boom").code == 4242
+
+    async def test_msmartcloud_get_cloud_keys_no_paired_device(self) -> None:
+        """Test get_cloud_keys raises NoDeviceRegistered on a permission error.
+
+        The SmartHome cloud answers getToken with code 3201 when the account
+        does not own the appliance, which must surface as a specific error so
+        callers can tell the user to use the account that paired the device.
+        """
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["msmartcloud_reroute.json"],
+                self.responses["cloud_login_id.json"],
+                self.responses["msmartcloud_login.json"],
+                self.responses["cloud_no_permission.json"],
+            ],
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "SmartHome",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert cloud is not None
+        assert await cloud.login()
+
+        with pytest.raises(NoDeviceRegistered) as err:
+            await cloud.get_cloud_keys(100)
+        assert err.value.code == 3201
+        assert err.value.message == "You have no permissions."
+
+    async def test_msmartcloud_get_cloud_keys_other_error_returns_empty(self) -> None:
+        """Test get_cloud_keys swallows non-permission errors and returns no keys."""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["msmartcloud_reroute.json"],
+                self.responses["cloud_login_id.json"],
+                self.responses["msmartcloud_login.json"],
+                self.responses["cloud_invalid_response.json"],
+                self.responses["cloud_invalid_response.json"],
+            ],
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "SmartHome",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert cloud is not None
+        assert await cloud.login()
+
+        assert await cloud.get_cloud_keys(100) == {}
 
     async def test_msmartcloud_list_home(self) -> None:
         """Test MSmartCloud list_home."""
