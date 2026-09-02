@@ -1,10 +1,12 @@
 """Test cloud."""
 
 import json
+import logging
 from collections.abc import Callable
+from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import ClassVar
+from typing import Any, ClassVar
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -115,6 +117,111 @@ async def test_msmartcloud_login_raises_cloud_login_error(code: int, msg: str) -
     with pytest.raises(CloudLoginError) as err:
         await cloud.login()
     assert err.value.code == code
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("read_side_effect", "warns_rejected"),
+    [
+        pytest.param(
+            [_RESPONSES["cloud_invalid_response.json"]] * 2,
+            True,
+            id="unclassified-code",
+        ),
+        pytest.param(
+            [json.dumps({"code": 9999, "msg": "system error"}).encode()] * 2,
+            True,
+            id="system-error-9999",
+        ),
+        pytest.param(
+            [_RESPONSES["msmartcloud_reroute.json"], *[ClientConnectionError()] * 3],
+            False,
+            id="unreachable",
+        ),
+    ],
+)
+async def test_msmartcloud_login_returns_false(
+    read_side_effect: list,
+    warns_rejected: bool,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """login() returns False (never raises) for non-actionable failures.
+
+    The last case exhausts every retry with no JSON body, leaving the local
+    ``{"code": -1}`` sentinel, which must be logged as "already handled" -- no
+    "rejected the request" warning and no exception.
+    """
+    session = Mock()
+    response = Mock()
+    response.read = AsyncMock(side_effect=read_side_effect)
+    session.request = AsyncMock(return_value=response)
+    cloud = get_midea_cloud(
+        "SmartHome",
+        session=session,
+        account="account",
+        password="password",
+    )
+    with caplog.at_level(logging.WARNING, logger="midealocal.cloud"):
+        assert not await cloud.login()
+    assert ("rejected the request" in caplog.text) is warns_rejected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("get_token_reads", "expectation", "expected_keys"),
+    [
+        pytest.param(
+            [_RESPONSES["cloud_no_permission.json"]],
+            pytest.raises(NoDeviceRegistered),
+            None,
+            id="permission-error-raises",
+        ),
+        pytest.param(
+            [_RESPONSES["cloud_invalid_response.json"]] * 2,
+            nullcontext(),
+            {},
+            id="other-error-returns-empty",
+        ),
+    ],
+)
+async def test_msmartcloud_get_cloud_keys_error_handling(
+    get_token_reads: list[bytes],
+    expectation: AbstractContextManager[Any],
+    expected_keys: dict[int, dict[str, str]] | None,
+) -> None:
+    """get_cloud_keys raises NoDeviceRegistered on 3201, swallows other codes.
+
+    3201 means the account does not own the appliance, so callers can tell the
+    user to sign in with the account that paired it; any other non-zero code is
+    transient/unknown and must not abort key retrieval.
+    """
+    session = Mock()
+    response = Mock()
+    response.read = AsyncMock(
+        side_effect=[
+            _RESPONSES["msmartcloud_reroute.json"],
+            _RESPONSES["cloud_login_id.json"],
+            _RESPONSES["msmartcloud_login.json"],
+            *get_token_reads,
+        ],
+    )
+    session.request = AsyncMock(return_value=response)
+    cloud = get_midea_cloud(
+        "SmartHome",
+        session=session,
+        account="account",
+        password="password",
+    )
+    assert await cloud.login()
+
+    with expectation as err:
+        result = await cloud.get_cloud_keys(100)
+
+    if expected_keys is None:
+        assert err.value.code == 3201
+        assert err.value.message == "You have no permissions."
+    else:
+        assert result == expected_keys
 
 
 class CloudTest(IsolatedAsyncioTestCase):
@@ -732,39 +839,6 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert cloud is not None
         assert await cloud.login()
 
-    async def test_msmartcloud_login_invalid_user(self) -> None:
-        """Test MSmartCloud login invalid user."""
-        session = Mock()
-        response = Mock()
-        response.read = AsyncMock(
-            return_value=self.responses["cloud_invalid_response.json"],
-        )
-        session.request = AsyncMock(return_value=response)
-        cloud = get_midea_cloud(
-            "SmartHome",
-            session=session,
-            account="account",
-            password="password",
-        )
-        assert cloud is not None
-        assert not await cloud.login()
-
-    async def test_msmartcloud_login_generic_error_returns_false(self) -> None:
-        """Test an unclassified error code keeps the old login() -> False contract."""
-        session = Mock()
-        response = Mock()
-        response.read = AsyncMock(
-            return_value=json.dumps({"code": 9999, "msg": "system error"}).encode(),
-        )
-        session.request = AsyncMock(return_value=response)
-        cloud = get_midea_cloud(
-            "SmartHome",
-            session=session,
-            account="account",
-            password="password",
-        )
-        assert not await cloud.login()
-
     def test_cloud_api_error_factory(self) -> None:
         """Test cloud_api_error picks the most specific subclass per code."""
         assert type(cloud_api_error(3201, "")) is NoDeviceRegistered
@@ -776,63 +850,6 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert type(generic) is MideaCloudError
         assert "transient" in str(generic)
         assert cloud_api_error(4242, "boom").code == 4242
-
-    async def test_msmartcloud_get_cloud_keys_no_paired_device(self) -> None:
-        """Test get_cloud_keys raises NoDeviceRegistered on a permission error.
-
-        The SmartHome cloud answers getToken with code 3201 when the account
-        does not own the appliance, which must surface as a specific error so
-        callers can tell the user to use the account that paired the device.
-        """
-        session = Mock()
-        response = Mock()
-        response.read = AsyncMock(
-            side_effect=[
-                self.responses["msmartcloud_reroute.json"],
-                self.responses["cloud_login_id.json"],
-                self.responses["msmartcloud_login.json"],
-                self.responses["cloud_no_permission.json"],
-            ],
-        )
-        session.request = AsyncMock(return_value=response)
-        cloud = get_midea_cloud(
-            "SmartHome",
-            session=session,
-            account="account",
-            password="password",
-        )
-        assert cloud is not None
-        assert await cloud.login()
-
-        with pytest.raises(NoDeviceRegistered) as err:
-            await cloud.get_cloud_keys(100)
-        assert err.value.code == 3201
-        assert err.value.message == "You have no permissions."
-
-    async def test_msmartcloud_get_cloud_keys_other_error_returns_empty(self) -> None:
-        """Test get_cloud_keys swallows non-permission errors and returns no keys."""
-        session = Mock()
-        response = Mock()
-        response.read = AsyncMock(
-            side_effect=[
-                self.responses["msmartcloud_reroute.json"],
-                self.responses["cloud_login_id.json"],
-                self.responses["msmartcloud_login.json"],
-                self.responses["cloud_invalid_response.json"],
-                self.responses["cloud_invalid_response.json"],
-            ],
-        )
-        session.request = AsyncMock(return_value=response)
-        cloud = get_midea_cloud(
-            "SmartHome",
-            session=session,
-            account="account",
-            password="password",
-        )
-        assert cloud is not None
-        assert await cloud.login()
-
-        assert await cloud.get_cloud_keys(100) == {}
 
     async def test_msmartcloud_list_home(self) -> None:
         """Test MSmartCloud list_home."""
