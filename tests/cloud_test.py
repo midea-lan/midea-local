@@ -209,7 +209,22 @@ class CloudTest(IsolatedAsyncioTestCase):
             password="password",
             api_url="http://api.url/",
         )
-        assert cloud._make_general_data() == {}
+        general_data = cloud._make_general_data()
+        assert general_data["appId"] == "appid"
+        assert general_data["src"] == "appid"
+        assert general_data["uid"] is None
+        assert set(general_data) == {
+            "src",
+            "format",
+            "stamp",
+            "platformId",
+            "deviceId",
+            "reqId",
+            "uid",
+            "clientType",
+            "appId",
+            "language",
+        }
         with pytest.raises(NotImplementedError):
             await cloud.login()
         with pytest.raises(NotImplementedError):
@@ -605,6 +620,7 @@ class CloudTest(IsolatedAsyncioTestCase):
                 self.responses["meijucloud_login.json"],
                 self.responses["meijucloud_download_lua.json"],
                 self.responses["meijucloud_download_lua.json"],
+                b'{"code": 0, "data": {"url": "u", "fileName": "../evil.lua"}}',
             ],
         )
         session.request = AsyncMock(return_value=response)
@@ -632,6 +648,13 @@ class CloudTest(IsolatedAsyncioTestCase):
             assert (
                 await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010") is None
             )
+
+            # a cloud-supplied fileName with path components is rejected
+            res.status = 200
+            assert (
+                await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010") is None
+            )
+            assert not (Path(tmpdir).parent / "evil.lua").exists()
 
     async def test_meijucloud_download_plugin(self) -> None:
         """Test MeijuCloud download_plugin."""
