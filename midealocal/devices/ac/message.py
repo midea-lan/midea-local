@@ -120,6 +120,12 @@ B5_ANION_ON_VALUE = 1
 B5_TURBO_HEAT_VALUES = frozenset({1, 3})
 B5_DISPLAY_VALUES = frozenset({1, 2, 100})
 B5_ELECTRICITY_UNSUPPORTED_VALUE = 0  # 0 = unsupported; nonzero = rate level count
+B5_ENERGY_STATS_VALUES = frozenset({2, 3, 4, 5})
+B5_ENERGY_SETTING_VALUES = frozenset({3, 5})
+B5_ENERGY_BCD_VALUES = frozenset({2, 3})
+RATE_SELECT_2_LEVEL_BIT = 0x1
+RATE_SELECT_5_LEVEL_BIT = 0x2
+B5_HUMIDITY_SUPPORTED_MASK = 0x3
 
 
 class DeviceAttributes(StrEnum):
@@ -1356,20 +1362,20 @@ class XB5MessageBody(NewProtocolMessageBody):
             caps["display_control"] = value in B5_DISPLAY_VALUES
         if NewProtocolTags.b5_electricity in params:
             value = params[NewProtocolTags.b5_electricity][0]
-            caps["energy_stats"] = value in [2, 3, 4, 5]
-            caps["energy_setting"] = value in [3, 5]
-            caps["energy_bcd"] = value in [2, 3]
+            caps["energy_stats"] = value in B5_ENERGY_STATS_VALUES
+            caps["energy_setting"] = value in B5_ENERGY_SETTING_VALUES
+            caps["energy_bcd"] = value in B5_ENERGY_BCD_VALUES
         if NewProtocolTags.rate_select in params:
             value = params[NewProtocolTags.rate_select][0]
             caps["rate_select"] = value > 0
-            caps["rate_select_2_level"] = value & 0x1 > 0
-            caps["rate_select_5_level"] = value & 0x2 > 0
+            caps["rate_select_2_level"] = value & RATE_SELECT_2_LEVEL_BIT > 0
+            caps["rate_select_5_level"] = value & RATE_SELECT_5_LEVEL_BIT > 0
         if NewProtocolTags.b5_sound in params:
             value = params[NewProtocolTags.buzzer_all][0]
             caps["sound"] = value == 1
         if NewProtocolTags.b5_humidity in params:
             value = params[NewProtocolTags.b5_humidity][0]
-            caps["humidity"] = value & 0x3 > 0
+            caps["humidity"] = value & B5_HUMIDITY_SUPPORTED_MASK > 0
         self.capabilities = caps
 
 
