@@ -36,6 +36,7 @@ _DEFAULT_KEYS = {99: {"key": "key99", "token": "token99"}}
 def cli() -> MideaCLI:
     """Return a MideaCLI with the minimal namespace the cloud-key paths need."""
     instance = MideaCLI()
+    instance.session = AsyncMock()
     instance.namespace = Namespace(
         cloud_name="SmartHome",
         username="user",
