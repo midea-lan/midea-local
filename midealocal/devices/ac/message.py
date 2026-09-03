@@ -2,7 +2,7 @@
 
 import logging
 from collections.abc import Callable, Mapping
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 from types import MappingProxyType
 
 from midealocal.const import MAX_BYTE_VALUE, DeviceType
@@ -120,6 +120,87 @@ B5_ANION_ON_VALUE = 1
 B5_TURBO_HEAT_VALUES = frozenset({1, 3})
 B5_DISPLAY_VALUES = frozenset({1, 2, 100})
 B5_ELECTRICITY_UNSUPPORTED_VALUE = 0  # 0 = unsupported; nonzero = rate level count
+B5_ENERGY_STATS_VALUES = frozenset({2, 3, 4, 5})
+B5_ENERGY_SETTING_VALUES = frozenset({3, 5})
+B5_ENERGY_BCD_VALUES = frozenset({2, 3})
+RATE_SELECT_2_LEVEL_BIT = 0x1
+RATE_SELECT_5_LEVEL_BIT = 0x2
+B5_HUMIDITY_SUPPORTED_MASK = 0x3
+
+
+class DeviceAttributes(StrEnum):
+    """Midea AC device attributes."""
+
+    prompt_tone = "prompt_tone"
+    power = "power"
+    mode = "mode"
+    target_temperature = "target_temperature"
+    min_temperature = "min_temperature"
+    max_temperature = "max_temperature"
+    fan_speed = "fan_speed"
+    swing_vertical = "swing_vertical"
+    swing_horizontal = "swing_horizontal"
+    boost_mode = "boost_mode"
+    power_saving = "power_saving"
+    smart_eye = "smart_eye"
+    dry = "dry"
+    eco_mode = "eco_mode"
+    aux_heating = "aux_heating"
+    sleep_mode = "sleep_mode"
+    natural_wind = "natural_wind"
+    temp_fahrenheit = "temp_fahrenheit"
+    screen_display = "screen_display"
+    screen_display_alternate = "screen_display_alternate"
+    full_dust = "full_dust"
+    frost_protect = "frost_protect"
+    comfort_mode = "comfort_mode"
+    indoor_temperature = "indoor_temperature"
+    outdoor_temperature = "outdoor_temperature"
+    indirect_wind = "indirect_wind"
+    indoor_humidity = "indoor_humidity"
+    breezeless = "breezeless"
+    fresh_air_power = "fresh_air_power"
+    fresh_air_fan_speed = "fresh_air_fan_speed"
+    fresh_air_mode = "fresh_air_mode"
+    fresh_air_1 = "fresh_air_1"
+    fresh_air_2 = "fresh_air_2"
+    fresh_air_exhaust_power = "fresh_air_exhaust_power"
+    fresh_air_exhaust_speed = "fresh_air_exhaust_speed"
+    fresh_air_exhaust_mode = "fresh_air_exhaust_mode"
+    total_energy_consumption = "total_energy_consumption"
+    total_operating_consumption = "total_operating_consumption"
+    current_energy_consumption = "current_energy_consumption"
+    realtime_power = "realtime_power"
+    electrify_time = "electrify_time"
+    total_operating_time = "total_operating_time"
+    current_operating_time = "current_operating_time"
+    wind_lr_angle = "wind_lr_angle"
+    wind_ud_angle = "wind_ud_angle"
+    rate_select = "rate_select"
+    out_silent = "out_silent"
+    anion = "anion"
+    sound = "sound"
+    self_clean = "self_clean"
+    pmv = "pmv"
+    error_code = "error_code"
+    # group 1: compressor and refrigerant circuit
+    compressor_frequency = "compressor_frequency"
+    target_compressor_frequency = "target_compressor_frequency"
+    compressor_current = "compressor_current"
+    compressor_voltage = "compressor_voltage"
+    indoor_ambient_temperature = "indoor_ambient_temperature"  # T1
+    indoor_coil_temperature = "indoor_coil_temperature"  # T2
+    outdoor_coil_temperature = "outdoor_coil_temperature"  # T3
+    outdoor_ambient_temperature = "outdoor_ambient_temperature"  # T4
+    discharge_pipe_temperature = "discharge_pipe_temperature"  # TP
+    # group 2: indoor fan and condensate pump
+    indoor_fan_speed = "indoor_fan_speed"
+    target_indoor_fan_speed = "target_indoor_fan_speed"
+    water_pump_running = "water_pump_running"
+    # group 3: outdoor fan
+    outdoor_fan_speed = "outdoor_fan_speed"
+    # group 7: real time compressor power
+    compressor_power = "compressor_power"
 
 
 class PowerFormats(IntEnum):
@@ -1239,6 +1320,10 @@ class XB5MessageBody(NewProtocolMessageBody):
         project). Only capabilities actually reported are added.
         """
         caps: dict[str, bool] = {}
+        caps["fan_low"] = True
+        caps["fan_medium"] = True
+        caps["fan_high"] = True
+        caps["fan_auto"] = True
         if NewProtocolTags.b5_mode in params:
             value = params[NewProtocolTags.b5_mode][0]
             caps["heat_mode"] = value in B5_HEAT_MODE_VALUES
@@ -1249,6 +1334,12 @@ class XB5MessageBody(NewProtocolMessageBody):
             value = params[NewProtocolTags.b5_wind_swing][0]
             caps["swing_horizontal"] = value in B5_SWING_HORIZONTAL_VALUES
             caps["swing_vertical"] = value < B5_LOW_VALUE_MAX
+        if NewProtocolTags.wind_lr_angle in params:
+            value = params[NewProtocolTags.wind_lr_angle][0]
+            caps["swing_horizontal_angle"] = value == 1
+        if NewProtocolTags.wind_ud_angle in params:
+            value = params[NewProtocolTags.wind_ud_angle][0]
+            caps["swing_vertical_angle"] = value == 1
         if NewProtocolTags.b5_wind_speed in params:
             value = params[NewProtocolTags.b5_wind_speed][0]
             fan_custom = value == B5_FAN_CUSTOM_VALUE
@@ -1271,7 +1362,20 @@ class XB5MessageBody(NewProtocolMessageBody):
             caps["display_control"] = value in B5_DISPLAY_VALUES
         if NewProtocolTags.b5_electricity in params:
             value = params[NewProtocolTags.b5_electricity][0]
-            caps["rate_select"] = value > B5_ELECTRICITY_UNSUPPORTED_VALUE
+            caps["energy_stats"] = value in B5_ENERGY_STATS_VALUES
+            caps["energy_setting"] = value in B5_ENERGY_SETTING_VALUES
+            caps["energy_bcd"] = value in B5_ENERGY_BCD_VALUES
+        if NewProtocolTags.rate_select in params:
+            value = params[NewProtocolTags.rate_select][0]
+            caps["rate_select"] = value > 0
+            caps["rate_select_2_level"] = value & RATE_SELECT_2_LEVEL_BIT > 0
+            caps["rate_select_5_level"] = value & RATE_SELECT_5_LEVEL_BIT > 0
+        if NewProtocolTags.b5_sound in params:
+            value = params[NewProtocolTags.buzzer_all][0]
+            caps["sound"] = value == 1
+        if NewProtocolTags.b5_humidity in params:
+            value = params[NewProtocolTags.b5_humidity][0]
+            caps["humidity"] = value & B5_HUMIDITY_SUPPORTED_MASK > 0
         self.capabilities = caps
 
 

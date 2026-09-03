@@ -4,7 +4,6 @@ import json
 import logging
 import time
 from dataclasses import dataclass
-from enum import StrEnum
 from typing import Any, ClassVar, Unpack, cast
 
 from midealocal.const import DeviceType
@@ -12,6 +11,7 @@ from midealocal.device import SKIP_ATTRIBUTE, MideaDevice, MideaDeviceInitKwargs
 from midealocal.message import ListTypes
 
 from .message import (
+    DeviceAttributes,
     MessageACResponse,
     MessageCapabilitiesAdditionalQuery,
     MessageCapabilitiesQuery,
@@ -55,81 +55,6 @@ ACQuery = (
 
 # AC mode constants
 DRY_MODE = 3
-
-
-class DeviceAttributes(StrEnum):
-    """Midea AC device attributes."""
-
-    prompt_tone = "prompt_tone"
-    power = "power"
-    mode = "mode"
-    target_temperature = "target_temperature"
-    min_temperature = "min_temperature"
-    max_temperature = "max_temperature"
-    fan_speed = "fan_speed"
-    swing_vertical = "swing_vertical"
-    swing_horizontal = "swing_horizontal"
-    boost_mode = "boost_mode"
-    power_saving = "power_saving"
-    smart_eye = "smart_eye"
-    dry = "dry"
-    eco_mode = "eco_mode"
-    aux_heating = "aux_heating"
-    sleep_mode = "sleep_mode"
-    natural_wind = "natural_wind"
-    temp_fahrenheit = "temp_fahrenheit"
-    screen_display = "screen_display"
-    screen_display_alternate = "screen_display_alternate"
-    full_dust = "full_dust"
-    frost_protect = "frost_protect"
-    comfort_mode = "comfort_mode"
-    indoor_temperature = "indoor_temperature"
-    outdoor_temperature = "outdoor_temperature"
-    indirect_wind = "indirect_wind"
-    indoor_humidity = "indoor_humidity"
-    breezeless = "breezeless"
-    fresh_air_power = "fresh_air_power"
-    fresh_air_fan_speed = "fresh_air_fan_speed"
-    fresh_air_mode = "fresh_air_mode"
-    fresh_air_1 = "fresh_air_1"
-    fresh_air_2 = "fresh_air_2"
-    fresh_air_exhaust_power = "fresh_air_exhaust_power"
-    fresh_air_exhaust_speed = "fresh_air_exhaust_speed"
-    fresh_air_exhaust_mode = "fresh_air_exhaust_mode"
-    total_energy_consumption = "total_energy_consumption"
-    total_operating_consumption = "total_operating_consumption"
-    current_energy_consumption = "current_energy_consumption"
-    realtime_power = "realtime_power"
-    electrify_time = "electrify_time"
-    total_operating_time = "total_operating_time"
-    current_operating_time = "current_operating_time"
-    wind_lr_angle = "wind_lr_angle"
-    wind_ud_angle = "wind_ud_angle"
-    rate_select = "rate_select"
-    out_silent = "out_silent"
-    anion = "anion"
-    sound = "sound"
-    self_clean = "self_clean"
-    pmv = "pmv"
-    error_code = "error_code"
-    # group 1: compressor and refrigerant circuit
-    compressor_frequency = "compressor_frequency"
-    target_compressor_frequency = "target_compressor_frequency"
-    compressor_current = "compressor_current"
-    compressor_voltage = "compressor_voltage"
-    indoor_ambient_temperature = "indoor_ambient_temperature"  # T1
-    indoor_coil_temperature = "indoor_coil_temperature"  # T2
-    outdoor_coil_temperature = "outdoor_coil_temperature"  # T3
-    outdoor_ambient_temperature = "outdoor_ambient_temperature"  # T4
-    discharge_pipe_temperature = "discharge_pipe_temperature"  # TP
-    # group 2: indoor fan and condensate pump
-    indoor_fan_speed = "indoor_fan_speed"
-    target_indoor_fan_speed = "target_indoor_fan_speed"
-    water_pump_running = "water_pump_running"
-    # group 3: outdoor fan
-    outdoor_fan_speed = "outdoor_fan_speed"
-    # group 7: real time compressor power
-    compressor_power = "compressor_power"
 
 
 BB_FRESH_AIR_DEFAULT_SPEED = 60
@@ -181,6 +106,16 @@ STALE_C0_TEMPERATURE_ATTRIBUTES = (
 
 class MideaACDevice(MideaDevice):
     """Midea AC device."""
+
+    _capabilities_attr: ClassVar[dict[str, DeviceAttributes]] = {
+        "anion": DeviceAttributes.anion,
+        "rate_select": DeviceAttributes.rate_select,
+        "sound": DeviceAttributes.sound,
+        "display_control": DeviceAttributes.screen_display,
+        "humidity": DeviceAttributes.indoor_humidity,
+        "swing_horizontal_angle": DeviceAttributes.wind_lr_angle,
+        "swing_vertical_angle": DeviceAttributes.wind_ud_angle,
+    }
 
     _fresh_air_fan_speeds: ClassVar[dict[int, str]] = {
         0: "off",
@@ -567,6 +502,9 @@ class MideaACDevice(MideaDevice):
         ):
             return {}
         self._capabilities.update(new_capabilities)
+        for cap in MideaACDevice._capabilities_attr:
+            if not self._capabilities.get(cap, False):
+                self._attributes.pop(MideaACDevice._capabilities_attr[cap])
         return {"capabilities": dict(self._capabilities)}
 
     def _refresh_self_clean_status(self, message: MessageACResponse) -> dict[str, Any]:

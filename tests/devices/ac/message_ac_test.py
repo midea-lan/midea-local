@@ -946,7 +946,7 @@ class TestMessageACResponse:
     def test_message_query_b5_capabilities(self) -> None:
         """Test Message parse query B5 capabilities."""
         self.header[9] = 0x03
-        body = bytearray([0xB5, 0x0B])  # Body type, params count
+        body = bytearray([0xB5, 0x0D])  # Body type, params count
         body += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode
         body += bytearray([0x15, 0x02, 0x01, 1])  # b5_wind_swing
         body += bytearray([0x10, 0x02, 0x01, 5])  # b5_wind_speed
@@ -958,6 +958,8 @@ class TestMessageACResponse:
         body += bytearray([0x24, 0x02, 0x01, 1])  # b5_screen_display
         body += bytearray([0x2C, 0x02, 0x01, 1])  # b5_sound
         body += bytearray([0x1F, 0x02, 0x01, 1])  # b5_humidity
+        body += bytearray([0x0A, 0x00, 0x01, 1])  # wind_lr_angle
+        body += bytearray([0x09, 0x00, 0x01, 1])  # wind_up_angle
         body += bytearray(1)  # trailing checksum byte (stripped by MessageResponse)
 
         response = MessageACResponse(self.header + body)
@@ -1008,22 +1010,76 @@ class TestMessageACResponse:
             "turbo_cool": True,
             "turbo_heat": True,
             "display_control": True,
+            "sound": True,
+            "humidity": True,
+            "swing_horizontal_angle": True,
+            "swing_vertical_angle": True,
         }
 
     @pytest.mark.parametrize(
-        ("raw_value", "expected"),
-        [(4, True), (1, True), (0, False)],
+        (
+            "raw_value",
+            "expected_rate_select",
+            "expected_rate_select_2_level",
+            "expected_rate_select_5_level",
+        ),
+        [
+            (0, False, False, False),
+            (1, True, True, False),
+            (2, True, False, True),
+            (3, True, True, True),
+        ],
+    )
+    def test_message_query_b5_rate_select(
+        self,
+        raw_value: int,
+        expected_rate_select: bool,
+        expected_rate_select_2_level: bool,
+        expected_rate_select_5_level: bool,
+    ) -> None:
+        """Test b5_rate_select capability gates the rate_select capability flag."""
+        self.header[9] = 0x03
+        body = bytearray([0xB5, 0x01])  # Body type, params count
+        body += bytearray([0x48, 0x00, 0x01, raw_value])  # b5_rate_select
+        body += bytearray(1)  # trailing checksum byte (stripped by MessageResponse)
+
+        response = MessageACResponse(self.header + body)
+
+        assert hasattr(response, "capabilities")
+
+        assert response.capabilities == {
+            "rate_select": expected_rate_select,
+            "rate_select_2_level": expected_rate_select_2_level,
+            "rate_select_5_level": expected_rate_select_5_level,
+            "fan_auto": True,
+            "fan_high": True,
+            "fan_low": True,
+            "fan_medium": True,
+        }
+
+    @pytest.mark.parametrize(
+        (
+            "raw_value",
+            "expected_energy_stats",
+            "expected_energy_setting",
+            "expected_energy_bcd",
+        ),
+        [
+            (1, False, False, False),
+            (2, True, False, True),
+            (3, True, True, True),
+            (4, True, False, False),
+            (5, True, True, False),
+        ],
     )
     def test_message_query_b5_electricity_gates_rate_select(
         self,
         raw_value: int,
-        expected: bool,
+        expected_energy_stats: bool,
+        expected_energy_setting: bool,
+        expected_energy_bcd: bool,
     ) -> None:
-        """Test b5_electricity capability gates the rate_select capability flag.
-
-        A nonzero value (rate level count) means the device supports
-        rate_select; 0 means unsupported.
-        """
+        """Test b5_electricity capability gates the energy capability flag."""
         self.header[9] = 0x03
         body = bytearray([0xB5, 0x01])  # Body type, params count
         body += bytearray([0x16, 0x02, 0x01, raw_value])  # b5_electricity
@@ -1032,7 +1088,16 @@ class TestMessageACResponse:
         response = MessageACResponse(self.header + body)
 
         assert hasattr(response, "capabilities")
-        assert response.capabilities == {"rate_select": expected}
+
+        assert response.capabilities == {
+            "energy_stats": expected_energy_stats,
+            "energy_setting": expected_energy_setting,
+            "energy_bcd": expected_energy_bcd,
+            "fan_auto": True,
+            "fan_high": True,
+            "fan_low": True,
+            "fan_medium": True,
+        }
 
     def test_message_query_b5_custom_fan_supports_named_speeds(self) -> None:
         """Test B5 fan custom profile includes named fan speeds."""
