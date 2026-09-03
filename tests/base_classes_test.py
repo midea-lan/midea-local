@@ -2,7 +2,7 @@
 
 import pytest
 
-from midealocal.base_classes import (
+from midealocal.base_classes.climate import (
     MideaClimateDevice,
     MideaFanMode,
     MideaHVACMode,
@@ -15,20 +15,20 @@ class _MinimalClimateDevice(MideaClimateDevice):
     """A climate device overriding only the mandatory members."""
 
     @property
-    def device_hvac_modes(self) -> set[MideaHVACMode]:
+    def hvac_modes(self) -> set[MideaHVACMode]:
         return {DummyHVACMode.OFF, DummyHVACMode.AUTO}
 
-    def device_hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:  # noqa: ARG002
+    def hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:  # noqa: ARG002
         return DummyHVACMode.AUTO
 
-    def set_device_hvac_mode(
+    def set_hvac_mode(
         self,
         hvac_mode: MideaHVACMode,
         zone: int | None = None,  # noqa: ARG002
     ) -> None:
         self._attributes["hvac_mode"] = hvac_mode
 
-    def set_device_target_temperature(
+    def set_target_temperature(
         self,
         target_temperature: float,
         hvac_mode: MideaHVACMode | None,
@@ -87,21 +87,21 @@ class TestMideaClimateDevice:
 
     def test_fan_capability_defaults_to_unsupported(self) -> None:
         """Test fan_modes/fan_mode default to None and set_fan_mode raises."""
-        assert self.device.fan_modes is None
-        assert self.device.fan_mode is None
+        assert self.device.raw_fan_modes is None
+        assert self.device.raw_fan_mode is None
         with pytest.raises(ValueError, match="Unsupported fan mode"):
-            self.device.set_fan_mode("auto")
+            self.device.set_raw_fan_mode("auto")
         with pytest.raises(NotImplementedError, match="Fan mode"):
-            self.device.set_device_fan_mode(DummyFanMode.OFF)
+            self.device.set_fan_mode(DummyFanMode.OFF)
 
     def test_swing_capability_defaults_to_unsupported(self) -> None:
         """Test swing_modes/swing_mode default to None and set_swing_mode raises."""
-        assert self.device.swing_modes is None
-        assert self.device.swing_mode is None
+        assert self.device.raw_swing_modes is None
+        assert self.device.raw_swing_mode is None
         with pytest.raises(ValueError, match="Unsupported swing mode"):
-            self.device.set_swing_mode("on")
+            self.device.set_raw_swing_mode("on")
         with pytest.raises(NotImplementedError, match="Swing mode"):
-            self.device.set_device_swing_mode(DummySwingMode.OFF)
+            self.device.set_swing_mode(DummySwingMode.OFF)
 
     def test_temperature_step_defaults_to_none(self) -> None:
         """Test temperature_step defaults to None."""

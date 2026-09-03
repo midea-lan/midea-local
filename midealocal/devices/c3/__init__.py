@@ -5,7 +5,7 @@ import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, override
 
-from midealocal.base_classes import MideaClimateDevice, MideaHVACMode
+from midealocal.base_classes.climate import MideaClimateDevice, MideaHVACMode
 from midealocal.const import DeviceType
 from midealocal.device import MideaDeviceInitKwargs
 
@@ -173,12 +173,12 @@ class MideaC3Device(MideaClimateDevice):
 
     @property
     @override
-    def device_hvac_modes(self) -> set[MideaHVACMode]:
+    def hvac_modes(self) -> set[MideaHVACMode]:
         """Midea C3 device HVAC modes."""
         return MideaC3Device._device_hvac_modes
 
     @override
-    def device_hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:
+    def hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:
         """Midea C3 device HVAC mode."""
         if zone is None:
             raise ValueError("[C3] Parameter `zone` must be set")
@@ -198,7 +198,7 @@ class MideaC3Device(MideaClimateDevice):
             return None
 
     @override
-    def set_device_hvac_mode(
+    def set_hvac_mode(
         self,
         hvac_mode: MideaHVACMode,
         zone: int | None = None,
@@ -209,7 +209,7 @@ class MideaC3Device(MideaClimateDevice):
         if hvac_mode == DeviceHVACMode.OFF:
             self.set_attribute(attr=MideaC3Device._power_attributes[zone], value=False)
             return
-        if hvac_mode not in self.device_hvac_modes:
+        if hvac_mode not in self.hvac_modes:
             msg = f"[C3] Unsupported hvac mode: {hvac_mode}"
             raise ValueError(msg)
         self._set_mode(zone, hvac_mode)
@@ -392,7 +392,7 @@ class MideaC3Device(MideaClimateDevice):
         self.build_send(message)
 
     @override
-    def set_device_target_temperature(
+    def set_target_temperature(
         self,
         target_temperature: float,
         hvac_mode: MideaHVACMode | None,

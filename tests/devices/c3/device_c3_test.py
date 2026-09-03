@@ -227,21 +227,21 @@ class TestMideaC3Device:
     def test_set_target_temperature(self) -> None:
         """Test set target temperature."""
         with pytest.raises(ValueError):  # noqa: PT011
-            self.device.set_target_temperature(22.5, 1)
+            self.device.set_raw_target_temperature(22.5, 1)
         with patch("midealocal.devices.c3.MessageC3Response") as mock_message_response:
             mock_message = mock_message_response.return_value
             mock_message.zone_temp_type = [True, False]
             self.device.process_message(b"")
 
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_target_temperature(22.5, 1, 0)
+            self.device.set_raw_target_temperature(22.5, 1, 0)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.mode == 1
             assert message.zone1_power
 
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_target_temperature(23, 1, 1)
+            self.device.set_raw_target_temperature(23, 1, 1)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.room_target_temp == 23
@@ -271,12 +271,12 @@ class TestMideaC3Device:
 
     def test_hvac_modes(self) -> None:
         """Test hvac_modes lists every generic HVAC mode name."""
-        assert self.device.hvac_modes == ["off", "auto", "cool", "heat"]
+        assert self.device.raw_hvac_modes == ["off", "auto", "cool", "heat"]
 
     def test_hvac_mode_requires_zone(self) -> None:
         """Test hvac_mode raises when zone isn't set."""
         with pytest.raises(ValueError, match="`zone` must be set"):
-            self.device.hvac_mode()
+            self.device.raw_hvac_mode()
 
     @pytest.mark.parametrize(
         ("zone", "power_attr"),
@@ -289,44 +289,44 @@ class TestMideaC3Device:
     ) -> None:
         """Test hvac_mode reads the zone-specific power attribute."""
         self.device._attributes[power_attr] = False
-        assert self.device.hvac_mode(zone) == "off"
+        assert self.device.raw_hvac_mode(zone) == "off"
 
         self.device._attributes[power_attr] = True
         self.device._attributes[DeviceAttributes.mode] = C3DeviceMode.HEAT
-        assert self.device.hvac_mode(zone) == "heat"
+        assert self.device.raw_hvac_mode(zone) == "heat"
 
     def test_set_hvac_mode_unsupported(self) -> None:
         """Test unsupported MideaHVACMode."""
         with pytest.raises(ValueError, match="Unsupported hvac mode"):
-            self.device.set_device_hvac_mode(DummyHVACMode.INVALID, 0)
+            self.device.set_hvac_mode(DummyHVACMode.INVALID, 0)
 
     def test_hvac_mode_invalid_type_returns_none(self) -> None:
         """Test hvac_mode returns None for an unexpected attribute type."""
         self.device._attributes[DeviceAttributes.zone1_power] = "not_a_bool"
-        assert self.device.hvac_mode(0) is None
+        assert self.device.raw_hvac_mode(0) is None
 
     def test_hvac_mode_invalid_mode_index_returns_none(self) -> None:
         """Test hvac_mode returns None for a mode index out of range."""
         self.device._attributes[DeviceAttributes.zone1_power] = True
         self.device._attributes[DeviceAttributes.mode] = 999
-        assert self.device.hvac_mode(0) is None
+        assert self.device.raw_hvac_mode(0) is None
 
     def test_set_hvac_mode_requires_zone(self) -> None:
         """Test set_hvac_mode raises when zone isn't set."""
         with pytest.raises(ValueError, match="`zone` must be set"):
-            self.device.set_hvac_mode("heat")
+            self.device.set_raw_hvac_mode("heat")
 
     def test_set_hvac_mode_off_powers_off_the_zone(self) -> None:
         """Test set_hvac_mode with off powers off only the requested zone."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_hvac_mode("off", 1)
+            self.device.set_raw_hvac_mode("off", 1)
             message = mock_build_send.call_args[0][0]
             assert message.zone2_power is False
 
     def test_set_hvac_mode_sets_mode_via_set_mode(self) -> None:
         """Test set_hvac_mode delegates to set_mode with the protocol index."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_hvac_mode("heat", 0)
+            self.device.set_raw_hvac_mode("heat", 0)
             message = mock_build_send.call_args[0][0]
             assert message.zone1_power is True
             assert message.mode == C3DeviceMode.HEAT
@@ -337,5 +337,5 @@ class TestMideaC3Device:
             patch.object(self.device, "build_send") as mock_build_send,
             pytest.raises(ValueError, match="Unsupported hvac mode"),
         ):
-            self.device.set_hvac_mode("not_a_real_mode", 0)
+            self.device.set_raw_hvac_mode("not_a_real_mode", 0)
         mock_build_send.assert_not_called()

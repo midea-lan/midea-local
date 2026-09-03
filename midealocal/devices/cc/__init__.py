@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, override
 
-from midealocal.base_classes import (
+from midealocal.base_classes.climate import (
     MideaClimateDevice,
     MideaFanMode,
     MideaHVACMode,
@@ -121,18 +121,18 @@ class MideaCCDevice(MideaClimateDevice):
 
     @property
     @override
-    def device_hvac_modes(self) -> set[MideaHVACMode]:
+    def hvac_modes(self) -> set[MideaHVACMode]:
         """Midea CC device HVAC modes."""
         return MideaCCDevice._device_hvac_modes
 
     @property
     @override
-    def device_swing_modes(self) -> list[MideaSwingMode]:
+    def swing_modes(self) -> list[MideaSwingMode]:
         """Midea CC device HVAC modes."""
         return list(MideaCCDevice._device_swing_modes)
 
     @override
-    def device_hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:
+    def hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:
         """Midea CC device HVAC mode."""
         power = self._attributes[DeviceAttributes.power]
         if not isinstance(power, bool):
@@ -150,7 +150,7 @@ class MideaCCDevice(MideaClimateDevice):
             return None
 
     @override
-    def set_device_hvac_mode(
+    def set_hvac_mode(
         self,
         hvac_mode: MideaHVACMode,
         zone: int | None = None,
@@ -159,7 +159,7 @@ class MideaCCDevice(MideaClimateDevice):
         if hvac_mode == DeviceHVACMode.OFF:
             self.set_attribute(attr=DeviceAttributes.power, value=False)
             return
-        if hvac_mode not in self.device_hvac_modes:
+        if hvac_mode not in self.hvac_modes:
             msg = f"[cc] Unsupported hvac mode: {hvac_mode}"
             raise ValueError(msg)
         self.set_attribute(
@@ -169,7 +169,7 @@ class MideaCCDevice(MideaClimateDevice):
 
     @property
     @override
-    def device_fan_modes(self) -> list[MideaFanMode] | None:
+    def fan_modes(self) -> list[MideaFanMode] | None:
         """Midea CC device fan modes."""
         if self._fan_speeds is None:
             return None
@@ -177,7 +177,7 @@ class MideaCCDevice(MideaClimateDevice):
 
     @property
     @override
-    def device_fan_mode(self) -> MideaFanMode | None:
+    def fan_mode(self) -> MideaFanMode | None:
         """Midea CC device fan mode."""
         value = self._attributes[DeviceAttributes.fan_speed]
         return (
@@ -196,7 +196,7 @@ class MideaCCDevice(MideaClimateDevice):
             return None
 
     @override
-    def set_device_fan_mode(self, fan_mode: MideaFanMode) -> None:
+    def set_fan_mode(self, fan_mode: MideaFanMode) -> None:
         """Midea CC device set fan mode."""
         if self._fan_speeds is None or fan_mode not in self._fan_speeds:
             msg = f"[cc] Unsupported fan mode: {fan_mode}"
@@ -205,7 +205,7 @@ class MideaCCDevice(MideaClimateDevice):
 
     @property
     @override
-    def device_swing_mode(self) -> MideaSwingMode | None:
+    def swing_mode(self) -> MideaSwingMode | None:
         """Midea CC device swing mode."""
         swing = self._attributes[DeviceAttributes.swing]
         if not isinstance(swing, bool):
@@ -213,9 +213,9 @@ class MideaCCDevice(MideaClimateDevice):
         return DeviceSwingMode.ON if swing else DeviceSwingMode.OFF
 
     @override
-    def set_device_swing_mode(self, swing_mode: MideaSwingMode) -> None:
+    def set_swing_mode(self, swing_mode: MideaSwingMode) -> None:
         """Midea CC device set swing mode."""
-        if swing_mode not in self.device_swing_modes:
+        if swing_mode not in self.swing_modes:
             msg = f"[cc] Unsupported swing mode: {swing_mode}"
             raise ValueError(msg)
         self.set_attribute(
@@ -320,7 +320,7 @@ class MideaCCDevice(MideaClimateDevice):
         )
 
     @override
-    def set_device_target_temperature(
+    def set_target_temperature(
         self,
         target_temperature: float,
         hvac_mode: MideaHVACMode | None,

@@ -2,7 +2,7 @@
 
 from enum import IntEnum
 
-from midealocal.base_classes import MideaFanMode
+from midealocal.base_classes.climate import MideaFanMode
 from midealocal.const import DeviceType
 from midealocal.crc8 import calculate
 from midealocal.message import (

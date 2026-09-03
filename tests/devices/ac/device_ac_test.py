@@ -129,7 +129,7 @@ class TestMideaACDevice:
             self.device.set_attribute(DeviceAttributes.mode.value, 2)
             mock_build_send.assert_called()
 
-            self.device.set_target_temperature(26, 2)
+            self.device.set_raw_target_temperature(26, 2)
             mock_build_send.assert_called()
 
             self.device.set_attribute(DeviceAttributes.prompt_tone.value, False)
@@ -290,7 +290,7 @@ class TestMideaACDevice:
 
             # 2. immediately set target temperature (mode=None, as the climate
             #    entity does) - must not resurrect the stale power=False.
-            self.device.set_target_temperature(21, None)
+            self.device.set_raw_target_temperature(21, None)
             temp_message = mock_build_send.call_args[0][0]
             assert temp_message.power is True
             assert temp_message.mode == 2
@@ -744,14 +744,14 @@ class TestMideaACDevice:
     def test_set_target_temperature(self) -> None:
         """Test set target temperature."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_target_temperature(22.5, 1)
+            self.device.set_raw_target_temperature(22.5, 1)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.target_temperature == 22.5
             assert message.mode == 1
             assert message.power
             self.device._used_subprotocol = True
-            self.device.set_target_temperature(22.5, 1)
+            self.device.set_raw_target_temperature(22.5, 1)
 
     def test_process_message_ignores_stale_c0_temperatures_after_new_protocol(
         self,
@@ -842,7 +842,7 @@ class TestMideaACDevice:
             assert not message.frost_protect
 
             self.device._attributes[DeviceAttributes.power_saving] = True
-            self.device.set_target_temperature(22.5, None)
+            self.device.set_raw_target_temperature(22.5, None)
             message = mock_build_send.call_args[0][0]
             assert message.power_saving
 
@@ -1025,7 +1025,7 @@ class TestMideaACDevice:
 
     def test_hvac_modes(self) -> None:
         """Test hvac_modes lists every generic HVAC mode name by default."""
-        assert self.device.hvac_modes == [
+        assert self.device.raw_hvac_modes == [
             "off",
             "auto",
             "cool",
@@ -1042,7 +1042,7 @@ class TestMideaACDevice:
         self.device._capabilities.update(
             {"auto_mode": False, "cool_mode": True, "dry_mode": False},
         )
-        assert self.device.hvac_modes == ["off", "cool", "heat", "fan_only"]
+        assert self.device.raw_hvac_modes == ["off", "cool", "heat", "fan_only"]
 
     def test_set_hvac_mode_rejects_a_capability_filtered_mode(self) -> None:
         """Test set_hvac_mode raises for a mode hidden by the capabilities."""
@@ -1051,7 +1051,7 @@ class TestMideaACDevice:
             patch.object(self.device, "build_send") as mock_build_send,
             pytest.raises(ValueError, match="Unsupported hvac mode"),
         ):
-            self.device.set_hvac_mode("auto")
+            self.device.set_raw_hvac_mode("auto")
         mock_build_send.assert_not_called()
 
     def test_set_hvac_mode_index_unaffected_by_capability_filtering(self) -> None:
@@ -1064,7 +1064,7 @@ class TestMideaACDevice:
         """
         self.device._capabilities["auto_mode"] = False
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_hvac_mode("cool")
+            self.device.set_raw_hvac_mode("cool")
             message = mock_build_send.call_args[0][0]
             assert message.mode == 2
 
@@ -1089,24 +1089,24 @@ class TestMideaACDevice:
         """Test hvac_mode across power/mode edge cases."""
         self.device._attributes[DeviceAttributes.power] = power
         self.device._attributes[DeviceAttributes.mode] = mode
-        assert self.device.hvac_mode() == expected
+        assert self.device.raw_hvac_mode() == expected
 
     def test_set_hvac_mode_unsupported(self) -> None:
         """Test unsupported MideaHVACMode."""
         with pytest.raises(ValueError, match="Unsupported hvac mode"):
-            self.device.set_device_hvac_mode(DummyHVACMode.INVALID)
+            self.device.set_hvac_mode(DummyHVACMode.INVALID)
 
     def test_set_hvac_mode_off_powers_off(self) -> None:
         """Test set_hvac_mode with off powers the device off."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_hvac_mode("off")
+            self.device.set_raw_hvac_mode("off")
             message = mock_build_send.call_args[0][0]
             assert message.power is False
 
     def test_set_hvac_mode_sets_mode_index(self) -> None:
         """Test set_hvac_mode writes the matching protocol mode index."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_hvac_mode("heat")
+            self.device.set_raw_hvac_mode("heat")
             message = mock_build_send.call_args[0][0]
             assert message.mode == 4
 
@@ -1116,7 +1116,7 @@ class TestMideaACDevice:
             patch.object(self.device, "build_send") as mock_build_send,
             pytest.raises(ValueError, match="Unsupported hvac mode"),
         ):
-            self.device.set_hvac_mode("not_a_real_mode")
+            self.device.set_raw_hvac_mode("not_a_real_mode")
         mock_build_send.assert_not_called()
 
     @pytest.mark.parametrize(
@@ -1134,21 +1134,21 @@ class TestMideaACDevice:
     def test_fan_mode(self, fan_speed: int, expected_mode: str) -> None:
         """Test fan_mode is derived from fan_speed via thresholds."""
         self.device._attributes[DeviceAttributes.fan_speed] = fan_speed
-        assert self.device.fan_mode == expected_mode
+        assert self.device.raw_fan_mode == expected_mode
 
     def test_set_fun_mode_unsupported(self) -> None:
         """Test unsupported MideaFanMode."""
         with pytest.raises(ValueError, match="Unsupported fan mode"):
-            self.device.set_device_fan_mode(DummyFanMode.INVALID)
+            self.device.set_fan_mode(DummyFanMode.INVALID)
 
     def test_fan_mode_invalid_type_returns_none(self) -> None:
         """Test fan_mode returns None for an unexpected attribute type."""
         self.device._attributes[DeviceAttributes.fan_speed] = "auto"
-        assert self.device.fan_mode is None
+        assert self.device.raw_fan_mode is None
 
     def test_fan_modes(self) -> None:
         """Test fan_modes lists every named speed."""
-        assert self.device.fan_modes == [
+        assert self.device.raw_fan_modes == [
             "silent",
             "low",
             "medium",
@@ -1160,7 +1160,7 @@ class TestMideaACDevice:
     def test_set_fan_mode(self) -> None:
         """Test set_fan_mode writes the matching fan_speed set-point."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_fan_mode("high")
+            self.device.set_raw_fan_mode("high")
             message = mock_build_send.call_args[0][0]
             assert message.fan_speed == 80
 
@@ -1170,7 +1170,7 @@ class TestMideaACDevice:
             patch.object(self.device, "build_send") as mock_build_send,
             pytest.raises(ValueError, match="Unsupported fan mode"),
         ):
-            self.device.set_fan_mode("not_a_real_mode")
+            self.device.set_raw_fan_mode("not_a_real_mode")
         mock_build_send.assert_not_called()
 
     @pytest.mark.parametrize(
@@ -1191,21 +1191,21 @@ class TestMideaACDevice:
         """Test swing_mode is derived from the vertical/horizontal flags."""
         self.device._attributes[DeviceAttributes.swing_vertical] = swing_vertical
         self.device._attributes[DeviceAttributes.swing_horizontal] = swing_horizontal
-        assert self.device.swing_mode == expected_mode
+        assert self.device.raw_swing_mode == expected_mode
 
     def test_set_swing_mode_unsupported(self) -> None:
         """Test unsupported MideaSwingMode."""
         with pytest.raises(ValueError, match="Unsupported swing mode"):
-            self.device.set_device_swing_mode(DummySwingMode.INVALID)
+            self.device.set_swing_mode(DummySwingMode.INVALID)
 
     def test_swing_modes(self) -> None:
         """Test swing_modes lists every combination."""
-        assert self.device.swing_modes == ["off", "vertical", "horizontal", "both"]
+        assert self.device.raw_swing_modes == ["off", "vertical", "horizontal", "both"]
 
     def test_set_swing_mode(self) -> None:
         """Test set_swing_mode maps a mode name to the vertical/horizontal flags."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_swing_mode("both")
+            self.device.set_raw_swing_mode("both")
             message = mock_build_send.call_args[0][0]
             assert message.swing_vertical is True
             assert message.swing_horizontal is True
@@ -1216,7 +1216,7 @@ class TestMideaACDevice:
             patch.object(self.device, "build_send") as mock_build_send,
             pytest.raises(ValueError, match="Unsupported swing mode"),
         ):
-            self.device.set_swing_mode("not_a_real_mode")
+            self.device.set_raw_swing_mode("not_a_real_mode")
         mock_build_send.assert_not_called()
 
     def test_swing_unsupported_on_bb_subprotocol(self) -> None:
@@ -1226,11 +1226,11 @@ class TestMideaACDevice:
         silently do nothing; swing must be withheld instead.
         """
         self.device._used_subprotocol = True
-        assert self.device.swing_modes is None
-        assert self.device.swing_mode is None
+        assert self.device.raw_swing_modes is None
+        assert self.device.raw_swing_mode is None
         with (
             patch.object(self.device, "build_send") as mock_build_send,
             pytest.raises(ValueError, match="Unsupported swing mode"),
         ):
-            self.device.set_swing_mode("both")
+            self.device.set_raw_swing_mode("both")
         mock_build_send.assert_not_called()

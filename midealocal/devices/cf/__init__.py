@@ -5,7 +5,7 @@ import math
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, override
 
-from midealocal.base_classes import MideaClimateDevice, MideaHVACMode
+from midealocal.base_classes.climate import MideaClimateDevice, MideaHVACMode
 from midealocal.const import DeviceType
 from midealocal.device import MideaDeviceInitKwargs
 from midealocal.exceptions import ValueWrongType
@@ -74,12 +74,12 @@ class MideaCFDevice(MideaClimateDevice):
 
     @property
     @override
-    def device_hvac_modes(self) -> set[MideaHVACMode]:
+    def hvac_modes(self) -> set[MideaHVACMode]:
         """Midea CF device HVAC modes."""
         return MideaCFDevice._device_hvac_modes
 
     @override
-    def device_hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:
+    def hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:
         """Midea CF device HVAC mode."""
         power = self._attributes[DeviceAttributes.power]
         if not isinstance(power, bool):
@@ -97,7 +97,7 @@ class MideaCFDevice(MideaClimateDevice):
             return None
 
     @override
-    def set_device_hvac_mode(
+    def set_hvac_mode(
         self,
         hvac_mode: MideaHVACMode,
         zone: int | None = None,
@@ -111,13 +111,13 @@ class MideaCFDevice(MideaClimateDevice):
         if hvac_mode == DeviceHVACMode.OFF:
             self.set_attribute(attr=DeviceAttributes.power, value=False)
             return
-        if hvac_mode not in self.device_hvac_modes:
+        if hvac_mode not in self.hvac_modes:
             msg = f"[cf] Unsupported hvac mode: {hvac_mode}"
             raise ValueError(msg)
         target_temperature = self._attributes[DeviceAttributes.target_temperature]
         if target_temperature is None:
             target_temperature = self._attributes[DeviceAttributes.min_temperature]
-        self.set_device_target_temperature(
+        self.set_target_temperature(
             target_temperature=target_temperature,
             hvac_mode=hvac_mode,
         )
@@ -133,7 +133,7 @@ class MideaCFDevice(MideaClimateDevice):
         return self.update_attributes_from_message(message)
 
     @override
-    def set_device_target_temperature(
+    def set_target_temperature(
         self,
         target_temperature: float,
         hvac_mode: MideaHVACMode | None,

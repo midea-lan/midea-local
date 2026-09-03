@@ -4,7 +4,7 @@ import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, override
 
-from midealocal.base_classes import MideaClimateDevice, MideaHVACMode
+from midealocal.base_classes.climate import MideaClimateDevice, MideaHVACMode
 from midealocal.const import DeviceType
 from midealocal.device import MideaDeviceInitKwargs
 
@@ -74,12 +74,12 @@ class MideaFBDevice(MideaClimateDevice):
 
     @property
     @override
-    def device_hvac_modes(self) -> set[MideaHVACMode]:
+    def hvac_modes(self) -> set[MideaHVACMode]:
         """Midea FB device HVAC modes."""
         return set(MideaFBDevice._device_hvac_modes)
 
     @override
-    def device_hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:
+    def hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:
         """Midea FB device HVAC mode."""
         power = self._attributes[DeviceAttributes.power]
         if not isinstance(power, bool):
@@ -87,13 +87,13 @@ class MideaFBDevice(MideaClimateDevice):
         return DeviceHVACMode.HEAT if power else DeviceHVACMode.OFF
 
     @override
-    def set_device_hvac_mode(
+    def set_hvac_mode(
         self,
         hvac_mode: MideaHVACMode,
         zone: int | None = None,
     ) -> None:
         """Midea FB device set HVAC mode."""
-        if hvac_mode not in self.device_hvac_modes:
+        if hvac_mode not in self.hvac_modes:
             msg = f"[fb] Unsupported hvac mode: {hvac_mode}"
             raise ValueError(msg)
         self.set_attribute(
@@ -133,7 +133,7 @@ class MideaFBDevice(MideaClimateDevice):
         self.build_send(message)
 
     @override
-    def set_device_target_temperature(
+    def set_target_temperature(
         self,
         target_temperature: float,
         hvac_mode: MideaHVACMode | None,

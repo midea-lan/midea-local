@@ -140,7 +140,7 @@ class TestMideaCFDevice:
     def test_set_target_temperature(self) -> None:
         """Test set target temperature with and without mode."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_target_temperature(25, None)
+            self.device.set_raw_target_temperature(25, None)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageSet)
@@ -149,7 +149,7 @@ class TestMideaCFDevice:
             assert message.target_temperature == 25
             mock_build_send.reset_mock()
 
-            self.device.set_target_temperature(30, 2, 1)
+            self.device.set_raw_target_temperature(30, 2, 1)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.mode == 2
@@ -221,7 +221,7 @@ class TestMideaCFDevice:
 
     def test_hvac_modes(self) -> None:
         """Test hvac_modes lists every generic HVAC mode name."""
-        assert self.device.hvac_modes == ["off", "auto", "cool", "heat"]
+        assert self.device.raw_hvac_modes == ["off", "auto", "cool", "heat"]
 
     @pytest.mark.parametrize(
         ("power", "mode", "expected"),
@@ -244,17 +244,17 @@ class TestMideaCFDevice:
         """Test hvac_mode across power/mode edge cases."""
         self.device._attributes[DeviceAttributes.power] = power
         self.device._attributes[DeviceAttributes.mode] = mode
-        assert self.device.hvac_mode() == expected
+        assert self.device.raw_hvac_mode() == expected
 
     def test_set_hvac_mode_unsupported(self) -> None:
         """Test unsupported MideaHVACMode."""
         with pytest.raises(ValueError, match="Unsupported hvac mode"):
-            self.device.set_device_hvac_mode(DummyHVACMode.INVALID)
+            self.device.set_hvac_mode(DummyHVACMode.INVALID)
 
     def test_set_hvac_mode_off_powers_off(self) -> None:
         """Test set_hvac_mode with off powers the device off."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_hvac_mode("off")
+            self.device.set_raw_hvac_mode("off")
             message = mock_build_send.call_args[0][0]
             assert message.power is False
 
@@ -262,7 +262,7 @@ class TestMideaCFDevice:
         """Test set_hvac_mode carries the current target_temperature."""
         self.device._attributes[DeviceAttributes.target_temperature] = 22.0
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_hvac_mode("heat")
+            self.device.set_raw_hvac_mode("heat")
             message = mock_build_send.call_args[0][0]
             assert message.mode == 3
             assert message.target_temperature == 22.0
@@ -271,7 +271,7 @@ class TestMideaCFDevice:
         """Test set_hvac_mode falls back to min_temperature when unset."""
         assert self.device._attributes[DeviceAttributes.target_temperature] is None
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_hvac_mode("heat")
+            self.device.set_raw_hvac_mode("heat")
             message = mock_build_send.call_args[0][0]
             assert message.target_temperature == 5
 
@@ -281,5 +281,5 @@ class TestMideaCFDevice:
             patch.object(self.device, "build_send") as mock_build_send,
             pytest.raises(ValueError, match="Unsupported hvac mode"),
         ):
-            self.device.set_hvac_mode("not_a_real_mode")
+            self.device.set_raw_hvac_mode("not_a_real_mode")
         mock_build_send.assert_not_called()

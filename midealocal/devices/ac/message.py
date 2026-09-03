@@ -5,7 +5,7 @@ from collections.abc import Callable, Mapping
 from enum import IntEnum
 from types import MappingProxyType
 
-from midealocal.base_classes import MideaFanMode, MideaSwingMode
+from midealocal.base_classes.climate import MideaFanMode, MideaSwingMode
 from midealocal.const import MAX_BYTE_VALUE, DeviceType
 from midealocal.crc8 import calculate
 from midealocal.message import (
