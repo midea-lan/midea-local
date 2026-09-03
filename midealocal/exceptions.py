@@ -43,10 +43,11 @@ class ValueWrongType(MideaLocalError):
     """Exception raised when the value has a wrong data type."""
 
 
-# Verified against mp-prod.appsmb.com. The wire message text varies by locale
-# and endpoint (65027 comes back in Chinese), so callers should branch on the
-# code; the meaning here is only for logging.
+# Seen on mp-prod.appsmb.com and the Meiju gateway (1002 / 40404). The wire
+# message text varies by locale and endpoint (65027 comes back in Chinese), so
+# callers should branch on the code; the meaning here is only for logging.
 CLOUD_ERROR_MEANINGS: dict[int, str] = {
+    1002: "a required request parameter is missing or has the wrong type",
     3004: (
         "malformed or rejected request: bad udpid/applianceCodes, or the "
         "endpoint is disabled on this cloud"
@@ -62,6 +63,7 @@ CLOUD_ERROR_MEANINGS: dict[int, str] = {
     3301: "invalid app key for this cloud",
     7610: "too many failed login attempts; locked for about 5 minutes",
     9999: "generic or transient cloud error",
+    40404: "the API endpoint does not exist; it was retired or moved",
     65027: "maximum number of simultaneously logged-in devices exceeded",
 }
 

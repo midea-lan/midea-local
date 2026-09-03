@@ -856,6 +856,10 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert type(generic) is MideaCloudError
         assert "transient" in str(generic)
         assert cloud_api_error(4242, "boom").code == 4242
+        # getToken-only codes: base class, but still enriched from the table
+        assert type(cloud_api_error(1002, "")) is MideaCloudError
+        assert "parameter" in str(cloud_api_error(1002, ""))
+        assert "retired" in str(cloud_api_error(40404, ""))
 
     async def test_msmartcloud_list_home(self) -> None:
         """Test MSmartCloud list_home."""
