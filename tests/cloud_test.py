@@ -246,6 +246,10 @@ class CloudTest(IsolatedAsyncioTestCase):
             get_midea_cloud("Ariston Clima", session, "", ""),
             MideaAirCloud,
         )
+        assert isinstance(
+            get_midea_cloud("OS Comfort", session, "", ""),
+            MideaAirCloud,
+        )
         with pytest.raises(ElementMissing):
             get_midea_cloud("Invalid", session, "", "")
 
@@ -338,7 +342,7 @@ class CloudTest(IsolatedAsyncioTestCase):
     async def test_get_cloud_servers(self) -> None:
         """Test get cloud servers."""
         servers = await MideaCloud.get_cloud_servers()
-        assert len(servers.items()) == 6
+        assert len(servers.items()) == 7
 
     async def test_get_preset_account_cloud(self) -> None:
         """Test get preset cloud account."""
