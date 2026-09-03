@@ -348,39 +348,54 @@ class MideaCloud:
                     "key": token["key"].lower(),
                 }
 
-    async def get_cloud_keys(self, appliance_id: int) -> dict[int, dict[str, Any]]:
-        """Get keys for device."""
+    async def _retrieve_cloud_keys(
+        self,
+        appliance_id: int,
+        endpoint: str,
+        extra_data: dict[str, Any],
+    ) -> dict[int, dict[str, Any]]:
+        """Query ``endpoint`` for a token/key with UDP methods 1 and 2.
+
+        ``extra_data`` carries the per-endpoint payload quirks: v1 wants
+        ``applianceCodes`` as a bare string, v2 wants it as a list plus a
+        ``homegroupId``.
+        """
         result: dict[int, dict[str, Any]] = {}
-        for method in [1, 2]:
+        for method in (1, 2):
             udp_id = self._security.get_udp_id(appliance_id, method)
             data = self._make_general_data()
-            # The MSmartHome ("SmartHome") cloud rejects getToken with
-            # 3004 "value is illegal" unless the appliance id is also sent as
-            # `applianceCodes`; the official app includes it. Harmless on other
-            # clouds, which ignore the extra field.
-            data.update({"udpid": udp_id, "applianceCodes": str(appliance_id)})
+            data.update({"udpid": udp_id, **extra_data})
             response = await self._api_request(
-                endpoint="/v1/iot/secure/getToken",
+                endpoint=endpoint,
                 data=data,
                 raise_for_error=True,
             )
             # Log only the entry count: the payload carries token/key material.
             tokens = (response or {}).get("tokenlist") or []
             _LOGGER.debug(
-                "get_keys() for appliance_id %s with method %s returned "
-                "%s token entries",
+                "getToken %s for appliance_id %s method %s returned %s token entries",
+                endpoint,
                 appliance_id,
                 method,
                 len(tokens),
             )
-            if tokens:
-                self._store_matching_tokens(
-                    result=result,
-                    tokens=tokens,
-                    udp_id=udp_id,
-                    method=method,
-                )
+            self._store_matching_tokens(
+                result=result,
+                tokens=tokens,
+                udp_id=udp_id,
+                method=method,
+            )
         return result
+
+    async def get_cloud_keys(self, appliance_id: int) -> dict[int, dict[str, Any]]:
+        """Get keys for device."""
+        # ``applianceCodes``: the MSmartHome ("SmartHome") cloud rejects getToken
+        # with 3004 "value is illegal" without it; other clouds ignore the field.
+        return await self._retrieve_cloud_keys(
+            appliance_id,
+            "/v1/iot/secure/getToken",
+            {"applianceCodes": str(appliance_id)},
+        )
 
     @staticmethod
     async def get_cloud_servers() -> dict[int, str]:
@@ -540,50 +555,23 @@ class MeijuCloud(MideaCloud):
         Falls back to the inherited v1 implementation when v2 yields nothing, so
         this stays a no-op for clouds or accounts the old endpoint still serves.
         """
-        homes = await self.list_home()
-        result: dict[int, dict[str, Any]] = {}
-        for home_id in homes or {}:
-            for method in [1, 2]:
-                udp_id = self._security.get_udp_id(appliance_id, method)
-                data = self._make_general_data()
-                data.update(
-                    {
-                        "homegroupId": str(home_id),
-                        "udpid": udp_id,
-                        "applianceCodes": [str(appliance_id)],
-                    },
-                )
-                response = await self._api_request(
-                    endpoint="/v2/iot/secure/getToken",
-                    data=data,
-                    raise_for_error=True,
-                )
-                # Log only the entry count: the payload carries token/key material.
-                tokens = (response or {}).get("tokenlist") or []
-                _LOGGER.debug(
-                    "get_cloud_keys() v2 for appliance_id %s in home %s "
-                    "with method %s returned %s token entries",
-                    appliance_id,
-                    home_id,
-                    method,
-                    len(tokens),
-                )
-                self._store_matching_tokens(
-                    result=result,
-                    tokens=tokens,
-                    udp_id=udp_id,
-                    method=method,
-                )
-            if result:
-                break
-        if not result:
-            _LOGGER.debug(
-                "v2 getToken returned no keys for appliance_id %s, "
-                "falling back to the v1 endpoint",
+        for home_id in await self.list_home() or {}:
+            result = await self._retrieve_cloud_keys(
                 appliance_id,
+                "/v2/iot/secure/getToken",
+                {
+                    "homegroupId": str(home_id),
+                    "applianceCodes": [str(appliance_id)],
+                },
             )
-            return await super().get_cloud_keys(appliance_id)
-        return result
+            if result:
+                return result
+        _LOGGER.debug(
+            "v2 getToken returned no keys for appliance_id %s, "
+            "falling back to the v1 endpoint",
+            appliance_id,
+        )
+        return await super().get_cloud_keys(appliance_id)
 
     async def list_appliances(
         self,
