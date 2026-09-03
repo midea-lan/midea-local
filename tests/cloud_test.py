@@ -86,8 +86,11 @@ _TOSHIBA_EXPECTED_SN = "0008AC0000000000000000000000BEEF"
 @pytest.mark.parametrize(
     ("code", "msg"),
     [
+        (3101, "password error"),
         (3102, "Account or password incorrect, please re-enter"),
+        (3106, "invalid session"),
         (3144, "login failed, loginId is empty, please login again"),
+        (3301, "app key is invalid"),
         (7610, "Too many failed login attempts, please try again 5 minutes later"),
         (65027, "该用户在线登录设备已超过上限,请更换账号登录"),
     ],
@@ -95,9 +98,9 @@ _TOSHIBA_EXPECTED_SN = "0008AC0000000000000000000000BEEF"
 async def test_msmartcloud_login_raises_cloud_login_error(code: int, msg: str) -> None:
     """Test known login-step error codes surface as CloudLoginError.
 
-    3102/3144/7610/65027 are actionable failures of the login / loginId step;
-    callers need the code to show the right message, so login() must raise
-    rather than return a bare False.
+    3101/3102/3106/3144/3301/7610/65027 are actionable failures of the login /
+    loginId step; callers need the code to show the right message, so login()
+    must raise rather than return a bare False.
     """
     session = Mock()
     response = Mock()
@@ -842,6 +845,9 @@ class CloudTest(IsolatedAsyncioTestCase):
     def test_cloud_api_error_factory(self) -> None:
         """Test cloud_api_error picks the most specific subclass per code."""
         assert type(cloud_api_error(3201, "")) is NoDeviceRegistered
+        assert type(cloud_api_error(3101, "")) is CloudLoginError
+        assert type(cloud_api_error(3106, "")) is CloudLoginError
+        assert type(cloud_api_error(3301, "")) is CloudLoginError
         assert type(cloud_api_error(7610, "")) is CloudLoginError
         assert type(cloud_api_error(65027, "")) is CloudLoginError
         # unknown code falls back to the base class, and the meaning table
