@@ -20,6 +20,7 @@ from midealocal.message import ListTypes
 from .message import (
     ACFanSpeed,
     ACSwingMode,
+    DeviceAttributes,
     MessageACResponse,
     MessageCapabilitiesAdditionalQuery,
     MessageCapabilitiesQuery,
@@ -200,6 +201,16 @@ STALE_C0_TEMPERATURE_ATTRIBUTES = (
 
 class MideaACDevice(MideaClimateDevice):
     """Midea AC device."""
+
+    _capabilities_attr: ClassVar[dict[str, DeviceAttributes]] = {
+        "anion": DeviceAttributes.anion,
+        "rate_select": DeviceAttributes.rate_select,
+        "sound": DeviceAttributes.sound,
+        "display_control": DeviceAttributes.screen_display,
+        "humidity": DeviceAttributes.indoor_humidity,
+        "swing_horizontal_angle": DeviceAttributes.wind_lr_angle,
+        "swing_vertical_angle": DeviceAttributes.wind_ud_angle,
+    }
 
     _fresh_air_fan_speeds: ClassVar[dict[int, str]] = {
         0: "off",
@@ -739,6 +750,9 @@ class MideaACDevice(MideaClimateDevice):
         ):
             return {}
         self._capabilities.update(new_capabilities)
+        for cap in MideaACDevice._capabilities_attr:
+            if not self._capabilities.get(cap, False):
+                self._attributes.pop(MideaACDevice._capabilities_attr[cap])
         return {"capabilities": dict(self._capabilities)}
 
     def _refresh_self_clean_status(self, message: MessageACResponse) -> dict[str, Any]:

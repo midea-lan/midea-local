@@ -19,7 +19,13 @@ from aiohttp import ClientConnectionError, ClientSession, ClientTimeout
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 
-from midealocal.exceptions import ElementMissing
+from midealocal.exceptions import (
+    CLOUD_ERROR_MEANINGS,
+    LOGIN_ERROR_CODES,
+    NO_PERMISSION_CODES,
+    ElementMissing,
+    cloud_api_error,
+)
 
 from .security import (
     CloudSecurity,
@@ -29,6 +35,10 @@ from .security import (
 )
 
 SN8_MIN_SERIAL_LENGTH = 17
+
+# Cloud error codes that have a dedicated, actionable exception subclass; every
+# other non-zero code is logged and surfaced as ``None``.
+RAISE_FOR_ERROR_CODES = NO_PERMISSION_CODES | LOGIN_ERROR_CODES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -216,6 +226,7 @@ class MideaCloud:
         endpoint: str,
         data: dict[str, Any],
         header: dict[str, Any] | None = None,
+        raise_for_error: bool = False,
     ) -> dict | None:
         header = header or {}
         if not data.get("reqId"):
@@ -266,9 +277,41 @@ class MideaCloud:
                     url,
                     repr(e),
                 )
-        if int(response["code"]) == 0 and "data" in response:
+        code = int(response["code"])
+        if code == 0 and "data" in response:
             return cast("dict", response["data"])
+        self._handle_error_code(
+            url,
+            code,
+            str(response.get("msg") or ""),
+            raise_for_error,
+        )
         return None
+
+    def _handle_error_code(
+        self,
+        url: str,
+        code: int,
+        message: str,
+        raise_for_error: bool,
+    ) -> None:
+        """Log a non-zero cloud error code and raise if it maps to a known error.
+
+        ``code`` -1 is the local "no reply" sentinel already logged by the
+        caller, so it is skipped here.
+        """
+        if code == -1:
+            return
+        meaning = CLOUD_ERROR_MEANINGS.get(code)
+        _LOGGER.warning(
+            "Midea cloud API url: %s rejected the request with code %s: %s%s",
+            url,
+            code,
+            message,
+            f" ({meaning})" if meaning else "",
+        )
+        if raise_for_error and code in RAISE_FOR_ERROR_CODES:
+            raise cloud_api_error(code, message)
 
     async def _get_login_id(self) -> str | None:
         data = self._make_general_data()
@@ -276,6 +319,7 @@ class MideaCloud:
         if response := await self._api_request(
             endpoint="/v1/user/login/id/get",
             data=data,
+            raise_for_error=True,
         ):
             return response.get("loginId")
         return None
@@ -318,6 +362,7 @@ class MideaCloud:
             response = await self._api_request(
                 endpoint="/v1/iot/secure/getToken",
                 data=data,
+                raise_for_error=True,
             )
             # Log only the entry count: the payload carries token/key material.
             tokens = (response or {}).get("tokenlist") or []
@@ -455,6 +500,7 @@ class MeijuCloud(MideaCloud):
             if response := await self._api_request(
                 endpoint="/mj/user/login",
                 data=data,
+                raise_for_error=True,
             ):
                 self._access_token = response["mdata"]["accessToken"]
                 self._security.set_aes_keys(
@@ -510,6 +556,7 @@ class MeijuCloud(MideaCloud):
                 response = await self._api_request(
                     endpoint="/v2/iot/secure/getToken",
                     data=data,
+                    raise_for_error=True,
                 )
                 # Log only the entry count: the payload carries token/key material.
                 tokens = (response or {}).get("tokenlist") or []
@@ -779,13 +826,14 @@ class SmartHomeCloud(MideaCloud):
         endpoint: str,
         data: dict[str, Any],
         header: dict[str, Any] | None = None,
+        raise_for_error: bool = False,
     ) -> dict[str, Any] | None:
         header = header or {}
         header.update(
             {"x-recipe-app": self._app_id, "authorization": f"Basic {self._auth_base}"},
         )
 
-        return await super()._api_request(endpoint, data, header)
+        return await super()._api_request(endpoint, data, header, raise_for_error)
 
     async def _re_route(self) -> None:
         data = self._make_general_data()
@@ -832,6 +880,7 @@ class SmartHomeCloud(MideaCloud):
             if response := await self._api_request(
                 endpoint="/mj/user/login",
                 data=data,
+                raise_for_error=True,
             ):
                 self._uid = response["uid"]
                 self._access_token = response["mdata"]["accessToken"]
@@ -1004,6 +1053,7 @@ class MideaAirCloud(MideaCloud):
         endpoint: str,
         data: dict[str, Any],
         header: dict[str, Any] | None = None,
+        raise_for_error: bool = False,
     ) -> dict[str, Any] | None:
         header = header or {}
         url = self._api_url + endpoint
@@ -1040,13 +1090,21 @@ class MideaAirCloud(MideaCloud):
                     url,
                     repr(e),
                 )
-        if int(response["errorCode"]) == 0:
+        error_code = int(response["errorCode"])
+        if error_code == 0:
             if "result" in response:
                 return cast("dict[str, Any]", response["result"])
             # The legacy lua endpoint returns its payload under "data" instead
             # of "result"; fall back to it so download_lua can read the url.
             if "data" in response:
                 return cast("dict[str, Any]", response["data"])
+        else:
+            self._handle_error_code(
+                url,
+                error_code,
+                str(response.get("msg") or ""),
+                raise_for_error,
+            )
         return None
 
     async def login(self) -> bool:
@@ -1066,6 +1124,7 @@ class MideaAirCloud(MideaCloud):
             if response := await self._api_request(
                 endpoint="/v1/user/login",
                 data=data,
+                raise_for_error=True,
             ):
                 self._access_token = response["accessToken"]
                 self._uid = response["userId"]
