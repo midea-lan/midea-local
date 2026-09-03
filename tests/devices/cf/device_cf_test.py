@@ -137,22 +137,38 @@ class TestMideaCFDevice:
         new_status = self.device.process_message(bytes(header + body + crc))
         assert new_status == {}
 
-    def test_set_target_temperature(self) -> None:
+    @pytest.mark.parametrize(
+        ("power", "hvac_mode", "mode"),
+        [
+            (False, None, 0),
+            (False, "", 0),
+            (True, "auto", 1),
+            (True, "heat", 3),
+            (False, "off", 0),
+            (False, "invalid", 0),
+        ],
+    )
+    def test_set_target_temperature(
+        self,
+        power: bool,
+        hvac_mode: str | None,
+        mode: int,
+    ) -> None:
         """Test set target temperature with and without mode."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_raw_target_temperature(25, None)
+            self.device.set_raw_target_temperature(25, hvac_mode)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageSet)
-            assert message.power is True
-            assert message.mode == 0
+            assert message.power is power
+            assert message.mode == mode
             assert message.target_temperature == 25
             mock_build_send.reset_mock()
 
-            self.device.set_raw_target_temperature(30, 2, 1)
+            self.device.set_raw_target_temperature(30, hvac_mode)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
-            assert message.mode == 2
+            assert message.mode == mode
             assert message.target_temperature == 30
 
     @pytest.mark.parametrize(

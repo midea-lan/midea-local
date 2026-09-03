@@ -270,16 +270,31 @@ class TestMideaCCDevice:
             self.device.set_attribute(DeviceAttributes.fan_speed_level.value, True)
             mock_send.assert_not_called()
 
-    def test_set_target_temperature_with_mode(self) -> None:
+    @pytest.mark.parametrize(
+        ("power", "hvac_mode", "mode"),
+        [
+            (False, "", 1),
+            (True, "auto", 5),
+            (True, "dry", 2),
+            (False, "off", 0),
+            (False, "invalid", 1),
+        ],
+    )
+    def test_set_target_temperature(
+        self,
+        power: bool,
+        hvac_mode: str,
+        mode: int,
+    ) -> None:
         """Setting temperature with a mode powers on and applies the mode."""
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_raw_target_temperature(22.5, 3)
+            self.device.set_raw_target_temperature(22.5, hvac_mode)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
             assert isinstance(msg, MessageSet)
             assert msg.target_temperature == 22.5
-            assert msg.power is True
-            assert msg.mode == 3
+            assert msg.power == power
+            assert msg.mode == mode
 
     def test_set_target_temperature_without_mode(self) -> None:
         """Setting temperature without a mode keeps the current power state."""
@@ -471,16 +486,50 @@ class TestMideaCCDeviceFEControl:
         assert self.device._fe_temperature_value(24.0) == 128
         assert self.device._fe_temperature_value(17.5) == 115
 
-    def test_set_target_temperature_with_mode(self) -> None:
+    @pytest.mark.parametrize(
+        ("power", "hvac_mode", "mode"),
+        [
+            (1, "auto", 5),
+            (1, "dry", 6),
+        ],
+    )
+    def test_set_target_temperature(
+        self,
+        power: int,
+        hvac_mode: str,
+        mode: int,
+    ) -> None:
         """FE temperature set with mode sends power + mode + temperature."""
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_raw_target_temperature(24.0, 3)
+            self.device.set_raw_target_temperature(24.0, hvac_mode)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
             assert isinstance(msg, MessageFEControl)
             assert msg._controls == [
-                (CCControlId.POWER, 1),
-                (CCControlId.MODE, 0x03),
+                (CCControlId.POWER, power),
+                (CCControlId.MODE, mode),
+                (CCControlId.TARGET_TEMPERATURE, 128),
+            ]
+
+    @pytest.mark.parametrize(
+        ("hvac_mode"),
+        [
+            (""),
+            ("invalid"),
+            ("off"),
+        ],
+    )
+    def test_set_target_temperature_hvac_none(
+        self,
+        hvac_mode: str,
+    ) -> None:
+        """FE temperature set with mode sends power + mode + temperature."""
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_raw_target_temperature(24.0, hvac_mode)
+            mock_send.assert_called_once()
+            msg = mock_send.call_args[0][0]
+            assert isinstance(msg, MessageFEControl)
+            assert msg._controls == [
                 (CCControlId.TARGET_TEMPERATURE, 128),
             ]
 

@@ -165,7 +165,7 @@ class TestMideaFBDevice:
     def test_set_target_temperature_with_mode_powers_on(self) -> None:
         """Setting temperature alongside a mode also powers the device on."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_raw_target_temperature(25, 1)
+            self.device.set_raw_target_temperature(25, "heat")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageSet)

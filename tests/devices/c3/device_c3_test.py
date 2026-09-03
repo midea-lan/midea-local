@@ -224,29 +224,64 @@ class TestMideaC3Device:
 
             assert result[DeviceAttributes.mode.value] == 3
 
-    def test_set_target_temperature(self) -> None:
+    @pytest.mark.parametrize(
+        ("power", "hvac_mode", "mode"),
+        [
+            (False, "off", 0),
+            (True, "auto", 1),
+            (True, "heat", 3),
+        ],
+    )
+    def test_set_target_temperature(
+        self,
+        power: bool,
+        hvac_mode: str | None,
+        mode: int,
+    ) -> None:
         """Test set target temperature."""
         with pytest.raises(ValueError):  # noqa: PT011
-            self.device.set_raw_target_temperature(22.5, 1)
+            self.device.set_raw_target_temperature(22.5, hvac_mode)
         with patch("midealocal.devices.c3.MessageC3Response") as mock_message_response:
             mock_message = mock_message_response.return_value
             mock_message.zone_temp_type = [True, False]
             self.device.process_message(b"")
 
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_raw_target_temperature(22.5, 1, 0)
+            self.device.set_raw_target_temperature(22.5, hvac_mode, 0)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
-            assert message.mode == 1
-            assert message.zone1_power
+            assert message.mode == mode
+            assert message.zone1_power == power
 
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_raw_target_temperature(23, 1, 1)
+            self.device.set_raw_target_temperature(23, hvac_mode, 1)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.room_target_temp == 23
-            assert message.mode == 1
-            assert message.zone2_power
+            assert message.mode == mode
+            assert message.zone2_power == power
+
+    def test_set_target_temperature_without_hvac(
+        self,
+    ) -> None:
+        """Test set target temperature without HVAC Mode."""
+        with pytest.raises(ValueError):  # noqa: PT011
+            self.device.set_raw_target_temperature(22.5, None)
+        with patch("midealocal.devices.c3.MessageC3Response") as mock_message_response:
+            mock_message = mock_message_response.return_value
+            mock_message.zone_temp_type = [True, False]
+            self.device.process_message(b"")
+
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_raw_target_temperature(22.5, None, 0)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_raw_target_temperature(23, None, 1)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.room_target_temp == 23
 
     def test_set_mode(self) -> None:
         """Test set mode."""

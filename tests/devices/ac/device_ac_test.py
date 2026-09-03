@@ -129,7 +129,7 @@ class TestMideaACDevice:
             self.device.set_attribute(DeviceAttributes.mode.value, 2)
             mock_build_send.assert_called()
 
-            self.device.set_raw_target_temperature(26, 2)
+            self.device.set_raw_target_temperature(26, "auto")
             mock_build_send.assert_called()
 
             self.device.set_attribute(DeviceAttributes.prompt_tone.value, False)
@@ -741,17 +741,33 @@ class TestMideaACDevice:
                 self.device.set_attribute(attr.value, 1)
             mock_build_send.assert_not_called()
 
-    def test_set_target_temperature(self) -> None:
+    @pytest.mark.parametrize(
+        ("power", "hvac_mode", "mode"),
+        [
+            (False, None, 0),
+            (False, "", 0),
+            (True, "auto", 1),
+            (True, "dry", 3),
+            (False, "off", 0),
+            (False, "invalid", 0),
+        ],
+    )
+    def test_set_target_temperature(
+        self,
+        power: bool,
+        hvac_mode: str | None,
+        mode: int,
+    ) -> None:
         """Test set target temperature."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_raw_target_temperature(22.5, 1)
+            self.device.set_raw_target_temperature(22.5, hvac_mode)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.target_temperature == 22.5
-            assert message.mode == 1
-            assert message.power
+            assert message.mode == mode
+            assert message.power == power
             self.device._used_subprotocol = True
-            self.device.set_raw_target_temperature(22.5, 1)
+            self.device.set_raw_target_temperature(22.5, "auto")
 
     def test_process_message_ignores_stale_c0_temperatures_after_new_protocol(
         self,

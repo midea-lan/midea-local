@@ -99,16 +99,13 @@ class MideaClimateDevice(MideaDevice, ABC):
     def set_raw_target_temperature(
         self,
         target_temperature: float,
-        hvac_mode: int | None,
+        hvac_mode: str | None,
         zone: int | None = None,
     ) -> None:
         """Set the target temperature, optionally also changing HVAC mode."""
-        hvac = self._str_to_hvac(
-            self.raw_hvac_modes[hvac_mode] if hvac_mode is not None else None,
-        )
         self.set_target_temperature(
             target_temperature=target_temperature,
-            hvac_mode=hvac,
+            hvac_mode=self._str_to_hvac(hvac_mode),
             zone=zone,
         )
 
