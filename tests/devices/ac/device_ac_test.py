@@ -550,7 +550,7 @@ class TestMideaACDevice:
 
         self.device.process_message(self._response(body))
 
-        assert self.device.capabilities == {
+        assert self.device._capabilities == {
             "fan_auto": True,
             "fan_high": True,
             "fan_low": True,
