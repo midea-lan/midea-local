@@ -30,6 +30,7 @@ from midealocal.devices.ac.message import (
     PowerFormats,
 )
 from midealocal.message import ListTypes, MessageBase
+from tests.base_classes_test import DummyFanMode, DummyHVACMode, DummySwingMode
 
 
 class TestMideaACDevice:
@@ -1090,6 +1091,11 @@ class TestMideaACDevice:
         self.device._attributes[DeviceAttributes.mode] = mode
         assert self.device.hvac_mode() == expected
 
+    def test_set_hvac_mode_unsupported(self) -> None:
+        """Test unsupported MideaHVACMode."""
+        with pytest.raises(ValueError, match="Unsupported hvac mode"):
+            self.device.set_device_hvac_mode(DummyHVACMode.INVALID)
+
     def test_set_hvac_mode_off_powers_off(self) -> None:
         """Test set_hvac_mode with off powers the device off."""
         with patch.object(self.device, "build_send") as mock_build_send:
@@ -1129,6 +1135,11 @@ class TestMideaACDevice:
         """Test fan_mode is derived from fan_speed via thresholds."""
         self.device._attributes[DeviceAttributes.fan_speed] = fan_speed
         assert self.device.fan_mode == expected_mode
+
+    def test_set_fun_mode_unsupported(self) -> None:
+        """Test unsupported MideaFanMode."""
+        with pytest.raises(ValueError, match="Unsupported fan mode"):
+            self.device.set_device_fan_mode(DummyFanMode.INVALID)
 
     def test_fan_mode_invalid_type_returns_none(self) -> None:
         """Test fan_mode returns None for an unexpected attribute type."""
@@ -1181,6 +1192,11 @@ class TestMideaACDevice:
         self.device._attributes[DeviceAttributes.swing_vertical] = swing_vertical
         self.device._attributes[DeviceAttributes.swing_horizontal] = swing_horizontal
         assert self.device.swing_mode == expected_mode
+
+    def test_set_swing_mode_unsupported(self) -> None:
+        """Test unsupported MideaSwingMode."""
+        with pytest.raises(ValueError, match="Unsupported swing mode"):
+            self.device.set_device_swing_mode(DummySwingMode.INVALID)
 
     def test_swing_modes(self) -> None:
         """Test swing_modes lists every combination."""

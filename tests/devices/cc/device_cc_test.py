@@ -16,6 +16,7 @@ from midealocal.devices.cc.message import (
     MessageSet,
 )
 from midealocal.message import MessageType
+from tests.base_classes_test import DummyFanMode, DummyHVACMode, DummySwingMode
 
 
 def _build_message(message_type: MessageType, body: bytearray) -> bytes:
@@ -323,6 +324,11 @@ class TestMideaCCDevice:
         self.device._attributes[DeviceAttributes.mode] = mode
         assert self.device.hvac_mode() == expected
 
+    def test_set_hvac_mode_unsupported(self) -> None:
+        """Test unsupported MideaHVACMode."""
+        with pytest.raises(ValueError, match="Unsupported hvac mode"):
+            self.device.set_device_hvac_mode(DummyHVACMode.INVALID)
+
     def test_set_hvac_mode_off_powers_off(self) -> None:
         """Test set_hvac_mode with off powers the device off."""
         with patch.object(self.device, "build_send") as mock_build_send:
@@ -364,6 +370,11 @@ class TestMideaCCDevice:
             self.device.set_fan_mode(fan_modes[0])
             mock_send.assert_called_once()
 
+    def test_set_fan_mode_unsupported(self) -> None:
+        """Test unsupported MideaFanMode."""
+        with pytest.raises(ValueError, match="Unsupported fan mode"):
+            self.device.set_device_fan_mode(DummyFanMode.INVALID)
+
     def test_set_fan_mode_unresolved_table_raises(self) -> None:
         """Test set_fan_mode raises before the fan speed table is known."""
         assert self.device.fan_modes is None
@@ -390,6 +401,11 @@ class TestMideaCCDevice:
         assert self.device.swing_mode == "off"
         self.device._attributes[DeviceAttributes.swing] = True
         assert self.device.swing_mode == "on"
+
+    def test_set_swing_mode_unsupported(self) -> None:
+        """Test unsupported MideaSwingMode."""
+        with pytest.raises(ValueError, match="Unsupported swing mode"):
+            self.device.set_device_swing_mode(DummySwingMode.INVALID)
 
     def test_swing_mode_invalid_type_returns_none(self) -> None:
         """Test swing_mode returns None for an unexpected attribute type."""

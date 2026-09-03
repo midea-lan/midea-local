@@ -3,9 +3,9 @@
 import json
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
-from midealocal.base_classes import MideaClimateDevice
+from midealocal.base_classes import MideaClimateDevice, MideaHVACMode
 from midealocal.const import DeviceType
 from midealocal.device import MideaDeviceInitKwargs
 
@@ -77,6 +77,15 @@ class DeviceAttributes(StrEnum):
     error_code = "error_code"
 
 
+class DeviceHVACMode(MideaHVACMode):
+    """Midea C3 HVAC Mode."""
+
+    OFF = 0
+    AUTO = 1
+    COOL = 2
+    HEAT = 3
+
+
 class MideaC3Device(MideaClimateDevice):
     """Midea C3 device."""
 
@@ -87,7 +96,12 @@ class MideaC3Device(MideaClimateDevice):
     ]
 
     # Generic HVAC mode names, ordered to match the protocol's mode index.
-    hvac_modes: ClassVar[list[str]] = ["off", "auto", "cool", "heat"]
+    _device_hvac_modes: ClassVar[set[MideaHVACMode]] = {
+        DeviceHVACMode.OFF,
+        DeviceHVACMode.AUTO,
+        DeviceHVACMode.COOL,
+        DeviceHVACMode.HEAT,
+    }
 
     # C3 has two independently powered zones sharing one device connection;
     # mode is shared, but power (and hence hvac_mode) is per-zone.
@@ -157,7 +171,14 @@ class MideaC3Device(MideaClimateDevice):
         self._temperature_step: float = 0.5
         self.set_customize(customize)
 
-    def hvac_mode(self, zone: int | None = None) -> str | None:
+    @property
+    @override
+    def device_hvac_modes(self) -> set[MideaHVACMode]:
+        """Midea C3 device HVAC modes."""
+        return MideaC3Device._device_hvac_modes
+
+    @override
+    def device_hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:
         """Midea C3 device HVAC mode."""
         if zone is None:
             raise ValueError("[C3] Parameter `zone` must be set")
@@ -165,23 +186,33 @@ class MideaC3Device(MideaClimateDevice):
         if not isinstance(power, bool):
             return None
         if not power:
-            return "off"
+            return DeviceHVACMode.OFF
         mode = self._attributes[DeviceAttributes.mode]
-        if isinstance(mode, int) and 1 <= mode < len(self.hvac_modes):
-            return self.hvac_modes[mode]
-        return None
+        try:
+            return (
+                DeviceHVACMode(mode)
+                if DeviceHVACMode(mode) != DeviceHVACMode.OFF
+                else None
+            )
+        except ValueError:
+            return None
 
-    def set_hvac_mode(self, hvac_mode: str, zone: int | None = None) -> None:
+    @override
+    def set_device_hvac_mode(
+        self,
+        hvac_mode: MideaHVACMode,
+        zone: int | None = None,
+    ) -> None:
         """Midea C3 device set HVAC mode."""
         if zone is None:
             raise ValueError("[C3] Parameter `zone` must be set")
-        if hvac_mode == "off":
+        if hvac_mode == DeviceHVACMode.OFF:
             self.set_attribute(attr=MideaC3Device._power_attributes[zone], value=False)
             return
-        if hvac_mode not in self.hvac_modes:
+        if hvac_mode not in self.device_hvac_modes:
             msg = f"[C3] Unsupported hvac mode: {hvac_mode}"
             raise ValueError(msg)
-        self._set_mode(zone, self.hvac_modes.index(hvac_mode))
+        self._set_mode(zone, hvac_mode)
 
     @property
     def temperature_step(self) -> float | None:
@@ -360,10 +391,11 @@ class MideaC3Device(MideaClimateDevice):
         message.mode = mode
         self.build_send(message)
 
-    def set_target_temperature(
+    @override
+    def set_device_target_temperature(
         self,
         target_temperature: float,
-        mode: int | None,
+        hvac_mode: MideaHVACMode | None,
         zone: int | None = None,
     ) -> None:
         """Midea C3 device set target temperature."""
@@ -375,12 +407,12 @@ class MideaC3Device(MideaClimateDevice):
             message.zone_target_temp[zone] = target_temperature
         else:
             message.room_target_temp = target_temperature
-        if mode is not None:
+        if hvac_mode is not None:
             if zone == 0:
                 message.zone1_power = True
             else:
                 message.zone2_power = True
-            message.mode = mode
+            message.mode = hvac_mode
         self.build_send(message)
 
     def set_customize(self, customize: str) -> None:

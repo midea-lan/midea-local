@@ -9,6 +9,7 @@ from midealocal.devices.cf import DeviceAttributes, MideaCFDevice
 from midealocal.devices.cf.message import MessageQuery, MessageSet
 from midealocal.exceptions import ValueWrongType
 from midealocal.message import MessageType
+from tests.base_classes_test import DummyHVACMode
 
 
 class TestMideaCFDevice:
@@ -244,6 +245,11 @@ class TestMideaCFDevice:
         self.device._attributes[DeviceAttributes.power] = power
         self.device._attributes[DeviceAttributes.mode] = mode
         assert self.device.hvac_mode() == expected
+
+    def test_set_hvac_mode_unsupported(self) -> None:
+        """Test unsupported MideaHVACMode."""
+        with pytest.raises(ValueError, match="Unsupported hvac mode"):
+            self.device.set_device_hvac_mode(DummyHVACMode.INVALID)
 
     def test_set_hvac_mode_off_powers_off(self) -> None:
         """Test set_hvac_mode with off powers the device off."""

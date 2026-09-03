@@ -2,9 +2,10 @@
 
 import logging
 from collections.abc import Callable, Mapping
-from enum import IntEnum, StrEnum
+from enum import IntEnum
 from types import MappingProxyType
 
+from midealocal.base_classes import MideaFanMode, MideaSwingMode
 from midealocal.const import MAX_BYTE_VALUE, DeviceType
 from midealocal.crc8 import calculate
 from midealocal.message import (
@@ -122,7 +123,7 @@ B5_DISPLAY_VALUES = frozenset({1, 2, 100})
 B5_ELECTRICITY_UNSUPPORTED_VALUE = 0  # 0 = unsupported; nonzero = rate level count
 
 
-class ACFanSpeed(IntEnum):
+class ACFanSpeed(MideaFanMode):
     """AC fan speed set-points.
 
     fan_speed is reported as a 0-127 percentage-like value; a device only
@@ -139,7 +140,7 @@ class ACFanSpeed(IntEnum):
     AUTO = 102
 
 
-class ACSwingMode(StrEnum):
+class ACSwingMode(MideaSwingMode):
     """AC swing mode names.
 
     A StrEnum (not IntEnum, unlike ACFanSpeed): its members compare equal to

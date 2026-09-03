@@ -5,9 +5,14 @@ import logging
 import time
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack, cast
+from typing import Any, ClassVar, Unpack, cast, override
 
-from midealocal.base_classes import MideaClimateDevice
+from midealocal.base_classes import (
+    MideaClimateDevice,
+    MideaFanMode,
+    MideaHVACMode,
+    MideaSwingMode,
+)
 from midealocal.const import DeviceType
 from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs
 from midealocal.message import ListTypes
@@ -58,6 +63,17 @@ ACQuery = (
 
 # AC mode constants
 DRY_MODE = 3
+
+
+class DeviceHVACMode(MideaHVACMode):
+    """Midea AC HVAC modes."""
+
+    OFF = 0
+    AUTO = 1
+    COOL = 2
+    DRY = 3
+    HEAT = 4
+    FAN_ONLY = 5
 
 
 class DeviceAttributes(StrEnum):
@@ -240,23 +256,23 @@ class MideaACDevice(MideaClimateDevice):
     # Fixed and never filtered: hvac_mode()/set_hvac_mode() index into this
     # to convert to/from the wire's mode int, which is unaffected by which
     # modes the B5 capability response says this unit actually supports.
-    _all_hvac_modes: ClassVar[list[str]] = [
-        "off",
-        "auto",
-        "cool",
-        "dry",
-        "heat",
-        "fan_only",
+    _all_hvac_modes: ClassVar[list[DeviceHVACMode]] = [
+        DeviceHVACMode.OFF,
+        DeviceHVACMode.AUTO,
+        DeviceHVACMode.COOL,
+        DeviceHVACMode.DRY,
+        DeviceHVACMode.HEAT,
+        DeviceHVACMode.FAN_ONLY,
     ]
 
     # Bucket boundaries for the get-side threshold scan: each pair is the
     # next-lower set-point's value paired with the bucket name above it.
-    _fan_speed_thresholds: ClassVar[tuple[tuple[int, str], ...]] = (
-        (ACFanSpeed.FULL, ACFanSpeed.AUTO.name.lower()),
-        (ACFanSpeed.HIGH, ACFanSpeed.FULL.name.lower()),
-        (ACFanSpeed.MEDIUM, ACFanSpeed.HIGH.name.lower()),
-        (ACFanSpeed.LOW, ACFanSpeed.MEDIUM.name.lower()),
-        (ACFanSpeed.SILENT, ACFanSpeed.LOW.name.lower()),
+    _fan_speed_thresholds: ClassVar[tuple[tuple[int, ACFanSpeed], ...]] = (
+        (ACFanSpeed.FULL, ACFanSpeed.AUTO),
+        (ACFanSpeed.HIGH, ACFanSpeed.FULL),
+        (ACFanSpeed.MEDIUM, ACFanSpeed.HIGH),
+        (ACFanSpeed.LOW, ACFanSpeed.MEDIUM),
+        (ACFanSpeed.SILENT, ACFanSpeed.LOW),
     )
 
     _swing_modes: ClassVar[dict[ACSwingMode, tuple[bool, bool]]] = {
@@ -376,71 +392,87 @@ class MideaACDevice(MideaClimateDevice):
         self.set_customize(customize)
 
     @property
-    def hvac_modes(self) -> list[str]:
+    @override
+    def device_hvac_modes(self) -> set[MideaHVACMode]:
         """Midea AC device HVAC modes, filtered by the device's B5 capabilities.
 
         "off"/"fan_only" have no matching capability key (the B5 response
         never reports one named "off_mode"/"fan_only_mode"), so they fall
         through to the default and are always kept.
         """
-        return [
-            mode
-            for mode in MideaACDevice._all_hvac_modes
-            if self._capabilities.get(f"{mode}_mode", True)
-        ]
+        modes: set[MideaHVACMode] = set()
+        for mode in MideaACDevice._all_hvac_modes:
+            if self._capabilities.get(f"{mode.name.lower()}_mode", True):
+                modes.add(mode)
+        return modes
 
-    def hvac_mode(self, zone: int | None = None) -> str | None:  # noqa: ARG002
+    @override
+    def device_hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:
         """Midea AC device HVAC mode."""
         power = self._attributes[DeviceAttributes.power]
         if not isinstance(power, bool):
             return None
         if not power:
-            return "off"
+            return DeviceHVACMode.OFF
         mode = self._attributes[DeviceAttributes.mode]
-        if isinstance(mode, int) and 1 <= mode < len(MideaACDevice._all_hvac_modes):
-            return MideaACDevice._all_hvac_modes[mode]
-        return None
+        try:
+            return (
+                DeviceHVACMode(mode)
+                if DeviceHVACMode(mode) != DeviceHVACMode.OFF
+                else None
+            )
+        except ValueError:
+            return None
 
-    def set_hvac_mode(self, hvac_mode: str, zone: int | None = None) -> None:  # noqa: ARG002
+    @override
+    def set_device_hvac_mode(
+        self,
+        hvac_mode: MideaHVACMode,
+        zone: int | None = None,
+    ) -> None:
         """Midea AC device set HVAC mode."""
-        if hvac_mode == "off":
+        if hvac_mode == DeviceHVACMode.OFF:
             self.set_attribute(attr=DeviceAttributes.power, value=False)
             return
-        if hvac_mode not in self.hvac_modes:
+        if hvac_mode not in self.device_hvac_modes:
             msg = f"[ac] Unsupported hvac mode: {hvac_mode}"
             raise ValueError(msg)
         self.set_attribute(
             attr=DeviceAttributes.mode,
-            value=MideaACDevice._all_hvac_modes.index(hvac_mode),
+            value=hvac_mode,
         )
 
     @property
-    def fan_modes(self) -> list[str]:
+    @override
+    def device_fan_modes(self) -> list[MideaFanMode]:
         """Midea AC device fan modes."""
-        return [member.name.lower() for member in ACFanSpeed]
+        return [member for member in ACFanSpeed]
 
     @property
-    def fan_mode(self) -> str | None:
+    @override
+    def device_fan_mode(self) -> MideaFanMode | None:
         """Midea AC device fan mode."""
         fan_speed = self._attributes[DeviceAttributes.fan_speed]
         if not isinstance(fan_speed, int):
             return None
-        for threshold, name in MideaACDevice._fan_speed_thresholds:
+        for threshold, fan_mode in MideaACDevice._fan_speed_thresholds:
             if fan_speed > threshold:
-                return name
-        return ACFanSpeed.SILENT.name.lower()
+                return fan_mode
+        return ACFanSpeed.SILENT
 
-    def set_fan_mode(self, fan_mode: str) -> None:
+    @override
+    def set_device_fan_mode(self, fan_mode: MideaFanMode) -> None:
         """Midea AC device set fan mode."""
         try:
-            value = ACFanSpeed[fan_mode.upper()]
+            value = ACFanSpeed[fan_mode.name.upper()]
         except KeyError as err:
             msg = f"[ac] Unsupported fan mode: {fan_mode}"
             raise ValueError(msg) from err
         self.set_attribute(attr=DeviceAttributes.fan_speed, value=int(value))
 
     @property
-    def swing_modes(self) -> list[ACSwingMode] | None:
+    @override
+    def device_swing_modes(self) -> list[MideaSwingMode] | None:
         """Midea AC device swing modes.
 
         The BB subprotocol (MessageSubProtocolSet) has no swing fields at
@@ -451,7 +483,8 @@ class MideaACDevice(MideaClimateDevice):
         return list(MideaACDevice._swing_modes.keys())
 
     @property
-    def swing_mode(self) -> ACSwingMode | None:
+    @override
+    def device_swing_mode(self) -> MideaSwingMode | None:
         """Midea AC device swing mode."""
         if self._used_subprotocol:
             return None
@@ -465,7 +498,8 @@ class MideaACDevice(MideaClimateDevice):
             if pair == (vertical, horizontal)
         )
 
-    def set_swing_mode(self, swing_mode: str) -> None:
+    @override
+    def set_device_swing_mode(self, swing_mode: MideaSwingMode) -> None:
         """Midea AC device set swing mode."""
         try:
             mode = ACSwingMode(swing_mode)
@@ -1089,20 +1123,21 @@ class MideaACDevice(MideaClimateDevice):
                     {DeviceAttributes.self_clean.value: optimistic_self_clean},
                 )
 
-    def set_target_temperature(
+    @override
+    def set_device_target_temperature(
         self,
         target_temperature: float,
-        mode: int | None,
-        zone: int | None = None,  # noqa: ARG002
+        hvac_mode: MideaHVACMode | None,
+        zone: int | None = None,
     ) -> None:
         """Midea AC device set target temperature."""
         message: MessageSubProtocolSet | MessageGeneralSet = (
             self._make_message_uniq_set()
         )
         message.target_temperature = target_temperature
-        if mode is not None:
-            message.power = True
-            message.mode = mode
+        if hvac_mode is not None:
+            message.power = hvac_mode != DeviceHVACMode.OFF
+            message.mode = hvac_mode
         self.build_send(message)
 
     def _set_swing(self, swing_vertical: bool, swing_horizontal: bool) -> None:

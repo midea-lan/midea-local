@@ -8,6 +8,7 @@ from midealocal.const import ProtocolVersion
 from midealocal.devices.fb import DeviceAttributes, MideaFBDevice
 from midealocal.devices.fb.message import MessageQuery, MessageSet
 from midealocal.message import MessageType
+from tests.base_classes_test import DummyHVACMode
 
 
 class TestMideaFBDevice:
@@ -187,6 +188,11 @@ class TestMideaFBDevice:
         """Test hvac_mode is derived from power."""
         self.device._attributes[DeviceAttributes.power] = power
         assert self.device.hvac_mode() == expected
+
+    def test_set_hvac_mode_unsupported(self) -> None:
+        """Test unsupported MideaHVACMode."""
+        with pytest.raises(ValueError, match="Unsupported hvac mode"):
+            self.device.set_device_hvac_mode(DummyHVACMode.INVALID)
 
     def test_set_hvac_mode_heat_powers_on(self) -> None:
         """Test set_hvac_mode with heat powers the device on."""

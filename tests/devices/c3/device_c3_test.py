@@ -17,6 +17,7 @@ from midealocal.devices.c3.message import (
     MessageQueryECO,
     MessageQuerySilence,
 )
+from tests.base_classes_test import DummyHVACMode
 
 
 class TestMideaC3Device:
@@ -293,6 +294,11 @@ class TestMideaC3Device:
         self.device._attributes[power_attr] = True
         self.device._attributes[DeviceAttributes.mode] = C3DeviceMode.HEAT
         assert self.device.hvac_mode(zone) == "heat"
+
+    def test_set_hvac_mode_unsupported(self) -> None:
+        """Test unsupported MideaHVACMode."""
+        with pytest.raises(ValueError, match="Unsupported hvac mode"):
+            self.device.set_device_hvac_mode(DummyHVACMode.INVALID, 0)
 
     def test_hvac_mode_invalid_type_returns_none(self) -> None:
         """Test hvac_mode returns None for an unexpected attribute type."""
