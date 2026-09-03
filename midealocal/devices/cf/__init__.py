@@ -141,10 +141,10 @@ class MideaCFDevice(MideaClimateDevice):
     ) -> None:
         """Midea CF device set target temperature."""
         message = MessageSet(self._message_protocol_version)
-        message.power = True
         message.mode = self._attributes[DeviceAttributes.mode]
         message.target_temperature = target_temperature
         if hvac_mode is not None:
+            message.power = hvac_mode != 0
             message.mode = hvac_mode
         self.build_send(message)
 

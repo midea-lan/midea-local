@@ -409,9 +409,9 @@ class MideaC3Device(MideaClimateDevice):
             message.room_target_temp = target_temperature
         if hvac_mode is not None:
             if zone == 0:
-                message.zone1_power = True
+                message.zone1_power = hvac_mode != 0
             else:
-                message.zone2_power = True
+                message.zone2_power = hvac_mode != 0
             message.mode = hvac_mode
         self.build_send(message)
 

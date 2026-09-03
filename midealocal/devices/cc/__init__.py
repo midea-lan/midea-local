@@ -329,7 +329,7 @@ class MideaCCDevice(MideaClimateDevice):
         """Midea CC device set target temperature."""
         if self._is_fe_format:
             controls: list[tuple[CCControlId, int]] = []
-            if hvac_mode is not None:
+            if hvac_mode is not None and hvac_mode != 0:
                 controls.append((CCControlId.POWER, 1))
                 controls.append(
                     (CCControlId.MODE, INDEX_TO_FE_MODE.get(hvac_mode, 0x02)),
@@ -345,7 +345,7 @@ class MideaCCDevice(MideaClimateDevice):
         message = self.make_message_set()
         message.target_temperature = target_temperature
         if hvac_mode is not None:
-            message.power = True
+            message.power = hvac_mode != 0
             message.mode = hvac_mode
         self.build_send(message)
 
