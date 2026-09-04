@@ -239,8 +239,10 @@ class TestMideaC3Device:
         mode: int,
     ) -> None:
         """Test set target temperature."""
-        with pytest.raises(ValueError):  # noqa: PT011
+        with pytest.raises(ValueError, match="`zone` must be set"):
             self.device.set_raw_target_temperature(22.5, hvac_mode)
+        with pytest.raises(ValueError, match="`zone` must be between 0"):
+            self.device.set_raw_target_temperature(22.5, hvac_mode, -1)
         with patch("midealocal.devices.c3.MessageC3Response") as mock_message_response:
             mock_message = mock_message_response.return_value
             mock_message.zone_temp_type = [True, False]
@@ -314,6 +316,15 @@ class TestMideaC3Device:
             self.device.raw_hvac_mode()
 
     @pytest.mark.parametrize(
+        ("zone"),
+        [(-1), (2), (99)],
+    )
+    def test_hvac_mode_invalid_zone(self, zone: int) -> None:
+        """Test hvac_mode raises when zone isn't valid."""
+        with pytest.raises(ValueError, match="`zone` must be between 0"):
+            self.device.raw_hvac_mode(zone)
+
+    @pytest.mark.parametrize(
         ("zone", "power_attr"),
         [(0, DeviceAttributes.zone1_power), (1, DeviceAttributes.zone2_power)],
     )
@@ -350,6 +361,15 @@ class TestMideaC3Device:
         """Test set_hvac_mode raises when zone isn't set."""
         with pytest.raises(ValueError, match="`zone` must be set"):
             self.device.set_raw_hvac_mode("heat")
+
+    @pytest.mark.parametrize(
+        ("zone"),
+        [(-1), (2), (99)],
+    )
+    def test_set_hvac_mode_invalid_zone(self, zone: int) -> None:
+        """Test set_hvac_mode raises when zone isn't valid."""
+        with pytest.raises(ValueError, match="`zone` must be between 0"):
+            self.device.set_raw_hvac_mode("heat", zone)
 
     def test_set_hvac_mode_off_powers_off_the_zone(self) -> None:
         """Test set_hvac_mode with off powers off only the requested zone."""

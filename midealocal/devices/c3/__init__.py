@@ -182,6 +182,11 @@ class MideaC3Device(MideaClimateDevice):
         """Midea C3 device HVAC mode."""
         if zone is None:
             raise ValueError("[C3] Parameter `zone` must be set")
+        if zone not in range(len(MideaC3Device._power_attributes)):
+            raise ValueError(
+                "[C3] Parameter `zone` must be between 0 "
+                f"and {len(MideaC3Device._power_attributes) - 1}",
+            )
         power = self._attributes[MideaC3Device._power_attributes[zone]]
         if not isinstance(power, bool):
             return None
@@ -206,6 +211,11 @@ class MideaC3Device(MideaClimateDevice):
         """Midea C3 device set HVAC mode."""
         if zone is None:
             raise ValueError("[C3] Parameter `zone` must be set")
+        if zone not in range(len(MideaC3Device._power_attributes)):
+            raise ValueError(
+                "[C3] Parameter `zone` must be between 0 "
+                f"and {len(MideaC3Device._power_attributes) - 1}",
+            )
         if hvac_mode == DeviceHVACMode.OFF:
             self.set_attribute(attr=MideaC3Device._power_attributes[zone], value=False)
             return
@@ -401,6 +411,11 @@ class MideaC3Device(MideaClimateDevice):
         """Midea C3 device set target temperature."""
         if zone is None:
             raise ValueError("[C3] Parameter `zone` must be set")
+        if zone not in range(len(MideaC3Device._power_attributes)):
+            raise ValueError(
+                "[C3] Parameter `zone` must be between 0 "
+                f"and {len(MideaC3Device._power_attributes) - 1}",
+            )
 
         message = self.make_message_set()
         if self._attributes[DeviceAttributes.zone_temp_type][zone]:
