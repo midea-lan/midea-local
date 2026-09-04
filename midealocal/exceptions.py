@@ -72,6 +72,12 @@ CLOUD_ERROR_MEANINGS: dict[int, str] = {
 # account). See https://github.com/mill1000/midea-ac-py/issues/482.
 NO_PERMISSION_CODES = frozenset({3201})
 
+# Sporadic server-side failures that a plain resend usually clears: 9999
+# "system error" comes back for otherwise valid login / getToken calls on both
+# the legacy mapp.appsmb.com backend and the v5 proxy. midea-beautiful-air
+# likewise treats 9999 as ignore-and-retry (see its ``handle_api_error``).
+TRANSIENT_CLOUD_ERROR_CODES = frozenset({9999})
+
 # Failures of the login / loginId step that a user has to act on (wrong
 # credentials, invalid app key, expired session, rate limit, device-count
 # limit). 3101/3102 wrong password/account, 3301 wrong app key, 3106/3144
