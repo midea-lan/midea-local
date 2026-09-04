@@ -92,6 +92,12 @@ SUPPORTED_CLOUDS: dict[str, Any] = {
         "app_key": "434a209a5ce141c3b726de067835d7f0",
         "api_url": "https://mapp.appsmb.com",  # codespell:ignore
     },
+    "OS Comfort": {
+        "class_name": "MideaAirCloud",
+        "app_id": "1114",
+        "app_key": "02021a881e4d4b21d7fed806719e5440",
+        "api_url": "https://mapp.appsmb.com",  # codespell:ignore
+    },
     "Toshiba Iolife": {
         "class_name": "ToshibaIOLife",
         "app_id": "1203",
