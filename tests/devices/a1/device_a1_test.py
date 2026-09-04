@@ -83,7 +83,7 @@ class TestMideaA1Device:
             assert new_status[DeviceAttributes.pump.value]
             assert new_status[DeviceAttributes.tank_full.value]
             assert new_status[DeviceAttributes.mode.value] == "manual"
-            assert self.device.pump_supported
+            assert self.device.capabilities == {"pump": True}
 
             mock_message.mode = 10
             mock_message.fan_speed = 99
@@ -93,7 +93,7 @@ class TestMideaA1Device:
             assert new_status[DeviceAttributes.mode.value] is None
             assert new_status[DeviceAttributes.fan_speed.value] is None
             assert not new_status[DeviceAttributes.tank_full.value]
-            assert not self.device.pump_supported
+            assert self.device.capabilities == {"pump": False}
 
     def test_build_query(self) -> None:
         """Test build query."""

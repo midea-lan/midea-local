@@ -81,7 +81,7 @@ class MideaA1Device(MideaDevice):
                 DeviceAttributes.filter_cleaning_reminder: False,
             },
         )
-        self._pump_enable = False
+        self._capabilities: dict[str, bool] = {}
         self._speeds = self._default_speeds
         self._modes = self._default_modes
         self.set_customize(customize)
@@ -102,9 +102,9 @@ class MideaA1Device(MideaDevice):
         return MideaA1Device._water_level_sets
 
     @property
-    def pump_supported(self) -> bool:
-        """Return whether the device supports a pump."""
-        return self._pump_enable
+    def capabilities(self) -> dict[str, bool]:
+        """Return the capabilities reported by the device."""
+        return self._capabilities
 
     def build_query(self) -> list[MessageQuery]:
         """Midea A1 device build query."""
@@ -114,9 +114,10 @@ class MideaA1Device(MideaDevice):
         """Midea A1 device process message."""
         message = MessageA1Response(bytearray(msg))
         self._message_protocol_version = message.protocol_version
-        # Preserve the hidden pump capability bit for future set packets.
+        # Preserve the pump capability bit for future set packets and expose it
+        # through the capability map.
         if hasattr(message, "pump_enable"):
-            self._pump_enable = message.pump_enable
+            self._capabilities["pump"] = message.pump_enable
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = self.update_attributes_from_message(
             message,
@@ -135,6 +136,7 @@ class MideaA1Device(MideaDevice):
             if self._attributes[DeviceAttributes.tank_full] != tank_full_calculated:
                 self._attributes[DeviceAttributes.tank_full] = tank_full_calculated
                 new_status[DeviceAttributes.tank_full.value] = tank_full_calculated
+        new_status["capabilities"] = dict(self._capabilities)
         return new_status
 
     def make_message_set(self) -> MessageSet:
@@ -159,7 +161,7 @@ class MideaA1Device(MideaDevice):
         message.swing = self._attributes[DeviceAttributes.swing]
         message.anion = self._attributes[DeviceAttributes.anion]
         message.pump = self._attributes[DeviceAttributes.pump]
-        message.pump_enable = self._pump_enable
+        message.pump_enable = self._capabilities.get("pump", False)
         message.water_level_set = int(
             self._attributes[DeviceAttributes.water_level_set],
         )
