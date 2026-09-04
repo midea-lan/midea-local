@@ -29,7 +29,11 @@ from midealocal.device import (
 )
 from midealocal.devices import device_selector
 from midealocal.discover import SERIAL_TYPE1_LENGTH, discover
-from midealocal.exceptions import SocketException
+from midealocal.exceptions import (
+    CloudLoginError,
+    NoDeviceRegistered,
+    SocketException,
+)
 from midealocal.version import __version__
 
 _LOGGER = logging.getLogger("cli")
@@ -75,12 +79,29 @@ class MideaCLI:
     async def _get_keys(self, device_id: int) -> dict[int, dict[str, Any]]:
         cloud = await self._get_cloud()
         default_keys = await cloud.get_default_keys()
-        if not await cloud.login():
+        try:
+            logged_in = await cloud.login()
+        except CloudLoginError as err:
+            _LOGGER.warning(
+                "Cloud login failed (%s). Using only default keys.",
+                err,
+            )
+            return default_keys
+        if not logged_in:
             _LOGGER.warning(
                 "Failed to authenticate to the cloud. Using only default keys.",
             )
             return default_keys
-        cloud_keys = await cloud.get_cloud_keys(device_id)
+        try:
+            cloud_keys = await cloud.get_cloud_keys(device_id)
+        except NoDeviceRegistered:
+            _LOGGER.warning(
+                "The cloud account has no paired device matching id %s. "
+                "Sign in with the account that added the device in the Midea "
+                "app. Using only default keys.",
+                device_id,
+            )
+            return default_keys
 
         return {**cloud_keys, **default_keys}
 
@@ -324,7 +345,14 @@ class MideaCLI:
         """
         cloud = await self._get_cloud()
         _LOGGER.debug("Try to authenticate to the cloud.")
-        if not await cloud.login():
+        try:
+            logged_in = await cloud.login()
+        except CloudLoginError as err:
+            # A specific, expected login failure -- the code/meaning is the
+            # useful output, not a traceback.
+            _LOGGER.error("Cloud login failed: %s", err)  # noqa: TRY400
+            return
+        if not logged_in:
             _LOGGER.error("Failed to authenticate to the cloud.")
             return
 

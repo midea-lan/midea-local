@@ -5,7 +5,7 @@ import json
 import logging
 import re
 import time
-from asyncio import Lock
+from asyncio import Lock, sleep
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from hashlib import md5
@@ -19,7 +19,14 @@ from aiohttp import ClientConnectionError, ClientSession, ClientTimeout
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 
-from midealocal.exceptions import ElementMissing
+from midealocal.exceptions import (
+    CLOUD_ERROR_MEANINGS,
+    LOGIN_ERROR_CODES,
+    NO_PERMISSION_CODES,
+    TRANSIENT_CLOUD_ERROR_CODES,
+    ElementMissing,
+    cloud_api_error,
+)
 
 from .security import (
     CloudSecurity,
@@ -29,6 +36,16 @@ from .security import (
 )
 
 SN8_MIN_SERIAL_LENGTH = 17
+
+# Cloud error codes that have a dedicated, actionable exception subclass; every
+# other non-zero code is logged and surfaced as ``None``.
+RAISE_FOR_ERROR_CODES = NO_PERMISSION_CODES | LOGIN_ERROR_CODES
+
+# Total attempts for a single cloud API call before giving up.
+_RETRY_ATTEMPTS = 3
+
+# Base delay between retries of a transient cloud error, scaled by attempt.
+_TRANSIENT_RETRY_BACKOFF_SECONDS = 1.0
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -73,6 +90,12 @@ SUPPORTED_CLOUDS: dict[str, Any] = {
         "class_name": "MideaAirCloud",
         "app_id": "1005",
         "app_key": "434a209a5ce141c3b726de067835d7f0",
+        "api_url": "https://mapp.appsmb.com",  # codespell:ignore
+    },
+    "OS Comfort": {
+        "class_name": "MideaAirCloud",
+        "app_id": "1114",
+        "app_key": "02021a881e4d4b21d7fed806719e5440",
         "api_url": "https://mapp.appsmb.com",  # codespell:ignore
     },
     "Toshiba Iolife": {
@@ -232,6 +255,7 @@ class MideaCloud:
         endpoint: str,
         data: dict[str, Any],
         header: dict[str, Any] | None = None,
+        raise_for_error: bool = False,
     ) -> dict | None:
         header = header or {}
         if not data.get("reqId"):
@@ -257,7 +281,7 @@ class MideaCloud:
         if self._access_token is not None:
             header.update({"accessToken": self._access_token})
         response: dict = {"code": -1}
-        for _ in range(3):
+        for attempt in range(_RETRY_ATTEMPTS):
             try:
                 async with self._api_lock:
                     r = await self._session.request(
@@ -275,16 +299,70 @@ class MideaCloud:
                         _redact_data(str(raw)),
                     )
                     response = json.loads(raw)
-                    break
             except (TimeoutError, ClientConnectionError, json.JSONDecodeError) as e:
                 _LOGGER.warning(
                     "Midea cloud API error, url: %s, error: %s",
                     url,
                     repr(e),
                 )
-        if int(response["code"]) == 0 and "data" in response:
+                continue
+            if not await self._retry_if_transient(url, int(response["code"]), attempt):
+                break
+        code = int(response["code"])
+        if code == 0 and "data" in response:
             return cast("dict", response["data"])
+        self._handle_error_code(
+            url,
+            code,
+            str(response.get("msg") or ""),
+            raise_for_error,
+        )
         return None
+
+    def _handle_error_code(
+        self,
+        url: str,
+        code: int,
+        message: str,
+        raise_for_error: bool,
+    ) -> None:
+        """Log a non-zero cloud error code and raise if it maps to a known error.
+
+        ``code`` -1 is the local "no reply" sentinel already logged by the
+        caller, so it is skipped here.
+        """
+        if code == -1:
+            return
+        meaning = CLOUD_ERROR_MEANINGS.get(code)
+        _LOGGER.warning(
+            "Midea cloud API url: %s rejected the request with code %s: %s%s",
+            url,
+            code,
+            message,
+            f" ({meaning})" if meaning else "",
+        )
+        if raise_for_error and code in RAISE_FOR_ERROR_CODES:
+            raise cloud_api_error(code, message)
+
+    async def _retry_if_transient(self, url: str, code: int, attempt: int) -> bool:
+        """Return whether ``code`` is a transient error worth resending.
+
+        9999 "system error" comes back sporadically for otherwise valid calls;
+        a short back-off and resend usually succeeds. When retries remain this
+        waits and returns True so the caller loops again; otherwise the code is
+        left in ``response`` to be surfaced by ``_handle_error_code``.
+        """
+        if code not in TRANSIENT_CLOUD_ERROR_CODES or attempt >= _RETRY_ATTEMPTS - 1:
+            return False
+        _LOGGER.warning(
+            "Midea cloud API url: %s returned transient error %s; retry %s of %s",
+            url,
+            code,
+            attempt + 1,
+            _RETRY_ATTEMPTS - 1,
+        )
+        await sleep(_TRANSIENT_RETRY_BACKOFF_SECONDS * (attempt + 1))
+        return True
 
     async def _get_login_id(self) -> str | None:
         data = self._make_general_data()
@@ -292,6 +370,7 @@ class MideaCloud:
         if response := await self._api_request(
             endpoint="/v1/user/login/id/get",
             data=data,
+            raise_for_error=True,
         ):
             return response.get("loginId")
         return None
@@ -334,6 +413,7 @@ class MideaCloud:
             response = await self._api_request(
                 endpoint="/v1/iot/secure/getToken",
                 data=data,
+                raise_for_error=True,
             )
             # Log only the entry count: the payload carries token/key material.
             tokens = (response or {}).get("tokenlist") or []
@@ -518,6 +598,7 @@ class MeijuCloud(MideaCloud):
             if response := await self._api_request(
                 endpoint="/mj/user/login",
                 data=data,
+                raise_for_error=True,
             ):
                 self._access_token = response["mdata"]["accessToken"]
                 self._security.set_aes_keys(
@@ -573,6 +654,7 @@ class MeijuCloud(MideaCloud):
                 response = await self._api_request(
                     endpoint="/v2/iot/secure/getToken",
                     data=data,
+                    raise_for_error=True,
                 )
                 # Log only the entry count: the payload carries token/key material.
                 tokens = (response or {}).get("tokenlist") or []
@@ -809,13 +891,14 @@ class SmartHomeCloud(MideaCloud):
         endpoint: str,
         data: dict[str, Any],
         header: dict[str, Any] | None = None,
+        raise_for_error: bool = False,
     ) -> dict[str, Any] | None:
         header = header or {}
         header.update(
             {"x-recipe-app": self._app_id, "authorization": f"Basic {self._auth_base}"},
         )
 
-        return await super()._api_request(endpoint, data, header)
+        return await super()._api_request(endpoint, data, header, raise_for_error)
 
     async def _re_route(self) -> None:
         data = self._make_general_data()
@@ -862,6 +945,7 @@ class SmartHomeCloud(MideaCloud):
             if response := await self._api_request(
                 endpoint="/mj/user/login",
                 data=data,
+                raise_for_error=True,
             ):
                 self._uid = response["uid"]
                 self._access_token = response["mdata"]["accessToken"]
@@ -1015,6 +1099,7 @@ class MideaAirCloud(MideaCloud):
         endpoint: str,
         data: dict[str, Any],
         header: dict[str, Any] | None = None,
+        raise_for_error: bool = False,
     ) -> dict[str, Any] | None:
         header = header or {}
         url = self._api_url + endpoint
@@ -1026,7 +1111,7 @@ class MideaAirCloud(MideaCloud):
         if self._access_token is not None:
             header.update({"accessToken": self._access_token})
         response: dict = {"errorCode": -1}
-        for _ in range(3):
+        for attempt in range(_RETRY_ATTEMPTS):
             try:
                 async with self._api_lock:
                     r = await self._session.request(
@@ -1044,20 +1129,34 @@ class MideaAirCloud(MideaCloud):
                         raw,
                     )
                     response = json.loads(raw)
-                    break
             except (TimeoutError, ClientConnectionError, json.JSONDecodeError) as e:
                 _LOGGER.warning(
                     "Midea cloud API error, url: %s, error: %s",
                     url,
                     repr(e),
                 )
-        if int(response["errorCode"]) == 0:
+                continue
+            if not await self._retry_if_transient(
+                url,
+                int(response["errorCode"]),
+                attempt,
+            ):
+                break
+        error_code = int(response["errorCode"])
+        if error_code == 0:
             if "result" in response:
                 return cast("dict[str, Any]", response["result"])
             # The legacy lua endpoint returns its payload under "data" instead
             # of "result"; fall back to it so download_lua can read the url.
             if "data" in response:
                 return cast("dict[str, Any]", response["data"])
+        else:
+            self._handle_error_code(
+                url,
+                error_code,
+                str(response.get("msg") or ""),
+                raise_for_error,
+            )
         return None
 
     async def login(self) -> bool:
@@ -1077,6 +1176,7 @@ class MideaAirCloud(MideaCloud):
             if response := await self._api_request(
                 endpoint="/v1/user/login",
                 data=data,
+                raise_for_error=True,
             ):
                 self._access_token = response["accessToken"]
                 self._uid = response["userId"]

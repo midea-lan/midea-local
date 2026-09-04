@@ -23,7 +23,63 @@ from midealocal.cloud import MideaAirCloud, SmartHomeCloud
 from midealocal.const import ProtocolVersion
 from midealocal.device import AuthException, NoSupportedProtocol
 from midealocal.discover import _extract_mac
-from midealocal.exceptions import SocketException
+from midealocal.exceptions import (
+    CloudLoginError,
+    NoDeviceRegistered,
+    SocketException,
+)
+
+_DEFAULT_KEYS = {99: {"key": "key99", "token": "token99"}}
+
+
+@pytest.fixture
+def cli() -> MideaCLI:
+    """Return a MideaCLI with the minimal namespace the cloud-key paths need."""
+    instance = MideaCLI()
+    instance.session = AsyncMock()
+    instance.namespace = Namespace(
+        cloud_name="SmartHome",
+        username="user",
+        password="pass",
+    )
+    return instance
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("login_side_effect", "get_cloud_keys_side_effect"),
+    [
+        pytest.param(
+            None,
+            NoDeviceRegistered(3201, "You have no permissions"),
+            id="device-bound-to-other-account",
+        ),
+        pytest.param(
+            CloudLoginError(7610, "rate limited"),
+            None,
+            id="login-rejected",
+        ),
+    ],
+)
+async def test_get_keys_falls_back_to_default_keys(
+    cli: MideaCLI,
+    login_side_effect: Exception | None,
+    get_cloud_keys_side_effect: Exception | None,
+) -> None:
+    """_get_keys returns only the default keys when the cloud path fails.
+
+    ``login_side_effect=None`` leaves an AsyncMock (truthy) so the flow reaches
+    ``get_cloud_keys``; a raised ``get_cloud_keys`` would break ``keys ==``.
+    """
+    mock_cloud = AsyncMock()
+    mock_cloud.get_default_keys.return_value = _DEFAULT_KEYS
+    mock_cloud.login.side_effect = login_side_effect
+    mock_cloud.get_cloud_keys.side_effect = get_cloud_keys_side_effect
+
+    with patch("midealocal.cli.get_midea_cloud", return_value=mock_cloud):
+        keys = await cli._get_keys(0)
+
+    assert keys == _DEFAULT_KEYS
 
 
 class TestMideaCLI(IsolatedAsyncioTestCase):
@@ -468,6 +524,18 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             await self.cli.download()
             mock_cloud_instance.download_lua.assert_called_once()
             mock_cloud_instance.download_plugin.assert_not_called()
+
+    async def test_download_cloud_login_error(self) -> None:
+        """download() bails out cleanly when login raises CloudLoginError."""
+        mock_cloud_instance = AsyncMock()
+        mock_cloud_instance.login.side_effect = CloudLoginError(7610, "rate limited")
+        with patch.object(self.cli, "_get_cloud", return_value=mock_cloud_instance):
+            self.namespace.host = None
+            self.namespace.device_sn = ""
+            # Must not raise, and must not proceed to enumerate appliances.
+            await self.cli.download()
+            mock_cloud_instance.list_appliances.assert_not_called()
+            mock_cloud_instance.download_lua.assert_not_called()
 
     async def test_download_plugin_error_is_isolated(self) -> None:
         """A plugin download error is logged without discarding the lua file."""
