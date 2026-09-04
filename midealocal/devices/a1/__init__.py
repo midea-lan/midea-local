@@ -104,7 +104,7 @@ class MideaA1Device(MideaDevice):
     @property
     def capabilities(self) -> dict[str, bool]:
         """Return the capabilities reported by the device."""
-        return self._capabilities
+        return dict(self._capabilities)
 
     def build_query(self) -> list[MessageQuery]:
         """Midea A1 device build query."""

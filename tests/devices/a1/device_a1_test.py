@@ -85,6 +85,10 @@ class TestMideaA1Device:
             assert new_status[DeviceAttributes.mode.value] == "manual"
             assert self.device.capabilities == {"pump": True}
 
+            capabilities = self.device.capabilities
+            capabilities["pump"] = False
+            assert self.device.capabilities == {"pump": True}
+
             mock_message.mode = 10
             mock_message.fan_speed = 99
             mock_message.pump_enable = False
