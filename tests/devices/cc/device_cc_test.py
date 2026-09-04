@@ -98,7 +98,8 @@ class TestMideaCCDevice:
         assert self.device.attributes[DeviceAttributes.fan_speed_level] is None
         assert self.device.attributes[DeviceAttributes.indoor_temperature] is None
         assert self.device.attributes[DeviceAttributes.aux_heating] is False
-        assert self.device.raw_fan_modes is None
+        assert self.device.raw_fan_modes is not None
+        assert len(self.device.raw_fan_modes) == 0
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -393,7 +394,8 @@ class TestMideaCCDevice:
 
     def test_set_fan_mode_unresolved_table_raises(self) -> None:
         """Test set_fan_mode raises before the fan speed table is known."""
-        assert self.device.raw_fan_modes is None
+        assert self.device.raw_fan_modes is not None
+        assert len(self.device.raw_fan_modes) == 0
         with (
             patch.object(self.device, "build_send") as mock_send,
             pytest.raises(ValueError, match="Unsupported fan mode"),

@@ -110,33 +110,29 @@ class MideaClimateDevice(MideaDevice, ABC):
         )
 
     @property
-    def fan_modes(self) -> Sequence[MideaFanMode] | None:
-        """Return the available fan modes, or None if unsupported."""
-        return None
+    def fan_modes(self) -> Sequence[MideaFanMode]:
+        """Return the available fan modes."""
+        return []
 
     @property
     @final
-    def raw_fan_modes(self) -> Sequence[str] | None:
-        """Return the available fan modes, or None if unsupported."""
-        if self.fan_modes is None:
-            return None
+    def raw_fan_modes(self) -> Sequence[str]:
+        """Return the available fan modes."""
         return [fan_mode.name.lower() for fan_mode in sorted(self.fan_modes)]
 
     @property
     def fan_mode(self) -> MideaFanMode | None:
-        """Return the current fan mode, or None if unsupported/unknown."""
+        """Return the current fan mode, or None if unknown."""
         return None
 
     @property
     @final
     def raw_fan_mode(self) -> str | None:
-        """Return the current fan mode, or None if unsupported/unknown."""
+        """Return the current fan mode, or None if unknown."""
         return self.fan_mode.name.lower() if self.fan_mode is not None else None
 
     def _str_to_fan_mode(self, fan_mode: str) -> MideaFanMode | None:
         """Get the correct MideaFanMode based on name."""
-        if self.fan_modes is None:
-            return None
         for mode in self.fan_modes:
             if mode.name.lower() == fan_mode:
                 return mode
@@ -156,31 +152,29 @@ class MideaClimateDevice(MideaDevice, ABC):
         self.set_fan_mode(mode)
 
     @property
-    def swing_modes(self) -> Sequence[MideaSwingMode] | None:
-        """Return the available MideaSwingMode, or None if unsupported."""
-        return None
+    def swing_modes(self) -> Sequence[MideaSwingMode]:
+        """Return the available MideaSwingMode."""
+        return []
 
     @property
     @final
-    def raw_swing_modes(self) -> Sequence[str] | None:
-        """Return the available swing modes, or None if unsupported."""
+    def raw_swing_modes(self) -> Sequence[str]:
+        """Return the available swing modes."""
         return self.swing_modes
 
     @property
     def swing_mode(self) -> MideaSwingMode | None:
-        """Return the current swing mode, or None if unsupported/unknown."""
+        """Return the current swing mode, or None if unknown."""
         return None
 
     @property
     @final
     def raw_swing_mode(self) -> str | None:
-        """Return the current swing mode, or None if unsupported/unknown."""
+        """Return the current swing mode, or None if unknown."""
         return self.swing_mode
 
     def _str_to_swing_mode(self, swing_mode: str) -> MideaSwingMode | None:
         """Get the correct MideaFanMode based on name."""
-        if self.swing_modes is None:
-            return None
         for mode in self.swing_modes:
             if mode == swing_mode:
                 return mode

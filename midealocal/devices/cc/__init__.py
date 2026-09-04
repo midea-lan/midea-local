@@ -169,10 +169,10 @@ class MideaCCDevice(MideaClimateDevice):
 
     @property
     @override
-    def fan_modes(self) -> list[MideaFanMode] | None:
+    def fan_modes(self) -> list[MideaFanMode]:
         """Midea CC device fan modes."""
         if self._fan_speeds is None:
-            return None
+            return []
         return [member for member in self._fan_speeds]
 
     @property

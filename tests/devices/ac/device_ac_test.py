@@ -1246,7 +1246,8 @@ class TestMideaACDevice:
         silently do nothing; swing must be withheld instead.
         """
         self.device._used_subprotocol = True
-        assert self.device.raw_swing_modes is None
+        assert self.device.raw_swing_modes is not None
+        assert len(self.device.raw_swing_modes) == 0
         assert self.device.raw_swing_mode is None
         with (
             patch.object(self.device, "build_send") as mock_build_send,

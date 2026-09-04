@@ -87,7 +87,8 @@ class TestMideaClimateDevice:
 
     def test_fan_capability_defaults_to_unsupported(self) -> None:
         """Test fan_modes/fan_mode default to None and set_fan_mode raises."""
-        assert self.device.raw_fan_modes is None
+        assert self.device.raw_fan_modes is not None
+        assert len(self.device.raw_fan_modes) == 0
         assert self.device.raw_fan_mode is None
         with pytest.raises(ValueError, match="Unsupported fan mode"):
             self.device.set_raw_fan_mode("auto")
@@ -96,7 +97,8 @@ class TestMideaClimateDevice:
 
     def test_swing_capability_defaults_to_unsupported(self) -> None:
         """Test swing_modes/swing_mode default to None and set_swing_mode raises."""
-        assert self.device.raw_swing_modes is None
+        assert self.device.raw_swing_modes is not None
+        assert len(self.device.raw_swing_modes) == 0
         assert self.device.raw_swing_mode is None
         with pytest.raises(ValueError, match="Unsupported swing mode"):
             self.device.set_raw_swing_mode("on")

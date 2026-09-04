@@ -407,14 +407,14 @@ class MideaACDevice(MideaClimateDevice):
 
     @property
     @override
-    def swing_modes(self) -> list[MideaSwingMode] | None:
+    def swing_modes(self) -> list[MideaSwingMode]:
         """Midea AC device swing modes.
 
         The BB subprotocol (MessageSubProtocolSet) has no swing fields at
         all, so swing is not advertised for devices using it.
         """
         if self._used_subprotocol:
-            return None
+            return []
         return list(MideaACDevice._swing_modes.keys())
 
     @property
