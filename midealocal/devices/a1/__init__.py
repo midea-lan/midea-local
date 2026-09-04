@@ -101,6 +101,11 @@ class MideaA1Device(MideaDevice):
         """Midea A1 device water level options."""
         return MideaA1Device._water_level_sets
 
+    @property
+    def pump_supported(self) -> bool:
+        """Return whether the device supports a pump."""
+        return self._pump_enable
+
     def build_query(self) -> list[MessageQuery]:
         """Midea A1 device build query."""
         return [MessageQuery(self._message_protocol_version)]
