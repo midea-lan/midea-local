@@ -1025,3 +1025,52 @@ class TestMideaACDevice:
     def test_invalid_customize_format(self) -> None:
         """Test invalid customize format."""
         self.device.set_customize("{")
+
+    def test_make_message_set_with_missing_attrs(self) -> None:
+        """Test make message set with attributes removed from the device."""
+        message = self.device.make_message_set()
+        assert not message.anion
+
+        with patch("midealocal.devices.ac.MessageACResponse") as mock_message_response:
+            mock_message = mock_message_response.return_value
+            mock_message.anion = True
+            mock_message.prompt_tone = False
+            mock_message.power = True
+            mock_message.mode = 1
+            mock_message.target_temperature = 25.0
+            mock_message.fan_speed = 102
+            mock_message.swing_vertical = True
+            mock_message.swing_horizontal = True
+            mock_message.smart_eye = True
+            mock_message.dry = True
+            mock_message.aux_heating = True
+            mock_message.boost_mode = True
+            mock_message.power_saving = True
+            mock_message.sleep_mode = True
+            mock_message.frost_protect = True
+            mock_message.comfort_mode = True
+            mock_message.eco_mode = True
+            mock_message.natural_wind = True
+            mock_message.temp_fahrenheit = True
+            mock_message.screen_display = True
+            mock_message.screen_display_alternate = True
+            mock_message.full_dust = True
+            mock_message.indoor_temperature = None
+            mock_message.outdoor_temperature = None
+            mock_message.indoor_humidity = None
+            mock_message.breezeless = True
+            mock_message.total_energy_consumption = None
+            mock_message.current_energy_consumption = None
+            mock_message.realtime_power = None
+            mock_message.fresh_air_power = True
+            mock_message.fresh_air_fan_speed = 0
+            mock_message.fresh_air_1 = 1
+            mock_message.fresh_air_2 = 1
+            mock_message.out_silent = True
+            self.device.process_message(b"")
+
+        message = self.device.make_message_set()
+        assert message.anion
+        self.device._attributes.pop(DeviceAttributes.anion)
+        message = self.device.make_message_set()
+        assert not message.anion
