@@ -43,22 +43,27 @@ class ValueWrongType(MideaLocalError):
     """Exception raised when the value has a wrong data type."""
 
 
-# Verified against mp-prod.appsmb.com. The wire message text varies by locale
-# and endpoint (65027 comes back in Chinese), so callers should branch on the
-# code; the meaning here is only for logging.
+# Seen on mp-prod.appsmb.com and the Meiju gateway (1002 / 40404). The wire
+# message text varies by locale and endpoint (65027 comes back in Chinese), so
+# callers should branch on the code; the meaning here is only for logging.
 CLOUD_ERROR_MEANINGS: dict[int, str] = {
+    1002: "a required request parameter is missing or has the wrong type",
     3004: (
         "malformed or rejected request: bad udpid/applianceCodes, or the "
         "endpoint is disabled on this cloud"
     ),
+    3101: "account password is incorrect",
     3102: "account or password incorrect",
+    3106: "login session is invalid; log in again",
     3144: "login session is no longer valid (empty loginId); log in again",
     3201: (
         "the account has no permission for this device; it is bound to a "
         "different account"
     ),
+    3301: "invalid app key for this cloud",
     7610: "too many failed login attempts; locked for about 5 minutes",
     9999: "generic or transient cloud error",
+    40404: "the API endpoint does not exist; it was retired or moved",
     65027: "maximum number of simultaneously logged-in devices exceeded",
 }
 
@@ -68,8 +73,10 @@ CLOUD_ERROR_MEANINGS: dict[int, str] = {
 NO_PERMISSION_CODES = frozenset({3201})
 
 # Failures of the login / loginId step that a user has to act on (wrong
-# credentials, expired session, rate limit, device-count limit).
-LOGIN_ERROR_CODES = frozenset({3102, 3144, 7610, 65027})
+# credentials, invalid app key, expired session, rate limit, device-count
+# limit). 3101/3102 wrong password/account, 3301 wrong app key, 3106/3144
+# dead session -- all reported by nbogojevic/midea-beautiful-air.
+LOGIN_ERROR_CODES = frozenset({3101, 3102, 3106, 3144, 3301, 7610, 65027})
 
 
 class MideaCloudError(MideaLocalError):
