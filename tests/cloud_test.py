@@ -451,7 +451,22 @@ class CloudTest(IsolatedAsyncioTestCase):
             password="password",
             api_url="http://api.url/",
         )
-        assert cloud._make_general_data() == {}
+        general_data = cloud._make_general_data()
+        assert general_data["appId"] == "appid"
+        assert general_data["src"] == "appid"
+        assert general_data["uid"] is None
+        assert set(general_data) == {
+            "src",
+            "format",
+            "stamp",
+            "platformId",
+            "deviceId",
+            "reqId",
+            "uid",
+            "clientType",
+            "appId",
+            "language",
+        }
         with pytest.raises(NotImplementedError):
             await cloud.login()
         with pytest.raises(NotImplementedError):
@@ -847,6 +862,8 @@ class CloudTest(IsolatedAsyncioTestCase):
                 self.responses["meijucloud_login.json"],
                 self.responses["meijucloud_download_lua.json"],
                 self.responses["meijucloud_download_lua.json"],
+                b'{"code": 0, "data": {"url": "u", "fileName": "../evil.lua"}}',
+                self.responses["cloud_invalid_response.json"],
             ],
         )
         session.request = AsyncMock(return_value=response)
@@ -875,14 +892,31 @@ class CloudTest(IsolatedAsyncioTestCase):
                 await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010") is None
             )
 
+            # a cloud-supplied fileName with path components is rejected
+            res.status = 200
+            assert (
+                await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010") is None
+            )
+            assert not (Path(tmpdir).parent / "evil.lua").exists()
+
+            # luaGet itself fails: nothing to fetch
+            assert (
+                await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010") is None
+            )
+
     async def test_meijucloud_download_plugin(self) -> None:
         """Test MeijuCloud download_plugin."""
+        ok = b'{"code": 0, "data": {"list": [{"url": "http://host/plugin.zip"}]}}'
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
-            return_value=(
-                b'{"code": 0, "data": {"list": [{"url": "http://host/plugin.zip"}]}}'
-            ),
+            side_effect=[
+                ok,
+                ok,
+                ok,
+                b'{"code": 0, "data": {"list": [{"url": "http://h/a\\\\..\\\\x.zip"}]}}',
+                self.responses["cloud_invalid_response.json"],
+            ],
         )
         session.request = AsyncMock(return_value=response)
         res = Mock()
@@ -906,6 +940,23 @@ class CloudTest(IsolatedAsyncioTestCase):
             Path.unlink(file_path)
 
             res.status = 404
+            assert (
+                await cloud.download_plugin(tmpdir, 10, "0000AC000ABCD1234000") is None
+            )
+
+            # the plugin server returns an empty body
+            res.status = 200
+            res.read = AsyncMock(return_value=b"")
+            assert (
+                await cloud.download_plugin(tmpdir, 10, "0000AC000ABCD1234000") is None
+            )
+
+            # a plugin url whose last segment carries path components is rejected
+            assert (
+                await cloud.download_plugin(tmpdir, 10, "0000AC000ABCD1234000") is None
+            )
+
+            # getplugin itself fails: nothing to fetch
             assert (
                 await cloud.download_plugin(tmpdir, 10, "0000AC000ABCD1234000") is None
             )
@@ -1062,6 +1113,7 @@ class CloudTest(IsolatedAsyncioTestCase):
                 self.responses["cloud_login_id.json"],
                 self.responses["msmartcloud_login.json"],
                 self.responses["meijucloud_download_lua.json"],
+                self.responses["cloud_invalid_response.json"],
             ],
         )
         session.request = AsyncMock(return_value=response)
@@ -1085,14 +1137,18 @@ class CloudTest(IsolatedAsyncioTestCase):
             assert Path.exists(file_path)
             Path.unlink(file_path)
 
+            # luaGet itself fails: nothing to fetch
+            assert (
+                await cloud.download_lua(tmpdir, 10, "00000000", "0xAC", "0010") is None
+            )
+
     async def test_msmartcloud_download_plugin(self) -> None:
         """Test MSmartCloud download_plugin."""
+        ok = b'{"code": 0, "data": {"result": [{"url": "http://host/plugin.zip"}]}}'
         session = Mock()
         response = Mock()
         response.read = AsyncMock(
-            return_value=(
-                b'{"code": 0, "data": {"result": [{"url": "http://host/plugin.zip"}]}}'
-            ),
+            side_effect=[ok, ok, self.responses["cloud_invalid_response.json"]],
         )
         session.request = AsyncMock(return_value=response)
         res = Mock()
@@ -1116,6 +1172,12 @@ class CloudTest(IsolatedAsyncioTestCase):
             Path.unlink(file_path)
 
             res.status = 404
+            assert (
+                await cloud.download_plugin(tmpdir, 10, "0000AC000ABCD1234000") is None
+            )
+
+            # getplugin itself fails: nothing to fetch
+            res.status = 200
             assert (
                 await cloud.download_plugin(tmpdir, 10, "0000AC000ABCD1234000") is None
             )

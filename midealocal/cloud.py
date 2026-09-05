@@ -6,7 +6,7 @@ import logging
 import re
 import time
 from asyncio import Lock, sleep
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from hashlib import md5
 from http import HTTPStatus
@@ -231,8 +231,24 @@ class MideaCloud:
         self._uid: str | None = None
         self._login_id = ""
 
-    def _make_general_data(self) -> dict[Any, Any]:
-        return {}
+    def _make_general_data(self) -> dict[str, Any]:
+        """Return the base fields every MSmart-style (v5 proxy) request carries.
+
+        ``MideaAirCloud`` overrides this with the legacy ``mapp.appsmb.com``
+        shape; ``MeijuCloud`` and ``SmartHomeCloud`` share this one.
+        """
+        return {
+            "src": self._app_id,
+            "format": "2",
+            "stamp": datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S"),
+            "platformId": "1",
+            "deviceId": self._device_id,
+            "reqId": token_hex(16),
+            "uid": self._uid,
+            "clientType": "1",
+            "appId": self._app_id,
+            "language": "en_US",
+        }
 
     async def _api_request(
         self,
@@ -476,6 +492,67 @@ class MideaCloud:
         """Download lua integration."""
         raise NotImplementedError
 
+    @staticmethod
+    def _safe_download_name(file_name: str) -> str | None:
+        """Return file_name if it is a single path component, else None.
+
+        The cloud controls the file name; a name with a separator could write
+        outside the target directory. Both separator styles are checked since
+        Windows is a supported platform.
+        """
+        if file_name in {"", ".."} or (
+            PurePosixPath(file_name).name != file_name
+            or PureWindowsPath(file_name).name != file_name
+        ):
+            _LOGGER.error(
+                "Refusing download file name with path components: %s",
+                file_name,
+            )
+            return None
+        return file_name
+
+    async def _fetch_lua_file(
+        self,
+        path: str,
+        response: dict[str, Any],
+        decrypt: Callable[[str], str],
+    ) -> str | None:
+        """Download, decrypt and write the lua file described by a luaGet response.
+
+        ``response`` carries ``url`` and ``fileName``; ``decrypt`` turns the
+        downloaded ciphertext into lua source.
+        """
+        res = await self._session.get(response["url"])
+        if res.status != HTTPStatus.OK:
+            return None
+        lua = await res.text()
+        if not lua:
+            return None
+        file_name = self._safe_download_name(response["fileName"])
+        if file_name is None:
+            return None
+        stream = ('local bit = require "bit"\n' + decrypt(lua)).replace("\r\n", "\n")
+        fnm = f"{path}/{file_name}"
+        async with aiofiles.open(fnm, "w") as fp:
+            await fp.write(stream)
+        return fnm
+
+    async def _fetch_plugin_file(self, path: str, url: str) -> str | None:
+        """Download the plugin binary at ``url`` and write it under ``path``."""
+        file_name = self._safe_download_name(url.rsplit("/", maxsplit=1)[-1])
+        if file_name is None:
+            return None
+        res = await self._session.get(url)
+        if res.status != HTTPStatus.OK:
+            return None
+        plugin = await res.read()
+        if not plugin:
+            return None
+        fnm = f"{path}/{file_name}"
+        async with aiofiles.open(fnm, "wb") as fp:
+            await fp.write(plugin)
+        return fnm
+
 
 class MeijuCloud(MideaCloud):
     """Meiju Cloud."""
@@ -502,20 +579,6 @@ class MeijuCloud(MideaCloud):
             password=password,
             api_url=cloud_data["api_url"],
         )
-
-    def _make_general_data(self) -> dict[str, Any]:
-        return {
-            "src": self._app_id,
-            "format": "2",
-            "stamp": datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S"),
-            "platformId": "1",
-            "deviceId": self._device_id,
-            "reqId": token_hex(16),
-            "uid": self._uid,
-            "clientType": "1",
-            "appId": self._app_id,
-            "language": "en_US",
-        }
 
     async def login(self) -> bool:
         """Authenticate to Meiju Cloud."""
@@ -739,24 +802,16 @@ class MeijuCloud(MideaCloud):
             "version": "0",
             "iotAppId": self._app_id,
         }
-        fnm = None
         if response := await self._api_request(
             endpoint="/v1/appliance/protocol/lua/luaGet",
             data=data,
         ):
-            res = await self._session.get(response["url"])
-            if res.status == HTTPStatus.OK:
-                lua = await res.text()
-                if lua:
-                    stream = (
-                        'local bit = require "bit"\n'
-                        + self._security.aes_decrypt_with_fixed_key(lua)
-                    )
-                    stream = stream.replace("\r\n", "\n")
-                    fnm = f"{path}/{response['fileName']}"
-                    async with aiofiles.open(fnm, "w") as fp:
-                        await fp.write(stream)
-        return str(fnm) if fnm else None
+            return await self._fetch_lua_file(
+                path,
+                response,
+                self._security.aes_decrypt_with_fixed_key,
+            )
+        return None
 
     async def download_plugin(
         self,
@@ -779,24 +834,13 @@ class MeijuCloud(MideaCloud):
                 ],
             },
         )
-        fnm = None
         if response := await self._api_request(
             endpoint="/v1/plugin/update/getplugin",
             data=data,
         ):
-            # get file name from url
             _LOGGER.debug("response: %s, type: %s", response, type(response))
-            file_name = response["list"][0]["url"].split("/")[-1]
-            # download plugin from url
-            res = await self._session.get(response["list"][0]["url"])
-            if res.status == HTTPStatus.OK:
-                # get the file content in binary mode
-                plugin = await res.read()
-                if plugin:
-                    fnm = f"{path}/{file_name}"
-                    async with aiofiles.open(fnm, "wb") as fp:
-                        await fp.write(plugin)
-        return str(fnm) if fnm else None
+            return await self._fetch_plugin_file(path, response["list"][0]["url"])
+        return None
 
 
 class SmartHomeCloud(MideaCloud):
@@ -829,20 +873,6 @@ class SmartHomeCloud(MideaCloud):
                 "ascii",
             ),
         ).decode("ascii")
-
-    def _make_general_data(self) -> dict[str, Any]:
-        return {
-            "src": self._app_id,
-            "format": "2",
-            "stamp": datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S"),
-            "platformId": "1",
-            "deviceId": self._device_id,
-            "reqId": token_hex(16),
-            "uid": self._uid,
-            "clientType": "1",
-            "appId": self._app_id,
-            "language": "en_US",
-        }
 
     async def _api_request(
         self,
@@ -975,24 +1005,16 @@ class SmartHomeCloud(MideaCloud):
         )
         if model_number is not None:
             data["modelNumber"] = model_number
-        fnm = None
         if response := await self._api_request(
             endpoint="/v2/luaEncryption/luaGet",
             data=data,
         ):
-            res = await self._session.get(response["url"])
-            if res.status == HTTPStatus.OK:
-                lua = await res.text()
-                if lua:
-                    stream = (
-                        'local bit = require "bit"\n'
-                        + self._security.aes_decrypt_with_fixed_key(lua)
-                    )
-                    stream = stream.replace("\r\n", "\n")
-                    fnm = f"{path}/{response['fileName']}"
-                    async with aiofiles.open(fnm, "w") as fp:
-                        await fp.write(stream)
-        return str(fnm) if fnm else None
+            return await self._fetch_lua_file(
+                path,
+                response,
+                self._security.aes_decrypt_with_fixed_key,
+            )
+        return None
 
     async def download_plugin(
         self,
@@ -1014,24 +1036,13 @@ class SmartHomeCloud(MideaCloud):
                 ],
             },
         )
-        fnm = None
         if response := await self._api_request(
             endpoint="/v1/plugin/update/overseas/get",
             data=data,
         ):
-            # get file name from url
             _LOGGER.debug("response: %s, type: %s", response, type(response))
-            file_name = response["result"][0]["url"].split("/")[-1]
-            # download plugin from url
-            res = await self._session.get(response["result"][0]["url"])
-            if res.status == HTTPStatus.OK:
-                # get the file content in binary mode
-                plugin = await res.read()
-                if plugin:
-                    fnm = f"{path}/{file_name}"
-                    async with aiofiles.open(fnm, "wb") as fp:
-                        await fp.write(plugin)
-        return str(fnm) if fnm else None
+            return await self._fetch_plugin_file(path, response["result"][0]["url"])
+        return None
 
 
 class MideaAirCloud(MideaCloud):
@@ -1223,37 +1234,16 @@ class MideaAirCloud(MideaCloud):
                 "version": "0",
             },
         )
-        fnm = None
         if response := await self._api_request(
             endpoint="/v1/appliance/protocol/lua/luaGet",
             data=data,
         ):
-            res = await self._session.get(response["url"])
-            if res.status == HTTPStatus.OK:
-                lua = await res.text()
-                if lua:
-                    file_name = response["fileName"]
-                    # The cloud controls fileName; keep it to a single path
-                    # component so it cannot be written outside path. Check both
-                    # separator styles since Windows is a supported platform.
-                    if (
-                        PurePosixPath(file_name).name != file_name
-                        or PureWindowsPath(file_name).name != file_name
-                    ):
-                        _LOGGER.error(
-                            "Refusing lua file name with path components: %s",
-                            file_name,
-                        )
-                        return None
-                    stream = 'local bit = require "bit"\n' + cast(
-                        "MideaAirSecurity",
-                        self._security,
-                    ).decrypt_appliance_lua(lua)
-                    stream = stream.replace("\r\n", "\n")
-                    fnm = f"{path}/{file_name}"
-                    async with aiofiles.open(fnm, "w") as fp:
-                        await fp.write(stream)
-        return str(fnm) if fnm else None
+            return await self._fetch_lua_file(
+                path,
+                response,
+                cast("MideaAirSecurity", self._security).decrypt_appliance_lua,
+            )
+        return None
 
 
 class ToshibaIOLife(MideaAirCloud):
