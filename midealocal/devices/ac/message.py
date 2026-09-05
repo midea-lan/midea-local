@@ -5,6 +5,7 @@ from collections.abc import Callable, Mapping
 from enum import IntEnum, StrEnum
 from types import MappingProxyType
 
+from midealocal.base_classes.climate import MideaFanMode, MideaSwingMode
 from midealocal.const import MAX_BYTE_VALUE, DeviceType
 from midealocal.crc8 import calculate
 from midealocal.message import (
@@ -201,6 +202,37 @@ class DeviceAttributes(StrEnum):
     outdoor_fan_speed = "outdoor_fan_speed"
     # group 7: real time compressor power
     compressor_power = "compressor_power"
+
+
+class ACFanSpeed(MideaFanMode):
+    """AC fan speed set-points.
+
+    fan_speed is reported as a 0-127 percentage-like value; a device only
+    ever commands one of these six set-points, but reported values are
+    bucketed by threshold (against the next-lower set-point) to tolerate
+    slightly-off readings from hardware.
+    """
+
+    SILENT = 20
+    LOW = 40
+    MEDIUM = 60
+    HIGH = 80
+    FULL = 100
+    AUTO = 102
+
+
+class ACSwingMode(MideaSwingMode):
+    """AC swing mode names.
+
+    A StrEnum (not IntEnum, unlike ACFanSpeed): its members compare equal to
+    plain strings, which is required since Home Assistant's climate contract
+    checks membership with bare strings (e.g. "off" in device.swing_modes).
+    """
+
+    OFF = "off"
+    VERTICAL = "vertical"
+    HORIZONTAL = "horizontal"
+    BOTH = "both"
 
 
 class PowerFormats(IntEnum):

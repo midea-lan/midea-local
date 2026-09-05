@@ -3,10 +3,11 @@
 import logging
 import math
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
+from midealocal.base_classes.climate import MideaClimateDevice, MideaHVACMode
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import MideaDeviceInitKwargs
 from midealocal.exceptions import ValueWrongType
 
 from .message import MessageCFResponse, MessageQuery, MessageSet
@@ -28,11 +29,25 @@ class DeviceAttributes(StrEnum):
     freeze = "freeze"
 
 
-class MideaCFDevice(MideaDevice):
+class DeviceHVACMode(MideaHVACMode):
+    """Midea CF device HVAC mode."""
+
+    OFF = 0
+    AUTO = 1
+    COOL = 2
+    HEAT = 3
+
+
+class MideaCFDevice(MideaClimateDevice):
     """Midea CF device."""
 
     # Generic HVAC mode names, ordered to match the protocol's mode index.
-    hvac_modes: ClassVar[list[str]] = ["off", "auto", "cool", "heat"]
+    _device_hvac_modes: ClassVar[set[MideaHVACMode]] = {
+        DeviceHVACMode.OFF,
+        DeviceHVACMode.AUTO,
+        DeviceHVACMode.COOL,
+        DeviceHVACMode.HEAT,
+    }
 
     def __init__(
         self,
@@ -57,6 +72,56 @@ class MideaCFDevice(MideaDevice):
             },
         )
 
+    @property
+    @override
+    def hvac_modes(self) -> set[MideaHVACMode]:
+        """Midea CF device HVAC modes."""
+        return MideaCFDevice._device_hvac_modes
+
+    @override
+    def hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:
+        """Midea CF device HVAC mode."""
+        power = self._attributes[DeviceAttributes.power]
+        if not isinstance(power, bool):
+            return None
+        if not power:
+            return DeviceHVACMode.OFF
+        mode = self._attributes[DeviceAttributes.mode]
+        try:
+            return (
+                DeviceHVACMode(mode)
+                if DeviceHVACMode(mode) != DeviceHVACMode.OFF
+                else None
+            )
+        except ValueError:
+            return None
+
+    @override
+    def set_hvac_mode(
+        self,
+        hvac_mode: MideaHVACMode,
+        zone: int | None = None,
+    ) -> None:
+        """Midea CF device set HVAC mode.
+
+        Every mode-change message must carry a target_temperature, so this
+        supplies the current one (or the device's minimum as a fallback)
+        rather than sending mode alone via set_attribute.
+        """
+        if hvac_mode == DeviceHVACMode.OFF:
+            self.set_attribute(attr=DeviceAttributes.power, value=False)
+            return
+        if hvac_mode not in self.hvac_modes:
+            msg = f"[cf] Unsupported hvac mode: {hvac_mode}"
+            raise ValueError(msg)
+        target_temperature = self._attributes[DeviceAttributes.target_temperature]
+        if target_temperature is None:
+            target_temperature = self._attributes[DeviceAttributes.min_temperature]
+        self.set_target_temperature(
+            target_temperature=target_temperature,
+            hvac_mode=hvac_mode,
+        )
+
     def build_query(self) -> list[MessageQuery]:
         """Midea CF device build query."""
         return [MessageQuery(self._message_protocol_version)]
@@ -67,19 +132,20 @@ class MideaCFDevice(MideaDevice):
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         return self.update_attributes_from_message(message)
 
+    @override
     def set_target_temperature(
         self,
         target_temperature: float,
-        mode: int | None,
-        zone: int | None = None,  # noqa: ARG002
+        hvac_mode: MideaHVACMode | None,
+        zone: int | None = None,
     ) -> None:
         """Midea CF device set target temperature."""
         message = MessageSet(self._message_protocol_version)
-        message.power = True
         message.mode = self._attributes[DeviceAttributes.mode]
         message.target_temperature = target_temperature
-        if mode is not None:
-            message.mode = mode
+        if hvac_mode is not None:
+            message.power = hvac_mode != 0
+            message.mode = hvac_mode
         self.build_send(message)
 
     @staticmethod
