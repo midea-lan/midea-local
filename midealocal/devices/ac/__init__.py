@@ -578,27 +578,49 @@ class MideaACDevice(MideaDevice):
     def make_message_set(self) -> MessageGeneralSet:
         """Midea AC device make message set."""
         message = MessageGeneralSet(self._message_protocol_version)
-        message.power = self._attributes[DeviceAttributes.power]
-        message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
-        message.mode = self._attributes[DeviceAttributes.mode]
-        message.target_temperature = self._attributes[
-            DeviceAttributes.target_temperature
-        ]
-        message.fan_speed = self._attributes[DeviceAttributes.fan_speed]
-        message.swing_vertical = self._attributes[DeviceAttributes.swing_vertical]
-        message.swing_horizontal = self._attributes[DeviceAttributes.swing_horizontal]
-        message.boost_mode = self._attributes[DeviceAttributes.boost_mode]
-        message.power_saving = self._attributes[DeviceAttributes.power_saving]
-        message.smart_eye = self._attributes[DeviceAttributes.smart_eye]
-        message.dry = self._attributes[DeviceAttributes.dry]
-        message.eco_mode = self._attributes[DeviceAttributes.eco_mode]
-        message.aux_heating = self._attributes[DeviceAttributes.aux_heating]
-        message.sleep_mode = self._attributes[DeviceAttributes.sleep_mode]
-        message.natural_wind = self._attributes[DeviceAttributes.natural_wind]
-        message.temp_fahrenheit = self._attributes[DeviceAttributes.temp_fahrenheit]
-        message.frost_protect = self._attributes[DeviceAttributes.frost_protect]
-        message.comfort_mode = self._attributes[DeviceAttributes.comfort_mode]
-        message.anion = self._attributes[DeviceAttributes.anion]
+        message.power = self._attributes.get(DeviceAttributes.power, False)
+        message.prompt_tone = self._attributes.get(DeviceAttributes.prompt_tone, True)
+        message.mode = self._attributes.get(DeviceAttributes.mode, 0)
+        message.target_temperature = self._attributes.get(
+            DeviceAttributes.target_temperature,
+            20.0,
+        )
+        message.fan_speed = self._attributes.get(DeviceAttributes.fan_speed, 102)
+        message.swing_vertical = self._attributes.get(
+            DeviceAttributes.swing_vertical,
+            False,
+        )
+        message.swing_horizontal = self._attributes.get(
+            DeviceAttributes.swing_horizontal,
+            False,
+        )
+        message.boost_mode = self._attributes.get(DeviceAttributes.boost_mode, False)
+        message.power_saving = self._attributes.get(
+            DeviceAttributes.power_saving,
+            False,
+        )
+        message.smart_eye = self._attributes.get(DeviceAttributes.smart_eye, False)
+        message.dry = self._attributes.get(DeviceAttributes.dry, False)
+        message.aux_heating = self._attributes.get(DeviceAttributes.aux_heating, False)
+        message.eco_mode = self._attributes.get(DeviceAttributes.eco_mode, False)
+        message.temp_fahrenheit = self._attributes.get(
+            DeviceAttributes.temp_fahrenheit,
+            False,
+        )
+        message.sleep_mode = self._attributes.get(DeviceAttributes.sleep_mode, False)
+        message.natural_wind = self._attributes.get(
+            DeviceAttributes.natural_wind,
+            False,
+        )
+        message.frost_protect = self._attributes.get(
+            DeviceAttributes.frost_protect,
+            False,
+        )
+        message.comfort_mode = self._attributes.get(
+            DeviceAttributes.comfort_mode,
+            False,
+        )
+        message.anion = self._attributes.get(DeviceAttributes.anion, False)
         return message
 
     def make_newprotocol_message_set(
