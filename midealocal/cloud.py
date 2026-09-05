@@ -485,7 +485,7 @@ class MideaCloud:
         outside the target directory. Both separator styles are checked since
         Windows is a supported platform.
         """
-        if (
+        if file_name in {"", ".."} or (
             PurePosixPath(file_name).name != file_name
             or PureWindowsPath(file_name).name != file_name
         ):
