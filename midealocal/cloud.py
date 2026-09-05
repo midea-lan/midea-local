@@ -5,7 +5,7 @@ import json
 import logging
 import re
 import time
-from asyncio import Lock
+from asyncio import Lock, sleep
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from hashlib import md5
@@ -23,6 +23,7 @@ from midealocal.exceptions import (
     CLOUD_ERROR_MEANINGS,
     LOGIN_ERROR_CODES,
     NO_PERMISSION_CODES,
+    TRANSIENT_CLOUD_ERROR_CODES,
     ElementMissing,
     cloud_api_error,
 )
@@ -39,6 +40,12 @@ SN8_MIN_SERIAL_LENGTH = 17
 # Cloud error codes that have a dedicated, actionable exception subclass; every
 # other non-zero code is logged and surfaced as ``None``.
 RAISE_FOR_ERROR_CODES = NO_PERMISSION_CODES | LOGIN_ERROR_CODES
+
+# Total attempts for a single cloud API call before giving up.
+_RETRY_ATTEMPTS = 3
+
+# Base delay between retries of a transient cloud error, scaled by attempt.
+_TRANSIENT_RETRY_BACKOFF_SECONDS = 1.0
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -83,6 +90,12 @@ SUPPORTED_CLOUDS: dict[str, Any] = {
         "class_name": "MideaAirCloud",
         "app_id": "1005",
         "app_key": "434a209a5ce141c3b726de067835d7f0",
+        "api_url": "https://mapp.appsmb.com",  # codespell:ignore
+    },
+    "OS Comfort": {
+        "class_name": "MideaAirCloud",
+        "app_id": "1114",
+        "app_key": "02021a881e4d4b21d7fed806719e5440",
         "api_url": "https://mapp.appsmb.com",  # codespell:ignore
     },
     "Toshiba Iolife": {
@@ -252,7 +265,7 @@ class MideaCloud:
         if self._access_token is not None:
             header.update({"accessToken": self._access_token})
         response: dict = {"code": -1}
-        for _ in range(3):
+        for attempt in range(_RETRY_ATTEMPTS):
             try:
                 async with self._api_lock:
                     r = await self._session.request(
@@ -270,13 +283,15 @@ class MideaCloud:
                         _redact_data(str(raw)),
                     )
                     response = json.loads(raw)
-                    break
             except (TimeoutError, ClientConnectionError, json.JSONDecodeError) as e:
                 _LOGGER.warning(
                     "Midea cloud API error, url: %s, error: %s",
                     url,
                     repr(e),
                 )
+                continue
+            if not await self._retry_if_transient(url, int(response["code"]), attempt):
+                break
         code = int(response["code"])
         if code == 0 and "data" in response:
             return cast("dict", response["data"])
@@ -312,6 +327,26 @@ class MideaCloud:
         )
         if raise_for_error and code in RAISE_FOR_ERROR_CODES:
             raise cloud_api_error(code, message)
+
+    async def _retry_if_transient(self, url: str, code: int, attempt: int) -> bool:
+        """Return whether ``code`` is a transient error worth resending.
+
+        9999 "system error" comes back sporadically for otherwise valid calls;
+        a short back-off and resend usually succeeds. When retries remain this
+        waits and returns True so the caller loops again; otherwise the code is
+        left in ``response`` to be surfaced by ``_handle_error_code``.
+        """
+        if code not in TRANSIENT_CLOUD_ERROR_CODES or attempt >= _RETRY_ATTEMPTS - 1:
+            return False
+        _LOGGER.warning(
+            "Midea cloud API url: %s returned transient error %s; retry %s of %s",
+            url,
+            code,
+            attempt + 1,
+            _RETRY_ATTEMPTS - 1,
+        )
+        await sleep(_TRANSIENT_RETRY_BACKOFF_SECONDS * (attempt + 1))
+        return True
 
     async def _get_login_id(self) -> str | None:
         data = self._make_general_data()
@@ -1065,7 +1100,7 @@ class MideaAirCloud(MideaCloud):
         if self._access_token is not None:
             header.update({"accessToken": self._access_token})
         response: dict = {"errorCode": -1}
-        for _ in range(3):
+        for attempt in range(_RETRY_ATTEMPTS):
             try:
                 async with self._api_lock:
                     r = await self._session.request(
@@ -1083,13 +1118,19 @@ class MideaAirCloud(MideaCloud):
                         raw,
                     )
                     response = json.loads(raw)
-                    break
             except (TimeoutError, ClientConnectionError, json.JSONDecodeError) as e:
                 _LOGGER.warning(
                     "Midea cloud API error, url: %s, error: %s",
                     url,
                     repr(e),
                 )
+                continue
+            if not await self._retry_if_transient(
+                url,
+                int(response["errorCode"]),
+                attempt,
+            ):
+                break
         error_code = int(response["errorCode"])
         if error_code == 0:
             if "result" in response:

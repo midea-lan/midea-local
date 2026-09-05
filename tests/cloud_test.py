@@ -2,7 +2,7 @@
 
 import json
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -14,6 +14,7 @@ import pytest
 from aiohttp import ClientConnectionError
 
 from midealocal.cloud import (
+    _RETRY_ATTEMPTS,
     DEFAULT_KEYS,
     MeijuCloud,
     MideaAirCloud,
@@ -81,13 +82,28 @@ _TOSHIBA_ENCRYPTED_SN = (
 )
 _TOSHIBA_EXPECTED_SN = "0008AC0000000000000000000000BEEF"
 
+# 9999 "system error": a well-formed body that must be retried in place. Two
+# spellings so the same value works for the v5 proxy ("code") and the legacy
+# mapp.appsmb.com backend ("errorCode").
+_SYSTEM_ERROR_9999 = json.dumps({"code": 9999, "errorCode": 9999}).encode()
+
+
+@pytest.fixture(autouse=True)
+def _no_retry_backoff() -> Iterator[None]:
+    """Drop the transient-retry back-off so retry paths run without waiting."""
+    with patch("midealocal.cloud.sleep", new=AsyncMock()):
+        yield
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("code", "msg"),
     [
+        (3101, "password error"),
         (3102, "Account or password incorrect, please re-enter"),
+        (3106, "invalid session"),
         (3144, "login failed, loginId is empty, please login again"),
+        (3301, "app key is invalid"),
         (7610, "Too many failed login attempts, please try again 5 minutes later"),
         (65027, "该用户在线登录设备已超过上限,请更换账号登录"),
     ],
@@ -95,9 +111,9 @@ _TOSHIBA_EXPECTED_SN = "0008AC0000000000000000000000BEEF"
 async def test_msmartcloud_login_raises_cloud_login_error(code: int, msg: str) -> None:
     """Test known login-step error codes surface as CloudLoginError.
 
-    3102/3144/7610/65027 are actionable failures of the login / loginId step;
-    callers need the code to show the right message, so login() must raise
-    rather than return a bare False.
+    3101/3102/3106/3144/3301/7610/65027 are actionable failures of the login /
+    loginId step; callers need the code to show the right message, so login()
+    must raise rather than return a bare False.
     """
     session = Mock()
     response = Mock()
@@ -121,26 +137,45 @@ async def test_msmartcloud_login_raises_cloud_login_error(code: int, msg: str) -
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("read_side_effect", "warns_rejected"),
+    ("cloud_name", "read_side_effect", "warns_rejected"),
     [
         pytest.param(
+            "SmartHome",
             [_RESPONSES["cloud_invalid_response.json"]] * 2,
             True,
             id="unclassified-code",
         ),
         pytest.param(
-            [json.dumps({"code": 9999, "msg": "system error"}).encode()] * 2,
+            "SmartHome",
+            # re_route and login/id each burn a full retry budget on 9999.
+            [_SYSTEM_ERROR_9999] * (_RETRY_ATTEMPTS * 2),
             True,
-            id="system-error-9999",
+            id="system-error-9999-v5-proxy",
         ),
         pytest.param(
+            "Midea Air",
+            # A 9999 that never clears must exhaust the legacy backend's retries
+            # and then surface, not loop forever.
+            [_SYSTEM_ERROR_9999] * _RETRY_ATTEMPTS,
+            True,
+            id="system-error-9999-legacy-appsmb",
+        ),
+        pytest.param(
+            "SmartHome",
             [_RESPONSES["msmartcloud_reroute.json"], *[ClientConnectionError()] * 3],
             False,
             id="unreachable",
         ),
+        pytest.param(
+            "Midea Air",
+            [ClientConnectionError()] * _RETRY_ATTEMPTS,
+            False,
+            id="unreachable-legacy-appsmb",
+        ),
     ],
 )
-async def test_msmartcloud_login_returns_false(
+async def test_login_returns_false(
+    cloud_name: str,
     read_side_effect: list,
     warns_rejected: bool,
     caplog: pytest.LogCaptureFixture,
@@ -156,7 +191,7 @@ async def test_msmartcloud_login_returns_false(
     response.read = AsyncMock(side_effect=read_side_effect)
     session.request = AsyncMock(return_value=response)
     cloud = get_midea_cloud(
-        "SmartHome",
+        cloud_name,
         session=session,
         account="account",
         password="password",
@@ -164,6 +199,59 @@ async def test_msmartcloud_login_returns_false(
     with caplog.at_level(logging.WARNING, logger="midealocal.cloud"):
         assert not await cloud.login()
     assert ("rejected the request" in caplog.text) is warns_rejected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("cloud_name", "reads"),
+    [
+        pytest.param(
+            "SmartHome",
+            [
+                "msmartcloud_reroute.json",
+                _SYSTEM_ERROR_9999,
+                "cloud_login_id.json",
+                "msmartcloud_login.json",
+            ],
+            id="v5-proxy",
+        ),
+        pytest.param(
+            "Midea Air",
+            [
+                "mideaaircloud_login_id.json",
+                _SYSTEM_ERROR_9999,
+                "mideaaircloud_login.json",
+            ],
+            id="legacy-appsmb",
+        ),
+    ],
+)
+async def test_login_retries_transient_system_error(
+    cloud_name: str,
+    reads: list[str | bytes],
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A single 9999 during login is resent and recovers.
+
+    The infamous "system error" is a sporadic server fault; midea-beautiful-air
+    likewise retries it rather than failing the login.
+    """
+    session = Mock()
+    response = Mock()
+    response.read = AsyncMock(
+        side_effect=[r if isinstance(r, bytes) else _RESPONSES[r] for r in reads],
+    )
+    session.request = AsyncMock(return_value=response)
+    cloud = get_midea_cloud(
+        cloud_name,
+        session=session,
+        account="account",
+        password="password",
+    )
+    with caplog.at_level(logging.WARNING, logger="midealocal.cloud"):
+        assert await cloud.login()
+    assert "transient error 9999" in caplog.text
+    assert "rejected the request" not in caplog.text
 
 
 @pytest.mark.asyncio
@@ -244,6 +332,10 @@ class CloudTest(IsolatedAsyncioTestCase):
         )
         assert isinstance(
             get_midea_cloud("Ariston Clima", session, "", ""),
+            MideaAirCloud,
+        )
+        assert isinstance(
+            get_midea_cloud("OS Comfort", session, "", ""),
             MideaAirCloud,
         )
         with pytest.raises(ElementMissing):
@@ -338,7 +430,7 @@ class CloudTest(IsolatedAsyncioTestCase):
     async def test_get_cloud_servers(self) -> None:
         """Test get cloud servers."""
         servers = await MideaCloud.get_cloud_servers()
-        assert len(servers.items()) == 6
+        assert len(servers.items()) == 7
 
     async def test_get_preset_account_cloud(self) -> None:
         """Test get preset cloud account."""
@@ -842,6 +934,9 @@ class CloudTest(IsolatedAsyncioTestCase):
     def test_cloud_api_error_factory(self) -> None:
         """Test cloud_api_error picks the most specific subclass per code."""
         assert type(cloud_api_error(3201, "")) is NoDeviceRegistered
+        assert type(cloud_api_error(3101, "")) is CloudLoginError
+        assert type(cloud_api_error(3106, "")) is CloudLoginError
+        assert type(cloud_api_error(3301, "")) is CloudLoginError
         assert type(cloud_api_error(7610, "")) is CloudLoginError
         assert type(cloud_api_error(65027, "")) is CloudLoginError
         # unknown code falls back to the base class, and the meaning table
@@ -850,6 +945,10 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert type(generic) is MideaCloudError
         assert "transient" in str(generic)
         assert cloud_api_error(4242, "boom").code == 4242
+        # getToken-only codes: base class, but still enriched from the table
+        assert type(cloud_api_error(1002, "")) is MideaCloudError
+        assert "parameter" in str(cloud_api_error(1002, ""))
+        assert "retired" in str(cloud_api_error(40404, ""))
 
     async def test_msmartcloud_list_home(self) -> None:
         """Test MSmartCloud list_home."""
