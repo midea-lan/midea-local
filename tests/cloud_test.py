@@ -990,16 +990,33 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert type(cloud_api_error(3301, "")) is CloudLoginError
         assert type(cloud_api_error(7610, "")) is CloudLoginError
         assert type(cloud_api_error(65027, "")) is CloudLoginError
-        # unknown code falls back to the base class, and the meaning table
-        # enriches the string for known-but-generic codes
+        # unknown code falls back to the base class; the raw server message is
+        # carried through unchanged
         generic = cloud_api_error(9999, "system error")
         assert type(generic) is MideaCloudError
-        assert "transient" in str(generic)
+        assert "system error" in str(generic)
         assert cloud_api_error(4242, "boom").code == 4242
-        # getToken-only codes: base class, but still enriched from the table
+        # getToken-only codes: base class
         assert type(cloud_api_error(1002, "")) is MideaCloudError
-        assert "parameter" in str(cloud_api_error(1002, ""))
-        assert "retired" in str(cloud_api_error(40404, ""))
+        assert type(cloud_api_error(40404, "")) is MideaCloudError
+
+    def test_cloud_error_translation_key(self) -> None:
+        """Test translation_key exposes a stable slug per error code."""
+        assert cloud_api_error(3101, "").translation_key == "invalid_auth"
+        assert cloud_api_error(3102, "").translation_key == "invalid_auth"
+        assert cloud_api_error(3106, "").translation_key == "cloud_session_expired"
+        assert cloud_api_error(3144, "").translation_key == "cloud_session_expired"
+        assert cloud_api_error(3201, "").translation_key == "device_not_registered"
+        assert cloud_api_error(3301, "").translation_key == "invalid_cloud_server"
+        assert cloud_api_error(7610, "").translation_key == "account_locked"
+        assert (
+            cloud_api_error(65027, "").translation_key == "too_many_logged_in_devices"
+        )
+        # generic codes map to the fallback slug explicitly...
+        assert cloud_api_error(9999, "").translation_key == "cloud_error"
+        assert cloud_api_error(40404, "").translation_key == "cloud_error"
+        # ...as do codes with no table entry at all
+        assert cloud_api_error(4242, "").translation_key == "cloud_error"
 
     async def test_msmartcloud_list_home(self) -> None:
         """Test MSmartCloud list_home."""

@@ -43,28 +43,25 @@ class ValueWrongType(MideaLocalError):
     """Exception raised when the value has a wrong data type."""
 
 
-# Seen on mp-prod.appsmb.com and the Meiju gateway (1002 / 40404). The wire
-# message text varies by locale and endpoint (65027 comes back in Chinese), so
-# callers should branch on the code; the meaning here is only for logging.
-CLOUD_ERROR_MEANINGS: dict[int, str] = {
-    1002: "a required request parameter is missing or has the wrong type",
-    3004: (
-        "malformed or rejected request: bad udpid/applianceCodes, or the "
-        "endpoint is disabled on this cloud"
-    ),
-    3101: "account password is incorrect",
-    3102: "account or password incorrect",
-    3106: "login session is invalid; log in again",
-    3144: "login session is no longer valid (empty loginId); log in again",
-    3201: (
-        "the account has no permission for this device; it is bound to a "
-        "different account"
-    ),
-    3301: "invalid app key for this cloud",
-    7610: "too many failed login attempts; locked for about 5 minutes",
-    9999: "generic or transient cloud error",
-    40404: "the API endpoint does not exist; it was retired or moved",
-    65027: "maximum number of simultaneously logged-in devices exceeded",
+# Maps a Midea cloud error code to a stable, user-actionable slug so callers can
+# show a specific message without pattern-matching on the numeric code. The
+# comment after each entry is the human explanation; the wire message text
+# varies by locale and endpoint (65027 comes back in Chinese) so never match on
+# it. Codes absent here -- and transient 9999 -- fall back to "cloud_error".
+# Seen on mp-prod.appsmb.com and the Meiju gateway (1002 / 40404).
+CLOUD_ERRORS: dict[int, str] = {
+    1002: "cloud_error",  # missing or wrong-type request parameter
+    3004: "cloud_error",  # malformed/rejected request, or endpoint disabled
+    3101: "invalid_auth",  # account password is incorrect
+    3102: "invalid_auth",  # account or password incorrect
+    3106: "cloud_session_expired",  # login session is invalid; log in again
+    3144: "cloud_session_expired",  # login session invalid (empty loginId)
+    3201: "device_not_registered",  # device is bound to a different account
+    3301: "invalid_cloud_server",  # invalid app key for this cloud
+    7610: "account_locked",  # too many failed logins; ~5 minute lockout
+    9999: "cloud_error",  # generic or transient cloud error
+    40404: "cloud_error",  # the API endpoint was retired or moved
+    65027: "too_many_logged_in_devices",  # too many simultaneous logins
 }
 
 # getToken / appliance endpoints answer with this when the authenticated account
@@ -90,11 +87,10 @@ class MideaCloudError(MideaLocalError):
 
     def __init__(self, code: int, message: str) -> None:
         """Initialize with the cloud error code and message."""
-        meaning = CLOUD_ERROR_MEANINGS.get(code)
-        detail = f"{message} ({meaning})" if meaning else message
-        super().__init__(f"Cloud request failed with code {code}: {detail}")
+        super().__init__(f"Cloud request failed with code {code}: {message}")
         self.code = code
         self.message = message
+        self.translation_key = CLOUD_ERRORS.get(code, "cloud_error")
 
 
 class NoDeviceRegistered(MideaCloudError):
@@ -109,9 +105,9 @@ class NoDeviceRegistered(MideaCloudError):
 class CloudLoginError(MideaCloudError):
     """Exception raised when the cloud login / loginId step fails with a known code.
 
-    Carries the cloud ``code`` so callers can map it to a specific message
-    (wrong credentials, expired session, rate limit, too many logged-in
-    devices); see ``LOGIN_ERROR_CODES`` and ``CLOUD_ERROR_MEANINGS``.
+    Carries the cloud ``code`` and a ``translation_key`` so callers can map it
+    to a specific message (wrong credentials, expired session, rate limit, too
+    many logged-in devices); see ``LOGIN_ERROR_CODES`` and ``CLOUD_ERRORS``.
     """
 
 

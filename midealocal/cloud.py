@@ -20,7 +20,7 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 
 from midealocal.exceptions import (
-    CLOUD_ERROR_MEANINGS,
+    CLOUD_ERRORS,
     LOGIN_ERROR_CODES,
     NO_PERMISSION_CODES,
     TRANSIENT_CLOUD_ERROR_CODES,
@@ -333,13 +333,13 @@ class MideaCloud:
         """
         if code == -1:
             return
-        meaning = CLOUD_ERROR_MEANINGS.get(code)
+        slug = CLOUD_ERRORS.get(code, "")
         _LOGGER.warning(
-            "Midea cloud API url: %s rejected the request with code %s: %s%s",
+            "Midea cloud API url: %s rejected the request with code %s (%s): %s",
             url,
             code,
+            slug,
             message,
-            f" ({meaning})" if meaning else "",
         )
         if raise_for_error and code in RAISE_FOR_ERROR_CODES:
             raise cloud_api_error(code, message)

@@ -348,7 +348,7 @@ class MideaCLI:
         try:
             logged_in = await cloud.login()
         except CloudLoginError as err:
-            # A specific, expected login failure -- the code/meaning is the
+            # A specific, expected login failure -- the code/message is the
             # useful output, not a traceback.
             _LOGGER.error("Cloud login failed: %s", err)  # noqa: TRY400
             return
