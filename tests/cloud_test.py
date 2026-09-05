@@ -994,7 +994,8 @@ class CloudTest(IsolatedAsyncioTestCase):
         # carried through unchanged
         generic = cloud_api_error(9999, "system error")
         assert type(generic) is MideaCloudError
-        assert "system error" in str(generic)
+        assert generic.message == "system error"
+        assert str(generic) == "Cloud request failed with code 9999: system error"
         assert cloud_api_error(4242, "boom").code == 4242
         # getToken-only codes: base class
         assert type(cloud_api_error(1002, "")) is MideaCloudError
