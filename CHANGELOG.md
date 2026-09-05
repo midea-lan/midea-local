@@ -1,5 +1,40 @@
 # Changelog
 
+## [11.0.0](https://github.com/midea-lan/midea-local/compare/v10.1.0...v11.0.0) (2026-09-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* **cloud:** raise typed errors for known cloud API failure codes ([#747](https://github.com/midea-lan/midea-local/issues/747))
+
+### Features
+
+* **a1:** expose device capabilities ([#754](https://github.com/midea-lan/midea-local/issues/754)) ([ea33031](https://github.com/midea-lan/midea-local/commit/ea3303168555dfec57e4721454794ede083216fc))
+* **ac:** add group 3 outdoor fan speed ([#736](https://github.com/midea-lan/midea-local/issues/736)) ([d8027fc](https://github.com/midea-lan/midea-local/commit/d8027fc3c8c37d64cc0cd2ae1d227a56874f1d12))
+* **ac:** capabilities remove unsupported attrs ([#746](https://github.com/midea-lan/midea-local/issues/746)) ([27aa14b](https://github.com/midea-lan/midea-local/commit/27aa14bca5fb10e53a8bd934b34e7ccd6ab4033c))
+* add OS Comfort (Olimpia Splendid) cloud ([#752](https://github.com/midea-lan/midea-local/issues/752)) ([7a5360c](https://github.com/midea-lan/midea-local/commit/7a5360c784f646d9330881ea448ba7d90c45add7))
+* add public metod mode_options() ([#745](https://github.com/midea-lan/midea-local/issues/745)) ([e1f6b04](https://github.com/midea-lan/midea-local/commit/e1f6b040f0c8de900cc386f136a1948171125126))
+* **cd:** support extended water heater protocol ([#735](https://github.com/midea-lan/midea-local/issues/735)) ([8916a31](https://github.com/midea-lan/midea-local/commit/8916a3105356d491ea93ba97034f2831fcb1b0b8))
+* **cloud:** add support for Japanese Toshiba IOLife devices ([#301](https://github.com/midea-lan/midea-local/issues/301)) ([f357970](https://github.com/midea-lan/midea-local/commit/f3579707342eec1c0103d2ac254f436ba49a3c2d))
+* **cloud:** classify 3101/3106/3301 as login errors ([#751](https://github.com/midea-lan/midea-local/issues/751)) ([2a8a4f0](https://github.com/midea-lan/midea-local/commit/2a8a4f0a89577e3a74c7476eae0e1228771ebf6d))
+* introduce MideaClimateDevice base class ([#728](https://github.com/midea-lan/midea-local/issues/728)) ([303ac20](https://github.com/midea-lan/midea-local/commit/303ac2034c7d4597326137c30d39a693f0005130))
+
+
+### Bug Fixes
+
+* **ac:** default values for make message set when missing DeviceAttributes ([#755](https://github.com/midea-lan/midea-local/issues/755)) ([0c979b0](https://github.com/midea-lan/midea-local/commit/0c979b0a88b359a91db4d23004ff73cf37ee7303))
+* **c3:** align to climate platform ([#730](https://github.com/midea-lan/midea-local/issues/730)) ([c6fed4d](https://github.com/midea-lan/midea-local/commit/c6fed4d99241d506e564a95d368eaeb095c40792))
+* **cc:** align to climate platform ([#729](https://github.com/midea-lan/midea-local/issues/729)) ([12b0b89](https://github.com/midea-lan/midea-local/commit/12b0b893e8e9c781b180072dee61a2c24c9628ee))
+* **cf:** align to climate platform ([#731](https://github.com/midea-lan/midea-local/issues/731)) ([de01976](https://github.com/midea-lan/midea-local/commit/de01976c2f33db78990891fae70208fe3095eec0))
+* **cloud:** retry transient 9999 system error responses ([#750](https://github.com/midea-lan/midea-local/issues/750)) ([8857000](https://github.com/midea-lan/midea-local/commit/8857000faa40959caec6e08057c2c7d90cdc69d1))
+* **cloud:** use the v2 getToken endpoint for the Meiju cloud ([#717](https://github.com/midea-lan/midea-local/issues/717)) ([d819de1](https://github.com/midea-lan/midea-local/commit/d819de146eb875bf9a46fb0ab932bc9be375a3ea))
+* **fb:** align to climate platform ([#732](https://github.com/midea-lan/midea-local/issues/732)) ([197657d](https://github.com/midea-lan/midea-local/commit/197657d1b8e568a30f167994b6dbced621da798a))
+
+
+### Code Refactoring
+
+* **cloud:** raise typed errors for known cloud API failure codes ([#747](https://github.com/midea-lan/midea-local/issues/747)) ([7854642](https://github.com/midea-lan/midea-local/commit/78546422e0eea45183bc573bc19b38a229698c5c))
+
 ## [10.1.0](https://github.com/midea-lan/midea-local/compare/v10.0.1...v10.1.0) (2026-08-28)
 
 
