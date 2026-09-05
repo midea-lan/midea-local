@@ -86,7 +86,7 @@ class TestMideaCDDevice:
         )
 
     # ------------------------------------------------------------------ #
-    # MessageSet 25-byte body / tsMax (issue #468)                        #
+    # MessageSet controlType=0x01 SET body (issue #468)                   #
     # ------------------------------------------------------------------ #
 
     def test_preset_modes_excludes_vacation_from_selectable_modes(self) -> None:
@@ -100,8 +100,8 @@ class TestMideaCDDevice:
             self.device.set_attribute(DeviceAttributes.mode.value, "vacation")
             mock_send.assert_not_called()
 
-    def test_set_power_uses_ts_max_at_body_23(self) -> None:
-        """Plain SET uses device max_temperature as full[23] tsMax (#468)."""
+    def test_set_power_builds_lua_length_body(self) -> None:
+        """Plain SET builds the 22-byte lua/cd body, vacationTs left 0 (#468)."""
         self.device._attributes[DeviceAttributes.max_temperature] = 70.0
         self.device._attributes[DeviceAttributes.vacation_temperature] = 65.0
 
@@ -109,14 +109,12 @@ class TestMideaCDDevice:
             self.device.set_attribute(DeviceAttributes.power.value, True)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
-            assert msg.ts_max == 70
-            assert len(msg.body) == 25
-            assert msg.body[23] == 70  # tsMax
+            assert len(msg.body) == 22
             assert msg.body[21] == 0  # vacationTs left 0 on plain set
             assert msg.body[4] != 0  # target present
 
-    def test_set_target_temperature_body_length_and_ts_max(self) -> None:
-        """set_temperature builds 25-byte body with non-zero tsMax."""
+    def test_set_target_temperature_body_length(self) -> None:
+        """set_temperature builds the 22-byte new-protocol body (#468)."""
         # RSJRAC07 uses the new (raw °C) Lua protocol — matches issue #468.
         self.device.set_customize('{"lua_protocol": "new"}')
         self.device._attributes[DeviceAttributes.max_temperature] = 65.0
@@ -130,13 +128,11 @@ class TestMideaCDDevice:
             msg = mock_send.call_args[0][0]
             assert msg.target_temperature == 63.0
             assert msg.use_old_protocol is False
-            assert len(msg.body) == 25
+            assert len(msg.body) == 22
             assert msg.body[4] == 63
-            assert msg.body[23] == 65
 
     def test_disable_vacation_sets_flag_and_mode(self) -> None:
         """Disabling vacation clears flag and forces Energy-save mode."""
-        self.device._attributes[DeviceAttributes.max_temperature] = 65.0
         self.device._attributes[DeviceAttributes.vacation_mode] = True
 
         with patch.object(self.device, "build_send") as mock_send:
@@ -146,12 +142,9 @@ class TestMideaCDDevice:
             assert msg.vacation_flag is False
             assert msg.vacation_days == 0
             assert msg.mode == 0x01
-            assert msg.body[23] == 65
 
     def test_set_vacation_days_encodes_days(self) -> None:
-        """vacation_days SET keeps tsMax and marks vacation flag."""
-        self.device._attributes[DeviceAttributes.max_temperature] = 65.0
-
+        """vacation_days SET marks the vacation flag and encodes the day count."""
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.vacation_days.value, 30)
             mock_send.assert_called_once()
@@ -159,36 +152,6 @@ class TestMideaCDDevice:
             assert msg.vacation_flag is True
             assert msg.vacation_days == 30
             assert msg.body[10] == 30  # vacation days low
-            assert msg.body[23] == 65
-
-    def test_ts_max_falls_back_when_max_missing(self) -> None:
-        """Missing max_temperature still yields non-zero tsMax via MessageSet."""
-        self.device._attributes[DeviceAttributes.max_temperature] = None
-
-        with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.power.value, True)
-            mock_send.assert_called_once()
-            msg = mock_send.call_args[0][0]
-            assert msg.body[23] != 0
-
-    def test_ts_max_falls_back_when_max_unconvertible(self) -> None:
-        """A stored max_temperature that fails int() conversion sends tsMax=0."""
-
-        class UnconvertibleFloat(float):
-            """A float that raises when int() is attempted on it."""
-
-            def __int__(self) -> int:
-                raise ValueError("cannot convert")
-
-        self.device._attributes[DeviceAttributes.max_temperature] = UnconvertibleFloat(
-            70.0,
-        )
-
-        with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.power.value, True)
-            mock_send.assert_called_once()
-            msg = mock_send.call_args[0][0]
-            assert msg.ts_max == 0
 
     # ------------------------------------------------------------------ #
     # disinfect set_attribute                                              #
@@ -291,8 +254,8 @@ class TestMideaCDDevice:
     # max_temperature                                                       #
     # ------------------------------------------------------------------ #
 
-    def test_set_max_temperature_sends_clamped_message(self) -> None:
-        """max_temperature is read-only until the write payload is safe."""
+    def test_set_max_temperature_is_read_only(self) -> None:
+        """max_temperature (tsMax) is read-only: no CD Lua writes it (#468)."""
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.max_temperature.value, 70.0)
             mock_send.assert_not_called()
@@ -936,25 +899,14 @@ class TestMideaCDExtendedDevice:
         message = mock_send.call_args.args[0]
         assert message.mode == 0x05
 
-    def test_max_temperature_is_clamped_to_reported_limit(self) -> None:
-        """Maximum target temperature uses BasicControl byte 23."""
+    def test_max_temperature_and_schedule_mode_are_read_only(self) -> None:
+        """Neither tsMax nor schedule_mode is writable — no CD Lua sends them."""
         self.device._attributes[DeviceAttributes.max_temperature_lower_limit] = 40.0
         self.device._attributes[DeviceAttributes.max_temperature_upper_limit] = 68.0
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.max_temperature.value, 75.0)
-        message = mock_send.call_args.args[0]
-        assert message.body[23] == 68
-
-    def test_max_temperature_clamps_target_and_schedule_mode(self) -> None:
-        """Reducing the maximum also clamps target; schedule mode stays 0..2."""
-        self.device._attributes[DeviceAttributes.target_temperature] = 69.0
-        with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.max_temperature.value, 65.0)
-            maximum = mock_send.call_args.args[0]
-            assert maximum.target_temperature == 65.0
             self.device.set_attribute(DeviceAttributes.schedule_mode.value, 9.0)
-            schedule = mock_send.call_args.args[0]
-            assert schedule.schedule_mode == 2
+        mock_send.assert_not_called()
 
     def test_maintenance_preserves_b1_flags(self) -> None:
         """Maintenance B0 control preserves priority, warning and reserved bits."""
