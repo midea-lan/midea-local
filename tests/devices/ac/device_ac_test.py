@@ -1255,6 +1255,7 @@ class TestMideaACDevice:
         ):
             self.device.set_raw_swing_mode("both")
         mock_build_send.assert_not_called()
+
     def test_make_message_set_with_missing_attrs(self) -> None:
         """Test make message set with attributes removed from the device."""
         message = self.device.make_message_set()
