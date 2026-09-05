@@ -333,7 +333,7 @@ class MideaCloud:
         """
         if code == -1:
             return
-        slug = CLOUD_ERRORS.get(code, "")
+        slug = CLOUD_ERRORS.get(code, "cloud_error")
         _LOGGER.warning(
             "Midea cloud API url: %s rejected the request with code %s (%s): %s",
             url,
