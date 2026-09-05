@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.0.1](https://github.com/midea-lan/midea-local/compare/v11.0.0...v11.0.1) (2026-09-05)
+
+
+### Bug Fixes
+
+* **cloud:** expose a translation_key on MideaCloudError ([#757](https://github.com/midea-lan/midea-local/issues/757)) ([133dc54](https://github.com/midea-lan/midea-local/commit/133dc54b9d2880dbeebc6d4bf79c21e735240ffe))
+
 ## [11.0.0](https://github.com/midea-lan/midea-local/compare/v10.1.0...v11.0.0) (2026-09-05)
 
 
