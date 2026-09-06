@@ -63,10 +63,12 @@ class B4MessageBody(MessageBody):
         if self.current_temperature == 0:
             self.current_temperature = (body[27] << 8) + body[28]
         self.status = body[31]
+        # door and the water flags share the same flag byte, matching the
+        # B1 X01 body (physically confirmed) and the BF body.
         self.door = (body[32] & 0x02) > 0
-        self.tank_ejected = (body[16] & 0x04) > 0
-        self.water_shortage = (body[16] & 0x08) > 0
-        self.water_change_reminder = (body[16] & 0x10) > 0
+        self.tank_ejected = (body[32] & 0x04) > 0
+        self.water_shortage = (body[32] & 0x08) > 0
+        self.water_change_reminder = (body[32] & 0x10) > 0
 
 
 class MessageB4Response(MessageResponse):

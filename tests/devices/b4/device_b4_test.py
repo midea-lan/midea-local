@@ -56,14 +56,14 @@ class TestMideaB4Device:
         ) + bytearray([MessageType.query])
         body = bytearray(33)
         body[0] = 0x01  # body type
-        body[16] = 0x1C  # tank_ejected + water_shortage + change_reminder
         body[22] = 0x01  # hours
         body[23] = 0x01  # minutes
         body[24] = 0x01  # seconds
         body[25] = 0x01  # temperature high byte
         body[26] = 0x2C  # temperature low byte -> 300
         body[31] = 0x04  # status -> finished
-        body[32] = 0x02  # door
+        # door + tank_ejected + water_shortage + water_change_reminder
+        body[32] = 0x1E
         result = self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.door] is True
         assert self.device.attributes[DeviceAttributes.status] == "finished"
