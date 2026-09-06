@@ -5,7 +5,12 @@ import math
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, override
 
-from midealocal.base_classes.climate import MideaClimateDevice, MideaHVACMode
+from midealocal.base_classes.climate import (
+    DEFAULT_MAX_TARGET_TEMPERATURE,
+    DEFAULT_MIN_TARGET_TEMPERATURE,
+    MideaClimateDevice,
+    MideaHVACMode,
+)
 from midealocal.const import DeviceType
 from midealocal.device import MideaDeviceInitKwargs
 from midealocal.exceptions import ValueWrongType
@@ -77,6 +82,22 @@ class MideaCFDevice(MideaClimateDevice):
     def hvac_modes(self) -> set[MideaHVACMode]:
         """Midea CF device HVAC modes."""
         return MideaCFDevice._device_hvac_modes
+
+    @override
+    def min_temperature(self, zone: int | None = None) -> float:
+        """Midea CF device minimum target temperature."""
+        value = self._attributes[DeviceAttributes.min_temperature]
+        if isinstance(value, (int, float)):
+            return float(value)
+        return DEFAULT_MIN_TARGET_TEMPERATURE
+
+    @override
+    def max_temperature(self, zone: int | None = None) -> float:
+        """Midea CF device maximum target temperature."""
+        value = self._attributes[DeviceAttributes.max_temperature]
+        if isinstance(value, (int, float)):
+            return float(value)
+        return DEFAULT_MAX_TARGET_TEMPERATURE
 
     @override
     def hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:
