@@ -765,38 +765,20 @@ class MideaCDDevice(MideaDevice):
             )
             return
 
-        # Power, mode, temperature, max_temperature, and vacation use controlType=0x01.
+        # Power, mode, temperature and vacation use controlType=0x01.
+        # max_temperature (tsMax) and schedule_mode are read-only: no Midea CD
+        # Lua plugin writes them in any SET body.
         if attr in [
             DeviceAttributes.mode,
             DeviceAttributes.power,
             DeviceAttributes.target_temperature,
             DeviceAttributes.vacation_mode,
             DeviceAttributes.vacation_days,
-            DeviceAttributes.max_temperature,
-            DeviceAttributes.schedule_mode,
         ]:
-            if (
-                attr
-                in {
-                    DeviceAttributes.max_temperature,
-                    DeviceAttributes.schedule_mode,
-                }
-                and not self._is_extended_water_heater()
-            ):
-                _LOGGER.warning(
-                    "[%s] %s write requires reported CD support",
-                    self.device_id,
-                    attr,
-                )
-                return
             message = MessageSet(self._message_protocol_version)
             message.fields = dict(self._fields) if self._fields else {}
             # align temperature encoding with lua protocol selection
             message.use_old_protocol = self._lua_protocol == LuaProtocol.old
-            schedule_mode = self._attributes.get(DeviceAttributes.schedule_mode)
-            message.schedule_mode = (
-                int(schedule_mode) if isinstance(schedule_mode, int | float) else 0
-            )
 
             # Get safe current values
             current_power = self._attributes.get(DeviceAttributes.power, False)
@@ -813,8 +795,7 @@ class MideaCDDevice(MideaDevice):
                 self._attributes.get(DeviceAttributes.fahrenheit, False),
             )
 
-            # full[21] vacationTsValue — not max temperature.
-            # full[23] tsMax — must be the device max (issue #468); 0 clamps SP.
+            # full[21] vacationTsValue — only sent for vacation controls.
             if attr in (
                 DeviceAttributes.target_temperature,
                 DeviceAttributes.mode,
@@ -829,13 +810,6 @@ class MideaCDDevice(MideaDevice):
                     if isinstance(vac_temp, int | float) and vac_temp > 0
                     else 0.0
                 )
-            mx = self._attributes.get(DeviceAttributes.max_temperature)
-            try:
-                message.ts_max = (
-                    int(mx) if isinstance(mx, int | float) and mx > 0 else 0
-                )
-            except (TypeError, ValueError):
-                message.ts_max = 0
 
             # Ensure temperature is valid (not None/0)
             if isinstance(current_temp, int | float) and current_temp > 0:
@@ -920,24 +894,6 @@ class MideaCDDevice(MideaDevice):
                 days = max(1, min(360, int(value)))
                 message.vacation_flag = True
                 message.vacation_days = days
-
-            elif attr == DeviceAttributes.max_temperature:
-                # max_temperature is the configurable tsMax setting; the
-                # immutable device bounds are reported by the two limit attrs.
-                lower = self._attributes.get(
-                    DeviceAttributes.max_temperature_lower_limit,
-                )
-                upper = self._attributes.get(
-                    DeviceAttributes.max_temperature_upper_limit,
-                )
-                minimum = int(lower) if isinstance(lower, int | float) else 35
-                maximum = int(upper) if isinstance(upper, int | float) else 70
-                message.ts_max = max(minimum, min(maximum, int(float(value))))
-                if message.target_temperature > message.ts_max:
-                    message.target_temperature = float(message.ts_max)
-
-            elif attr == DeviceAttributes.schedule_mode:
-                message.schedule_mode = max(0, min(2, int(value)))
 
             # persist only safe fields; SET echoes often return openPTC=1 / bad Tr
             self._fields = self._sanitize_set_fields(message.fields)

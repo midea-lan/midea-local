@@ -1,7 +1,5 @@
 """Test CD message."""
 
-from typing import Any
-
 import pytest
 
 from midealocal.const import ProtocolVersion
@@ -83,7 +81,8 @@ class TestMessageSet:
         assert body[8] == 0x00  # flags
         assert body[9] == 0x00
         assert body[10] == 0x00
-        assert body[21] == 0  # max_temperature
+        assert len(body) == 22  # body_type + 21-byte payload (lua/cd)
+        assert body[21] == 0  # vacationTsValue (last field)
 
     def test_old_protocol_temperature(self) -> None:
         """Old protocol doubles the temperature and adds 30."""
@@ -125,11 +124,10 @@ class TestMessageSet:
         assert msg.read_field("openPTC") == 0
         assert msg.read_field("missing") == 0
 
-    def test_schedule_mode_uses_basic_control_byte_22(self) -> None:
-        """Timer/schedule selection is preserved in ordinary controls."""
+    def test_body_stops_at_vacation_ts_value(self) -> None:
+        """No Midea CD Lua writes past bodyBytes[21]; the body ends there."""
         msg = MessageSet(protocol_version=ProtocolVersion.V1)
-        msg.schedule_mode = 2
-        assert msg.body[22] == 2
+        assert len(msg.body) == 22
 
 
 class TestMessageSetMaintenance:
@@ -717,43 +715,23 @@ class TestMessageSetSterilize:
 
 
 class TestMessageSetRsjracBody:
-    """Regression tests for CD controlType=0x01 25-byte SET body (#468)."""
+    """Regression tests for the CD controlType=0x01 SET body (#468).
 
-    def test_body_length_is_25_with_type(self) -> None:
-        """MessageSet.body is body_type + 24-byte payload."""
+    The body matches Midea's own CD Lua plugins: 22 bytes (body_type + 21-byte
+    payload) for the new protocol, ending at bodyBytes[21] = vacationTsValue.
+    """
+
+    def test_body_length_is_22_with_type(self) -> None:
+        """MessageSet.body is body_type + 21-byte payload, raw °C target."""
         msg = MessageSet(protocol_version=8)
         msg.power = True
         msg.mode = 0x02
         msg.target_temperature = 63
         msg.use_old_protocol = False
-        msg.ts_max = 65
         body = msg.body
-        assert len(body) == 25
+        assert len(body) == 22
         assert body[0] == 0x01
         assert body[4] == 63
-        assert body[23] == 65
-        assert body[24] == 0
-
-    def test_ts_max_zero_falls_back(self) -> None:
-        """Zero tsMax falls back to the default (never emitted as 0)."""
-        msg = MessageSet(protocol_version=8)
-        msg.power = True
-        msg.mode = 0x01
-        msg.target_temperature = 60
-        msg.use_old_protocol = False
-        msg.ts_max = 0
-        assert msg.body[23] == MessageSet.DEFAULT_TS_MAX
-
-    def test_ts_max_unparseable_falls_back(self) -> None:
-        """A non-numeric tsMax falls back to the default instead of raising."""
-        msg = MessageSet(protocol_version=8)
-        msg.power = True
-        msg.mode = 0x01
-        msg.target_temperature = 60
-        msg.use_old_protocol = False
-        bad_ts_max: Any = "abc"
-        msg.ts_max = bad_ts_max
-        assert msg.body[23] == MessageSet.DEFAULT_TS_MAX
 
     def test_tr_clamped(self) -> None:
         """Out-of-range Tr is clamped to default 5."""
@@ -762,7 +740,6 @@ class TestMessageSetRsjracBody:
         msg.mode = 0x01
         msg.target_temperature = 60
         msg.use_old_protocol = False
-        msg.ts_max = 65
         msg.fields = {"trValue": 13}
         assert msg.body[5] == 5
 
@@ -773,18 +750,16 @@ class TestMessageSetRsjracBody:
         msg.mode = 0x02
         msg.target_temperature = 63
         msg.use_old_protocol = False
-        msg.ts_max = 65
         msg.fields = {"openPTC": 1, "trValue": 5}
         assert msg.body[6] == 0
 
     def test_vacation_days_in_body(self) -> None:
-        """Vacation SET encodes days in full[9..10]."""
+        """Vacation SET encodes days in full[9..10] and vacationTs in full[21]."""
         msg = MessageSet(protocol_version=8)
         msg.power = True
         msg.mode = 0x01
         msg.target_temperature = 50
         msg.use_old_protocol = False
-        msg.ts_max = 65
         msg.vacation_flag = True
         msg.vacation_days = 30
         msg.vacation_temperature = 50
@@ -792,7 +767,6 @@ class TestMessageSetRsjracBody:
         assert body[9] == 0
         assert body[10] == 30
         assert body[21] == 50
-        assert body[23] == 65
 
 
 class TestCDGeneralMessageBodySynthetic:
