@@ -33,8 +33,24 @@ from midealocal.devices.ac.message import (
     MessageToggleDisplay,
     NewProtocolTags,
     PowerFormats,
+    parse_indoor_humidity,
 )
 from midealocal.message import ListTypes, MessageBase, MessageType
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        (0, None),
+        (0xFF, None),
+        (1, 1),
+        (55, 55),
+        (100, 100),
+    ],
+)
+def test_parse_indoor_humidity(raw: int, expected: int | None) -> None:
+    """Test the 0x00/0xFF placeholders map to None and real readings pass through."""
+    assert parse_indoor_humidity(raw) == expected
 
 
 class TestMessageACBase:
@@ -1304,6 +1320,11 @@ class TestMessageACResponse:
         assert response.indoor_humidity == 55
 
         body[4] = 0  # Indoor humidity unavailable
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "indoor_humidity")
+        assert response.indoor_humidity is None
+
+        body[4] = 0xFF  # Indoor humidity sensor absent/faulted
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "indoor_humidity")
         assert response.indoor_humidity is None

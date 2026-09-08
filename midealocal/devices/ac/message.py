@@ -128,6 +128,15 @@ RATE_SELECT_2_LEVEL_BIT = 0x1
 RATE_SELECT_5_LEVEL_BIT = 0x2
 B5_HUMIDITY_SUPPORTED_MASK = 0x3
 
+# Indoor humidity is a percentage (1..100). 0x00 (not reported) and 0xFF
+# (sensor absent or faulted) are placeholders, not real readings.
+INVALID_INDOOR_HUMIDITY = frozenset({0, MAX_BYTE_VALUE})
+
+
+def parse_indoor_humidity(raw: int) -> int | None:
+    """Return the indoor humidity byte, or None for the invalid placeholders."""
+    return None if raw in INVALID_INDOOR_HUMIDITY else raw
+
 
 class DeviceAttributes(StrEnum):
     """Midea AC device attributes."""
@@ -1179,7 +1188,7 @@ class XA1MessageBody(XMessageBody):
         decimal = body[18] if len(body) > TEMP_DECIMAL_MIN_BODY_LENGTH else 0
         self.indoor_temperature = self.parse_temperature(body[13], decimal & 0x0F)
         self.outdoor_temperature = self.parse_temperature(body[14], decimal >> 4)
-        self.indoor_humidity = body[17] if body[17] != 0 else None
+        self.indoor_humidity = parse_indoor_humidity(body[17])
 
 
 class XBXMessageBody(NewProtocolMessageBody):
@@ -1200,8 +1209,9 @@ class XBXMessageBody(NewProtocolMessageBody):
                 params[NewProtocolTags.indirect_wind][0] == INDIRECT_WIND_VALUE
             )
         if NewProtocolTags.indoor_humidity in params:
-            indoor_humidity = params[NewProtocolTags.indoor_humidity][0]
-            self.indoor_humidity = indoor_humidity if indoor_humidity != 0 else None
+            self.indoor_humidity = parse_indoor_humidity(
+                params[NewProtocolTags.indoor_humidity][0],
+            )
         if NewProtocolTags.breezeless in params:
             self.breezeless = params[NewProtocolTags.breezeless][0] == 1
         if NewProtocolTags.screen_display in params:
@@ -1548,7 +1558,7 @@ class XC1MessageBody(MessageBody):
             if len(body) <= XC1_HUMIDITY_INDEX:
                 return
             # indoor humidity, it should be the same value as XBB/XA1 message
-            self.indoor_humidity = body[4] if body[4] != 0 else None
+            self.indoor_humidity = parse_indoor_humidity(body[4])
 
     def _parse_group_one(self, body: bytearray) -> None:
         """Parse group 1 data: compressor and refrigerant circuit.
@@ -1705,9 +1715,7 @@ class XBBMessageBody(MessageBody):
                         subprotocol_body[7] + subprotocol_body[8] * 256
                     ) / 100
             if subprotocol_body_len > BB_INDOOR_HUMIDITY_INDEX:
-                self.indoor_humidity = (
-                    subprotocol_body[30] if subprotocol_body[30] != 0 else None
-                )
+                self.indoor_humidity = parse_indoor_humidity(subprotocol_body[30])
             if subprotocol_body_len > BB_SN8_FLAG_INDEX:
                 self.sn8_flag = subprotocol_body[80] == XBB_SN8_BYTE_FLAG
         elif data_type == ListTypes.X12:
