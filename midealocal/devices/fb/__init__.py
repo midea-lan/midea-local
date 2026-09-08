@@ -12,6 +12,10 @@ from .message import MessageFBResponse, MessageQuery, MessageSet
 
 _LOGGER = logging.getLogger(__name__)
 
+# FB units do not report a settable range; these are the fixed protocol bounds.
+FB_MIN_TARGET_TEMPERATURE = 5.0
+FB_MAX_TARGET_TEMPERATURE = 35.0
+
 
 class DeviceAttributes(StrEnum):
     """Midea FB device attributes."""
@@ -105,6 +109,16 @@ class MideaFBDevice(MideaClimateDevice):
     def modes(self) -> list[str]:
         """Midea FB device modes."""
         return list(MideaFBDevice._modes.values())
+
+    @override
+    def min_temperature(self, zone: int | None = None) -> float:
+        """Midea FB device minimum target temperature."""
+        return FB_MIN_TARGET_TEMPERATURE
+
+    @override
+    def max_temperature(self, zone: int | None = None) -> float:
+        """Midea FB device maximum target temperature."""
+        return FB_MAX_TARGET_TEMPERATURE
 
     def build_query(self) -> list[MessageQuery]:
         """Midea FB device build query."""

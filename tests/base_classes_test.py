@@ -3,6 +3,8 @@
 import pytest
 
 from midealocal.base_classes.climate import (
+    DEFAULT_MAX_TARGET_TEMPERATURE,
+    DEFAULT_MIN_TARGET_TEMPERATURE,
     MideaClimateDevice,
     MideaFanMode,
     MideaHVACMode,
@@ -108,6 +110,13 @@ class TestMideaClimateDevice:
     def test_temperature_step_defaults_to_none(self) -> None:
         """Test temperature_step defaults to None."""
         assert self.device.temperature_step is None
+
+    def test_target_temperature_bounds_default(self) -> None:
+        """Test min/max target temperature fall back to the shared defaults."""
+        assert self.device.min_temperature() == DEFAULT_MIN_TARGET_TEMPERATURE
+        assert self.device.max_temperature() == DEFAULT_MAX_TARGET_TEMPERATURE
+        # the zone argument is accepted and ignored by the default implementation
+        assert self.device.min_temperature(zone=1) == DEFAULT_MIN_TARGET_TEMPERATURE
 
     def test_mandatory_members_must_be_overridden(self) -> None:
         """Test a subclass missing a mandatory member can't be instantiated.

@@ -7,6 +7,10 @@ from typing import final
 
 from midealocal.device import MideaDevice
 
+# Fallback target temperature bounds for devices that do not report their own.
+DEFAULT_MIN_TARGET_TEMPERATURE = 16.0
+DEFAULT_MAX_TARGET_TEMPERATURE = 30.0
+
 
 class MideaHVACMode(IntEnum):
     """Midea HVAC Mode."""
@@ -108,6 +112,18 @@ class MideaClimateDevice(MideaDevice, ABC):
             hvac_mode=self._str_to_hvac(hvac_mode),
             zone=zone,
         )
+
+    def min_temperature(self, zone: int | None = None) -> float:  # noqa: ARG002
+        """Return the minimum settable target temperature.
+
+        Takes a zone like set_target_temperature: ignored by every device
+        except C3, whose two zones have independent temperature ranges.
+        """
+        return DEFAULT_MIN_TARGET_TEMPERATURE
+
+    def max_temperature(self, zone: int | None = None) -> float:  # noqa: ARG002
+        """Return the maximum settable target temperature. See min_temperature."""
+        return DEFAULT_MAX_TARGET_TEMPERATURE
 
     @property
     def fan_modes(self) -> Sequence[MideaFanMode]:

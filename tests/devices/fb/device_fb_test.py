@@ -5,7 +5,12 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
-from midealocal.devices.fb import DeviceAttributes, MideaFBDevice
+from midealocal.devices.fb import (
+    FB_MAX_TARGET_TEMPERATURE,
+    FB_MIN_TARGET_TEMPERATURE,
+    DeviceAttributes,
+    MideaFBDevice,
+)
 from midealocal.devices.fb.message import MessageQuery, MessageSet
 from midealocal.message import MessageType
 from tests.base_classes_test import DummyHVACMode
@@ -133,6 +138,11 @@ class TestMideaFBDevice:
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageSet)
             assert message.mode is None
+
+    def test_target_temperature_bounds(self) -> None:
+        """Test FB exposes its fixed target temperature range."""
+        assert self.device.min_temperature() == FB_MIN_TARGET_TEMPERATURE
+        assert self.device.max_temperature() == FB_MAX_TARGET_TEMPERATURE
 
     @pytest.mark.parametrize(
         ("attr", "value"),

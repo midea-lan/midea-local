@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from typing import Any, ClassVar, Unpack, cast, override
 
 from midealocal.base_classes.climate import (
+    DEFAULT_MAX_TARGET_TEMPERATURE,
+    DEFAULT_MIN_TARGET_TEMPERATURE,
     MideaClimateDevice,
     MideaFanMode,
     MideaHVACMode,
@@ -453,6 +455,22 @@ class MideaACDevice(MideaClimateDevice):
     def temperature_step(self) -> float | None:
         """Midea AC device temperature step."""
         return self._temperature_step
+
+    @override
+    def min_temperature(self, zone: int | None = None) -> float:
+        """Midea AC device minimum target temperature."""
+        value = self._attributes[DeviceAttributes.min_temperature]
+        if isinstance(value, (int, float)):
+            return float(value)
+        return DEFAULT_MIN_TARGET_TEMPERATURE
+
+    @override
+    def max_temperature(self, zone: int | None = None) -> float:
+        """Midea AC device maximum target temperature."""
+        value = self._attributes[DeviceAttributes.max_temperature]
+        if isinstance(value, (int, float)):
+            return float(value)
+        return DEFAULT_MAX_TARGET_TEMPERATURE
 
     @property
     def fresh_air_fan_speeds(self) -> list[str]:
