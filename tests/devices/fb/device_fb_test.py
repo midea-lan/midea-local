@@ -134,6 +134,22 @@ class TestMideaFBDevice:
             assert isinstance(message, MessageSet)
             assert message.mode is None
 
+    def test_preset_modes(self) -> None:
+        """Test preset modes expose the device's named heating modes."""
+        assert self.device.preset_modes == self.device.modes
+
+        self.device._attributes[DeviceAttributes.mode] = "eco"
+        active_preset = self.device.preset_mode
+        assert active_preset == "eco"
+
+        self.device._attributes[DeviceAttributes.mode] = 5
+        invalid_preset = self.device.preset_mode
+        assert invalid_preset is None
+
+        with patch.object(self.device, "set_attribute") as mock_set:
+            self.device.set_preset_mode("comfort")
+        mock_set.assert_called_once_with(attr=DeviceAttributes.mode, value="comfort")
+
     @pytest.mark.parametrize(
         ("attr", "value"),
         [

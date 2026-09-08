@@ -86,6 +86,11 @@ class MideaCCDevice(MideaClimateDevice):
         DeviceSwingMode.ON,
     ]
 
+    _preset_attributes: ClassVar[dict[str, str]] = {
+        "sleep": DeviceAttributes.sleep_mode,
+        "eco": DeviceAttributes.eco_mode,
+    }
+
     def __init__(
         self,
         *,

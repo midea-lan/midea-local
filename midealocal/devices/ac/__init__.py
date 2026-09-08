@@ -210,6 +210,14 @@ class MideaACDevice(MideaClimateDevice):
         (ACFanSpeed.SILENT, ACFanSpeed.LOW),
     )
 
+    _preset_attributes: ClassVar[dict[str, str]] = {
+        "comfort": DeviceAttributes.comfort_mode,
+        "eco": DeviceAttributes.eco_mode,
+        "boost": DeviceAttributes.boost_mode,
+        "sleep": DeviceAttributes.sleep_mode,
+        "away": DeviceAttributes.frost_protect,
+    }
+
     _swing_modes: ClassVar[dict[ACSwingMode, tuple[bool, bool]]] = {
         ACSwingMode.OFF: (False, False),
         ACSwingMode.VERTICAL: (True, False),
