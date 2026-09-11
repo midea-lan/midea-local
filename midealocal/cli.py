@@ -38,6 +38,8 @@ from midealocal.version import __version__
 
 _LOGGER = logging.getLogger("cli")
 
+USE_CONFIG_FILE = "Use midea-local.json"
+
 LOG_FORMAT = (
     "%(asctime)s.%(msecs)03d %(levelname)s (%(threadName)s) [%(name)s] %(message)s"
 )
@@ -105,11 +107,62 @@ class MideaCLI:
 
         return {**cloud_keys, **default_keys}
 
+    def _connect_and_collect(
+        self,
+        dev: MideaDevice,
+        device_list: list[MideaDevice],
+    ) -> None:
+        """Connect to a device and, on success, refresh status and record it."""
+        _LOGGER.debug("Opening socket for device.")
+        if not dev.connect():
+            return
+        success = False
+        try:
+            # connect() already authenticates V3 devices, so there
+            # is no need to call authenticate() again here.
+            _LOGGER.debug("Trying to retrieve device attributes.")
+            dev.refresh_status(True)
+            _LOGGER.info("Found device:\n%s", dev.attributes)
+            device_list.append(dev)
+            success = True
+        except AuthException:
+            _LOGGER.debug("Unable to connect with key.")
+        except SocketException:
+            _LOGGER.exception("Device socket closed.")
+        except NoSupportedProtocol:
+            _LOGGER.exception("Unable to retrieve device attributes.")
+        except OSError:
+            # OSError covers TimeoutError/ConnectionResetError raised
+            # by authenticate()/refresh_status(); catch it so one
+            # unreachable device doesn't abort the whole scan.
+            _LOGGER.exception("Connection error during device query.")
+        finally:
+            if not success:
+                dev.close_socket()
+
+    def _get_test_config(self) -> dict[str, Any] | None:
+        """Load midea-local.json if it opts into skipping the cloud lookup.
+
+        The local UDP discovery probe still runs: some devices only answer
+        TCP status queries once they've seen it, so only the cloud key
+        lookup is replaced by the token/key already stored in the file.
+        """
+        test_config = get_test_config_file_path(
+            getattr(self.namespace, "configfile", None),
+        )
+        if not test_config.exists():
+            return None
+        with test_config.open(encoding="utf-8") as f:
+            config_data: dict[str, Any] = json.load(f)
+        return config_data if config_data.get("skip_discovery") else None
+
     async def discover(self) -> list[MideaDevice]:
         """Discover device information."""
         device_list: list[MideaDevice] = []
 
-        devices = discover(ip_address=self.namespace.host)
+        test_config = self._get_test_config()
+        host = test_config["ip"] if test_config else self.namespace.host
+        devices = discover(ip_address=host)
 
         if len(devices) == 0:
             _LOGGER.error("No devices found.")
@@ -122,11 +175,17 @@ class MideaCLI:
             _LOGGER.info("Found devices: %s", devices)
             return device_list
         for device in devices.values():
-            keys = (
-                {0: {"token": "", "key": ""}}
-                if device["protocol"] != ProtocolVersion.V3
-                else await self._get_keys(device["device_id"])
-            )
+            if test_config:
+                _LOGGER.info(
+                    "Using token/key from midea-local.json, skipping cloud lookup.",
+                )
+                keys = {0: {"token": test_config["token"], "key": test_config["key"]}}
+            else:
+                keys = (
+                    {0: {"token": "", "key": ""}}
+                    if device["protocol"] != ProtocolVersion.V3
+                    else await self._get_keys(device["device_id"])
+                )
 
             for key in keys.values():
                 dev = device_selector(
@@ -144,31 +203,7 @@ class MideaCLI:
                     mac=device["mac"],
                     serial_number=device["sn"],
                 )
-                _LOGGER.debug("Opening socket for device.")
-                if dev.connect():
-                    success = False
-                    try:
-                        # connect() already authenticates V3 devices, so there
-                        # is no need to call authenticate() again here.
-                        _LOGGER.debug("Trying to retrieve device attributes.")
-                        dev.refresh_status(True)
-                        _LOGGER.info("Found device:\n%s", dev.attributes)
-                        device_list.append(dev)
-                        success = True
-                    except AuthException:
-                        _LOGGER.debug("Unable to connect with key: %s", key)
-                    except SocketException:
-                        _LOGGER.exception("Device socket closed.")
-                    except NoSupportedProtocol:
-                        _LOGGER.exception("Unable to retrieve device attributes.")
-                    except OSError:
-                        # OSError covers TimeoutError/ConnectionResetError raised
-                        # by authenticate()/refresh_status(); catch it so one
-                        # unreachable device doesn't abort the whole scan.
-                        _LOGGER.exception("Connection error during device query.")
-                    finally:
-                        if not success:
-                            dev.close_socket()
+                self._connect_and_collect(dev, device_list)
         return device_list
 
     def message(self) -> None:
@@ -454,6 +489,17 @@ class MideaCLI:
             ),
         )
 
+        if getattr(self.namespace, "log_file", None):
+            file_handler = logging.FileHandler(
+                self.namespace.log_file,
+                mode="w",
+                encoding="utf-8",
+            )
+            file_handler.setFormatter(
+                logging.Formatter(fmt, datefmt="%Y-%m-%d %H:%M:%S"),
+            )
+            logging.getLogger().addHandler(file_handler)
+
         with contextlib.suppress(KeyboardInterrupt):
             if inspect.iscoroutinefunction(self.namespace.func):
                 asyncio.run(self.namespace.func())
@@ -472,6 +518,11 @@ def get_config_file_path(relative: bool = False) -> Path:
     return platformdirs.user_config_path(appname="midea-local").joinpath(
         "midea-local.json",
     )
+
+
+def get_test_config_file_path(configfile: str | None = None) -> Path:
+    """Get the test config file path: --configfile if given, else midea-local.json."""
+    return Path(configfile) if configfile else Path("midea-local.json")
 
 
 def main() -> NoReturn:
@@ -512,7 +563,20 @@ def main() -> NoReturn:
         "-cn",
         type=str,
         help="Set Cloud name",
-        choices=SUPPORTED_CLOUDS.keys(),
+        choices=[*SUPPORTED_CLOUDS.keys(), USE_CONFIG_FILE],
+    )
+    common_parser.add_argument(
+        "--log-file",
+        type=str,
+        help="Also write logs to this file (overwritten on each run).",
+    )
+    common_parser.add_argument(
+        "--configfile",
+        "-cf",
+        type=str,
+        help="Load defaults from this JSON file instead of midea-local.json. "
+        "For discover, a truthy skip_discovery in it also bypasses the cloud "
+        "key lookup.",
     )
 
     # Setup discover parser
@@ -604,14 +668,20 @@ def main() -> NoReturn:
     )
     attribute_parser.set_defaults(func=cli.set_attribute)
 
-    config = get_config_file_path()
     namespace = parser.parse_args()
-    if config.exists():
-        with config.open(encoding="utf-8") as f:
-            config_data = json.load(f)
-            for key, value in config_data.items():
-                if not getattr(namespace, key):
-                    setattr(namespace, key, value)
+    if getattr(namespace, "cloud_name", None) == USE_CONFIG_FILE:
+        namespace.cloud_name = None
+    # midea-local.json (or --configfile) is the developer's local config
+    # fixture; it takes priority so debug launches can reuse its cloud
+    # credentials instead of retyping them.
+    test_config_path = get_test_config_file_path(getattr(namespace, "configfile", None))
+    for config in (test_config_path, get_config_file_path()):
+        if config.exists():
+            with config.open(encoding="utf-8") as f:
+                config_data = json.load(f)
+                for key, value in config_data.items():
+                    if hasattr(namespace, key) and not getattr(namespace, key):
+                        setattr(namespace, key, value)
 
     # Run with args
     cli.run(namespace)

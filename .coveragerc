@@ -1,8 +1,6 @@
 [run]
 branch = true
 source = midealocal
-omit =
-    library_test.py
 
 [report]
 exclude_lines =

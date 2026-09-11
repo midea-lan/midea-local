@@ -139,5 +139,4 @@ reports/
 .idea/
 
 # Optional config file for library script
-library_test.json
 midea-local.json

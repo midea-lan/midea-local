@@ -69,6 +69,37 @@ ac.set_swing(False, False)
 python3 -m midealocal.cli -h
 ```
 
+#### `midea-local.json` config file
+
+`python3 -m midealocal.cli save` writes your cloud username, password and
+cloud name to `midea-local.json` in the current directory (use `--user` to
+save it to your user config folder instead). Every `midealocal.cli` command
+then loads that file automatically, so you don't have to pass
+`--username`/`--password`/`--cloud-name` again — use `--configfile <path>` to
+point at a different file instead.
+
+For `discover`, the file can also carry `skip_discovery: true` with a
+device's `ip`, `token` and `key` (e.g. captured from a previous `discover`
+run). When set, discovery skips the cloud key lookup entirely and connects
+straight to that device with the stored credentials. It still performs the
+local network probe first, since some devices only answer status queries
+once they've seen it.
+
+```json
+{
+  "username": "user@example.com",
+  "password": "your-cloud-password",
+  "cloud_name": "SmartHome",
+  "skip_discovery": true,
+  "ip": "192.168.1.65",
+  "token": "...",
+  "key": "..."
+}
+```
+
+All fields are optional; only include what you need. Run
+`python3 -m midealocal.cli discover -h` for the full option list.
+
 ## Development
 
 This project uses [uv](https://docs.astral.sh/uv/) for its development environment.

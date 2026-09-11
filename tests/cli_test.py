@@ -15,8 +15,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from midealocal.cli import (
+    USE_CONFIG_FILE,
     MideaCLI,
     get_config_file_path,
+    get_test_config_file_path,
     main,
 )
 from midealocal.cloud import MideaAirCloud, SmartHomeCloud
@@ -215,6 +217,10 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 mock_device_instance,
                 "refresh_status",
             ) as refresh_status_mock,
+            patch(
+                "midealocal.cli.get_test_config_file_path",
+                return_value=Path("does-not-exist/midea-local.json"),
+            ),
         ):
             mock_discover.return_value = {1: mock_device}
             mock_cloud_instance.get_cloud_keys.return_value = {
@@ -264,6 +270,132 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             mock_discover.return_value = {}
 
             await self.cli.discover()  # No devices
+
+    async def test_discover_from_test_config(self) -> None:
+        """Test discover still probes locally but skips the cloud key lookup."""
+        with TemporaryDirectory() as tmpdir:
+            test_config_file = Path(tmpdir) / "midea-local.json"
+            test_config_file.write_text(
+                json.dumps(
+                    {
+                        "skip_discovery": True,
+                        "ip": "192.168.1.65",
+                        "token": "abcd",
+                        "key": "ef01",
+                    },
+                ),
+                encoding="utf-8",
+            )
+            mock_device = {
+                "device_id": 1,
+                "protocol": ProtocolVersion.V3,
+                "type": "AC",
+                "ip_address": "192.168.1.65",
+                "port": 6444,
+                "model": "00000Q18",
+                "sn": "0000AC12300000001234567890ABCDEF",
+                "mac": "1234567890AB",
+            }
+            mock_device_instance = MagicMock()
+            mock_device_instance.connect.return_value = True
+            with (
+                patch(
+                    "midealocal.cli.get_test_config_file_path",
+                    return_value=test_config_file,
+                ),
+                patch(
+                    "midealocal.cli.discover",
+                    return_value={1: mock_device},
+                ) as mock_discover,
+                patch.object(self.cli, "_get_keys") as mock_get_keys,
+                patch(
+                    "midealocal.cli.device_selector",
+                    return_value=mock_device_instance,
+                ) as mock_device_selector,
+            ):
+                result = await self.cli.discover()
+
+            # the local UDP probe still runs, targeted at the config's IP
+            mock_discover.assert_called_once_with(ip_address="192.168.1.65")
+            # only the cloud key lookup is skipped
+            mock_get_keys.assert_not_called()
+            mock_device_selector.assert_called_once_with(
+                name=1,
+                device_id=1,
+                device_type="AC",
+                ip_address="192.168.1.65",
+                port=6444,
+                token="abcd",
+                key="ef01",
+                device_protocol=ProtocolVersion.V3,
+                model="00000Q18",
+                subtype=0,
+                customize="",
+                mac="1234567890AB",
+                serial_number="0000AC12300000001234567890ABCDEF",
+            )
+            mock_device_instance.refresh_status.assert_called_once_with(True)
+            assert result == [mock_device_instance]
+
+    async def test_discover_configfile_option(self) -> None:
+        """Test --configfile can carry skip_discovery in place of midea-local.json."""
+        with TemporaryDirectory() as tmpdir:
+            custom_config = Path(tmpdir) / "custom.json"
+            custom_config.write_text(
+                json.dumps(
+                    {
+                        "skip_discovery": True,
+                        "ip": "10.0.0.5",
+                        "token": "customtoken",
+                        "key": "customkey",
+                    },
+                ),
+                encoding="utf-8",
+            )
+            self.namespace.configfile = str(custom_config)
+            mock_device = {
+                "device_id": 1,
+                "protocol": ProtocolVersion.V3,
+                "type": "AC",
+                "ip_address": "10.0.0.5",
+                "port": 6444,
+                "model": "00000Q18",
+                "sn": "0000AC12300000001234567890ABCDEF",
+                "mac": "1234567890AB",
+            }
+            mock_device_instance = MagicMock()
+            mock_device_instance.connect.return_value = True
+            with (
+                patch(
+                    "midealocal.cli.discover",
+                    return_value={1: mock_device},
+                ) as mock_discover,
+                patch.object(self.cli, "_get_keys") as mock_get_keys,
+                patch(
+                    "midealocal.cli.device_selector",
+                    return_value=mock_device_instance,
+                ) as mock_device_selector,
+            ):
+                result = await self.cli.discover()
+
+            mock_discover.assert_called_once_with(ip_address="10.0.0.5")
+            mock_get_keys.assert_not_called()
+            mock_device_selector.assert_called_once_with(
+                name=1,
+                device_id=1,
+                device_type="AC",
+                ip_address="10.0.0.5",
+                port=6444,
+                token="customtoken",
+                key="customkey",
+                device_protocol=ProtocolVersion.V3,
+                model="00000Q18",
+                subtype=0,
+                customize="",
+                mac="1234567890AB",
+                serial_number="0000AC12300000001234567890ABCDEF",
+            )
+            assert result == [mock_device_instance]
 
     def test_message(self) -> None:
         """Test message."""
@@ -731,6 +863,32 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             mock_set_level.assert_called_with(logging.WARNING)
             self.namespace.func.assert_called_once()
 
+    def test_run_log_file(self) -> None:
+        """Test run also writes logs to a file when --log-file is set."""
+        mock_logger = MagicMock()
+        mock_file_handler = MagicMock()
+        with TemporaryDirectory() as tmpdir:
+            log_file = str(Path(tmpdir) / "midea-local-test.log")
+            with (
+                patch("logging.basicConfig"),
+                patch("logging.getLogger", return_value=mock_logger),
+                patch(
+                    "logging.FileHandler",
+                    return_value=mock_file_handler,
+                ) as mock_file_handler_cls,
+            ):
+                self.cli.session = AsyncMock()
+                self.namespace.log_file = log_file
+                self.cli.run(self.namespace)
+
+        mock_file_handler_cls.assert_called_once_with(
+            log_file,
+            mode="w",
+            encoding="utf-8",
+        )
+        mock_file_handler.setFormatter.assert_called_once()
+        mock_logger.addHandler.assert_called_once_with(mock_file_handler)
+
     def test_main_call(self) -> None:
         """Test main call."""
         # Command to run the script
@@ -777,6 +935,10 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                     "midealocal.cli.get_config_file_path",
                     return_value=config_file,
                 ),
+                patch(
+                    "midealocal.cli.get_test_config_file_path",
+                    return_value=Path(tmpdir) / "does-not-exist.json",
+                ),
                 patch.object(MideaCLI, "run") as mock_run,
             ):
                 try:
@@ -792,6 +954,114 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             # password passed on command line: config value is not applied
             assert namespace.password == "argpass"
             assert namespace.func.__name__ == "discover"
+
+    def test_main_test_config_takes_priority(self) -> None:
+        """Test the test-config lookup takes priority over the saved config."""
+        with TemporaryDirectory() as tmpdir:
+            config_file = Path(tmpdir) / "midea-local.json"
+            config_file.write_text(
+                json.dumps({"username": "configuser", "cloud_name": "SmartHome"}),
+                encoding="utf-8",
+            )
+            test_config_file = Path(tmpdir) / "device-config.json"
+            test_config_file.write_text(
+                json.dumps({"username": "testuser", "cloud_name": "OS Comfort"}),
+                encoding="utf-8",
+            )
+            exit_code: int | str | None = None
+            with (
+                patch.object(sys, "argv", ["midealocal", "discover"]),
+                patch(
+                    "midealocal.cli.get_config_file_path",
+                    return_value=config_file,
+                ),
+                patch(
+                    "midealocal.cli.get_test_config_file_path",
+                    return_value=test_config_file,
+                ),
+                patch.object(MideaCLI, "run") as mock_run,
+            ):
+                try:
+                    main()
+                except SystemExit as exc:
+                    exit_code = exc.code
+
+            assert exit_code == 0
+            namespace = mock_run.call_args[0][0]
+            # the test-config lookup is checked first, so its values win
+            assert namespace.username == "testuser"
+            assert namespace.cloud_name == "OS Comfort"
+
+    def test_main_cloud_name_sentinel_uses_config_file(self) -> None:
+        """Test the "Use midea-local.json" cloud-name picker option."""
+        with TemporaryDirectory() as tmpdir:
+            test_config_file = Path(tmpdir) / "midea-local.json"
+            test_config_file.write_text(
+                json.dumps({"cloud_name": "OS Comfort", "username": "testuser"}),
+                encoding="utf-8",
+            )
+            exit_code: int | str | None = None
+            with (
+                patch.object(
+                    sys,
+                    "argv",
+                    ["midealocal", "discover", "-cn", USE_CONFIG_FILE],
+                ),
+                patch(
+                    "midealocal.cli.get_config_file_path",
+                    return_value=Path(tmpdir) / "does-not-exist.json",
+                ),
+                patch(
+                    "midealocal.cli.get_test_config_file_path",
+                    return_value=test_config_file,
+                ),
+                patch.object(MideaCLI, "run") as mock_run,
+            ):
+                try:
+                    main()
+                except SystemExit as exc:
+                    exit_code = exc.code
+
+            assert exit_code == 0
+            namespace = mock_run.call_args[0][0]
+            assert namespace.cloud_name == "OS Comfort"
+            assert namespace.username == "testuser"
+
+    def test_main_configfile_option(self) -> None:
+        """Test --configfile is used instead of the default midea-local.json."""
+        with TemporaryDirectory() as tmpdir:
+            custom_config = Path(tmpdir) / "custom.json"
+            custom_config.write_text(
+                json.dumps({"username": "customuser", "cloud_name": "SmartHome"}),
+                encoding="utf-8",
+            )
+            exit_code: int | str | None = None
+            with (
+                patch.object(
+                    sys,
+                    "argv",
+                    ["midealocal", "discover", "-cf", str(custom_config)],
+                ),
+                patch(
+                    "midealocal.cli.get_config_file_path",
+                    return_value=Path(tmpdir) / "midea-local.json",
+                ),
+                patch.object(MideaCLI, "run") as mock_run,
+            ):
+                try:
+                    main()
+                except SystemExit as exc:
+                    exit_code = exc.code
+
+            assert exit_code == 0
+            namespace = mock_run.call_args[0][0]
+            assert namespace.username == "customuser"
+            assert namespace.cloud_name == "SmartHome"
+
+    def test_get_test_config_file_path(self) -> None:
+        """Test get_test_config_file_path resolves an override or the default."""
+        assert get_test_config_file_path() == Path("midea-local.json")
+        assert get_test_config_file_path("custom.json") == Path("custom.json")
 
     def test_main_module_entry(self) -> None:
         """Test the __main__ guard when running the module as a script."""
