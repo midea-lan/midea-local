@@ -13,7 +13,13 @@ from midealocal.device import (
 )
 from midealocal.exceptions import ValueWrongType
 
-from .message import MessageDCResponse, MessagePower, MessageQuery, MessageStart
+from .message import (
+    MessageDCResponse,
+    MessagePower,
+    MessageQuery,
+    MessageSetAISwitch,
+    MessageStart,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -161,6 +167,7 @@ class MideaDCDevice(MideaDevice):
                 DeviceAttributes.progress: list_translator(progress, min_index=1),
                 DeviceAttributes.status: dict_translator(MideaDCDevice._status),
                 DeviceAttributes.program: dict_translator(MideaDCDevice._program),
+                DeviceAttributes.ai_switch: bool,
             },
         )
 
@@ -168,7 +175,7 @@ class MideaDCDevice(MideaDevice):
         """Midea DC device set attribute."""
         if not isinstance(value, bool):
             raise ValueWrongType("[dc] Expected bool")
-        message: MessagePower | MessageStart | None = None
+        message: MessagePower | MessageStart | MessageSetAISwitch | None = None
         if attr == DeviceAttributes.power:
             message = MessagePower(self._message_protocol_version)
             message.power = value
@@ -177,6 +184,10 @@ class MideaDCDevice(MideaDevice):
             message = MessageStart(self._message_protocol_version)
             message.start = value
             message.washing_data = self._attributes[DeviceAttributes.washing_data]
+            self.build_send(message)
+        elif attr == DeviceAttributes.ai_switch:
+            message = MessageSetAISwitch(self._message_protocol_version)
+            message.ai_switch = value
             self.build_send(message)
 
 
