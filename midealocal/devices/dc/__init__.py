@@ -161,6 +161,7 @@ class MideaDCDevice(MideaDevice):
                 DeviceAttributes.progress: list_translator(progress, min_index=1),
                 DeviceAttributes.status: dict_translator(MideaDCDevice._status),
                 DeviceAttributes.program: dict_translator(MideaDCDevice._program),
+                DeviceAttributes.door_warn: bool,
             },
         )
 
