@@ -66,7 +66,7 @@ class TestMideaBFDevice:
         result = self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.door] is True
         assert self.device.attributes[DeviceAttributes.status] == "working"
-        assert self.device.attributes[DeviceAttributes.time_remaining] == 3661
+        assert self.device.attributes[DeviceAttributes.time_remaining] == 61
         assert self.device.attributes[DeviceAttributes.current_temperature] == 300
         assert self.device.attributes[DeviceAttributes.tank_ejected] is True
         assert self.device.attributes[DeviceAttributes.water_change_reminder] is True

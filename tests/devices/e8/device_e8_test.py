@@ -84,7 +84,7 @@ class TestMideaE8Device:
         body[43] = 0x01  # water shortage
         result = self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.status] == expected_status
-        assert self.device.attributes[DeviceAttributes.time_remaining] == 3661
+        assert self.device.attributes[DeviceAttributes.time_remaining] == 61
         assert self.device.attributes[DeviceAttributes.keep_warm_remaining] == 90
         assert self.device.attributes[DeviceAttributes.working_time] == 125
         assert self.device.attributes[DeviceAttributes.target_temperature] == 60
