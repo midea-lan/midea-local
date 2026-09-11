@@ -4,8 +4,10 @@ import base64
 import json
 import logging
 import re
+import shutil
 import time
-from asyncio import Lock, sleep
+from asyncio import Lock, create_subprocess_exec, sleep
+from asyncio.subprocess import PIPE
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from hashlib import md5
@@ -36,6 +38,7 @@ from .security import (
 )
 
 SN8_MIN_SERIAL_LENGTH = 17
+LUA_FORMAT_BIN = "lua-format"
 
 # Cloud error codes that have a dedicated, actionable exception subclass; every
 # other non-zero code is logged and surfaced as ``None``.
@@ -535,7 +538,41 @@ class MideaCloud:
         fnm = f"{path}/{file_name}"
         async with aiofiles.open(fnm, "w") as fp:
             await fp.write(stream)
+        await self._format_lua_file(fnm)
         return fnm
+
+    async def _format_lua_file(self, fnm: str) -> None:
+        """Pretty-print a downloaded lua file in place with lua-format.
+
+        Formatting is best-effort: a missing binary or a formatter failure
+        must not fail the download, so this only ever logs a warning.
+        """
+        lua_format = shutil.which(LUA_FORMAT_BIN)
+        if lua_format is None:
+            _LOGGER.warning(
+                "%s not found on PATH; keeping %s unformatted. Install it from "
+                "https://github.com/Koihik/LuaFormatter to get pretty-printed "
+                "lua files.",
+                LUA_FORMAT_BIN,
+                fnm,
+            )
+            return
+        proc = await create_subprocess_exec(
+            lua_format,
+            "-i",
+            fnm,
+            stdout=PIPE,
+            stderr=PIPE,
+        )
+        _, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            _LOGGER.warning(
+                "%s failed for %s (exit %s): %s",
+                LUA_FORMAT_BIN,
+                fnm,
+                proc.returncode,
+                stderr.decode(errors="replace").strip(),
+            )
 
     async def _fetch_plugin_file(self, path: str, url: str) -> str | None:
         """Download the plugin binary at ``url`` and write it under ``path``."""
