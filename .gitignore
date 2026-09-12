@@ -138,5 +138,5 @@ reports/
 # IDE
 .idea/
 
-# Optional config file for library script
+# Optional config file
 midea-local.json
