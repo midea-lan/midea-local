@@ -54,10 +54,8 @@ class B4MessageBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         """Initialize B4 message body."""
         super().__init__(body)
-        self.time_remaining = (
-            (0 if body[22] == MAX_BYTE_VALUE else body[22]) * 3600
-            + (0 if body[23] == MAX_BYTE_VALUE else body[23]) * 60
-            + (0 if body[24] == MAX_BYTE_VALUE else body[24])
+        self.time_remaining = (0 if body[22] == MAX_BYTE_VALUE else body[22]) * 60 + (
+            0 if body[23] == MAX_BYTE_VALUE else body[23]
         )
         self.current_temperature = (body[25] << 8) + body[26]
         if self.current_temperature == 0:
