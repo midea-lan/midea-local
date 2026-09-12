@@ -146,25 +146,25 @@ class Message26Body(MessageBody):
         """Initialize X26 message body."""
         super().__init__(body)
         self.fields = self._gen_fields(body)
-        self.main_light = self.read_byte(body, 1) > 0
-        self.night_light = self.read_byte(body, 3) > 0
-        heat_mode = self.read_byte(body, 9) > 0
-        heat_temperature = self.read_byte(body, 10)
-        heat_direction = self.read_byte(body, 12)
-        bath_mode = self.read_byte(body, 13) > 0
-        bath_direction = self.read_byte(body, 17)
-        ventilation_mode = self.read_byte(body, 18) > 0
-        ventilation_direction = self.read_byte(body, 20)
-        dry_mode = self.read_byte(body, 21) > 0
-        dry_direction = self.read_byte(body, 25)
-        blow_mode = self.read_byte(body, 26) > 0
-        blow_direction = self.read_byte(body, 28)
-        if self.read_byte(body, 31) != MAX_BYTE_VALUE:
-            self.current_humidity = self.read_byte(body, 31)
-        if self.read_byte(body, 32) != MAX_BYTE_VALUE:
-            self.current_radar = self.read_byte(body, 32)
-        if self.read_byte(body, 33) != MAX_BYTE_VALUE:
-            self.current_temperature = self.read_byte(body, 33)
+        self.main_light = self.read_byte(body, 1, 0) > 0
+        self.night_light = self.read_byte(body, 3, 0) > 0
+        heat_mode = self.read_byte(body, 9, 0) > 0
+        heat_temperature = self.read_byte(body, 10, 0)
+        heat_direction = self.read_byte(body, 12, 0)
+        bath_mode = self.read_byte(body, 13, 0) > 0
+        bath_direction = self.read_byte(body, 17, 0)
+        ventilation_mode = self.read_byte(body, 18, 0) > 0
+        ventilation_direction = self.read_byte(body, 20, 0)
+        dry_mode = self.read_byte(body, 21, 0) > 0
+        dry_direction = self.read_byte(body, 25, 0)
+        blow_mode = self.read_byte(body, 26, 0) > 0
+        blow_direction = self.read_byte(body, 28, 0)
+        if self.read_byte(body, 31, 0) != MAX_BYTE_VALUE:
+            self.current_humidity = self.read_byte(body, 31, 0)
+        if self.read_byte(body, 32, 0) != MAX_BYTE_VALUE:
+            self.current_radar = self.read_byte(body, 32, 0)
+        if self.read_byte(body, 33, 0) != MAX_BYTE_VALUE:
+            self.current_temperature = self.read_byte(body, 33, 0)
         self.mode = 0
         self.direction = 0xFD
         if heat_mode:
@@ -188,32 +188,32 @@ class Message26Body(MessageBody):
 
     def _gen_fields(self, body: bytearray) -> dict[str, int]:
         fields: dict[str, int] = {}
-        fields["MAIN_LIGHT_BRIGHTNESS"] = self.read_byte(body, 2)
-        fields["NIGHT_LIGHT_BRIGHTNESS"] = self.read_byte(body, 4)
-        fields["RADAR_INDUCTION_ENABLE"] = self.read_byte(body, 5)
-        fields["RADAR_INDUCTION_CLOSING_TIME"] = self.read_byte(body, 6)
-        fields["LIGHT_INTENSITY_THRESHOLD"] = self.read_byte(body, 7)
-        fields["RADAR_SENSITIVITY"] = self.read_byte(body, 8)
-        fields["HEATING_SPEED"] = self.read_byte(body, 11)
-        fields["BATH_HEATING_TIME"] = self.read_byte(body, 14)
-        fields["BATH_TEMPERATURE"] = self.read_byte(body, 15)
-        fields["BATH_SPEED"] = self.read_byte(body, 16)
-        fields["VENTILATION_SPEED"] = self.read_byte(body, 19)
-        fields["DRYING_TIME"] = self.read_byte(body, 22)
-        fields["DRYING_TEMPERATURE"] = self.read_byte(body, 23)
-        fields["DRYING_SPEED"] = self.read_byte(body, 24)
-        fields["BLOWING_SPEED"] = self.read_byte(body, 27)
-        fields["DELAY_ENABLE"] = self.read_byte(body, 29)
-        fields["DELAY_TIME"] = self.read_byte(body, 30)
-        fields["SOFT_WIND_ENABLE"] = self.read_byte(body, 38)
-        fields["SOFT_WIND_TIME"] = self.read_byte(body, 39)
-        fields["SOFT_WIND_TEMPERATURE"] = self.read_byte(body, 40)
-        fields["SOFT_WIND_SPEED"] = self.read_byte(body, 41)
-        fields["SOFT_WIND_DIRECTION"] = self.read_byte(body, 42)
-        fields["WINDLESS_ENABLE"] = self.read_byte(body, 43)
-        fields["ANION_ENABLE"] = self.read_byte(body, 44)
-        fields["SMELLY_ENABLE"] = self.read_byte(body, 45)
-        fields["SMELLY_THRESHOLD"] = self.read_byte(body, 46)
+        fields["MAIN_LIGHT_BRIGHTNESS"] = self.read_byte(body, 2, 0)
+        fields["NIGHT_LIGHT_BRIGHTNESS"] = self.read_byte(body, 4, 0)
+        fields["RADAR_INDUCTION_ENABLE"] = self.read_byte(body, 5, 0)
+        fields["RADAR_INDUCTION_CLOSING_TIME"] = self.read_byte(body, 6, 0)
+        fields["LIGHT_INTENSITY_THRESHOLD"] = self.read_byte(body, 7, 0)
+        fields["RADAR_SENSITIVITY"] = self.read_byte(body, 8, 0)
+        fields["HEATING_SPEED"] = self.read_byte(body, 11, 0)
+        fields["BATH_HEATING_TIME"] = self.read_byte(body, 14, 0)
+        fields["BATH_TEMPERATURE"] = self.read_byte(body, 15, 0)
+        fields["BATH_SPEED"] = self.read_byte(body, 16, 0)
+        fields["VENTILATION_SPEED"] = self.read_byte(body, 19, 0)
+        fields["DRYING_TIME"] = self.read_byte(body, 22, 0)
+        fields["DRYING_TEMPERATURE"] = self.read_byte(body, 23, 0)
+        fields["DRYING_SPEED"] = self.read_byte(body, 24, 0)
+        fields["BLOWING_SPEED"] = self.read_byte(body, 27, 0)
+        fields["DELAY_ENABLE"] = self.read_byte(body, 29, 0)
+        fields["DELAY_TIME"] = self.read_byte(body, 30, 0)
+        fields["SOFT_WIND_ENABLE"] = self.read_byte(body, 38, 0)
+        fields["SOFT_WIND_TIME"] = self.read_byte(body, 39, 0)
+        fields["SOFT_WIND_TEMPERATURE"] = self.read_byte(body, 40, 0)
+        fields["SOFT_WIND_SPEED"] = self.read_byte(body, 41, 0)
+        fields["SOFT_WIND_DIRECTION"] = self.read_byte(body, 42, 0)
+        fields["WINDLESS_ENABLE"] = self.read_byte(body, 43, 0)
+        fields["ANION_ENABLE"] = self.read_byte(body, 44, 0)
+        fields["SMELLY_ENABLE"] = self.read_byte(body, 45, 0)
+        fields["SMELLY_THRESHOLD"] = self.read_byte(body, 46, 0)
 
         return fields
 

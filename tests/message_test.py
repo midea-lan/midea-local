@@ -260,6 +260,18 @@ class TestMessageBody:
         body = bytearray([0x0A, 0x0B])
         assert MessageBody.read_byte(body, byte, default_value=0x09) == expected
 
+    def test_read_byte_present(self) -> None:
+        """Test read_byte returns a present byte without a fallback."""
+        body = bytearray([0x0A, 0x0B])
+        assert MessageBody.read_byte(body, 1) == 0x0B
+
+    @pytest.mark.parametrize("byte", [2, 5])
+    def test_read_byte_missing(self, byte: int) -> None:
+        """Test read_byte returns None when the byte is out of range."""
+        body = bytearray([0x0A, 0x0B])
+        assert MessageBody.read_byte(body, byte) is None
+        assert MessageBody.read_byte(body, byte, default_value=None) is None
+
     def test_parse_all(self) -> None:
         """Test parse all."""
         data = bytearray(

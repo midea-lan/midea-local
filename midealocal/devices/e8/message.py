@@ -64,26 +64,26 @@ class E8MessageBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         """Initialize E8 message body."""
         super().__init__(body)
-        self.status = self.read_byte(body, 11)
+        self.status = self.read_byte(body, 11, 0)
         self.time_remaining = (
-            self.read_byte(body, 16) * 3600
-            + self.read_byte(body, 17) * 60
-            + self.read_byte(body, 18)
+            self.read_byte(body, 16, 0) * 3600
+            + self.read_byte(body, 17, 0) * 60
+            + self.read_byte(body, 18, 0)
         )
         self.keep_warm_remaining = (
-            self.read_byte(body, 19) * 3600
-            + self.read_byte(body, 20) * 60
-            + self.read_byte(body, 21)
+            self.read_byte(body, 19, 0) * 3600
+            + self.read_byte(body, 20, 0) * 60
+            + self.read_byte(body, 21, 0)
         )
         self.working_time = (
-            self.read_byte(body, 28) * 3600
-            + self.read_byte(body, 29) * 60
-            + self.read_byte(body, 30)
+            self.read_byte(body, 28, 0) * 3600
+            + self.read_byte(body, 29, 0) * 60
+            + self.read_byte(body, 30, 0)
         )
-        self.target_temperature = self.read_byte(body, 39)
-        self.current_temperature = self.read_byte(body, 39)
-        self.finished = (self.read_byte(body, 41) & 0x01) > 0
-        self.water_shortage = self.read_byte(body, 43) > 0
+        self.target_temperature = self.read_byte(body, 39, 0)
+        self.current_temperature = self.read_byte(body, 39, 0)
+        self.finished = (self.read_byte(body, 41, 0) & 0x01) > 0
+        self.water_shortage = self.read_byte(body, 43, 0) > 0
 
 
 class MessageE8Response(MessageResponse):
@@ -92,7 +92,7 @@ class MessageE8Response(MessageResponse):
     def __init__(self, message: bytes) -> None:
         """Initialize E8 message response."""
         super().__init__(bytearray(message))
-        sub_cmd = MessageBody.read_byte(super().body, 6)
+        sub_cmd = MessageBody.read_byte(super().body, 6, 0)
         if (
             (
                 self.message_type == MessageType.set
