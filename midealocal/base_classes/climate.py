@@ -1,11 +1,14 @@
 """Shared climate classes for Midea devices."""
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from enum import IntEnum, StrEnum
-from typing import final
+from typing import ClassVar, final
 
 from midealocal.device import MideaDevice
+
+# Generic preset name for "no preset active".
+PRESET_NONE = "none"
 
 
 class MideaHVACMode(IntEnum):
@@ -29,6 +32,10 @@ class MideaClimateDevice(MideaDevice, ABC):
     which report the capability as unsupported rather than raising for a
     routine read.
     """
+
+    # Flag-style presets: {generic preset name: boolean device attribute}.
+    # Devices with named string presets (fb) override the three methods below.
+    _preset_attributes: ClassVar[Mapping[str, str]] = {}
 
     @property
     @abstractmethod
@@ -197,3 +204,35 @@ class MideaClimateDevice(MideaDevice, ABC):
     def temperature_step(self) -> float | None:
         """Return the target temperature step, or None if fixed/unknown."""
         return None
+
+    @property
+    def preset_modes(self) -> Sequence[str]:
+        """Return the available preset mode names, or [] if unsupported."""
+        if not self._preset_attributes:
+            return []
+        return [PRESET_NONE, *self._preset_attributes]
+
+    @property
+    def preset_mode(self) -> str | None:
+        """Return the current preset mode name, or None if unsupported."""
+        if not self._preset_attributes:
+            return None
+        for name, attr in self._preset_attributes.items():
+            if self.get_attribute(attr):
+                return name
+        return PRESET_NONE
+
+    def set_preset_mode(self, preset_mode: str) -> None:
+        """Activate a preset by name (clearing the previous one)."""
+        if not self._preset_attributes:
+            msg = "Preset mode is not supported by this device"
+            raise NotImplementedError(msg)
+        if (attr := self._preset_attributes.get(preset_mode)) is not None:
+            self.set_attribute(attr=attr, value=True)
+            return
+        current = self.preset_mode
+        if (
+            current is not None
+            and (old_attr := self._preset_attributes.get(current)) is not None
+        ):
+            self.set_attribute(attr=old_attr, value=False)

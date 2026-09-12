@@ -106,6 +106,24 @@ class MideaFBDevice(MideaClimateDevice):
         """Midea FB device modes."""
         return list(MideaFBDevice._modes.values())
 
+    @property
+    @override
+    def preset_modes(self) -> list[str]:
+        """Midea FB device preset modes (its named heating modes)."""
+        return self.modes
+
+    @property
+    @override
+    def preset_mode(self) -> str | None:
+        """Midea FB device current preset mode."""
+        mode = self._attributes[DeviceAttributes.mode]
+        return mode if isinstance(mode, str) else None
+
+    @override
+    def set_preset_mode(self, preset_mode: str) -> None:
+        """Midea FB device set preset mode."""
+        self.set_attribute(attr=DeviceAttributes.mode, value=preset_mode)
+
     def build_query(self) -> list[MessageQuery]:
         """Midea FB device build query."""
         return [MessageQuery(self._message_protocol_version)]
