@@ -140,3 +140,6 @@ reports/
 
 # Optional config file
 midea-local.json
+
+# Cached device tokens/keys
+midea-devices.json

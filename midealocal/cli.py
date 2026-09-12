@@ -76,7 +76,47 @@ class MideaCLI:
             password=self.namespace.password,
         )
 
+    def _load_devices_cache(self) -> list[dict[str, Any]]:
+        """Load the device token/key cache (see midea-devices.json)."""
+        cache_file = get_devices_cache_path()
+        if not cache_file.exists():
+            return []
+        with cache_file.open(encoding="utf-8") as f:
+            devices = json.load(f).get("devices", [])
+        return devices if isinstance(devices, list) else []
+
+    def _get_cached_device_keys(self, device_id: int) -> dict[str, str] | None:
+        """Look up a previously cached token/key for this device, if any."""
+        for entry in self._load_devices_cache():
+            if str(entry.get("device_id")) == str(device_id):
+                return {"token": entry["token"], "key": entry["key"]}
+        return None
+
+    def _cache_device_keys(self, device_id: int, keys: dict[str, str]) -> None:
+        """Persist a token/key pair confirmed to work for this device."""
+        devices = [
+            entry
+            for entry in self._load_devices_cache()
+            if str(entry.get("device_id")) != str(device_id)
+        ]
+        devices.append(
+            {
+                "device_id": str(device_id),
+                "token": keys["token"],
+                "key": keys["key"],
+            },
+        )
+        get_devices_cache_path().write_text(
+            json.dumps({"devices": devices}, indent=2),
+            encoding="utf-8",
+        )
+
     async def _get_keys(self, device_id: int) -> dict[int, dict[str, Any]]:
+        cached = self._get_cached_device_keys(device_id)
+        if cached is not None:
+            _LOGGER.info("Using cached token/key for device %s.", device_id)
+            return {0: cached}
+
         cloud = await self._get_cloud()
         default_keys = await cloud.get_default_keys()
         try:
@@ -145,8 +185,8 @@ class MideaCLI:
                     serial_number=device["sn"],
                 )
                 _LOGGER.debug("Opening socket for device.")
+                success = False
                 if dev.connect():
-                    success = False
                     try:
                         # connect() already authenticates V3 devices, so there
                         # is no need to call authenticate() again here.
@@ -169,6 +209,13 @@ class MideaCLI:
                     finally:
                         if not success:
                             dev.close_socket()
+                if not success:
+                    continue
+                if device["protocol"] == ProtocolVersion.V3:
+                    # this candidate key connected: cache it and stop
+                    # trying the rest (e.g. the preset default keys).
+                    self._cache_device_keys(device["device_id"], key)
+                break
         return device_list
 
     def message(self) -> None:
@@ -454,6 +501,17 @@ class MideaCLI:
             ),
         )
 
+        if getattr(self.namespace, "log_file", None):
+            file_handler = logging.FileHandler(
+                self.namespace.log_file,
+                mode="w",
+                encoding="utf-8",
+            )
+            file_handler.setFormatter(
+                logging.Formatter(fmt, datefmt="%Y-%m-%d %H:%M:%S"),
+            )
+            logging.getLogger().addHandler(file_handler)
+
         with contextlib.suppress(KeyboardInterrupt):
             if inspect.iscoroutinefunction(self.namespace.func):
                 asyncio.run(self.namespace.func())
@@ -472,6 +530,11 @@ def get_config_file_path(relative: bool = False) -> Path:
     return platformdirs.user_config_path(appname="midea-local").joinpath(
         "midea-local.json",
     )
+
+
+def get_devices_cache_path() -> Path:
+    """Get the device token/key cache file path."""
+    return Path("midea-devices.json")
 
 
 def main() -> NoReturn:
@@ -513,6 +576,11 @@ def main() -> NoReturn:
         type=str,
         help="Set Cloud name",
         choices=SUPPORTED_CLOUDS.keys(),
+    )
+    common_parser.add_argument(
+        "--log-file",
+        type=str,
+        help="Also write logs to this file (overwritten on each run).",
     )
 
     # Setup discover parser

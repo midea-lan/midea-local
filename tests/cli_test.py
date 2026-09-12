@@ -76,7 +76,13 @@ async def test_get_keys_falls_back_to_default_keys(
     mock_cloud.login.side_effect = login_side_effect
     mock_cloud.get_cloud_keys.side_effect = get_cloud_keys_side_effect
 
-    with patch("midealocal.cli.get_midea_cloud", return_value=mock_cloud):
+    with (
+        patch("midealocal.cli.get_midea_cloud", return_value=mock_cloud),
+        patch(
+            "midealocal.cli.get_devices_cache_path",
+            return_value=Path("does-not-exist-cache.json"),
+        ),
+    ):
         keys = await cli._get_keys(0)
 
     assert keys == _DEFAULT_KEYS
@@ -130,6 +136,10 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         mock_cloud = AsyncMock()
         with (
             patch("midealocal.cli.get_midea_cloud", return_value=mock_cloud),
+            patch(
+                "midealocal.cli.get_devices_cache_path",
+                return_value=Path("does-not-exist-cache.json"),
+            ),
             patch.object(
                 mock_cloud,
                 "get_default_keys",
@@ -198,6 +208,8 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         mock_cloud_instance = AsyncMock()
         mock_device_instance = MagicMock()
         mock_device_instance.connect.return_value = True
+        tmpdir = TemporaryDirectory()
+        self.addCleanup(tmpdir.cleanup)
         with (
             patch(
                 "midealocal.cli.discover",
@@ -215,6 +227,10 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 mock_device_instance,
                 "refresh_status",
             ) as refresh_status_mock,
+            patch(
+                "midealocal.cli.get_devices_cache_path",
+                return_value=Path(tmpdir.name) / "midea-devices.json",
+            ),
         ):
             mock_discover.return_value = {1: mock_device}
             mock_cloud_instance.get_cloud_keys.return_value = {
@@ -232,7 +248,8 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             self.namespace.get_sn = False
 
             # test V3 device: connect() already authenticated, discover only
-            # calls refresh_status (once per candidate key).
+            # calls refresh_status once and stops trying further candidate
+            # keys once one connects successfully.
             refresh_status_mock.side_effect = None
             await self.cli.discover()  # V3 device
             refresh_status_mock.assert_called_with(True)
@@ -264,6 +281,183 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             mock_discover.return_value = {}
 
             await self.cli.discover()  # No devices
+
+    async def test_discover_caches_working_key_and_stops_trying_others(self) -> None:
+        """Test discover caches the winning key and skips remaining candidates."""
+        mock_device = {
+            "device_id": 1,
+            "protocol": ProtocolVersion.V3,
+            "type": "AC",
+            "ip_address": "192.168.0.2",
+            "port": 6444,
+            "model": "AC123000",
+            "sn": "0000AC12300000001234567890ABCDEF",
+            "mac": "1234567890AB",
+        }
+        mock_device_instance = MagicMock()
+        mock_device_instance.connect.return_value = True
+        with TemporaryDirectory() as tmpdir:
+            cache_file = Path(tmpdir) / "midea-devices.json"
+            with (
+                patch(
+                    "midealocal.cli.discover",
+                    return_value={1: mock_device},
+                ),
+                patch.object(
+                    self.cli,
+                    "_get_keys",
+                    return_value={
+                        0: {"token": "cloudtoken", "key": "cloudkey"},
+                        99: {"token": "defaulttoken", "key": "defaultkey"},
+                    },
+                ) as mock_get_keys,
+                patch(
+                    "midealocal.cli.device_selector",
+                    return_value=mock_device_instance,
+                ) as mock_device_selector,
+                patch(
+                    "midealocal.cli.get_devices_cache_path",
+                    return_value=cache_file,
+                ),
+            ):
+                result = await self.cli.discover()
+
+            mock_get_keys.assert_called_once_with(1)
+            # only the first candidate key is tried once it connects
+            mock_device_selector.assert_called_once_with(
+                name=1,
+                device_id=1,
+                device_type="AC",
+                ip_address="192.168.0.2",
+                port=6444,
+                token="cloudtoken",
+                key="cloudkey",
+                device_protocol=ProtocolVersion.V3,
+                model="AC123000",
+                subtype=0,
+                customize="",
+                mac="1234567890AB",
+                serial_number="0000AC12300000001234567890ABCDEF",
+            )
+            assert result == [mock_device_instance]
+            cached = json.loads(cache_file.read_text(encoding="utf-8"))
+            assert cached == {
+                "devices": [
+                    {"device_id": "1", "token": "cloudtoken", "key": "cloudkey"},
+                ],
+            }
+
+    async def test_discover_uses_cached_key_via_get_keys(self) -> None:
+        """Test a cached token/key is returned by _get_keys without cloud calls."""
+        mock_device = {
+            "device_id": 1,
+            "protocol": ProtocolVersion.V3,
+            "type": "AC",
+            "ip_address": "192.168.0.2",
+            "port": 6444,
+            "model": "AC123000",
+            "sn": "0000AC12300000001234567890ABCDEF",
+            "mac": "1234567890AB",
+        }
+        mock_device_instance = MagicMock()
+        mock_device_instance.connect.return_value = True
+        with TemporaryDirectory() as tmpdir:
+            cache_file = Path(tmpdir) / "midea-devices.json"
+            cache_file.write_text(
+                json.dumps(
+                    {
+                        "devices": [
+                            {
+                                "device_id": "1",
+                                "token": "cachedtoken",
+                                "key": "cachedkey",
+                            },
+                        ],
+                    },
+                ),
+                encoding="utf-8",
+            )
+            with (
+                patch(
+                    "midealocal.cli.discover",
+                    return_value={1: mock_device},
+                ),
+                patch.object(self.cli, "_get_cloud") as mock_get_cloud,
+                patch(
+                    "midealocal.cli.device_selector",
+                    return_value=mock_device_instance,
+                ) as mock_device_selector,
+                patch(
+                    "midealocal.cli.get_devices_cache_path",
+                    return_value=cache_file,
+                ),
+            ):
+                result = await self.cli.discover()
+
+            mock_get_cloud.assert_not_called()
+            mock_device_selector.assert_called_once_with(
+                name=1,
+                device_id=1,
+                device_type="AC",
+                ip_address="192.168.0.2",
+                port=6444,
+                token="cachedtoken",
+                key="cachedkey",
+                device_protocol=ProtocolVersion.V3,
+                model="AC123000",
+                subtype=0,
+                customize="",
+                mac="1234567890AB",
+                serial_number="0000AC12300000001234567890ABCDEF",
+            )
+            assert result == [mock_device_instance]
+
+    def test_get_cached_device_keys(self) -> None:
+        """Test _get_cached_device_keys reads a matching entry, or returns None."""
+        with TemporaryDirectory() as tmpdir:
+            cache_file = Path(tmpdir) / "midea-devices.json"
+            cache_file.write_text(
+                json.dumps(
+                    {"devices": [{"device_id": "1", "token": "tok", "key": "key"}]},
+                ),
+                encoding="utf-8",
+            )
+            with patch(
+                "midealocal.cli.get_devices_cache_path",
+                return_value=cache_file,
+            ):
+                assert self.cli._get_cached_device_keys(1) == {
+                    "token": "tok",
+                    "key": "key",
+                }
+                assert self.cli._get_cached_device_keys(2) is None
+
+            with patch(
+                "midealocal.cli.get_devices_cache_path",
+                return_value=Path(tmpdir) / "does-not-exist.json",
+            ):
+                assert self.cli._get_cached_device_keys(1) is None
+
+    def test_cache_device_keys_replaces_existing_entry(self) -> None:
+        """Test _cache_device_keys overwrites a stale entry for the same device."""
+        with TemporaryDirectory() as tmpdir:
+            cache_file = Path(tmpdir) / "midea-devices.json"
+            cache_file.write_text(
+                json.dumps(
+                    {"devices": [{"device_id": "1", "token": "old", "key": "old"}]},
+                ),
+                encoding="utf-8",
+            )
+            with patch(
+                "midealocal.cli.get_devices_cache_path",
+                return_value=cache_file,
+            ):
+                self.cli._cache_device_keys(1, {"token": "new", "key": "new"})
+
+            cached = json.loads(cache_file.read_text(encoding="utf-8"))
+            assert cached == {
+                "devices": [{"device_id": "1", "token": "new", "key": "new"}],
+            }
 
     def test_message(self) -> None:
         """Test message."""
@@ -730,6 +924,32 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             mock_basic_config.assert_called_once_with(level=logging.INFO)
             mock_set_level.assert_called_with(logging.WARNING)
             self.namespace.func.assert_called_once()
+
+    def test_run_log_file(self) -> None:
+        """Test run also writes logs to a file when --log-file is set."""
+        mock_logger = MagicMock()
+        mock_file_handler = MagicMock()
+        with TemporaryDirectory() as tmpdir:
+            log_file = str(Path(tmpdir) / "midea-local-test.log")
+            with (
+                patch("logging.basicConfig"),
+                patch("logging.getLogger", return_value=mock_logger),
+                patch(
+                    "logging.FileHandler",
+                    return_value=mock_file_handler,
+                ) as mock_file_handler_cls,
+            ):
+                self.cli.session = AsyncMock()
+                self.namespace.log_file = log_file
+                self.cli.run(self.namespace)
+
+        mock_file_handler_cls.assert_called_once_with(
+            log_file,
+            mode="w",
+            encoding="utf-8",
+        )
+        mock_file_handler.setFormatter.assert_called_once()
+        mock_logger.addHandler.assert_called_once_with(mock_file_handler)
 
     def test_main_call(self) -> None:
         """Test main call."""
