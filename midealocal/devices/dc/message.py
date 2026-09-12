@@ -87,6 +87,33 @@ class MessageStart(MessageDCBase):
         return bytearray([0xFF, 0x00])
 
 
+class MessageSetAISwitch(MessageDCBase):
+    """DC message set ai_switch.
+
+    Sends a full 21-byte X02 control body, matching the generic
+    control-table layout documented in the DC lua reference
+    (T_0000_DC_5.lua's commandSpec/bits2Config): every byte defaults
+    to 0xFF ("leave this field unchanged"), and only the 2-bit
+    ai_switch field (commandSpec offset 234, byte-relative index 18,
+    bits 2-3) is modified.
+    """
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize DC message set ai_switch."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.set,
+            body_type=ListTypes.X02,
+        )
+        self.ai_switch = False
+
+    @property
+    def _body(self) -> bytearray:
+        body = bytearray([0xFF] * 21)
+        body[18] = 0xDF if self.ai_switch else 0xCF
+        return body
+
+
 class DCGeneralMessageBody(MessageBody):
     """DC message general body."""
 
