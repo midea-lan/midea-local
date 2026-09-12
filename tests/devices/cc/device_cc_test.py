@@ -101,6 +101,18 @@ class TestMideaCCDevice:
         assert self.device.raw_fan_modes is not None
         assert len(self.device.raw_fan_modes) == 0
 
+    def test_preset_modes(self) -> None:
+        """Test the flag-style preset read/write for CC."""
+        assert list(self.device.preset_modes) == ["none", "sleep", "eco"]
+        assert self.device.preset_mode == "none"
+
+        self.device._attributes[DeviceAttributes.sleep_mode] = True
+        assert self.device.preset_mode == "sleep"
+
+        with patch.object(self.device, "set_attribute") as mock_set:
+            self.device.set_preset_mode("eco")
+        mock_set.assert_called_once_with(attr=DeviceAttributes.eco_mode, value=True)
+
     def test_build_query(self) -> None:
         """Test build query."""
         queries = self.device.build_query()

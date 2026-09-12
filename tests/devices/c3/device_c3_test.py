@@ -6,6 +6,8 @@ import pytest
 
 from midealocal.const import ProtocolVersion
 from midealocal.devices.c3 import (
+    DEFAULT_ZONE_MAX_TARGET_TEMPERATURE,
+    DEFAULT_ZONE_MIN_TARGET_TEMPERATURE,
     DeviceAttributes,
     MideaC3Device,
 )
@@ -309,6 +311,34 @@ class TestMideaC3Device:
     def test_hvac_modes(self) -> None:
         """Test hvac_modes lists every generic HVAC mode name."""
         assert self.device.raw_hvac_modes == ["off", "auto", "cool", "heat"]
+
+    def test_target_temperature_bounds_per_zone(self) -> None:
+        """Test min/max target temperature are read per zone from the list attrs."""
+        self.device._attributes[DeviceAttributes.temperature_min] = [16.0, 17.0]
+        self.device._attributes[DeviceAttributes.temperature_max] = [30.0, 29.0]
+        assert self.device.min_temperature(0) == 16.0
+        assert self.device.max_temperature(0) == 30.0
+        assert self.device.min_temperature(1) == 17.0
+        assert self.device.max_temperature(1) == 29.0
+
+    def test_target_temperature_bounds_fallback(self) -> None:
+        """Test a zone reported as 0.0 or a short list falls back to the defaults."""
+        # per-zone 0.0 -> that zone falls back independently
+        self.device._attributes[DeviceAttributes.temperature_min] = [0.0, 18.0]
+        self.device._attributes[DeviceAttributes.temperature_max] = [0.0, 45.0]
+        assert self.device.min_temperature(0) == DEFAULT_ZONE_MIN_TARGET_TEMPERATURE
+        assert self.device.max_temperature(0) == DEFAULT_ZONE_MAX_TARGET_TEMPERATURE
+        assert self.device.min_temperature(1) == 18.0
+        # list with fewer than one entry per zone -> fall back
+        self.device._attributes[DeviceAttributes.temperature_min] = [20.0]
+        assert self.device.min_temperature(0) == DEFAULT_ZONE_MIN_TARGET_TEMPERATURE
+
+    def test_target_temperature_bounds_require_zone(self) -> None:
+        """Test min/max target temperature raise without a valid zone."""
+        with pytest.raises(ValueError, match="`zone` must be set"):
+            self.device.min_temperature()
+        with pytest.raises(ValueError, match="`zone` must be between 0"):
+            self.device.max_temperature(2)
 
     def test_hvac_mode_requires_zone(self) -> None:
         """Test hvac_mode raises when zone isn't set."""

@@ -4,6 +4,10 @@ from unittest.mock import patch
 
 import pytest
 
+from midealocal.base_classes.climate import (
+    DEFAULT_MAX_TARGET_TEMPERATURE,
+    DEFAULT_MIN_TARGET_TEMPERATURE,
+)
 from midealocal.const import ProtocolVersion
 from midealocal.devices.cf import DeviceAttributes, MideaCFDevice
 from midealocal.devices.cf.message import MessageQuery, MessageSet
@@ -44,6 +48,16 @@ class TestMideaCFDevice:
         assert self.device.attributes[DeviceAttributes.min_temperature] == 5
         assert self.device.attributes[DeviceAttributes.defrost] is False
         assert self.device.attributes[DeviceAttributes.freeze] is False
+
+    def test_target_temperature_bounds(self) -> None:
+        """Test min/max target temperature read the device attributes, with fallback."""
+        assert self.device.min_temperature() == 5.0
+        assert self.device.max_temperature() == 55.0
+
+        self.device._attributes[DeviceAttributes.min_temperature] = None
+        self.device._attributes[DeviceAttributes.max_temperature] = None
+        assert self.device.min_temperature() == DEFAULT_MIN_TARGET_TEMPERATURE
+        assert self.device.max_temperature() == DEFAULT_MAX_TARGET_TEMPERATURE
 
     def test_build_query(self) -> None:
         """Test build query."""

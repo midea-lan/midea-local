@@ -5,6 +5,10 @@ from unittest.mock import patch
 
 import pytest
 
+from midealocal.base_classes.climate import (
+    DEFAULT_MAX_TARGET_TEMPERATURE,
+    DEFAULT_MIN_TARGET_TEMPERATURE,
+)
 from midealocal.const import ProtocolVersion
 from midealocal.devices.ac import DeviceAttributes, MideaACDevice
 from midealocal.devices.ac.message import (
@@ -301,6 +305,38 @@ class TestMideaACDevice:
         self.device.set_customize('{"min_temperature": 17, "max_temperature": 28}')
         assert self.device.attributes[DeviceAttributes.min_temperature] == 17
         assert self.device.attributes[DeviceAttributes.max_temperature] == 28
+
+    def test_target_temperature_bounds(self) -> None:
+        """Test min/max target temperature read the device attributes, with fallback."""
+        assert self.device.min_temperature() == DEFAULT_MIN_TARGET_TEMPERATURE
+        assert self.device.max_temperature() == DEFAULT_MAX_TARGET_TEMPERATURE
+
+        self.device._attributes[DeviceAttributes.min_temperature] = 17
+        self.device._attributes[DeviceAttributes.max_temperature] = 28
+        assert self.device.min_temperature() == 17.0
+        assert self.device.max_temperature() == 28.0
+
+    def test_preset_modes(self) -> None:
+        """Test the flag-style preset read/write for AC."""
+        assert list(self.device.preset_modes) == [
+            "none",
+            "comfort",
+            "eco",
+            "boost",
+            "sleep",
+            "away",
+        ]
+        assert self.device.preset_mode == "none"
+
+        self.device._attributes[DeviceAttributes.eco_mode] = True
+        assert self.device.preset_mode == "eco"
+
+        with patch.object(self.device, "set_attribute") as mock_set:
+            self.device.set_preset_mode("comfort")
+        mock_set.assert_called_once_with(
+            attr=DeviceAttributes.comfort_mode,
+            value=True,
+        )
 
     def test_build_query(self) -> None:
         """Test build query."""
