@@ -1,5 +1,14 @@
 # Changelog
 
+## [11.0.2](https://github.com/midea-lan/midea-local/compare/v11.0.1...v11.0.2) (2026-09-12)
+
+
+### Bug Fixes
+
+* **ac:** treat 0xFF indoor humidity as unavailable ([#762](https://github.com/midea-lan/midea-local/issues/762)) ([257c2c7](https://github.com/midea-lan/midea-local/commit/257c2c7c56253361a478b00ae43a8c07cdce56b1))
+* **b4:** read water status flags from the correct body offset ([#759](https://github.com/midea-lan/midea-local/issues/759)) ([58dd991](https://github.com/midea-lan/midea-local/commit/58dd9911ad9ff18704bcc57557eb632c9a7196a4))
+* **cd:** match controlType=0x01 SET body to lua/cd plugins ([#760](https://github.com/midea-lan/midea-local/issues/760)) ([c2c025e](https://github.com/midea-lan/midea-local/commit/c2c025eed2f2f73ffbbfef591bf678293553d159))
+
 ## [11.0.1](https://github.com/midea-lan/midea-local/compare/v11.0.0...v11.0.1) (2026-09-05)
 
 
