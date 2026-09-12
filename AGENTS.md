@@ -47,8 +47,8 @@ across all three:
 Entry points: `discover.py` finds devices on the LAN; `devices/__init__.py`
 `device_selector()` dynamically `import_module`s the right `devices/<type>` package and
 instantiates its `MideaAppliance`. `cloud.py` retrieves token/key from Midea cloud
-accounts. `cli.py` (`python3 -m midealocal.cli` / `midealocal`) is
-user-facing harness.
+accounts. `cli.py` (`python3 -m midealocal.cli` / `midealocal`) is the user-facing
+harness.
 
 ## Conventions specific to this codebase
 

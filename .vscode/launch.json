@@ -6,14 +6,33 @@
       "type": "debugpy",
       "request": "launch",
       "module": "midealocal.cli",
-      "args": ["discover", "-d", "--host", "${input:host}"]
+      "args": [
+        "discover",
+        "-d",
+        "--host",
+        "${input:host}",
+        "--cloud-name",
+        "${input:cloud-name}",
+        "--username",
+        "${input:username}",
+        "--password",
+        "${input:password}",
+        "--log-file",
+        "${workspaceFolder}/debug.log"
+      ]
     },
     {
       "name": "Python Debugger: Decode message",
       "type": "debugpy",
       "request": "launch",
       "module": "midealocal.cli",
-      "args": ["decode", "-d", "${input:message}"]
+      "args": [
+        "decode",
+        "-d",
+        "${input:message}",
+        "--log-file",
+        "${workspaceFolder}/debug.log"
+      ]
     },
     {
       "name": "Python Debugger: Save config",
@@ -28,7 +47,9 @@
         "--username",
         "${input:username}",
         "--password",
-        "${input:password}"
+        "${input:password}",
+        "--log-file",
+        "${workspaceFolder}/debug.log"
       ]
     },
     {
@@ -36,7 +57,14 @@
       "type": "debugpy",
       "request": "launch",
       "module": "midealocal.cli",
-      "args": ["download", "-d", "--host", "${input:host}"]
+      "args": [
+        "download",
+        "-d",
+        "--host",
+        "${input:host}",
+        "--log-file",
+        "${workspaceFolder}/debug.log"
+      ]
     },
     {
       "name": "Python Debugger: Download from sn and type",
@@ -49,7 +77,9 @@
         "--device-type",
         "${input:device-type}",
         "--device-sn",
-        "${input:device-sn}"
+        "${input:device-sn}",
+        "--log-file",
+        "${workspaceFolder}/debug.log"
       ]
     },
     {
@@ -64,7 +94,9 @@
         "${input:attribute}",
         "${input:value}",
         "--attr-type",
-        "${input:attr-type}"
+        "${input:attr-type}",
+        "--log-file",
+        "${workspaceFolder}/debug.log"
       ]
     }
   ],
@@ -96,24 +128,29 @@
       "id": "cloud-name",
       "type": "pickString",
       "options": [
+        "Use midea-local.json",
         "美的美居",
         "SmartHome",
         "Midea Air",
         "NetHome Plus",
-        "Ariston Clima"
+        "Ariston Clima",
+        "OS Comfort",
+        "Toshiba Iolife"
       ],
-      "description": "Choose one of the cloud servers."
+      "description": "Choose a cloud server, or the top option to reuse credentials from midea-local.json (if present)."
     },
     {
       "id": "username",
       "type": "promptString",
-      "description": "Enter cloud username."
+      "description": "Enter cloud username (leave empty when using midea-local.json).",
+      "default": ""
     },
     {
       "id": "password",
       "type": "promptString",
       "password": true,
-      "description": "Enter cloud password."
+      "description": "Enter cloud password (leave empty when using midea-local.json).",
+      "default": ""
     },
     {
       "id": "attribute",
