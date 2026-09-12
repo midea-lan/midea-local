@@ -85,7 +85,7 @@ class TestMideaB0Device:
         )
         assert self.device.attributes[DeviceAttributes.door] is True
         assert self.device.attributes[DeviceAttributes.status] == "working"
-        assert self.device.attributes[DeviceAttributes.time_remaining] == 90
+        assert self.device.attributes[DeviceAttributes.time_remaining] == 1
         assert self.device.attributes[DeviceAttributes.current_temperature] == 80
         assert self.device.attributes[DeviceAttributes.tank_ejected] is False
         assert self.device.attributes[DeviceAttributes.water_change_reminder] is False
@@ -107,7 +107,7 @@ class TestMideaB0Device:
         body[14] = 0x03  # fire power "Medium Low"
         self.device.process_message(_build_message(MessageType.query, body))
         assert self.device.attributes[DeviceAttributes.status] == "working"
-        assert self.device.attributes[DeviceAttributes.time_remaining] == 60
+        assert self.device.attributes[DeviceAttributes.time_remaining] == 1
         assert self.device.attributes[DeviceAttributes.mode] == "time_unfreeze"
         assert self.device.attributes[DeviceAttributes.fire_power] == "medium_low"
 
@@ -149,7 +149,7 @@ class TestMideaB0Device:
         new_status = device.process_message(_build_message(MessageType.query, body))
         assert device.attributes[DeviceAttributes.door] is True
         assert device.attributes[DeviceAttributes.status] == "idle"
-        assert device.attributes[DeviceAttributes.time_remaining] == 3660
+        assert device.attributes[DeviceAttributes.time_remaining] == 61
         assert device.attributes[DeviceAttributes.current_temperature] == 300
         assert device.attributes[DeviceAttributes.tank_ejected] is False
         assert device.attributes[DeviceAttributes.water_shortage] is False
@@ -211,7 +211,7 @@ class TestMideaB0Device:
         new_status = device.process_message(bytes(header + body))
         assert device.attributes[DeviceAttributes.door] is False
         assert device.attributes[DeviceAttributes.status] == "working"
-        assert device.attributes[DeviceAttributes.time_remaining] == 60
+        assert device.attributes[DeviceAttributes.time_remaining] == 1
         assert new_status[DeviceAttributes.status.value] == "working"
 
     def test_process_message_default_body_subtype_zero(self) -> None:

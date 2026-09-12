@@ -65,11 +65,7 @@ class E8MessageBody(MessageBody):
         """Initialize E8 message body."""
         super().__init__(body)
         self.status = self.read_byte(body, 11)
-        self.time_remaining = (
-            self.read_byte(body, 16) * 3600
-            + self.read_byte(body, 17) * 60
-            + self.read_byte(body, 18)
-        )
+        self.time_remaining = self.read_byte(body, 16) * 60 + self.read_byte(body, 17)
         self.keep_warm_remaining = (
             self.read_byte(body, 19) * 3600
             + self.read_byte(body, 20) * 60
