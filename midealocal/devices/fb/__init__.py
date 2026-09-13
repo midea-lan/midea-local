@@ -4,7 +4,11 @@ import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, override
 
-from midealocal.base_classes.climate import MideaClimateDevice, MideaHVACMode
+from midealocal.base_classes.climate import (
+    MideaClimateDevice,
+    MideaHVACMode,
+    MideaPreset,
+)
 from midealocal.const import DeviceType
 from midealocal.device import MideaDeviceInitKwargs
 
@@ -40,16 +44,16 @@ class MideaFBDevice(MideaClimateDevice):
         DeviceHVACMode.HEAT,
     ]
 
-    _modes: ClassVar[dict[int, str]] = {
-        0x01: "auto",
-        0x02: "eco",
-        0x03: "sleep",
-        0x04: "anti_freezing",
-        0x05: "comfort",
-        0x06: "constant_temperature",
-        0x07: "normal",
-        0x08: "fast_heating",
-        0x10: "standby",
+    _modes: ClassVar[dict[int, MideaPreset]] = {
+        0x01: MideaPreset.AUTO,
+        0x02: MideaPreset.ECO,
+        0x03: MideaPreset.SLEEP,
+        0x04: MideaPreset.ANTI_FREEZING,
+        0x05: MideaPreset.COMFORT,
+        0x06: MideaPreset.CONSTANT_TEMPERATURE,
+        0x07: MideaPreset.NORMAL,
+        0x08: MideaPreset.FAST_HEATING,
+        0x10: MideaPreset.STANDBY,
     }
 
     def __init__(
@@ -102,9 +106,30 @@ class MideaFBDevice(MideaClimateDevice):
         )
 
     @property
-    def modes(self) -> list[str]:
+    def modes(self) -> list[MideaPreset]:
         """Midea FB device modes."""
         return list(MideaFBDevice._modes.values())
+
+    @property
+    @override
+    def preset_modes(self) -> list[MideaPreset]:
+        """Midea FB device preset modes (its named heating modes)."""
+        return self.modes
+
+    @property
+    @override
+    def preset_mode(self) -> MideaPreset | None:
+        """Midea FB device current preset mode."""
+        mode = self._attributes[DeviceAttributes.mode]
+        return mode if isinstance(mode, MideaPreset) else None
+
+    @override
+    def set_preset_mode(self, preset_mode: str) -> None:
+        """Midea FB device set preset mode."""
+        if preset_mode not in self.preset_modes:
+            msg = f"[fb] Unsupported preset mode: {preset_mode}"
+            raise ValueError(msg)
+        self.set_attribute(attr=DeviceAttributes.mode, value=preset_mode)
 
     def build_query(self) -> list[MessageQuery]:
         """Midea FB device build query."""
@@ -126,9 +151,10 @@ class MideaFBDevice(MideaClimateDevice):
                 msg = f"[fb] Unsupported mode: {value}"
                 raise ValueError(msg)
             message = MessageSet(self._message_protocol_version, self.subtype)
-            message.mode = list(MideaFBDevice._modes.keys())[
-                list(MideaFBDevice._modes.values()).index(str(value))
-            ]
+            if value in MideaFBDevice._modes.values():
+                message.mode = list(MideaFBDevice._modes.keys())[
+                    list(MideaFBDevice._modes.values()).index(MideaPreset(str(value)))
+                ]
         else:
             message = MessageSet(self._message_protocol_version, self.subtype)
             setattr(message, str(attr), value)

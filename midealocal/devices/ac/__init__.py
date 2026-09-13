@@ -3,6 +3,7 @@
 import json
 import logging
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, ClassVar, Unpack, cast, override
 
@@ -10,6 +11,7 @@ from midealocal.base_classes.climate import (
     MideaClimateDevice,
     MideaFanMode,
     MideaHVACMode,
+    MideaPreset,
     MideaSwingMode,
 )
 from midealocal.const import DeviceType
@@ -210,6 +212,19 @@ class MideaACDevice(MideaClimateDevice):
         (ACFanSpeed.SILENT, ACFanSpeed.LOW),
     )
 
+    # BB (sub-protocol) devices: MessageSubProtocolSet doesn't serialize
+    # comfort_mode/frost_protect, so comfort/away are excluded for them below.
+    _all_preset_attributes: ClassVar[dict[MideaPreset, str]] = {
+        MideaPreset.COMFORT: DeviceAttributes.comfort_mode,
+        MideaPreset.ECO: DeviceAttributes.eco_mode,
+        MideaPreset.BOOST: DeviceAttributes.boost_mode,
+        MideaPreset.SLEEP: DeviceAttributes.sleep_mode,
+        MideaPreset.AWAY: DeviceAttributes.frost_protect,
+    }
+    _bb_unsupported_presets: ClassVar[frozenset[MideaPreset]] = frozenset(
+        {MideaPreset.COMFORT, MideaPreset.AWAY},
+    )
+
     _swing_modes: ClassVar[dict[ACSwingMode, tuple[bool, bool]]] = {
         ACSwingMode.OFF: (False, False),
         ACSwingMode.VERTICAL: (True, False),
@@ -325,6 +340,23 @@ class MideaACDevice(MideaClimateDevice):
         # fields to avoid brief UI flicker caused by query ordering.
         self._prefer_new_protocol_temperature: bool = False
         self.set_customize(customize)
+
+    @property
+    @override
+    def _preset_attributes(self) -> Mapping[MideaPreset, str]:
+        """Presets supported by this unit.
+
+        BB (sub-protocol) devices drop comfort/away: MessageSubProtocolSet
+        doesn't serialize comfort_mode/frost_protect, so those commands
+        would have no effect.
+        """
+        if self._used_subprotocol:
+            return {
+                preset: attr
+                for preset, attr in MideaACDevice._all_preset_attributes.items()
+                if preset not in MideaACDevice._bb_unsupported_presets
+            }
+        return MideaACDevice._all_preset_attributes
 
     @property
     @override

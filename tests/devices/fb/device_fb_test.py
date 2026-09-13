@@ -4,11 +4,12 @@ from unittest.mock import patch
 
 import pytest
 
+from midealocal.base_classes.climate import MideaPreset
 from midealocal.const import ProtocolVersion
 from midealocal.devices.fb import DeviceAttributes, MideaFBDevice
 from midealocal.devices.fb.message import MessageQuery, MessageSet
 from midealocal.message import MessageType
-from tests.base_classes_test import DummyHVACMode
+from tests.base_classes.climate_test import DummyHVACMode
 
 
 class TestMideaFBDevice:
@@ -136,6 +137,25 @@ class TestMideaFBDevice:
             with pytest.raises(ValueError, match="Unsupported mode"):
                 self.device.set_attribute(DeviceAttributes.mode.value, "invalid")
             mock_build_send.assert_not_called()
+
+    def test_preset_modes(self) -> None:
+        """Test preset modes expose the device's named heating modes."""
+        assert self.device.preset_modes == self.device.modes
+
+        self.device._attributes[DeviceAttributes.mode] = MideaPreset.ECO
+        active_preset = self.device.preset_mode
+        assert active_preset == "eco"
+
+        self.device._attributes[DeviceAttributes.mode] = 5
+        invalid_preset = self.device.preset_mode
+        assert invalid_preset is None
+
+        with patch.object(self.device, "set_attribute") as mock_set:
+            self.device.set_preset_mode("comfort")
+        mock_set.assert_called_once_with(attr=DeviceAttributes.mode, value="comfort")
+
+        with pytest.raises(ValueError, match="Unsupported preset mode: bogus"):
+            self.device.set_preset_mode("bogus")
 
     @pytest.mark.parametrize(
         ("attr", "value"),

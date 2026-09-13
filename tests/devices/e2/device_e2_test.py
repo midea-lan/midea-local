@@ -230,3 +230,19 @@ class TestMideaE2Device:
             message = mock_build_send.call_args[0][0]
         assert isinstance(message, MessageNewProtocolSet)
         assert message.sterilization is True
+
+    def test_set_attribute_new_protocol_protection(self) -> None:
+        """DeviceAttributes.protection must reach MessageNewProtocolSet.protection.
+
+        Previously the message class stored this field as `protect`, so
+        setattr(message, "protection", value) silently landed on a new,
+        unread instance attribute instead: setting protection was a no-op.
+        """
+        device = self._device('{"old_protocol": "false"}')
+        with patch.object(device, "build_send") as mock_build_send:
+            device.set_attribute(DeviceAttributes.protection.value, True)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+        assert isinstance(message, MessageNewProtocolSet)
+        assert message.protection is True
+        assert message._body == bytearray([0x05, 0x01])
