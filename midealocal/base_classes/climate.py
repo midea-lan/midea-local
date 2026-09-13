@@ -1,11 +1,28 @@
 """Shared climate classes for Midea devices."""
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from enum import IntEnum, StrEnum
 from typing import final
 
 from midealocal.device import MideaDevice
+
+
+class MideaPreset(StrEnum):
+    """Preset mode names, merged across all climate devices (ac, cc, fb)."""
+
+    NONE = "none"
+    AUTO = "auto"
+    COMFORT = "comfort"
+    ECO = "eco"
+    BOOST = "boost"
+    SLEEP = "sleep"
+    AWAY = "away"
+    ANTI_FREEZING = "anti_freezing"
+    CONSTANT_TEMPERATURE = "constant_temperature"
+    NORMAL = "normal"
+    FAST_HEATING = "fast_heating"
+    STANDBY = "standby"
 
 
 class MideaHVACMode(IntEnum):
@@ -29,6 +46,15 @@ class MideaClimateDevice(MideaDevice, ABC):
     which report the capability as unsupported rather than raising for a
     routine read.
     """
+
+    @property
+    def _preset_attributes(self) -> Mapping[MideaPreset, str]:
+        """Flag-style presets: {generic preset name: boolean device attribute}.
+
+        Devices with named string presets (fb) override the three methods
+        below instead of this mapping.
+        """
+        return {}
 
     @property
     @abstractmethod
@@ -197,3 +223,50 @@ class MideaClimateDevice(MideaDevice, ABC):
     def temperature_step(self) -> float | None:
         """Return the target temperature step, or None if fixed/unknown."""
         return None
+
+    @property
+    def preset_modes(self) -> Sequence[MideaPreset]:
+        """Return the available preset mode names, or [] if unsupported."""
+        if not self._preset_attributes:
+            return []
+        return [MideaPreset.NONE, *self._preset_attributes]
+
+    @property
+    def preset_mode(self) -> MideaPreset | None:
+        """Return the current preset mode name, or None if unsupported."""
+        if not self._preset_attributes:
+            return None
+        for name, attr in self._preset_attributes.items():
+            if self.get_attribute(attr):
+                return name
+        return MideaPreset.NONE
+
+    def set_preset_mode(self, preset_mode: str) -> None:
+        """Activate a preset by name (clearing the previous one)."""
+        if not self._preset_attributes:
+            msg = "Preset mode is not supported by this device"
+            raise NotImplementedError(msg)
+        try:
+            requested = MideaPreset(preset_mode)
+        except ValueError:
+            msg = f"Unsupported preset mode: {preset_mode}"
+            raise ValueError(msg) from None
+        if (attr := self._preset_attributes.get(requested)) is not None:
+            self.set_attribute(attr=attr, value=True)
+            # set_attribute() only builds/sends the wire command; it doesn't
+            # update self._attributes, so an immediate follow-up read (or an
+            # immediate set_preset_mode(NONE)) would still see the old flags
+            # until the device's next status response.
+            for other_attr in self._preset_attributes.values():
+                self._attributes[other_attr] = other_attr == attr
+            return
+        if requested != MideaPreset.NONE:
+            msg = f"Unsupported preset mode: {preset_mode}"
+            raise ValueError(msg)
+        # Clear every active flag, not just the one preset_mode() would
+        # report: if device state ever has more than one flag active at
+        # once, clearing only the first-found one would leave the rest on.
+        for old_attr in self._preset_attributes.values():
+            if self.get_attribute(old_attr):
+                self.set_attribute(attr=old_attr, value=False)
+                self._attributes[old_attr] = False

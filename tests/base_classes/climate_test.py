@@ -1,11 +1,14 @@
 """Midea Local shared base classes test."""
 
+from collections.abc import Mapping
+
 import pytest
 
 from midealocal.base_classes.climate import (
     MideaClimateDevice,
     MideaFanMode,
     MideaHVACMode,
+    MideaPreset,
     MideaSwingMode,
 )
 from midealocal.const import DeviceType, ProtocolVersion
@@ -37,6 +40,20 @@ class _MinimalClimateDevice(MideaClimateDevice):
         self._attributes["target_temperature"] = target_temperature
         if hvac_mode is not None:
             self._attributes["hvac_mode"] = hvac_mode
+
+    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+        self._attributes[attr] = value
+
+
+class _FlagPresetClimateDevice(_MinimalClimateDevice):
+    """A climate device using the shared flag-style preset implementation."""
+
+    @property
+    def _preset_attributes(self) -> Mapping[MideaPreset, str]:
+        return {
+            MideaPreset.ECO: "eco_mode",
+            MideaPreset.SLEEP: "sleep_mode",
+        }
 
 
 class DummyFanMode(MideaFanMode):
@@ -108,6 +125,96 @@ class TestMideaClimateDevice:
     def test_temperature_step_defaults_to_none(self) -> None:
         """Test temperature_step defaults to None."""
         assert self.device.temperature_step is None
+
+    def test_preset_capability_defaults_to_unsupported(self) -> None:
+        """Test preset_modes/preset_mode default to empty/None and setting raises."""
+        assert list(self.device.preset_modes) == []
+        assert self.device.preset_mode is None
+        with pytest.raises(NotImplementedError, match="Preset mode"):
+            self.device.set_preset_mode("eco")
+
+    def test_flag_style_presets(self) -> None:
+        """Test the shared flag-style preset read/write via _preset_attributes."""
+        device = _FlagPresetClimateDevice(
+            device_type=DeviceType.AC,
+            attributes={"eco_mode": False, "sleep_mode": False},
+            name="Test Device",
+            device_id=3,
+            ip_address="192.168.1.3",
+            port=12345,
+            token="AA",
+            key="BB",
+            device_protocol=ProtocolVersion.V1,
+            model="test_model",
+            subtype=1,
+        )
+
+        assert list(device.preset_modes) == ["none", "eco", "sleep"]
+        assert device.preset_mode == "none"
+
+        device.set_preset_mode("eco")
+        assert device.get_attribute("eco_mode") is True
+        assert device.preset_mode == "eco"
+
+        # switching preset clears the previous flag
+        device.set_preset_mode("none")
+        assert device.get_attribute("eco_mode") is False
+        assert device.preset_mode == "none"
+
+        # clearing again with nothing active is a no-op
+        device.set_preset_mode("none")
+        assert device.preset_mode == "none"
+
+        # a name outside MideaPreset entirely is rejected
+        with pytest.raises(ValueError, match="Unsupported preset mode: bogus"):
+            device.set_preset_mode("bogus")
+
+        # a MideaPreset this device doesn't support is also rejected
+        with pytest.raises(ValueError, match="Unsupported preset mode: boost"):
+            device.set_preset_mode("boost")
+        assert device.preset_mode == "none"
+
+        # switching directly between two presets (skipping "none") normalizes
+        # every flag, not just the one set_attribute() was called with --
+        # set_attribute() alone doesn't know to clear the other preset's flag
+        device.set_preset_mode("eco")
+        device.set_preset_mode("sleep")
+        assert device.preset_mode == "sleep"
+        assert device.get_attribute("eco_mode") is False
+        assert device.get_attribute("sleep_mode") is True
+
+        # and an immediate clear right after activating reads back correctly,
+        # since set_preset_mode() -- not set_attribute() -- caches the change
+        device.set_preset_mode("none")
+        assert device.preset_mode == "none"
+        assert device.get_attribute("sleep_mode") is False
+
+    def test_clear_preset_with_two_flags_active(self) -> None:
+        """Clearing disables every active flag, not just the first one found.
+
+        Real device state shouldn't have two preset flags active at once,
+        but if it ever does (a stale read, a wire quirk), preset_mode()
+        would only report one of them -- clearing must not stop there and
+        leave the other stuck on.
+        """
+        device = _FlagPresetClimateDevice(
+            device_type=DeviceType.AC,
+            attributes={"eco_mode": True, "sleep_mode": True},
+            name="Test Device",
+            device_id=4,
+            ip_address="192.168.1.4",
+            port=12345,
+            token="AA",
+            key="BB",
+            device_protocol=ProtocolVersion.V1,
+            model="test_model",
+            subtype=1,
+        )
+
+        device.set_preset_mode("none")
+        assert device.get_attribute("eco_mode") is False
+        assert device.get_attribute("sleep_mode") is False
+        assert device.preset_mode == "none"
 
     def test_mandatory_members_must_be_overridden(self) -> None:
         """Test a subclass missing a mandatory member can't be instantiated.

@@ -30,7 +30,7 @@ from midealocal.devices.ac.message import (
     PowerFormats,
 )
 from midealocal.message import ListTypes, MessageBase
-from tests.base_classes_test import DummyFanMode, DummyHVACMode, DummySwingMode
+from tests.base_classes.climate_test import DummyFanMode, DummyHVACMode, DummySwingMode
 
 
 class TestMideaACDevice:
@@ -301,6 +301,55 @@ class TestMideaACDevice:
         self.device.set_customize('{"min_temperature": 17, "max_temperature": 28}')
         assert self.device.attributes[DeviceAttributes.min_temperature] == 17
         assert self.device.attributes[DeviceAttributes.max_temperature] == 28
+
+    def test_preset_modes(self) -> None:
+        """Test the flag-style preset read/write for AC."""
+        assert list(self.device.preset_modes) == [
+            "none",
+            "comfort",
+            "eco",
+            "boost",
+            "sleep",
+            "away",
+        ]
+        assert self.device.preset_mode == "none"
+
+        self.device._attributes[DeviceAttributes.eco_mode] = True
+        assert self.device.preset_mode == "eco"
+
+        with patch.object(self.device, "set_attribute") as mock_set:
+            self.device.set_preset_mode("comfort")
+        mock_set.assert_called_once_with(
+            attr=DeviceAttributes.comfort_mode,
+            value=True,
+        )
+
+    def test_set_preset_mode_then_clear_immediately(self) -> None:
+        """An immediate set-then-clear reads back the just-set preset.
+
+        set_attribute() only builds/sends the wire command; it doesn't
+        update self._attributes, so preset_mode must be updated by
+        set_preset_mode() itself, or an immediate clear would see the
+        stale (pre-command) flags and skip sending the disable command.
+        """
+        with patch.object(self.device, "build_send"):
+            self.device.set_preset_mode("eco")
+            assert self.device.preset_mode == "eco"
+            assert self.device.get_attribute(DeviceAttributes.eco_mode) is True
+
+            self.device.set_preset_mode("none")
+            assert self.device.preset_mode == "none"
+            assert self.device.get_attribute(DeviceAttributes.eco_mode) is False
+
+    def test_preset_modes_bb_protocol_drops_comfort_and_away(self) -> None:
+        """BB (sub-protocol) devices can't serialize comfort_mode/frost_protect."""
+        self.device._used_subprotocol = True
+        assert list(self.device.preset_modes) == ["none", "eco", "boost", "sleep"]
+
+        with pytest.raises(ValueError, match="Unsupported preset mode: comfort"):
+            self.device.set_preset_mode("comfort")
+        with pytest.raises(ValueError, match="Unsupported preset mode: away"):
+            self.device.set_preset_mode("away")
 
     def test_build_query(self) -> None:
         """Test build query."""
