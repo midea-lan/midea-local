@@ -109,11 +109,11 @@ class CEGeneralMessageBody(MessageBody):
         self.aux_heating: bool | None = None
 
         if body[7] != MAX_BYTE_VALUE:
-            self.current_humidity = (body[7] << 8) + body[8] / 10
+            self.current_humidity = ((body[7] << 8) + body[8]) / 10
         if body[9] != MAX_BYTE_VALUE:
             self.current_temperature = (body[9] << 8) + (body[10] - 60) / 2
         if body[11] != MAX_BYTE_VALUE:
-            self.hcho = (body[11] << 8) + body[12] / 1000
+            self.hcho = ((body[11] << 8) + body[12]) / 1000
         self.link_to_ac = (body[17] & 0x01) > 0
         self.sleep_mode = (body[17] & 0x02) > 0
         self.eco_mode = (body[17] & 0x04) > 0
@@ -138,11 +138,11 @@ class CENotifyMessageBody(MessageBody):
         self.pm25 = (body[1] << 8) + body[2]
         self.co2 = (body[3] << 8) + body[4]
         if body[5] != MAX_BYTE_VALUE:
-            self.current_humidity = (body[5] << 8) + body[6] / 10
+            self.current_humidity = ((body[5] << 8) + body[6]) / 10
         if body[7] != MAX_BYTE_VALUE:
             self.current_temperature = (body[7] << 8) + (body[8] - 60) / 2
         if body[9] != MAX_BYTE_VALUE:
-            self.hcho = (body[9] << 8) + body[10] / 1000
+            self.hcho = ((body[9] << 8) + body[10]) / 1000
         self.error_code = body[12]
 
 

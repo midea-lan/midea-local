@@ -87,12 +87,12 @@ class TestMideaCEDevice:
         body[4] = 53  # pm25
         body[5] = 0x01
         body[6] = 0x00  # co2 = 256
-        body[7] = 0x00
-        body[8] = 50  # current_humidity = 5.0
+        body[7] = 0x01  # current_humidity high byte: exercises the << 8 term
+        body[8] = 50  # current_humidity = ((1 << 8) + 50) / 10 = 30.6
         body[9] = 0x00
         body[10] = 100  # current_temperature = 20.0
-        body[11] = 0x00
-        body[12] = 200  # hcho = 0.2
+        body[11] = 0x01  # hcho high byte: exercises the << 8 term
+        body[12] = 200  # hcho = ((1 << 8) + 200) / 1000 = 0.456
         body[17] = 0x01 | 0x02 | 0x08 | 0x10  # link_to_ac, sleep, aux, purify
         body[18] = 0x03  # both filter reminders
         body[19] = 0x02  # aux_heating supported
@@ -105,9 +105,9 @@ class TestMideaCEDevice:
         assert self.device.attributes[DeviceAttributes.fan_speed] == 5
         assert self.device.attributes[DeviceAttributes.pm25] == 53
         assert self.device.attributes[DeviceAttributes.co2] == 256
-        assert self.device.attributes[DeviceAttributes.current_humidity] == 5.0
+        assert self.device.attributes[DeviceAttributes.current_humidity] == 30.6
         assert self.device.attributes[DeviceAttributes.current_temperature] == 20.0
-        assert self.device.attributes[DeviceAttributes.hcho] == 0.2
+        assert self.device.attributes[DeviceAttributes.hcho] == 0.456
         assert self.device.attributes[DeviceAttributes.link_to_ac] is True
         assert self.device.attributes[DeviceAttributes.sleep_mode] is True
         assert self.device.attributes[DeviceAttributes.eco_mode] is False
@@ -150,20 +150,20 @@ class TestMideaCEDevice:
         body[2] = 42  # pm25
         body[3] = 0x00
         body[4] = 120  # co2
-        body[5] = 0x00
-        body[6] = 80  # current_humidity = 8.0
+        body[5] = 0x01  # current_humidity high byte: exercises the << 8 term
+        body[6] = 80  # current_humidity = ((1 << 8) + 80) / 10 = 33.6
         body[7] = 0x00
         body[8] = 70  # current_temperature = 5.0
-        body[9] = 0x00
-        body[10] = 100  # hcho = 0.1
+        body[9] = 0x01  # hcho high byte: exercises the << 8 term
+        body[10] = 100  # hcho = ((1 << 8) + 100) / 1000 = 0.356
         body[12] = 3  # error_code
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
         assert self.device.attributes[DeviceAttributes.pm25] == 42
         assert self.device.attributes[DeviceAttributes.co2] == 120
-        assert self.device.attributes[DeviceAttributes.current_humidity] == 8.0
+        assert self.device.attributes[DeviceAttributes.current_humidity] == 33.6
         assert self.device.attributes[DeviceAttributes.current_temperature] == 5.0
-        assert self.device.attributes[DeviceAttributes.hcho] == 0.1
+        assert self.device.attributes[DeviceAttributes.hcho] == 0.356
         assert self.device.attributes[DeviceAttributes.error_code] == 3
         assert self.device.attributes[DeviceAttributes.mode] == "none"
 
