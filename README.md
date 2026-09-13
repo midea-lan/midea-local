@@ -92,12 +92,13 @@ All fields are optional; only include what you need. Run
 
 Every device needs a token/key pair, normally fetched from the cloud on
 each run. `discover` caches the pair that successfully connects to a device
-in `midea-devices.json`, keyed by `device_id`, and `_get_keys` checks this
-cache before contacting the cloud at all. In practice this means only the
-_first_ `discover`/`setattr` run for a given device needs your cloud
-credentials — every run after that connects straight to the device with the
-cached key, with no cloud login required. The file is managed automatically;
-you don't need to create or edit it yourself.
+in `midea-devices.json`, keyed by `device_id`, and tries that cached pair
+first on every later run — before contacting the cloud at all. In practice
+this means only the _first_ `discover`/`setattr` run for a given device
+needs your cloud credentials. If a cached key ever stops working (e.g. the
+device was re-paired), `discover` automatically falls back to fetching a
+fresh key from the cloud and updates the cache. The file is managed
+automatically; you don't need to create or edit it yourself.
 
 ```json
 {
