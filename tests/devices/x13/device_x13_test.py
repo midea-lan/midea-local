@@ -74,7 +74,7 @@ class TestMidea13Device:
         [
             (3, "reading"),
             (7, "living"),  # out of range raw value falls back to index 1
-            (0, "night"),  # raw 0 becomes index -1, the last effect
+            (0, "living"),  # raw 0 would be index -1; falls back to index 1
         ],
     )
     def test_process_message_main_light(
