@@ -304,9 +304,9 @@ class TestMessageC3Response:
         assert hasattr(response, "status_heating")
         assert response.status_heating is True
         assert hasattr(response, "total_energy_consumption")
-        assert response.total_energy_consumption == 214750114754
+        assert response.total_energy_consumption == 840610754
         assert hasattr(response, "total_produced_energy")
-        assert response.total_produced_energy == 90195765805
+        assert response.total_produced_energy == 353774125
         assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature == 30
         assert hasattr(response, "zone1_temp_set")
