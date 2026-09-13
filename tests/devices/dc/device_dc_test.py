@@ -95,7 +95,7 @@ class TestMideaDCDevice:
         assert self.device.attributes[DeviceAttributes.dryness_level] == 4
         assert self.device.attributes[DeviceAttributes.dry_temperature] == 4
         assert self.device.attributes[DeviceAttributes.error_code] == 5
-        assert self.device.attributes[DeviceAttributes.door_warn] == 6
+        assert self.device.attributes[DeviceAttributes.door_warn] is True
         assert self.device.attributes[DeviceAttributes.ai_switch] is True
         assert self.device.attributes[DeviceAttributes.material] == 8
         assert self.device.attributes[DeviceAttributes.water_box] == 9
@@ -132,6 +132,7 @@ class TestMideaDCDevice:
         assert self.device.attributes[DeviceAttributes.program] == 99
         assert self.device.attributes[DeviceAttributes.progress] is None
         assert self.device.attributes[DeviceAttributes.time_remaining] is None
+        assert self.device.attributes[DeviceAttributes.door_warn] is False
         assert self.device.attributes[DeviceAttributes.ai_switch] is False
 
     def test_unexpected_response(self) -> None:
