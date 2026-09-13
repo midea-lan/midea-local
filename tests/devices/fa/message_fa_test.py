@@ -4,6 +4,7 @@ import pytest
 
 from midealocal.const import ProtocolVersion
 from midealocal.devices.fa.message import (
+    PROTOCOL_V5,
     FAGeneralMessageBody,
     MessageFABase,
     MessageFAResponse,
@@ -193,6 +194,92 @@ class TestMessageSet:
         msg.power = True
         assert len(msg.serialize()) > 0
 
+    @pytest.mark.parametrize(
+        ("mode", "expected"),
+        [
+            pytest.param(7, 0x0F, id="storm"),
+            pytest.param(20, 0x29, id="self_selection"),
+        ],
+    )
+    def test_body_mode_protocol_v5(self, mode: int, expected: int) -> None:
+        """Test set body mode uses the 5-bit raw table index on protocol 5."""
+        msg = MessageSet(ProtocolVersion.V1, 1)
+        msg.fa_message_protocol = PROTOCOL_V5
+        msg.mode = mode
+        assert msg._body[3] == expected
+
+    def test_body_voice(self) -> None:
+        """Test set body voice."""
+        msg = MessageSet(ProtocolVersion.V1, 1)
+        msg.voice = 0x04
+        assert msg._body[1] == 0x04
+
+    def test_body_target_temperature_valid(self) -> None:
+        """Test set body target temperature applies the +41 offset."""
+        msg = MessageSet(ProtocolVersion.V1, 1)
+        msg.target_temperature = 20
+        assert msg._body[5] == 61
+
+    def test_body_target_temperature_out_of_range(self) -> None:
+        """Test set body ignores an out-of-range target temperature."""
+        msg = MessageSet(ProtocolVersion.V1, 1)
+        msg.target_temperature = 51
+        assert msg._body[5] == 0
+
+    def test_body_target_humidity_valid(self) -> None:
+        """Test set body target humidity."""
+        msg = MessageSet(ProtocolVersion.V1, 1)
+        msg.target_humidity = 55
+        assert msg._body[6] == 55
+
+    def test_body_target_humidity_out_of_range(self) -> None:
+        """Test set body ignores an out-of-range target humidity."""
+        msg = MessageSet(ProtocolVersion.V1, 1)
+        msg.target_humidity = 0
+        assert msg._body[6] == 0
+
+    @pytest.mark.parametrize(
+        ("anion", "anophelifuge", "expected"),
+        [
+            pytest.param(True, None, 0x01, id="anion_on"),
+            pytest.param(False, None, 0x02, id="anion_off"),
+            pytest.param(None, True, 0x04, id="anophelifuge_on"),
+            pytest.param(None, False, 0x08, id="anophelifuge_off"),
+            pytest.param(True, True, 0x05, id="both_on"),
+        ],
+    )
+    def test_body_anion_anophelifuge(
+        self,
+        anion: bool | None,
+        anophelifuge: bool | None,
+        expected: int,
+    ) -> None:
+        """Test set body anion and anophelifuge share byte 8."""
+        msg = MessageSet(ProtocolVersion.V1, 1)
+        msg.anion = anion
+        msg.anophelifuge = anophelifuge
+        assert msg._body[8] == expected
+
+    @pytest.mark.parametrize(
+        ("body_feeling_scan", "expected"),
+        [(True, 1), (False, 2)],
+    )
+    def test_body_body_feeling_scan(
+        self,
+        body_feeling_scan: bool,
+        expected: int,
+    ) -> None:
+        """Test set body body_feeling_scan."""
+        msg = MessageSet(ProtocolVersion.V1, 1)
+        msg.body_feeling_scan = body_feeling_scan
+        assert msg._body[14] == expected
+
+    def test_body_scene(self) -> None:
+        """Test set body scene."""
+        msg = MessageSet(ProtocolVersion.V1, 1)
+        msg.scene = 3
+        assert msg._body[15] == 3
+
 
 class TestFAGeneralMessageBody:
     """Test FA general message body."""
@@ -207,7 +294,51 @@ class TestFAGeneralMessageBody:
         assert body.humidify is False
         assert body.waterions is False
         assert body.display_on_off is False
+        assert body.fa_message_protocol == 0
+        assert body.error_code == 0
+        assert body.voice == 0
+        assert body.anion is False
+        assert body.anophelifuge is False
+        assert body.body_feeling_scan is False
+        assert body.scene == 0
+        assert body.humidify_feedback is None
+        assert body.temperature_feedback is None
+        assert body.target_temperature is None
+        assert body.target_humidity is None
         assert not hasattr(body, "mode")
+
+    def test_protocol_v5_body(self) -> None:
+        """Test protocol 5 fields, decoded to match the T_0000_FA_560000F3 lua."""
+        body = bytearray(36)
+        body[1] = 5  # error_code
+        body[2] = 0x04  # voice: open_buzzer
+        body[3] = 0x09  # child_lock on + auto_power_off_flag
+        body[4] = 0x0F  # power on, mode=7 (storm)
+        body[5] = 10  # fan_speed
+        body[6] = 61  # target_temperature raw (20C + 41)
+        body[7] = 55  # target_humidity
+        body[9] = 0x29  # anion on, anophelifuge off, humidify="1"
+        body[12] = 45  # humidify_feedback
+        body[13] = 59  # temperature_feedback raw (18C + 41)
+        body[15] = 1  # body_feeling_scan on
+        body[16] = 3  # scene: read
+        body[23] = 5  # protocol version
+        parsed = FAGeneralMessageBody(body)
+        assert parsed.fa_message_protocol == 5
+        assert parsed.child_lock is True
+        assert parsed.power is True
+        assert parsed.mode == 7
+        assert parsed.fan_speed == 10
+        assert parsed.target_temperature == 20
+        assert parsed.target_humidity == 55
+        assert parsed.error_code == 5
+        assert parsed.voice == 0x04
+        assert parsed.anion is True
+        assert parsed.anophelifuge is False
+        assert parsed.body_feeling_scan is True
+        assert parsed.scene == 3
+        assert parsed.humidify_feedback == 45
+        assert parsed.temperature_feedback == 18
 
 
 class TestMessageFAResponse:
