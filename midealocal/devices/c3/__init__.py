@@ -27,6 +27,10 @@ from .message import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Fallback target temperature bounds for a zone whose range is not (yet) reported.
+DEFAULT_ZONE_MIN_TARGET_TEMPERATURE = 5.0
+DEFAULT_ZONE_MAX_TARGET_TEMPERATURE = 60.0
+
 
 class DeviceAttributes(StrEnum):
     """Midea C3 device attributes."""
@@ -228,6 +232,55 @@ class MideaC3Device(MideaClimateDevice):
     def temperature_step(self) -> float | None:
         """Midea C3 device temperature step."""
         return self._temperature_step
+
+    def _require_zone(self, zone: int | None) -> int:
+        """Validate and return a zone index (C3 has one range per zone)."""
+        if zone is None:
+            raise ValueError("[C3] Parameter `zone` must be set")
+        if zone not in range(len(MideaC3Device._power_attributes)):
+            raise ValueError(
+                "[C3] Parameter `zone` must be between 0 "
+                f"and {len(MideaC3Device._power_attributes) - 1}",
+            )
+        return zone
+
+    def _zone_temperature_bound(
+        self,
+        attr: DeviceAttributes,
+        fallback: float,
+        zone: int | None,
+    ) -> float:
+        """Return ``attr``'s value for ``zone``, or ``fallback`` if unusable.
+
+        The device reports one entry per zone; a list shorter than two
+        entries, or a zone stuck at ``0.0``, means the range was not reported.
+        """
+        index = self._require_zone(zone)
+        values = self._attributes[attr]
+        if not isinstance(values, list) or len(values) < len(
+            MideaC3Device._power_attributes,
+        ):
+            return fallback
+        value = values[index]
+        return float(value) if value != 0.0 else fallback
+
+    @override
+    def min_temperature(self, zone: int | None = None) -> float:
+        """Midea C3 device minimum target temperature for a zone."""
+        return self._zone_temperature_bound(
+            DeviceAttributes.temperature_min,
+            DEFAULT_ZONE_MIN_TARGET_TEMPERATURE,
+            zone,
+        )
+
+    @override
+    def max_temperature(self, zone: int | None = None) -> float:
+        """Midea C3 device maximum target temperature for a zone."""
+        return self._zone_temperature_bound(
+            DeviceAttributes.temperature_max,
+            DEFAULT_ZONE_MAX_TARGET_TEMPERATURE,
+            zone,
+        )
 
     @property
     def silent_modes(self) -> list[str]:
