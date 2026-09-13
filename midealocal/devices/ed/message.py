@@ -713,6 +713,10 @@ class EDMessageBodyFF(MessageBody):
         super().__init__(body)
         data_offset = 2
         while True:
+            # every branch below reads up to data_offset + 6; check that
+            # range is in bounds before touching any of it, not after.
+            if data_offset + 6 >= len(body):
+                break
             length = (body[data_offset + 2] >> 4) + 2
             attr = ((body[data_offset + 2] % 16) << 8) + body[data_offset + 1]
             if attr == Attributes.CHILD_LOCK:
@@ -735,9 +739,6 @@ class EDMessageBodyFF(MessageBody):
                 self.life1 = body[data_offset + 3]
                 self.life2 = body[data_offset + 4]
                 self.life3 = body[data_offset + 5]
-            # fix index out of range error
-            if data_offset + length + 6 > len(body):
-                break
             data_offset += length
 
 
