@@ -708,7 +708,7 @@ class MideaACDevice(MideaClimateDevice):
         self._capabilities.update(new_capabilities)
         for cap in MideaACDevice._capabilities_attr:
             if not self._capabilities.get(cap, False):
-                self._attributes.pop(MideaACDevice._capabilities_attr[cap])
+                self._attributes.pop(MideaACDevice._capabilities_attr[cap], None)
         return {"capabilities": dict(self._capabilities)}
 
     def _refresh_self_clean_status(self, message: MessageACResponse) -> dict[str, Any]:
