@@ -88,7 +88,7 @@ class MessageNewProtocolSet(MessageE2Base):
         self.variable_heating: bool | None = None
         self.sterilization: bool | None = None
         self.whole_tank_heating: bool | None = None
-        self.protect: bool | None = None
+        self.protection: bool | None = None
         self.sleep: bool | None = None
         self.big_water: bool | None = None
         self.auto_off: bool | None = None
@@ -123,10 +123,10 @@ class MessageNewProtocolSet(MessageE2Base):
         elif self.sterilization is not None:
             byte12 = 0x0D
             byte13 = 0x01 if self.sterilization else 0x00
-        # protect
-        elif self.protect is not None:
+        # protection
+        elif self.protection is not None:
             byte12 = 0x05
-            byte13 = 0x01 if self.protect else 0x00
+            byte13 = 0x01 if self.protection else 0x00
         # sleep
         elif self.sleep is not None:
             byte12 = 0x0E
