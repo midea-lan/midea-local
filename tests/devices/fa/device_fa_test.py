@@ -642,6 +642,12 @@ class TestMideaFADevice:
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].scene == 0x04
 
+    def test_set_attribute_scene_unknown(self) -> None:
+        """Test set attribute scene is a no-op for an unrecognised name."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.scene.value, "not_a_scene")
+            mock_build_send.assert_not_called()
+
     def test_set_attribute_target_temperature(self) -> None:
         """Test set attribute target_temperature is sent through as a float."""
         with patch.object(self.device, "build_send") as mock_build_send:

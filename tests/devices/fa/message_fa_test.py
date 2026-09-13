@@ -307,6 +307,12 @@ class TestFAGeneralMessageBody:
         assert body.target_humidity is None
         assert not hasattr(body, "mode")
 
+    def test_anion_anophelifuge_default_on_short_body(self) -> None:
+        """Test anion and anophelifuge default to False with a short body."""
+        body = FAGeneralMessageBody(bytearray(9))
+        assert body.anion is False
+        assert body.anophelifuge is False
+
     def test_protocol_v5_body(self) -> None:
         """Test protocol 5 fields, decoded to match the T_0000_FA_560000F3 lua."""
         body = bytearray(36)
