@@ -332,10 +332,8 @@ class B0Message01Body(MessageBody):
             self.door = (body[32] & 0x02) > 0
             self.status = body[31]
             self.time_remaining = (
-                (0 if body[22] == MAX_BYTE_VALUE else body[22]) * 3600
-                + (0 if body[23] == MAX_BYTE_VALUE else body[23]) * 60
-                + (0 if body[24] == MAX_BYTE_VALUE else body[24])
-            )
+                0 if body[22] == MAX_BYTE_VALUE else body[22]
+            ) * 60 + (0 if body[23] == MAX_BYTE_VALUE else body[23])
             self.current_temperature = (body[25] << 8) + (body[26])
             if self.current_temperature == 0:
                 self.current_temperature = (body[27] << 8) + body[28]
@@ -355,10 +353,8 @@ class B0Message31Body(MessageBody):
             self.cloudmenuid = int.from_bytes(body[2:5], "big")
             self.total_step = body[5] / 16
             self.step_num = body[5]
-            self.time_remaining = (
-                (0 if body[6] == MAX_BYTE_VALUE else body[6]) * 3600
-                + (0 if body[7] == MAX_BYTE_VALUE else body[7]) * 60
-                + (0 if body[8] == MAX_BYTE_VALUE else body[8])
+            self.time_remaining = (0 if body[6] == MAX_BYTE_VALUE else body[6]) * 60 + (
+                0 if body[7] == MAX_BYTE_VALUE else body[7]
             )
             self.mode = body[9]
             # current_temperature

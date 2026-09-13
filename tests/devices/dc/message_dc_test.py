@@ -7,6 +7,7 @@ from midealocal.devices.dc.message import (
     MessageDCBase,
     MessagePower,
     MessageQuery,
+    MessageSetAISwitch,
     MessageStart,
 )
 from midealocal.message import ListTypes, MessageType
@@ -64,3 +65,30 @@ class TestMessageStart:
         """Test stop body."""
         msg = MessageStart(protocol_version=ProtocolVersion.V1)
         assert msg.body == bytearray([0x02, 0xFF, 0x00])
+
+
+class TestMessageSetAISwitch:
+    """Test DC Message Set AI Switch.
+
+    Byte offsets and the on/off AND-mask values (0xDF/0xCF) come
+    from the DC lua reference (T_0000_DC_5.lua): commandSpec's
+    ai_switch = {offset = 234, bits = 2} places it at byte-relative
+    index 18 (floor(234 / 8) + 1 - 12) within the 21-byte control
+    body, bit-offset 234 % 8 = 2, and bits2Config[2] maps off/on to
+    0xCF/0xDF.
+    """
+
+    def test_body_on(self) -> None:
+        """Test ai_switch on only touches byte 18 of the control body."""
+        msg = MessageSetAISwitch(protocol_version=ProtocolVersion.V1)
+        msg.ai_switch = True
+        expected = bytearray([0xFF] * 21)
+        expected[18] = 0xDF
+        assert msg.body == bytearray([0x02]) + expected
+
+    def test_body_off(self) -> None:
+        """Test ai_switch off only touches byte 18 of the control body."""
+        msg = MessageSetAISwitch(protocol_version=ProtocolVersion.V1)
+        expected = bytearray([0xFF] * 21)
+        expected[18] = 0xCF
+        assert msg.body == bytearray([0x02]) + expected

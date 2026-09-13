@@ -69,6 +69,49 @@ ac.set_swing(False, False)
 python3 -m midealocal.cli -h
 ```
 
+#### `midea-local.json` config file
+
+`python3 -m midealocal.cli save` writes your cloud username, password and
+cloud name to `midea-local.json` in the current directory (use `--user` to
+save it to your user config folder instead). Every `midealocal.cli` command
+then loads that file automatically, so you don't have to pass
+`--username`/`--password`/`--cloud-name` again.
+
+```json
+{
+  "username": "user@example.com",
+  "password": "your-cloud-password",
+  "cloud_name": "SmartHome"
+}
+```
+
+All fields are optional; only include what you need. Run
+`python3 -m midealocal.cli discover -h` for the full option list.
+
+#### `midea-devices.json` token/key cache
+
+Every device needs a token/key pair, normally fetched from the cloud on
+each run. `discover` caches the pair that successfully connects to a device
+in `midea-devices.json`, keyed by `device_id`, and tries that cached pair
+first on every later run — before contacting the cloud at all. In practice
+this means only the _first_ `discover`/`setattr` run for a given device
+needs your cloud credentials. If a cached key ever stops working (e.g. the
+device was re-paired), `discover` automatically falls back to fetching a
+fresh key from the cloud and updates the cache. The file is managed
+automatically; you don't need to create or edit it yourself.
+
+```json
+{
+  "devices": [
+    {
+      "device_id": "146235046630006",
+      "token": "...",
+      "key": "..."
+    }
+  ]
+}
+```
+
 ## Development
 
 This project uses [uv](https://docs.astral.sh/uv/) for its development environment.
