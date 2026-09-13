@@ -266,7 +266,6 @@ class CAExceptionMessageBody(MessageBody):
         self.storageTemperatureOverheating = body[3] & 0x04
         self.storageTemperatureTooLow = body[3] & 0x04
         self.storageHeatingWireSensorError = body[3] & 0x04
-        self.storageTemperatureTooLow = body[3] & 0x04
 
 
 class CANotify00MessageBody(MessageBody):
