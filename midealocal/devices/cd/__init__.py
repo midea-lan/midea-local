@@ -918,7 +918,7 @@ class MideaCDDevice(MideaDevice):
             tr_i = 0
         if tr_i < MessageSet.TR_VALUE_MIN or tr_i > MessageSet.TR_VALUE_MAX:
             clean.pop("trValue", None)
-        return {k: v for k, v in clean.items() if k == "trValue"}
+        return clean
 
     def set_customize(self, customize: str) -> None:
         """Midea CD device set customize."""

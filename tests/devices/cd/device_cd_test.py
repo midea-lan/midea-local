@@ -429,6 +429,25 @@ class TestMideaCDDevice:
         )
         assert clean == {}
 
+    def test_sanitize_set_fields_keeps_other_fields_with_valid_tr_value(self) -> None:
+        """Only openPTC/ptcTemp/byte8 are stripped; other fields must survive.
+
+        A prior bug filtered the return value down to trValue alone,
+        discarding mode/power/etc. so they were dropped from the next
+        SET frame instead of carrying over.
+        """
+        clean = MideaCDDevice._sanitize_set_fields(
+            {
+                "trValue": 4,
+                "openPTC": 1,
+                "ptcTemp": 2,
+                "byte8": 0x10,
+                "mode": 7,
+                "power": True,
+            },
+        )
+        assert clean == {"trValue": 4, "mode": 7, "power": True}
+
     def test_process_weekly_schedule_message(self) -> None:
         """A weekly schedule frame stores the parsed schedule."""
         body = bytearray(177)
