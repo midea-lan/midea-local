@@ -9,7 +9,7 @@ from midealocal.devices.cf import DeviceAttributes, MideaCFDevice
 from midealocal.devices.cf.message import MessageQuery, MessageSet
 from midealocal.exceptions import ValueWrongType
 from midealocal.message import MessageType
-from tests.base_classes_test import DummyHVACMode
+from tests.base_classes.climate_test import DummyHVACMode
 
 
 class TestMideaCFDevice:

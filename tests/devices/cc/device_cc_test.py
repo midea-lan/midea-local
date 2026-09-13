@@ -16,7 +16,7 @@ from midealocal.devices.cc.message import (
     MessageSet,
 )
 from midealocal.message import MessageType
-from tests.base_classes_test import DummyFanMode, DummyHVACMode, DummySwingMode
+from tests.base_classes.climate_test import DummyFanMode, DummyHVACMode, DummySwingMode
 
 
 def _build_message(message_type: MessageType, body: bytearray) -> bytes:
@@ -112,6 +112,23 @@ class TestMideaCCDevice:
         with patch.object(self.device, "set_attribute") as mock_set:
             self.device.set_preset_mode("eco")
         mock_set.assert_called_once_with(attr=DeviceAttributes.eco_mode, value=True)
+
+    def test_set_preset_mode_then_clear_immediately(self) -> None:
+        """An immediate set-then-clear reads back the just-set preset.
+
+        set_attribute() only builds/sends the wire command; it doesn't
+        update self._attributes, so preset_mode must be updated by
+        set_preset_mode() itself, or an immediate clear would see the
+        stale (pre-command) flags and skip sending the disable command.
+        """
+        with patch.object(self.device, "build_send"):
+            self.device.set_preset_mode("sleep")
+            assert self.device.preset_mode == "sleep"
+            assert self.device.get_attribute(DeviceAttributes.sleep_mode) is True
+
+            self.device.set_preset_mode("none")
+            assert self.device.preset_mode == "none"
+            assert self.device.get_attribute(DeviceAttributes.sleep_mode) is False
 
     def test_build_query(self) -> None:
         """Test build query."""

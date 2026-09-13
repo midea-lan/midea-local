@@ -17,7 +17,7 @@ from midealocal.devices.c3.message import (
     MessageQueryECO,
     MessageQuerySilence,
 )
-from tests.base_classes_test import DummyHVACMode
+from tests.base_classes.climate_test import DummyHVACMode
 
 
 class TestMideaC3Device:

@@ -9,7 +9,7 @@ from midealocal.const import ProtocolVersion
 from midealocal.devices.fb import DeviceAttributes, MideaFBDevice
 from midealocal.devices.fb.message import MessageQuery, MessageSet
 from midealocal.message import MessageType
-from tests.base_classes_test import DummyHVACMode
+from tests.base_classes.climate_test import DummyHVACMode
 
 
 class TestMideaFBDevice:

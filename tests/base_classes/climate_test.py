@@ -174,6 +174,21 @@ class TestMideaClimateDevice:
             device.set_preset_mode("boost")
         assert device.preset_mode == "none"
 
+        # switching directly between two presets (skipping "none") normalizes
+        # every flag, not just the one set_attribute() was called with --
+        # set_attribute() alone doesn't know to clear the other preset's flag
+        device.set_preset_mode("eco")
+        device.set_preset_mode("sleep")
+        assert device.preset_mode == "sleep"
+        assert device.get_attribute("eco_mode") is False
+        assert device.get_attribute("sleep_mode") is True
+
+        # and an immediate clear right after activating reads back correctly,
+        # since set_preset_mode() -- not set_attribute() -- caches the change
+        device.set_preset_mode("none")
+        assert device.preset_mode == "none"
+        assert device.get_attribute("sleep_mode") is False
+
     def test_mandatory_members_must_be_overridden(self) -> None:
         """Test a subclass missing a mandatory member can't be instantiated.
 

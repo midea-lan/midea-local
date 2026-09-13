@@ -253,6 +253,12 @@ class MideaClimateDevice(MideaDevice, ABC):
             raise ValueError(msg) from None
         if (attr := self._preset_attributes.get(requested)) is not None:
             self.set_attribute(attr=attr, value=True)
+            # set_attribute() only builds/sends the wire command; it doesn't
+            # update self._attributes, so an immediate follow-up read (or an
+            # immediate set_preset_mode(NONE)) would still see the old flags
+            # until the device's next status response.
+            for other_attr in self._preset_attributes.values():
+                self._attributes[other_attr] = other_attr == attr
             return
         if requested != MideaPreset.NONE:
             msg = f"Unsupported preset mode: {preset_mode}"
@@ -263,3 +269,4 @@ class MideaClimateDevice(MideaDevice, ABC):
             and (old_attr := self._preset_attributes.get(current)) is not None
         ):
             self.set_attribute(attr=old_attr, value=False)
+            self._attributes[old_attr] = False
