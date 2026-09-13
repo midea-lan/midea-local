@@ -263,10 +263,10 @@ class MideaClimateDevice(MideaDevice, ABC):
         if requested != MideaPreset.NONE:
             msg = f"Unsupported preset mode: {preset_mode}"
             raise ValueError(msg)
-        current = self.preset_mode
-        if (
-            current is not None
-            and (old_attr := self._preset_attributes.get(current)) is not None
-        ):
-            self.set_attribute(attr=old_attr, value=False)
-            self._attributes[old_attr] = False
+        # Clear every active flag, not just the one preset_mode() would
+        # report: if device state ever has more than one flag active at
+        # once, clearing only the first-found one would leave the rest on.
+        for old_attr in self._preset_attributes.values():
+            if self.get_attribute(old_attr):
+                self.set_attribute(attr=old_attr, value=False)
+                self._attributes[old_attr] = False

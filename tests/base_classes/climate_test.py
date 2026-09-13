@@ -189,6 +189,33 @@ class TestMideaClimateDevice:
         assert device.preset_mode == "none"
         assert device.get_attribute("sleep_mode") is False
 
+    def test_clear_preset_with_two_flags_active(self) -> None:
+        """Clearing disables every active flag, not just the first one found.
+
+        Real device state shouldn't have two preset flags active at once,
+        but if it ever does (a stale read, a wire quirk), preset_mode()
+        would only report one of them -- clearing must not stop there and
+        leave the other stuck on.
+        """
+        device = _FlagPresetClimateDevice(
+            device_type=DeviceType.AC,
+            attributes={"eco_mode": True, "sleep_mode": True},
+            name="Test Device",
+            device_id=4,
+            ip_address="192.168.1.4",
+            port=12345,
+            token="AA",
+            key="BB",
+            device_protocol=ProtocolVersion.V1,
+            model="test_model",
+            subtype=1,
+        )
+
+        device.set_preset_mode("none")
+        assert device.get_attribute("eco_mode") is False
+        assert device.get_attribute("sleep_mode") is False
+        assert device.preset_mode == "none"
+
     def test_mandatory_members_must_be_overridden(self) -> None:
         """Test a subclass missing a mandatory member can't be instantiated.
 
