@@ -17,6 +17,7 @@ import pytest
 from midealocal.cli import (
     MideaCLI,
     get_config_file_path,
+    get_devices_cache_path,
     main,
 )
 from midealocal.cloud import MideaAirCloud, SmartHomeCloud
@@ -210,6 +211,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         mock_device_instance.connect.return_value = True
         tmpdir = TemporaryDirectory()
         self.addCleanup(tmpdir.cleanup)
+        cache_file = Path(tmpdir.name) / "midea-devices.json"
         with (
             patch(
                 "midealocal.cli.discover",
@@ -229,7 +231,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             ) as refresh_status_mock,
             patch(
                 "midealocal.cli.get_devices_cache_path",
-                return_value=Path(tmpdir.name) / "midea-devices.json",
+                return_value=cache_file,
             ),
         ):
             mock_discover.return_value = {1: mock_device}
@@ -254,6 +256,10 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             await self.cli.discover()  # V3 device
             refresh_status_mock.assert_called_with(True)
             refresh_status_mock.reset_mock()
+            # the successful call above cached a key for this device; clear it
+            # so the failure scenarios below hit the cloud path fresh, with
+            # both candidate keys available.
+            cache_file.unlink()
 
             # V3 device where refresh_status raises: each failure is caught and
             # the device is simply not added to the list.
@@ -264,10 +270,12 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             refresh_status_mock.side_effect = [SocketException, None]
             await self.cli.discover()  # V3 device SocketException on first key
             refresh_status_mock.reset_mock()
+            cache_file.unlink()  # the second key succeeded and got cached
 
             refresh_status_mock.side_effect = [OSError, None]
             await self.cli.discover()  # V3 device OSError on first key
             refresh_status_mock.reset_mock()
+            cache_file.unlink()  # the second key succeeded and got cached
 
             mock_device["protocol"] = ProtocolVersion.V2
             refresh_status_mock.side_effect = None
@@ -1034,3 +1042,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             patch.object(mock_path, "exists", return_value=False),
         ):
             get_config_file_path()
+
+    def test_get_devices_cache_path(self) -> None:
+        """Test get devices cache path."""
+        assert get_devices_cache_path() == Path("midea-devices.json")
