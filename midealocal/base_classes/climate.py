@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from enum import IntEnum, StrEnum
-from typing import ClassVar, final
+from typing import final
 
 from midealocal.device import MideaDevice
 
@@ -47,9 +47,14 @@ class MideaClimateDevice(MideaDevice, ABC):
     routine read.
     """
 
-    # Flag-style presets: {generic preset name: boolean device attribute}.
-    # Devices with named string presets (fb) override the three methods below.
-    _preset_attributes: ClassVar[Mapping[MideaPreset, str]] = {}
+    @property
+    def _preset_attributes(self) -> Mapping[MideaPreset, str]:
+        """Flag-style presets: {generic preset name: boolean device attribute}.
+
+        Devices with named string presets (fb) override the three methods
+        below instead of this mapping.
+        """
+        return {}
 
     @property
     @abstractmethod
@@ -242,15 +247,16 @@ class MideaClimateDevice(MideaDevice, ABC):
             msg = "Preset mode is not supported by this device"
             raise NotImplementedError(msg)
         try:
-            requested: MideaPreset | None = MideaPreset(preset_mode)
+            requested = MideaPreset(preset_mode)
         except ValueError:
-            requested = None
-        if (
-            requested is not None
-            and (attr := self._preset_attributes.get(requested)) is not None
-        ):
+            msg = f"Unsupported preset mode: {preset_mode}"
+            raise ValueError(msg) from None
+        if (attr := self._preset_attributes.get(requested)) is not None:
             self.set_attribute(attr=attr, value=True)
             return
+        if requested != MideaPreset.NONE:
+            msg = f"Unsupported preset mode: {preset_mode}"
+            raise ValueError(msg)
         current = self.preset_mode
         if (
             current is not None

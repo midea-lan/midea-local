@@ -612,8 +612,29 @@ class TestMideaCCDeviceFEControl:
             assert mock_send.call_count == 2
             assert mock_send.call_args_list[0][0][0]._controls == [
                 (CCControlId.ECO, 1),
+                (CCControlId.SLEEP, 0),
             ]
             assert mock_send.call_args_list[1][0][0]._controls == [
+                (CCControlId.SLEEP, 0),
+            ]
+
+    def test_set_attribute_eco_and_sleep_are_mutually_exclusive(self) -> None:
+        """Activating eco/sleep clears the other flag in the same control frame.
+
+        Legacy C3 serialization does this in make_message_set(); the 0xFE
+        control path must match it so a sleep->eco transition (or the
+        reverse) doesn't leave both flags active on the panel.
+        """
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.sleep_mode.value, True)
+            self.device.set_attribute(DeviceAttributes.eco_mode.value, True)
+            assert mock_send.call_count == 2
+            assert mock_send.call_args_list[0][0][0]._controls == [
+                (CCControlId.SLEEP, 1),
+                (CCControlId.ECO, 0),
+            ]
+            assert mock_send.call_args_list[1][0][0]._controls == [
+                (CCControlId.ECO, 1),
                 (CCControlId.SLEEP, 0),
             ]
 

@@ -1,6 +1,6 @@
 """Midea Local shared base classes test."""
 
-from typing import ClassVar
+from collections.abc import Mapping
 
 import pytest
 
@@ -48,10 +48,12 @@ class _MinimalClimateDevice(MideaClimateDevice):
 class _FlagPresetClimateDevice(_MinimalClimateDevice):
     """A climate device using the shared flag-style preset implementation."""
 
-    _preset_attributes: ClassVar[dict[MideaPreset, str]] = {
-        MideaPreset.ECO: "eco_mode",
-        MideaPreset.SLEEP: "sleep_mode",
-    }
+    @property
+    def _preset_attributes(self) -> Mapping[MideaPreset, str]:
+        return {
+            MideaPreset.ECO: "eco_mode",
+            MideaPreset.SLEEP: "sleep_mode",
+        }
 
 
 class DummyFanMode(MideaFanMode):
@@ -163,10 +165,13 @@ class TestMideaClimateDevice:
         device.set_preset_mode("none")
         assert device.preset_mode == "none"
 
-        # a name outside MideaPreset entirely is treated like clearing
-        device.set_preset_mode("eco")
-        device.set_preset_mode("bogus")
-        assert device.get_attribute("eco_mode") is False
+        # a name outside MideaPreset entirely is rejected
+        with pytest.raises(ValueError, match="Unsupported preset mode: bogus"):
+            device.set_preset_mode("bogus")
+
+        # a MideaPreset this device doesn't support is also rejected
+        with pytest.raises(ValueError, match="Unsupported preset mode: boost"):
+            device.set_preset_mode("boost")
         assert device.preset_mode == "none"
 
     def test_mandatory_members_must_be_overridden(self) -> None:

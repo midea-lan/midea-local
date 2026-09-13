@@ -151,6 +151,9 @@ class TestMideaFBDevice:
             self.device.set_preset_mode("comfort")
         mock_set.assert_called_once_with(attr=DeviceAttributes.mode, value="comfort")
 
+        with pytest.raises(ValueError, match="Unsupported preset mode: bogus"):
+            self.device.set_preset_mode("bogus")
+
     @pytest.mark.parametrize(
         ("attr", "value"),
         [

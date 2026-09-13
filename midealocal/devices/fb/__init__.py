@@ -126,6 +126,9 @@ class MideaFBDevice(MideaClimateDevice):
     @override
     def set_preset_mode(self, preset_mode: str) -> None:
         """Midea FB device set preset mode."""
+        if preset_mode not in self.preset_modes:
+            msg = f"[fb] Unsupported preset mode: {preset_mode}"
+            raise ValueError(msg)
         self.set_attribute(attr=DeviceAttributes.mode, value=preset_mode)
 
     def build_query(self) -> list[MessageQuery]:

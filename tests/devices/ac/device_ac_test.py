@@ -324,6 +324,16 @@ class TestMideaACDevice:
             value=True,
         )
 
+    def test_preset_modes_bb_protocol_drops_comfort_and_away(self) -> None:
+        """BB (sub-protocol) devices can't serialize comfort_mode/frost_protect."""
+        self.device._used_subprotocol = True
+        assert list(self.device.preset_modes) == ["none", "eco", "boost", "sleep"]
+
+        with pytest.raises(ValueError, match="Unsupported preset mode: comfort"):
+            self.device.set_preset_mode("comfort")
+        with pytest.raises(ValueError, match="Unsupported preset mode: away"):
+            self.device.set_preset_mode("away")
+
     def test_build_query(self) -> None:
         """Test build query."""
         self.device._used_subprotocol = True

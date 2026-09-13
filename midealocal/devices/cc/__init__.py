@@ -1,7 +1,7 @@
 """Midea local CC device."""
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, override
 
@@ -87,11 +87,6 @@ class MideaCCDevice(MideaClimateDevice):
         DeviceSwingMode.ON,
     ]
 
-    _preset_attributes: ClassVar[dict[MideaPreset, str]] = {
-        MideaPreset.SLEEP: DeviceAttributes.sleep_mode,
-        MideaPreset.ECO: DeviceAttributes.eco_mode,
-    }
-
     def __init__(
         self,
         *,
@@ -124,6 +119,15 @@ class MideaCCDevice(MideaClimateDevice):
         self._fan_speeds: type[MideaFanMode] | None = None
         # set once a 0xFE-format response is seen; selects the VRF control path
         self._is_fe_format = False
+
+    @property
+    @override
+    def _preset_attributes(self) -> Mapping[MideaPreset, str]:
+        """Midea CC device presets."""
+        return {
+            MideaPreset.SLEEP: DeviceAttributes.sleep_mode,
+            MideaPreset.ECO: DeviceAttributes.eco_mode,
+        }
 
     @property
     @override
@@ -370,9 +374,15 @@ class MideaCCDevice(MideaClimateDevice):
             if (speed := self._fan_speed_code(str(value))) is not None:
                 self._send_fe_control([(CCControlId.FAN_SPEED, speed)])
         elif attr == DeviceAttributes.eco_mode:
-            self._send_fe_control([(CCControlId.ECO, 1 if value else 0)])
+            controls = [(CCControlId.ECO, 1 if value else 0)]
+            if value:
+                controls.append((CCControlId.SLEEP, 0))
+            self._send_fe_control(controls)
         elif attr == DeviceAttributes.sleep_mode:
-            self._send_fe_control([(CCControlId.SLEEP, 1 if value else 0)])
+            controls = [(CCControlId.SLEEP, 1 if value else 0)]
+            if value:
+                controls.append((CCControlId.ECO, 0))
+            self._send_fe_control(controls)
         elif attr == DeviceAttributes.swing:
             self._send_fe_control([(CCControlId.SWING, 0x06 if value else 0x00)])
         # other attributes are not supported by the 0xFE control protocol
