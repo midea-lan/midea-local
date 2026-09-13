@@ -588,6 +588,27 @@ class TestMideaACDevice:
 
         assert "capabilities" not in status
 
+    def test_removing_unsupported_capability_attribute_is_idempotent(self) -> None:
+        """Repeated removal of unsupported capability attribute must not crash.
+
+        Regression test: the first B5 frame pops the attribute for an
+        unsupported capability (e.g. rate_select); a later frame that changes a
+        *different* capability re-runs the removal loop and must not KeyError on
+        the already-removed attribute.
+        """
+        first = bytearray([0xB5, 0x03])
+        first += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode, no rate_select
+
+        self.device.process_message(self._response(first))
+        assert DeviceAttributes.rate_select not in self.device._attributes
+
+        second = bytearray([0xB5, 0x03])
+        second += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode
+        second += bytearray([0x1E, 0x02, 0x01, 1])  # b5_anion -> caps change
+
+        self.device.process_message(self._response(second))
+        assert DeviceAttributes.rate_select not in self.device._attributes
+
     def test_process_message(self) -> None:
         """Test process message."""
         with patch("midealocal.devices.ac.MessageACResponse") as mock_message_response:
