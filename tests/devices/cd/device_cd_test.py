@@ -415,12 +415,35 @@ class TestMideaCDDevice:
             "ptcTemp": 3,
             "byte8": 0x10,
         }
-        assert self.device.attributes[DeviceAttributes.power] is True
         assert self.device.attributes[DeviceAttributes.mode] == "standard"
         assert self.device.attributes[DeviceAttributes.target_temperature] == 40
         assert self.device.attributes[DeviceAttributes.vacation_mode] is True
         assert self.device.attributes[DeviceAttributes.vacation_days] == 30
         assert new_status[DeviceAttributes.vacation_days.value] == 30
+
+    def test_process_set_echo_does_not_clobber_power(self) -> None:
+        """A SET echo's power bit is distrusted; a trusted ON state survives it.
+
+        Otherwise a stale/incorrect echoed power=False would be replayed
+        into the next temperature/mode SET frame, silently switching the
+        unit off (midea_ac_lan#768).
+        """
+        self.device._attributes[DeviceAttributes.power] = True
+        body = bytearray([0x01, 0x01, 0x00, 0x02, 110, 1, 2, 3, 0x10, 0x00, 30])
+        new_status = self.device.process_message(
+            _build_message(MessageType.set, body),
+        )
+        assert self.device.attributes[DeviceAttributes.power] is True
+        assert DeviceAttributes.power.value not in new_status
+
+    def test_process_status_frame_still_updates_power(self) -> None:
+        """A genuine status/notify frame still updates power normally."""
+        self.device._attributes[DeviceAttributes.power] = False
+        new_status = self.device.process_message(
+            _build_message(MessageType.notify2, _general_body()),
+        )
+        assert self.device.attributes[DeviceAttributes.power] is True
+        assert new_status[DeviceAttributes.power.value] is True
 
     def test_sanitize_set_fields_drops_unconvertible_tr_value(self) -> None:
         """A non-numeric trValue echo is dropped instead of raising."""
