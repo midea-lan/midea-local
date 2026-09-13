@@ -14,7 +14,6 @@ X01_FLAGS_OFFSET = 32
 X01_MIN_BODY_LENGTH = X01_FLAGS_OFFSET + 1
 X01_TIME_REMAINING_HOURS_OFFSET = 22
 X01_TIME_REMAINING_MINUTES_OFFSET = 23
-X01_TIME_REMAINING_SECONDS_OFFSET = 24
 X01_TEMPERATURE_HIGH_OFFSET = 25
 X01_TEMPERATURE_LOW_OFFSET = 26
 X01_TEMPERATURE_FALLBACK_HIGH_OFFSET = 27
@@ -92,10 +91,8 @@ class B1MessageBody(MessageBody):
         super().__init__(body)
         self.door = (body[16] & 0x02) > 0
         self.status = body[1]
-        self.time_remaining = (
-            (0 if body[6] == MAX_BYTE_VALUE else body[6]) * 3600
-            + (0 if body[7] == MAX_BYTE_VALUE else body[7]) * 60
-            + (0 if body[8] == MAX_BYTE_VALUE else body[8])
+        self.time_remaining = (0 if body[6] == MAX_BYTE_VALUE else body[6]) * 60 + (
+            0 if body[7] == MAX_BYTE_VALUE else body[7]
         )
         self.current_temperature = body[19]
         self.tank_ejected = (body[16] & 0x04) > 0
@@ -122,23 +119,13 @@ class B1Message01Body(MessageBody):
             self.door = (body[X01_FLAGS_OFFSET] & 0x02) > 0
             self.status = body[X01_STATUS_OFFSET]
             self.time_remaining = (
-                (
-                    0
-                    if body[X01_TIME_REMAINING_HOURS_OFFSET] == MAX_BYTE_VALUE
-                    else body[X01_TIME_REMAINING_HOURS_OFFSET]
-                )
-                * 3600
-                + (
-                    0
-                    if body[X01_TIME_REMAINING_MINUTES_OFFSET] == MAX_BYTE_VALUE
-                    else body[X01_TIME_REMAINING_MINUTES_OFFSET]
-                )
-                * 60
-                + (
-                    0
-                    if body[X01_TIME_REMAINING_SECONDS_OFFSET] == MAX_BYTE_VALUE
-                    else body[X01_TIME_REMAINING_SECONDS_OFFSET]
-                )
+                0
+                if body[X01_TIME_REMAINING_HOURS_OFFSET] == MAX_BYTE_VALUE
+                else body[X01_TIME_REMAINING_HOURS_OFFSET]
+            ) * 60 + (
+                0
+                if body[X01_TIME_REMAINING_MINUTES_OFFSET] == MAX_BYTE_VALUE
+                else body[X01_TIME_REMAINING_MINUTES_OFFSET]
             )
             self.current_temperature = (body[X01_TEMPERATURE_HIGH_OFFSET] << 8) + body[
                 X01_TEMPERATURE_LOW_OFFSET

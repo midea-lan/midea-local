@@ -77,10 +77,8 @@ class MessageBFBody(MessageBody):
         """Initialize BF message body."""
         super().__init__(body)
         self.status = body[31]
-        self.time_remaining = (
-            (0 if body[22] == MAX_BYTE_VALUE else body[22]) * 3600
-            + (0 if body[23] == MAX_BYTE_VALUE else body[23]) * 60
-            + (0 if body[24] == MAX_BYTE_VALUE else body[24])
+        self.time_remaining = (0 if body[22] == MAX_BYTE_VALUE else body[22]) * 60 + (
+            0 if body[23] == MAX_BYTE_VALUE else body[23]
         )
         cur_temperature = body[25] * 256 + body[26]
         if cur_temperature == 0:

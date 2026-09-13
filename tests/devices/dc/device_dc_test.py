@@ -6,9 +6,14 @@ import pytest
 
 from midealocal.const import ProtocolVersion
 from midealocal.devices.dc import DeviceAttributes, MideaDCDevice
-from midealocal.devices.dc.message import MessagePower, MessageQuery, MessageStart
+from midealocal.devices.dc.message import (
+    MessagePower,
+    MessageQuery,
+    MessageSetAISwitch,
+    MessageStart,
+)
 from midealocal.exceptions import ValueWrongType
-from midealocal.message import MessageType
+from midealocal.message import ListTypes, MessageType
 
 
 class TestMideaDCDevice:
@@ -91,7 +96,7 @@ class TestMideaDCDevice:
         assert self.device.attributes[DeviceAttributes.dry_temperature] == 4
         assert self.device.attributes[DeviceAttributes.error_code] == 5
         assert self.device.attributes[DeviceAttributes.door_warn] == 6
-        assert self.device.attributes[DeviceAttributes.ai_switch] == 7
+        assert self.device.attributes[DeviceAttributes.ai_switch] is True
         assert self.device.attributes[DeviceAttributes.material] == 8
         assert self.device.attributes[DeviceAttributes.water_box] == 9
         assert self.device.attributes[DeviceAttributes.washing_data] == body[3:15]
@@ -127,6 +132,7 @@ class TestMideaDCDevice:
         assert self.device.attributes[DeviceAttributes.program] == 99
         assert self.device.attributes[DeviceAttributes.progress] is None
         assert self.device.attributes[DeviceAttributes.time_remaining] is None
+        assert self.device.attributes[DeviceAttributes.ai_switch] is False
 
     def test_unexpected_response(self) -> None:
         """Test notify1 response with unexpected body type updates no attribute."""
@@ -161,8 +167,30 @@ class TestMideaDCDevice:
     def test_set_attribute_not_supported(self) -> None:
         """Test set attribute with an unsupported attribute does not send."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.ai_switch.value, True)
+            self.device.set_attribute(DeviceAttributes.door_warn.value, True)
             mock_build_send.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("ai_switch", "expected_byte"),
+        [(True, 0xDF), (False, 0xCF)],
+    )
+    def test_set_attribute_ai_switch(
+        self,
+        ai_switch: bool,
+        expected_byte: int,
+    ) -> None:
+        """Test set attribute ai_switch sends a full 21-byte control body."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.ai_switch.value, ai_switch)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert isinstance(message, MessageSetAISwitch)
+            assert message.ai_switch is ai_switch
+            body = message.body
+            assert len(body) == 22
+            expected = bytearray([0xFF] * 21)
+            expected[18] = expected_byte
+            assert body == bytearray([ListTypes.X02]) + expected
 
     def test_set_attribute_wrong_type(self) -> None:
         """Test set attribute with a non-bool value raises and does not send."""
