@@ -1,5 +1,36 @@
 # Changelog
 
+## [12.0.0](https://github.com/midea-lan/midea-local/compare/v11.0.1...v12.0.0) (2026-09-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* **b0:** correct hot_steam mode typo ([#789](https://github.com/midea-lan/midea-local/issues/789))
+
+### Features
+
+* add preset modes to MideaClimateDevice ([#765](https://github.com/midea-lan/midea-local/issues/765)) ([9a27658](https://github.com/midea-lan/midea-local/commit/9a27658ce536cebd8938ad45a6109d8fddf70e9c))
+* add target temperature bounds to MideaClimateDevice ([#764](https://github.com/midea-lan/midea-local/issues/764)) ([7e1b781](https://github.com/midea-lan/midea-local/commit/7e1b78144c2da3b0c8def50caa628a4f62752c35))
+* **dc:** add "ai_switch" write support ([#769](https://github.com/midea-lan/midea-local/issues/769)) ([957f758](https://github.com/midea-lan/midea-local/commit/957f758c5226960c228e2421334b2a2399d22641))
+* **fa:** add protocol 5 support  ([#775](https://github.com/midea-lan/midea-local/issues/775)) ([b9d4572](https://github.com/midea-lan/midea-local/commit/b9d4572216c77e6ae53be8d2327515d5c622774f))
+
+
+### Bug Fixes
+
+* **ac:** make capability attribute removal idempotent ([#787](https://github.com/midea-lan/midea-local/issues/787)) ([cc3aeb7](https://github.com/midea-lan/midea-local/commit/cc3aeb7216d9a1ded6169d0642c90adb54ab93a2))
+* **ac:** treat 0xFF indoor humidity as unavailable ([#762](https://github.com/midea-lan/midea-local/issues/762)) ([257c2c7](https://github.com/midea-lan/midea-local/commit/257c2c7c56253361a478b00ae43a8c07cdce56b1))
+* **b0:** correct hot_steam mode typo ([#789](https://github.com/midea-lan/midea-local/issues/789)) ([5b4505e](https://github.com/midea-lan/midea-local/commit/5b4505eab913ddc0ae81df13304c8d781262ebac))
+* **b4:** read water status flags from the correct body offset ([#759](https://github.com/midea-lan/midea-local/issues/759)) ([58dd991](https://github.com/midea-lan/midea-local/commit/58dd9911ad9ff18704bcc57557eb632c9a7196a4))
+* **c3:** use 24-bit shift for uint32 energy fields ([#779](https://github.com/midea-lan/midea-local/issues/779)) ([8900e1a](https://github.com/midea-lan/midea-local/commit/8900e1a6a64c950b7e305e2f307d4435ba7eb93a))
+* **cd:** don't let SET echo clobber power state ([#776](https://github.com/midea-lan/midea-local/issues/776)) ([fd21bd0](https://github.com/midea-lan/midea-local/commit/fd21bd04d110b42c64f36a454cfaadb5ee8183ba)), closes [#527](https://github.com/midea-lan/midea-local/issues/527)
+* **cd:** match controlType=0x01 SET body to lua/cd plugins ([#760](https://github.com/midea-lan/midea-local/issues/760)) ([c2c025e](https://github.com/midea-lan/midea-local/commit/c2c025eed2f2f73ffbbfef591bf678293553d159))
+* **ce:** parenthesize humidity/hcho division to include high byte ([#780](https://github.com/midea-lan/midea-local/issues/780)) ([63b1242](https://github.com/midea-lan/midea-local/commit/63b1242742c5d6f441937801d9114828273c5657))
+* **dc:** report "door_warn" as bool ([#770](https://github.com/midea-lan/midea-local/issues/770)) ([94e7edf](https://github.com/midea-lan/midea-local/commit/94e7edf4f55ebec271a3699313a7516cf106a994))
+* **e2:** rename protect to protection to match DeviceAttributes ([#784](https://github.com/midea-lan/midea-local/issues/784)) ([546cac8](https://github.com/midea-lan/midea-local/commit/546cac87f9fb43c904069ac5c20e85075e86af05))
+* **fb:** reject unrecognized mode instead of sending mode=0 ([#788](https://github.com/midea-lan/midea-local/issues/788)) ([0167530](https://github.com/midea-lan/midea-local/commit/0167530f655159f0282748b88d06ce6c630451ee))
+* normalize "time_remaining" to minutes ([#768](https://github.com/midea-lan/midea-local/issues/768)) ([967b2b2](https://github.com/midea-lan/midea-local/commit/967b2b2357e896bfd320123567913835680eca37))
+* **x13:** clamp negative effect index ([#785](https://github.com/midea-lan/midea-local/issues/785)) ([22d92b0](https://github.com/midea-lan/midea-local/commit/22d92b0080cc2d6d3e46cf3ceb40287d820e69c8))
+
 ## [11.0.1](https://github.com/midea-lan/midea-local/compare/v11.0.0...v11.0.1) (2026-09-05)
 
 
