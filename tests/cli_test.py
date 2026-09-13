@@ -9,7 +9,7 @@ import warnings
 from argparse import Namespace
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase, skipIf
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -595,6 +595,10 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             ):
                 self.cli._cache_device_keys(1, {"token": "tok", "key": "key"})
 
+    @skipIf(
+        sys.platform == "win32",
+        "Windows has no POSIX permission bits for chmod to set.",
+    )
     def test_cache_device_keys_sets_owner_only_permissions(self) -> None:
         """Test the cache file is written with owner-only (0600) permissions."""
         with TemporaryDirectory() as tmpdir:
