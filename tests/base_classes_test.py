@@ -163,6 +163,12 @@ class TestMideaClimateDevice:
         device.set_preset_mode("none")
         assert device.preset_mode == "none"
 
+        # a name outside MideaPreset entirely is treated like clearing
+        device.set_preset_mode("eco")
+        device.set_preset_mode("bogus")
+        assert device.get_attribute("eco_mode") is False
+        assert device.preset_mode == "none"
+
     def test_mandatory_members_must_be_overridden(self) -> None:
         """Test a subclass missing a mandatory member can't be instantiated.
 
