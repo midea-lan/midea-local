@@ -6,9 +6,14 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
+from midealocal.device import (
+    MideaDevice,
+    MideaDeviceInitKwargs,
+    dict_translator,
+    list_translator,
+)
 
-from .message import MessageFAResponse, MessageQuery, MessageSet
+from .message import PROTOCOL_V5, MessageFAResponse, MessageQuery, MessageSet
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,6 +35,16 @@ class DeviceAttributes(StrEnum):
     humidify = "humidify"
     waterions = "waterions"
     display_on_off = "display_on_off"
+    error_code = "error_code"
+    voice = "voice"
+    scene = "scene"
+    anion = "anion"
+    anophelifuge = "anophelifuge"
+    body_feeling_scan = "body_feeling_scan"
+    humidify_feedback = "humidify_feedback"
+    temperature_feedback = "temperature_feedback"
+    target_temperature = "target_temperature"
+    target_humidity = "target_humidity"
 
 
 class MideaFADevice(MideaDevice):
@@ -80,6 +95,46 @@ class MideaFADevice(MideaDevice):
         "warm",
         "smart",
     ]
+    # Protocol 5 (T_0000_FA_560000F3_2023011001.lua) reports mode as a raw
+    # 1..20 index in a 5-bit field, unlike protocol 0's 4-bit "index + 1".
+    _modes_v5: ClassVar[dict[int, str]] = {
+        1: "normal",
+        2: "natural",
+        3: "sleep",
+        4: "comfort",
+        5: "mute",
+        6: "baby",
+        7: "feel",
+        8: "storm",
+        9: "strong",
+        10: "soft",
+        11: "customize",
+        12: "warm",
+        13: "smart",
+        14: "ionic",
+        15: "ai_smart",
+        16: "double_area",
+        17: "purified_wind",
+        18: "sleeping_wind",
+        19: "purify_only",
+        20: "self_selection",
+    }
+    _voice: ClassVar[dict[int, str]] = {
+        0x01: "open_gps",
+        0x02: "close_gps",
+        0x04: "open_buzzer",
+        0x05: "open_tips",
+        0x08: "close_buzzer",
+        0x0A: "mute",
+    }
+    _scene: ClassVar[dict[int, str]] = {
+        0x00: "none",
+        0x01: "old",
+        0x02: "child",
+        0x03: "read",
+        0x04: "sleep",
+        0x05: "ac",
+    }
 
     def __init__(
         self,
@@ -103,11 +158,22 @@ class MideaFADevice(MideaDevice):
                 DeviceAttributes.waterions: False,
                 DeviceAttributes.display_on_off: False,
                 DeviceAttributes.oscillation_mode: None,
+                DeviceAttributes.error_code: None,
+                DeviceAttributes.voice: None,
+                DeviceAttributes.scene: None,
+                DeviceAttributes.anion: False,
+                DeviceAttributes.anophelifuge: False,
+                DeviceAttributes.body_feeling_scan: False,
+                DeviceAttributes.humidify_feedback: None,
+                DeviceAttributes.temperature_feedback: None,
+                DeviceAttributes.target_temperature: None,
+                DeviceAttributes.target_humidity: None,
             },
         )
         self._default_speed_count = 3
         self._speed_count: int = self._default_speed_count
         self._mode_set_overrides: dict[int, int] = {}
+        self._fa_protocol: int = 0
         self.set_customize(customize)
 
     @property
@@ -133,16 +199,29 @@ class MideaFADevice(MideaDevice):
     @property
     def preset_modes(self) -> list[str]:
         """Return a list of preset modes."""
+        if self._fa_protocol == PROTOCOL_V5:
+            return list(MideaFADevice._modes_v5.values())
         return self._modes
 
     def build_query(self) -> list[MessageQuery]:
         """Midea FA device build query."""
         return [MessageQuery(self._message_protocol_version)]
 
+    def _new_set_message(self) -> MessageSet:
+        """Build a MessageSet carrying the last-seen protocol version.
+
+        Needed so `_body` can pick the matching mode encoding (protocol 5's
+        5-bit raw table index vs protocol 0's 4-bit "index + 1").
+        """
+        message = MessageSet(self._message_protocol_version, self.subtype)
+        message.fa_message_protocol = self._fa_protocol
+        return message
+
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea FA device process message."""
         message = MessageFAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
+        self._fa_protocol = getattr(message, "fa_message_protocol", 0)
 
         forced_fan_speed_reset = False
 
@@ -158,6 +237,11 @@ class MideaFADevice(MideaDevice):
         def _translate_fan_speed(value: int) -> int:
             return 0 if not self._attributes[DeviceAttributes.power] else value
 
+        def _translate_mode(value: int) -> str | None:
+            if self._fa_protocol == PROTOCOL_V5:
+                return MideaFADevice._modes_v5.get(value)
+            return list_translator(MideaFADevice._modes)(value)
+
         new_status = self.update_attributes_from_message(
             message,
             {
@@ -170,9 +254,11 @@ class MideaFADevice(MideaDevice):
                 DeviceAttributes.oscillation_mode: list_translator(
                     MideaFADevice._oscillation_modes,
                 ),
-                DeviceAttributes.mode: list_translator(MideaFADevice._modes),
+                DeviceAttributes.mode: _translate_mode,
                 DeviceAttributes.power: _translate_power,
                 DeviceAttributes.fan_speed: _translate_fan_speed,
+                DeviceAttributes.voice: dict_translator(MideaFADevice._voice),
+                DeviceAttributes.scene: dict_translator(MideaFADevice._scene),
             },
         )
         if forced_fan_speed_reset:
@@ -268,7 +354,7 @@ class MideaFADevice(MideaDevice):
         message: MessageSet | None = None
         if self._attributes[attr] != value:
             if attr == DeviceAttributes.oscillate:
-                message = MessageSet(self._message_protocol_version, self.subtype)
+                message = self._new_set_message()
                 message.oscillate = bool(value)
                 if value:
                     message.oscillation_angle = 3  # 90
@@ -276,17 +362,17 @@ class MideaFADevice(MideaDevice):
             elif attr == DeviceAttributes.oscillation_mode and (
                 value in MideaFADevice._oscillation_modes or not value
             ):
-                message = MessageSet(self._message_protocol_version, self.subtype)
+                message = self._new_set_message()
                 self._set_oscillation_mode(message, str(value))
             elif attr == DeviceAttributes.oscillation_angle and (
                 value in MideaFADevice._oscillation_angles or not value
             ):
-                message = MessageSet(self._message_protocol_version, self.subtype)
+                message = self._new_set_message()
                 self._set_oscillation_angle(message, str(value))
             elif attr == DeviceAttributes.tilting_angle and (
                 value in MideaFADevice._tilting_angles or not value
             ):
-                message = MessageSet(self._message_protocol_version, self.subtype)
+                message = self._new_set_message()
                 self._set_tilting_angle(message, str(value))
         return message
 
@@ -305,30 +391,59 @@ class MideaFADevice(MideaDevice):
             and int(value) > 0
             and not self._attributes[DeviceAttributes.power]
         ):
-            message = MessageSet(self._message_protocol_version, self.subtype)
+            message = self._new_set_message()
             message.fan_speed = int(value)
             message.power = True
         elif attr == DeviceAttributes.mode:
-            if value in MideaFADevice._modes:
-                message = MessageSet(self._message_protocol_version, self.subtype)
-                message.mode = MideaFADevice._modes.index(str(value))
+            mode_value = self._mode_index(str(value))
+            if mode_value is not None:
+                message = self._new_set_message()
+                message.mode = mode_value
                 message.mode_set_overrides = self._mode_set_overrides
+        elif attr == DeviceAttributes.voice:
+            voice_value = self._reverse_lookup(MideaFADevice._voice, str(value))
+            if voice_value is not None:
+                message = self._new_set_message()
+                message.voice = voice_value
+        elif attr == DeviceAttributes.scene:
+            scene_value = self._reverse_lookup(MideaFADevice._scene, str(value))
+            if scene_value is not None:
+                message = self._new_set_message()
+                message.scene = scene_value
         elif not (attr == DeviceAttributes.fan_speed and value == 0):
-            message = MessageSet(self._message_protocol_version, self.subtype)
+            message = self._new_set_message()
             setattr(message, str(attr), value)
         if message is not None:
             self.build_send(message)
 
     def turn_on(self, fan_speed: int | None = None, mode: str | None = None) -> None:
         """Turn on the device."""
-        message = MessageSet(self._message_protocol_version, self.subtype)
+        message = self._new_set_message()
         message.power = True
         if fan_speed is not None:
             message.fan_speed = fan_speed
-        if mode is not None and mode in MideaFADevice._modes:
-            message.mode = MideaFADevice._modes.index(mode)
-            message.mode_set_overrides = self._mode_set_overrides
+        if mode is not None:
+            mode_value = self._mode_index(mode)
+            if mode_value is not None:
+                message.mode = mode_value
+                message.mode_set_overrides = self._mode_set_overrides
         self.build_send(message)
+
+    def _mode_index(self, value: str) -> int | None:
+        """Return the raw mode value to send for `value`, or None if unknown."""
+        if self._fa_protocol == PROTOCOL_V5:
+            return self._reverse_lookup(MideaFADevice._modes_v5, value)
+        if value in MideaFADevice._modes:
+            return MideaFADevice._modes.index(value)
+        return None
+
+    @staticmethod
+    def _reverse_lookup(mapping: dict[int, str], value: str) -> int | None:
+        """Return the raw key whose mapped name matches `value`, or None."""
+        for raw, name in mapping.items():
+            if name == value:
+                return raw
+        return None
 
     def _parse_mode_set_overrides(
         self,

@@ -6,7 +6,7 @@ import pytest
 
 from midealocal.const import ProtocolVersion
 from midealocal.devices.fa import DeviceAttributes, MideaFADevice
-from midealocal.devices.fa.message import MessageQuery
+from midealocal.devices.fa.message import PROTOCOL_V5, MessageQuery
 from midealocal.message import MessageType
 
 
@@ -551,3 +551,108 @@ class TestMideaFADevice:
         """Test a float that is a whole number is still a usable byte."""
         self.device.set_customize('{"mode_set_overrides": {"3": 41.0}}')
         assert self.device._mode_set_overrides == {3: 41}
+
+    def _receive_protocol_v5_status(self) -> None:
+        """Push a protocol-5 status message so the device tracks _fa_protocol."""
+        body = bytearray(36)
+        body[4] = 0x0F  # power on, mode raw 7 -> "feel"
+        body[23] = PROTOCOL_V5
+        self.device.process_message(
+            _build_message(ProtocolVersion.V1, MessageType.query, body),
+        )
+
+    def test_protocol_v5_status_switches_mode_table(self) -> None:
+        """A protocol-5 status message uses the extended mode table."""
+        assert self.device.preset_modes == self.device._modes
+        self._receive_protocol_v5_status()
+        assert self.device._fa_protocol == PROTOCOL_V5
+        assert self.device.attributes[DeviceAttributes.mode] == "feel"
+        assert self.device.preset_modes == list(
+            MideaFADevice._modes_v5.values(),
+        )
+        assert "self_selection" in self.device.preset_modes
+
+    def test_protocol_v5_status_common_fields(self) -> None:
+        """A protocol-5 status message decodes the fields shared with protocol 0."""
+        body = bytearray(36)
+        body[1] = 5  # error_code
+        body[2] = 0x04  # voice: open_buzzer
+        body[6] = 61  # target_temperature raw (20C)
+        body[7] = 55  # target_humidity
+        body[9] = 0x05  # anion on, anophelifuge on
+        body[15] = 1  # body_feeling_scan on
+        body[16] = 3  # scene: read
+        body[23] = PROTOCOL_V5
+        self.device.process_message(
+            _build_message(ProtocolVersion.V1, MessageType.query, body),
+        )
+        assert self.device.attributes[DeviceAttributes.error_code] == 5
+        assert self.device.attributes[DeviceAttributes.voice] == "open_buzzer"
+        assert self.device.attributes[DeviceAttributes.scene] == "read"
+        assert self.device.attributes[DeviceAttributes.target_temperature] == 20
+        assert self.device.attributes[DeviceAttributes.target_humidity] == 55
+        assert self.device.attributes[DeviceAttributes.anion] is True
+        assert self.device.attributes[DeviceAttributes.anophelifuge] is True
+        assert self.device.attributes[DeviceAttributes.body_feeling_scan] is True
+
+    def test_set_attribute_mode_protocol_v5(self) -> None:
+        """Test set attribute mode sends the raw table index on protocol 5."""
+        self._receive_protocol_v5_status()
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.mode.value, "self_selection")
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.mode == 20
+            assert message.fa_message_protocol == PROTOCOL_V5
+
+    def test_set_attribute_mode_protocol_v5_unknown(self) -> None:
+        """Test set attribute mode is a no-op for a name unknown to protocol 5."""
+        self._receive_protocol_v5_status()
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.mode.value, "induction")
+            mock_build_send.assert_not_called()
+
+    def test_turn_on_protocol_v5_mode(self) -> None:
+        """Test turn_on resolves the mode name through the protocol-5 table."""
+        self._receive_protocol_v5_status()
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.turn_on(mode="self_selection")
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.power is True
+            assert message.mode == 20
+
+    def test_set_attribute_voice(self) -> None:
+        """Test set attribute voice resolves the friendly name to its raw byte."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.voice.value, "open_buzzer")
+            mock_build_send.assert_called_once()
+            assert mock_build_send.call_args[0][0].voice == 0x04
+
+    def test_set_attribute_voice_unknown(self) -> None:
+        """Test set attribute voice is a no-op for an unrecognised name."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.voice.value, "not_a_voice")
+            mock_build_send.assert_not_called()
+
+    def test_set_attribute_scene(self) -> None:
+        """Test set attribute scene resolves the friendly name to its raw byte."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.scene.value, "sleep")
+            mock_build_send.assert_called_once()
+            assert mock_build_send.call_args[0][0].scene == 0x04
+
+    def test_set_attribute_scene_unknown(self) -> None:
+        """Test set attribute scene is a no-op for an unrecognised name."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.scene.value, "not_a_scene")
+            mock_build_send.assert_not_called()
+
+    def test_set_attribute_target_temperature(self) -> None:
+        """Test set attribute target_temperature is sent through as a float."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.target_temperature.value, 22)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.target_temperature == 22
+            assert message._body[5] == 63
