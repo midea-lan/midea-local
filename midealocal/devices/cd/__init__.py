@@ -13,6 +13,7 @@ from midealocal.device import (
     MideaDeviceInitKwargs,
     sentinel_translator,
 )
+from midealocal.message import MessageType
 
 from .message import (
     DailyTimerSchedule,
@@ -412,6 +413,23 @@ class MideaCDDevice(MideaDevice):
 
         return _translate
 
+    def _make_power_translator(self, message: object) -> Callable[[bool], Any]:
+        """Distrust the power bit from a SET echo.
+
+        CD01MessageBody (controlType=0x01 SET response echo) parses power
+        straight from the echoed body regardless of whether it reflects
+        real device state. A stale/incorrect echoed value would otherwise
+        be stored and then replayed into the next temperature/mode SET
+        frame, silently switching the unit off. Genuine status/notify/query
+        frames still update power normally.
+        """
+        is_set_echo = getattr(message, "message_type", None) == MessageType.set
+
+        def _translate(value: bool) -> Any:  # noqa: ANN401
+            return SKIP_ATTRIBUTE if is_set_echo else value
+
+        return _translate
+
     def _mode_key(self, value: str) -> int | None:
         """Return the protocol key from the capability-selected mode map."""
         return next(
@@ -537,6 +555,8 @@ class MideaCDDevice(MideaDevice):
                 # corrupting the displayed mode; the next status notification
                 # will correct it.
                 DeviceAttributes.mode: self._make_mode_translator(message),
+                # Distrust a SET echo's power bit; see _make_power_translator.
+                DeviceAttributes.power: self._make_power_translator(message),
                 **{
                     attr: self._make_temperature_translator(attr)
                     for attr in temperature_attrs
