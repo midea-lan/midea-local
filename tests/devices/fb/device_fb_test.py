@@ -126,13 +126,16 @@ class TestMideaFBDevice:
             assert message.mode == 0x02
 
     def test_set_attribute_mode_invalid(self) -> None:
-        """Test set attribute mode with an invalid mode name leaves mode unset."""
+        """Test set attribute mode with an invalid mode name is rejected.
+
+        Previously an unrecognized mode still reached build_send with
+        mode left at None, which MessageSet.body then encodes as a real
+        mode=0 byte on the wire instead of the write being rejected.
+        """
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.mode.value, "invalid")
-            mock_build_send.assert_called_once()
-            message = mock_build_send.call_args[0][0]
-            assert isinstance(message, MessageSet)
-            assert message.mode is None
+            with pytest.raises(ValueError, match="Unsupported mode"):
+                self.device.set_attribute(DeviceAttributes.mode.value, "invalid")
+            mock_build_send.assert_not_called()
 
     @pytest.mark.parametrize(
         ("attr", "value"),
