@@ -604,19 +604,45 @@ class TestMideaCCDeviceFEControl:
             self.device.set_attribute(DeviceAttributes.fan_speed.value, "Bogus")
             mock_send.assert_not_called()
 
-    def test_set_attribute_eco_and_sleep(self) -> None:
-        """FE eco and sleep controls carry the boolean value."""
+    @pytest.mark.parametrize(
+        ("attr", "value", "expected_controls"),
+        [
+            pytest.param(
+                DeviceAttributes.eco_mode,
+                True,
+                [(CCControlId.ECO, 1), (CCControlId.SLEEP, 0)],
+                id="eco-on-clears-sleep",
+            ),
+            pytest.param(
+                DeviceAttributes.eco_mode,
+                False,
+                [(CCControlId.ECO, 0)],
+                id="eco-off",
+            ),
+            pytest.param(
+                DeviceAttributes.sleep_mode,
+                True,
+                [(CCControlId.SLEEP, 1), (CCControlId.ECO, 0)],
+                id="sleep-on-clears-eco",
+            ),
+            pytest.param(
+                DeviceAttributes.sleep_mode,
+                False,
+                [(CCControlId.SLEEP, 0)],
+                id="sleep-off",
+            ),
+        ],
+    )
+    def test_set_attribute_eco_and_sleep(
+        self,
+        attr: DeviceAttributes,
+        value: bool,
+        expected_controls: list[tuple[CCControlId, int]],
+    ) -> None:
+        """FE eco/sleep controls carry the value and clear the other on activation."""
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.eco_mode.value, True)
-            self.device.set_attribute(DeviceAttributes.sleep_mode.value, False)
-            assert mock_send.call_count == 2
-            assert mock_send.call_args_list[0][0][0]._controls == [
-                (CCControlId.ECO, 1),
-                (CCControlId.SLEEP, 0),
-            ]
-            assert mock_send.call_args_list[1][0][0]._controls == [
-                (CCControlId.SLEEP, 0),
-            ]
+            self.device.set_attribute(attr.value, value)
+            assert mock_send.call_args[0][0]._controls == expected_controls
 
     def test_set_attribute_eco_and_sleep_are_mutually_exclusive(self) -> None:
         """Activating eco/sleep clears the other flag in the same control frame.
