@@ -147,6 +147,9 @@ class MideaFBDevice(MideaClimateDevice):
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea FB device set attribute."""
         if attr == DeviceAttributes.mode:
+            if value not in MideaFBDevice._modes.values():
+                msg = f"[fb] Unsupported mode: {value}"
+                raise ValueError(msg)
             message = MessageSet(self._message_protocol_version, self.subtype)
             if value in MideaFBDevice._modes.values():
                 message.mode = list(MideaFBDevice._modes.keys())[
