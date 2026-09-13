@@ -7,8 +7,22 @@ from typing import ClassVar, final
 
 from midealocal.device import MideaDevice
 
-# Generic preset name for "no preset active".
-PRESET_NONE = "none"
+
+class MideaPreset(StrEnum):
+    """Preset mode names, merged across all climate devices (ac, cc, fb)."""
+
+    NONE = "none"
+    AUTO = "auto"
+    COMFORT = "comfort"
+    ECO = "eco"
+    BOOST = "boost"
+    SLEEP = "sleep"
+    AWAY = "away"
+    ANTI_FREEZING = "anti_freezing"
+    CONSTANT_TEMPERATURE = "constant_temperature"
+    NORMAL = "normal"
+    FAST_HEATING = "fast_heating"
+    STANDBY = "standby"
 
 
 class MideaHVACMode(IntEnum):
@@ -35,7 +49,7 @@ class MideaClimateDevice(MideaDevice, ABC):
 
     # Flag-style presets: {generic preset name: boolean device attribute}.
     # Devices with named string presets (fb) override the three methods below.
-    _preset_attributes: ClassVar[Mapping[str, str]] = {}
+    _preset_attributes: ClassVar[Mapping[MideaPreset, str]] = {}
 
     @property
     @abstractmethod
@@ -206,28 +220,35 @@ class MideaClimateDevice(MideaDevice, ABC):
         return None
 
     @property
-    def preset_modes(self) -> Sequence[str]:
+    def preset_modes(self) -> Sequence[MideaPreset]:
         """Return the available preset mode names, or [] if unsupported."""
         if not self._preset_attributes:
             return []
-        return [PRESET_NONE, *self._preset_attributes]
+        return [MideaPreset.NONE, *self._preset_attributes]
 
     @property
-    def preset_mode(self) -> str | None:
+    def preset_mode(self) -> MideaPreset | None:
         """Return the current preset mode name, or None if unsupported."""
         if not self._preset_attributes:
             return None
         for name, attr in self._preset_attributes.items():
             if self.get_attribute(attr):
                 return name
-        return PRESET_NONE
+        return MideaPreset.NONE
 
     def set_preset_mode(self, preset_mode: str) -> None:
         """Activate a preset by name (clearing the previous one)."""
         if not self._preset_attributes:
             msg = "Preset mode is not supported by this device"
             raise NotImplementedError(msg)
-        if (attr := self._preset_attributes.get(preset_mode)) is not None:
+        try:
+            requested: MideaPreset | None = MideaPreset(preset_mode)
+        except ValueError:
+            requested = None
+        if (
+            requested is not None
+            and (attr := self._preset_attributes.get(requested)) is not None
+        ):
             self.set_attribute(attr=attr, value=True)
             return
         current = self.preset_mode

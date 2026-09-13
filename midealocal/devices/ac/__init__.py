@@ -10,6 +10,7 @@ from midealocal.base_classes.climate import (
     MideaClimateDevice,
     MideaFanMode,
     MideaHVACMode,
+    MideaPreset,
     MideaSwingMode,
 )
 from midealocal.const import DeviceType
@@ -210,12 +211,12 @@ class MideaACDevice(MideaClimateDevice):
         (ACFanSpeed.SILENT, ACFanSpeed.LOW),
     )
 
-    _preset_attributes: ClassVar[dict[str, str]] = {
-        "comfort": DeviceAttributes.comfort_mode,
-        "eco": DeviceAttributes.eco_mode,
-        "boost": DeviceAttributes.boost_mode,
-        "sleep": DeviceAttributes.sleep_mode,
-        "away": DeviceAttributes.frost_protect,
+    _preset_attributes: ClassVar[dict[MideaPreset, str]] = {
+        MideaPreset.COMFORT: DeviceAttributes.comfort_mode,
+        MideaPreset.ECO: DeviceAttributes.eco_mode,
+        MideaPreset.BOOST: DeviceAttributes.boost_mode,
+        MideaPreset.SLEEP: DeviceAttributes.sleep_mode,
+        MideaPreset.AWAY: DeviceAttributes.frost_protect,
     }
 
     _swing_modes: ClassVar[dict[ACSwingMode, tuple[bool, bool]]] = {

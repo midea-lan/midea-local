@@ -8,6 +8,7 @@ from midealocal.base_classes.climate import (
     MideaClimateDevice,
     MideaFanMode,
     MideaHVACMode,
+    MideaPreset,
     MideaSwingMode,
 )
 from midealocal.const import DeviceType, ProtocolVersion
@@ -47,9 +48,9 @@ class _MinimalClimateDevice(MideaClimateDevice):
 class _FlagPresetClimateDevice(_MinimalClimateDevice):
     """A climate device using the shared flag-style preset implementation."""
 
-    _preset_attributes: ClassVar[dict[str, str]] = {
-        "eco": "eco_mode",
-        "sleep": "sleep_mode",
+    _preset_attributes: ClassVar[dict[MideaPreset, str]] = {
+        MideaPreset.ECO: "eco_mode",
+        MideaPreset.SLEEP: "sleep_mode",
     }
 
 

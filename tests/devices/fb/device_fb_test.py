@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+from midealocal.base_classes.climate import MideaPreset
 from midealocal.const import ProtocolVersion
 from midealocal.devices.fb import DeviceAttributes, MideaFBDevice
 from midealocal.devices.fb.message import MessageQuery, MessageSet
@@ -138,7 +139,7 @@ class TestMideaFBDevice:
         """Test preset modes expose the device's named heating modes."""
         assert self.device.preset_modes == self.device.modes
 
-        self.device._attributes[DeviceAttributes.mode] = "eco"
+        self.device._attributes[DeviceAttributes.mode] = MideaPreset.ECO
         active_preset = self.device.preset_mode
         assert active_preset == "eco"
 
