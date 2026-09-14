@@ -43,8 +43,11 @@ jobs:
           token: ${{ secrets.MIDEA_GITHUB_PAT }}
 
       - name: Validate version format
+        env:
+          VERSION: ${{ inputs.version }}
         run: |
-          if ! echo "${{ inputs.version }}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+          if [[ "$VERSION" == *$'\n'* || "$VERSION" == *$'\r'* ]] ||
+             ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Error: Version must be in format X.Y.Z (e.g., 2026.9.1)"
             exit 1
           fi

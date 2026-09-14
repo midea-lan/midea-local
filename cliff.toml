@@ -13,7 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # https://keats.github.io/tera/docs/#introduction
 body = """
 {% if version %}\
+    {% if previous.version %}\
     ## [{{ version | trim_start_matches(pat="v") }}](https://github.com/wuwentao/midea-lan/compare/{{ previous.version }}...{{ version }}) ({{ timestamp | date(format="%Y-%m-%d") }})
+    {% else %}\
+    ## {{ version | trim_start_matches(pat="v") }} ({{ timestamp | date(format="%Y-%m-%d") }})
+    {% endif %}\
 {% else %}\
     ## [unreleased]
 {% endif %}\

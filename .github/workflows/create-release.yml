@@ -52,15 +52,28 @@ jobs:
         id: check_tag
         run: |
           if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "⚠️  Tag v${{ steps.version.outputs.version }} already exists, skipping release creation"
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+            echo "⚠️  Tag v${{ steps.version.outputs.version }} already exists"
           else
-            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
             echo "✓ Tag v${{ steps.version.outputs.version }} does not exist, will create"
           fi
 
+      - name: Check if GitHub Release exists
+        id: check_release
+        env:
+          GH_TOKEN: ${{ secrets.MIDEA_GITHUB_PAT }}
+        run: |
+          if gh release view "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "release_exists=true" >> $GITHUB_OUTPUT
+            echo "⚠️  GitHub Release v${{ steps.version.outputs.version }} already exists, skipping"
+          else
+            echo "release_exists=false" >> $GITHUB_OUTPUT
+            echo "✓ GitHub Release v${{ steps.version.outputs.version }} does not exist, will create"
+          fi
+
       - name: Extract changelog for this version
-        if: steps.check_tag.outputs.exists == 'false'
+        if: steps.check_release.outputs.release_exists == 'false'
         id: changelog
         run: |
           # Extract the section for this version from CHANGELOG.md
@@ -80,7 +93,7 @@ jobs:
           head -n 10 /tmp/release_notes.md
 
       - name: Create git tag
-        if: steps.check_tag.outputs.exists == 'false'
+        if: steps.check_tag.outputs.tag_exists == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -89,7 +102,7 @@ jobs:
           echo "✅ Created and pushed tag v${{ steps.version.outputs.version }}"
 
       - name: Create GitHub Release
-        if: steps.check_tag.outputs.exists == 'false'
+        if: steps.check_release.outputs.release_exists == 'false'
         env:
           # ── Why MIDEA_GITHUB_PAT and not the default GITHUB_TOKEN? ──
           # This step must be created with a Personal Access Token (PAT), because
@@ -117,7 +130,7 @@ jobs:
           echo "✅ GitHub Release created: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.version }}"
 
       - name: Summary
-        if: steps.check_tag.outputs.exists == 'false'
+        if: steps.check_release.outputs.release_exists == 'false'
         run: |
           echo "### 🚀 Release Published" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -126,8 +139,8 @@ jobs:
           echo "- **Release**: [View on GitHub](https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.version }})" >> $GITHUB_STEP_SUMMARY
 
       - name: Summary (skipped)
-        if: steps.check_tag.outputs.exists == 'true'
+        if: steps.check_release.outputs.release_exists == 'true'
         run: |
           echo "### ⏭️  Release Skipped" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Tag v${{ steps.version.outputs.version }} already exists." >> $GITHUB_STEP_SUMMARY
+          echo "Release v${{ steps.version.outputs.version }} already exists." >> $GITHUB_STEP_SUMMARY
