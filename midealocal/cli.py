@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, NoReturn
 
 import aiohttp
+import anyio
 import platformdirs
 from colorlog import ColoredFormatter
 
@@ -76,14 +77,16 @@ class MideaCLI:
             password=self.namespace.password,
         )
 
-    def _load_devices_cache(self) -> list[Any]:
+    async def _load_devices_cache(self) -> list[Any]:
         """Load the device token/key cache (see midea-devices.json)."""
-        cache_file = get_devices_cache_path()
-        if not cache_file.exists():
+        cache_file = anyio.Path(get_devices_cache_path())
+        if not await cache_file.exists():
             return []
         try:
-            with cache_file.open(encoding="utf-8") as f:
-                devices = json.load(f).get("devices", [])
+            devices = json.loads(await cache_file.read_text(encoding="utf-8")).get(
+                "devices",
+                [],
+            )
         except (json.JSONDecodeError, AttributeError, OSError):
             # Malformed or unreadable cache: treat it as empty rather than
             # aborting discovery over a corrupt convenience file.
@@ -91,9 +94,9 @@ class MideaCLI:
             return []
         return devices if isinstance(devices, list) else []
 
-    def _get_cached_device_keys(self, device_id: int) -> dict[str, str] | None:
+    async def _get_cached_device_keys(self, device_id: int) -> dict[str, str] | None:
         """Look up a previously cached token/key for this device, if any."""
-        for entry in self._load_devices_cache():
+        for entry in await self._load_devices_cache():
             if not isinstance(entry, dict):
                 continue
             if str(entry.get("device_id")) == str(device_id):
@@ -101,11 +104,15 @@ class MideaCLI:
                 return {"token": token, "key": key} if token and key else None
         return None
 
-    def _cache_device_keys(self, device_id: int, keys: dict[str, str]) -> None:
+    async def _cache_device_keys(
+        self,
+        device_id: int,
+        keys: dict[str, str],
+    ) -> None:
         """Persist a token/key pair confirmed to work for this device."""
         devices = [
             entry
-            for entry in self._load_devices_cache()
+            for entry in await self._load_devices_cache()
             if str(entry.get("device_id")) != str(device_id)
         ]
         devices.append(
@@ -115,17 +122,17 @@ class MideaCLI:
                 "key": keys["key"],
             },
         )
-        cache_file = get_devices_cache_path()
+        cache_file = anyio.Path(get_devices_cache_path())
         try:
             # Write to a sibling temp file and rename over the cache so a
             # failure mid-write never leaves behind truncated/corrupt JSON.
             tmp_file = cache_file.with_name(cache_file.name + ".tmp")
-            tmp_file.write_text(
+            await tmp_file.write_text(
                 json.dumps({"devices": devices}, indent=2),
                 encoding="utf-8",
             )
-            tmp_file.chmod(0o600)
-            tmp_file.replace(cache_file)
+            await tmp_file.chmod(0o600)
+            await tmp_file.replace(cache_file)
         except OSError:
             _LOGGER.warning("Could not write the device cache; continuing without it.")
 
@@ -229,7 +236,7 @@ class MideaCLI:
                 self._try_connect(device, {"token": "", "key": ""}, device_list)
                 continue
 
-            cached = self._get_cached_device_keys(device["device_id"])
+            cached = await self._get_cached_device_keys(device["device_id"])
             if cached:
                 _LOGGER.info(
                     "Found cached token/key, using those instead of asking cloud.",
@@ -241,7 +248,7 @@ class MideaCLI:
             # cloud and try each candidate, caching whichever one connects.
             for key in (await self._get_keys(device["device_id"])).values():
                 if self._try_connect(device, key, device_list):
-                    self._cache_device_keys(device["device_id"], key)
+                    await self._cache_device_keys(device["device_id"], key)
                     break
         return device_list
 

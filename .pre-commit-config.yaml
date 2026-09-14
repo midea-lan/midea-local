@@ -61,6 +61,7 @@ repos:
         types: [python]
         additional_dependencies:
           - aiofiles
+          - anyio
           - pycryptodome
           - platformdirs
           - typing_extensions

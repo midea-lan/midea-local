@@ -514,7 +514,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 ],
             }
 
-    def test_get_cached_device_keys(self) -> None:
+    async def test_get_cached_device_keys(self) -> None:
         """Test _get_cached_device_keys reads a matching entry, or returns None."""
         with TemporaryDirectory() as tmpdir:
             cache_file = Path(tmpdir) / "midea-devices.json"
@@ -528,19 +528,19 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 "midealocal.cli.get_devices_cache_path",
                 return_value=cache_file,
             ):
-                assert self.cli._get_cached_device_keys(1) == {
+                assert await self.cli._get_cached_device_keys(1) == {
                     "token": "tok",
                     "key": "key",
                 }
-                assert self.cli._get_cached_device_keys(2) is None
+                assert await self.cli._get_cached_device_keys(2) is None
 
             with patch(
                 "midealocal.cli.get_devices_cache_path",
                 return_value=Path(tmpdir) / "does-not-exist.json",
             ):
-                assert self.cli._get_cached_device_keys(1) is None
+                assert await self.cli._get_cached_device_keys(1) is None
 
-    def test_get_cached_device_keys_ignores_malformed_cache(self) -> None:
+    async def test_get_cached_device_keys_ignores_malformed_cache(self) -> None:
         """Test malformed cache data is treated as a cache miss, not a crash."""
         with TemporaryDirectory() as tmpdir:
             # invalid JSON
@@ -550,7 +550,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 "midealocal.cli.get_devices_cache_path",
                 return_value=invalid_json,
             ):
-                assert self.cli._get_cached_device_keys(1) is None
+                assert await self.cli._get_cached_device_keys(1) is None
 
             # JSON root is not an object
             non_object_root = Path(tmpdir) / "list.json"
@@ -559,7 +559,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 "midealocal.cli.get_devices_cache_path",
                 return_value=non_object_root,
             ):
-                assert self.cli._get_cached_device_keys(1) is None
+                assert await self.cli._get_cached_device_keys(1) is None
 
             # a "devices" entry that isn't an object
             bad_entry = Path(tmpdir) / "bad_entry.json"
@@ -568,7 +568,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 "midealocal.cli.get_devices_cache_path",
                 return_value=bad_entry,
             ):
-                assert self.cli._get_cached_device_keys(1) is None
+                assert await self.cli._get_cached_device_keys(1) is None
 
             # a matching entry missing its token/key
             missing_fields = Path(tmpdir) / "missing_fields.json"
@@ -580,9 +580,11 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 "midealocal.cli.get_devices_cache_path",
                 return_value=missing_fields,
             ):
-                assert self.cli._get_cached_device_keys(1) is None
+                assert await self.cli._get_cached_device_keys(1) is None
 
-    def test_cache_device_keys_write_failure_is_logged_not_raised(self) -> None:
+    async def test_cache_device_keys_write_failure_is_logged_not_raised(
+        self,
+    ) -> None:
         """Test a cache write failure (e.g. read-only filesystem) doesn't raise."""
         with TemporaryDirectory() as tmpdir:
             cache_file = Path(tmpdir) / "midea-devices.json"
@@ -593,13 +595,13 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 ),
                 patch.object(Path, "replace", side_effect=OSError("disk full")),
             ):
-                self.cli._cache_device_keys(1, {"token": "tok", "key": "key"})
+                await self.cli._cache_device_keys(1, {"token": "tok", "key": "key"})
 
     @skipIf(
         sys.platform == "win32",
         "Windows has no POSIX permission bits for chmod to set.",
     )
-    def test_cache_device_keys_sets_owner_only_permissions(self) -> None:
+    async def test_cache_device_keys_sets_owner_only_permissions(self) -> None:
         """Test the cache file is written with owner-only (0600) permissions."""
         with TemporaryDirectory() as tmpdir:
             cache_file = Path(tmpdir) / "midea-devices.json"
@@ -607,13 +609,13 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 "midealocal.cli.get_devices_cache_path",
                 return_value=cache_file,
             ):
-                self.cli._cache_device_keys(1, {"token": "tok", "key": "key"})
+                await self.cli._cache_device_keys(1, {"token": "tok", "key": "key"})
 
             assert cache_file.stat().st_mode & 0o777 == 0o600
             # no leftover temp file from the atomic write
             assert not cache_file.with_name(cache_file.name + ".tmp").exists()
 
-    def test_cache_device_keys_replaces_existing_entry(self) -> None:
+    async def test_cache_device_keys_replaces_existing_entry(self) -> None:
         """Test _cache_device_keys overwrites a stale entry for the same device."""
         with TemporaryDirectory() as tmpdir:
             cache_file = Path(tmpdir) / "midea-devices.json"
@@ -627,7 +629,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 "midealocal.cli.get_devices_cache_path",
                 return_value=cache_file,
             ):
-                self.cli._cache_device_keys(1, {"token": "new", "key": "new"})
+                await self.cli._cache_device_keys(1, {"token": "new", "key": "new"})
 
             cached = json.loads(cache_file.read_text(encoding="utf-8"))
             assert cached == {
