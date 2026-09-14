@@ -159,7 +159,7 @@ class TestMideaCADevice:
 
     def test_process_message_exception(self) -> None:
         """Test process message with an exception body."""
-        body = bytearray([0x01, 0x0F, 0x00, 0x00])
+        body = bytearray([0x01, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
         self.device.process_message(_build_message(MessageType.exception, body))
         assert (
             self.device.attributes[DeviceAttributes.refrigerator_door_overtime] is True
