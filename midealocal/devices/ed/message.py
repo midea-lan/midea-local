@@ -713,11 +713,14 @@ class EDMessageBodyFF(MessageBody):
         super().__init__(body)
         data_offset = 2
         while True:
-            # every branch below reads up to data_offset + 6; check that
-            # range is in bounds before touching any of it, not after.
-            if data_offset + 6 >= len(body):
+            # need the 2 header bytes in bounds before reading the length nibble
+            if data_offset + 2 >= len(body):
                 break
             length = (body[data_offset + 2] >> 4) + 2
+            # then bound the whole TLV record by its own declared length,
+            # not a magic number, before touching any of its fields.
+            if data_offset + length >= len(body):
+                break
             attr = ((body[data_offset + 2] % 16) << 8) + body[data_offset + 1]
             if attr == Attributes.CHILD_LOCK:
                 self.child_lock = (body[data_offset + 5] & 0x01) > 0
