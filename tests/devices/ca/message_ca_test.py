@@ -342,6 +342,12 @@ class TestMessageCAResponse:
         msg = MessageCAResponse(_build_message(MessageType.query, body))
         assert getattr(msg, "freezer_door_overtime", None) is True
 
+    def test_exception_response_too_short(self) -> None:
+        """Test exception response with a too short body."""
+        body = bytearray([0x01, 0x0F, 0x00, 0x00])
+        msg = MessageCAResponse(_build_message(MessageType.exception, body))
+        assert not hasattr(msg, "refrigerator_door_overtime")
+
     def test_notify1_00_response(self) -> None:
         """Test notify1 response with a notify00 body."""
         body = bytearray([0x00, 0x07])

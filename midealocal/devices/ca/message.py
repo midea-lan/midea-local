@@ -10,6 +10,7 @@ from midealocal.message import (
 )
 
 MIN_CA_GENERAL_BODY_LENGTH = 24
+MIN_CA_EXCEPTION_BODY_LENGTH = 8
 CA_GENERAL_BODY_LENGTH1 = 25
 CA_GENERAL_BODY_LENGTH2 = 30
 CA_GENERAL_BODY_LENGTH3 = 31
@@ -338,11 +339,15 @@ class MessageCAResponse(MessageResponse):
         # uptable["dataType"] 0x06 and messageBytes[0] 0x01
         # uptable["dataType"] 0x03 and messageBytes[0] 0x02
         elif (
-            self.message_type == MessageType.exception
-            and self.body_type == ListTypes.X01
-        ) or (
-            self.message_type == MessageType.query and self.body_type == ListTypes.X02
-        ):
+            (
+                self.message_type == MessageType.exception
+                and self.body_type == ListTypes.X01
+            )
+            or (
+                self.message_type == MessageType.query
+                and self.body_type == ListTypes.X02
+            )
+        ) and len(super().body) >= MIN_CA_EXCEPTION_BODY_LENGTH:
             self.set_body(CAExceptionMessageBody(super().body))
         # uptable["dataType"] 0x04 and messageBytes[0] 0x00
         elif (
