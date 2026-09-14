@@ -117,13 +117,8 @@ class B3MessageBody31(MessageBody):
             body[23] * 3600
             if len(body) > X31_TOP_COMPARTMENT_REMAINING_BYTE
             and body[23] != MAX_BYTE_VALUE
-            else (
-                0 + body[4] * 60
-                if body[4] != MAX_BYTE_VALUE
-                else 0 + body[5]
-                if body[5] != MAX_BYTE_VALUE
-                else 0
-            )
+            else (0 if body[4] == MAX_BYTE_VALUE else body[4]) * 60
+            + (0 if body[5] == MAX_BYTE_VALUE else body[5])
         )
         self.bottom_compartment_status = body[6]
         self.bottom_compartment_mode = body[7]
@@ -132,13 +127,8 @@ class B3MessageBody31(MessageBody):
             body[24] * 3600
             if len(body) > X31_BOTTOM_COMPARTMENT_REMAINING_BYTE
             and body[24] != MAX_BYTE_VALUE
-            else (
-                0 + body[9] * 60
-                if body[9] != MAX_BYTE_VALUE
-                else 0 + body[10]
-                if body[10] != MAX_BYTE_VALUE
-                else 0
-            )
+            else (0 if body[9] == MAX_BYTE_VALUE else body[9]) * 60
+            + (0 if body[10] == MAX_BYTE_VALUE else body[10])
         )
         self.middle_compartment_status = body[17]
         self.middle_compartment_mode = body[18]
@@ -147,13 +137,8 @@ class B3MessageBody31(MessageBody):
             body[25] * 3600
             if len(body) > X31_MIDDLE_COMPARTMENT_REMAINING_BYTE
             and body[25] != MAX_BYTE_VALUE
-            else (
-                0 + body[20] * 60
-                if body[20] != MAX_BYTE_VALUE
-                else 0 + body[21]
-                if body[21] != MAX_BYTE_VALUE
-                else 0
-            )
+            else (0 if body[20] == MAX_BYTE_VALUE else body[20]) * 60
+            + (0 if body[21] == MAX_BYTE_VALUE else body[21])
         )
         self.lock = body[11] & 0x01 > 0
         self.bottom_compartment_door = body[11] & 0x02 > 0
@@ -180,13 +165,8 @@ class B3MessageBody21(MessageBody):
             body[17] * 3600
             if len(body) > X21_TOP_COMPARTMENT_REMAINING_BYTE
             and body[17] != MAX_BYTE_VALUE
-            else (
-                0 + body[4] * 60
-                if body[4] != MAX_BYTE_VALUE
-                else 0 + body[5]
-                if body[5] != MAX_BYTE_VALUE
-                else 0
-            )
+            else (0 if body[4] == MAX_BYTE_VALUE else body[4]) * 60
+            + (0 if body[5] == MAX_BYTE_VALUE else body[5])
         )
         self.bottom_compartment_status = body[6]
         self.bottom_compartment_mode = body[7]
@@ -195,13 +175,8 @@ class B3MessageBody21(MessageBody):
             body[18] * 3600
             if len(body) > X21_BOTTOM_COMPARTMENT_REMAINING_BYTE
             and body[18] != MAX_BYTE_VALUE
-            else (
-                0 + body[9] * 60
-                if body[9] != MAX_BYTE_VALUE
-                else 0 + body[10]
-                if body[10] != MAX_BYTE_VALUE
-                else 0
-            )
+            else (0 if body[9] == MAX_BYTE_VALUE else body[9]) * 60
+            + (0 if body[10] == MAX_BYTE_VALUE else body[10])
         )
         self.middle_compartment_status = body[12]
         self.middle_compartment_mode = body[13]
@@ -210,13 +185,8 @@ class B3MessageBody21(MessageBody):
             body[19] * 3600
             if len(body) > X21_MIDDLE_COMPARTMENT_REMAINING_BYTE
             and body[19] != MAX_BYTE_VALUE
-            else (
-                0 + body[15] * 60
-                if body[15] != MAX_BYTE_VALUE
-                else 0 + body[16]
-                if body[16] != MAX_BYTE_VALUE
-                else 0
-            )
+            else (0 if body[15] == MAX_BYTE_VALUE else body[15]) * 60
+            + (0 if body[16] == MAX_BYTE_VALUE else body[16])
         )
         self.lock = body[11] & 0x01 > 0
 
