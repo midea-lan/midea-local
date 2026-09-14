@@ -923,22 +923,19 @@ class MideaCDDevice(MideaDevice):
 
     @staticmethod
     def _sanitize_set_fields(fields: dict[Any, Any]) -> dict[Any, Any]:
-        """Strip SET-echo junk so it is not replayed into the next frame.
+        """Keep only a valid Tr value from a SET echo.
 
-        Drops openPTC/ptcTemp/byte8 (openPTC is forced 0 by MessageSet) and
-        removes an out-of-range trValue so only a valid Tr survives.
+        SET echoes may report openPTC=1 or an out-of-range trValue; neither
+        should be replayed into the next control frame.
         """
-        clean = dict(fields)
-        for key in ("openPTC", "ptcTemp", "byte8"):
-            clean.pop(key, None)
-        tr = clean.get("trValue")
+        tr = fields.get("trValue")
         try:
             tr_i = int(tr) if tr is not None else 0
         except (TypeError, ValueError):
             tr_i = 0
-        if tr_i < MessageSet.TR_VALUE_MIN or tr_i > MessageSet.TR_VALUE_MAX:
-            clean.pop("trValue", None)
-        return {k: v for k, v in clean.items() if k == "trValue"}
+        if MessageSet.TR_VALUE_MIN <= tr_i <= MessageSet.TR_VALUE_MAX:
+            return {"trValue": tr_i}
+        return {}
 
     def set_customize(self, customize: str) -> None:
         """Midea CD device set customize."""

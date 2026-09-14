@@ -452,6 +452,13 @@ class TestMideaCDDevice:
         )
         assert clean == {}
 
+    def test_sanitize_set_fields_keeps_only_valid_tr_value(self) -> None:
+        """openPTC/ptcTemp/byte8 are stripped; a valid trValue survives alone."""
+        clean = MideaCDDevice._sanitize_set_fields(
+            {"trValue": 4, "openPTC": 1, "ptcTemp": 2, "byte8": 0x10},
+        )
+        assert clean == {"trValue": 4}
+
     def test_process_weekly_schedule_message(self) -> None:
         """A weekly schedule frame stores the parsed schedule."""
         body = bytearray(177)
