@@ -917,6 +917,31 @@ class TestEDMessageBodyFF:
         assert hasattr(message, "life3")
         assert message.life3 == 3
 
+    def test_ed_message_ff_truncated_first_tlv(self) -> None:
+        """A body ending mid-TLV must be skipped, not raise IndexError.
+
+        Before the fix, the bounds check ran only *after* a TLV's fields
+        were read, so a body too short for even the first TLV raised
+        IndexError instead of being treated as absent data.
+        """
+        body = bytearray(
+            [
+                0xFF,  # body_type
+                0x01,
+                0x07,  # category
+                0x00,  # part 1, offset+1,  attr bit1, test 0x00/CHILD_LOCK
+                0x40,  # part 1, offset+2,  attr bit2 and length bit
+                0x00,  # part 1, offset+3,
+                0x00,  # part 1, offset+4,
+                0x01,  # part 1, offset+5, child_lock
+                # power's byte at offset+6 is truncated off the end
+            ],
+        )
+
+        message = EDMessageBodyFF(body=body)
+        assert not hasattr(message, "child_lock")
+        assert not hasattr(message, "power")
+
 
 class TestMessageEDResponse:
     """Test Message ED Response."""
