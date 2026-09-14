@@ -207,40 +207,40 @@ class TestCAExceptionMessageBody:
         assert body.refrigeration_defrosting_overtime == 0x02
         assert body.freezing_defrosting_overtime == 0x04
         assert body.zeroCrossingCheckError == 0x08
-        assert body.eepromReadWriteError == 0x10
-        assert body.leftFlexzoneSensorError == 0x20
-        assert body.iceRoomSensorError == 0x40
-        assert body.mainDisplayCorrespondError == 0x80
-        assert body.iceMachineTemperatureError == 0x01
-        assert body.flexzoneDefrostingSensorError == 0x02
-        assert body.flexzoneDefrostingSensor2Error == 0x04
-        assert body.yogurtMachineSensorError == 0x08
-        assert body.iceMachineFrettingSwitchError == 0x10
-        assert body.iceMachinePipeFilterOvertime == 0x20
-        assert body.ambientHumiditySensorError == 0x40
-        assert body.storageHumiditySensorError == 0x80
-        assert body.radarSensor1Error == 0x01
-        assert body.radarSensor2Error == 0x02
-        assert body.radarSensor3Error == 0x04
-        assert body.radarSensor4Error == 0x08
-        assert body.radarSensor5Error == 0x10
-        assert body.functionZoneTemperatureSensorError == 0x20
-        assert body.normalZoneTemperatureSensorError == 0x40
-        assert body.humidityControlSensorError == 0x80
-        assert body.openDoorTooFrequently == 0x01
-        assert body.storageDoorAloneOpenFrequently == 0x02
-        assert body.freezingDoorAloneOpenFrequently == 0x04
-        assert body.barDoorAloneOpenFrequently == 0x08
-        assert body.snWritingError == 0x20
-        assert body.storageTemperatureOverheating == 0x40
-        assert body.storageTemperatureTooLow == 0x80
-        assert body.storageHeatingWireSensorError == 0x01
-        assert body.uartReceiverError == 0x02
-        assert body.crystalliteMainSensorError == 0x08
-        assert body.crystalliteBase1SensorError == 0x10
-        assert body.crystalliteBase2SensorError == 0x20
-        assert body.crystalliteBase3SensorError == 0x40
-        assert body.crystalliteBase4SensorError == 0x80
+        assert body.eepromReadWriteError is True
+        assert body.leftFlexzoneSensorError is True
+        assert body.iceRoomSensorError is True
+        assert body.mainDisplayCorrespondError is True
+        assert body.iceMachineTemperatureError is True
+        assert body.flexzoneDefrostingSensorError is True
+        assert body.flexzoneDefrostingSensor2Error is True
+        assert body.yogurtMachineSensorError is True
+        assert body.iceMachineFrettingSwitchError is True
+        assert body.iceMachinePipeFilterOvertime is True
+        assert body.ambientHumiditySensorError is True
+        assert body.storageHumiditySensorError is True
+        assert body.radarSensor1Error is True
+        assert body.radarSensor2Error is True
+        assert body.radarSensor3Error is True
+        assert body.radarSensor4Error is True
+        assert body.radarSensor5Error is True
+        assert body.functionZoneTemperatureSensorError is True
+        assert body.normalZoneTemperatureSensorError is True
+        assert body.humidityControlSensorError is True
+        assert body.openDoorTooFrequently is True
+        assert body.storageDoorAloneOpenFrequently is True
+        assert body.freezingDoorAloneOpenFrequently is True
+        assert body.barDoorAloneOpenFrequently is True
+        assert body.snWritingError is True
+        assert body.storageTemperatureOverheating is True
+        assert body.storageTemperatureTooLow is True
+        assert body.storageHeatingWireSensorError is True
+        assert body.uartReceiverError is True
+        assert body.crystalliteMainSensorError is True
+        assert body.crystalliteBase1SensorError is True
+        assert body.crystalliteBase2SensorError is True
+        assert body.crystalliteBase3SensorError is True
+        assert body.crystalliteBase4SensorError is True
 
     def test_exception_body_clear(self) -> None:
         """Test exception body with no error bits."""
