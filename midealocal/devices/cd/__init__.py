@@ -914,7 +914,7 @@ class MideaCDDevice(MideaDevice):
         except (TypeError, ValueError):
             tr_i = 0
         if MessageSet.TR_VALUE_MIN <= tr_i <= MessageSet.TR_VALUE_MAX:
-            return {"trValue": tr}
+            return {"trValue": tr_i}
         return {}
 
     def set_customize(self, customize: str) -> None:
