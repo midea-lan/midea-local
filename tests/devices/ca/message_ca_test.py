@@ -187,7 +187,9 @@ class TestCAExceptionMessageBody:
 
     def test_exception_body(self) -> None:
         """Test exception body parsing."""
-        body = CAExceptionMessageBody(bytearray([0x01, 0x1F, 0xFF, 0x0F]))
+        body = CAExceptionMessageBody(
+            bytearray([0x01, 0x1F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
+        )
         assert body.refrigerator_door_overtime is True
         assert body.freezer_door_overtime is True
         assert body.bar_door_overtime is True
@@ -205,11 +207,46 @@ class TestCAExceptionMessageBody:
         assert body.refrigeration_defrosting_overtime == 0x02
         assert body.freezing_defrosting_overtime == 0x04
         assert body.zeroCrossingCheckError == 0x08
-        assert body.eepromReadWriteError == 0x04
+        assert body.eepromReadWriteError == 0x10
+        assert body.leftFlexzoneSensorError == 0x20
+        assert body.iceRoomSensorError == 0x40
+        assert body.mainDisplayCorrespondError == 0x80
+        assert body.iceMachineTemperatureError == 0x01
+        assert body.flexzoneDefrostingSensorError == 0x02
+        assert body.flexzoneDefrostingSensor2Error == 0x04
+        assert body.yogurtMachineSensorError == 0x08
+        assert body.iceMachineFrettingSwitchError == 0x10
+        assert body.iceMachinePipeFilterOvertime == 0x20
+        assert body.ambientHumiditySensorError == 0x40
+        assert body.storageHumiditySensorError == 0x80
+        assert body.radarSensor1Error == 0x01
+        assert body.radarSensor2Error == 0x02
+        assert body.radarSensor3Error == 0x04
+        assert body.radarSensor4Error == 0x08
+        assert body.radarSensor5Error == 0x10
+        assert body.functionZoneTemperatureSensorError == 0x20
+        assert body.normalZoneTemperatureSensorError == 0x40
+        assert body.humidityControlSensorError == 0x80
+        assert body.openDoorTooFrequently == 0x01
+        assert body.storageDoorAloneOpenFrequently == 0x02
+        assert body.freezingDoorAloneOpenFrequently == 0x04
+        assert body.barDoorAloneOpenFrequently == 0x08
+        assert body.snWritingError == 0x20
+        assert body.storageTemperatureOverheating == 0x40
+        assert body.storageTemperatureTooLow == 0x80
+        assert body.storageHeatingWireSensorError == 0x01
+        assert body.uartReceiverError == 0x02
+        assert body.crystalliteMainSensorError == 0x08
+        assert body.crystalliteBase1SensorError == 0x10
+        assert body.crystalliteBase2SensorError == 0x20
+        assert body.crystalliteBase3SensorError == 0x40
+        assert body.crystalliteBase4SensorError == 0x80
 
     def test_exception_body_clear(self) -> None:
         """Test exception body with no error bits."""
-        body = CAExceptionMessageBody(bytearray([0x01, 0x00, 0x00, 0x00]))
+        body = CAExceptionMessageBody(
+            bytearray([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+        )
         assert body.refrigerator_door_overtime is False
         assert body.freezer_door_overtime is False
         assert body.bar_door_overtime is False
@@ -295,13 +332,13 @@ class TestMessageCAResponse:
 
     def test_exception_response(self) -> None:
         """Test exception response."""
-        body = bytearray([0x01, 0x0F, 0x00, 0x00])
+        body = bytearray([0x01, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
         msg = MessageCAResponse(_build_message(MessageType.exception, body))
         assert getattr(msg, "refrigerator_door_overtime", None) is True
 
     def test_query_exception_response(self) -> None:
         """Test query response with an exception body."""
-        body = bytearray([0x02, 0x0F, 0x00, 0x00])
+        body = bytearray([0x02, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
         msg = MessageCAResponse(_build_message(MessageType.query, body))
         assert getattr(msg, "freezer_door_overtime", None) is True
 
