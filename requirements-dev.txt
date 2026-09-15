@@ -1,5 +1,6 @@
 build
 mypy
+pre_commit
 pylint
 pytest
 pytest-asyncio
