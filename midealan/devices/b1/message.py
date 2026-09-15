@@ -9,6 +9,8 @@ from midealan.message import (
     MessageType,
 )
 
+X01_MODE_OFFSET = 7
+X01_TARGET_TEMPERATURE_OFFSET = 14
 X01_STATUS_OFFSET = 31
 X01_FLAGS_OFFSET = 32
 X01_MIN_BODY_LENGTH = X01_FLAGS_OFFSET + 1
@@ -113,6 +115,26 @@ class B1Message01Body(MessageBody):
     real showed ``door=True`` (open) with no inversion needed - everything
     else (status, time_remaining, temperature, tank/water flags) produced
     sane values matching the device's known idle state.
+
+    ``mode`` and ``target_temperature`` were added from a physical test on
+    the same oven, driving the appliance through a full session with a
+    pause after every action so each frame maps to exactly one action:
+
+    * switch on with top+bottom heat at 180 degrees - byte 7 goes 0 -> 83,
+      byte 14 goes 0 -> 180;
+    * change the setpoint to 220 degrees - byte 14 goes 180 -> 220, and
+      byte 7 does not move;
+    * switch to convection - byte 7 goes 83 -> 84 and byte 14 goes
+      220 -> 160 in the same frame, because each programme carries its own
+      default temperature;
+    * switch off - both go to 0.
+
+    Scrolling the programme dial afterwards produced further codes
+    (82, 87, 88, 94, 95, 99, 102, 103, 162, 164), each with its own
+    default setpoint, so byte 7 is a programme number rather than a
+    bit field. The codes are reported as-is: this is one appliance, and
+    guessing a name table from a single model would be worse than
+    passing the number through.
     """
 
     def __init__(self, body: bytearray) -> None:
@@ -150,6 +172,8 @@ class B1Message01Body(MessageBody):
             self.tank_ejected = (body[X01_FLAGS_OFFSET] & 0x04) > 0
             self.water_shortage = (body[X01_FLAGS_OFFSET] & 0x08) > 0
             self.water_change_reminder = (body[X01_FLAGS_OFFSET] & 0x10) > 0
+            self.mode = body[X01_MODE_OFFSET]
+            self.target_temperature = body[X01_TARGET_TEMPERATURE_OFFSET]
 
 
 class MessageB1Response(MessageResponse):

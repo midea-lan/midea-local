@@ -26,6 +26,15 @@ class TestMideaB1Device:
         "0021"
     )
 
+    # Real-device X01 response captured from the same oven while running:
+    # top+bottom heat (programme 0x53) at a 180C setpoint, 30 minutes left
+    # on the timer, cavity at 33C on the way up.
+    X01_RESPONSE_711001CJ_WORKING_HEX = (
+        "010000000011005301001e000000b4ffff0000000000001e000021ffff"
+        "0000030004000000000000000000000ab803000200000000000080"
+        "000021"
+    )
+
     @pytest.fixture(autouse=True)
     def _setup_device(self) -> None:
         """Midea B1 Device setup."""
@@ -51,6 +60,8 @@ class TestMideaB1Device:
         assert self.device.attributes[DeviceAttributes.tank_ejected] is False
         assert self.device.attributes[DeviceAttributes.water_change_reminder] is False
         assert self.device.attributes[DeviceAttributes.water_shortage] is False
+        assert self.device.attributes[DeviceAttributes.mode] is None
+        assert self.device.attributes[DeviceAttributes.target_temperature] is None
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -188,6 +199,30 @@ class TestMideaB1Device:
         assert self.device.attributes[DeviceAttributes.water_shortage] is False
         assert self.device.attributes[DeviceAttributes.water_change_reminder] is False
         assert result[DeviceAttributes.status.value] == "Idle"
+        assert self.device.attributes[DeviceAttributes.mode] is None
+        assert self.device.attributes[DeviceAttributes.target_temperature] is None
+
+    def test_x01_response_mode_and_target_temperature(self) -> None:
+        """Test programme number and setpoint from a running-oven capture.
+
+        The idle capture has both bytes at zero, which is indistinguishable
+        from "not implemented", so this uses a second capture taken while
+        the oven was actually cooking. Both values were driven one at a
+        time on the physical appliance, with a pause after every action:
+        see ``B1Message01Body`` for the full sequence.
+        """
+        header = bytearray(
+            [0xAA, 0x00, DeviceType.B1] + [0x00] * 5 + [ProtocolVersion.V1],
+        ) + bytearray([MessageType.query])
+        body = bytearray.fromhex(self.X01_RESPONSE_711001CJ_WORKING_HEX)
+        result = self.device.process_message(bytes(header + body + bytearray(1)))
+        assert self.device.attributes[DeviceAttributes.mode] == 0x53
+        assert self.device.attributes[DeviceAttributes.target_temperature] == 180
+        assert self.device.attributes[DeviceAttributes.status] == "Working"
+        assert self.device.attributes[DeviceAttributes.time_remaining] == 30 * 60
+        assert self.device.attributes[DeviceAttributes.current_temperature] == 33
+        assert result[DeviceAttributes.mode.value] == 0x53
+        assert result[DeviceAttributes.target_temperature.value] == 180
 
 
 class TestMessageB1Base:

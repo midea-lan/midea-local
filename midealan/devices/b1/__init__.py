@@ -22,6 +22,8 @@ class DeviceAttributes(StrEnum):
     tank_ejected = "tank_ejected"
     water_change_reminder = "water_change_reminder"
     water_shortage = "water_shortage"
+    mode = "mode"
+    target_temperature = "target_temperature"
 
 
 class MideaB1Device(MideaDevice):
@@ -54,6 +56,8 @@ class MideaB1Device(MideaDevice):
                 DeviceAttributes.tank_ejected: False,
                 DeviceAttributes.water_change_reminder: False,
                 DeviceAttributes.water_shortage: False,
+                DeviceAttributes.mode: None,
+                DeviceAttributes.target_temperature: None,
             },
         )
 
@@ -85,6 +89,14 @@ class MideaB1Device(MideaDevice):
                         )
                     else:
                         self._attributes[DeviceAttributes.status] = None
+                elif status in (
+                    DeviceAttributes.mode,
+                    DeviceAttributes.target_temperature,
+                ):
+                    # The oven zeroes both when no programme is selected.
+                    # Reported as None rather than 0, which would otherwise
+                    # read as programme number zero and a setpoint of 0 C.
+                    self._attributes[status] = value or None
                 else:
                     self._attributes[status] = value
                 new_status[str(status)] = self._attributes[status]
