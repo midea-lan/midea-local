@@ -1,5 +1,14 @@
 # Changelog
 
+## [12.0.1](https://github.com/midea-lan/midea-local/compare/v12.0.0...v12.0.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **b3:** sum remaining minutes and seconds instead of dropping one ([#781](https://github.com/midea-lan/midea-local/issues/781)) ([bd6ce1c](https://github.com/midea-lan/midea-local/commit/bd6ce1c1a6d72bd3f416c613dafd5ab536cd3577))
+* **ca:** exception body bit offsets and add missing fields ([#786](https://github.com/midea-lan/midea-local/issues/786)) ([d5314e2](https://github.com/midea-lan/midea-local/commit/d5314e214ce826050dd9ed2fe6ab027d5f2f8a1b))
+* **ed:** check TLV bounds before reading, not after ([#782](https://github.com/midea-lan/midea-local/issues/782)) ([3806077](https://github.com/midea-lan/midea-local/commit/380607787cfed07a067d5a32d49ddb7b10c7d44f))
+
 ## [12.0.0](https://github.com/midea-lan/midea-local/compare/v11.0.1...v12.0.0) (2026-09-13)
 
 
