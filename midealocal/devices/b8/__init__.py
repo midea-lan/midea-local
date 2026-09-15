@@ -25,8 +25,32 @@ from .message import (
     MessageSet,
     MessageSetCommand,
 )
+from .message_v2 import (
+    B8V2ConfigType,
+    B8V2FanLevel,
+    B8V2TaskControl,
+    B8V2WaterLevel,
+    MessageB8V2Response,
+    MessageV2Query,
+    MessageV2SetCommand,
+    MessageV2SetConfig,
+)
 
 _LOGGER = logging.getLogger(__name__)
+
+# Integer ``subType`` (Midea cloud API) of B8 models that speak the
+# second-generation protocol (cloud plugin SN8 "750004CE"); see message_v2.py.
+# Empty until a real device's subType is known -- it cannot be derived from the
+# plugin, so v2 support stays inert until an entry is added here.
+_V2_SUBTYPES: frozenset[int] = frozenset()
+
+# v1 start/stop/charge/pause command -> v2 task-control code.
+_WORK_MODE_TO_V2_TASK: dict[B8WorkMode, B8V2TaskControl] = {
+    B8WorkMode.CHARGE: B8V2TaskControl.CHARGE,
+    B8WorkMode.WORK: B8V2TaskControl.WORK,
+    B8WorkMode.STOP: B8V2TaskControl.STOP,
+    B8WorkMode.PAUSE: B8V2TaskControl.PAUSE,
+}
 
 
 def _translate_int_enum(v: Any) -> Any:  # noqa: ANN401
@@ -37,6 +61,8 @@ class DeviceAttributes(StrEnum):
     """Midea B8 device attributes."""
 
     work_status = "work_status"
+    sub_work_status = "sub_work_status"
+    sweep_mop_mode = "sweep_mop_mode"
     function_type = "function_type"
     control_type = "control_type"
     move_direction = "move_direction"
@@ -78,6 +104,9 @@ class MideaB8Device(MideaDevice):
             **kwargs,
             attributes={
                 DeviceAttributes.work_status: B8WorkStatus.NONE.name.lower(),
+                # v2-only; stays "none" on v1 devices
+                DeviceAttributes.sub_work_status: "none",
+                DeviceAttributes.sweep_mop_mode: "none",
                 DeviceAttributes.function_type: B8FunctionType.NONE.name.lower(),
                 DeviceAttributes.control_type: B8ControlType.NONE.name.lower(),
                 DeviceAttributes.move_direction: B8Moviment.NONE.name.lower(),
@@ -105,13 +134,22 @@ class MideaB8Device(MideaDevice):
             },
         )
 
-    def build_query(self) -> list[MessageQuery]:
+    @property
+    def _is_v2(self) -> bool:
+        """Whether this device speaks the second-generation B8 protocol."""
+        return self.subtype in _V2_SUBTYPES
+
+    def build_query(self) -> list[MessageQuery | MessageV2Query]:
         """Midea B8 device build query."""
+        if self._is_v2:
+            return [MessageV2Query(self._message_protocol_version)]
         return [MessageQuery(self._message_protocol_version)]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea B8 device process message."""
-        message = MessageB8Response(msg)
+        message: MessageB8Response | MessageB8V2Response = (
+            MessageB8V2Response(msg) if self._is_v2 else MessageB8Response(msg)
+        )
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         # lowercase name for IntEnums, pass through everything else unchanged
         return self.update_attributes_from_message(
@@ -133,6 +171,16 @@ class MideaB8Device(MideaDevice):
 
     def set_work_mode(self, work_mode: B8WorkMode) -> None:
         """Midea B8 device set work mode."""
+        if self._is_v2:
+            task = _WORK_MODE_TO_V2_TASK.get(work_mode)
+            if task is None:
+                _LOGGER.warning("Unsupported v2 work mode: %s", work_mode)
+                return
+            self.build_send(
+                MessageV2SetCommand(self._message_protocol_version, task),
+            )
+            return
+
         if work_mode == B8WorkMode.WORK:
             self.set_attribute(
                 DeviceAttributes.clean_mode,
@@ -143,8 +191,39 @@ class MideaB8Device(MideaDevice):
         msg = MessageSetCommand(self._message_protocol_version, work_mode=work_mode)
         self.build_send(msg)
 
+    def _set_attribute_v2(self, attr: str, value: bool | float | str) -> None:
+        """Midea B8 v2 device set attribute (one frame per setting)."""
+        try:
+            if attr == DeviceAttributes.fan_level:
+                msg: MessageV2SetConfig = MessageV2SetConfig(
+                    self._message_protocol_version,
+                    B8V2ConfigType.FAN,
+                    B8V2FanLevel[str(value).upper()],
+                )
+            elif attr == DeviceAttributes.water_level:
+                msg = MessageV2SetConfig(
+                    self._message_protocol_version,
+                    B8V2ConfigType.WATER,
+                    B8V2WaterLevel[str(value).upper()],
+                )
+            elif attr == DeviceAttributes.voice_volume:
+                msg = MessageV2SetConfig(
+                    self._message_protocol_version,
+                    B8V2ConfigType.VOICE,
+                    max(1, min(int(value), 100)),
+                )
+            else:
+                _LOGGER.warning("Unsupported v2 attribute set: %s", attr)
+                return
+            self.build_send(msg)
+        except KeyError:
+            _LOGGER.exception("Wrong value for attribute %s: %s", attr, value)
+
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea B8 device set attribute."""
+        if self._is_v2:
+            self._set_attribute_v2(attr, value)
+            return
         try:
             msg = self._gen_set_msg_default_values()
             if attr == DeviceAttributes.clean_mode:
