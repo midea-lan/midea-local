@@ -157,6 +157,7 @@ class FBGeneralMessageBody(MessageBody):
         self.target_temperature = body[6] - 41
         if 1 <= body[7] <= MAX_HUMIDITY:
             self.target_humidity = body[7]
+        self.humidity_mode = body[9] & 0xF0
         if 1 <= body[12] <= MAX_HUMIDITY:
             self.current_humidity = body[12]
         self.current_temperature = body[13] - 20

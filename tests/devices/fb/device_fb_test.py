@@ -130,6 +130,7 @@ class TestMideaFBDevice:
         body[5] = 3  # heating_level
         body[6] = 66  # target_temperature = 25
         body[7] = 50  # target_humidity
+        body[9] = 0x40  # humidity_mode
         body[12] = 45  # current_humidity
         body[13] = 45  # current_temperature = 25
         body[18] = 0x01  # child_lock
@@ -143,6 +144,7 @@ class TestMideaFBDevice:
         assert self.device.attributes[DeviceAttributes.target_temperature] == 25
         assert self.device.attributes[DeviceAttributes.current_temperature] == 25
         assert self.device.attributes[DeviceAttributes.child_lock] is True
+        assert self.device.attributes[DeviceAttributes.humidity_mode] == "two"
         assert new_status[DeviceAttributes.mode.value] == "eco"
         assert self.device.current_temperature() == 25.0
         assert self.device.target_temperature() == 25.0

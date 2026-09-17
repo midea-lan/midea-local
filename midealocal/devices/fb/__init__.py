@@ -98,6 +98,7 @@ class MideaFBDevice(MideaClimateDevice):
                 DeviceAttributes.target_temperature: None,
                 DeviceAttributes.current_temperature: None,
                 DeviceAttributes.target_humidity: None,
+                DeviceAttributes.humidity_mode: None,
                 DeviceAttributes.current_humidity: None,
                 DeviceAttributes.child_lock: False,
             },
@@ -212,7 +213,10 @@ class MideaFBDevice(MideaClimateDevice):
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         return self.update_attributes_from_message(
             message,
-            {DeviceAttributes.mode: MideaFBDevice._modes.get},
+            {
+                DeviceAttributes.mode: MideaFBDevice._modes.get,
+                DeviceAttributes.humidity_mode: MideaFBDevice._humidity_modes.get,
+            },
         )
 
     def _build_set_message(self) -> MessageSet:
