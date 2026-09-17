@@ -9,7 +9,9 @@ local JSON = require "cjson"
 --------------sum校验
 local function makeSum(tmpbuf, start_pos, end_pos)
     local resVal = 0
-    for si = start_pos, end_pos do resVal = resVal + tmpbuf[si] end
+    for si = start_pos, end_pos do
+        resVal = resVal + tmpbuf[si]
+    end
     resVal = bit.bnot(resVal) + 1
     resVal = bit.band(resVal, 0x00ff)
     return resVal
@@ -31,7 +33,9 @@ end
 -- 十六进制 string 输出
 local function string2hexstring(str)
     local ret = ""
-    for i = 1, #str do ret = ret .. string.format("%02x", str:byte(i)) end
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
     return ret
 end
 
@@ -39,18 +43,20 @@ end
 local function table2string(cmd)
     local ret = ""
     local i
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 
 -- 检查取值是否超过边界
 local function checkBoundary(data, min, max)
-    if (not data) then data = 0 end
+    if not data then data = 0 end
     data = tonumber(data)
-    if ((data >= min) and (data <= max)) then
+    if (data >= min) and (data <= max) then
         return data
     else
-        if (data < min) then
+        if data < min then
             return min
         else
             return max
@@ -64,15 +70,12 @@ local function Split(szFullString, szSeparator)
     local nSplitIndex = 1
     local nSplitArray = {}
     while true do
-        local nFindLastIndex = string.find(szFullString, szSeparator,
-                                           nFindStartIndex)
+        local nFindLastIndex = string.find(szFullString, szSeparator, nFindStartIndex)
         if not nFindLastIndex then
-            nSplitArray[nSplitIndex] = string.sub(szFullString, nFindStartIndex,
-                                                  string.len(szFullString))
+            nSplitArray[nSplitIndex] = string.sub(szFullString, nFindStartIndex, string.len(szFullString))
             break
         end
-        nSplitArray[nSplitIndex] = string.sub(szFullString, nFindStartIndex,
-                                              nFindLastIndex - 1)
+        nSplitArray[nSplitIndex] = string.sub(szFullString, nFindStartIndex, nFindLastIndex - 1)
         nFindStartIndex = nFindLastIndex + string.len(szSeparator)
         nSplitIndex = nSplitIndex + 1
     end
@@ -82,8 +85,10 @@ end
 -- 获取到A0值，判断新旧型号
 
 local function parseDevFlag(value, tab)
-    for k, v in ipairs(tab) do if v == value then return true; end end
-    return false;
+    for k, v in ipairs(tab) do
+        if v == value then return true end
+    end
+    return false
 end
 
 -------把业务逻辑json转化为byte数组
@@ -95,87 +100,77 @@ local function assembleByteFromJson(result, msgBytes)
     local status = nil
     local devInfoData = result["deviceinfo"]["deviceSubType"]
 
-    if (result["status"]) then status = result["status"] end
+    if result["status"] then status = result["status"] end
 
-    if (control) then
+    if control then
         msgBytes[10] = 0x02 -- 控制
         -- 开关机
-        if (control["power"]) then
-            if (control["power"] == "on" or control["power"] == 1) then
+        if control["power"] then
+            if control["power"] == "on" or control["power"] == 1 then
                 msgBytes[11] = 0x01
                 msgBytes[12] = 0x01
-            elseif (control["power"] == "off" or control["power"] == 0) then
+            elseif control["power"] == "off" or control["power"] == 0 then
                 msgBytes[11] = 0x02
                 msgBytes[12] = 0x01
             end
         else
             -- 分段功能
-            for i = 11, 17 do msgBytes[i] = 0x00 end
+            for i = 11, 17 do
+                msgBytes[i] = 0x00
+            end
             msgBytes[11] = 0x14
             -- 供热方式
-            if (control["hot_style"]) then
+            if control["hot_style"] then
                 msgBytes[12] = 0x02
-                if (control["hot_style"] == 1) then
-                    msgBytes[13] = bit.bor(msgBytes[13], 0x01)
-                end
-                if (control["hot_style"] == 2) then
-                    msgBytes[13] = bit.bor(msgBytes[13], 0x02)
-                end
+                if control["hot_style"] == 1 then msgBytes[13] = bit.bor(msgBytes[13], 0x01) end
+                if control["hot_style"] == 2 then msgBytes[13] = bit.bor(msgBytes[13], 0x02) end
             end
             -- 卫浴功能
-            if (control["bash_mode"]) then
+            if control["bash_mode"] then
                 msgBytes[12] = 0x03
-                if (control["bash_target_temperature"]) then
-                    msgBytes[13] = control["bash_target_temperature"]
-                end
-                if (control["bash_gap_temperature"]) then
-                    msgBytes[14] = control["bash_gap_temperature"]
-                end
-                if (control["bash_mode"]) then
-                    msgBytes[15] = control["bash_mode"]
-                end
+                if control["bash_target_temperature"] then msgBytes[13] = control["bash_target_temperature"] end
+                if control["bash_gap_temperature"] then msgBytes[14] = control["bash_gap_temperature"] end
+                if control["bash_mode"] then msgBytes[15] = control["bash_mode"] end
             end
             -- 采暖模式
-            if (control["heating_mode"]) then
+            if control["heating_mode"] then
                 msgBytes[12] = 0x04
                 msgBytes[13] = control["heating_mode"]
-                if (control["heating_target_temperature"]) then
-                    msgBytes[14] = control["heating_target_temperature"]
-                end
-                if (control["last_time"]) then
-                    msgBytes[15] = control["last_time"]
-                end
-                if (control["heating_gap_temperature"]) then
-                    msgBytes[16] = control["heating_gap_temperature"]
-                end
+                if control["heating_target_temperature"] then msgBytes[14] = control["heating_target_temperature"] end
+                if control["last_time"] then msgBytes[15] = control["last_time"] end
+                if control["heating_gap_temperature"] then msgBytes[16] = control["heating_gap_temperature"] end
             end
             -- 蜂鸣器开关
-            if (control["buzzer"]) then
+            if control["buzzer"] then
                 msgBytes[12] = 0x1e
                 msgBytes[13] = control["buzzer"]
             end
         end
         -- 取消预约
-        if (control["appoint_power"] and control["appoint_power"] == "off") then
+        if control["appoint_power"] and control["appoint_power"] == "off" then
             msgBytes[11] = 0x0A
             msgBytes[12] = 0x01
             msgBytes[13] = 0x04
             msgBytes[14] = 0x00
             msgBytes[15] = 0x00
-            for i = 16, 30 do msgBytes[i] = 0x00 end
+            for i = 16, 30 do
+                msgBytes[i] = 0x00
+            end
         end
         -- 预约，暂时没用
-        if (control["appoint0"] ~= nil) then
-            for i = 11, 20 do msgBytes[i] = 0x00 end
+        if control["appoint0"] ~= nil then
+            for i = 11, 20 do
+                msgBytes[i] = 0x00
+            end
             local ap
-            if (control["appoint0"] ~= nil) then
+            if control["appoint0"] ~= nil then
                 msgBytes[11] = 0x05
                 ap = Split(control["appoint0"], ",")
             end
             msgBytes[12] = 0x01
             for k, v in pairs(ap) do
-                if (k == 1) then
-                    if (tonumber(v) == 1) then
+                if k == 1 then
+                    if tonumber(v) == 1 then
                         msgBytes[13] = 0xff
                     else
                         msgBytes[13] = 0x00
@@ -185,9 +180,9 @@ local function assembleByteFromJson(result, msgBytes)
                 end
             end
         end
-    elseif (query) then
+    elseif query then
         msgBytes[10] = 0x03 -- 查询
-        if (query["query_type"] == "appoint_query") then
+        if query["query_type"] == "appoint_query" then
             msgBytes[11] = 0x02
         else
             msgBytes[11] = 0x01
@@ -199,51 +194,52 @@ end
 
 local function parseByteToJson(status, bodyBytes)
     -- 当前状态
-    if ((bodyBytes[10] == 0x02 and bodyBytes[11] == 0x01) or
-        (bodyBytes[10] == 0x02 and bodyBytes[11] == 0x02) or
-        (bodyBytes[10] == 0x02 and bodyBytes[11] == 0x04) or
-        (bodyBytes[10] == 0x02 and bodyBytes[11] == 0x14) or
-        (bodyBytes[10] == 0x03 and bodyBytes[11] == 0x01) or
-        (bodyBytes[10] == 0x04 and bodyBytes[11] == 0x01)) then
-
+    if
+        (bodyBytes[10] == 0x02 and bodyBytes[11] == 0x01)
+        or (bodyBytes[10] == 0x02 and bodyBytes[11] == 0x02)
+        or (bodyBytes[10] == 0x02 and bodyBytes[11] == 0x04)
+        or (bodyBytes[10] == 0x02 and bodyBytes[11] == 0x14)
+        or (bodyBytes[10] == 0x03 and bodyBytes[11] == 0x01)
+        or (bodyBytes[10] == 0x04 and bodyBytes[11] == 0x01)
+    then
         -- 开/关机
-        if (bodyBytes[13] and bit.band(bodyBytes[13], 0x01) == 0x01) then
+        if bodyBytes[13] and bit.band(bodyBytes[13], 0x01) == 0x01 then
             status["power"] = "on"
         else
             status["power"] = "off"
         end
         -- 待机中
-        if (bodyBytes[13] and bit.band(bodyBytes[13], 0x02) == 0x02) then
+        if bodyBytes[13] and bit.band(bodyBytes[13], 0x02) == 0x02 then
             status["wait_power"] = "on"
         else
             status["wait_power"] = "off"
         end
         -- 加热中
-        if (bodyBytes[13] and bit.band(bodyBytes[13], 0x04) == 0x04) then
+        if bodyBytes[13] and bit.band(bodyBytes[13], 0x04) == 0x04 then
             status["hot_power"] = "on"
         else
             status["hot_power"] = "off"
         end
         -- 保温中
-        if (bodyBytes[13] and bit.band(bodyBytes[13], 0x08) == 0x08) then
+        if bodyBytes[13] and bit.band(bodyBytes[13], 0x08) == 0x08 then
             status["warm_power"] = "on"
         else
             status["warm_power"] = "off"
         end
         -- 防冻中
-        if (bodyBytes[13] and bit.band(bodyBytes[13], 0x10) == 0x10) then
+        if bodyBytes[13] and bit.band(bodyBytes[13], 0x10) == 0x10 then
             status["cold_power"] = "on"
         else
             status["cold_power"] = "off"
         end
         -- 休眠中
-        if (bodyBytes[13] and bit.band(bodyBytes[13], 0x20) == 0x20) then
+        if bodyBytes[13] and bit.band(bodyBytes[13], 0x20) == 0x20 then
             status["sleep_power"] = "on"
         else
             status["sleep_power"] = "off"
         end
         -- 预约中
-        if (bodyBytes[13] and bit.band(bodyBytes[13], 0x40) == 0x40) then
+        if bodyBytes[13] and bit.band(bodyBytes[13], 0x40) == 0x40 then
             status["appoint_power"] = "on"
         else
             status["appoint_power"] = "off"
@@ -253,17 +249,17 @@ local function parseByteToJson(status, bodyBytes)
         -- 故障代码2
         -- status["error_code2"]=tonumber(bodyBytes[15])
 
-        if (bodyBytes[14] and bit.band(bodyBytes[14], 0x01) == 0x01) then
+        if bodyBytes[14] and bit.band(bodyBytes[14], 0x01) == 0x01 then
             status["error_code"] = "F0"
-        elseif (bodyBytes[15] and bit.band(bodyBytes[15], 0x01) == 0x01) then
+        elseif bodyBytes[15] and bit.band(bodyBytes[15], 0x01) == 0x01 then
             status["error_code"] = "F2"
-        elseif (bodyBytes[14] and bit.band(bodyBytes[14], 0x80) == 0x80) then
+        elseif bodyBytes[14] and bit.band(bodyBytes[14], 0x80) == 0x80 then
             status["error_code"] = "E8"
-        elseif (bodyBytes[14] and bit.band(bodyBytes[14], 0x40) == 0x40) then
+        elseif bodyBytes[14] and bit.band(bodyBytes[14], 0x40) == 0x40 then
             status["error_code"] = "E7"
-        elseif (bodyBytes[14] and bit.band(bodyBytes[14], 0x10) == 0x10) then
+        elseif bodyBytes[14] and bit.band(bodyBytes[14], 0x10) == 0x10 then
             status["error_code"] = "E3"
-        elseif (bodyBytes[14] and bit.band(bodyBytes[14], 0x04) == 0x04) then
+        elseif bodyBytes[14] and bit.band(bodyBytes[14], 0x04) == 0x04 then
             status["error_code"] = "E1"
         else
             status["error_code"] = "normal"
@@ -306,35 +302,33 @@ local function parseByteToJson(status, bodyBytes)
         -- 卫浴功能
         status["bash_function"] = tonumber(bodyBytes[32])
         -- 蜂鸣器开关
-        if (bodyBytes[33] and bit.band(bodyBytes[33], 0x01) == 0x01) then
+        if bodyBytes[33] and bit.band(bodyBytes[33], 0x01) == 0x01 then
             status["buzzer"] = "on"
         else
             status["buzzer"] = "off"
         end
         -- 水泵开关
-        if (bodyBytes[33] and bit.band(bodyBytes[33], 0x02) == 0x02) then
+        if bodyBytes[33] and bit.band(bodyBytes[33], 0x02) == 0x02 then
             status["pump"] = "on"
         else
             status["pump"] = "off"
         end
         -- 三通阀执行模式
-        if (bodyBytes[33] and bit.band(bodyBytes[33], 0x04) == 0x04) then
+        if bodyBytes[33] and bit.band(bodyBytes[33], 0x04) == 0x04 then
             status["three_way_mode"] = "bath"
         else
             status["three_way_mode"] = "heating"
         end
 
         -- 采暖器件类型
-        if (bodyBytes[33] and bit.band(bodyBytes[33], 0x08) == 0x08) then
+        if bodyBytes[33] and bit.band(bodyBytes[33], 0x08) == 0x08 then
             status["heating_unit_type"] = "radiator"
         else
             status["heating_unit_type"] = "floor_heating"
         end
 
         -- 屏幕亮度
-        if (bodyBytes[33]) then
-            status["light_gear"] = bit.rshift(bodyBytes[33], 5)
-        end
+        if bodyBytes[33] then status["light_gear"] = bit.rshift(bodyBytes[33], 5) end
 
         -- 用户模式设置温度
         status["user_mode_target_temperature"] = tonumber(bodyBytes[34])
@@ -344,20 +338,25 @@ local function parseByteToJson(status, bodyBytes)
         status["sleep_mode_target_temperature"] = tonumber(bodyBytes[36])
 
         -- 预约状态
-    elseif ((bodyBytes[10] == 0x02 and bodyBytes[11] == 0x05) or
-        (bodyBytes[10] == 0x02 and bodyBytes[11] == 0x06) or
-        (bodyBytes[10] == 0x02 and bodyBytes[11] == 0x07) or
-        (bodyBytes[10] == 0x03 and bodyBytes[11] == 0x02)) then
-
-        if (bit.band(bodyBytes[13], 0x01) == 0x01) then
+    elseif
+        (bodyBytes[10] == 0x02 and bodyBytes[11] == 0x05)
+        or (bodyBytes[10] == 0x02 and bodyBytes[11] == 0x06)
+        or (bodyBytes[10] == 0x02 and bodyBytes[11] == 0x07)
+        or (bodyBytes[10] == 0x03 and bodyBytes[11] == 0x02)
+    then
+        if bit.band(bodyBytes[13], 0x01) == 0x01 then
             status["appoint0"] = "1,"
         else
             status["appoint0"] = "0,"
         end
-        status["appoint0"] = status["appoint0"] .. tostring(bodyBytes[14]) ..
-                                 "," .. tostring(bodyBytes[15]) .. "," ..
-                                 tostring(bodyBytes[16]) .. "," ..
-                                 tostring(bodyBytes[17])
+        status["appoint0"] = status["appoint0"]
+            .. tostring(bodyBytes[14])
+            .. ","
+            .. tostring(bodyBytes[15])
+            .. ","
+            .. tostring(bodyBytes[16])
+            .. ","
+            .. tostring(bodyBytes[17])
     end
 
     status["version"] = VALUE_VERSION
@@ -379,13 +378,13 @@ end
 
 ------------------json转化为cmd二进制, 云端到设备端控制指令入口-------------------
 function jsonToData(jsonCmdStr)
-    if (#jsonCmdStr == 0) then return nil end
+    if #jsonCmdStr == 0 then return nil end
     local result
     if JSON == nil then JSON = require "cjson" end
     result = JSON.decode(jsonCmdStr)
     if result == nil then return end
 
-    local msgBytes = {0xAA, 0x00, 0xC1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+    local msgBytes = { 0xAA, 0x00, 0xC1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
     ---将业务json转化为对应的byte数组数据
     msgBytes = assembleByteFromJson(result, msgBytes)
     ---计算长度、checksum
@@ -403,7 +402,7 @@ end
 -- 2. 没有，则由指令生成对应的部分状态的值
 
 function dataToJson(cmdStr)
-    if (not cmdStr) then return nil end
+    if not cmdStr then return nil end
     local result
     if JSON == nil then JSON = require "cjson" end
     result = JSON.decode(cmdStr)

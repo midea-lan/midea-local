@@ -290,105 +290,74 @@ function jsonToModel(controlJson)
     if controlCmd[uptable["KEY_SUB_CMD"]] ~= nil then
         if controlCmd[uptable["KEY_SUB_CMD"]] == uptable["VALUE_SEASONING_SET"] then
             paramTable["subCmd"] = 0x02
-        elseif controlCmd[uptable["KEY_SUB_CMD"]] ==
-            uptable["VALUE_SEASONING_OUTPUT"] then
+        elseif controlCmd[uptable["KEY_SUB_CMD"]] == uptable["VALUE_SEASONING_OUTPUT"] then
             paramTable["subCmd"] = 0x01
         end
     end
     if controlCmd[uptable["KEY_SEASONING_NUMBER"]] ~= nil then
-        paramTable["number"] = checkBoundary(string2Int(
-                                                 controlCmd[uptable["KEY_SEASONING_NUMBER"]]),
-                                             1, 8)
+        paramTable["number"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING_NUMBER"]]), 1, 8)
     end
     if controlCmd[uptable["KEY_SEASONING1_WEIGHT"]] ~= nil then
-        paramTable["weight1"] = checkBoundary(string2Int(
-                                                  controlCmd[uptable["KEY_SEASONING1_WEIGHT"]]),
-                                              1, 255)
+        paramTable["weight1"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING1_WEIGHT"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING2_WEIGHT"]] ~= nil then
-        paramTable["weight2"] = checkBoundary(string2Int(
-                                                  controlCmd[uptable["KEY_SEASONING2_WEIGHT"]]),
-                                              1, 255)
+        paramTable["weight2"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING2_WEIGHT"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING3_WEIGHT"]] ~= nil then
-        paramTable["weight3"] = checkBoundary(string2Int(
-                                                  controlCmd[uptable["KEY_SEASONING3_WEIGHT"]]),
-                                              1, 255)
+        paramTable["weight3"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING3_WEIGHT"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING4_WEIGHT"]] ~= nil then
-        paramTable["weight4"] = checkBoundary(string2Int(
-                                                  controlCmd[uptable["KEY_SEASONING4_WEIGHT"]]),
-                                              1, 255)
+        paramTable["weight4"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING4_WEIGHT"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING5_WEIGHT"]] ~= nil then
-        paramTable["weight5"] = checkBoundary(string2Int(
-                                                  controlCmd[uptable["KEY_SEASONING5_WEIGHT"]]),
-                                              1, 255)
+        paramTable["weight5"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING5_WEIGHT"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING6_WEIGHT"]] ~= nil then
-        paramTable["weight6"] = checkBoundary(string2Int(
-                                                  controlCmd[uptable["KEY_SEASONING6_WEIGHT"]]),
-                                              1, 255)
+        paramTable["weight6"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING6_WEIGHT"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING7_WEIGHT"]] ~= nil then
-        paramTable["weight7"] = checkBoundary(string2Int(
-                                                  controlCmd[uptable["KEY_SEASONING7_WEIGHT"]]),
-                                              1, 255)
+        paramTable["weight7"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING7_WEIGHT"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING8_WEIGHT"]] ~= nil then
-        paramTable["weight8"] = checkBoundary(string2Int(
-                                                  controlCmd[uptable["KEY_SEASONING8_WEIGHT"]]),
-                                              1, 255)
+        paramTable["weight8"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING8_WEIGHT"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING1_TYPE"]] ~= nil then
-        paramTable["type1"] = checkBoundary(string2Int(
-                                                controlCmd[uptable["KEY_SEASONING1_TYPE"]]),
-                                            1, 255)
+        paramTable["type1"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING1_TYPE"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING2_TYPE"]] ~= nil then
-        paramTable["type2"] = checkBoundary(string2Int(
-                                                controlCmd[uptable["KEY_SEASONING2_TYPE"]]),
-                                            1, 255)
+        paramTable["type2"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING2_TYPE"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING3_TYPE"]] ~= nil then
-        paramTable["type3"] = checkBoundary(string2Int(
-                                                controlCmd[uptable["KEY_SEASONING3_TYPE"]]),
-                                            1, 255)
+        paramTable["type3"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING3_TYPE"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING4_TYPE"]] ~= nil then
-        paramTable["type4"] = checkBoundary(string2Int(
-                                                controlCmd[uptable["KEY_SEASONING4_TYPE"]]),
-                                            1, 255)
+        paramTable["type4"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING4_TYPE"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING5_TYPE"]] ~= nil then
-        paramTable["type5"] = checkBoundary(string2Int(
-                                                controlCmd[uptable["KEY_SEASONING5_TYPE"]]),
-                                            1, 255)
+        paramTable["type5"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING5_TYPE"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING6_TYPE"]] ~= nil then
-        paramTable["type6"] = checkBoundary(string2Int(
-                                                controlCmd[uptable["KEY_SEASONING6_TYPE"]]),
-                                            1, 255)
+        paramTable["type6"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING6_TYPE"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING7_TYPE"]] ~= nil then
-        paramTable["type7"] = checkBoundary(string2Int(
-                                                controlCmd[uptable["KEY_SEASONING7_TYPE"]]),
-                                            1, 255)
+        paramTable["type7"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING7_TYPE"]]), 1, 255)
     end
     if controlCmd[uptable["KEY_SEASONING8_TYPE"]] ~= nil then
-        paramTable["type8"] = checkBoundary(string2Int(
-                                                controlCmd[uptable["KEY_SEASONING8_TYPE"]]),
-                                            1, 255)
+        paramTable["type8"] = checkBoundary(string2Int(controlCmd[uptable["KEY_SEASONING8_TYPE"]]), 1, 255)
     end
 end
 
 function binToModel(binData)
-    if (#binData == 0) then return nil end
+    if #binData == 0 then return nil end
     local messageBytes = {}
-    for i = 0, #binData do messageBytes[i] = 0 end
-    for i = 0, #binData do messageBytes[i] = binData[i] end
+    for i = 0, #binData do
+        messageBytes[i] = 0
+    end
+    for i = 0, #binData do
+        messageBytes[i] = binData[i]
+    end
     paramTable["subCmd"] = messageBytes[0]
-    if (paramTable["dataType"] == 0x03) then
+    if paramTable["dataType"] == 0x03 then
         paramTable["box1Type"] = messageBytes[1]
         paramTable["box1Status"] = messageBytes[2]
         paramTable["box1AddTimeYear"] = messageBytes[3]
@@ -521,25 +490,26 @@ function binToModel(binData)
 end
 
 function jsonToData(jsonCmd)
-    if (#jsonCmd == 0) then return nil end
+    if #jsonCmd == 0 then return nil end
     local json = decode(jsonCmd)
     local deviceSubType = json["deviceinfo"]["deviceSubType"]
-    if (deviceSubType == 1) then end
+    if deviceSubType == 1 then
+    end
     local query = json["query"]
     local control = json["control"]
     local status = json["status"]
     local infoM = {}
     local bodyBytes = {}
-    if (query) then
+    if query then
         bodyBytes[0] = 0x01
         infoM = getTotalMsg(bodyBytes, uptable["BYTE_QUERYL_REQUEST"])
-    elseif (control) then
-        if (status) then jsonToModel(status) end
-        if (control) then jsonToModel(control) end
-        local index = checkBoundary(string2Int(
-                                        control[uptable["KEY_SEASONING_NUMBER"]]),
-                                    1, 8)
-        for i = 0, index * 2 + 1 do bodyBytes[i] = 0 end
+    elseif control then
+        if status then jsonToModel(status) end
+        if control then jsonToModel(control) end
+        local index = checkBoundary(string2Int(control[uptable["KEY_SEASONING_NUMBER"]]), 1, 8)
+        for i = 0, index * 2 + 1 do
+            bodyBytes[i] = 0
+        end
         bodyBytes[0] = paramTable["subCmd"]
         bodyBytes[1] = index
         if paramTable["subCmd"] == 0x01 then
@@ -688,7 +658,9 @@ function getTotalMsg(bodyData, cType)
     local bodyLength = #bodyData
     local msgLength = bodyLength + uptable["BYTE_PROTOCOL_LENGTH"] + 1
     local msgBytes = {}
-    for i = 0, msgLength do msgBytes[i] = 0 end
+    for i = 0, msgLength do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = uptable["BYTE_PROTOCOL_HEAD"]
     msgBytes[1] = bodyLength + uptable["BYTE_PROTOCOL_LENGTH"] + 1
     msgBytes[2] = uptable["BYTE_DEVICE_TYPE"]
@@ -698,16 +670,19 @@ function getTotalMsg(bodyData, cType)
     end
     msgBytes[msgLength] = makeSum(msgBytes, 1, msgLength - 1)
     local msgFinal = {}
-    for i = 1, msgLength + 1 do msgFinal[i] = msgBytes[i - 1] end
+    for i = 1, msgLength + 1 do
+        msgFinal[i] = msgBytes[i - 1]
+    end
     return msgFinal
 end
 
 function dataToJson(jsonCmd)
-    if (not jsonCmd) then return nil end
+    if not jsonCmd then return nil end
     local json = decode(jsonCmd)
     local deviceinfo = json["deviceinfo"]
     local deviceSubType = deviceinfo["deviceSubType"]
-    if (deviceSubType == 1) then end
+    if deviceSubType == 1 then
+    end
     local binData = json["msg"]["data"]
     local info = {}
     local msgBytes = {}
@@ -716,21 +691,24 @@ function dataToJson(jsonCmd)
     local bodyLength = 0
     local msgSubType = 0
     info = string2table(binData)
-    if (#info < 11) then return nil end
-    for i = 1, #info do msgBytes[i - 1] = info[i] end
+    if #info < 11 then return nil end
+    for i = 1, #info do
+        msgBytes[i - 1] = info[i]
+    end
     msgLength = msgBytes[1]
     bodyLength = msgLength - uptable["BYTE_PROTOCOL_LENGTH"] - 1
     paramTable["dataType"] = msgBytes[9]
     msgSubType = msgBytes[10]
     local sumRes = makeSum(msgBytes, 1, msgLength - 1)
-    if (sumRes ~= msgBytes[msgLength]) then end
+    if sumRes ~= msgBytes[msgLength] then
+    end
     local streams = {}
     streams[uptable["KEY_VERSION"]] = uptable["VALUE_VERSION"]
     for i = 0, bodyLength do
         bodyBytes[i] = msgBytes[i + uptable["BYTE_PROTOCOL_LENGTH"]]
     end
     binToModel(bodyBytes)
-    if (paramTable["dataType"] == uptable["BYTE_CONTROL_REQUEST"]) then
+    if paramTable["dataType"] == uptable["BYTE_CONTROL_REQUEST"] then
         if paramTable["subCmd"] == 0x01 then
             streams[uptable["KEY_SUB_CMD"]] = uptable["VALUE_SEASONING_OUTPUT"]
         elseif paramTable["subCmd"] == 0x02 then
@@ -739,262 +717,162 @@ function dataToJson(jsonCmd)
         if paramTable["controlResult"] == 0x00 then
             streams[uptable["KEY_CONTROL_RESULT"]] = uptable["VALUE_SUCCESS"]
         elseif paramTable["controlResult"] == 0x01 then
-            streams[uptable["KEY_CONTROL_RESULT"]] =
-                uptable["VALUE_DATA_OVERFLOW"]
+            streams[uptable["KEY_CONTROL_RESULT"]] = uptable["VALUE_DATA_OVERFLOW"]
         elseif paramTable["controlResult"] == 0x02 then
             streams[uptable["KEY_CONTROL_RESULT"]] = uptable["VALUE_EXECUTION"]
         end
     elseif paramTable["dataType"] == uptable["BYTE_AUTO_REPORT"] then
         if paramTable["subCmd"] == 0x01 then
-            streams[uptable["KEY_SUB_CMD"]] =
-                uptable["VALUE_SEASONING_COMPLETE"]
+            streams[uptable["KEY_SUB_CMD"]] = uptable["VALUE_SEASONING_COMPLETE"]
         elseif paramTable["subCmd"] == 0x02 then
             streams[uptable["KEY_SUB_CMD"]] = uptable["VALUE_BOX_CLEAN"]
         end
     elseif paramTable["dataType"] == uptable["BYTE_QUERYL_REQUEST"] then
-        if paramTable["subCmd"] == 0x01 then
-            streams[uptable["KEY_SUB_CMD"]] = uptable["VALUE_QUERY_DEVICE"]
-        end
+        if paramTable["subCmd"] == 0x01 then streams[uptable["KEY_SUB_CMD"]] = uptable["VALUE_QUERY_DEVICE"] end
         streams[uptable["KEY_BOX1_TYPE"]] = int2String(paramTable["box1Type"])
         if paramTable["box1Status"] == 0x01 then
             streams[uptable["KEY_BOX1_STATUS"]] = "missing"
         elseif paramTable["box1Status"] == 0x00 then
             streams[uptable["KEY_BOX1_STATUS"]] = "no"
         end
-        streams[uptable["KEY_BOX1_ADD_TIME_YEAR"]] = int2String(
-                                                         paramTable["box1AddTimeYear"])
-        streams[uptable["KEY_BOX1_ADD_TIME_MONTH"]] = int2String(
-                                                          paramTable["box1AddTimeMonth"])
-        streams[uptable["KEY_BOX1_ADD_TIME_DAY"]] = int2String(
-                                                        paramTable["box1AddTimeDay"])
-        streams[uptable["KEY_BOX1_ADD_TIME_HOUR"]] = int2String(
-                                                         paramTable["box1AddTimeHour"])
-        streams[uptable["KEY_BOX1_ADD_TIME_MINUTE"]] = int2String(
-                                                           paramTable["box1AddTimeMinute"])
-        streams[uptable["KEY_BOX1_ADD_TIME_SECOND"]] = int2String(
-                                                           paramTable["box1AddTimeSecond"])
-        streams[uptable["KEY_BOX1_CLEAN_TIME_YEAR"]] = int2String(
-                                                           paramTable["box1CleanTimeYear"])
-        streams[uptable["KEY_BOX1_CLEAN_TIME_MONTH"]] = int2String(
-                                                            paramTable["box1CleanTimeMonth"])
-        streams[uptable["KEY_BOX1_CLEAN_TIME_DAY"]] = int2String(
-                                                          paramTable["box1CleanTimeDay"])
-        streams[uptable["KEY_BOX1_CLEAN_TIME_HOUR"]] = int2String(
-                                                           paramTable["box1CleanTimeHour"])
-        streams[uptable["KEY_BOX1_CLEAN_TIME_MINUTE"]] = int2String(
-                                                             paramTable["box1CleanTimeMinute"])
-        streams[uptable["KEY_BOX1_CLEAN_TIME_SECOND"]] = int2String(
-                                                             paramTable["box1CleanTimeSecond"])
+        streams[uptable["KEY_BOX1_ADD_TIME_YEAR"]] = int2String(paramTable["box1AddTimeYear"])
+        streams[uptable["KEY_BOX1_ADD_TIME_MONTH"]] = int2String(paramTable["box1AddTimeMonth"])
+        streams[uptable["KEY_BOX1_ADD_TIME_DAY"]] = int2String(paramTable["box1AddTimeDay"])
+        streams[uptable["KEY_BOX1_ADD_TIME_HOUR"]] = int2String(paramTable["box1AddTimeHour"])
+        streams[uptable["KEY_BOX1_ADD_TIME_MINUTE"]] = int2String(paramTable["box1AddTimeMinute"])
+        streams[uptable["KEY_BOX1_ADD_TIME_SECOND"]] = int2String(paramTable["box1AddTimeSecond"])
+        streams[uptable["KEY_BOX1_CLEAN_TIME_YEAR"]] = int2String(paramTable["box1CleanTimeYear"])
+        streams[uptable["KEY_BOX1_CLEAN_TIME_MONTH"]] = int2String(paramTable["box1CleanTimeMonth"])
+        streams[uptable["KEY_BOX1_CLEAN_TIME_DAY"]] = int2String(paramTable["box1CleanTimeDay"])
+        streams[uptable["KEY_BOX1_CLEAN_TIME_HOUR"]] = int2String(paramTable["box1CleanTimeHour"])
+        streams[uptable["KEY_BOX1_CLEAN_TIME_MINUTE"]] = int2String(paramTable["box1CleanTimeMinute"])
+        streams[uptable["KEY_BOX1_CLEAN_TIME_SECOND"]] = int2String(paramTable["box1CleanTimeSecond"])
         streams[uptable["KEY_BOX2_TYPE"]] = int2String(paramTable["box2Type"])
         if paramTable["box2Status"] == 0x01 then
             streams[uptable["KEY_BOX2_STATUS"]] = "missing"
         elseif paramTable["box2Status"] == 0x00 then
             streams[uptable["KEY_BOX2_STATUS"]] = "no"
         end
-        streams[uptable["KEY_BOX2_ADD_TIME_YEAR"]] = int2String(
-                                                         paramTable["box2AddTimeYear"])
-        streams[uptable["KEY_BOX2_ADD_TIME_MONTH"]] = int2String(
-                                                          paramTable["box2AddTimeMonth"])
-        streams[uptable["KEY_BOX2_ADD_TIME_DAY"]] = int2String(
-                                                        paramTable["box2AddTimeDay"])
-        streams[uptable["KEY_BOX2_ADD_TIME_HOUR"]] = int2String(
-                                                         paramTable["box2AddTimeHour"])
-        streams[uptable["KEY_BOX2_ADD_TIME_MINUTE"]] = int2String(
-                                                           paramTable["box2AddTimeMinute"])
-        streams[uptable["KEY_BOX2_ADD_TIME_SECOND"]] = int2String(
-                                                           paramTable["box2AddTimeSecond"])
-        streams[uptable["KEY_BOX2_CLEAN_TIME_YEAR"]] = int2String(
-                                                           paramTable["box2CleanTimeYear"])
-        streams[uptable["KEY_BOX2_CLEAN_TIME_MONTH"]] = int2String(
-                                                            paramTable["box2CleanTimeMonth"])
-        streams[uptable["KEY_BOX2_CLEAN_TIME_DAY"]] = int2String(
-                                                          paramTable["box2CleanTimeDay"])
-        streams[uptable["KEY_BOX2_CLEAN_TIME_HOUR"]] = int2String(
-                                                           paramTable["box2CleanTimeHour"])
-        streams[uptable["KEY_BOX2_CLEAN_TIME_MINUTE"]] = int2String(
-                                                             paramTable["box2CleanTimeMinute"])
-        streams[uptable["KEY_BOX2_CLEAN_TIME_SECOND"]] = int2String(
-                                                             paramTable["box2CleanTimeSecond"])
+        streams[uptable["KEY_BOX2_ADD_TIME_YEAR"]] = int2String(paramTable["box2AddTimeYear"])
+        streams[uptable["KEY_BOX2_ADD_TIME_MONTH"]] = int2String(paramTable["box2AddTimeMonth"])
+        streams[uptable["KEY_BOX2_ADD_TIME_DAY"]] = int2String(paramTable["box2AddTimeDay"])
+        streams[uptable["KEY_BOX2_ADD_TIME_HOUR"]] = int2String(paramTable["box2AddTimeHour"])
+        streams[uptable["KEY_BOX2_ADD_TIME_MINUTE"]] = int2String(paramTable["box2AddTimeMinute"])
+        streams[uptable["KEY_BOX2_ADD_TIME_SECOND"]] = int2String(paramTable["box2AddTimeSecond"])
+        streams[uptable["KEY_BOX2_CLEAN_TIME_YEAR"]] = int2String(paramTable["box2CleanTimeYear"])
+        streams[uptable["KEY_BOX2_CLEAN_TIME_MONTH"]] = int2String(paramTable["box2CleanTimeMonth"])
+        streams[uptable["KEY_BOX2_CLEAN_TIME_DAY"]] = int2String(paramTable["box2CleanTimeDay"])
+        streams[uptable["KEY_BOX2_CLEAN_TIME_HOUR"]] = int2String(paramTable["box2CleanTimeHour"])
+        streams[uptable["KEY_BOX2_CLEAN_TIME_MINUTE"]] = int2String(paramTable["box2CleanTimeMinute"])
+        streams[uptable["KEY_BOX2_CLEAN_TIME_SECOND"]] = int2String(paramTable["box2CleanTimeSecond"])
         streams[uptable["KEY_BOX3_TYPE"]] = int2String(paramTable["box3Type"])
         if paramTable["box3Status"] == 0x01 then
             streams[uptable["KEY_BOX3_STATUS"]] = "missing"
         elseif paramTable["box3Status"] == 0x00 then
             streams[uptable["KEY_BOX3_STATUS"]] = "no"
         end
-        streams[uptable["KEY_BOX3_ADD_TIME_YEAR"]] = int2String(
-                                                         paramTable["box3AddTimeYear"])
-        streams[uptable["KEY_BOX3_ADD_TIME_MONTH"]] = int2String(
-                                                          paramTable["box3AddTimeMonth"])
-        streams[uptable["KEY_BOX3_ADD_TIME_DAY"]] = int2String(
-                                                        paramTable["box3AddTimeDay"])
-        streams[uptable["KEY_BOX3_ADD_TIME_HOUR"]] = int2String(
-                                                         paramTable["box3AddTimeHour"])
-        streams[uptable["KEY_BOX3_ADD_TIME_MINUTE"]] = int2String(
-                                                           paramTable["box3AddTimeMinute"])
-        streams[uptable["KEY_BOX3_ADD_TIME_SECOND"]] = int2String(
-                                                           paramTable["box3AddTimeSecond"])
-        streams[uptable["KEY_BOX3_CLEAN_TIME_YEAR"]] = int2String(
-                                                           paramTable["box3CleanTimeYear"])
-        streams[uptable["KEY_BOX3_CLEAN_TIME_MONTH"]] = int2String(
-                                                            paramTable["box3CleanTimeMonth"])
-        streams[uptable["KEY_BOX3_CLEAN_TIME_DAY"]] = int2String(
-                                                          paramTable["box3CleanTimeDay"])
-        streams[uptable["KEY_BOX3_CLEAN_TIME_HOUR"]] = int2String(
-                                                           paramTable["box3CleanTimeHour"])
-        streams[uptable["KEY_BOX3_CLEAN_TIME_MINUTE"]] = int2String(
-                                                             paramTable["box3CleanTimeMinute"])
-        streams[uptable["KEY_BOX3_CLEAN_TIME_SECOND"]] = int2String(
-                                                             paramTable["box3CleanTimeSecond"])
+        streams[uptable["KEY_BOX3_ADD_TIME_YEAR"]] = int2String(paramTable["box3AddTimeYear"])
+        streams[uptable["KEY_BOX3_ADD_TIME_MONTH"]] = int2String(paramTable["box3AddTimeMonth"])
+        streams[uptable["KEY_BOX3_ADD_TIME_DAY"]] = int2String(paramTable["box3AddTimeDay"])
+        streams[uptable["KEY_BOX3_ADD_TIME_HOUR"]] = int2String(paramTable["box3AddTimeHour"])
+        streams[uptable["KEY_BOX3_ADD_TIME_MINUTE"]] = int2String(paramTable["box3AddTimeMinute"])
+        streams[uptable["KEY_BOX3_ADD_TIME_SECOND"]] = int2String(paramTable["box3AddTimeSecond"])
+        streams[uptable["KEY_BOX3_CLEAN_TIME_YEAR"]] = int2String(paramTable["box3CleanTimeYear"])
+        streams[uptable["KEY_BOX3_CLEAN_TIME_MONTH"]] = int2String(paramTable["box3CleanTimeMonth"])
+        streams[uptable["KEY_BOX3_CLEAN_TIME_DAY"]] = int2String(paramTable["box3CleanTimeDay"])
+        streams[uptable["KEY_BOX3_CLEAN_TIME_HOUR"]] = int2String(paramTable["box3CleanTimeHour"])
+        streams[uptable["KEY_BOX3_CLEAN_TIME_MINUTE"]] = int2String(paramTable["box3CleanTimeMinute"])
+        streams[uptable["KEY_BOX3_CLEAN_TIME_SECOND"]] = int2String(paramTable["box3CleanTimeSecond"])
         streams[uptable["KEY_BOX4_TYPE"]] = int2String(paramTable["box4Type"])
         if paramTable["box4Status"] == 0x01 then
             streams[uptable["KEY_BOX4_STATUS"]] = "missing"
         elseif paramTable["box4Status"] == 0x00 then
             streams[uptable["KEY_BOX4_STATUS"]] = "no"
         end
-        streams[uptable["KEY_BOX4_ADD_TIME_YEAR"]] = int2String(
-                                                         paramTable["box4AddTimeYear"])
-        streams[uptable["KEY_BOX4_ADD_TIME_MONTH"]] = int2String(
-                                                          paramTable["box4AddTimeMonth"])
-        streams[uptable["KEY_BOX4_ADD_TIME_DAY"]] = int2String(
-                                                        paramTable["box4AddTimeDay"])
-        streams[uptable["KEY_BOX4_ADD_TIME_HOUR"]] = int2String(
-                                                         paramTable["box4AddTimeHour"])
-        streams[uptable["KEY_BOX4_ADD_TIME_MINUTE"]] = int2String(
-                                                           paramTable["box4AddTimeMinute"])
-        streams[uptable["KEY_BOX4_ADD_TIME_SECOND"]] = int2String(
-                                                           paramTable["box4AddTimeSecond"])
-        streams[uptable["KEY_BOX4_CLEAN_TIME_YEAR"]] = int2String(
-                                                           paramTable["box4CleanTimeYear"])
-        streams[uptable["KEY_BOX4_CLEAN_TIME_MONTH"]] = int2String(
-                                                            paramTable["box4CleanTimeMonth"])
-        streams[uptable["KEY_BOX4_CLEAN_TIME_DAY"]] = int2String(
-                                                          paramTable["box4CleanTimeDay"])
-        streams[uptable["KEY_BOX4_CLEAN_TIME_HOUR"]] = int2String(
-                                                           paramTable["box4CleanTimeHour"])
-        streams[uptable["KEY_BOX4_CLEAN_TIME_MINUTE"]] = int2String(
-                                                             paramTable["box4CleanTimeMinute"])
-        streams[uptable["KEY_BOX4_CLEAN_TIME_SECOND"]] = int2String(
-                                                             paramTable["box4CleanTimeSecond"])
+        streams[uptable["KEY_BOX4_ADD_TIME_YEAR"]] = int2String(paramTable["box4AddTimeYear"])
+        streams[uptable["KEY_BOX4_ADD_TIME_MONTH"]] = int2String(paramTable["box4AddTimeMonth"])
+        streams[uptable["KEY_BOX4_ADD_TIME_DAY"]] = int2String(paramTable["box4AddTimeDay"])
+        streams[uptable["KEY_BOX4_ADD_TIME_HOUR"]] = int2String(paramTable["box4AddTimeHour"])
+        streams[uptable["KEY_BOX4_ADD_TIME_MINUTE"]] = int2String(paramTable["box4AddTimeMinute"])
+        streams[uptable["KEY_BOX4_ADD_TIME_SECOND"]] = int2String(paramTable["box4AddTimeSecond"])
+        streams[uptable["KEY_BOX4_CLEAN_TIME_YEAR"]] = int2String(paramTable["box4CleanTimeYear"])
+        streams[uptable["KEY_BOX4_CLEAN_TIME_MONTH"]] = int2String(paramTable["box4CleanTimeMonth"])
+        streams[uptable["KEY_BOX4_CLEAN_TIME_DAY"]] = int2String(paramTable["box4CleanTimeDay"])
+        streams[uptable["KEY_BOX4_CLEAN_TIME_HOUR"]] = int2String(paramTable["box4CleanTimeHour"])
+        streams[uptable["KEY_BOX4_CLEAN_TIME_MINUTE"]] = int2String(paramTable["box4CleanTimeMinute"])
+        streams[uptable["KEY_BOX4_CLEAN_TIME_SECOND"]] = int2String(paramTable["box4CleanTimeSecond"])
         streams[uptable["KEY_BOX5_TYPE"]] = int2String(paramTable["box5Type"])
         if paramTable["box5Status"] == 0x01 then
             streams[uptable["KEY_BOX5_STATUS"]] = "missing"
         elseif paramTable["box5Status"] == 0x00 then
             streams[uptable["KEY_BOX5_STATUS"]] = "no"
         end
-        streams[uptable["KEY_BOX5_ADD_TIME_YEAR"]] = int2String(
-                                                         paramTable["box5AddTimeYear"])
-        streams[uptable["KEY_BOX5_ADD_TIME_MONTH"]] = int2String(
-                                                          paramTable["box5AddTimeMonth"])
-        streams[uptable["KEY_BOX5_ADD_TIME_DAY"]] = int2String(
-                                                        paramTable["box5AddTimeDay"])
-        streams[uptable["KEY_BOX5_ADD_TIME_HOUR"]] = int2String(
-                                                         paramTable["box5AddTimeHour"])
-        streams[uptable["KEY_BOX5_ADD_TIME_MINUTE"]] = int2String(
-                                                           paramTable["box5AddTimeMinute"])
-        streams[uptable["KEY_BOX5_ADD_TIME_SECOND"]] = int2String(
-                                                           paramTable["box5AddTimeSecond"])
-        streams[uptable["KEY_BOX5_CLEAN_TIME_YEAR"]] = int2String(
-                                                           paramTable["box5CleanTimeYear"])
-        streams[uptable["KEY_BOX5_CLEAN_TIME_MONTH"]] = int2String(
-                                                            paramTable["box5CleanTimeMonth"])
-        streams[uptable["KEY_BOX5_CLEAN_TIME_DAY"]] = int2String(
-                                                          paramTable["box5CleanTimeDay"])
-        streams[uptable["KEY_BOX5_CLEAN_TIME_HOUR"]] = int2String(
-                                                           paramTable["box5CleanTimeHour"])
-        streams[uptable["KEY_BOX5_CLEAN_TIME_MINUTE"]] = int2String(
-                                                             paramTable["box5CleanTimeMinute"])
-        streams[uptable["KEY_BOX5_CLEAN_TIME_SECOND"]] = int2String(
-                                                             paramTable["box5CleanTimeSecond"])
+        streams[uptable["KEY_BOX5_ADD_TIME_YEAR"]] = int2String(paramTable["box5AddTimeYear"])
+        streams[uptable["KEY_BOX5_ADD_TIME_MONTH"]] = int2String(paramTable["box5AddTimeMonth"])
+        streams[uptable["KEY_BOX5_ADD_TIME_DAY"]] = int2String(paramTable["box5AddTimeDay"])
+        streams[uptable["KEY_BOX5_ADD_TIME_HOUR"]] = int2String(paramTable["box5AddTimeHour"])
+        streams[uptable["KEY_BOX5_ADD_TIME_MINUTE"]] = int2String(paramTable["box5AddTimeMinute"])
+        streams[uptable["KEY_BOX5_ADD_TIME_SECOND"]] = int2String(paramTable["box5AddTimeSecond"])
+        streams[uptable["KEY_BOX5_CLEAN_TIME_YEAR"]] = int2String(paramTable["box5CleanTimeYear"])
+        streams[uptable["KEY_BOX5_CLEAN_TIME_MONTH"]] = int2String(paramTable["box5CleanTimeMonth"])
+        streams[uptable["KEY_BOX5_CLEAN_TIME_DAY"]] = int2String(paramTable["box5CleanTimeDay"])
+        streams[uptable["KEY_BOX5_CLEAN_TIME_HOUR"]] = int2String(paramTable["box5CleanTimeHour"])
+        streams[uptable["KEY_BOX5_CLEAN_TIME_MINUTE"]] = int2String(paramTable["box5CleanTimeMinute"])
+        streams[uptable["KEY_BOX5_CLEAN_TIME_SECOND"]] = int2String(paramTable["box5CleanTimeSecond"])
         streams[uptable["KEY_BOX6_TYPE"]] = int2String(paramTable["box6Type"])
         if paramTable["box6Status"] == 0x01 then
             streams[uptable["KEY_BOX6_STATUS"]] = "missing"
         elseif paramTable["box6Status"] == 0x00 then
             streams[uptable["KEY_BOX6_STATUS"]] = "no"
         end
-        streams[uptable["KEY_BOX6_ADD_TIME_YEAR"]] = int2String(
-                                                         paramTable["box6AddTimeYear"])
-        streams[uptable["KEY_BOX6_ADD_TIME_MONTH"]] = int2String(
-                                                          paramTable["box6AddTimeMonth"])
-        streams[uptable["KEY_BOX6_ADD_TIME_DAY"]] = int2String(
-                                                        paramTable["box6AddTimeDay"])
-        streams[uptable["KEY_BOX6_ADD_TIME_HOUR"]] = int2String(
-                                                         paramTable["box6AddTimeHour"])
-        streams[uptable["KEY_BOX6_ADD_TIME_MINUTE"]] = int2String(
-                                                           paramTable["box6AddTimeMinute"])
-        streams[uptable["KEY_BOX6_ADD_TIME_SECOND"]] = int2String(
-                                                           paramTable["box6AddTimeSecond"])
-        streams[uptable["KEY_BOX6_CLEAN_TIME_YEAR"]] = int2String(
-                                                           paramTable["box6CleanTimeYear"])
-        streams[uptable["KEY_BOX6_CLEAN_TIME_MONTH"]] = int2String(
-                                                            paramTable["box6CleanTimeMonth"])
-        streams[uptable["KEY_BOX6_CLEAN_TIME_DAY"]] = int2String(
-                                                          paramTable["box6CleanTimeDay"])
-        streams[uptable["KEY_BOX6_CLEAN_TIME_HOUR"]] = int2String(
-                                                           paramTable["box6CleanTimeHour"])
-        streams[uptable["KEY_BOX6_CLEAN_TIME_MINUTE"]] = int2String(
-                                                             paramTable["box6CleanTimeMinute"])
-        streams[uptable["KEY_BOX6_CLEAN_TIME_SECOND"]] = int2String(
-                                                             paramTable["box6CleanTimeSecond"])
+        streams[uptable["KEY_BOX6_ADD_TIME_YEAR"]] = int2String(paramTable["box6AddTimeYear"])
+        streams[uptable["KEY_BOX6_ADD_TIME_MONTH"]] = int2String(paramTable["box6AddTimeMonth"])
+        streams[uptable["KEY_BOX6_ADD_TIME_DAY"]] = int2String(paramTable["box6AddTimeDay"])
+        streams[uptable["KEY_BOX6_ADD_TIME_HOUR"]] = int2String(paramTable["box6AddTimeHour"])
+        streams[uptable["KEY_BOX6_ADD_TIME_MINUTE"]] = int2String(paramTable["box6AddTimeMinute"])
+        streams[uptable["KEY_BOX6_ADD_TIME_SECOND"]] = int2String(paramTable["box6AddTimeSecond"])
+        streams[uptable["KEY_BOX6_CLEAN_TIME_YEAR"]] = int2String(paramTable["box6CleanTimeYear"])
+        streams[uptable["KEY_BOX6_CLEAN_TIME_MONTH"]] = int2String(paramTable["box6CleanTimeMonth"])
+        streams[uptable["KEY_BOX6_CLEAN_TIME_DAY"]] = int2String(paramTable["box6CleanTimeDay"])
+        streams[uptable["KEY_BOX6_CLEAN_TIME_HOUR"]] = int2String(paramTable["box6CleanTimeHour"])
+        streams[uptable["KEY_BOX6_CLEAN_TIME_MINUTE"]] = int2String(paramTable["box6CleanTimeMinute"])
+        streams[uptable["KEY_BOX6_CLEAN_TIME_SECOND"]] = int2String(paramTable["box6CleanTimeSecond"])
         streams[uptable["KEY_BOX7_TYPE"]] = int2String(paramTable["box7Type"])
         if paramTable["box7Status"] == 0x01 then
             streams[uptable["KEY_BOX7_STATUS"]] = "missing"
         elseif paramTable["box7Status"] == 0x00 then
             streams[uptable["KEY_BOX7_STATUS"]] = "no"
         end
-        streams[uptable["KEY_BOX7_ADD_TIME_YEAR"]] = int2String(
-                                                         paramTable["box7AddTimeYear"])
-        streams[uptable["KEY_BOX7_ADD_TIME_MONTH"]] = int2String(
-                                                          paramTable["box7AddTimeMonth"])
-        streams[uptable["KEY_BOX7_ADD_TIME_DAY"]] = int2String(
-                                                        paramTable["box7AddTimeDay"])
-        streams[uptable["KEY_BOX7_ADD_TIME_HOUR"]] = int2String(
-                                                         paramTable["box7AddTimeHour"])
-        streams[uptable["KEY_BOX7_ADD_TIME_MINUTE"]] = int2String(
-                                                           paramTable["box7AddTimeMinute"])
-        streams[uptable["KEY_BOX7_ADD_TIME_SECOND"]] = int2String(
-                                                           paramTable["box7AddTimeSecond"])
-        streams[uptable["KEY_BOX7_CLEAN_TIME_YEAR"]] = int2String(
-                                                           paramTable["box7CleanTimeYear"])
-        streams[uptable["KEY_BOX7_CLEAN_TIME_MONTH"]] = int2String(
-                                                            paramTable["box7CleanTimeMonth"])
-        streams[uptable["KEY_BOX7_CLEAN_TIME_DAY"]] = int2String(
-                                                          paramTable["box7CleanTimeDay"])
-        streams[uptable["KEY_BOX7_CLEAN_TIME_HOUR"]] = int2String(
-                                                           paramTable["box7CleanTimeHour"])
-        streams[uptable["KEY_BOX7_CLEAN_TIME_MINUTE"]] = int2String(
-                                                             paramTable["box7CleanTimeMinute"])
-        streams[uptable["KEY_BOX7_CLEAN_TIME_SECOND"]] = int2String(
-                                                             paramTable["box7CleanTimeSecond"])
+        streams[uptable["KEY_BOX7_ADD_TIME_YEAR"]] = int2String(paramTable["box7AddTimeYear"])
+        streams[uptable["KEY_BOX7_ADD_TIME_MONTH"]] = int2String(paramTable["box7AddTimeMonth"])
+        streams[uptable["KEY_BOX7_ADD_TIME_DAY"]] = int2String(paramTable["box7AddTimeDay"])
+        streams[uptable["KEY_BOX7_ADD_TIME_HOUR"]] = int2String(paramTable["box7AddTimeHour"])
+        streams[uptable["KEY_BOX7_ADD_TIME_MINUTE"]] = int2String(paramTable["box7AddTimeMinute"])
+        streams[uptable["KEY_BOX7_ADD_TIME_SECOND"]] = int2String(paramTable["box7AddTimeSecond"])
+        streams[uptable["KEY_BOX7_CLEAN_TIME_YEAR"]] = int2String(paramTable["box7CleanTimeYear"])
+        streams[uptable["KEY_BOX7_CLEAN_TIME_MONTH"]] = int2String(paramTable["box7CleanTimeMonth"])
+        streams[uptable["KEY_BOX7_CLEAN_TIME_DAY"]] = int2String(paramTable["box7CleanTimeDay"])
+        streams[uptable["KEY_BOX7_CLEAN_TIME_HOUR"]] = int2String(paramTable["box7CleanTimeHour"])
+        streams[uptable["KEY_BOX7_CLEAN_TIME_MINUTE"]] = int2String(paramTable["box7CleanTimeMinute"])
+        streams[uptable["KEY_BOX7_CLEAN_TIME_SECOND"]] = int2String(paramTable["box7CleanTimeSecond"])
         streams[uptable["KEY_BOX8_TYPE"]] = int2String(paramTable["box8Type"])
         if paramTable["box8Status"] == 0x01 then
             streams[uptable["KEY_BOX8_STATUS"]] = "missing"
         elseif paramTable["box8Status"] == 0x00 then
             streams[uptable["KEY_BOX8_STATUS"]] = "no"
         end
-        streams[uptable["KEY_BOX8_ADD_TIME_YEAR"]] = int2String(
-                                                         paramTable["box8AddTimeYear"])
-        streams[uptable["KEY_BOX8_ADD_TIME_MONTH"]] = int2String(
-                                                          paramTable["box8AddTimeMonth"])
-        streams[uptable["KEY_BOX8_ADD_TIME_DAY"]] = int2String(
-                                                        paramTable["box8AddTimeDay"])
-        streams[uptable["KEY_BOX8_ADD_TIME_HOUR"]] = int2String(
-                                                         paramTable["box8AddTimeHour"])
-        streams[uptable["KEY_BOX8_ADD_TIME_MINUTE"]] = int2String(
-                                                           paramTable["box8AddTimeMinute"])
-        streams[uptable["KEY_BOX8_ADD_TIME_SECOND"]] = int2String(
-                                                           paramTable["box8AddTimeSecond"])
-        streams[uptable["KEY_BOX8_CLEAN_TIME_YEAR"]] = int2String(
-                                                           paramTable["box8CleanTimeYear"])
-        streams[uptable["KEY_BOX8_CLEAN_TIME_MONTH"]] = int2String(
-                                                            paramTable["box8CleanTimeMonth"])
-        streams[uptable["KEY_BOX8_CLEAN_TIME_DAY"]] = int2String(
-                                                          paramTable["box8CleanTimeDay"])
-        streams[uptable["KEY_BOX8_CLEAN_TIME_HOUR"]] = int2String(
-                                                           paramTable["box8CleanTimeHour"])
-        streams[uptable["KEY_BOX8_CLEAN_TIME_MINUTE"]] = int2String(
-                                                             paramTable["box8CleanTimeMinute"])
-        streams[uptable["KEY_BOX8_CLEAN_TIME_SECOND"]] = int2String(
-                                                             paramTable["box8CleanTimeSecond"])
+        streams[uptable["KEY_BOX8_ADD_TIME_YEAR"]] = int2String(paramTable["box8AddTimeYear"])
+        streams[uptable["KEY_BOX8_ADD_TIME_MONTH"]] = int2String(paramTable["box8AddTimeMonth"])
+        streams[uptable["KEY_BOX8_ADD_TIME_DAY"]] = int2String(paramTable["box8AddTimeDay"])
+        streams[uptable["KEY_BOX8_ADD_TIME_HOUR"]] = int2String(paramTable["box8AddTimeHour"])
+        streams[uptable["KEY_BOX8_ADD_TIME_MINUTE"]] = int2String(paramTable["box8AddTimeMinute"])
+        streams[uptable["KEY_BOX8_ADD_TIME_SECOND"]] = int2String(paramTable["box8AddTimeSecond"])
+        streams[uptable["KEY_BOX8_CLEAN_TIME_YEAR"]] = int2String(paramTable["box8CleanTimeYear"])
+        streams[uptable["KEY_BOX8_CLEAN_TIME_MONTH"]] = int2String(paramTable["box8CleanTimeMonth"])
+        streams[uptable["KEY_BOX8_CLEAN_TIME_DAY"]] = int2String(paramTable["box8CleanTimeDay"])
+        streams[uptable["KEY_BOX8_CLEAN_TIME_HOUR"]] = int2String(paramTable["box8CleanTimeHour"])
+        streams[uptable["KEY_BOX8_CLEAN_TIME_MINUTE"]] = int2String(paramTable["box8CleanTimeMinute"])
+        streams[uptable["KEY_BOX8_CLEAN_TIME_SECOND"]] = int2String(paramTable["box8CleanTimeSecond"])
     end
     local retTable = {}
     retTable["status"] = streams
@@ -1027,12 +905,12 @@ function print_lua_table(lua_table, indent)
 end
 
 function checkBoundary(data, min, max)
-    if (not data) then data = 0 end
+    if not data then data = 0 end
     data = tonumber(data)
-    if ((data >= min) and (data <= max)) then
+    if (data >= min) and (data <= max) then
         return data
     else
-        if (data < min) then
+        if data < min then
             return min
         else
             return max
@@ -1043,7 +921,9 @@ end
 function table2string(cmd)
     local ret = ""
     local i
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 
@@ -1061,7 +941,9 @@ end
 
 function string2hexstring(str)
     local ret = ""
-    for i = 1, #str do ret = ret .. string.format("%02x", str:byte(i)) end
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
     return ret
 end
 
@@ -1090,22 +972,262 @@ function makeSum(tmpbuf, start_pos, end_pos)
 end
 
 local crc8_854_table = {
-    0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65, 157,
-    195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220, 35, 125,
-    159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98, 190, 224, 2,
-    92, 223, 129, 99, 61, 124, 34, 192, 158, 29, 67, 161, 255, 70, 24, 250, 164,
-    39, 121, 155, 197, 132, 218, 56, 102, 229, 187, 89, 7, 219, 133, 103, 57,
-    186, 228, 6, 88, 25, 71, 165, 251, 120, 38, 196, 154, 101, 59, 217, 135, 4,
-    90, 184, 230, 167, 249, 27, 69, 198, 152, 122, 36, 248, 166, 68, 26, 153,
-    199, 37, 123, 58, 100, 134, 216, 91, 5, 231, 185, 140, 210, 48, 110, 237,
-    179, 81, 15, 78, 16, 242, 172, 47, 113, 147, 205, 17, 79, 173, 243, 112, 46,
-    204, 146, 211, 141, 111, 49, 178, 236, 14, 80, 175, 241, 19, 77, 206, 144,
-    114, 44, 109, 51, 209, 143, 12, 82, 176, 238, 50, 108, 142, 208, 83, 13,
-    239, 177, 240, 174, 76, 18, 145, 207, 45, 115, 202, 148, 118, 40, 171, 245,
-    23, 73, 8, 86, 180, 234, 105, 55, 213, 139, 87, 9, 235, 181, 54, 104, 138,
-    212, 149, 203, 41, 119, 244, 170, 72, 22, 233, 183, 85, 11, 136, 214, 52,
-    106, 43, 117, 151, 201, 74, 20, 246, 168, 116, 42, 200, 150, 21, 75, 169,
-    247, 182, 232, 10, 84, 215, 137, 107, 53
+    0,
+    94,
+    188,
+    226,
+    97,
+    63,
+    221,
+    131,
+    194,
+    156,
+    126,
+    32,
+    163,
+    253,
+    31,
+    65,
+    157,
+    195,
+    33,
+    127,
+    252,
+    162,
+    64,
+    30,
+    95,
+    1,
+    227,
+    189,
+    62,
+    96,
+    130,
+    220,
+    35,
+    125,
+    159,
+    193,
+    66,
+    28,
+    254,
+    160,
+    225,
+    191,
+    93,
+    3,
+    128,
+    222,
+    60,
+    98,
+    190,
+    224,
+    2,
+    92,
+    223,
+    129,
+    99,
+    61,
+    124,
+    34,
+    192,
+    158,
+    29,
+    67,
+    161,
+    255,
+    70,
+    24,
+    250,
+    164,
+    39,
+    121,
+    155,
+    197,
+    132,
+    218,
+    56,
+    102,
+    229,
+    187,
+    89,
+    7,
+    219,
+    133,
+    103,
+    57,
+    186,
+    228,
+    6,
+    88,
+    25,
+    71,
+    165,
+    251,
+    120,
+    38,
+    196,
+    154,
+    101,
+    59,
+    217,
+    135,
+    4,
+    90,
+    184,
+    230,
+    167,
+    249,
+    27,
+    69,
+    198,
+    152,
+    122,
+    36,
+    248,
+    166,
+    68,
+    26,
+    153,
+    199,
+    37,
+    123,
+    58,
+    100,
+    134,
+    216,
+    91,
+    5,
+    231,
+    185,
+    140,
+    210,
+    48,
+    110,
+    237,
+    179,
+    81,
+    15,
+    78,
+    16,
+    242,
+    172,
+    47,
+    113,
+    147,
+    205,
+    17,
+    79,
+    173,
+    243,
+    112,
+    46,
+    204,
+    146,
+    211,
+    141,
+    111,
+    49,
+    178,
+    236,
+    14,
+    80,
+    175,
+    241,
+    19,
+    77,
+    206,
+    144,
+    114,
+    44,
+    109,
+    51,
+    209,
+    143,
+    12,
+    82,
+    176,
+    238,
+    50,
+    108,
+    142,
+    208,
+    83,
+    13,
+    239,
+    177,
+    240,
+    174,
+    76,
+    18,
+    145,
+    207,
+    45,
+    115,
+    202,
+    148,
+    118,
+    40,
+    171,
+    245,
+    23,
+    73,
+    8,
+    86,
+    180,
+    234,
+    105,
+    55,
+    213,
+    139,
+    87,
+    9,
+    235,
+    181,
+    54,
+    104,
+    138,
+    212,
+    149,
+    203,
+    41,
+    119,
+    244,
+    170,
+    72,
+    22,
+    233,
+    183,
+    85,
+    11,
+    136,
+    214,
+    52,
+    106,
+    43,
+    117,
+    151,
+    201,
+    74,
+    20,
+    246,
+    168,
+    116,
+    42,
+    200,
+    150,
+    21,
+    75,
+    169,
+    247,
+    182,
+    232,
+    10,
+    84,
+    215,
+    137,
+    107,
+    53,
 }
 
 function crc8_854(dataBuf, start_pos, end_pos)
@@ -1117,15 +1239,15 @@ function crc8_854(dataBuf, start_pos, end_pos)
 end
 
 function string2Int(data)
-    if (not data) then data = tonumber("0") end
+    if not data then data = tonumber "0" end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
+    if data == nil then data = 0 end
     return data
 end
 
 function int2String(data)
-    if (not data) then data = tostring(0) end
+    if not data then data = tostring(0) end
     data = tostring(data)
-    if (data == nil) then data = "0" end
+    if data == nil then data = "0" end
     return data
 end

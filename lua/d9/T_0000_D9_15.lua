@@ -5,12 +5,12 @@ local dcControlMapping = {
     ["dc_power"] = {
         ["type"] = 0x01,
         ["length"] = 1,
-        ["value"] = {["on"] = 1, ["off"] = 0}
+        ["value"] = { ["on"] = 1, ["off"] = 0 },
     },
     ["dc_control_status"] = {
         ["type"] = 0x02,
         ["length"] = 1,
-        ["value"] = {["start"] = 1, ["pause"] = 0}
+        ["value"] = { ["start"] = 1, ["pause"] = 0 },
     },
     ["dc_program"] = {
         ["type"] = 0x04,
@@ -46,31 +46,31 @@ local dcControlMapping = {
             ["western_trouser"] = 0x1d,
             ["dehumidification"] = 0x1e,
             ["silk"] = 0x1f,
-            ["air_wash"] = 0x25
-        }
+            ["air_wash"] = 0x25,
+        },
     },
-    ["dc_dry_time"] = {["type"] = 0x05, ["length"] = 2},
-    ["dc_intensity"] = {["type"] = 0x07, ["length"] = 1},
-    ["dc_light"] = {["type"] = 0x08, ["length"] = 1},
-    ["dc_baby_lock"] = {["type"] = 0x09, ["length"] = 1},
-    ["dc_appointment"] = {["type"] = 0x0B, ["length"] = 1},
-    ["dc_sterilize"] = {["type"] = 0x0D, ["length"] = 1},
-    ["dc_remind_sound"] = {["type"] = 0x0E, ["length"] = 1},
-    ["dc_position"] = {["type"] = 0x0F, ["length"] = 1},
-    ["dc_appointment_time"] = {["type"] = 0x10, ["length"] = 2},
-    ["dc_steam"] = {["type"] = 0x11, ["length"] = 1},
-    ["dc_prevent_wrinkle"] = {["type"] = 0x12, ["length"] = 1}
+    ["dc_dry_time"] = { ["type"] = 0x05, ["length"] = 2 },
+    ["dc_intensity"] = { ["type"] = 0x07, ["length"] = 1 },
+    ["dc_light"] = { ["type"] = 0x08, ["length"] = 1 },
+    ["dc_baby_lock"] = { ["type"] = 0x09, ["length"] = 1 },
+    ["dc_appointment"] = { ["type"] = 0x0B, ["length"] = 1 },
+    ["dc_sterilize"] = { ["type"] = 0x0D, ["length"] = 1 },
+    ["dc_remind_sound"] = { ["type"] = 0x0E, ["length"] = 1 },
+    ["dc_position"] = { ["type"] = 0x0F, ["length"] = 1 },
+    ["dc_appointment_time"] = { ["type"] = 0x10, ["length"] = 2 },
+    ["dc_steam"] = { ["type"] = 0x11, ["length"] = 1 },
+    ["dc_prevent_wrinkle"] = { ["type"] = 0x12, ["length"] = 1 },
 }
 local dbControlMapping = {
     ["db_power"] = {
         ["type"] = 0x01,
         ["length"] = 1,
-        ["value"] = {["on"] = 1, ["off"] = 0}
+        ["value"] = { ["on"] = 1, ["off"] = 0 },
     },
     ["db_control_status"] = {
         ["type"] = 0x02,
         ["length"] = 1,
-        ["value"] = {["start"] = 1, ["pause"] = 0}
+        ["value"] = { ["start"] = 1, ["pause"] = 0 },
     },
     ["db_program"] = {
         ["type"] = 0x04,
@@ -153,53 +153,53 @@ local dbControlMapping = {
             ["cook_wash"] = 0x68,
             ["fresh_remove_wrinkle"] = 0x69,
             ["steam_sterilize_wash"] = 0x6A,
-            ["sterilize_wash"] = 0x70
-        }
+            ["sterilize_wash"] = 0x70,
+        },
     },
-    ["db_water_level"] = {["type"] = 0x05, ["length"] = 1},
-    ["db_dry"] = {["type"] = 0x06, ["length"] = 1},
-    ["db_rinse_count"] = {["type"] = 0x07, ["length"] = 1},
-    ["db_temperature"] = {["type"] = 0x08, ["length"] = 1},
-    ["db_dehydration_speed"] = {["type"] = 0x09, ["length"] = 1},
-    ["db_wash_time"] = {["type"] = 0x0A, ["length"] = 1},
-    ["db_detergent"] = {["type"] = 0x0B, ["length"] = 1},
-    ["db_softener"] = {["type"] = 0x0C, ["length"] = 1},
-    ["db_appointment_time"] = {["type"] = 0x0D, ["length"] = 2},
-    ["db_memory"] = {["type"] = 0x0E, ["length"] = 1},
-    ["db_appointment"] = {["type"] = 0x0F, ["length"] = 1},
-    ["db_spray_wash"] = {["type"] = 0x10, ["length"] = 1},
-    ["db_speedy_wash"] = {["type"] = 0x11, ["length"] = 1},
-    ["db_nightly_wash"] = {["type"] = 0x12, ["length"] = 1},
-    ["db_baby_lock"] = {["type"] = 0x13, ["length"] = 1},
-    ["db_light"] = {["type"] = 0x14, ["length"] = 1},
-    ["db_easy_ironing"] = {["type"] = 0x15, ["length"] = 1},
-    ["db_appointment_wash"] = {["type"] = 0x16, ["length"] = 1},
-    ["db_super_clean_wash"] = {["type"] = 0x17, ["length"] = 1},
-    ["db_intelligent_wash"] = {["type"] = 0x18, ["length"] = 1},
-    ["db_strong_wash"] = {["type"] = 0x19, ["length"] = 1},
-    ["db_steam_wash"] = {["type"] = 0x1A, ["length"] = 1},
-    ["db_fast_clean_wash"] = {["type"] = 0x1B, ["length"] = 1},
-    ["db_disinfectant"] = {["type"] = 0x1C, ["length"] = 1},
-    ["db_stains_wash"] = {["type"] = 0x1D, ["length"] = 1},
-    ["db_sterilize"] = {["type"] = 0x1E, ["length"] = 1},
-    ["db_soak_wash"] = {["type"] = 0x1F, ["length"] = 1},
-    ["db_water_quality_link"] = {["type"] = 0x22, ["length"] = 1},
-    ["db_dehydration_time"] = {["type"] = 0x27, ["length"] = 1},
-    ["db_position"] = {["type"] = 0x2A, ["length"] = 1},
-    ["db_location"] = {["type"] = 0x32, ["length"] = 1},
-    ["db_material"] = {["type"] = 0x36, ["length"] = 1},
-    ["db_ai"] = {["type"] = 0x3A, ["length"] = 1}
+    ["db_water_level"] = { ["type"] = 0x05, ["length"] = 1 },
+    ["db_dry"] = { ["type"] = 0x06, ["length"] = 1 },
+    ["db_rinse_count"] = { ["type"] = 0x07, ["length"] = 1 },
+    ["db_temperature"] = { ["type"] = 0x08, ["length"] = 1 },
+    ["db_dehydration_speed"] = { ["type"] = 0x09, ["length"] = 1 },
+    ["db_wash_time"] = { ["type"] = 0x0A, ["length"] = 1 },
+    ["db_detergent"] = { ["type"] = 0x0B, ["length"] = 1 },
+    ["db_softener"] = { ["type"] = 0x0C, ["length"] = 1 },
+    ["db_appointment_time"] = { ["type"] = 0x0D, ["length"] = 2 },
+    ["db_memory"] = { ["type"] = 0x0E, ["length"] = 1 },
+    ["db_appointment"] = { ["type"] = 0x0F, ["length"] = 1 },
+    ["db_spray_wash"] = { ["type"] = 0x10, ["length"] = 1 },
+    ["db_speedy_wash"] = { ["type"] = 0x11, ["length"] = 1 },
+    ["db_nightly_wash"] = { ["type"] = 0x12, ["length"] = 1 },
+    ["db_baby_lock"] = { ["type"] = 0x13, ["length"] = 1 },
+    ["db_light"] = { ["type"] = 0x14, ["length"] = 1 },
+    ["db_easy_ironing"] = { ["type"] = 0x15, ["length"] = 1 },
+    ["db_appointment_wash"] = { ["type"] = 0x16, ["length"] = 1 },
+    ["db_super_clean_wash"] = { ["type"] = 0x17, ["length"] = 1 },
+    ["db_intelligent_wash"] = { ["type"] = 0x18, ["length"] = 1 },
+    ["db_strong_wash"] = { ["type"] = 0x19, ["length"] = 1 },
+    ["db_steam_wash"] = { ["type"] = 0x1A, ["length"] = 1 },
+    ["db_fast_clean_wash"] = { ["type"] = 0x1B, ["length"] = 1 },
+    ["db_disinfectant"] = { ["type"] = 0x1C, ["length"] = 1 },
+    ["db_stains_wash"] = { ["type"] = 0x1D, ["length"] = 1 },
+    ["db_sterilize"] = { ["type"] = 0x1E, ["length"] = 1 },
+    ["db_soak_wash"] = { ["type"] = 0x1F, ["length"] = 1 },
+    ["db_water_quality_link"] = { ["type"] = 0x22, ["length"] = 1 },
+    ["db_dehydration_time"] = { ["type"] = 0x27, ["length"] = 1 },
+    ["db_position"] = { ["type"] = 0x2A, ["length"] = 1 },
+    ["db_location"] = { ["type"] = 0x32, ["length"] = 1 },
+    ["db_material"] = { ["type"] = 0x36, ["length"] = 1 },
+    ["db_ai"] = { ["type"] = 0x3A, ["length"] = 1 },
 }
 local daControlMapping = {
     ["da_power"] = {
         ["type"] = 0x01,
         ["length"] = 1,
-        ["value"] = {["on"] = 1, ["off"] = 0}
+        ["value"] = { ["on"] = 1, ["off"] = 0 },
     },
     ["da_control_status"] = {
         ["type"] = 0x02,
         ["length"] = 1,
-        ["value"] = {["start"] = 1, ["pause"] = 0}
+        ["value"] = { ["start"] = 1, ["pause"] = 0 },
     },
     ["da_program"] = {
         ["type"] = 0x04,
@@ -242,35 +242,35 @@ local daControlMapping = {
             ["silk"] = 0x24,
             ["shirt"] = 0x25,
             ["cook_wash"] = 0x26,
-            ["towel"] = 0x27
-        }
+            ["towel"] = 0x27,
+        },
     },
-    ["da_water_level"] = {["type"] = 0x05, ["length"] = 1},
-    ["da_rinse_level"] = {["type"] = 0x06, ["length"] = 1},
-    ["da_wash_strength"] = {["type"] = 0x07, ["length"] = 1},
-    ["da_dehydration_speed"] = {["type"] = 0x08, ["length"] = 1},
-    ["da_detergent"] = {["type"] = 0x09, ["length"] = 1},
-    ["da_softener"] = {["type"] = 0x0A, ["length"] = 1},
-    ["da_wash_time"] = {["type"] = 0x0B, ["length"] = 1},
-    ["da_rinse_count"] = {["type"] = 0x0C, ["length"] = 1},
-    ["da_dehydration_time"] = {["type"] = 0x0D, ["length"] = 1},
-    ["da_soak_waterlevel"] = {["type"] = 0x0E, ["length"] = 1},
-    ["da_soak_time"] = {["type"] = 0x0F, ["length"] = 1},
-    ["da_appointment_time"] = {["type"] = 0x10, ["length"] = 2},
-    ["da_baby_lock"] = {["type"] = 0x11, ["length"] = 1},
-    ["da_light"] = {["type"] = 0x12, ["length"] = 1},
-    ["da_offcenter_wash"] = {["type"] = 0x13, ["length"] = 1},
-    ["da_fcs"] = {["type"] = 0x14, ["length"] = 1},
-    ["da_auto_weighting"] = {["type"] = 0x15, ["length"] = 1},
-    ["da_appointment_status"] = {["type"] = 0x16, ["length"] = 1},
-    ["da_intense_wash"] = {["type"] = 0x17, ["length"] = 1},
-    ["da_air_dry"] = {["type"] = 0x18, ["length"] = 1},
-    ["da_keep_water"] = {["type"] = 0x19, ["length"] = 1},
-    ["da_wash_pump"] = {["type"] = 0x1A, ["length"] = 1},
-    ["da_rinse_pump"] = {["type"] = 0x1B, ["length"] = 1},
-    ["da_automatic_door"] = {["type"] = 0x1C, ["length"] = 1},
-    ["da_temperature"] = {["type"] = 0x20, ["length"] = 1},
-    ["da_position"] = {["type"] = 0x22, ["length"] = 1}
+    ["da_water_level"] = { ["type"] = 0x05, ["length"] = 1 },
+    ["da_rinse_level"] = { ["type"] = 0x06, ["length"] = 1 },
+    ["da_wash_strength"] = { ["type"] = 0x07, ["length"] = 1 },
+    ["da_dehydration_speed"] = { ["type"] = 0x08, ["length"] = 1 },
+    ["da_detergent"] = { ["type"] = 0x09, ["length"] = 1 },
+    ["da_softener"] = { ["type"] = 0x0A, ["length"] = 1 },
+    ["da_wash_time"] = { ["type"] = 0x0B, ["length"] = 1 },
+    ["da_rinse_count"] = { ["type"] = 0x0C, ["length"] = 1 },
+    ["da_dehydration_time"] = { ["type"] = 0x0D, ["length"] = 1 },
+    ["da_soak_waterlevel"] = { ["type"] = 0x0E, ["length"] = 1 },
+    ["da_soak_time"] = { ["type"] = 0x0F, ["length"] = 1 },
+    ["da_appointment_time"] = { ["type"] = 0x10, ["length"] = 2 },
+    ["da_baby_lock"] = { ["type"] = 0x11, ["length"] = 1 },
+    ["da_light"] = { ["type"] = 0x12, ["length"] = 1 },
+    ["da_offcenter_wash"] = { ["type"] = 0x13, ["length"] = 1 },
+    ["da_fcs"] = { ["type"] = 0x14, ["length"] = 1 },
+    ["da_auto_weighting"] = { ["type"] = 0x15, ["length"] = 1 },
+    ["da_appointment_status"] = { ["type"] = 0x16, ["length"] = 1 },
+    ["da_intense_wash"] = { ["type"] = 0x17, ["length"] = 1 },
+    ["da_air_dry"] = { ["type"] = 0x18, ["length"] = 1 },
+    ["da_keep_water"] = { ["type"] = 0x19, ["length"] = 1 },
+    ["da_wash_pump"] = { ["type"] = 0x1A, ["length"] = 1 },
+    ["da_rinse_pump"] = { ["type"] = 0x1B, ["length"] = 1 },
+    ["da_automatic_door"] = { ["type"] = 0x1C, ["length"] = 1 },
+    ["da_temperature"] = { ["type"] = 0x20, ["length"] = 1 },
+    ["da_position"] = { ["type"] = 0x22, ["length"] = 1 },
 }
 local dcQueryTable = {
     [1] = 0xAA,
@@ -284,7 +284,7 @@ local dcQueryTable = {
     [9] = 0x00,
     [10] = 0x03,
     [11] = 0xDC,
-    [12] = 0x6D
+    [12] = 0x6D,
 }
 local dbQueryTable = {
     [1] = 0xAA,
@@ -298,7 +298,7 @@ local dbQueryTable = {
     [9] = 0x00,
     [10] = 0x03,
     [11] = 0xDB,
-    [12] = 0x6E
+    [12] = 0x6E,
 }
 local upDBQueryTable = {
     [1] = 0xAA,
@@ -315,7 +315,7 @@ local upDBQueryTable = {
     [12] = 0x32,
     [13] = 0x01,
     [14] = 0x01,
-    [15] = 0x37
+    [15] = 0x37,
 }
 local downDBQueryTable = {
     [1] = 0xAA,
@@ -332,7 +332,7 @@ local downDBQueryTable = {
     [12] = 0x32,
     [13] = 0x01,
     [14] = 0x02,
-    [15] = 0x36
+    [15] = 0x36,
 }
 local daQueryTable = {
     [1] = 0xAA,
@@ -346,10 +346,10 @@ local daQueryTable = {
     [9] = 0x00,
     [10] = 0x03,
     [11] = 0xDA,
-    [12] = 0x6F
+    [12] = 0x6F,
 }
 local dcReportMapping = {
-    [1] = {["name"] = "dc_power", ["value"] = {[0] = "off", [1] = "on"}},
+    [1] = { ["name"] = "dc_power", ["value"] = { [0] = "off", [1] = "on" } },
     [4] = {
         ["name"] = "dc_program",
         ["value"] = {
@@ -383,20 +383,20 @@ local dcReportMapping = {
             [29] = "western_trouser",
             [30] = "dehumidification",
             [31] = "silk",
-            [37] = "air_wash"
-        }
+            [37] = "air_wash",
+        },
     },
-    [5] = {["name"] = "dc_dry_time"},
-    [7] = {["name"] = "dc_intensity"},
-    [8] = {["name"] = "dc_light"},
-    [9] = {["name"] = "dc_baby_lock"},
-    [11] = {["name"] = "dc_appointment"},
-    [13] = {["name"] = "dc_sterilize"},
-    [14] = {["name"] = "dc_remind_sound"},
-    [15] = {["name"] = "dc_position"},
-    [16] = {["name"] = "dc_appointment_time"},
-    [17] = {["name"] = "dc_steam"},
-    [18] = {["name"] = "dc_prevent_wrinkle"},
+    [5] = { ["name"] = "dc_dry_time" },
+    [7] = { ["name"] = "dc_intensity" },
+    [8] = { ["name"] = "dc_light" },
+    [9] = { ["name"] = "dc_baby_lock" },
+    [11] = { ["name"] = "dc_appointment" },
+    [13] = { ["name"] = "dc_sterilize" },
+    [14] = { ["name"] = "dc_remind_sound" },
+    [15] = { ["name"] = "dc_position" },
+    [16] = { ["name"] = "dc_appointment_time" },
+    [17] = { ["name"] = "dc_steam" },
+    [18] = { ["name"] = "dc_prevent_wrinkle" },
     [19] = {
         ["name"] = "dc_running_status",
         ["value"] = {
@@ -406,10 +406,10 @@ local dcReportMapping = {
             [4] = "end",
             [5] = "fault",
             [6] = "delay",
-            [8] = "delay"
-        }
+            [8] = "delay",
+        },
     },
-    [20] = {["name"] = "dc_error_code"},
+    [20] = { ["name"] = "dc_error_code" },
     [21] = {
         ["name"] = "dc_dry_status",
         ["value"] = {
@@ -419,18 +419,18 @@ local dcReportMapping = {
             [8] = "ending",
             [16] = "preventwrinkling",
             [32] = "sterilizing",
-            [64] = "steamironing"
-        }
+            [64] = "steamironing",
+        },
     },
-    [22] = {["name"] = "dc_remain_time"},
-    [43] = {["name"] = "dc_project_no"},
-    [44] = {["name"] = "dc_water_consumption"},
-    [45] = {["name"] = "dc_power_consumption"},
-    [46] = {["name"] = "dc_appointment_end_time"},
-    [50] = {["name"] = "dc_location"}
+    [22] = { ["name"] = "dc_remain_time" },
+    [43] = { ["name"] = "dc_project_no" },
+    [44] = { ["name"] = "dc_water_consumption" },
+    [45] = { ["name"] = "dc_power_consumption" },
+    [46] = { ["name"] = "dc_appointment_end_time" },
+    [50] = { ["name"] = "dc_location" },
 }
 local dbReportMapping = {
-    [1] = {["name"] = "db_power", ["value"] = {[0] = "off", [1] = "on"}},
+    [1] = { ["name"] = "db_power", ["value"] = { [0] = "off", [1] = "on" } },
     [4] = {
         ["name"] = "db_program",
         ["value"] = {
@@ -511,40 +511,40 @@ local dbReportMapping = {
             [104] = "cook_wash",
             [105] = "fresh_remove_wrinkle",
             [106] = "steam_sterilize_wash",
-            [112] = "sterilize_wash"
-        }
+            [112] = "sterilize_wash",
+        },
     },
-    [5] = {["name"] = "db_water_level"},
-    [6] = {["name"] = "db_dry"},
-    [7] = {["name"] = "db_rinse_count"},
-    [8] = {["name"] = "db_temperature"},
-    [9] = {["name"] = "db_dehydration_speed"},
-    [10] = {["name"] = "db_wash_time"},
-    [11] = {["name"] = "db_detergent"},
-    [12] = {["name"] = "db_softener"},
-    [13] = {["name"] = "db_appointment_time"},
-    [14] = {["name"] = "db_memory"},
-    [15] = {["name"] = "db_appointment"},
-    [16] = {["name"] = "db_spray_wash"},
-    [17] = {["name"] = "db_speedy_wash"},
-    [18] = {["name"] = "db_nightly_wash"},
-    [19] = {["name"] = "db_baby_lock"},
-    [20] = {["name"] = "db_light"},
-    [21] = {["name"] = "db_easy_ironing"},
-    [22] = {["name"] = "db_appointment_wash"},
-    [23] = {["name"] = "db_super_clean_wash"},
-    [24] = {["name"] = "db_intelligent_wash"},
-    [25] = {["name"] = "db_strong_wash"},
-    [26] = {["name"] = "db_steam_wash"},
-    [27] = {["name"] = "db_fast_clean_wash"},
-    [28] = {["name"] = "db_disinfectant"},
-    [29] = {["name"] = "db_stains_wash"},
-    [30] = {["name"] = "db_sterilize"},
-    [31] = {["name"] = "db_soak_wash"},
-    [32] = {["name"] = "db_detergent_increment"},
-    [33] = {["name"] = "db_softener_increment"},
-    [34] = {["name"] = "db_water_quality_link"},
-    [35] = {["name"] = "db_remain_time"},
+    [5] = { ["name"] = "db_water_level" },
+    [6] = { ["name"] = "db_dry" },
+    [7] = { ["name"] = "db_rinse_count" },
+    [8] = { ["name"] = "db_temperature" },
+    [9] = { ["name"] = "db_dehydration_speed" },
+    [10] = { ["name"] = "db_wash_time" },
+    [11] = { ["name"] = "db_detergent" },
+    [12] = { ["name"] = "db_softener" },
+    [13] = { ["name"] = "db_appointment_time" },
+    [14] = { ["name"] = "db_memory" },
+    [15] = { ["name"] = "db_appointment" },
+    [16] = { ["name"] = "db_spray_wash" },
+    [17] = { ["name"] = "db_speedy_wash" },
+    [18] = { ["name"] = "db_nightly_wash" },
+    [19] = { ["name"] = "db_baby_lock" },
+    [20] = { ["name"] = "db_light" },
+    [21] = { ["name"] = "db_easy_ironing" },
+    [22] = { ["name"] = "db_appointment_wash" },
+    [23] = { ["name"] = "db_super_clean_wash" },
+    [24] = { ["name"] = "db_intelligent_wash" },
+    [25] = { ["name"] = "db_strong_wash" },
+    [26] = { ["name"] = "db_steam_wash" },
+    [27] = { ["name"] = "db_fast_clean_wash" },
+    [28] = { ["name"] = "db_disinfectant" },
+    [29] = { ["name"] = "db_stains_wash" },
+    [30] = { ["name"] = "db_sterilize" },
+    [31] = { ["name"] = "db_soak_wash" },
+    [32] = { ["name"] = "db_detergent_increment" },
+    [33] = { ["name"] = "db_softener_increment" },
+    [34] = { ["name"] = "db_water_quality_link" },
+    [35] = { ["name"] = "db_remain_time" },
     [36] = {
         ["name"] = "db_running_status",
         ["value"] = {
@@ -554,30 +554,30 @@ local dbReportMapping = {
             [3] = "pause",
             [4] = "end",
             [5] = "fault",
-            [6] = "delay"
-        }
+            [6] = "delay",
+        },
     },
-    [37] = {["name"] = "db_progress"},
-    [38] = {["name"] = "db_error_code"},
-    [39] = {["name"] = "db_dehydration_time"},
-    [40] = {["name"] = "db_set_dewater_time"},
-    [41] = {["name"] = "db_set_wash_time"},
-    [42] = {["name"] = "db_position"},
-    [43] = {["name"] = "db_project_no"},
-    [44] = {["name"] = "db_water_consumption"},
-    [45] = {["name"] = "db_power_consumption"},
-    [46] = {["name"] = "db_clean_notification"},
-    [47] = {["name"] = "db_softener_needed"},
-    [48] = {["name"] = "db_detergent_needed"},
-    [50] = {["name"] = "db_location"},
-    [51] = {["name"] = "db_water_radar_rinse"},
-    [52] = {["name"] = "db_water_radar_wash_time"},
-    [53] = {["name"] = "db_appointment_end_time"},
-    [54] = {["name"] = "db_material"},
-    [58] = {["name"] = "db_ai"}
+    [37] = { ["name"] = "db_progress" },
+    [38] = { ["name"] = "db_error_code" },
+    [39] = { ["name"] = "db_dehydration_time" },
+    [40] = { ["name"] = "db_set_dewater_time" },
+    [41] = { ["name"] = "db_set_wash_time" },
+    [42] = { ["name"] = "db_position" },
+    [43] = { ["name"] = "db_project_no" },
+    [44] = { ["name"] = "db_water_consumption" },
+    [45] = { ["name"] = "db_power_consumption" },
+    [46] = { ["name"] = "db_clean_notification" },
+    [47] = { ["name"] = "db_softener_needed" },
+    [48] = { ["name"] = "db_detergent_needed" },
+    [50] = { ["name"] = "db_location" },
+    [51] = { ["name"] = "db_water_radar_rinse" },
+    [52] = { ["name"] = "db_water_radar_wash_time" },
+    [53] = { ["name"] = "db_appointment_end_time" },
+    [54] = { ["name"] = "db_material" },
+    [58] = { ["name"] = "db_ai" },
 }
 local daReportMapping = {
-    [1] = {["name"] = "da_power", ["value"] = {[0] = "off", [1] = "on"}},
+    [1] = { ["name"] = "da_power", ["value"] = { [0] = "off", [1] = "on" } },
     [4] = {
         ["name"] = "da_program",
         ["value"] = {
@@ -618,34 +618,34 @@ local daReportMapping = {
             [36] = "silk",
             [37] = "shirt",
             [38] = "cook_wash",
-            [39] = "towel"
-        }
+            [39] = "towel",
+        },
     },
-    [5] = {["name"] = "da_water_level"},
-    [6] = {["name"] = "da_rinse_level"},
-    [7] = {["name"] = "da_wash_strength"},
-    [8] = {["name"] = "da_dehydration_speed"},
-    [9] = {["name"] = "da_detergent"},
-    [10] = {["name"] = "da_softener"},
-    [11] = {["name"] = "da_wash_time"},
-    [12] = {["name"] = "da_rinse_count"},
-    [13] = {["name"] = "da_dehydration_time"},
-    [14] = {["name"] = "da_soak_waterlevel"},
-    [15] = {["name"] = "da_soak_time"},
-    [16] = {["name"] = "da_appointment_time"},
-    [17] = {["name"] = "da_baby_lock"},
-    [18] = {["name"] = "da_light"},
-    [19] = {["name"] = "da_offcenter_wash"},
-    [20] = {["name"] = "da_fcs"},
-    [21] = {["name"] = "da_auto_weighting"},
-    [22] = {["name"] = "da_appointment_status"},
-    [23] = {["name"] = "da_intense_wash"},
-    [24] = {["name"] = "da_air_dry"},
-    [25] = {["name"] = "da_keep_water"},
-    [26] = {["name"] = "da_wash_pump"},
-    [27] = {["name"] = "da_rinse_pump"},
-    [28] = {["name"] = "da_automatic_door"},
-    [29] = {["name"] = "da_remain_time"},
+    [5] = { ["name"] = "da_water_level" },
+    [6] = { ["name"] = "da_rinse_level" },
+    [7] = { ["name"] = "da_wash_strength" },
+    [8] = { ["name"] = "da_dehydration_speed" },
+    [9] = { ["name"] = "da_detergent" },
+    [10] = { ["name"] = "da_softener" },
+    [11] = { ["name"] = "da_wash_time" },
+    [12] = { ["name"] = "da_rinse_count" },
+    [13] = { ["name"] = "da_dehydration_time" },
+    [14] = { ["name"] = "da_soak_waterlevel" },
+    [15] = { ["name"] = "da_soak_time" },
+    [16] = { ["name"] = "da_appointment_time" },
+    [17] = { ["name"] = "da_baby_lock" },
+    [18] = { ["name"] = "da_light" },
+    [19] = { ["name"] = "da_offcenter_wash" },
+    [20] = { ["name"] = "da_fcs" },
+    [21] = { ["name"] = "da_auto_weighting" },
+    [22] = { ["name"] = "da_appointment_status" },
+    [23] = { ["name"] = "da_intense_wash" },
+    [24] = { ["name"] = "da_air_dry" },
+    [25] = { ["name"] = "da_keep_water" },
+    [26] = { ["name"] = "da_wash_pump" },
+    [27] = { ["name"] = "da_rinse_pump" },
+    [28] = { ["name"] = "da_automatic_door" },
+    [29] = { ["name"] = "da_remain_time" },
     [30] = {
         ["name"] = "da_running_status",
         ["value"] = {
@@ -654,25 +654,25 @@ local daReportMapping = {
             [3] = "pause",
             [4] = "end",
             [5] = "fault",
-            [6] = "delay"
-        }
+            [6] = "delay",
+        },
     },
-    [31] = {["name"] = "da_error_code"},
-    [32] = {["name"] = "da_temperature"},
-    [33] = {["name"] = "da_progress"},
-    [34] = {["name"] = "da_position"},
-    [43] = {["name"] = "da_project_no"},
-    [44] = {["name"] = "da_water_consumption"},
-    [45] = {["name"] = "da_power_consumption"},
-    [46] = {["name"] = "da_clean_notification"},
-    [47] = {["name"] = "da_softener_needed"},
-    [48] = {["name"] = "da_detergent_needed"},
-    [50] = {["name"] = "da_location"}
+    [31] = { ["name"] = "da_error_code" },
+    [32] = { ["name"] = "da_temperature" },
+    [33] = { ["name"] = "da_progress" },
+    [34] = { ["name"] = "da_position" },
+    [43] = { ["name"] = "da_project_no" },
+    [44] = { ["name"] = "da_water_consumption" },
+    [45] = { ["name"] = "da_power_consumption" },
+    [46] = { ["name"] = "da_clean_notification" },
+    [47] = { ["name"] = "da_softener_needed" },
+    [48] = { ["name"] = "da_detergent_needed" },
+    [50] = { ["name"] = "da_location" },
 }
 local commandSpec = {
-    power = {offset = 88, bits = 8},
-    control_status = {offset = 96, bits = 8},
-    program = {offset = 112, bits = 8}
+    power = { offset = 88, bits = 8 },
+    control_status = { offset = 96, bits = 8 },
+    program = { offset = 112, bits = 8 },
 }
 local function decodeJsonToTable(cmd)
     local tb
@@ -685,71 +685,72 @@ local function encodeTableToJson(luaTable)
     return jsonStr
 end
 local function checkSum(controlTable)
-    local checksum = 0;
-    for i = 2, #controlTable do checksum = checksum + controlTable[i]; end
-    return bit.band((bit.bnot(checksum) + 1), 0x00FF);
+    local checksum = 0
+    for i = 2, #controlTable do
+        checksum = checksum + controlTable[i]
+    end
+    return bit.band((bit.bnot(checksum) + 1), 0x00FF)
 end
-local function hextonumber(hexstr) return tonumber(hexstr, 16) end
+local function hextonumber(hexstr)
+    return tonumber(hexstr, 16)
+end
 local function hexstrtotable(hexstr, reportMapping, reportType, bucketType)
     local tb = {}
     local i = 23
-    while (i <= #hexstr - 2) do
+    while i <= #hexstr - 2 do
         local dataType = hextonumber(string.sub(hexstr, i, i + 1))
         local length = hextonumber(string.sub(hexstr, i + 2, i + 3))
-        if (length == 1) then
-            if (reportMapping[dataType]) then
+        if length == 1 then
+            if reportMapping[dataType] then
                 local value = hextonumber(string.sub(hexstr, i + 4, i + 5))
-                if (reportMapping[dataType]["value"]) then
-                    tb[reportMapping[dataType]["name"]] =
-                        reportMapping[dataType]["value"][value]
+                if reportMapping[dataType]["value"] then
+                    tb[reportMapping[dataType]["name"]] = reportMapping[dataType]["value"][value]
                 else
-                    if (reportMapping[dataType]["name"] == "da_error_code" or
-                        reportMapping[dataType]["name"] == "db_error_code" or
-                        reportMapping[dataType]["name"] == "dc_error_code") then
-                        tb[reportMapping[dataType]["name"]] = string.format(
-                                                                  "%x", value)
+                    if
+                        reportMapping[dataType]["name"] == "da_error_code"
+                        or reportMapping[dataType]["name"] == "db_error_code"
+                        or reportMapping[dataType]["name"] == "dc_error_code"
+                    then
+                        tb[reportMapping[dataType]["name"]] = string.format("%x", value)
                     else
                         tb[reportMapping[dataType]["name"]] = value
                     end
                 end
             end
-        elseif (length == 2) then
-            if (reportMapping[dataType]) then
-                local value = hextonumber(
-                                  string.sub(hexstr, i + 6, i + 7) ..
-                                      string.sub(hexstr, i + 4, i + 5))
-                if (reportMapping[dataType]["value"]) then
-                    tb[reportMapping[dataType]["name"]] =
-                        reportMapping[dataType]["value"][value]
+        elseif length == 2 then
+            if reportMapping[dataType] then
+                local value = hextonumber(string.sub(hexstr, i + 6, i + 7) .. string.sub(hexstr, i + 4, i + 5))
+                if reportMapping[dataType]["value"] then
+                    tb[reportMapping[dataType]["name"]] = reportMapping[dataType]["value"][value]
                 else
                     tb[reportMapping[dataType]["name"]] = value
                 end
             end
-        elseif (length == 3) then
-            if (reportMapping[dataType]) then
+        elseif length == 3 then
+            if reportMapping[dataType] then
                 local value
-                if (reportMapping[dataType]["name"] == "da_water_consumption" or
-                    reportMapping[dataType]["name"] == "da_power_consumption" or
-                    reportMapping[dataType]["name"] == "db_water_consumption" or
-                    reportMapping[dataType]["name"] == "db_power_consumption" or
-                    reportMapping[dataType]["name"] == "dc_water_consumption" or
-                    reportMapping[dataType]["name"] == "dc_power_consumption") then
-                    value = hextonumber(string.sub(hexstr, i + 8, i + 9) ..
-                                            string.sub(hexstr, i + 6, i + 7) ..
-                                            string.sub(hexstr, i + 4, i + 5))
-                elseif (reportMapping[dataType]["name"] ==
-                    "db_appointment_end_time" or reportMapping[dataType]["name"] ==
-                    "dc_appointment_end_time") then
-                    local todayOrTomorrow =
-                        hextonumber(string.sub(hexstr, i + 8, i + 9))
-                    value = hextonumber(string.sub(hexstr, i + 6, i + 7) ..
-                                            string.sub(hexstr, i + 4, i + 5))
-                    if (todayOrTomorrow == 1) then
-                        value = value + 1440
-                    end
+                if
+                    reportMapping[dataType]["name"] == "da_water_consumption"
+                    or reportMapping[dataType]["name"] == "da_power_consumption"
+                    or reportMapping[dataType]["name"] == "db_water_consumption"
+                    or reportMapping[dataType]["name"] == "db_power_consumption"
+                    or reportMapping[dataType]["name"] == "dc_water_consumption"
+                    or reportMapping[dataType]["name"] == "dc_power_consumption"
+                then
+                    value = hextonumber(
+                        string.sub(hexstr, i + 8, i + 9)
+                            .. string.sub(hexstr, i + 6, i + 7)
+                            .. string.sub(hexstr, i + 4, i + 5)
+                    )
+                elseif
+                    reportMapping[dataType]["name"] == "db_appointment_end_time"
+                    or reportMapping[dataType]["name"] == "dc_appointment_end_time"
+                then
+                    local todayOrTomorrow = hextonumber(string.sub(hexstr, i + 8, i + 9))
+                    value = hextonumber(string.sub(hexstr, i + 6, i + 7) .. string.sub(hexstr, i + 4, i + 5))
+                    if todayOrTomorrow == 1 then value = value + 1440 end
                 else
-                    value = hextonumber(string.sub(hexstr, i + 6, i + 7) ..
-                                            string.sub(hexstr, i + 4, i + 5))
+                    value = hextonumber(string.sub(hexstr, i + 6, i + 7) .. string.sub(hexstr, i + 4, i + 5))
                 end
                 tb[reportMapping[dataType]["name"]] = value
             end
@@ -775,20 +776,20 @@ local function jsontotable(control, controlMapping)
         [8] = 0x00,
         [9] = 0x00,
         [10] = 0x02,
-        [11] = 0x02
+        [11] = 0x02,
     }
     local offset = 12
     for k in pairs(control) do
-        if (k ~= "bucket") then
+        if k ~= "bucket" then
             header[offset] = controlMapping[k]["type"]
             header[offset + 1] = controlMapping[k]["length"]
-            if (header[offset + 1] == 1) then
-                if (controlMapping[k]["value"]) then
+            if header[offset + 1] == 1 then
+                if controlMapping[k]["value"] then
                     header[offset + 2] = controlMapping[k]["value"][control[k]]
                 else
                     header[offset + 2] = control[k]
                 end
-            elseif (header[offset + 1] == 2) then
+            elseif header[offset + 1] == 2 then
                 header[offset + 2] = bit.band(control[k], 0x00FF)
                 header[offset + 3] = bit.rshift(bit.band(control[k], 0xFF00), 8)
             end
@@ -802,71 +803,71 @@ local function jsontotable(control, controlMapping)
 end
 local function updateArg(tempTable, argsTable, controlMapping)
     for k in pairs(argsTable) do
-        if (controlMapping[k]) then tempTable[k] = argsTable[k] end
+        if controlMapping[k] then tempTable[k] = argsTable[k] end
     end
 end
 function jsonToData(jsonCmdStr)
-    if (#jsonCmdStr == 0) then return nil end
+    if #jsonCmdStr == 0 then return nil end
     local msgBytes = {}
     local json = decodeJsonToTable(jsonCmdStr)
     local query = json["query"]
     local control = json["control"]
     local status = json["status"]
     local tmpTable = {}
-    if (control) then
+    if control then
         local tab = {}
-        if (control["bucket"] == 'da') then
+        if control["bucket"] == "da" then
             updateArg(tab, control, daControlMapping)
             tab["bucket"] = "da"
             tmpTable = jsontotable(tab, daControlMapping)
-        elseif (control["bucket"] == 'db') then
+        elseif control["bucket"] == "db" then
             updateArg(tab, control, dbControlMapping)
             tab["bucket"] = "db"
             tmpTable = jsontotable(tab, dbControlMapping)
-        elseif (control["bucket"] == 'dc') then
+        elseif control["bucket"] == "dc" then
             updateArg(tab, control, dcControlMapping)
             tab["bucket"] = "dc"
             tmpTable = jsontotable(tab, dcControlMapping)
         else
             return nil
         end
-    elseif (query) then
-        if (query["query_type"] == 'da') then
+    elseif query then
+        if query["query_type"] == "da" then
             tmpTable = daQueryTable
-        elseif (query["query_type"] == 'db') then
+        elseif query["query_type"] == "db" then
             local UP_BUCKET = 1
             local DOWN_BUCKET = 2
-            if (query["db_location"] == UP_BUCKET) then
+            if query["db_location"] == UP_BUCKET then
                 tmpTable = upDBQueryTable
-            elseif (query["db_location"] == DOWN_BUCKET) then
+            elseif query["db_location"] == DOWN_BUCKET then
                 tmpTable = downDBQueryTable
             else
                 tmpTable = dbQueryTable
             end
-        elseif (query["query_type"] == 'dc') then
+        elseif query["query_type"] == "dc" then
             tmpTable = dcQueryTable
         else
             tmpTable = dbQueryTable
         end
     end
-    local hex = '';
+    local hex = ""
     for key = 1, #tmpTable, 1 do
-        hex = hex .. string.format("%02x", tmpTable[key]);
+        hex = hex .. string.format("%02x", tmpTable[key])
     end
     return hex
 end
 function dataToJson(jsonStr)
-    if (not jsonStr) then return nil end
+    if not jsonStr then return nil end
     local json = decodeJsonToTable(jsonStr)
     local binData = json["msg"]["data"]
     local reportType = string.lower(string.sub(binData, 19, 22))
-    if (reportType == '02da' or reportType == '03da' or reportType == '04da') then
-        return hexstrtotable(binData, daReportMapping, reportType, 'da')
-    elseif (reportType == '02db' or reportType == '03db' or reportType == '04db') then
-        return hexstrtotable(binData, dbReportMapping, reportType, 'db')
-    elseif (reportType == '02dc' or reportType == '03dc' or reportType == '04dc') then
-        return hexstrtotable(binData, dcReportMapping, reportType, 'dc')
+    if reportType == "02da" or reportType == "03da" or reportType == "04da" then
+        return hexstrtotable(binData, daReportMapping, reportType, "da")
+    elseif reportType == "02db" or reportType == "03db" or reportType == "04db" then
+        return hexstrtotable(binData, dbReportMapping, reportType, "db")
+    elseif reportType == "02dc" or reportType == "03dc" or reportType == "04dc" then
+        return hexstrtotable(binData, dcReportMapping, reportType, "dc")
     else
-        return hexstrtotable(binData, dbReportMapping, reportType, 'db')
+        return hexstrtotable(binData, dbReportMapping, reportType, "db")
     end
 end

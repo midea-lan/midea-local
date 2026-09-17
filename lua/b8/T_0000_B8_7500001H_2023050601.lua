@@ -28,7 +28,7 @@ local BYTE_DEVICE_TYPE = 0xB8
 local CONTROL_TYPE_CODE = {
     none = 0x00, -- 不控制
     manual = 0x01, -- 手动模式
-    auto = 0x02 -- 自动模式
+    auto = 0x02, -- 自动模式
 }
 
 -- 手动控制方向
@@ -37,7 +37,7 @@ local MOVEMENT_CODE = {
     forward = 0x01, --	 上/前
     back = 0x02, --	 下/后
     left = 0x03, --	 左
-    right = 0x04 --	 右
+    right = 0x04, --	 右
 }
 
 -- 清扫类型
@@ -54,7 +54,7 @@ local CLEAN_MODE_CODE = {
     area = 0x09, --	 区域清
     zone_index = 0x0a, --    分区清扫(索引)
     zone_rect = 0x0b, --    划区清扫(手绘矩形区域)
-    path = 0x0c --    轨迹清扫
+    path = 0x0c, --    轨迹清扫
 }
 
 -- 风机设置
@@ -63,7 +63,7 @@ local FAN_LEVEL_CODE = {
     soft = 0x01, --	轻柔
     normal = 0x02, --	正常(默认)
     high = 0x03, --	强力
-    low = 0x04 --   安静
+    low = 0x04, --   安静
 }
 
 -- 水箱设置
@@ -71,7 +71,7 @@ local WATER_LEVEL_CODE = {
     off = 0x00, --	关闭
     low = 0x01, --	慢速（默认）
     normal = 0x02, --	中速
-    high = 0x03 --	快速
+    high = 0x03, --	快速
 }
 
 -- 指定位置工作内容
@@ -79,7 +79,7 @@ local WORK_CONTENT_CODE = {
     charge = 0x01,
     auto = 0x02,
     stop = 0x03,
-    screw = 0x04
+    screw = 0x04,
 }
 
 -- 语音控制
@@ -88,14 +88,14 @@ local SPEAK_LEVEL_CODE = {
     off = 0x01, --	关闭
     low = 0x02, --	小声
     normal = 0x03, --	中声
-    high = 0x04 --	大声
+    high = 0x04, --	大声
 }
 
 local ERROR_TYPE_OF_A0A3 = {
     no = 0x00,
     can_fix = 0x01,
     reboot = 0x02,
-    warning = 0x03
+    warning = 0x03,
 }
 
 local ERROR_FIX_DESC_OF_A0A3 = {
@@ -115,14 +115,14 @@ local ERROR_FIX_DESC_OF_A0A3 = {
     fix_edge_sensor = 0x0D,
     fix_start_in_forbid_area = 0x0E,
     fix_start_in_strong_magnetic = 0x0F,
-    fix_laser_sensor_blocked = 0x10
+    fix_laser_sensor_blocked = 0x10,
 }
 
 local ERROR_REBOOT_DESC = {
     no = 0x00,
     reboot_laser_comm_fail = 0x01,
     reboot_robot_comm_fail = 0x02,
-    reboot_inner_fail = 0x03
+    reboot_inner_fail = 0x03,
 }
 
 local ERROR_WARN_DESC_OF_A0A3 = {
@@ -130,10 +130,10 @@ local ERROR_WARN_DESC_OF_A0A3 = {
     warn_location_fail = 0x01,
     warn_low_battery = 0x02,
     warn_full_dust = 0x03,
-    warn_low_water = 0x04
+    warn_low_water = 0x04,
 }
 
-local JSON = require("cjson")
+local JSON = require "cjson"
 
 -- 返回 bin(byte) 的 第 pos(0-7) 位， 是否为 1.
 local function bitAt(bin, ops)
@@ -148,7 +148,9 @@ end
 -- 返回初始化后的数组，下标从0开始， 初始化值为0
 local function initMessageArray(len)
     local arr = {}
-    for i = 0, len - 1 do arr[i] = 0 end
+    for i = 0, len - 1 do
+        arr[i] = 0
+    end
     -- 初始化消息头部信息
     arr[0] = BYTE_PROTOCOL_HEAD
     arr[1] = len
@@ -181,7 +183,9 @@ end
 local function addSumAndConvertMsgToHexString(msg, len)
     msg[len] = makeSum(msg, len - 1)
     local bin = ""
-    for i = 0, len do bin = bin .. string.format("%02x", msg[i]) end
+    for i = 0, len do
+        bin = bin .. string.format("%02x", msg[i])
+    end
     return bin
 end
 
@@ -191,9 +195,7 @@ local function convertWeekdayToByte(weekday)
     local rst = 0x0
     for i = 1, 7 do
         p, _ = string.find(weekday, tostring(i))
-        if p ~= nil and p > 0 then
-            rst = bit.bxor(rst, bit.lshift(0x01, i - 1))
-        end
+        if p ~= nil and p > 0 then rst = bit.bxor(rst, bit.lshift(0x01, i - 1)) end
     end
 
     -- 高位给一， 周期性预约
@@ -321,7 +323,6 @@ end
 
 -- 处理充电、暂停json
 local function handleChargeStopJson(json)
-
     local workMode = json["work_status"]
 
     -- 电控消息总长 13 (不包含最后的校验位)
@@ -376,7 +377,6 @@ local function handleDisturbJson(json)
     end
 
     return addSumAndConvertMsgToHexString(msg, msgLen)
-
 end
 
 -- 控制音量
@@ -527,7 +527,6 @@ end
 
 -- 处理OTA升级
 local function handleOTAJson(json)
-
     -- 电控消息总长 14 (不包含最后的校验位)
     local msgLen = 13
     local msg = initMessageArray(msgLen)
@@ -693,8 +692,7 @@ local function handleControlJson(json)
     elseif workStatus == "reserve" then
         -- 预约
         return handleReserveJson(json)
-    elseif workStatus == "charge" or workStatus == "stop" or workStatus ==
-        "pause" then
+    elseif workStatus == "charge" or workStatus == "stop" or workStatus == "pause" then
         -- 充电、暂停,暂停自动清扫， 继续自动清扫
         return handleChargeStopJson(json)
     elseif workStatus == "disturb" then
@@ -715,8 +713,7 @@ local function handleControlJson(json)
     elseif workStatus == "switch" then
         -- switch
         return handleSwitchJson(json)
-    elseif workStatus == "virtual_wall_param" or workStatus ==
-        "zone_clean_param" then
+    elseif workStatus == "virtual_wall_param" or workStatus == "zone_clean_param" then
         -- 虚拟墙指令参数 or 划区清扫指令参数
         return handleVirtualWallParamJson(json)
     elseif workStatus == "path_clean_param" then
@@ -816,13 +813,13 @@ local WORK_STATUS_CODE = {
     electrolysed_water_making = 0x0F, -- 电解水制作中
     dust_collecting = 0x10, -- 集尘中
     back_dust_collecting = 0x11, -- 回去集尘中
-    sleep_in_station = 0x12 -- 站内休眠
+    sleep_in_station = 0x12, -- 站内休眠
 }
 
 -- 功能分类
 local FUNCTION_TYPE_CODE = {
     dust_box_cleaning = 0x01, -- 尘盒清扫
-    water_tank_cleaning = 0x02 -- 水箱清扫
+    water_tank_cleaning = 0x02, -- 水箱清扫
 }
 
 -- 0A 指令上报内容
@@ -836,7 +833,7 @@ local ERR_0A_INFRA_RED_LOW_CODE = {
     failure_infra_red_low_left_hanging = 0x02, -- 左轮悬空
     failure_infra_red_low_right_collision = 0x01, -- 右边碰撞
     failure_infra_red_low_left_collision = 0x00, -- 左边碰撞
-    failure_infra_red_low_center_collision = 0x08 -- 左边碰撞和右边碰撞都发生时： 中间碰撞
+    failure_infra_red_low_center_collision = 0x08, -- 左边碰撞和右边碰撞都发生时： 中间碰撞
 }
 -- byte12 红外传感器提示信息 (高位)
 local ERR_0A_INFRA_RED_HIGH_CODE = {
@@ -847,7 +844,7 @@ local ERR_0A_INFRA_RED_HIGH_CODE = {
     failure_infra_red_high_right_obstacle = 0x03, -- 右边有障碍物
     failure_infra_red_high_right_fall = 0x02, -- 右边跌落
     failure_infra_red_high_front_fall = 0x01, -- 前边跌落
-    failure_infra_red_high_left_fall = 0x00 -- 左边跌落
+    failure_infra_red_high_left_fall = 0x00, -- 左边跌落
 }
 -- byte13 故障信息 (低位)
 local ERR_0A_FAILURE_LOW_CODE = {
@@ -858,8 +855,7 @@ local ERR_0A_FAILURE_LOW_CODE = {
     failure_low_right_side_brush = 0x03, -- 右边刷标识 1=右边刷故障
     failure_low_left_side_brush = 0x02, -- 左边刷标识 1=左边刷故障
     failure_low_right_wheel_overload = 0x01, -- 右轮过载标识 1=右轮过载
-    failure_low_left_wheel_overload = 0x00 -- 左轮过载标识 1=左轮过载
-
+    failure_low_left_wheel_overload = 0x00, -- 左轮过载标识 1=左轮过载
 }
 -- byte14 故障信息 (中位)
 local ERR_0A_FAILURE_MID_CODE = {
@@ -870,7 +866,7 @@ local ERR_0A_FAILURE_MID_CODE = {
     failure_mid_right_back_hanging_sensor = 0x03, -- 悬空标识 1=右轮悬空S故障
     failure_mid_left_back_hanging_sensor = 0x02, -- 悬空标识 1=左轮悬空S故障
     failure_mid_right_collision_switch = 0x01, -- 碰撞标识 1=右边碰撞开关故障
-    failure_mid_left_collision_switch = 0x00 -- 碰撞标识 1=左边碰撞开关故障
+    failure_mid_left_collision_switch = 0x00, -- 碰撞标识 1=左边碰撞开关故障
 }
 
 -- byte15 故障信息 (高位)
@@ -882,7 +878,7 @@ local ERR_0A_FAILURE_HIGH_CODE = {
     failure_high_right_infra_red = 0x03, -- 障碍标识 1=右边红外故障
     failure_high_right_drop_sensor = 0x02, -- 跌落标识 1=右边跌落S故障
     failure_high_front_drop_sensor = 0x01, -- 跌落标识 1=前边跌落S故障
-    failure_high_left_drop_sensor = 0x00 -- 跌落标识 1=左边跌落S故障
+    failure_high_left_drop_sensor = 0x00, -- 跌落标识 1=左边跌落S故障
 }
 
 -- byte16 用户提示低位
@@ -894,7 +890,7 @@ local ERR_0A_USER_LOW_CODE = {
     failure_user_low_no_water = 0x03, -- 水箱缺水标识位 1=缺水
     failure_user_low_charging_switch_off = 0x02, -- 充电电源开关标识 1=未打开
     failure_user_low_charge_error = 0x01, -- 充电故障标识 1=故障
-    failure_user_low_network_failed = 0x00 -- 配网故障标识 1=配网失败
+    failure_user_low_network_failed = 0x00, -- 配网故障标识 1=配网失败
 }
 -- byte17 用户提示中位
 local ERR_0A_USER_MID_CODE = {
@@ -905,7 +901,7 @@ local ERR_0A_USER_MID_CODE = {
     failure_user_mid_laser_sensor_error = 0x03, -- 激光传感器故障标识 1=故障
     failure_user_mid_low_battery = 0x02, -- 电量不足标识 1=故障
     failure_user_mid_camera_error = 0x01, -- 摄像头故障标识 1=故障
-    failure_user_mid_vacuum_engine_overload = 0x00 -- 吸尘电机故障标识  1=过载
+    failure_user_mid_vacuum_engine_overload = 0x00, -- 吸尘电机故障标识  1=过载
 }
 
 -- 状态摘要低位 byte 24
@@ -917,7 +913,7 @@ local STATUS_SUMMARY_LOW_CODE = {
     none = 0x04,
     none = 0x05,
     status_summary_command_source = 0x06, --  指令上下行标识  1=指令由电控触发04 0=其它如APP触发
-    status_summary_device_error = 0x07 --  设备故障位标识  1=有故障 0=无故障
+    status_summary_device_error = 0x07, --  设备故障位标识  1=有故障 0=无故障
 }
 
 -- byte25 用户提示低位
@@ -929,7 +925,7 @@ local ERR_USER_LOW_CODE = {
     user_low_no_water = 0x03, -- 水箱缺水标识位 1=缺水
     user_low_charging_switch_off = 0x02, -- 充电电源开关标识 1=未打开
     user_low_f_b_plate_stuck = 0x01, -- 卡住标识 1=前后挡板卡住
-    user_low_l_r_wheel_hang = 0x00 -- 悬空标识 1=左右轮悬空
+    user_low_l_r_wheel_hang = 0x00, -- 悬空标识 1=左右轮悬空
 }
 -- byte26 用户提示中位
 local ERR_USER_MID_CODE = {
@@ -940,7 +936,7 @@ local ERR_USER_MID_CODE = {
     user_mid_vacuum_engine_overload = 0x03, -- 吸尘电机故障标识 1=过载
     user_mid_right_wheel_overload = 0x02, -- 右轮过载标识     1=过载
     user_mid_left_wheel_overload = 0x01, -- 左轮过载标识     1=过载
-    user_mid_drop = 0x00 -- 跌落标识         1=跌落
+    user_mid_drop = 0x00, -- 跌落标识         1=跌落
 }
 
 -- byte29 用户提示高位
@@ -952,12 +948,14 @@ local ERR_USER_HIGH_CODE = {
     none = 0x03,
     user_high_board_communication_error = 0x02, -- 主板与导航板通信异常故障标识 1=故障
     user_high_laser_sensor_shelter = 0x01, -- 激光传感器被遮挡标识  1=故障
-    user_high_laser_sensor_error = 0x00 -- 激光传感器故障标识    1=故障
+    user_high_laser_sensor_error = 0x00, -- 激光传感器故障标识    1=故障
 }
 
 -- 根据数值， 返回对应的字符串
 local function getCodeStr(dict, value)
-    for k, v in pairs(dict) do if v == value then return k end end
+    for k, v in pairs(dict) do
+        if v == value then return k end
+    end
     return nil
 end
 
@@ -965,9 +963,7 @@ end
 local function convertWorkdaysFromByte(weekdayByte)
     local rst = ""
     for i = 1, 7 do
-        if bit.band(weekdayByte, bit.lshift(0x01, i - 1)) > 0 then
-            rst = rst .. tostring(i)
-        end
+        if bit.band(weekdayByte, bit.lshift(0x01, i - 1)) > 0 then rst = rst .. tostring(i) end
     end
     return rst
 end
@@ -1118,17 +1114,12 @@ local function decodeReserveBin(bin)
 
             if msgLen == pos + 12 then switch = 0 end
 
-            data[outIdx]["reserve_weekdays"] =
-                convertWorkdaysFromByte(weekdayByte)
-            data[outIdx]["reserve_start_time"] =
-                string.format("%02d%02d%02d", hour, min, sec)
+            data[outIdx]["reserve_weekdays"] = convertWorkdaysFromByte(weekdayByte)
+            data[outIdx]["reserve_start_time"] = string.format("%02d%02d%02d", hour, min, sec)
             data[outIdx]["reserve_task_minutes"] = tostring(taskMin)
-            data[outIdx]["reserve_work_mode"] =
-                getCodeStr(CLEAN_MODE_CODE, cleanMode)
-            data[outIdx]["reserve_fan_level"] =
-                getCodeStr(FAN_LEVEL_CODE, fanLevel)
-            data[outIdx]["reserve_water_level"] =
-                getCodeStr(WATER_LEVEL_CODE, waterLevel)
+            data[outIdx]["reserve_work_mode"] = getCodeStr(CLEAN_MODE_CODE, cleanMode)
+            data[outIdx]["reserve_fan_level"] = getCodeStr(FAN_LEVEL_CODE, fanLevel)
+            data[outIdx]["reserve_water_level"] = getCodeStr(WATER_LEVEL_CODE, waterLevel)
             data[outIdx]["reserve_task_id"] = tostring(taskId)
             data[outIdx]["reserve_switch"] = switch == 0 and "on" or "off"
         end
@@ -1283,14 +1274,10 @@ local function decodeQueryWorkStatusBin(bin)
 
     for i = 0, 7 do
         local name = getCodeStr(STATUS_SUMMARY_LOW_CODE, i)
-        if name ~= nil and name ~= "none" then
-            query[name] = bitAt(statusSummary, i) == true and "yes" or "no"
-        end
+        if name ~= nil and name ~= "none" then query[name] = bitAt(statusSummary, i) == true and "yes" or "no" end
         -- 故障用户提示高位
         name = getCodeStr(ERR_USER_HIGH_CODE, i)
-        if name ~= nil and name ~= "none" then
-            query[name] = bitAt(errUserHigh, i) == true and "yes" or "no"
-        end
+        if name ~= nil and name ~= "none" then query[name] = bitAt(errUserHigh, i) == true and "yes" or "no" end
     end
 
     query["work_status"] = getCodeStr(WORK_STATUS_CODE, workStatus)
@@ -1384,8 +1371,7 @@ local function decodeQueryObserverBin(bin)
             data[i + 1]["task_minutes"] = tostring(taskMin)
             data[i + 1]["work_mode"] = getCodeStr(CLEAN_MODE_CODE, cleanMode)
             data[i + 1]["fan_level"] = getCodeStr(FAN_LEVEL_CODE, fanLevel)
-            data[i + 1]["water_level"] =
-                getCodeStr(WATER_LEVEL_CODE, waterLevel)
+            data[i + 1]["water_level"] = getCodeStr(WATER_LEVEL_CODE, waterLevel)
             data[i + 1]["task_id"] = tostring(taskId)
             data[i + 1]["open_status"] = isOpen == 0x00 and "on" or "off"
         end
@@ -1415,7 +1401,6 @@ local function decodeQueryParts(bin)
     query["roll_brush_rest_time"] = tostring(rollBrushRestTime)
     query["roll_brush_life_time"] = tostring(rollBrushLifeTime)
     return wrapTableToJson("status", query)
-
 end
 
 local function decodeQueryCommand(bin)
@@ -1520,19 +1505,13 @@ local function decode0442Report(bin)
     for i = 0, 7 do
         -- 状态摘要低位
         local name = getCodeStr(STATUS_SUMMARY_LOW_CODE, i)
-        if name ~= nil and name ~= "none" then
-            query[name] = bitAt(statusSummary, i) == true and "yes" or "no"
-        end
+        if name ~= nil and name ~= "none" then query[name] = bitAt(statusSummary, i) == true and "yes" or "no" end
         -- 故障用户提示低位
         name = getCodeStr(ERR_USER_LOW_CODE, i)
-        if name ~= nil and name ~= "none" then
-            query[name] = bitAt(errUserLow, i) == true and "yes" or "no"
-        end
+        if name ~= nil and name ~= "none" then query[name] = bitAt(errUserLow, i) == true and "yes" or "no" end
         -- 故障用户提示中位
         name = getCodeStr(ERR_USER_MID_CODE, i)
-        if name ~= nil and name ~= "none" then
-            query[name] = bitAt(errUserMid, i) == true and "yes" or "no"
-        end
+        if name ~= nil and name ~= "none" then query[name] = bitAt(errUserMid, i) == true and "yes" or "no" end
     end
 
     query["work_status"] = getCodeStr(WORK_STATUS_CODE, workStatus)
@@ -1638,24 +1617,17 @@ local function decodeA0A3Report(bin)
     query["error_type"] = getCodeStr(ERROR_TYPE_OF_A0A3, error_type)
     query["error_desc"] = "no"
 
-    if error_type == 0x01 then
-        query["error_desc"] = getCodeStr(ERROR_FIX_DESC_OF_A0A3, error_desc)
-    end
+    if error_type == 0x01 then query["error_desc"] = getCodeStr(ERROR_FIX_DESC_OF_A0A3, error_desc) end
 
-    if error_type == 0x02 then
-        query["error_desc"] = getCodeStr(ERROR_REBOOT_DESC, error_desc)
-    end
+    if error_type == 0x02 then query["error_desc"] = getCodeStr(ERROR_REBOOT_DESC, error_desc) end
 
-    if error_type == 0x03 then
-        query["error_desc"] = getCodeStr(ERROR_WARN_DESC_OF_A0A3, error_desc)
-    end
+    if error_type == 0x03 then query["error_desc"] = getCodeStr(ERROR_WARN_DESC_OF_A0A3, error_desc) end
 
     return wrapTableToJson("status", query)
 end
 
 -- 翻译 故障信息上报
 local function decodeErrorReport(bin)
-
     local msgSubType = bin[10]
     if msgSubType == 0xA3 then return decodeA0A3Report(bin) end
 
@@ -1670,51 +1642,35 @@ local function decodeErrorReport(bin)
     local query = {}
 
     if msgSubType == 0xA1 then
-
         -- 故障上报类型
         for i = 0, 7 do
             -- byte11 红外传感器提示信息 (低位)
             local name = getCodeStr(ERR_0A_INFRA_RED_LOW_CODE, i)
-            if name ~= nil and name ~= "none" then
-                query[name] = bitAt(infra_red_low, i) == true and "yes" or "no"
-            end
+            if name ~= nil and name ~= "none" then query[name] = bitAt(infra_red_low, i) == true and "yes" or "no" end
 
             -- byte12 红外传感器提示信息 (高位)
             name = getCodeStr(ERR_0A_INFRA_RED_HIGH_CODE, i)
-            if name ~= nil and name ~= "none" then
-                query[name] = bitAt(infra_red_high, i) == true and "yes" or "no"
-            end
+            if name ~= nil and name ~= "none" then query[name] = bitAt(infra_red_high, i) == true and "yes" or "no" end
 
             -- byte13 故障信息 (低位)
             name = getCodeStr(ERR_0A_FAILURE_LOW_CODE, i)
-            if name ~= nil and name ~= "none" then
-                query[name] = bitAt(failure_low, i) == true and "yes" or "no"
-            end
+            if name ~= nil and name ~= "none" then query[name] = bitAt(failure_low, i) == true and "yes" or "no" end
 
             -- byte14 故障信息 (中位)
             name = getCodeStr(ERR_0A_FAILURE_MID_CODE, i)
-            if name ~= nil and name ~= "none" then
-                query[name] = bitAt(failure_mid, i) == true and "yes" or "no"
-            end
+            if name ~= nil and name ~= "none" then query[name] = bitAt(failure_mid, i) == true and "yes" or "no" end
 
             -- byte15 故障信息 (高位)
             name = getCodeStr(ERR_0A_FAILURE_HIGH_CODE, i)
-            if name ~= nil and name ~= "none" then
-                query[name] = bitAt(failure_high, i) == true and "yes" or "no"
-            end
+            if name ~= nil and name ~= "none" then query[name] = bitAt(failure_high, i) == true and "yes" or "no" end
 
             -- byte16 用户提示低位
             name = getCodeStr(ERR_0A_USER_LOW_CODE, i)
-            if name ~= nil and name ~= "none" then
-                query[name] = bitAt(user_info_low, i) == true and "yes" or "no"
-            end
+            if name ~= nil and name ~= "none" then query[name] = bitAt(user_info_low, i) == true and "yes" or "no" end
 
             -- byte17 用户提示中位
             name = getCodeStr(ERR_0A_USER_MID_CODE, i)
-            if name ~= nil and name ~= "none" then
-                query[name] = bitAt(user_info_mid, i) == true and "yes" or "no"
-            end
-
+            if name ~= nil and name ~= "none" then query[name] = bitAt(user_info_mid, i) == true and "yes" or "no" end
         end
 
         -- 左边碰撞和右边碰撞都发生时， 显示为 中间碰撞
@@ -1729,7 +1685,6 @@ local function decodeErrorReport(bin)
 end
 
 local function checkJsonData(j)
-
     local msg = j["msg"]
     if not msg then return false end
 
@@ -1744,7 +1699,7 @@ local function checkBinSum(bin)
 
     -- 校验实际长度 : #bin 不会统计 bin[0] 的数量
     if msgLen ~= #bin then
-        dLog("msgLen no valid")
+        dLog "msgLen no valid"
         return false
     end
 
@@ -1756,7 +1711,7 @@ local function checkBinSum(bin)
     -- 校验 sum
     local realSum = makeSum(bin, #bin - 1)
     if bin[msgLen] ~= realSum then
-        dLog("check sum valid")
+        dLog "check sum valid"
         return false
     end
 

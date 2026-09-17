@@ -77,7 +77,7 @@ local keyTable = {
     KEY_RESERVATION_TIME_EARLIEST_HOUR = "reservation_time_earliest_hour",
     KEY_RESERVATION_TIME_EARLIEST_MIN = "reservation_time_earliest_min",
     KEY_RESERVATION_TIME_LATEST_HOUR = "reservation_time_latest_hour",
-    KEY_RESERVATION_TIME_LATEST_MIN = "reservation_time_latest_min"
+    KEY_RESERVATION_TIME_LATEST_MIN = "reservation_time_latest_min",
 }
 local proTable = {
     functionType = 0x00,
@@ -223,7 +223,7 @@ local proTable = {
     wash_dry_course_three_base_program = 0xff,
     inventoryUsageType = 0xff,
     inventoryUsageAmount = 0xff,
-    inventoryUsageAccumulatedAmount = 0xff
+    inventoryUsageAccumulatedAmount = 0xff,
 }
 local function crc16_ccitt(tmpbuf, start_pos, end_pos)
     local crc = 0
@@ -241,22 +241,262 @@ local function crc16_ccitt(tmpbuf, start_pos, end_pos)
     return crc
 end
 local crc8_854_table = {
-    0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65, 157,
-    195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220, 35, 125,
-    159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98, 190, 224, 2,
-    92, 223, 129, 99, 61, 124, 34, 192, 158, 29, 67, 161, 255, 70, 24, 250, 164,
-    39, 121, 155, 197, 132, 218, 56, 102, 229, 187, 89, 7, 219, 133, 103, 57,
-    186, 228, 6, 88, 25, 71, 165, 251, 120, 38, 196, 154, 101, 59, 217, 135, 4,
-    90, 184, 230, 167, 249, 27, 69, 198, 152, 122, 36, 248, 166, 68, 26, 153,
-    199, 37, 123, 58, 100, 134, 216, 91, 5, 231, 185, 140, 210, 48, 110, 237,
-    179, 81, 15, 78, 16, 242, 172, 47, 113, 147, 205, 17, 79, 173, 243, 112, 46,
-    204, 146, 211, 141, 111, 49, 178, 236, 14, 80, 175, 241, 19, 77, 206, 144,
-    114, 44, 109, 51, 209, 143, 12, 82, 176, 238, 50, 108, 142, 208, 83, 13,
-    239, 177, 240, 174, 76, 18, 145, 207, 45, 115, 202, 148, 118, 40, 171, 245,
-    23, 73, 8, 86, 180, 234, 105, 55, 213, 139, 87, 9, 235, 181, 54, 104, 138,
-    212, 149, 203, 41, 119, 244, 170, 72, 22, 233, 183, 85, 11, 136, 214, 52,
-    106, 43, 117, 151, 201, 74, 20, 246, 168, 116, 42, 200, 150, 21, 75, 169,
-    247, 182, 232, 10, 84, 215, 137, 107, 53
+    0,
+    94,
+    188,
+    226,
+    97,
+    63,
+    221,
+    131,
+    194,
+    156,
+    126,
+    32,
+    163,
+    253,
+    31,
+    65,
+    157,
+    195,
+    33,
+    127,
+    252,
+    162,
+    64,
+    30,
+    95,
+    1,
+    227,
+    189,
+    62,
+    96,
+    130,
+    220,
+    35,
+    125,
+    159,
+    193,
+    66,
+    28,
+    254,
+    160,
+    225,
+    191,
+    93,
+    3,
+    128,
+    222,
+    60,
+    98,
+    190,
+    224,
+    2,
+    92,
+    223,
+    129,
+    99,
+    61,
+    124,
+    34,
+    192,
+    158,
+    29,
+    67,
+    161,
+    255,
+    70,
+    24,
+    250,
+    164,
+    39,
+    121,
+    155,
+    197,
+    132,
+    218,
+    56,
+    102,
+    229,
+    187,
+    89,
+    7,
+    219,
+    133,
+    103,
+    57,
+    186,
+    228,
+    6,
+    88,
+    25,
+    71,
+    165,
+    251,
+    120,
+    38,
+    196,
+    154,
+    101,
+    59,
+    217,
+    135,
+    4,
+    90,
+    184,
+    230,
+    167,
+    249,
+    27,
+    69,
+    198,
+    152,
+    122,
+    36,
+    248,
+    166,
+    68,
+    26,
+    153,
+    199,
+    37,
+    123,
+    58,
+    100,
+    134,
+    216,
+    91,
+    5,
+    231,
+    185,
+    140,
+    210,
+    48,
+    110,
+    237,
+    179,
+    81,
+    15,
+    78,
+    16,
+    242,
+    172,
+    47,
+    113,
+    147,
+    205,
+    17,
+    79,
+    173,
+    243,
+    112,
+    46,
+    204,
+    146,
+    211,
+    141,
+    111,
+    49,
+    178,
+    236,
+    14,
+    80,
+    175,
+    241,
+    19,
+    77,
+    206,
+    144,
+    114,
+    44,
+    109,
+    51,
+    209,
+    143,
+    12,
+    82,
+    176,
+    238,
+    50,
+    108,
+    142,
+    208,
+    83,
+    13,
+    239,
+    177,
+    240,
+    174,
+    76,
+    18,
+    145,
+    207,
+    45,
+    115,
+    202,
+    148,
+    118,
+    40,
+    171,
+    245,
+    23,
+    73,
+    8,
+    86,
+    180,
+    234,
+    105,
+    55,
+    213,
+    139,
+    87,
+    9,
+    235,
+    181,
+    54,
+    104,
+    138,
+    212,
+    149,
+    203,
+    41,
+    119,
+    244,
+    170,
+    72,
+    22,
+    233,
+    183,
+    85,
+    11,
+    136,
+    214,
+    52,
+    106,
+    43,
+    117,
+    151,
+    201,
+    74,
+    20,
+    246,
+    168,
+    116,
+    42,
+    200,
+    150,
+    21,
+    75,
+    169,
+    247,
+    182,
+    232,
+    10,
+    84,
+    215,
+    137,
+    107,
+    53,
 }
 function crc8_854(dataBuf, start_pos, end_pos)
     local crc = 0
@@ -269,7 +509,9 @@ local function extractBodyBytes(byteData)
     local msgLength = #byteData
     local msgBytes = {}
     local bodyBytes = {}
-    for i = 1, msgLength do msgBytes[i - 1] = byteData[i] end
+    for i = 1, msgLength do
+        msgBytes[i - 1] = byteData[i]
+    end
     local bodyLength = msgLength - BYTE_PROTOCOL_LENGTH - 2
     for i = 0, bodyLength - 1 do
         bodyBytes[i] = msgBytes[i + BYTE_PROTOCOL_LENGTH]
@@ -280,7 +522,9 @@ local function assembleUart(bodyBytes, type)
     local bodyLength = #bodyBytes + 1
     local msgLength = (bodyLength + BYTE_PROTOCOL_LENGTH + 2)
     local msgBytes = {}
-    for i = 0, msgLength - 1 do msgBytes[i] = 0 end
+    for i = 0, msgLength - 1 do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = 0x55
     msgBytes[1] = 0xAA
     msgBytes[2] = 0xCC
@@ -302,7 +546,9 @@ local function assembleUart(bodyBytes, type)
 end
 local function makeSum(tmpbuf, start_pos, end_pos)
     local resVal = 0
-    for si = start_pos, end_pos do resVal = resVal + tmpbuf[si] end
+    for si = start_pos, end_pos do
+        resVal = resVal + tmpbuf[si]
+    end
     resVal = bit.bnot(resVal) + 1
     resVal = bit.band(resVal, 0x00ff)
     return resVal
@@ -320,15 +566,15 @@ local function encodeTableToJson(luaTable)
     return jsonStr
 end
 local function string2Int(data)
-    if (not data) then data = tonumber("0") end
+    if not data then data = tonumber "0" end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
+    if data == nil then data = 0 end
     return data
 end
 local function int2String(data)
-    if (not data) then data = tostring(0) end
+    if not data then data = tostring(0) end
     data = tostring(data)
-    if (data == nil) then data = "0" end
+    if data == nil then data = "0" end
     return data
 end
 local function string2table(hexstr)
@@ -344,22 +590,26 @@ local function string2table(hexstr)
 end
 local function string2hexstring(str)
     local ret = ""
-    for i = 1, #str do ret = ret .. string.format("%02x", str:byte(i)) end
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
     return ret
 end
 local function table2string(cmd)
     local ret = ""
     local i
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 local function checkBoundary(data, min, max)
-    if (not data) then data = 0 end
+    if not data then data = 0 end
     data = tonumber(data)
-    if ((data >= min) and (data <= max)) then
+    if (data >= min) and (data <= max) then
         return data
     else
-        if (data < min) then
+        if data < min then
             return min
         else
             return max
@@ -658,22 +908,14 @@ local function updateGlobalPropertyValueByJson(luaTable)
         proTable.program = 0xA0
     end
     if luaTable[keyTable.KEY_RESERVATION_HOUR] ~= nil then
-        proTable.reservationHour = string2Int(
-                                       luaTable[keyTable.KEY_RESERVATION_HOUR])
+        proTable.reservationHour = string2Int(luaTable[keyTable.KEY_RESERVATION_HOUR])
     end
     if luaTable[keyTable.KEY_RESERVATION_MIN] ~= nil then
-        proTable.reservationMin = string2Int(
-                                      luaTable[keyTable.KEY_RESERVATION_MIN])
+        proTable.reservationMin = string2Int(luaTable[keyTable.KEY_RESERVATION_MIN])
     end
-    if luaTable[keyTable.KEY_TIME_HOUR] ~= nil then
-        proTable.timeHour = string2Int(luaTable[keyTable.KEY_TIME_HOUR])
-    end
-    if luaTable[keyTable.KEY_TIME_MIN] ~= nil then
-        proTable.timeMin = string2Int(luaTable[keyTable.KEY_TIME_MIN])
-    end
-    if luaTable[keyTable.KEY_TIME_SEC] ~= nil then
-        proTable.timeSec = string2Int(luaTable[keyTable.KEY_TIME_SEC])
-    end
+    if luaTable[keyTable.KEY_TIME_HOUR] ~= nil then proTable.timeHour = string2Int(luaTable[keyTable.KEY_TIME_HOUR]) end
+    if luaTable[keyTable.KEY_TIME_MIN] ~= nil then proTable.timeMin = string2Int(luaTable[keyTable.KEY_TIME_MIN]) end
+    if luaTable[keyTable.KEY_TIME_SEC] ~= nil then proTable.timeSec = string2Int(luaTable[keyTable.KEY_TIME_SEC]) end
     if luaTable[keyTable.KEY_WASH_TIME] ~= nil then
         local tmpTime = string2Int(luaTable[keyTable.KEY_WASH_TIME])
         if tmpTime == 1 * 60 then
@@ -708,12 +950,9 @@ local function updateGlobalPropertyValueByJson(luaTable)
         proTable.rinsePour = string2Int(luaTable[keyTable.KEY_RINSE_POUR])
     end
     if luaTable[keyTable.KEY_DEHYDRATION_TIME] ~= nil then
-        proTable.dehydrationTime = string2Int(
-                                       luaTable[keyTable.KEY_DEHYDRATION_TIME])
+        proTable.dehydrationTime = string2Int(luaTable[keyTable.KEY_DEHYDRATION_TIME])
     end
-    if luaTable[keyTable.KEY_DRY] ~= nil then
-        proTable.dry = string2Int(luaTable[keyTable.KEY_DRY])
-    end
+    if luaTable[keyTable.KEY_DRY] ~= nil then proTable.dry = string2Int(luaTable[keyTable.KEY_DRY]) end
     if luaTable[keyTable.KEY_WASH_RISE] == "none" then
         proTable.washRinse = 0x00
     elseif luaTable[keyTable.KEY_WASH_RISE] == "wash" then
@@ -767,12 +1006,10 @@ local function updateGlobalPropertyValueByJson(luaTable)
         proTable.hotWaterFifteen = 0x00
     end
     if luaTable[keyTable.KEY_DRY_FINISH_ADJUST] ~= nil then
-        proTable.dryFinishAdjust = string2Int(
-                                       luaTable[keyTable.KEY_DRY_FINISH_ADJUST])
+        proTable.dryFinishAdjust = string2Int(luaTable[keyTable.KEY_DRY_FINISH_ADJUST])
     end
     if luaTable[keyTable.KEY_SPIN_ROTATE_ADJUST] ~= nil then
-        proTable.spinRotateAdjust = string2Int(
-                                        luaTable[keyTable.KEY_SPIN_ROTATE_ADJUST])
+        proTable.spinRotateAdjust = string2Int(luaTable[keyTable.KEY_SPIN_ROTATE_ADJUST])
     end
     if luaTable[keyTable.KEY_FUNGUS_PROTECT] == "on" then
         proTable.fungusProtect = 0x20
@@ -790,185 +1027,128 @@ local function updateGlobalPropertyValueByJson(luaTable)
         proTable.defaultDry = 0x00
     end
     if luaTable[keyTable.KEY_DETERGENT_NAME] ~= nil then
-        proTable.detergentName = string2Int(
-                                     luaTable[keyTable.KEY_DETERGENT_NAME])
+        proTable.detergentName = string2Int(luaTable[keyTable.KEY_DETERGENT_NAME])
     end
     if luaTable[keyTable.KEY_SOFTNER_NAME] ~= nil then
         proTable.softnerName = string2Int(luaTable[keyTable.KEY_SOFTNER_NAME])
     end
     if luaTable[keyTable.KEY_DETERGENT_MEASURE] ~= nil then
-        proTable.detergentMeasure = string2Int(
-                                        luaTable[keyTable.KEY_DETERGENT_MEASURE])
+        proTable.detergentMeasure = string2Int(luaTable[keyTable.KEY_DETERGENT_MEASURE])
     end
     if luaTable[keyTable.KEY_SOFTNER_MEASURE] ~= nil then
-        proTable.softnerMeasure = string2Int(
-                                      luaTable[keyTable.KEY_SOFTNER_MEASURE])
+        proTable.softnerMeasure = string2Int(luaTable[keyTable.KEY_SOFTNER_MEASURE])
     end
     if luaTable[keyTable.KEY_FUNCTION_TYPE] == "app_course_receive" then
         proTable.functionType = 0x10
     else
         proTable.functionType = 0x00
     end
-    if luaTable["response_status"] ~= nil then
-        proTable.response_status = string2Int(luaTable["response_status"])
-    end
-    updatePropertyOfProgram("wash_course_one_program",
-                            luaTable["wash_course_one_program"])
-    updatePropertyOfWashTime("wash_course_one_wash_time",
-                             luaTable["wash_course_one_wash_time"])
+    if luaTable["response_status"] ~= nil then proTable.response_status = string2Int(luaTable["response_status"]) end
+    updatePropertyOfProgram("wash_course_one_program", luaTable["wash_course_one_program"])
+    updatePropertyOfWashTime("wash_course_one_wash_time", luaTable["wash_course_one_wash_time"])
     if luaTable["wash_course_one_rinse_pour"] ~= nil then
-        proTable.wash_course_one_rinse_pour = string2Int(
-                                                  luaTable["wash_course_one_rinse_pour"])
+        proTable.wash_course_one_rinse_pour = string2Int(luaTable["wash_course_one_rinse_pour"])
     end
     if luaTable["wash_course_one_dehydration_time"] ~= nil then
-        proTable.wash_course_one_dehydration_time = string2Int(
-                                                        luaTable["wash_course_one_dehydration_time"])
+        proTable.wash_course_one_dehydration_time = string2Int(luaTable["wash_course_one_dehydration_time"])
     end
     if luaTable["wash_course_one_dry"] ~= nil then
-        proTable.wash_course_one_dry = string2Int(
-                                           luaTable["wash_course_one_dry"])
+        proTable.wash_course_one_dry = string2Int(luaTable["wash_course_one_dry"])
     end
     if luaTable["wash_course_one_temperature"] ~= nil then
-        proTable.wash_course_one_temperature = string2Int(
-                                                   luaTable["wash_course_one_temperature"])
+        proTable.wash_course_one_temperature = string2Int(luaTable["wash_course_one_temperature"])
     end
-    updatePropertyOfWashRise("wash_course_one_wash_rinse",
-                             luaTable["wash_course_one_wash_rinse"])
+    updatePropertyOfWashRise("wash_course_one_wash_rinse", luaTable["wash_course_one_wash_rinse"])
     updatePropertyOfUBF("wash_course_one_ufb", luaTable["wash_course_one_ufb"])
-    updatePropertyOfProgram("wash_course_one_base_program",
-                            luaTable["wash_course_one_base_program"])
-    updatePropertyOfProgram("wash_course_two_program",
-                            luaTable["wash_course_two_program"])
-    updatePropertyOfWashTime("wash_course_two_wash_time",
-                             luaTable["wash_course_two_wash_time"])
+    updatePropertyOfProgram("wash_course_one_base_program", luaTable["wash_course_one_base_program"])
+    updatePropertyOfProgram("wash_course_two_program", luaTable["wash_course_two_program"])
+    updatePropertyOfWashTime("wash_course_two_wash_time", luaTable["wash_course_two_wash_time"])
     if luaTable["wash_course_two_rinse_pour"] ~= nil then
-        proTable.wash_course_two_rinse_pour = string2Int(
-                                                  luaTable["wash_course_two_rinse_pour"])
+        proTable.wash_course_two_rinse_pour = string2Int(luaTable["wash_course_two_rinse_pour"])
     end
     if luaTable["wash_course_two_dehydration_time"] ~= nil then
-        proTable.wash_course_two_dehydration_time = string2Int(
-                                                        luaTable["wash_course_two_dehydration_time"])
+        proTable.wash_course_two_dehydration_time = string2Int(luaTable["wash_course_two_dehydration_time"])
     end
     if luaTable["wash_course_two_dry"] ~= nil then
-        proTable.wash_course_two_dry = string2Int(
-                                           luaTable["wash_course_two_dry"])
+        proTable.wash_course_two_dry = string2Int(luaTable["wash_course_two_dry"])
     end
     if luaTable["wash_course_two_temperature"] ~= nil then
-        proTable.wash_course_two_temperature = string2Int(
-                                                   luaTable["wash_course_two_temperature"])
+        proTable.wash_course_two_temperature = string2Int(luaTable["wash_course_two_temperature"])
     end
-    updatePropertyOfWashRise("wash_course_two_wash_rinse",
-                             luaTable["wash_course_two_wash_rinse"])
+    updatePropertyOfWashRise("wash_course_two_wash_rinse", luaTable["wash_course_two_wash_rinse"])
     updatePropertyOfUBF("wash_course_two_ufb", luaTable["wash_course_two_ufb"])
-    updatePropertyOfProgram("wash_course_two_base_program",
-                            luaTable["wash_course_two_base_program"])
-    updatePropertyOfProgram("wash_course_three_program",
-                            luaTable["wash_course_three_program"])
-    updatePropertyOfWashTime("wash_course_three_wash_time",
-                             luaTable["wash_course_three_wash_time"])
+    updatePropertyOfProgram("wash_course_two_base_program", luaTable["wash_course_two_base_program"])
+    updatePropertyOfProgram("wash_course_three_program", luaTable["wash_course_three_program"])
+    updatePropertyOfWashTime("wash_course_three_wash_time", luaTable["wash_course_three_wash_time"])
     if luaTable["wash_course_three_rinse_pour"] ~= nil then
-        proTable.wash_course_three_rinse_pour = string2Int(
-                                                    luaTable["wash_course_three_rinse_pour"])
+        proTable.wash_course_three_rinse_pour = string2Int(luaTable["wash_course_three_rinse_pour"])
     end
     if luaTable["wash_course_three_dehydration_time"] ~= nil then
-        proTable.wash_course_three_dehydration_time = string2Int(
-                                                          luaTable["wash_course_three_dehydration_time"])
+        proTable.wash_course_three_dehydration_time = string2Int(luaTable["wash_course_three_dehydration_time"])
     end
     if luaTable["wash_course_three_dry"] ~= nil then
-        proTable.wash_course_three_dry = string2Int(
-                                             luaTable["wash_course_three_dry"])
+        proTable.wash_course_three_dry = string2Int(luaTable["wash_course_three_dry"])
     end
     if luaTable["wash_course_three_temperature"] ~= nil then
-        proTable.wash_course_three_temperature = string2Int(
-                                                     luaTable["wash_course_three_temperature"])
+        proTable.wash_course_three_temperature = string2Int(luaTable["wash_course_three_temperature"])
     end
-    updatePropertyOfWashRise("wash_course_three_wash_rinse",
-                             luaTable["wash_course_three_wash_rinse"])
-    updatePropertyOfUBF("wash_course_three_ufb",
-                        luaTable["wash_course_three_ufb"])
-    updatePropertyOfProgram("wash_course_three_base_program",
-                            luaTable["wash_course_three_base_program"])
-    updatePropertyOfProgram("wash_dry_course_one_program",
-                            luaTable["wash_dry_course_one_program"])
-    updatePropertyOfWashTime("wash_dry_course_one_wash_time",
-                             luaTable["wash_dry_course_one_wash_time"])
+    updatePropertyOfWashRise("wash_course_three_wash_rinse", luaTable["wash_course_three_wash_rinse"])
+    updatePropertyOfUBF("wash_course_three_ufb", luaTable["wash_course_three_ufb"])
+    updatePropertyOfProgram("wash_course_three_base_program", luaTable["wash_course_three_base_program"])
+    updatePropertyOfProgram("wash_dry_course_one_program", luaTable["wash_dry_course_one_program"])
+    updatePropertyOfWashTime("wash_dry_course_one_wash_time", luaTable["wash_dry_course_one_wash_time"])
     if luaTable["wash_dry_course_one_rinse_pour"] ~= nil then
-        proTable.wash_dry_course_one_rinse_pour = string2Int(
-                                                      luaTable["wash_dry_course_one_rinse_pour"])
+        proTable.wash_dry_course_one_rinse_pour = string2Int(luaTable["wash_dry_course_one_rinse_pour"])
     end
     if luaTable["wash_dry_course_one_dehydration_time"] ~= nil then
-        proTable.wash_dry_course_one_dehydration_time = string2Int(
-                                                            luaTable["wash_dry_course_one_dehydration_time"])
+        proTable.wash_dry_course_one_dehydration_time = string2Int(luaTable["wash_dry_course_one_dehydration_time"])
     end
     if luaTable["wash_dry_course_one_dry"] ~= nil then
-        proTable.wash_dry_course_one_dry = string2Int(
-                                               luaTable["wash_dry_course_one_dry"])
+        proTable.wash_dry_course_one_dry = string2Int(luaTable["wash_dry_course_one_dry"])
     end
     if luaTable["wash_dry_course_one_temperature"] ~= nil then
-        proTable.wash_dry_course_one_temperature = string2Int(
-                                                       luaTable["wash_dry_course_one_temperature"])
+        proTable.wash_dry_course_one_temperature = string2Int(luaTable["wash_dry_course_one_temperature"])
     end
-    updatePropertyOfWashRise("wash_dry_course_one_wash_rinse",
-                             luaTable["wash_dry_course_one_wash_rinse"])
-    updatePropertyOfUBF("wash_dry_course_one_ufb",
-                        luaTable["wash_dry_course_one_ufb"])
-    updatePropertyOfProgram("wash_dry_course_one_base_program",
-                            luaTable["wash_dry_course_one_base_program"])
-    updatePropertyOfProgram("wash_dry_course_two_program",
-                            luaTable["wash_dry_course_two_program"])
-    updatePropertyOfWashTime("wash_dry_course_two_wash_time",
-                             luaTable["wash_dry_course_two_wash_time"])
+    updatePropertyOfWashRise("wash_dry_course_one_wash_rinse", luaTable["wash_dry_course_one_wash_rinse"])
+    updatePropertyOfUBF("wash_dry_course_one_ufb", luaTable["wash_dry_course_one_ufb"])
+    updatePropertyOfProgram("wash_dry_course_one_base_program", luaTable["wash_dry_course_one_base_program"])
+    updatePropertyOfProgram("wash_dry_course_two_program", luaTable["wash_dry_course_two_program"])
+    updatePropertyOfWashTime("wash_dry_course_two_wash_time", luaTable["wash_dry_course_two_wash_time"])
     if luaTable["wash_dry_course_two_rinse_pour"] ~= nil then
-        proTable.wash_dry_course_two_rinse_pour = string2Int(
-                                                      luaTable["wash_dry_course_two_rinse_pour"])
+        proTable.wash_dry_course_two_rinse_pour = string2Int(luaTable["wash_dry_course_two_rinse_pour"])
     end
     if luaTable["wash_dry_course_two_dehydration_time"] ~= nil then
-        proTable.wash_dry_course_two_dehydration_time = string2Int(
-                                                            luaTable["wash_dry_course_two_dehydration_time"])
+        proTable.wash_dry_course_two_dehydration_time = string2Int(luaTable["wash_dry_course_two_dehydration_time"])
     end
     if luaTable["wash_dry_course_two_dry"] ~= nil then
-        proTable.wash_dry_course_two_dry = string2Int(
-                                               luaTable["wash_dry_course_two_dry"])
+        proTable.wash_dry_course_two_dry = string2Int(luaTable["wash_dry_course_two_dry"])
     end
     if luaTable["wash_dry_course_two_temperature"] ~= nil then
-        proTable.wash_dry_course_two_temperature = string2Int(
-                                                       luaTable["wash_dry_course_two_temperature"])
+        proTable.wash_dry_course_two_temperature = string2Int(luaTable["wash_dry_course_two_temperature"])
     end
-    updatePropertyOfWashRise("wash_dry_course_two_wash_rinse",
-                             luaTable["wash_dry_course_two_wash_rinse"])
-    updatePropertyOfUBF("wash_dry_course_two_ufb",
-                        luaTable["wash_dry_course_two_ufb"])
-    updatePropertyOfProgram("wash_dry_course_two_base_program",
-                            luaTable["wash_dry_course_two_base_program"])
-    updatePropertyOfProgram("wash_dry_course_three_program",
-                            luaTable["wash_dry_course_three_program"])
-    updatePropertyOfWashTime("wash_dry_course_three_wash_time",
-                             luaTable["wash_dry_course_three_wash_time"])
+    updatePropertyOfWashRise("wash_dry_course_two_wash_rinse", luaTable["wash_dry_course_two_wash_rinse"])
+    updatePropertyOfUBF("wash_dry_course_two_ufb", luaTable["wash_dry_course_two_ufb"])
+    updatePropertyOfProgram("wash_dry_course_two_base_program", luaTable["wash_dry_course_two_base_program"])
+    updatePropertyOfProgram("wash_dry_course_three_program", luaTable["wash_dry_course_three_program"])
+    updatePropertyOfWashTime("wash_dry_course_three_wash_time", luaTable["wash_dry_course_three_wash_time"])
     if luaTable["wash_dry_course_three_rinse_pour"] ~= nil then
-        proTable.wash_dry_course_three_rinse_pour = string2Int(
-                                                        luaTable["wash_dry_course_three_rinse_pour"])
+        proTable.wash_dry_course_three_rinse_pour = string2Int(luaTable["wash_dry_course_three_rinse_pour"])
     end
     if luaTable["wash_dry_course_three_dehydration_time"] ~= nil then
-        proTable.wash_dry_course_three_dehydration_time = string2Int(
-                                                              luaTable["wash_dry_course_three_dehydration_time"])
+        proTable.wash_dry_course_three_dehydration_time = string2Int(luaTable["wash_dry_course_three_dehydration_time"])
     end
     if luaTable["wash_dry_course_three_dry"] ~= nil then
-        proTable.wash_dry_course_three_dry = string2Int(
-                                                 luaTable["wash_dry_course_three_dry"])
+        proTable.wash_dry_course_three_dry = string2Int(luaTable["wash_dry_course_three_dry"])
     end
     if luaTable["wash_dry_course_three_temperature"] ~= nil then
-        proTable.wash_dry_course_three_temperature = string2Int(
-                                                         luaTable["wash_dry_course_three_temperature"])
+        proTable.wash_dry_course_three_temperature = string2Int(luaTable["wash_dry_course_three_temperature"])
     end
-    updatePropertyOfWashRise("wash_dry_course_three_wash_rinse",
-                             luaTable["wash_dry_course_three_wash_rinse"])
-    updatePropertyOfUBF("wash_dry_course_three_ufb",
-                        luaTable["wash_dry_course_three_ufb"])
-    updatePropertyOfProgram("wash_dry_course_three_base_program",
-                            luaTable["wash_dry_course_three_base_program"])
+    updatePropertyOfWashRise("wash_dry_course_three_wash_rinse", luaTable["wash_dry_course_three_wash_rinse"])
+    updatePropertyOfUBF("wash_dry_course_three_ufb", luaTable["wash_dry_course_three_ufb"])
+    updatePropertyOfProgram("wash_dry_course_three_base_program", luaTable["wash_dry_course_three_base_program"])
 end
 local function updateGlobalPropertyValueByByte(messageBytes)
-    if (#messageBytes == 0) then return nil end
+    if #messageBytes == 0 then return nil end
     if (dataType == 0x02) or (dataType == 0x03) then
         if messageBytes[0] == 0x00 then
             proTable.command = messageBytes[1]
@@ -994,9 +1174,7 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.energySaving = bit.band(messageBytes[15], 0x20)
             proTable.hotWaterFifteen = bit.band(messageBytes[15], 0x40)
             proTable.dryFinishAdjust = bit.band(messageBytes[16], 0x07)
-            proTable.spinRotateAdjust = bit.band(
-                                            bit.rshift(messageBytes[16], 3),
-                                            0x03)
+            proTable.spinRotateAdjust = bit.band(bit.rshift(messageBytes[16], 3), 0x03)
             proTable.fungusProtect = bit.band(messageBytes[16], 0x20)
             proTable.drainBubbleProtect = bit.band(messageBytes[16], 0x40)
             proTable.defaultDry = bit.band(messageBytes[17], 0x01)
@@ -1004,9 +1182,10 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.processDetail = messageBytes[19]
             proTable.error = bit.lshift(messageBytes[21], 8) + messageBytes[20]
             proTable.machineStatus = messageBytes[22]
-            proTable.remainTime =
-                messageBytes[26] * 16777216 + messageBytes[25] * 65536 +
-                    messageBytes[24] * 256 + messageBytes[23]
+            proTable.remainTime = messageBytes[26] * 16777216
+                + messageBytes[25] * 65536
+                + messageBytes[24] * 256
+                + messageBytes[23]
             proTable.doorOpen = bit.band(messageBytes[27], 0x01)
             proTable.remainTimeAdjust = bit.band(messageBytes[27], 0x02)
             proTable.drainFilterClean = bit.band(messageBytes[27], 0x04)
@@ -1016,8 +1195,7 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.overCapacity = bit.band(messageBytes[27], 0x40)
             proTable.drainFilterCare = bit.band(messageBytes[28], 0x01)
             proTable.dryFilterClean = bit.band(messageBytes[28], 0x02)
-            proTable.appCourseNumber = bit.band(bit.rshift(messageBytes[28], 2),
-                                                0x07)
+            proTable.appCourseNumber = bit.band(bit.rshift(messageBytes[28], 2), 0x07)
             proTable.reservationMode = messageBytes[29]
             proTable.operationWashTime = messageBytes[30]
             proTable.operationWashRinseTimes = messageBytes[31]
@@ -1028,8 +1206,7 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.operationWashDryerDrySet = messageBytes[36]
             proTable.operationDryerDrySet = messageBytes[37]
             proTable.detergentRemain = bit.band(messageBytes[38], 0x0F)
-            proTable.detergentRemainExplanation =
-                bit.rshift(messageBytes[38], 4)
+            proTable.detergentRemainExplanation = bit.rshift(messageBytes[38], 4)
             proTable.softnerRemain = bit.band(messageBytes[39], 0x0F)
             proTable.softnerRemainExplanation = bit.rshift(messageBytes[39], 4)
             proTable.detergentName = messageBytes[40]
@@ -1037,35 +1214,36 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.detergentMeasure = messageBytes[42]
             proTable.softnerMeasure = messageBytes[43]
             proTable.beginProcess = messageBytes[44]
-            proTable.reservationTimeEarliestHour =
-                bit.band(bit.rshift(messageBytes[45], 3), 0x1F)
-            proTable.reservationTimeEarliestMin =
-                bit.band(messageBytes[45], 0x07)
-            proTable.reservationTimeLatestHour =
-                bit.band(bit.rshift(messageBytes[46], 3), 0x1F)
+            proTable.reservationTimeEarliestHour = bit.band(bit.rshift(messageBytes[45], 3), 0x1F)
+            proTable.reservationTimeEarliestMin = bit.band(messageBytes[45], 0x07)
+            proTable.reservationTimeLatestHour = bit.band(bit.rshift(messageBytes[46], 3), 0x1F)
             proTable.reservationTimeLatestMin = bit.band(messageBytes[46], 0x07)
         end
     end
     if (dataType == 0x03) or (dataType == 0x06) then
         if messageBytes[0] == 0xFE then
-            proTable.errorCode = bit.lshift(messageBytes[2], 8) +
-                                     messageBytes[1]
+            proTable.errorCode = bit.lshift(messageBytes[2], 8) + messageBytes[1]
             proTable.errorMin = messageBytes[3]
             proTable.errorHour = messageBytes[4]
             proTable.errorDay = messageBytes[5]
             proTable.errorMonth = messageBytes[6]
-            proTable.errorYear = bit.lshift(messageBytes[8], 8) +
-                                     messageBytes[7]
+            proTable.errorYear = bit.lshift(messageBytes[8], 8) + messageBytes[7]
             local firmTab = {}
-            for i = 1, 7 do firmTab[i] = messageBytes[8 + i] end
+            for i = 1, 7 do
+                firmTab[i] = messageBytes[8 + i]
+            end
             local firmTabStr = table2string(firmTab)
             proTable.firm = string2hexstring(firmTabStr)
             local mnTab = {}
-            for i = 1, 18 do mnTab[i] = messageBytes[15 + i] end
+            for i = 1, 18 do
+                mnTab[i] = messageBytes[15 + i]
+            end
             local mnTabStr = table2string(mnTab)
             proTable.machineName = string2hexstring(mnTabStr)
             local e2promTab = {}
-            for i = 1, 1025 do e2promTab[i] = messageBytes[33 + i] end
+            for i = 1, 1025 do
+                e2promTab[i] = messageBytes[33 + i]
+            end
             local e2promTabStr = table2string(e2promTab)
             proTable.e2prom = string2hexstring(e2promTabStr)
             proTable.reservationHour = messageBytes[1060]
@@ -1083,7 +1261,7 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.presenceDetergent = messageBytes[1072]
         end
     end
-    if (dataType == 0x04) then
+    if dataType == 0x04 then
         if messageBytes[0] == 0x00 then
             proTable.command = messageBytes[1]
             proTable.mode = messageBytes[2]
@@ -1108,9 +1286,7 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.energySaving = bit.band(messageBytes[15], 0x20)
             proTable.hotWaterFifteen = bit.band(messageBytes[15], 0x40)
             proTable.dryFinishAdjust = bit.band(messageBytes[16], 0x07)
-            proTable.spinRotateAdjust = bit.band(
-                                            bit.rshift(messageBytes[16], 3),
-                                            0x03)
+            proTable.spinRotateAdjust = bit.band(bit.rshift(messageBytes[16], 3), 0x03)
             proTable.fungusProtect = bit.band(messageBytes[16], 0x20)
             proTable.drainBubbleProtect = bit.band(messageBytes[16], 0x40)
             proTable.defaultDry = bit.band(messageBytes[17], 0x01)
@@ -1118,9 +1294,10 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.processDetail = messageBytes[19]
             proTable.error = bit.lshift(messageBytes[21], 8) + messageBytes[20]
             proTable.machineStatus = messageBytes[22]
-            proTable.remainTime =
-                messageBytes[26] * 16777216 + messageBytes[25] * 65536 +
-                    messageBytes[24] * 256 + messageBytes[23]
+            proTable.remainTime = messageBytes[26] * 16777216
+                + messageBytes[25] * 65536
+                + messageBytes[24] * 256
+                + messageBytes[23]
             proTable.doorOpen = bit.band(messageBytes[27], 0x01)
             proTable.remainTimeAdjust = bit.band(messageBytes[27], 0x02)
             proTable.drainFilterClean = bit.band(messageBytes[27], 0x04)
@@ -1130,8 +1307,7 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.overCapacity = bit.band(messageBytes[27], 0x40)
             proTable.drainFilterCare = bit.band(messageBytes[28], 0x01)
             proTable.dryFilterClean = bit.band(messageBytes[28], 0x02)
-            proTable.appCourseNumber = bit.band(bit.rshift(messageBytes[28], 2),
-                                                0x07)
+            proTable.appCourseNumber = bit.band(bit.rshift(messageBytes[28], 2), 0x07)
             proTable.reservationMode = messageBytes[29]
             proTable.operationWashTime = messageBytes[30]
             proTable.operationWashRinseTimes = messageBytes[31]
@@ -1142,8 +1318,7 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.operationWashDryerDrySet = messageBytes[36]
             proTable.operationDryerDrySet = messageBytes[37]
             proTable.detergentRemain = bit.band(messageBytes[38], 0x0F)
-            proTable.detergentRemainExplanation =
-                bit.rshift(messageBytes[38], 4)
+            proTable.detergentRemainExplanation = bit.rshift(messageBytes[38], 4)
             proTable.softnerRemain = bit.band(messageBytes[39], 0x0F)
             proTable.softnerRemainExplanation = bit.rshift(messageBytes[39], 4)
             proTable.detergentName = messageBytes[40]
@@ -1151,16 +1326,13 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.detergentMeasure = messageBytes[42]
             proTable.softnerMeasure = messageBytes[43]
             proTable.beginProcess = messageBytes[44]
-            proTable.reservationTimeEarliestHour =
-                bit.band(bit.rshift(messageBytes[45], 3), 0x1F)
-            proTable.reservationTimeEarliestMin =
-                bit.band(messageBytes[45], 0x07)
-            proTable.reservationTimeLatestHour =
-                bit.band(bit.rshift(messageBytes[46], 3), 0x1F)
+            proTable.reservationTimeEarliestHour = bit.band(bit.rshift(messageBytes[45], 3), 0x1F)
+            proTable.reservationTimeEarliestMin = bit.band(messageBytes[45], 0x07)
+            proTable.reservationTimeLatestHour = bit.band(bit.rshift(messageBytes[46], 3), 0x1F)
             proTable.reservationTimeLatestMin = bit.band(messageBytes[46], 0x07)
         end
     end
-    if (dataType == 0x06) then
+    if dataType == 0x06 then
         if messageBytes[0] == 0x20 then
             proTable.mode = messageBytes[1]
             proTable.program = messageBytes[2]
@@ -1183,8 +1355,7 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.wash_course_one_dehydration_time = messageBytes[14]
             proTable.wash_course_one_dry = messageBytes[15]
             proTable.wash_course_one_temperature = messageBytes[16]
-            proTable.wash_course_one_wash_rinse =
-                bit.band(messageBytes[17], 0x07)
+            proTable.wash_course_one_wash_rinse = bit.band(messageBytes[17], 0x07)
             proTable.wash_course_one_ufb = bit.band(messageBytes[17], 0x80)
             proTable.wash_course_one_base_program = messageBytes[18]
             proTable.wash_course_two_program = messageBytes[21]
@@ -1193,8 +1364,7 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.wash_course_two_dehydration_time = messageBytes[24]
             proTable.wash_course_two_dry = messageBytes[25]
             proTable.wash_course_two_temperature = messageBytes[26]
-            proTable.wash_course_two_wash_rinse =
-                bit.band(messageBytes[27], 0x07)
+            proTable.wash_course_two_wash_rinse = bit.band(messageBytes[27], 0x07)
             proTable.wash_course_two_ufb = bit.band(messageBytes[27], 0x80)
             proTable.wash_course_two_base_program = messageBytes[28]
             proTable.wash_course_three_program = messageBytes[31]
@@ -1203,8 +1373,7 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.wash_course_three_dehydration_time = messageBytes[34]
             proTable.wash_course_three_dry = messageBytes[35]
             proTable.wash_course_three_temperature = messageBytes[36]
-            proTable.wash_course_three_wash_rinse =
-                bit.band(messageBytes[37], 0x07)
+            proTable.wash_course_three_wash_rinse = bit.band(messageBytes[37], 0x07)
             proTable.wash_course_three_ufb = bit.band(messageBytes[37], 0x80)
             proTable.wash_course_three_base_program = messageBytes[38]
             proTable.wash_dry_course_one_program = messageBytes[41]
@@ -1213,8 +1382,7 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.wash_dry_course_one_dehydration_time = messageBytes[44]
             proTable.wash_dry_course_one_dry = messageBytes[45]
             proTable.wash_dry_course_one_temperature = messageBytes[46]
-            proTable.wash_dry_course_one_wash_rinse =
-                bit.band(messageBytes[47], 0x07)
+            proTable.wash_dry_course_one_wash_rinse = bit.band(messageBytes[47], 0x07)
             proTable.wash_dry_course_one_ufb = bit.band(messageBytes[47], 0x80)
             proTable.wash_dry_course_one_base_program = messageBytes[48]
             proTable.wash_dry_course_two_program = messageBytes[51]
@@ -1223,8 +1391,7 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.wash_dry_course_two_dehydration_time = messageBytes[54]
             proTable.wash_dry_course_two_dry = messageBytes[55]
             proTable.wash_dry_course_two_temperature = messageBytes[56]
-            proTable.wash_dry_course_two_wash_rinse =
-                bit.band(messageBytes[57], 0x07)
+            proTable.wash_dry_course_two_wash_rinse = bit.band(messageBytes[57], 0x07)
             proTable.wash_dry_course_two_ufb = bit.band(messageBytes[57], 0x80)
             proTable.wash_dry_course_two_base_program = messageBytes[58]
             proTable.wash_dry_course_three_program = messageBytes[61]
@@ -1233,21 +1400,16 @@ local function updateGlobalPropertyValueByByte(messageBytes)
             proTable.wash_dry_course_three_dehydration_time = messageBytes[64]
             proTable.wash_dry_course_three_dry = messageBytes[65]
             proTable.wash_dry_course_three_temperature = messageBytes[66]
-            proTable.wash_dry_course_three_wash_rinse = bit.band(
-                                                            messageBytes[67],
-                                                            0x07)
-            proTable.wash_dry_course_three_ufb =
-                bit.band(messageBytes[67], 0x80)
+            proTable.wash_dry_course_three_wash_rinse = bit.band(messageBytes[67], 0x07)
+            proTable.wash_dry_course_three_ufb = bit.band(messageBytes[67], 0x80)
             proTable.wash_dry_course_three_base_program = messageBytes[68]
         end
     end
-    if (dataType == 0x05) then
+    if dataType == 0x05 then
         if messageBytes[0] == 0x30 then
             proTable.inventoryUsageType = messageBytes[1]
             proTable.inventoryUsageAmount = messageBytes[2]
-            proTable.inventoryUsageAccumulatedAmount = bit.lshift(
-                                                           messageBytes[3], 8) +
-                                                           messageBytes[4]
+            proTable.inventoryUsageAccumulatedAmount = bit.lshift(messageBytes[3], 8) + messageBytes[4]
         end
     end
 end
@@ -1421,7 +1583,7 @@ end
 local function assembleJsonByGlobalProperty()
     local streams = {}
     streams[keyTable.KEY_VERSION] = version
-    if (subDataType == 0x00) then
+    if subDataType == 0x00 then
         streams[keyTable.KEY_FUNCTION_TYPE] = "base"
         if proTable.command == 0x01 then
             streams[keyTable.KEY_COMMAND] = "temporary_stop"
@@ -1695,43 +1857,43 @@ local function assembleJsonByGlobalProperty()
             streams[keyTable.KEY_MACHINE_STATUS] = "finish"
         end
         streams[keyTable.KEY_REMAIN_TIME] = proTable.remainTime
-        if (proTable.doorOpen == 0x01) then
+        if proTable.doorOpen == 0x01 then
             streams[keyTable.KEY_DOOR_OPEN] = 0x01
         else
             streams[keyTable.KEY_DOOR_OPEN] = 0x00
         end
-        if (proTable.remainTimeAdjust == 0x02) then
+        if proTable.remainTimeAdjust == 0x02 then
             streams[keyTable.KEY_REMAIN_TIME_ADJUST] = 0x01
         else
             streams[keyTable.KEY_REMAIN_TIME_ADJUST] = 0x00
         end
-        if (proTable.drainFilterClean == 0x04) then
+        if proTable.drainFilterClean == 0x04 then
             streams[keyTable.KEY_DRAIN_FILTER_CLEAN] = 0x01
         else
             streams[keyTable.KEY_DRAIN_FILTER_CLEAN] = 0x00
         end
-        if (proTable.tubHighHot == 0x08) then
+        if proTable.tubHighHot == 0x08 then
             streams[keyTable.KEY_TUB_HIGH_HOT] = 0x01
         else
             streams[keyTable.KEY_TUB_HIGH_HOT] = 0x00
         end
-        if (proTable.waterHighTemperature == 0x10) then
+        if proTable.waterHighTemperature == 0x10 then
             streams[keyTable.KEY_WATER_HIGH_TEMPERATURE] = 0x01
         else
             streams[keyTable.KEY_WATER_HIGH_TEMPERATURE] = 0x00
         end
-        if (proTable.tubWaterExist == 0x20) then
+        if proTable.tubWaterExist == 0x20 then
             streams[keyTable.KEY_TUB_WATER_EXIST] = 0x01
         else
             streams[keyTable.KEY_TUB_WATER_EXIST] = 0x00
         end
-        if (proTable.overCapacity == 0x40) then
+        if proTable.overCapacity == 0x40 then
             streams[keyTable.KEY_OVER_CAPACITY] = 0x01
         else
             streams[keyTable.KEY_OVER_CAPACITY] = 0x00
         end
         streams[keyTable.KEY_DRAIN_FILTER_CARE] = proTable.drainFilterCare
-        if (proTable.dryFilterClean == 0x02) then
+        if proTable.dryFilterClean == 0x02 then
             streams[keyTable.KEY_DRY_FILTER_CLEAN] = 0x01
         else
             streams[keyTable.KEY_DRY_FILTER_CLEAN] = 0x00
@@ -1739,26 +1901,17 @@ local function assembleJsonByGlobalProperty()
         streams[keyTable.KEY_APP_COURSE_NUMBER] = proTable.appCourseNumber
         streams[keyTable.KEY_RESERVATION_MODE] = proTable.reservationMode
         streams[keyTable.KEY_OPERATION_WASH_TIME] = proTable.operationWashTime
-        streams[keyTable.KEY_OPERATION_WASH_RINSE_TIMES] =
-            proTable.operationWashRinseTimes
-        streams[keyTable.KEY_OPERATION_WASH_SPIN_TIME] =
-            proTable.operationWashSpinTime
-        streams[keyTable.KEY_OPERATION_WASH_DRYER_TIME] =
-            proTable.operationWashDryerTime
-        streams[keyTable.KEY_OPERATION_WASH_DRYER_RINSE_TIMES] =
-            proTable.operationWashDryerRinseTimes
-        streams[keyTable.KEY_OPERATION_WASH_DRYER_SPIN_TIME] =
-            proTable.operationWashDryerSpinTime
-        streams[keyTable.KEY_OPERATION_WASH_DRYER_DRY_SET] =
-            proTable.operationWashDryerDrySet
-        streams[keyTable.KEY_OPERATION_DRYER_DRY_SET] =
-            proTable.operationDryerDrySet
+        streams[keyTable.KEY_OPERATION_WASH_RINSE_TIMES] = proTable.operationWashRinseTimes
+        streams[keyTable.KEY_OPERATION_WASH_SPIN_TIME] = proTable.operationWashSpinTime
+        streams[keyTable.KEY_OPERATION_WASH_DRYER_TIME] = proTable.operationWashDryerTime
+        streams[keyTable.KEY_OPERATION_WASH_DRYER_RINSE_TIMES] = proTable.operationWashDryerRinseTimes
+        streams[keyTable.KEY_OPERATION_WASH_DRYER_SPIN_TIME] = proTable.operationWashDryerSpinTime
+        streams[keyTable.KEY_OPERATION_WASH_DRYER_DRY_SET] = proTable.operationWashDryerDrySet
+        streams[keyTable.KEY_OPERATION_DRYER_DRY_SET] = proTable.operationDryerDrySet
         streams[keyTable.KEY_DETERGENT_REMAIN] = proTable.detergentRemain
-        streams[keyTable.KEY_DETERGENT_REMAIN_EXPLANATION] =
-            proTable.detergentRemainExplanation
+        streams[keyTable.KEY_DETERGENT_REMAIN_EXPLANATION] = proTable.detergentRemainExplanation
         streams[keyTable.KEY_SOFTNER_REMAIN] = proTable.softnerRemain
-        streams[keyTable.KEY_SOFTNER_REMAIN_EXPLANATION] =
-            proTable.softnerRemainExplanation
+        streams[keyTable.KEY_SOFTNER_REMAIN_EXPLANATION] = proTable.softnerRemainExplanation
         streams[keyTable.KEY_DETERGENT_NAME] = proTable.detergentName
         streams[keyTable.KEY_SOFTNER_NAME] = proTable.softnerName
         streams[keyTable.KEY_DETERGENT_MEASURE] = proTable.detergentMeasure
@@ -1788,15 +1941,11 @@ local function assembleJsonByGlobalProperty()
         else
             streams[keyTable.KEY_BEGIN_PROCESS_SOFT_KEEP] = "no"
         end
-        streams[keyTable.KEY_RESERVATION_TIME_EARLIEST_HOUR] =
-            proTable.reservationTimeEarliestHour
-        streams[keyTable.KEY_RESERVATION_TIME_EARLIEST_MIN] =
-            proTable.reservationTimeEarliestMin * 10
-        streams[keyTable.KEY_RESERVATION_TIME_LATEST_HOUR] =
-            proTable.reservationTimeLatestHour
-        streams[keyTable.KEY_RESERVATION_TIME_LATEST_MIN] =
-            proTable.reservationTimeLatestMin * 10
-    elseif (subDataType == 0x20) then
+        streams[keyTable.KEY_RESERVATION_TIME_EARLIEST_HOUR] = proTable.reservationTimeEarliestHour
+        streams[keyTable.KEY_RESERVATION_TIME_EARLIEST_MIN] = proTable.reservationTimeEarliestMin * 10
+        streams[keyTable.KEY_RESERVATION_TIME_LATEST_HOUR] = proTable.reservationTimeLatestHour
+        streams[keyTable.KEY_RESERVATION_TIME_LATEST_MIN] = proTable.reservationTimeLatestMin * 10
+    elseif subDataType == 0x20 then
         streams[keyTable.KEY_FUNCTION_TYPE] = "app_course_confirm"
         assembleMode(streams, "course_confirm_mode", proTable.mode)
         assembleProgram(streams, "course_confirm_program", proTable.program)
@@ -1805,123 +1954,74 @@ local function assembleJsonByGlobalProperty()
         streams["course_confirm_dehydration_time"] = proTable.dehydrationTime
         streams["course_confirm_dry"] = proTable.dry
         streams["course_confirm_temperature"] = proTable.temperature
-        assembleWashRinse(streams, "course_confirm_wash_rinse",
-                          proTable.washRinse)
+        assembleWashRinse(streams, "course_confirm_wash_rinse", proTable.washRinse)
         assembleUFB(streams, "course_confirm_ufb", proTable.ufb)
         streams["course_confirm_number"] = proTable.courseConfirmNumber
-    elseif (subDataType == 0x10) then
+    elseif subDataType == 0x10 then
         streams[keyTable.KEY_FUNCTION_TYPE] = "app_course_receive"
-        assembleProgram(streams, "wash_course_one_program",
-                        proTable.wash_course_one_program)
-        assembleWashTime(streams, "wash_course_one_wash_time",
-                         proTable.wash_course_one_wash_time)
-        streams["wash_course_one_rinse_pour"] =
-            proTable.wash_course_one_rinse_pour
-        streams["wash_course_one_dehydration_time"] =
-            proTable.wash_course_one_dehydration_time
+        assembleProgram(streams, "wash_course_one_program", proTable.wash_course_one_program)
+        assembleWashTime(streams, "wash_course_one_wash_time", proTable.wash_course_one_wash_time)
+        streams["wash_course_one_rinse_pour"] = proTable.wash_course_one_rinse_pour
+        streams["wash_course_one_dehydration_time"] = proTable.wash_course_one_dehydration_time
         streams["wash_course_one_dry"] = proTable.wash_course_one_dry
-        streams["wash_course_one_temperature"] =
-            proTable.wash_course_one_temperature
-        assembleWashRinse(streams, "wash_course_one_wash_rinse",
-                          proTable.wash_course_one_wash_rinse)
+        streams["wash_course_one_temperature"] = proTable.wash_course_one_temperature
+        assembleWashRinse(streams, "wash_course_one_wash_rinse", proTable.wash_course_one_wash_rinse)
         assembleUFB(streams, "wash_course_one_ufb", proTable.wash_course_one_ufb)
-        assembleProgram(streams, "wash_course_one_base_program",
-                        proTable.wash_course_one_base_program)
-        assembleProgram(streams, "wash_course_two_program",
-                        proTable.wash_course_two_program)
-        assembleWashTime(streams, "wash_course_two_wash_time",
-                         proTable.wash_course_two_wash_time)
-        streams["wash_course_two_rinse_pour"] =
-            proTable.wash_course_two_rinse_pour
-        streams["wash_course_two_dehydration_time"] =
-            proTable.wash_course_two_dehydration_time
+        assembleProgram(streams, "wash_course_one_base_program", proTable.wash_course_one_base_program)
+        assembleProgram(streams, "wash_course_two_program", proTable.wash_course_two_program)
+        assembleWashTime(streams, "wash_course_two_wash_time", proTable.wash_course_two_wash_time)
+        streams["wash_course_two_rinse_pour"] = proTable.wash_course_two_rinse_pour
+        streams["wash_course_two_dehydration_time"] = proTable.wash_course_two_dehydration_time
         streams["wash_course_two_dry"] = proTable.wash_course_two_dry
-        streams["wash_course_two_temperature"] =
-            proTable.wash_course_two_temperature
-        assembleWashRinse(streams, "wash_course_two_wash_rinse",
-                          proTable.wash_course_two_wash_rinse)
+        streams["wash_course_two_temperature"] = proTable.wash_course_two_temperature
+        assembleWashRinse(streams, "wash_course_two_wash_rinse", proTable.wash_course_two_wash_rinse)
         assembleUFB(streams, "wash_course_two_ufb", proTable.wash_course_two_ufb)
-        assembleProgram(streams, "wash_course_two_base_program",
-                        proTable.wash_course_two_base_program)
-        assembleProgram(streams, "wash_course_three_program",
-                        proTable.wash_course_three_program)
-        assembleWashTime(streams, "wash_course_three_wash_time",
-                         proTable.wash_course_three_wash_time)
-        streams["wash_course_three_rinse_pour"] =
-            proTable.wash_course_three_rinse_pour
-        streams["wash_course_three_dehydration_time"] =
-            proTable.wash_course_three_dehydration_time
+        assembleProgram(streams, "wash_course_two_base_program", proTable.wash_course_two_base_program)
+        assembleProgram(streams, "wash_course_three_program", proTable.wash_course_three_program)
+        assembleWashTime(streams, "wash_course_three_wash_time", proTable.wash_course_three_wash_time)
+        streams["wash_course_three_rinse_pour"] = proTable.wash_course_three_rinse_pour
+        streams["wash_course_three_dehydration_time"] = proTable.wash_course_three_dehydration_time
         streams["wash_course_three_dry"] = proTable.wash_course_three_dry
-        streams["wash_course_three_temperature"] =
-            proTable.wash_course_three_temperature
-        assembleWashRinse(streams, "wash_course_three_wash_rinse",
-                          proTable.wash_course_three_wash_rinse)
-        assembleUFB(streams, "wash_course_three_ufb",
-                    proTable.wash_course_three_ufb)
-        assembleProgram(streams, "wash_course_three_base_program",
-                        proTable.wash_course_three_base_program)
-        assembleProgram(streams, "wash_dry_course_one_program",
-                        proTable.wash_dry_course_one_program)
-        assembleWashTime(streams, "wash_dry_course_one_wash_time",
-                         proTable.wash_dry_course_one_wash_time)
-        streams["wash_dry_course_one_rinse_pour"] =
-            proTable.wash_dry_course_one_rinse_pour
-        streams["wash_dry_course_one_dehydration_time"] =
-            proTable.wash_dry_course_one_dehydration_time
+        streams["wash_course_three_temperature"] = proTable.wash_course_three_temperature
+        assembleWashRinse(streams, "wash_course_three_wash_rinse", proTable.wash_course_three_wash_rinse)
+        assembleUFB(streams, "wash_course_three_ufb", proTable.wash_course_three_ufb)
+        assembleProgram(streams, "wash_course_three_base_program", proTable.wash_course_three_base_program)
+        assembleProgram(streams, "wash_dry_course_one_program", proTable.wash_dry_course_one_program)
+        assembleWashTime(streams, "wash_dry_course_one_wash_time", proTable.wash_dry_course_one_wash_time)
+        streams["wash_dry_course_one_rinse_pour"] = proTable.wash_dry_course_one_rinse_pour
+        streams["wash_dry_course_one_dehydration_time"] = proTable.wash_dry_course_one_dehydration_time
         streams["wash_dry_course_one_dry"] = proTable.wash_dry_course_one_dry
-        streams["wash_dry_course_one_temperature"] =
-            proTable.wash_dry_course_one_temperature
-        assembleWashRinse(streams, "wash_dry_course_one_wash_rinse",
-                          proTable.wash_dry_course_one_wash_rinse)
-        assembleUFB(streams, "wash_dry_course_one_ufb",
-                    proTable.wash_dry_course_one_ufb)
-        assembleProgram(streams, "wash_dry_course_one_base_program",
-                        proTable.wash_dry_course_one_base_program)
-        assembleProgram(streams, "wash_dry_course_two_program",
-                        proTable.wash_dry_course_two_program)
-        assembleWashTime(streams, "wash_dry_course_two_wash_time",
-                         proTable.wash_dry_course_two_wash_time)
-        streams["wash_dry_course_two_rinse_pour"] =
-            proTable.wash_dry_course_two_rinse_pour
-        streams["wash_dry_course_two_dehydration_time"] =
-            proTable.wash_dry_course_two_dehydration_time
+        streams["wash_dry_course_one_temperature"] = proTable.wash_dry_course_one_temperature
+        assembleWashRinse(streams, "wash_dry_course_one_wash_rinse", proTable.wash_dry_course_one_wash_rinse)
+        assembleUFB(streams, "wash_dry_course_one_ufb", proTable.wash_dry_course_one_ufb)
+        assembleProgram(streams, "wash_dry_course_one_base_program", proTable.wash_dry_course_one_base_program)
+        assembleProgram(streams, "wash_dry_course_two_program", proTable.wash_dry_course_two_program)
+        assembleWashTime(streams, "wash_dry_course_two_wash_time", proTable.wash_dry_course_two_wash_time)
+        streams["wash_dry_course_two_rinse_pour"] = proTable.wash_dry_course_two_rinse_pour
+        streams["wash_dry_course_two_dehydration_time"] = proTable.wash_dry_course_two_dehydration_time
         streams["wash_dry_course_two_dry"] = proTable.wash_dry_course_two_dry
-        streams["wash_dry_course_two_temperature"] =
-            proTable.wash_dry_course_two_temperature
-        assembleWashRinse(streams, "wash_dry_course_two_wash_rinse",
-                          proTable.wash_dry_course_two_wash_rinse)
-        assembleUFB(streams, "wash_dry_course_two_ufb",
-                    proTable.wash_dry_course_two_ufb)
-        assembleProgram(streams, "wash_dry_course_two_base_program",
-                        proTable.wash_dry_course_two_base_program)
-        assembleProgram(streams, "wash_dry_course_three_program",
-                        proTable.wash_dry_course_three_program)
-        assembleWashTime(streams, "wash_dry_course_three_wash_time",
-                         proTable.wash_dry_course_three_wash_time)
-        streams["wash_dry_course_three_rinse_pour"] =
-            proTable.wash_dry_course_three_rinse_pour
-        streams["wash_dry_course_three_dehydration_time"] =
-            proTable.wash_dry_course_three_dehydration_time
-        streams["wash_dry_course_three_dry"] =
-            proTable.wash_dry_course_three_dry
-        streams["wash_dry_course_three_temperature"] =
-            proTable.wash_dry_course_three_temperature
-        assembleWashRinse(streams, "wash_dry_course_three_wash_rinse",
-                          proTable.wash_dry_course_three_wash_rinse)
-        assembleUFB(streams, "wash_dry_course_three_ufb",
-                    proTable.wash_dry_course_three_ufb)
-        assembleProgram(streams, "wash_dry_course_three_base_program",
-                        proTable.wash_dry_course_three_base_program)
-    elseif (subDataType == 0x30) then
+        streams["wash_dry_course_two_temperature"] = proTable.wash_dry_course_two_temperature
+        assembleWashRinse(streams, "wash_dry_course_two_wash_rinse", proTable.wash_dry_course_two_wash_rinse)
+        assembleUFB(streams, "wash_dry_course_two_ufb", proTable.wash_dry_course_two_ufb)
+        assembleProgram(streams, "wash_dry_course_two_base_program", proTable.wash_dry_course_two_base_program)
+        assembleProgram(streams, "wash_dry_course_three_program", proTable.wash_dry_course_three_program)
+        assembleWashTime(streams, "wash_dry_course_three_wash_time", proTable.wash_dry_course_three_wash_time)
+        streams["wash_dry_course_three_rinse_pour"] = proTable.wash_dry_course_three_rinse_pour
+        streams["wash_dry_course_three_dehydration_time"] = proTable.wash_dry_course_three_dehydration_time
+        streams["wash_dry_course_three_dry"] = proTable.wash_dry_course_three_dry
+        streams["wash_dry_course_three_temperature"] = proTable.wash_dry_course_three_temperature
+        assembleWashRinse(streams, "wash_dry_course_three_wash_rinse", proTable.wash_dry_course_three_wash_rinse)
+        assembleUFB(streams, "wash_dry_course_three_ufb", proTable.wash_dry_course_three_ufb)
+        assembleProgram(streams, "wash_dry_course_three_base_program", proTable.wash_dry_course_three_base_program)
+    elseif subDataType == 0x30 then
         streams[keyTable.KEY_FUNCTION_TYPE] = "inventory_usage"
-        if (proTable.inventoryUsageType == 0x02) then
+        if proTable.inventoryUsageType == 0x02 then
             streams["inventory_usage_type"] = "softener"
         else
             streams["inventory_usage_type"] = "detergent"
         end
         streams["inventory_usage_amount"] = proTable.inventoryUsageAmount
-        streams["inventory_usage_accumulated_amount"] =
-            proTable.inventoryUsageAccumulatedAmount
+        streams["inventory_usage_accumulated_amount"] = proTable.inventoryUsageAccumulatedAmount
     else
         streams[keyTable.KEY_FUNCTION_TYPE] = "exception"
         streams["error_code"] = proTable.errorCode
@@ -1948,20 +2048,22 @@ local function assembleJsonByGlobalProperty()
     return streams
 end
 function jsonToData(jsonCmdStr)
-    if (#jsonCmdStr == 0) then return nil end
+    if #jsonCmdStr == 0 then return nil end
     local msgBytes = {}
     local json = decodeJsonToTable(jsonCmdStr)
     local deviceSubType = json["deviceinfo"]["deviceSubType"]
     local query = json["query"]
     local control = json["control"]
     local status = json["status"]
-    if (control) then
-        if (status) then updateGlobalPropertyValueByJson(status) end
-        if (control) then updateGlobalPropertyValueByJson(control) end
+    if control then
+        if status then updateGlobalPropertyValueByJson(status) end
+        if control then updateGlobalPropertyValueByJson(control) end
         local bodyBytes = {}
-        if (proTable.functionType == 0x10) then
+        if proTable.functionType == 0x10 then
             local bodyLength = 71
-            for i = 0, bodyLength - 1 do bodyBytes[i] = 0xFF end
+            for i = 0, bodyLength - 1 do
+                bodyBytes[i] = 0xFF
+            end
             bodyBytes[0] = 0x10
             bodyBytes[1] = proTable.response_status
             bodyBytes[11] = proTable.wash_course_one_program
@@ -1970,8 +2072,7 @@ function jsonToData(jsonCmdStr)
             bodyBytes[14] = proTable.wash_course_one_dehydration_time
             bodyBytes[15] = proTable.wash_course_one_dry
             bodyBytes[16] = proTable.wash_course_one_temperature
-            bodyBytes[17] = bit.bor(proTable.wash_course_one_wash_rinse,
-                                    proTable.wash_course_one_ufb)
+            bodyBytes[17] = bit.bor(proTable.wash_course_one_wash_rinse, proTable.wash_course_one_ufb)
             bodyBytes[18] = proTable.wash_course_one_base_program
             bodyBytes[21] = proTable.wash_course_two_program
             bodyBytes[22] = proTable.wash_course_two_wash_time
@@ -1979,8 +2080,7 @@ function jsonToData(jsonCmdStr)
             bodyBytes[24] = proTable.wash_course_two_dehydration_time
             bodyBytes[25] = proTable.wash_course_two_dry
             bodyBytes[26] = proTable.wash_course_two_temperature
-            bodyBytes[27] = bit.bor(proTable.wash_course_two_wash_rinse,
-                                    proTable.wash_course_two_ufb)
+            bodyBytes[27] = bit.bor(proTable.wash_course_two_wash_rinse, proTable.wash_course_two_ufb)
             bodyBytes[28] = proTable.wash_course_two_base_program
             bodyBytes[31] = proTable.wash_course_three_program
             bodyBytes[32] = proTable.wash_course_three_wash_time
@@ -1988,8 +2088,7 @@ function jsonToData(jsonCmdStr)
             bodyBytes[34] = proTable.wash_course_three_dehydration_time
             bodyBytes[35] = proTable.wash_course_three_dry
             bodyBytes[36] = proTable.wash_course_three_temperature
-            bodyBytes[37] = bit.bor(proTable.wash_course_three_wash_rinse,
-                                    proTable.wash_course_three_ufb)
+            bodyBytes[37] = bit.bor(proTable.wash_course_three_wash_rinse, proTable.wash_course_three_ufb)
             bodyBytes[38] = proTable.wash_course_three_base_program
             bodyBytes[41] = proTable.wash_dry_course_one_program
             bodyBytes[42] = proTable.wash_dry_course_one_wash_time
@@ -1997,8 +2096,7 @@ function jsonToData(jsonCmdStr)
             bodyBytes[44] = proTable.wash_dry_course_one_dehydration_time
             bodyBytes[45] = proTable.wash_dry_course_one_dry
             bodyBytes[46] = proTable.wash_dry_course_one_temperature
-            bodyBytes[47] = bit.bor(proTable.wash_dry_course_one_wash_rinse,
-                                    proTable.wash_dry_course_one_ufb)
+            bodyBytes[47] = bit.bor(proTable.wash_dry_course_one_wash_rinse, proTable.wash_dry_course_one_ufb)
             bodyBytes[48] = proTable.wash_dry_course_one_base_program
             bodyBytes[51] = proTable.wash_dry_course_two_program
             bodyBytes[52] = proTable.wash_dry_course_two_wash_time
@@ -2006,8 +2104,7 @@ function jsonToData(jsonCmdStr)
             bodyBytes[54] = proTable.wash_dry_course_two_dehydration_time
             bodyBytes[55] = proTable.wash_dry_course_two_dry
             bodyBytes[56] = proTable.wash_dry_course_two_temperature
-            bodyBytes[57] = bit.bor(proTable.wash_dry_course_two_wash_rinse,
-                                    proTable.wash_dry_course_two_ufb)
+            bodyBytes[57] = bit.bor(proTable.wash_dry_course_two_wash_rinse, proTable.wash_dry_course_two_ufb)
             bodyBytes[58] = proTable.wash_dry_course_two_base_program
             bodyBytes[61] = proTable.wash_dry_course_three_program
             bodyBytes[62] = proTable.wash_dry_course_three_wash_time
@@ -2015,12 +2112,13 @@ function jsonToData(jsonCmdStr)
             bodyBytes[64] = proTable.wash_dry_course_three_dehydration_time
             bodyBytes[65] = proTable.wash_dry_course_three_dry
             bodyBytes[66] = proTable.wash_dry_course_three_temperature
-            bodyBytes[67] = bit.bor(proTable.wash_dry_course_three_wash_rinse,
-                                    proTable.wash_dry_course_three_ufb)
+            bodyBytes[67] = bit.bor(proTable.wash_dry_course_three_wash_rinse, proTable.wash_dry_course_three_ufb)
             bodyBytes[68] = proTable.wash_dry_course_three_base_program
         else
             local bodyLength = 47
-            for i = 0, bodyLength - 1 do bodyBytes[i] = 0xFF end
+            for i = 0, bodyLength - 1 do
+                bodyBytes[i] = 0xFF
+            end
             bodyBytes[0] = 0x00
             bodyBytes[1] = proTable.command
             bodyBytes[2] = proTable.mode
@@ -2037,42 +2135,21 @@ function jsonToData(jsonCmdStr)
             bodyBytes[13] = bit.bor(proTable.washRinse, proTable.ufb)
             bodyBytes[14] = proTable.temperature
             local byte15 = 0x00
-            if proTable.lock ~= 0xff then
-                byte15 = bit.bor(byte15, proTable.lock)
-            end
-            if proTable.tubAutoClean ~= 0xff then
-                byte15 = bit.bor(byte15, proTable.tubAutoClean)
-            end
-            if proTable.buzzer ~= 0xff then
-                byte15 = bit.bor(byte15, proTable.buzzer)
-            end
-            if proTable.rinseMode ~= 0xff then
-                byte15 = bit.bor(byte15, proTable.rinseMode)
-            end
-            if proTable.lowNoise ~= 0xff then
-                byte15 = bit.bor(byte15, proTable.lowNoise)
-            end
-            if proTable.energySaving ~= 0xff then
-                byte15 = bit.bor(byte15, proTable.energySaving)
-            end
-            if proTable.hotWaterFifteen ~= 0xff then
-                byte15 = bit.bor(byte15, proTable.hotWaterFifteen)
-            end
+            if proTable.lock ~= 0xff then byte15 = bit.bor(byte15, proTable.lock) end
+            if proTable.tubAutoClean ~= 0xff then byte15 = bit.bor(byte15, proTable.tubAutoClean) end
+            if proTable.buzzer ~= 0xff then byte15 = bit.bor(byte15, proTable.buzzer) end
+            if proTable.rinseMode ~= 0xff then byte15 = bit.bor(byte15, proTable.rinseMode) end
+            if proTable.lowNoise ~= 0xff then byte15 = bit.bor(byte15, proTable.lowNoise) end
+            if proTable.energySaving ~= 0xff then byte15 = bit.bor(byte15, proTable.energySaving) end
+            if proTable.hotWaterFifteen ~= 0xff then byte15 = bit.bor(byte15, proTable.hotWaterFifteen) end
             bodyBytes[15] = byte15
             local byte16 = 0x00
-            if proTable.dryFinishAdjust ~= nil then
-                byte16 = bit.bor(byte16, proTable.dryFinishAdjust)
-            end
+            if proTable.dryFinishAdjust ~= nil then byte16 = bit.bor(byte16, proTable.dryFinishAdjust) end
             if proTable.spinRotateAdjust ~= nil then
-                byte16 = bit.bor(byte16,
-                                 bit.lshift(proTable.spinRotateAdjust, 3))
+                byte16 = bit.bor(byte16, bit.lshift(proTable.spinRotateAdjust, 3))
             end
-            if proTable.fungusProtect ~= nil then
-                byte16 = bit.bor(byte16, proTable.fungusProtect)
-            end
-            if proTable.drainBubbleProtect ~= nil then
-                byte16 = bit.bor(byte16, proTable.drainBubbleProtect)
-            end
+            if proTable.fungusProtect ~= nil then byte16 = bit.bor(byte16, proTable.fungusProtect) end
+            if proTable.drainBubbleProtect ~= nil then byte16 = bit.bor(byte16, proTable.drainBubbleProtect) end
             bodyBytes[16] = byte16
             bodyBytes[17] = proTable.defaultDry
             bodyBytes[40] = proTable.detergentName
@@ -2081,20 +2158,22 @@ function jsonToData(jsonCmdStr)
             bodyBytes[43] = proTable.softnerMeasure
         end
         msgBytes = assembleUart(bodyBytes, 0x0002)
-    elseif (query) then
+    elseif query then
         local bodyBytes = {}
         bodyBytes[0] = 0x00
         msgBytes = assembleUart(bodyBytes, 0x0003)
     end
     local infoM = {}
     local length = #msgBytes + 1
-    for i = 1, length do infoM[i] = msgBytes[i - 1] end
+    for i = 1, length do
+        infoM[i] = msgBytes[i - 1]
+    end
     local ret = table2string(infoM)
     ret = string2hexstring(ret)
     return ret
 end
 function dataToJson(jsonStr)
-    if (not jsonStr) then return nil end
+    if not jsonStr then return nil end
     local json = decodeJsonToTable(jsonStr)
     local deviceSubType = json["deviceinfo"]["deviceSubType"]
     local binData = json["msg"]["data"]

@@ -76,7 +76,9 @@ local function decodeJsonToTable(cmd)
 end
 local function makeSum(tmpbuf, start_pos, end_pos)
     local resVal = 0
-    for si = start_pos, end_pos do resVal = resVal + tmpbuf[si] end
+    for si = start_pos, end_pos do
+        resVal = resVal + tmpbuf[si]
+    end
     resVal = bit.bnot(resVal) + 1
     resVal = bit.band(resVal, 0x00ff)
     return resVal
@@ -86,7 +88,9 @@ local function assembleUart(bodyBytes, type)
     if bodyLength == 0 then return nil end
     local msgLength = (bodyLength + BYTE_PROTOCOL_LENGTH + 1)
     local msgBytes = {}
-    for i = 0, msgLength - 1 do msgBytes[i] = 0 end
+    for i = 0, msgLength - 1 do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = BYTE_PROTOCOL_HEAD
     msgBytes[1] = msgLength - 1
     msgBytes[2] = BYTE_DEVICE_TYPE
@@ -100,12 +104,16 @@ end
 local function table2string(cmd)
     local ret = ""
     local i
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 local function string2hexstring(str)
     local ret = ""
-    for i = 1, #str do ret = ret .. string.format("%02x", str:byte(i)) end
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
     return ret
 end
 local function string2table(hexstr)
@@ -123,7 +131,9 @@ local function extractBodyBytes(byteData)
     local msgLength = #byteData
     local msgBytes = {}
     local bodyBytes = {}
-    for i = 1, msgLength do msgBytes[i - 1] = byteData[i] end
+    for i = 1, msgLength do
+        msgBytes[i - 1] = byteData[i]
+    end
     local bodyLength = msgLength - BYTE_PROTOCOL_LENGTH - 1
     for i = 0, bodyLength - 1 do
         bodyBytes[i] = msgBytes[i + BYTE_PROTOCOL_LENGTH]
@@ -137,22 +147,262 @@ local function encodeTableToJson(luaTable)
     return jsonStr
 end
 local crc8_854_table = {
-    0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65, 157,
-    195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220, 35, 125,
-    159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98, 190, 224, 2,
-    92, 223, 129, 99, 61, 124, 34, 192, 158, 29, 67, 161, 255, 70, 24, 250, 164,
-    39, 121, 155, 197, 132, 218, 56, 102, 229, 187, 89, 7, 219, 133, 103, 57,
-    186, 228, 6, 88, 25, 71, 165, 251, 120, 38, 196, 154, 101, 59, 217, 135, 4,
-    90, 184, 230, 167, 249, 27, 69, 198, 152, 122, 36, 248, 166, 68, 26, 153,
-    199, 37, 123, 58, 100, 134, 216, 91, 5, 231, 185, 140, 210, 48, 110, 237,
-    179, 81, 15, 78, 16, 242, 172, 47, 113, 147, 205, 17, 79, 173, 243, 112, 46,
-    204, 146, 211, 141, 111, 49, 178, 236, 14, 80, 175, 241, 19, 77, 206, 144,
-    114, 44, 109, 51, 209, 143, 12, 82, 176, 238, 50, 108, 142, 208, 83, 13,
-    239, 177, 240, 174, 76, 18, 145, 207, 45, 115, 202, 148, 118, 40, 171, 245,
-    23, 73, 8, 86, 180, 234, 105, 55, 213, 139, 87, 9, 235, 181, 54, 104, 138,
-    212, 149, 203, 41, 119, 244, 170, 72, 22, 233, 183, 85, 11, 136, 214, 52,
-    106, 43, 117, 151, 201, 74, 20, 246, 168, 116, 42, 200, 150, 21, 75, 169,
-    247, 182, 232, 10, 84, 215, 137, 107, 53
+    0,
+    94,
+    188,
+    226,
+    97,
+    63,
+    221,
+    131,
+    194,
+    156,
+    126,
+    32,
+    163,
+    253,
+    31,
+    65,
+    157,
+    195,
+    33,
+    127,
+    252,
+    162,
+    64,
+    30,
+    95,
+    1,
+    227,
+    189,
+    62,
+    96,
+    130,
+    220,
+    35,
+    125,
+    159,
+    193,
+    66,
+    28,
+    254,
+    160,
+    225,
+    191,
+    93,
+    3,
+    128,
+    222,
+    60,
+    98,
+    190,
+    224,
+    2,
+    92,
+    223,
+    129,
+    99,
+    61,
+    124,
+    34,
+    192,
+    158,
+    29,
+    67,
+    161,
+    255,
+    70,
+    24,
+    250,
+    164,
+    39,
+    121,
+    155,
+    197,
+    132,
+    218,
+    56,
+    102,
+    229,
+    187,
+    89,
+    7,
+    219,
+    133,
+    103,
+    57,
+    186,
+    228,
+    6,
+    88,
+    25,
+    71,
+    165,
+    251,
+    120,
+    38,
+    196,
+    154,
+    101,
+    59,
+    217,
+    135,
+    4,
+    90,
+    184,
+    230,
+    167,
+    249,
+    27,
+    69,
+    198,
+    152,
+    122,
+    36,
+    248,
+    166,
+    68,
+    26,
+    153,
+    199,
+    37,
+    123,
+    58,
+    100,
+    134,
+    216,
+    91,
+    5,
+    231,
+    185,
+    140,
+    210,
+    48,
+    110,
+    237,
+    179,
+    81,
+    15,
+    78,
+    16,
+    242,
+    172,
+    47,
+    113,
+    147,
+    205,
+    17,
+    79,
+    173,
+    243,
+    112,
+    46,
+    204,
+    146,
+    211,
+    141,
+    111,
+    49,
+    178,
+    236,
+    14,
+    80,
+    175,
+    241,
+    19,
+    77,
+    206,
+    144,
+    114,
+    44,
+    109,
+    51,
+    209,
+    143,
+    12,
+    82,
+    176,
+    238,
+    50,
+    108,
+    142,
+    208,
+    83,
+    13,
+    239,
+    177,
+    240,
+    174,
+    76,
+    18,
+    145,
+    207,
+    45,
+    115,
+    202,
+    148,
+    118,
+    40,
+    171,
+    245,
+    23,
+    73,
+    8,
+    86,
+    180,
+    234,
+    105,
+    55,
+    213,
+    139,
+    87,
+    9,
+    235,
+    181,
+    54,
+    104,
+    138,
+    212,
+    149,
+    203,
+    41,
+    119,
+    244,
+    170,
+    72,
+    22,
+    233,
+    183,
+    85,
+    11,
+    136,
+    214,
+    52,
+    106,
+    43,
+    117,
+    151,
+    201,
+    74,
+    20,
+    246,
+    168,
+    116,
+    42,
+    200,
+    150,
+    21,
+    75,
+    169,
+    247,
+    182,
+    232,
+    10,
+    84,
+    215,
+    137,
+    107,
+    53,
 }
 local function crc8_854(dataBuf, start_pos, end_pos)
     local crc = 0
@@ -162,12 +412,12 @@ local function crc8_854(dataBuf, start_pos, end_pos)
     return crc
 end
 local function checkBoundary(data, min, max)
-    if (not data) then data = 0 end
+    if not data then data = 0 end
     data = tonumber(data)
-    if ((data >= min) and (data <= max)) then
+    if (data >= min) and (data <= max) then
         return data
     else
-        if (data < min) then
+        if data < min then
             return min
         else
             return max
@@ -281,740 +531,751 @@ end
 local function assembleJsonByGlobalProperty()
     local streams = {}
     streams[KEY_VERSION] = VALUE_VERSION
-    streams['basic_data'] = basicData
+    streams["basic_data"] = basicData
     if (byte9 == 0x03 and byte10 == 0x01) or (byte9 == 0x04 and byte10 == 0x01) then
-        if (bit.band(byte12, 0x01) == 0x01) then
-            streams['power'] = VALUE_ON
+        if bit.band(byte12, 0x01) == 0x01 then
+            streams["power"] = VALUE_ON
         else
-            streams['power'] = VALUE_OFF
+            streams["power"] = VALUE_OFF
         end
-        if (bit.band(byte12, 0x02) == 0x02) then
-            streams['heat'] = VALUE_ON
+        if bit.band(byte12, 0x02) == 0x02 then
+            streams["heat"] = VALUE_ON
         else
-            streams['heat'] = VALUE_OFF
+            streams["heat"] = VALUE_OFF
         end
-        if (bit.band(byte12, 0x04) == 0x04) then
-            streams['heat_status'] = VALUE_ON
+        if bit.band(byte12, 0x04) == 0x04 then
+            streams["heat_status"] = VALUE_ON
         else
-            streams['heat_status'] = VALUE_OFF
+            streams["heat_status"] = VALUE_OFF
         end
-        if (bit.band(byte12, 0x08) == 0x08) then
-            streams['cool'] = VALUE_ON
+        if bit.band(byte12, 0x08) == 0x08 then
+            streams["cool"] = VALUE_ON
         else
-            streams['cool'] = VALUE_OFF
+            streams["cool"] = VALUE_OFF
         end
-        if (bit.band(byte12, 0x10) == 0x10) then
-            streams['cool_status'] = VALUE_ON
+        if bit.band(byte12, 0x10) == 0x10 then
+            streams["cool_status"] = VALUE_ON
         else
-            streams['cool_status'] = VALUE_OFF
+            streams["cool_status"] = VALUE_OFF
         end
-        if (bit.band(byte12, 0x20) == 0x20) then
-            streams['bubble'] = VALUE_ON
+        if bit.band(byte12, 0x20) == 0x20 then
+            streams["bubble"] = VALUE_ON
         else
-            streams['bubble'] = VALUE_OFF
+            streams["bubble"] = VALUE_OFF
         end
-        if (bit.band(byte12, 0x40) == 0x40) then
-            streams['bubble_status'] = VALUE_ON
+        if bit.band(byte12, 0x40) == 0x40 then
+            streams["bubble_status"] = VALUE_ON
         else
-            streams['bubble_status'] = VALUE_OFF
+            streams["bubble_status"] = VALUE_OFF
         end
-        if (bit.band(byte13, 0x10) == 0x10) then
-            streams['out_water'] = VALUE_ON
+        if bit.band(byte13, 0x10) == 0x10 then
+            streams["out_water"] = VALUE_ON
         else
-            streams['out_water'] = VALUE_OFF
+            streams["out_water"] = VALUE_OFF
         end
-        if (bit.band(byte13, 0x20) == 0x20) then
-            streams['filter'] = VALUE_ON
+        if bit.band(byte13, 0x20) == 0x20 then
+            streams["filter"] = VALUE_ON
         else
-            streams['filter'] = VALUE_OFF
+            streams["filter"] = VALUE_OFF
         end
-        if (bit.band(byte13, 0x40) == 0x40) then
-            streams['wash'] = VALUE_ON
+        if bit.band(byte13, 0x40) == 0x40 then
+            streams["wash"] = VALUE_ON
         else
-            streams['wash'] = VALUE_OFF
+            streams["wash"] = VALUE_OFF
         end
-        if (bit.band(byte14, 0x10) == 0x10) then
-            streams['rfid_error'] = VALUE_ON
+        if bit.band(byte14, 0x10) == 0x10 then
+            streams["rfid_error"] = VALUE_ON
         else
-            streams['rfid_error'] = VALUE_OFF
+            streams["rfid_error"] = VALUE_OFF
         end
-        if (bit.band(byte14, 0x20) == 0x20) then
-            streams['lack_water'] = VALUE_ON
+        if bit.band(byte14, 0x20) == 0x20 then
+            streams["lack_water"] = VALUE_ON
         else
-            streams['lack_water'] = VALUE_OFF
+            streams["lack_water"] = VALUE_OFF
         end
-        if (bit.band(byte14, 0x40) == 0x40) then
-            streams['drainage'] = VALUE_ON
+        if bit.band(byte14, 0x40) == 0x40 then
+            streams["drainage"] = VALUE_ON
         else
-            streams['drainage'] = VALUE_OFF
+            streams["drainage"] = VALUE_OFF
         end
-        if (bit.band(byte15, 0x20) == 0x20) then
-            streams['uv_sterilize'] = VALUE_ON
+        if bit.band(byte15, 0x20) == 0x20 then
+            streams["uv_sterilize"] = VALUE_ON
         else
-            streams['uv_sterilize'] = VALUE_OFF
+            streams["uv_sterilize"] = VALUE_OFF
         end
-        if (bit.band(byte23, 0x01) == 0x01) then
-            streams['has_error'] = VALUE_ON
+        if bit.band(byte23, 0x01) == 0x01 then
+            streams["has_error"] = VALUE_ON
         else
-            streams['has_error'] = VALUE_OFF
+            streams["has_error"] = VALUE_OFF
         end
-        if (bit.band(byte23, 0x02) == 0x02) then
-            streams['leaking_error'] = VALUE_ON
+        if bit.band(byte23, 0x02) == 0x02 then
+            streams["leaking_error"] = VALUE_ON
         else
-            streams['leaking_error'] = VALUE_OFF
+            streams["leaking_error"] = VALUE_OFF
         end
-        if (bit.band(byte23, 0x04) == 0x04) then
-            streams['in_temperature_sensor_error'] = VALUE_ON
+        if bit.band(byte23, 0x04) == 0x04 then
+            streams["in_temperature_sensor_error"] = VALUE_ON
         else
-            streams['in_temperature_sensor_error'] = VALUE_OFF
+            streams["in_temperature_sensor_error"] = VALUE_OFF
         end
-        if (bit.band(byte23, 0x08) == 0x08) then
-            streams['heat_sensor_error'] = VALUE_ON
+        if bit.band(byte23, 0x08) == 0x08 then
+            streams["heat_sensor_error"] = VALUE_ON
         else
-            streams['heat_sensor_error'] = VALUE_OFF
+            streams["heat_sensor_error"] = VALUE_OFF
         end
-        if (bit.band(byte23, 0x10) == 0x10) then
-            streams['out_temperature_sensor_error'] = VALUE_ON
+        if bit.band(byte23, 0x10) == 0x10 then
+            streams["out_temperature_sensor_error"] = VALUE_ON
         else
-            streams['out_temperature_sensor_error'] = VALUE_OFF
+            streams["out_temperature_sensor_error"] = VALUE_OFF
         end
-        if (bit.band(byte23, 0x20) == 0x20) then
-            streams['hotwater_sensor_short_error'] = VALUE_ON
+        if bit.band(byte23, 0x20) == 0x20 then
+            streams["hotwater_sensor_short_error"] = VALUE_ON
         else
-            streams['hotwater_sensor_short_error'] = VALUE_OFF
+            streams["hotwater_sensor_short_error"] = VALUE_OFF
         end
-        if (bit.band(byte23, 0x40) == 0x40) then
-            streams['hotwater_sensor_open_error'] = VALUE_ON
+        if bit.band(byte23, 0x40) == 0x40 then
+            streams["hotwater_sensor_open_error"] = VALUE_ON
         else
-            streams['hotwater_sensor_open_error'] = VALUE_OFF
+            streams["hotwater_sensor_open_error"] = VALUE_OFF
         end
-        if (bit.band(byte23, 0x80) == 0x80) then
-            streams['coolwater_sensor_short_error'] = VALUE_ON
+        if bit.band(byte23, 0x80) == 0x80 then
+            streams["coolwater_sensor_short_error"] = VALUE_ON
         else
-            streams['coolwater_sensor_short_error'] = VALUE_OFF
+            streams["coolwater_sensor_short_error"] = VALUE_OFF
         end
-        if (bit.band(byte24, 0x01) == 0x01) then
-            streams['coolwater_sensor_open_error'] = VALUE_ON
+        if bit.band(byte24, 0x01) == 0x01 then
+            streams["coolwater_sensor_open_error"] = VALUE_ON
         else
-            streams['coolwater_sensor_open_error'] = VALUE_OFF
+            streams["coolwater_sensor_open_error"] = VALUE_OFF
         end
-        if (bit.band(byte24, 0x08) == 0x08) then
-            streams['instant_error'] = VALUE_ON
+        if bit.band(byte24, 0x08) == 0x08 then
+            streams["instant_error"] = VALUE_ON
         else
-            streams['instant_error'] = VALUE_OFF
+            streams["instant_error"] = VALUE_OFF
         end
-        if (bit.band(byte24, 0x10) == 0x10) then
-            streams['overtime_error'] = VALUE_ON
+        if bit.band(byte24, 0x10) == 0x10 then
+            streams["overtime_error"] = VALUE_ON
         else
-            streams['overtime_error'] = VALUE_OFF
+            streams["overtime_error"] = VALUE_OFF
         end
-        if (bit.band(byte24, 0x20) == 0x20) then
-            streams['communicate_error'] = VALUE_ON
+        if bit.band(byte24, 0x20) == 0x20 then
+            streams["communicate_error"] = VALUE_ON
         else
-            streams['communicate_error'] = VALUE_OFF
+            streams["communicate_error"] = VALUE_OFF
         end
-        if (bit.band(byte25, 0x02) == 0x02) then
-            streams['standby_status'] = VALUE_ON
+        if bit.band(byte25, 0x02) == 0x02 then
+            streams["standby_status"] = VALUE_ON
         else
-            streams['standby_status'] = VALUE_OFF
+            streams["standby_status"] = VALUE_OFF
         end
-        if (bit.band(byte25, 0x04) == 0x04) then
-            streams['lock'] = VALUE_ON
+        if bit.band(byte25, 0x04) == 0x04 then
+            streams["lock"] = VALUE_ON
         else
-            streams['lock'] = VALUE_OFF
+            streams["lock"] = VALUE_OFF
         end
-        if (bit.band(byte25, 0x10) == 0x10) then
-            streams['faucet_error'] = VALUE_ON
+        if bit.band(byte25, 0x10) == 0x10 then
+            streams["faucet_error"] = VALUE_ON
         else
-            streams['faucet_error'] = VALUE_OFF
+            streams["faucet_error"] = VALUE_OFF
         end
-        if (bit.band(byte25, 0x20) == 0x20) then
-            streams['tds_error'] = VALUE_ON
+        if bit.band(byte25, 0x20) == 0x20 then
+            streams["tds_error"] = VALUE_ON
         else
-            streams['tds_error'] = VALUE_OFF
+            streams["tds_error"] = VALUE_OFF
         end
-        streams['heat_temperature'] = byte20
-        streams['cool_temperature'] = byte21
-        streams['filter_1'] = bit.lshift(byte36, 8) + byte35
-        streams['filter_2'] = bit.lshift(byte38, 8) + byte37
-        streams['filter_3'] = bit.lshift(byte40, 8) + byte39
-        streams['filter_4'] = bit.lshift(byte42, 8) + byte41
-        streams['filter_5'] = bit.lshift(byte44, 8) + byte43
-        streams['life_1'] = byte26
-        streams['life_2'] = byte27
-        streams['life_3'] = byte28
-        streams['life_4'] = byte29
-        streams['life_5'] = byte30
-        streams['countdown_filter_1'] = byte45
-        streams['countdown_filter_2'] = byte50
-        streams['countdown_filter_3'] = byte51
-        streams['countdown_filter_4'] = byte52
-        streams['countdown_filter_5'] = byte53
-        streams['e_version'] = byte54
-        streams['in_tds'] = bit.lshift(byte47, 8) + byte46
-        streams['out_tds'] = bit.lshift(byte49, 8) + byte48
-        streams['water_litre'] = bit.lshift(byte18, 8) + byte17
-        if ((byte58 ~= nil) and (bit.band(byte58, 0x01) == 0x01)) then
-            streams['vacation'] = VALUE_ON
+        streams["heat_temperature"] = byte20
+        streams["cool_temperature"] = byte21
+        streams["filter_1"] = bit.lshift(byte36, 8) + byte35
+        streams["filter_2"] = bit.lshift(byte38, 8) + byte37
+        streams["filter_3"] = bit.lshift(byte40, 8) + byte39
+        streams["filter_4"] = bit.lshift(byte42, 8) + byte41
+        streams["filter_5"] = bit.lshift(byte44, 8) + byte43
+        streams["life_1"] = byte26
+        streams["life_2"] = byte27
+        streams["life_3"] = byte28
+        streams["life_4"] = byte29
+        streams["life_5"] = byte30
+        streams["countdown_filter_1"] = byte45
+        streams["countdown_filter_2"] = byte50
+        streams["countdown_filter_3"] = byte51
+        streams["countdown_filter_4"] = byte52
+        streams["countdown_filter_5"] = byte53
+        streams["e_version"] = byte54
+        streams["in_tds"] = bit.lshift(byte47, 8) + byte46
+        streams["out_tds"] = bit.lshift(byte49, 8) + byte48
+        streams["water_litre"] = bit.lshift(byte18, 8) + byte17
+        if (byte58 ~= nil) and (bit.band(byte58, 0x01) == 0x01) then
+            streams["vacation"] = VALUE_ON
         else
-            streams['vacation'] = VALUE_OFF
+            streams["vacation"] = VALUE_OFF
         end
-        if ((byte59 ~= nil) and (bit.band(byte59, 0x20) == 0x20)) then
-            streams['wash_enable'] = VALUE_ON
+        if (byte59 ~= nil) and (bit.band(byte59, 0x20) == 0x20) then
+            streams["wash_enable"] = VALUE_ON
         else
-            streams['wash_enable'] = VALUE_OFF
+            streams["wash_enable"] = VALUE_OFF
         end
     end
-    if (byte9 == 0x03 and byte10 == 0x04) or (byte9 == 0x04 and byte10 == 0x04) or
-        (byte9 == 0x03 and byte10 == 0x03) or (byte9 == 0x04 and byte10 == 0x03) then
-        streams['e_version'] = byte18
-        streams['custom_temperature_1'] = byte20
-        streams['custom_temperature_2'] = byte21
-        streams['custom_temperature_3'] = byte22
-        streams['custom_temperature_4'] = byte23
-        streams['custom_temperature_5'] = byte24
-        streams['quantify_1'] = byte25
-        streams['quantify_2'] = byte26
-        streams['quantify_3'] = byte27
-        streams['quantify_4'] = byte28
-        streams['quantify_5'] = byte29
-        streams['water_consumption'] = bit.lshift(byte31, 8) + byte30
-        streams['life_1'] = byte32
-        streams['life_2'] = byte33
-        streams['life_3'] = byte34
-        streams['life_4'] = byte35
-        streams['life_5'] = byte36
-        streams['in_tds'] = bit.lshift(byte38, 8) + byte37
-        streams['out_tds'] = bit.lshift(byte40, 8) + byte39
-        streams['hot_water_consumption'] = bit.lshift(byte42, 8) + byte41
-        streams['keep_warm_time'] = byte43
-        streams['warm_left_time'] = bit.lshift(byte45, 8) + byte44
-        streams['water_consumption_ml'] = byte46
-        streams['wash_seconds'] = byte47
-        if (bit.band(byte58, 0x01) == 0x01) then
-            streams['vacation'] = VALUE_ON
+    if
+        (byte9 == 0x03 and byte10 == 0x04)
+        or (byte9 == 0x04 and byte10 == 0x04)
+        or (byte9 == 0x03 and byte10 == 0x03)
+        or (byte9 == 0x04 and byte10 == 0x03)
+    then
+        streams["e_version"] = byte18
+        streams["custom_temperature_1"] = byte20
+        streams["custom_temperature_2"] = byte21
+        streams["custom_temperature_3"] = byte22
+        streams["custom_temperature_4"] = byte23
+        streams["custom_temperature_5"] = byte24
+        streams["quantify_1"] = byte25
+        streams["quantify_2"] = byte26
+        streams["quantify_3"] = byte27
+        streams["quantify_4"] = byte28
+        streams["quantify_5"] = byte29
+        streams["water_consumption"] = bit.lshift(byte31, 8) + byte30
+        streams["life_1"] = byte32
+        streams["life_2"] = byte33
+        streams["life_3"] = byte34
+        streams["life_4"] = byte35
+        streams["life_5"] = byte36
+        streams["in_tds"] = bit.lshift(byte38, 8) + byte37
+        streams["out_tds"] = bit.lshift(byte40, 8) + byte39
+        streams["hot_water_consumption"] = bit.lshift(byte42, 8) + byte41
+        streams["keep_warm_time"] = byte43
+        streams["warm_left_time"] = bit.lshift(byte45, 8) + byte44
+        streams["water_consumption_ml"] = byte46
+        streams["wash_seconds"] = byte47
+        if bit.band(byte58, 0x01) == 0x01 then
+            streams["vacation"] = VALUE_ON
         else
-            streams['vacation'] = VALUE_OFF
+            streams["vacation"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x02) == 0x02) then
-            streams['germicidal'] = VALUE_ON
+        if bit.band(byte58, 0x02) == 0x02 then
+            streams["germicidal"] = VALUE_ON
         else
-            streams['germicidal'] = VALUE_OFF
+            streams["germicidal"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x04) == 0x04) then
-            streams['waste_water'] = VALUE_ON
+        if bit.band(byte58, 0x04) == 0x04 then
+            streams["waste_water"] = VALUE_ON
         else
-            streams['waste_water'] = VALUE_OFF
+            streams["waste_water"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x08) == 0x08) then
-            streams['full'] = VALUE_ON
+        if bit.band(byte58, 0x08) == 0x08 then
+            streams["full"] = VALUE_ON
         else
-            streams['full'] = VALUE_OFF
+            streams["full"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x01) == 0x01) then
-            streams['wash'] = VALUE_ON
+        if bit.band(byte59, 0x01) == 0x01 then
+            streams["wash"] = VALUE_ON
         else
-            streams['wash'] = VALUE_OFF
+            streams["wash"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x02) == 0x02) then
-            streams['filter'] = VALUE_ON
+        if bit.band(byte59, 0x02) == 0x02 then
+            streams["filter"] = VALUE_ON
         else
-            streams['filter'] = VALUE_OFF
+            streams["filter"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x04) == 0x04) then
-            streams['cool'] = VALUE_ON
+        if bit.band(byte59, 0x04) == 0x04 then
+            streams["cool"] = VALUE_ON
         else
-            streams['cool'] = VALUE_OFF
+            streams["cool"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x08) == 0x08) then
-            streams['heat'] = VALUE_ON
+        if bit.band(byte59, 0x08) == 0x08 then
+            streams["heat"] = VALUE_ON
         else
-            streams['heat'] = VALUE_OFF
+            streams["heat"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x10) == 0x10) then
-            streams['keep_warm'] = VALUE_ON
+        if bit.band(byte59, 0x10) == 0x10 then
+            streams["keep_warm"] = VALUE_ON
         else
-            streams['keep_warm'] = VALUE_OFF
+            streams["keep_warm"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x20) == 0x20) then
-            streams['wash_enable'] = VALUE_ON
+        if bit.band(byte59, 0x20) == 0x20 then
+            streams["wash_enable"] = VALUE_ON
         else
-            streams['wash_enable'] = VALUE_OFF
+            streams["wash_enable"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x40) == 0x40) then
-            streams['drainage'] = VALUE_ON
+        if bit.band(byte59, 0x40) == 0x40 then
+            streams["drainage"] = VALUE_ON
         else
-            streams['drainage'] = VALUE_OFF
+            streams["drainage"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x80) == 0x80) then
-            streams['sleep'] = VALUE_ON
+        if bit.band(byte59, 0x80) == 0x80 then
+            streams["sleep"] = VALUE_ON
         else
-            streams['sleep'] = VALUE_OFF
+            streams["sleep"] = VALUE_OFF
         end
-        streams['ice_gall_status'] = byte60
-        if (bit.band(byte61, 0x01) == 0x01) then
-            streams['power'] = VALUE_ON
+        streams["ice_gall_status"] = byte60
+        if bit.band(byte61, 0x01) == 0x01 then
+            streams["power"] = VALUE_ON
         else
-            streams['power'] = VALUE_OFF
+            streams["power"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x02) == 0x02) then
-            streams['lack_water'] = VALUE_ON
+        if bit.band(byte61, 0x02) == 0x02 then
+            streams["lack_water"] = VALUE_ON
         else
-            streams['lack_water'] = VALUE_OFF
+            streams["lack_water"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x04) == 0x04) then
-            streams['heat_status'] = VALUE_ON
+        if bit.band(byte61, 0x04) == 0x04 then
+            streams["heat_status"] = VALUE_ON
         else
-            streams['heat_status'] = VALUE_OFF
+            streams["heat_status"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x08) == 0x08) then
-            streams['lock'] = VALUE_ON
+        if bit.band(byte61, 0x08) == 0x08 then
+            streams["lock"] = VALUE_ON
         else
-            streams['lock'] = VALUE_OFF
+            streams["lock"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x10) == 0x10) then
-            streams['out_water'] = VALUE_ON
+        if bit.band(byte61, 0x10) == 0x10 then
+            streams["out_water"] = VALUE_ON
         else
-            streams['out_water'] = VALUE_OFF
+            streams["out_water"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x20) == 0x20) then
-            streams['season'] = 1
+        if bit.band(byte61, 0x20) == 0x20 then
+            streams["season"] = 1
         else
-            streams['season'] = 0
+            streams["season"] = 0
         end
-        if (bit.band(byte61, 0x40) == 0x40) then
-            streams['out_hot_water'] = VALUE_ON
+        if bit.band(byte61, 0x40) == 0x40 then
+            streams["out_hot_water"] = VALUE_ON
         else
-            streams['out_hot_water'] = VALUE_OFF
+            streams["out_hot_water"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x80) == 0x80) then
-            streams['standby_status'] = 1
+        if bit.band(byte61, 0x80) == 0x80 then
+            streams["standby_status"] = 1
         else
-            streams['standby_status'] = 0
+            streams["standby_status"] = 0
         end
-        streams['error'] = byte62
+        streams["error"] = byte62
     end
     if (byte9 == 0x03 and byte10 == 0x05) or (byte9 == 0x04 and byte10 == 0x05) then
-        streams['coffee_temperature'] = byte12
-        streams['honey_temperature'] = byte13
-        streams['milk_temperature'] = byte14
-        streams['current_temperature'] = byte15
-        streams['e_version'] = byte18
-        streams['custom_temperature_1'] = byte20
-        streams['custom_temperature_2'] = byte21
-        streams['custom_temperature_3'] = byte22
-        streams['custom_temperature_4'] = byte23
-        streams['custom_temperature_5'] = byte24
-        streams['quantify_1'] = byte25
-        streams['quantify_2'] = byte26
-        streams['quantify_3'] = byte27
-        streams['quantify_4'] = byte28
-        streams['quantify_5'] = byte29
-        streams['water_consumption'] = bit.lshift(byte31, 8) + byte30
-        streams['air_filter'] = byte32
-        streams['germicidal_countdown'] = byte33
-        streams['water_kind'] = byte34
-        streams['set_germicidal_countdown_days'] = byte35
-        streams['germicidal_left_time'] = byte36
-        streams['keep_warm_time'] = byte43
-        streams['warm_left_time'] = bit.lshift(byte45, 8) + byte44
-        streams['water_consumption_ml'] = byte46
-        if (bit.band(byte58, 0x01) == 0x01) then
-            streams['vacation'] = VALUE_ON
+        streams["coffee_temperature"] = byte12
+        streams["honey_temperature"] = byte13
+        streams["milk_temperature"] = byte14
+        streams["current_temperature"] = byte15
+        streams["e_version"] = byte18
+        streams["custom_temperature_1"] = byte20
+        streams["custom_temperature_2"] = byte21
+        streams["custom_temperature_3"] = byte22
+        streams["custom_temperature_4"] = byte23
+        streams["custom_temperature_5"] = byte24
+        streams["quantify_1"] = byte25
+        streams["quantify_2"] = byte26
+        streams["quantify_3"] = byte27
+        streams["quantify_4"] = byte28
+        streams["quantify_5"] = byte29
+        streams["water_consumption"] = bit.lshift(byte31, 8) + byte30
+        streams["air_filter"] = byte32
+        streams["germicidal_countdown"] = byte33
+        streams["water_kind"] = byte34
+        streams["set_germicidal_countdown_days"] = byte35
+        streams["germicidal_left_time"] = byte36
+        streams["keep_warm_time"] = byte43
+        streams["warm_left_time"] = bit.lshift(byte45, 8) + byte44
+        streams["water_consumption_ml"] = byte46
+        if bit.band(byte58, 0x01) == 0x01 then
+            streams["vacation"] = VALUE_ON
         else
-            streams['vacation'] = VALUE_OFF
+            streams["vacation"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x02) == 0x02) then
-            streams['germicidal'] = VALUE_ON
+        if bit.band(byte58, 0x02) == 0x02 then
+            streams["germicidal"] = VALUE_ON
         else
-            streams['germicidal'] = VALUE_OFF
+            streams["germicidal"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x08) == 0x08) then
-            streams['full'] = VALUE_ON
+        if bit.band(byte58, 0x08) == 0x08 then
+            streams["full"] = VALUE_ON
         else
-            streams['full'] = VALUE_OFF
+            streams["full"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x10) == 0x10) then
-            streams['set_germicidal_countdown'] = VALUE_ON
+        if bit.band(byte58, 0x10) == 0x10 then
+            streams["set_germicidal_countdown"] = VALUE_ON
         else
-            streams['set_germicidal_countdown'] = VALUE_OFF
+            streams["set_germicidal_countdown"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x01) == 0x01) then
-            streams['wash'] = VALUE_ON
+        if bit.band(byte59, 0x01) == 0x01 then
+            streams["wash"] = VALUE_ON
         else
-            streams['wash'] = VALUE_OFF
+            streams["wash"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x02) == 0x02) then
-            streams['cool'] = VALUE_ON
+        if bit.band(byte59, 0x02) == 0x02 then
+            streams["cool"] = VALUE_ON
         else
-            streams['cool'] = VALUE_OFF
+            streams["cool"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x10) == 0x10) then
-            streams['heat'] = VALUE_ON
+        if bit.band(byte59, 0x10) == 0x10 then
+            streams["heat"] = VALUE_ON
         else
-            streams['heat'] = VALUE_OFF
+            streams["heat"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x20) == 0x20) then
-            streams['wash_enable'] = VALUE_ON
+        if bit.band(byte59, 0x20) == 0x20 then
+            streams["wash_enable"] = VALUE_ON
         else
-            streams['wash_enable'] = VALUE_OFF
+            streams["wash_enable"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x40) == 0x40) then
-            streams['drainage'] = VALUE_ON
+        if bit.band(byte59, 0x40) == 0x40 then
+            streams["drainage"] = VALUE_ON
         else
-            streams['drainage'] = VALUE_OFF
+            streams["drainage"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x80) == 0x80) then
-            streams['sleep'] = VALUE_ON
+        if bit.band(byte59, 0x80) == 0x80 then
+            streams["sleep"] = VALUE_ON
         else
-            streams['sleep'] = VALUE_OFF
+            streams["sleep"] = VALUE_OFF
         end
-        streams['ice_gall_status'] = byte60
-        if (bit.band(byte61, 0x01) == 0x01) then
-            streams['power'] = VALUE_ON
+        streams["ice_gall_status"] = byte60
+        if bit.band(byte61, 0x01) == 0x01 then
+            streams["power"] = VALUE_ON
         else
-            streams['power'] = VALUE_OFF
+            streams["power"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x02) == 0x02) then
-            streams['lack_water'] = VALUE_ON
+        if bit.band(byte61, 0x02) == 0x02 then
+            streams["lack_water"] = VALUE_ON
         else
-            streams['lack_water'] = VALUE_OFF
+            streams["lack_water"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x04) == 0x04) then
-            streams['heat_status'] = VALUE_ON
+        if bit.band(byte61, 0x04) == 0x04 then
+            streams["heat_status"] = VALUE_ON
         else
-            streams['heat_status'] = VALUE_OFF
+            streams["heat_status"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x08) == 0x08) then
-            streams['lock'] = VALUE_ON
+        if bit.band(byte61, 0x08) == 0x08 then
+            streams["lock"] = VALUE_ON
         else
-            streams['lock'] = VALUE_OFF
+            streams["lock"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x10) == 0x10) then
-            streams['out_water'] = VALUE_ON
+        if bit.band(byte61, 0x10) == 0x10 then
+            streams["out_water"] = VALUE_ON
         else
-            streams['out_water'] = VALUE_OFF
+            streams["out_water"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x20) == 0x20) then
-            streams['season'] = 1
+        if bit.band(byte61, 0x20) == 0x20 then
+            streams["season"] = 1
         else
-            streams['season'] = 0
+            streams["season"] = 0
         end
-        if (bit.band(byte61, 0x40) == 0x40) then
-            streams['waste_water'] = VALUE_ON
+        if bit.band(byte61, 0x40) == 0x40 then
+            streams["waste_water"] = VALUE_ON
         else
-            streams['waste_water'] = VALUE_OFF
+            streams["waste_water"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x80) == 0x80) then
-            streams['standby_status'] = 1
+        if bit.band(byte61, 0x80) == 0x80 then
+            streams["standby_status"] = 1
         else
-            streams['standby_status'] = 0
+            streams["standby_status"] = 0
         end
-        streams['error'] = byte62
+        streams["error"] = byte62
     end
     if (byte9 == 0x03 and byte10 == 0x06) or (byte9 == 0x04 and byte10 == 0x06) then
-        streams['cool_target_temperature'] = byte12
-        streams['current_temperature'] = byte13
-        streams['red_tea_temperature'] = byte14
-        streams['black_tea_temperature'] = byte15
-        streams['green_tea_temperature'] = byte16
-        streams['yellow_tea_temperature'] = byte17
-        streams['e_version'] = byte18
-        streams['heat_time'] = byte19
-        streams['custom_temperature_1'] = byte20
-        streams['custom_temperature_2'] = byte21
-        streams['custom_temperature_3'] = byte22
-        streams['custom_temperature_4'] = byte23
-        streams['custom_temperature_5'] = byte24
-        streams['quantify_1'] = byte25
-        streams['quantify_2'] = byte26
-        streams['quantify_3'] = byte27
-        streams['quantify_4'] = byte28
-        streams['quantify_5'] = byte29
-        streams['custom_time_1'] = byte30
-        streams['custom_time_2'] = byte31
-        streams['custom_time_3'] = byte32
-        streams['custom_time_4'] = byte33
-        streams['custom_time_5'] = byte34
-        streams['water_consumption'] = bit.lshift(byte36, 8) + byte35
-        streams['bottle_capacity'] = bit.lshift(byte38, 8) + byte37
-        streams['heat_tea'] = byte39
-        streams['air_filter'] = byte40
-        streams['bottle_consumption'] = bit.lshift(byte42, 8) + byte41
-        streams['keep_warm_time'] = byte43
-        streams['warm_left_time'] = bit.lshift(byte45, 8) + byte44
-        streams['water_consumption_ml'] = byte46
-        if (bit.band(byte57, 0x01) == 0x01) then
-            streams['vacation'] = VALUE_ON
+        streams["cool_target_temperature"] = byte12
+        streams["current_temperature"] = byte13
+        streams["red_tea_temperature"] = byte14
+        streams["black_tea_temperature"] = byte15
+        streams["green_tea_temperature"] = byte16
+        streams["yellow_tea_temperature"] = byte17
+        streams["e_version"] = byte18
+        streams["heat_time"] = byte19
+        streams["custom_temperature_1"] = byte20
+        streams["custom_temperature_2"] = byte21
+        streams["custom_temperature_3"] = byte22
+        streams["custom_temperature_4"] = byte23
+        streams["custom_temperature_5"] = byte24
+        streams["quantify_1"] = byte25
+        streams["quantify_2"] = byte26
+        streams["quantify_3"] = byte27
+        streams["quantify_4"] = byte28
+        streams["quantify_5"] = byte29
+        streams["custom_time_1"] = byte30
+        streams["custom_time_2"] = byte31
+        streams["custom_time_3"] = byte32
+        streams["custom_time_4"] = byte33
+        streams["custom_time_5"] = byte34
+        streams["water_consumption"] = bit.lshift(byte36, 8) + byte35
+        streams["bottle_capacity"] = bit.lshift(byte38, 8) + byte37
+        streams["heat_tea"] = byte39
+        streams["air_filter"] = byte40
+        streams["bottle_consumption"] = bit.lshift(byte42, 8) + byte41
+        streams["keep_warm_time"] = byte43
+        streams["warm_left_time"] = bit.lshift(byte45, 8) + byte44
+        streams["water_consumption_ml"] = byte46
+        if bit.band(byte57, 0x01) == 0x01 then
+            streams["vacation"] = VALUE_ON
         else
-            streams['vacation'] = VALUE_OFF
+            streams["vacation"] = VALUE_OFF
         end
-        if (bit.band(byte57, 0x02) == 0x02) then
-            streams['germicidal'] = VALUE_ON
+        if bit.band(byte57, 0x02) == 0x02 then
+            streams["germicidal"] = VALUE_ON
         else
-            streams['germicidal'] = VALUE_OFF
+            streams["germicidal"] = VALUE_OFF
         end
-        if (bit.band(byte57, 0x04) == 0x04) then
-            streams['waste_water'] = VALUE_ON
+        if bit.band(byte57, 0x04) == 0x04 then
+            streams["waste_water"] = VALUE_ON
         else
-            streams['waste_water'] = VALUE_OFF
+            streams["waste_water"] = VALUE_OFF
         end
-        if (bit.band(byte57, 0x08) == 0x08) then
-            streams['full'] = VALUE_ON
+        if bit.band(byte57, 0x08) == 0x08 then
+            streams["full"] = VALUE_ON
         else
-            streams['full'] = VALUE_OFF
+            streams["full"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x01) == 0x01) then
-            streams['keep_warm'] = VALUE_ON
+        if bit.band(byte58, 0x01) == 0x01 then
+            streams["keep_warm"] = VALUE_ON
         else
-            streams['keep_warm'] = VALUE_OFF
+            streams["keep_warm"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x02) == 0x02) then
-            streams['keep_warm_2'] = VALUE_ON
+        if bit.band(byte58, 0x02) == 0x02 then
+            streams["keep_warm_2"] = VALUE_ON
         else
-            streams['keep_warm_2'] = VALUE_OFF
+            streams["keep_warm_2"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x20) == 0x20) then
-            streams['wash_enable'] = VALUE_ON
+        if bit.band(byte58, 0x20) == 0x20 then
+            streams["wash_enable"] = VALUE_ON
         else
-            streams['wash_enable'] = VALUE_OFF
+            streams["wash_enable"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x40) == 0x40) then
-            streams['drainage'] = VALUE_ON
+        if bit.band(byte58, 0x40) == 0x40 then
+            streams["drainage"] = VALUE_ON
         else
-            streams['drainage'] = VALUE_OFF
+            streams["drainage"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x80) == 0x80) then
-            streams['sleep'] = VALUE_ON
+        if bit.band(byte58, 0x80) == 0x80 then
+            streams["sleep"] = VALUE_ON
         else
-            streams['sleep'] = VALUE_OFF
+            streams["sleep"] = VALUE_OFF
         end
-        streams['heat_start'] = byte59
-        streams['ice_gall_status'] = byte60
-        if (bit.band(byte61, 0x01) == 0x01) then
-            streams['power'] = VALUE_ON
+        streams["heat_start"] = byte59
+        streams["ice_gall_status"] = byte60
+        if bit.band(byte61, 0x01) == 0x01 then
+            streams["power"] = VALUE_ON
         else
-            streams['power'] = VALUE_OFF
+            streams["power"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x02) == 0x02) then
-            streams['lack_water'] = VALUE_ON
+        if bit.band(byte61, 0x02) == 0x02 then
+            streams["lack_water"] = VALUE_ON
         else
-            streams['lack_water'] = VALUE_OFF
+            streams["lack_water"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x04) == 0x04) then
-            streams['heat_status'] = VALUE_ON
+        if bit.band(byte61, 0x04) == 0x04 then
+            streams["heat_status"] = VALUE_ON
         else
-            streams['heat_status'] = VALUE_OFF
+            streams["heat_status"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x08) == 0x08) then
-            streams['lock'] = VALUE_ON
+        if bit.band(byte61, 0x08) == 0x08 then
+            streams["lock"] = VALUE_ON
         else
-            streams['lock'] = VALUE_OFF
+            streams["lock"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x10) == 0x10) then
-            streams['out_water'] = VALUE_ON
+        if bit.band(byte61, 0x10) == 0x10 then
+            streams["out_water"] = VALUE_ON
         else
-            streams['out_water'] = VALUE_OFF
+            streams["out_water"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x20) == 0x20) then
-            streams['season'] = 1
+        if bit.band(byte61, 0x20) == 0x20 then
+            streams["season"] = 1
         else
-            streams['season'] = 0
+            streams["season"] = 0
         end
-        if (bit.band(byte61, 0x40) == 0x40) then
-            streams['out_hot_water'] = VALUE_ON
+        if bit.band(byte61, 0x40) == 0x40 then
+            streams["out_hot_water"] = VALUE_ON
         else
-            streams['out_hot_water'] = VALUE_OFF
+            streams["out_hot_water"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x80) == 0x80) then
-            streams['standby_status'] = 1
+        if bit.band(byte61, 0x80) == 0x80 then
+            streams["standby_status"] = 1
         else
-            streams['standby_status'] = 0
+            streams["standby_status"] = 0
         end
-        streams['error'] = byte62
+        streams["error"] = byte62
     end
     if (byte9 == 0x03 and byte10 == 0x07) or (byte9 == 0x04 and byte10 == 0x07) then
-        streams['tea_temperature'] = byte12
-        streams['medlar_temperature'] = byte13
-        streams['honey_temperature'] = byte14
-        streams['milk_temperature'] = byte15
-        streams['e_version'] = byte18
-        streams['custom_temperature_1'] = byte20
-        streams['custom_temperature_2'] = byte21
-        streams['custom_temperature_3'] = byte22
-        streams['custom_temperature_4'] = byte23
-        streams['custom_temperature_5'] = byte24
-        streams['quantify_1'] = byte25
-        streams['quantify_2'] = byte26
-        streams['quantify_3'] = byte27
-        streams['quantify_4'] = byte28
-        streams['quantify_5'] = byte29
-        streams['water_consumption'] = bit.lshift(byte31, 8) + byte30
-        streams['germicidal_countdown'] = byte32
-        streams['water_kind'] = byte33
-        streams['special_status'] = byte34
-        streams['set_germicidal_countdown_days'] = byte35
-        streams['germicidal_left_time'] = byte36
-        streams['current_temperature'] = byte37
-        streams['keep_warm_time'] = byte43
-        streams['warm_left_time'] = bit.lshift(byte45, 8) + byte44
-        streams['water_consumption_ml'] = byte46
-        if (bit.band(byte58, 0x01) == 0x01) then
-            streams['vacation'] = VALUE_ON
+        streams["tea_temperature"] = byte12
+        streams["medlar_temperature"] = byte13
+        streams["honey_temperature"] = byte14
+        streams["milk_temperature"] = byte15
+        streams["e_version"] = byte18
+        streams["custom_temperature_1"] = byte20
+        streams["custom_temperature_2"] = byte21
+        streams["custom_temperature_3"] = byte22
+        streams["custom_temperature_4"] = byte23
+        streams["custom_temperature_5"] = byte24
+        streams["quantify_1"] = byte25
+        streams["quantify_2"] = byte26
+        streams["quantify_3"] = byte27
+        streams["quantify_4"] = byte28
+        streams["quantify_5"] = byte29
+        streams["water_consumption"] = bit.lshift(byte31, 8) + byte30
+        streams["germicidal_countdown"] = byte32
+        streams["water_kind"] = byte33
+        streams["special_status"] = byte34
+        streams["set_germicidal_countdown_days"] = byte35
+        streams["germicidal_left_time"] = byte36
+        streams["current_temperature"] = byte37
+        streams["keep_warm_time"] = byte43
+        streams["warm_left_time"] = bit.lshift(byte45, 8) + byte44
+        streams["water_consumption_ml"] = byte46
+        if bit.band(byte58, 0x01) == 0x01 then
+            streams["vacation"] = VALUE_ON
         else
-            streams['vacation'] = VALUE_OFF
+            streams["vacation"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x02) == 0x02) then
-            streams['germicidal'] = VALUE_ON
+        if bit.band(byte58, 0x02) == 0x02 then
+            streams["germicidal"] = VALUE_ON
         else
-            streams['germicidal'] = VALUE_OFF
+            streams["germicidal"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x04) == 0x04) then
-            streams['waste_water'] = VALUE_ON
+        if bit.band(byte58, 0x04) == 0x04 then
+            streams["waste_water"] = VALUE_ON
         else
-            streams['waste_water'] = VALUE_OFF
+            streams["waste_water"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x08) == 0x08) then
-            streams['full'] = VALUE_ON
+        if bit.band(byte58, 0x08) == 0x08 then
+            streams["full"] = VALUE_ON
         else
-            streams['full'] = VALUE_OFF
+            streams["full"] = VALUE_OFF
         end
-        if (bit.band(byte58, 0x10) == 0x10) then
-            streams['set_germicidal_countdown'] = VALUE_ON
+        if bit.band(byte58, 0x10) == 0x10 then
+            streams["set_germicidal_countdown"] = VALUE_ON
         else
-            streams['set_germicidal_countdown'] = VALUE_OFF
+            streams["set_germicidal_countdown"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x20) == 0x20) then
-            streams['wash_enable'] = VALUE_ON
+        if bit.band(byte59, 0x20) == 0x20 then
+            streams["wash_enable"] = VALUE_ON
         else
-            streams['wash_enable'] = VALUE_OFF
+            streams["wash_enable"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x40) == 0x40) then
-            streams['drainage'] = VALUE_ON
+        if bit.band(byte59, 0x40) == 0x40 then
+            streams["drainage"] = VALUE_ON
         else
-            streams['drainage'] = VALUE_OFF
+            streams["drainage"] = VALUE_OFF
         end
-        if (bit.band(byte59, 0x80) == 0x80) then
-            streams['sleep'] = VALUE_ON
+        if bit.band(byte59, 0x80) == 0x80 then
+            streams["sleep"] = VALUE_ON
         else
-            streams['sleep'] = VALUE_OFF
+            streams["sleep"] = VALUE_OFF
         end
-        streams['ice_gall_status'] = byte60
-        if (bit.band(byte61, 0x01) == 0x01) then
-            streams['power'] = VALUE_ON
+        streams["ice_gall_status"] = byte60
+        if bit.band(byte61, 0x01) == 0x01 then
+            streams["power"] = VALUE_ON
         else
-            streams['power'] = VALUE_OFF
+            streams["power"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x02) == 0x02) then
-            streams['lack_water'] = VALUE_ON
+        if bit.band(byte61, 0x02) == 0x02 then
+            streams["lack_water"] = VALUE_ON
         else
-            streams['lack_water'] = VALUE_OFF
+            streams["lack_water"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x04) == 0x04) then
-            streams['heat_status'] = VALUE_ON
+        if bit.band(byte61, 0x04) == 0x04 then
+            streams["heat_status"] = VALUE_ON
         else
-            streams['heat_status'] = VALUE_OFF
+            streams["heat_status"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x08) == 0x08) then
-            streams['lock'] = VALUE_ON
+        if bit.band(byte61, 0x08) == 0x08 then
+            streams["lock"] = VALUE_ON
         else
-            streams['lock'] = VALUE_OFF
+            streams["lock"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x10) == 0x10) then
-            streams['out_water'] = VALUE_ON
+        if bit.band(byte61, 0x10) == 0x10 then
+            streams["out_water"] = VALUE_ON
         else
-            streams['out_water'] = VALUE_OFF
+            streams["out_water"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x20) == 0x20) then
-            streams['season'] = 1
+        if bit.band(byte61, 0x20) == 0x20 then
+            streams["season"] = 1
         else
-            streams['season'] = 0
+            streams["season"] = 0
         end
-        if (bit.band(byte61, 0x40) == 0x40) then
-            streams['out_hot_water'] = VALUE_ON
+        if bit.band(byte61, 0x40) == 0x40 then
+            streams["out_hot_water"] = VALUE_ON
         else
-            streams['out_hot_water'] = VALUE_OFF
+            streams["out_hot_water"] = VALUE_OFF
         end
-        if (bit.band(byte61, 0x80) == 0x80) then
-            streams['standby_status'] = 1
+        if bit.band(byte61, 0x80) == 0x80 then
+            streams["standby_status"] = 1
         else
-            streams['standby_status'] = 0
+            streams["standby_status"] = 0
         end
-        streams['error'] = byte62
+        streams["error"] = byte62
     end
     return streams
 end
 function jsonToData(jsonCmdStr)
-    if (#jsonCmdStr == 0) then return nil end
+    if #jsonCmdStr == 0 then return nil end
     local msgBytes
     local json = decodeJsonToTable(jsonCmdStr)
     local deviceSubType = json["deviceinfo"]["deviceSubType"]
-    if (deviceSubType == 1) then end
+    if deviceSubType == 1 then
+    end
     local query = json["query"]
     local control = json["control"]
     local status = json["status"]
-    if (control) then
+    if control then
         byte12 = 0
         byte22 = 0
-        if (status) then updateGlobalPropertyValueByJson(status) end
-        if (control) then updateGlobalPropertyValueByJson(control) end
+        if status then updateGlobalPropertyValueByJson(status) end
+        if control then updateGlobalPropertyValueByJson(control) end
         local bodyBytes = {}
         bodyBytes[0] = 0x15
         bodyBytes[1] = 0x01
         bodyBytes[2] = 0x00
-        if (control["power"] and control["power"] == VALUE_ON) then
+        if control["power"] and control["power"] == VALUE_ON then
             setbytes(0x00, 0x01, 0x01, 0x00, 0x00, bodyBytes)
-        elseif (control["power"] and control["power"] == VALUE_OFF) then
+        elseif control["power"] and control["power"] == VALUE_OFF then
             setbytes(0x00, 0x01, 0x00, 0x00, 0x00, bodyBytes)
         end
-        if (control["standby_status"] and control["standby_status"] == VALUE_ON) then
+        if control["standby_status"] and control["standby_status"] == VALUE_ON then
             setbytes(0x01, 0x01, 0x01, 0x00, 0x00, bodyBytes)
-        elseif (control["standby_status"] and control["standby_status"] ==
-            VALUE_OFF) then
+        elseif control["standby_status"] and control["standby_status"] == VALUE_OFF then
             setbytes(0x01, 0x01, 0x00, 0x00, 0x00, bodyBytes)
         end
-        if control["bottle_reset"] then
-            setbytes(0x02, 0x01, 0x00, 0x00, 0x00, bodyBytes)
-        end
+        if control["bottle_reset"] then setbytes(0x02, 0x01, 0x00, 0x00, 0x00, bodyBytes) end
         if control["bottle_capacity"] then
-            setbytes(0x03, 0x01, 0x00, control['bottle_capacity'] % 256,
-                     (control['bottle_capacity'] - control['bottle_capacity'] %
-                         256) / 256, bodyBytes)
+            setbytes(
+                0x03,
+                0x01,
+                0x00,
+                control["bottle_capacity"] % 256,
+                (control["bottle_capacity"] - control["bottle_capacity"] % 256) / 256,
+                bodyBytes
+            )
         end
-        if (control["sleep"] and control["sleep"] == VALUE_ON) then
+        if control["sleep"] and control["sleep"] == VALUE_ON then
             setbytes(0x04, 0x01, 0x01, 0x00, 0x00, bodyBytes)
-        elseif (control["sleep"] and control["sleep"] == VALUE_OFF) then
+        elseif control["sleep"] and control["sleep"] == VALUE_OFF then
             setbytes(0x04, 0x01, 0x00, 0x00, 0x00, bodyBytes)
         end
-        if (control["vacation"] and control["vacation"] == VALUE_ON) then
+        if control["vacation"] and control["vacation"] == VALUE_ON then
             setbytes(0x05, 0x01, 0x01, 0x00, 0x00, bodyBytes)
-        elseif (control["vacation"] and control["vacation"] == VALUE_OFF) then
+        elseif control["vacation"] and control["vacation"] == VALUE_OFF then
             setbytes(0x05, 0x01, 0x00, 0x00, 0x00, bodyBytes)
         end
-        if (control["germicidal"] and control["germicidal"] == VALUE_ON) then
+        if control["germicidal"] and control["germicidal"] == VALUE_ON then
             setbytes(0x06, 0x01, 0x01, 0x00, 0x00, bodyBytes)
-        elseif (control["germicidal"] and control["germicidal"] == VALUE_OFF) then
+        elseif control["germicidal"] and control["germicidal"] == VALUE_OFF then
             setbytes(0x06, 0x01, 0x00, 0x00, 0x00, bodyBytes)
         end
-        if (control["set_germicidal_countdown"] and
-            control["set_germicidal_countdown"] == VALUE_ON) then
-            if (control["set_germicidal_countdown_days"]) then
-                setbytes(0x07, 0x01, 0x01,
-                         control['set_germicidal_countdown_days'] % 256,
-                         (control['set_germicidal_countdown_days'] -
-                             control['set_germicidal_countdown_days'] % 256) /
-                             256, bodyBytes)
+        if control["set_germicidal_countdown"] and control["set_germicidal_countdown"] == VALUE_ON then
+            if control["set_germicidal_countdown_days"] then
+                setbytes(
+                    0x07,
+                    0x01,
+                    0x01,
+                    control["set_germicidal_countdown_days"] % 256,
+                    (control["set_germicidal_countdown_days"] - control["set_germicidal_countdown_days"] % 256) / 256,
+                    bodyBytes
+                )
             else
                 setbytes(0x07, 0x01, 0x01, 0x00, 0x00, bodyBytes)
             end
-        elseif (control["set_germicidal_countdown"] and
-            control["set_germicidal_countdown"] == VALUE_OFF) then
-            if (control["set_germicidal_countdown_days"]) then
-                setbytes(0x07, 0x01, 0x00,
-                         control['set_germicidal_countdown_days'] % 256,
-                         (control['set_germicidal_countdown_days'] -
-                             control['set_germicidal_countdown_days'] % 256) /
-                             256, bodyBytes)
+        elseif control["set_germicidal_countdown"] and control["set_germicidal_countdown"] == VALUE_OFF then
+            if control["set_germicidal_countdown_days"] then
+                setbytes(
+                    0x07,
+                    0x01,
+                    0x00,
+                    control["set_germicidal_countdown_days"] % 256,
+                    (control["set_germicidal_countdown_days"] - control["set_germicidal_countdown_days"] % 256) / 256,
+                    bodyBytes
+                )
             else
                 setbytes(0x07, 0x01, 0x00, 0x00, 0x00, bodyBytes)
             end
@@ -1023,71 +1284,69 @@ function jsonToData(jsonCmdStr)
             local item3 = 0x00
             local item4 = 0x00
             local item5 = 0x00
-            if control["out_water"] == VALUE_ON then
-                item3 = item3 + 1
-            end
-            if control["out_water_count"] then
-                item3 = item3 + control["out_water_count"] * 2
-            end
-            if control["water_kind"] then
-                item4 = control["water_kind"]
-            end
-            if control["ctrl_out_water_quantify"] then
-                item5 = control["ctrl_out_water_quantify"]
-            end
+            if control["out_water"] == VALUE_ON then item3 = item3 + 1 end
+            if control["out_water_count"] then item3 = item3 + control["out_water_count"] * 2 end
+            if control["water_kind"] then item4 = control["water_kind"] end
+            if control["ctrl_out_water_quantify"] then item5 = control["ctrl_out_water_quantify"] end
             setbytes(0x00, 0x02, item3, item4, item5, bodyBytes)
         end
-        if (control["lock"] and control["lock"] == VALUE_ON) then
+        if control["lock"] and control["lock"] == VALUE_ON then
             setbytes(0x01, 0x02, 0x01, 0x00, 0x00, bodyBytes)
-        elseif (control["lock"] and control["lock"] == VALUE_OFF) then
+        elseif control["lock"] and control["lock"] == VALUE_OFF then
             setbytes(0x01, 0x02, 0x00, 0x00, 0x00, bodyBytes)
         end
         for i = 1, 5 do
             if control["quantify_" .. i] then
-                setbytes(0x02, 0x02, i, control["quantify_" .. i] % 256,
-                         (control["quantify_" .. i] - control["quantify_" .. i] %
-                             256) / 256, bodyBytes)
+                setbytes(
+                    0x02,
+                    0x02,
+                    i,
+                    control["quantify_" .. i] % 256,
+                    (control["quantify_" .. i] - control["quantify_" .. i] % 256) / 256,
+                    bodyBytes
+                )
             end
         end
-        if (control["bubble"] and control["bubble"] == VALUE_ON) then
+        if control["bubble"] and control["bubble"] == VALUE_ON then
             setbytes(0x03, 0x02, 0x01, 0x00, 0x00, bodyBytes)
-        elseif (control["bubble"] and control["bubble"] == VALUE_OFF) then
+        elseif control["bubble"] and control["bubble"] == VALUE_OFF then
             setbytes(0x03, 0x02, 0x00, 0x00, 0x00, bodyBytes)
         end
-        if (control["drainage"] and control["drainage"] == VALUE_ON) then
+        if control["drainage"] and control["drainage"] == VALUE_ON then
             setbytes(0x04, 0x02, 0x01, 0x00, 0x00, bodyBytes)
-        elseif (control["drainage"] and control["drainage"] == VALUE_OFF) then
+        elseif control["drainage"] and control["drainage"] == VALUE_OFF then
             setbytes(0x04, 0x02, 0x00, 0x00, 0x00, bodyBytes)
         end
-        if (control["wash"] and control["wash"] == VALUE_ON) then
-            if (control["wash_seconds"]) then
-                setbytes(0x00, 0x03, 0x01, control['wash_seconds'] % 256,
-                         (control['wash_seconds'] - control['wash_seconds'] %
-                             256) / 256, bodyBytes)
+        if control["wash"] and control["wash"] == VALUE_ON then
+            if control["wash_seconds"] then
+                setbytes(
+                    0x00,
+                    0x03,
+                    0x01,
+                    control["wash_seconds"] % 256,
+                    (control["wash_seconds"] - control["wash_seconds"] % 256) / 256,
+                    bodyBytes
+                )
             else
                 setbytes(0x00, 0x03, 0x01, 0x00, 0x00, bodyBytes)
             end
-        elseif (control["wash"] and control["wash"] == VALUE_OFF) then
+        elseif control["wash"] and control["wash"] == VALUE_OFF then
             setbytes(0x00, 0x03, 0x00, 0x00, 0x00, bodyBytes)
         end
-        if (control["save_mode"] and control["save_mode"] == VALUE_ON) then
+        if control["save_mode"] and control["save_mode"] == VALUE_ON then
             setbytes(0x01, 0x03, 0x01, 0x00, 0x00, bodyBytes)
-        elseif (control["save_mode"] and control["save_mode"] == VALUE_OFF) then
+        elseif control["save_mode"] and control["save_mode"] == VALUE_OFF then
             setbytes(0x01, 0x03, 0x00, 0x00, 0x00, bodyBytes)
         end
         for i = 1, 5 do
-            if control["life_" .. i] then
-                setbytes(0x02, 0x03, i - 1, 0x64, 0x00, bodyBytes)
-            end
+            if control["life_" .. i] then setbytes(0x02, 0x03, i - 1, 0x64, 0x00, bodyBytes) end
         end
-        if (control["wash_enable"] and control["wash_enable"] == VALUE_ON) then
+        if control["wash_enable"] and control["wash_enable"] == VALUE_ON then
             setbytes(0x03, 0x03, 0x01, 0x00, 0x00, bodyBytes)
-        elseif (control["wash_enable"] and control["wash_enable"] == VALUE_OFF) then
+        elseif control["wash_enable"] and control["wash_enable"] == VALUE_OFF then
             setbytes(0x03, 0x03, 0x00, 0x00, 0x00, bodyBytes)
         end
-        if control["air_filter"] then
-            setbytes(0x02, 0x03, 0x05, 0x64, 0x00, bodyBytes)
-        end
+        if control["air_filter"] then setbytes(0x02, 0x03, 0x05, 0x64, 0x00, bodyBytes) end
         if control["heat"] then
             if control["heat"] == VALUE_ON then
                 setbytes(0x00, 0x04, 0x01, 0x00, 0x00, bodyBytes)
@@ -1098,167 +1357,169 @@ function jsonToData(jsonCmdStr)
             end
         end
         if control["tea_temperature"] then
-            set_tembytes(0x01, 0x04, control["tea_temperature"], 0x01, 0x00,
-                         bodyBytes)
+            set_tembytes(0x01, 0x04, control["tea_temperature"], 0x01, 0x00, bodyBytes)
         end
         if control["medlar_temperature"] then
-            set_tembytes(0x01, 0x04, control["medlar_temperature"], 0x02, 0x00,
-                         bodyBytes)
+            set_tembytes(0x01, 0x04, control["medlar_temperature"], 0x02, 0x00, bodyBytes)
         end
         if control["honey_temperature"] then
-            set_tembytes(0x01, 0x04, control["honey_temperature"], 0x03, 0x00,
-                         bodyBytes)
+            set_tembytes(0x01, 0x04, control["honey_temperature"], 0x03, 0x00, bodyBytes)
         end
         if control["milk_temperature"] then
-            set_tembytes(0x01, 0x04, control["milk_temperature"], 0x04, 0x00,
-                         bodyBytes)
+            set_tembytes(0x01, 0x04, control["milk_temperature"], 0x04, 0x00, bodyBytes)
         end
         if control["coffee_temperature"] then
-            set_tembytes(0x01, 0x04, control["coffee_temperature"], 0x05, 0x00,
-                         bodyBytes)
+            set_tembytes(0x01, 0x04, control["coffee_temperature"], 0x05, 0x00, bodyBytes)
         end
         if control["red_tea_temperature"] then
-            set_tembytes(0x01, 0x04, control["red_tea_temperature"], 0x06, 0x00,
-                         bodyBytes)
+            set_tembytes(0x01, 0x04, control["red_tea_temperature"], 0x06, 0x00, bodyBytes)
         end
         if control["black_tea_temperature"] then
-            set_tembytes(0x01, 0x04, control["black_tea_temperature"], 0x07,
-                         0x00, bodyBytes)
+            set_tembytes(0x01, 0x04, control["black_tea_temperature"], 0x07, 0x00, bodyBytes)
         end
         if control["green_tea_temperature"] then
-            set_tembytes(0x01, 0x04, control["green_tea_temperature"], 0x08,
-                         0x00, bodyBytes)
+            set_tembytes(0x01, 0x04, control["green_tea_temperature"], 0x08, 0x00, bodyBytes)
         end
         if control["yellow_tea_temperature"] then
-            set_tembytes(0x01, 0x04, control["yellow_tea_temperature"], 0x09,
-                         0x00, bodyBytes)
+            set_tembytes(0x01, 0x04, control["yellow_tea_temperature"], 0x09, 0x00, bodyBytes)
         end
         for i = 1, 5 do
             if control["custom_temperature_" .. i] then
-                set_tembytes(0x01, 0x04, control["custom_temperature_" .. i],
-                             9 + i, 0x00, bodyBytes)
+                set_tembytes(0x01, 0x04, control["custom_temperature_" .. i], 9 + i, 0x00, bodyBytes)
             end
         end
-        if (control["heat_return_temperature"] and
-            (control["heat_return_temperature"] >= 3 and
-                control["heat_return_temperature"] <= 100)) then
-            setbytes(0x02, 0x04, control["heat_return_temperature"], 0x00, 0x00,
-                     bodyBytes)
+        if
+            control["heat_return_temperature"]
+            and (control["heat_return_temperature"] >= 3 and control["heat_return_temperature"] <= 100)
+        then
+            setbytes(0x02, 0x04, control["heat_return_temperature"], 0x00, 0x00, bodyBytes)
         end
-        if (control["auto_season"] and control["auto_season"] == VALUE_ON) then
+        if control["auto_season"] and control["auto_season"] == VALUE_ON then
             setbytes(0x03, 0x04, 0x01, 0x00, 0x00, bodyBytes)
-        elseif (control["auto_season"] and control["auto_season"] == VALUE_OFF) then
+        elseif control["auto_season"] and control["auto_season"] == VALUE_OFF then
             setbytes(0x03, 0x04, 0x00, 0x00, 0x00, bodyBytes)
         end
-        if (control["season"] and control["season"] == 1) then
+        if control["season"] and control["season"] == 1 then
             setbytes(0x04, 0x04, 0x01, 0x00, 0x00, bodyBytes)
-        elseif (control["season"] and control["season"] == 0) then
+        elseif control["season"] and control["season"] == 0 then
             setbytes(0x04, 0x04, 0x00, 0x00, 0x00, bodyBytes)
         end
-        if control["heat_tea"] then
-            setbytes(0x06, 0x04, control["heat_tea"], 0x00, 0x00, bodyBytes)
-        end
+        if control["heat_tea"] then setbytes(0x06, 0x04, control["heat_tea"], 0x00, 0x00, bodyBytes) end
         if control["set_heat_time"] then
-            setbytes(0x07, 0x04, 0x00, control['set_heat_time'] % 256,
-                     (control['set_heat_time'] - control['set_heat_time'] % 256) /
-                         256, bodyBytes)
+            setbytes(
+                0x07,
+                0x04,
+                0x00,
+                control["set_heat_time"] % 256,
+                (control["set_heat_time"] - control["set_heat_time"] % 256) / 256,
+                bodyBytes
+            )
         end
         if control["keep_warm"] then
             if control["keep_warm"] == VALUE_ON then
                 if control["keep_warm_time"] then
-                    setbytes(0x08, 0x04, 0x01, control['keep_warm_time'] % 256,
-                             (control['keep_warm_time'] -
-                                 control['keep_warm_time'] % 256) / 256,
-                             bodyBytes)
+                    setbytes(
+                        0x08,
+                        0x04,
+                        0x01,
+                        control["keep_warm_time"] % 256,
+                        (control["keep_warm_time"] - control["keep_warm_time"] % 256) / 256,
+                        bodyBytes
+                    )
                 else
                     setbytes(0x08, 0x04, 0x01, 0x00, 0x00, bodyBytes)
                 end
             elseif control["keep_warm"] == VALUE_OFF then
                 if control["keep_warm_time"] then
-                    setbytes(0x08, 0x04, 0x00, control['keep_warm_time'] % 256,
-                             (control['keep_warm_time'] -
-                                 control['keep_warm_time'] % 256) / 256,
-                             bodyBytes)
+                    setbytes(
+                        0x08,
+                        0x04,
+                        0x00,
+                        control["keep_warm_time"] % 256,
+                        (control["keep_warm_time"] - control["keep_warm_time"] % 256) / 256,
+                        bodyBytes
+                    )
                 else
                     setbytes(0x08, 0x04, 0x00, 0x00, 0x00, bodyBytes)
                 end
             else
                 if control["keep_warm_time"] then
-                    setbytes(0x08, 0x04, control["keep_warm"],
-                             control['keep_warm_time'] % 256,
-                             (control['keep_warm_time'] -
-                                 control['keep_warm_time'] % 256) / 256,
-                             bodyBytes)
+                    setbytes(
+                        0x08,
+                        0x04,
+                        control["keep_warm"],
+                        control["keep_warm_time"] % 256,
+                        (control["keep_warm_time"] - control["keep_warm_time"] % 256) / 256,
+                        bodyBytes
+                    )
                 else
-                    setbytes(0x08, 0x04, control["keep_warm"], 0x00, 0x00,
-                             bodyBytes)
+                    setbytes(0x08, 0x04, control["keep_warm"], 0x00, 0x00, bodyBytes)
                 end
             end
         end
-        if (control["cool"] and control["cool"] == VALUE_ON) then
+        if control["cool"] and control["cool"] == VALUE_ON then
             setbytes(0x00, 0x05, 0x01, 0x00, 0x00, bodyBytes)
-        elseif (control["cool"] and control["cool"] == VALUE_OFF) then
+        elseif control["cool"] and control["cool"] == VALUE_OFF then
             setbytes(0x00, 0x05, 0x00, 0x00, 0x00, bodyBytes)
         end
         if control["cool_target_temperature"] then
-            set_tembytes(0x01, 0x05, control["cool_target_temperature"], 0x00,
-                         0x00, bodyBytes)
+            set_tembytes(0x01, 0x05, control["cool_target_temperature"], 0x00, 0x00, bodyBytes)
         end
         if control["ice_target_temperature"] then
-            set_tembytes(0x02, 0x05, control["ice_target_temperature"], 0x00,
-                         0x00, bodyBytes)
+            set_tembytes(0x02, 0x05, control["ice_target_temperature"], 0x00, 0x00, bodyBytes)
         end
-        if control["heat_start"] then
-            setbytes(0x05, 0x04, control["heat_start"], 0x00, 0x00, bodyBytes)
-        end
-        if #bodyBytes > 2 then
-            msgBytes = assembleUart(bodyBytes, BYTE_CONTROL_REQUEST)
-        end
-    elseif (query) then
+        if control["heat_start"] then setbytes(0x05, 0x04, control["heat_start"], 0x00, 0x00, bodyBytes) end
+        if #bodyBytes > 2 then msgBytes = assembleUart(bodyBytes, BYTE_CONTROL_REQUEST) end
+    elseif query then
         local bodyLength = 2
         local bodyBytes = {}
-        for i = 0, bodyLength - 1 do bodyBytes[i] = 0 end
-        if deviceSubType == '309' or deviceSubType == '310' or deviceSubType ==
-            '311' or deviceSubType == '313' or deviceSubType == '314' or
-            deviceSubType == '315' or deviceSubType == '317' or deviceSubType ==
-            '330' then
+        for i = 0, bodyLength - 1 do
+            bodyBytes[i] = 0
+        end
+        if
+            deviceSubType == "309"
+            or deviceSubType == "310"
+            or deviceSubType == "311"
+            or deviceSubType == "313"
+            or deviceSubType == "314"
+            or deviceSubType == "315"
+            or deviceSubType == "317"
+            or deviceSubType == "330"
+        then
             bodyBytes[0] = 0x04
-        elseif deviceSubType == '316' or deviceSubType == '318' or deviceSubType ==
-            '319' or deviceSubType == '320' then
+        elseif deviceSubType == "316" or deviceSubType == "318" or deviceSubType == "319" or deviceSubType == "320" then
             bodyBytes[0] = 0x05
-        elseif deviceSubType == '290' or deviceSubType == '331' or deviceSubType ==
-            '332' or deviceSubType == '340' then
+        elseif deviceSubType == "290" or deviceSubType == "331" or deviceSubType == "332" or deviceSubType == "340" then
             bodyBytes[0] = 0x06
-        elseif deviceSubType == '288' or deviceSubType == '307' or deviceSubType ==
-            '329' or deviceSubType == '349' then
+        elseif deviceSubType == "288" or deviceSubType == "307" or deviceSubType == "329" or deviceSubType == "349" then
             bodyBytes[0] = 0x07
         else
-            if query['subtypes'] ~= nil then
-                if query['subtypes'] == 1 then
+            if query["subtypes"] ~= nil then
+                if query["subtypes"] == 1 then
                     bodyBytes[0] = 0x01
-                elseif query['subtypes'] == 3 then
+                elseif query["subtypes"] == 3 then
                     bodyBytes[0] = 0x03
-                elseif query['subtypes'] == 4 then
+                elseif query["subtypes"] == 4 then
                     bodyBytes[0] = 0x04
-                elseif query['subtypes'] == 5 then
+                elseif query["subtypes"] == 5 then
                     bodyBytes[0] = 0x05
-                elseif query['subtypes'] == 6 then
+                elseif query["subtypes"] == 6 then
                     bodyBytes[0] = 0x06
-                elseif query['subtypes'] == 7 then
+                elseif query["subtypes"] == 7 then
                     bodyBytes[0] = 0x07
                 end
-            elseif query['query_type'] ~= nil then
-                if query['query_type'] == 1 then
+            elseif query["query_type"] ~= nil then
+                if query["query_type"] == 1 then
                     bodyBytes[0] = 0x01
-                elseif query['query_type'] == 3 then
+                elseif query["query_type"] == 3 then
                     bodyBytes[0] = 0x03
-                elseif query['query_type'] == 4 then
+                elseif query["query_type"] == 4 then
                     bodyBytes[0] = 0x04
-                elseif query['query_type'] == 5 then
+                elseif query["query_type"] == 5 then
                     bodyBytes[0] = 0x05
-                elseif query['query_type'] == 6 then
+                elseif query["query_type"] == 6 then
                     bodyBytes[0] = 0x06
-                elseif query['query_type'] == 7 then
+                elseif query["query_type"] == 7 then
                     bodyBytes[0] = 0x07
                 end
             else
@@ -1270,17 +1531,20 @@ function jsonToData(jsonCmdStr)
     end
     local infoM = {}
     local length = #msgBytes + 1
-    for i = 1, length do infoM[i] = msgBytes[i - 1] end
+    for i = 1, length do
+        infoM[i] = msgBytes[i - 1]
+    end
     local ret = table2string(infoM)
     ret = string2hexstring(ret)
     return ret
 end
 function dataToJson(jsonStr)
-    if (not jsonStr) then return nil end
+    if not jsonStr then return nil end
     local json = decodeJsonToTable(jsonStr)
     local deviceinfo = json["deviceinfo"]
     local deviceSubType = deviceinfo["deviceSubType"]
-    if (deviceSubType == 1) then end
+    if deviceSubType == 1 then
+    end
     local binData = json["msg"]["data"]
     local bodyBytes = {}
     local byteData = string2table(binData)

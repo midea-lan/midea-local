@@ -114,90 +114,84 @@ local dataType = 0
 
 function jsonToModel(jsonCmd)
     local streams = jsonCmd
-    if (streams[KEY_POWER] == VALUE_FUNCTION_ON) then
+    if streams[KEY_POWER] == VALUE_FUNCTION_ON then
         powerValue = BYTE_POWER_ON
         openTimerSwitch = BYTE_START_TIMER_SWITCH_OFF
         closeTimerSwitch = BYTE_CLOSE_TIMER_SWITCH_OFF
         PTCValue = BYTE_PTC_ON
         fanspeedValue = BYTE_FANSPEED_AUTO
-    elseif (streams[KEY_POWER] == VALUE_FUNCTION_OFF) then
+    elseif streams[KEY_POWER] == VALUE_FUNCTION_OFF then
         powerValue = BYTE_POWER_OFF
         openTimerSwitch = BYTE_START_TIMER_SWITCH_OFF
         closeTimerSwitch = BYTE_CLOSE_TIMER_SWITCH_OFF
         PTCValue = BYTE_PTC_ON
         fanspeedValue = BYTE_FANSPEED_AUTO
     end
-    if (streams[KEY_BUZZER] == VALUE_FUNCTION_ON) then
+    if streams[KEY_BUZZER] == VALUE_FUNCTION_ON then
         buzzerValue = BYTE_BUZZER_ON
-    elseif (streams[KEY_BUZZER] == VALUE_FUNCTION_OFF) then
+    elseif streams[KEY_BUZZER] == VALUE_FUNCTION_OFF then
         buzzerValue = BYTE_BUZZER_OFF
     end
-    if (streams[KEY_PURIFIER] == VALUE_FUNCTION_ON) then
+    if streams[KEY_PURIFIER] == VALUE_FUNCTION_ON then
         purifierValue = BYTE_PURIFIER_ON
-    elseif (streams[KEY_PURIFIER] == VALUE_FUNCTION_OFF) then
+    elseif streams[KEY_PURIFIER] == VALUE_FUNCTION_OFF then
         purifierValue = BYTE_PURIFIER_OFF
     end
-    if (streams[KEY_ECO] == VALUE_FUNCTION_ON) then
+    if streams[KEY_ECO] == VALUE_FUNCTION_ON then
         ecoValue = BYTE_ECO_ON
-    elseif (streams[KEY_ECO] == VALUE_FUNCTION_OFF) then
+    elseif streams[KEY_ECO] == VALUE_FUNCTION_OFF then
         ecoValue = BYTE_ECO_OFF
     end
-    if (streams[KEY_DRY] == VALUE_FUNCTION_ON) then
+    if streams[KEY_DRY] == VALUE_FUNCTION_ON then
         dryValue = BYTE_DRY_ON
-    elseif (streams[KEY_DRY] == VALUE_FUNCTION_OFF) then
+    elseif streams[KEY_DRY] == VALUE_FUNCTION_OFF then
         dryValue = BYTE_DRY_OFF
     end
-    if (streams[KEY_MODE] == VALUE_MODE_HEAT) then
+    if streams[KEY_MODE] == VALUE_MODE_HEAT then
         modeValue = BYTE_MODE_HEAT
         PTCValue = BYTE_PTC_ON
-    elseif (streams[KEY_MODE] == VALUE_MODE_COOL) then
+    elseif streams[KEY_MODE] == VALUE_MODE_COOL then
         modeValue = BYTE_MODE_COOL
-    elseif (streams[KEY_MODE] == VALUE_MODE_AUTO) then
+    elseif streams[KEY_MODE] == VALUE_MODE_AUTO then
         modeValue = BYTE_MODE_AUTO
         PTCValue = BYTE_PTC_ON
-    elseif (streams[KEY_MODE] == VALUE_MODE_DRY) then
+    elseif streams[KEY_MODE] == VALUE_MODE_DRY then
         modeValue = BYTE_MODE_DRY
-    elseif (streams[KEY_MODE] == VALUE_MODE_FAN) then
+    elseif streams[KEY_MODE] == VALUE_MODE_FAN then
         modeValue = BYTE_MODE_FAN
     end
-    if (streams[KEY_FANSPEED] ~= nil) then
-        fanspeedValue = checkBoundary(streams[KEY_FANSPEED], 1, 102)
-    end
-    if (streams[KEY_SWING_UD] == VALUE_FUNCTION_ON) then
+    if streams[KEY_FANSPEED] ~= nil then fanspeedValue = checkBoundary(streams[KEY_FANSPEED], 1, 102) end
+    if streams[KEY_SWING_UD] == VALUE_FUNCTION_ON then
         swingUDValue = BYTE_SWING_UD_ON
-    elseif (streams[KEY_SWING_UD] == VALUE_FUNCTION_OFF) then
+    elseif streams[KEY_SWING_UD] == VALUE_FUNCTION_OFF then
         swingUDValue = BYTE_SWING_UD_OFF
     end
-    if (streams[KEY_SWING_LR] == VALUE_FUNCTION_ON) then
+    if streams[KEY_SWING_LR] == VALUE_FUNCTION_ON then
         swingLRValue = BYTE_SWING_LR_ON
-    elseif (streams[KEY_SWING_LR] == VALUE_FUNCTION_OFF) then
+    elseif streams[KEY_SWING_LR] == VALUE_FUNCTION_OFF then
         swingLRValue = BYTE_SWING_LR_OFF
     end
-    if (streams[KEY_TIME_ON] == VALUE_FUNCTION_ON) then
+    if streams[KEY_TIME_ON] == VALUE_FUNCTION_ON then
         openTimerSwitch = BYTE_START_TIMER_SWITCH_ON
-    elseif (streams[KEY_TIME_ON] == VALUE_FUNCTION_OFF) then
+    elseif streams[KEY_TIME_ON] == VALUE_FUNCTION_OFF then
         openTimerSwitch = BYTE_START_TIMER_SWITCH_OFF
     end
-    if (streams[KEY_TIME_OFF] == VALUE_FUNCTION_ON) then
+    if streams[KEY_TIME_OFF] == VALUE_FUNCTION_ON then
         closeTimerSwitch = BYTE_CLOSE_TIMER_SWITCH_ON
-    elseif (streams[KEY_TIME_OFF] == VALUE_FUNCTION_OFF) then
+    elseif streams[KEY_TIME_OFF] == VALUE_FUNCTION_OFF then
         closeTimerSwitch = BYTE_CLOSE_TIMER_SWITCH_OFF
     end
-    if (streams[KEY_CLOSE_TIME] ~= nil) then
-        closeTime = streams[KEY_CLOSE_TIME]
-    end
-    if (streams[KEY_OPEN_TIME] ~= nil) then openTime = streams[KEY_OPEN_TIME] end
-    if (streams[KEY_PTC] == VALUE_FUNCTION_ON) then
+    if streams[KEY_CLOSE_TIME] ~= nil then closeTime = streams[KEY_CLOSE_TIME] end
+    if streams[KEY_OPEN_TIME] ~= nil then openTime = streams[KEY_OPEN_TIME] end
+    if streams[KEY_PTC] == VALUE_FUNCTION_ON then
         PTCValue = BYTE_PTC_ON
-    elseif (streams[KEY_PTC] == VALUE_FUNCTION_OFF) then
+    elseif streams[KEY_PTC] == VALUE_FUNCTION_OFF then
         PTCValue = BYTE_PTC_OFF
     end
-    if (streams[KEY_TEMPERATURE] ~= nil) then
-        temperatureValue = checkBoundary(streams[KEY_TEMPERATURE], 17, 30)
-    end
-    if (streams["small_temperature"] ~= nil) then
+    if streams[KEY_TEMPERATURE] ~= nil then temperatureValue = checkBoundary(streams[KEY_TEMPERATURE], 17, 30) end
+    if streams["small_temperature"] ~= nil then
         smallTemperature = checkBoundary(streams["small_temperature"], 0, 0.5)
-        if (smallTemperature == 0.5) then
+        if smallTemperature == 0.5 then
             smallTemperature = 0x01
         else
             smallTemperature = 0x00
@@ -206,41 +200,45 @@ function jsonToModel(jsonCmd)
 end
 
 function binToModel(binData)
-    if (#binData < 21) then return nil end
+    if #binData < 21 then return nil end
     local messageBytes = binData
-    if ((dataType == 0x02 and messageBytes[0] == 0xC0) or
-        (dataType == 0x03 and messageBytes[0] == 0xC0) or
-        (dataType == 0x05 and messageBytes[0] == 0xA0)) then
+    if
+        (dataType == 0x02 and messageBytes[0] == 0xC0)
+        or (dataType == 0x03 and messageBytes[0] == 0xC0)
+        or (dataType == 0x05 and messageBytes[0] == 0xA0)
+    then
         powerValue = bit.band(messageBytes[1], 0x01)
         modeValue = bit.band(messageBytes[2], 0xE0)
-        if (dataType == 0x05) then
-            if deviceSN8 == "11447" or deviceSN8 == "11451" or deviceSN8 ==
-                "11453" or deviceSN8 == "11455" or deviceSN8 == "11457" or
-                deviceSN8 == "11459" or deviceSN8 == "11525" or deviceSN8 ==
-                "11527" or deviceSN8 == "11533" or deviceSN8 == "11535" then
-                temperatureValue =
-                    bit.rshift(bit.band(messageBytes[1], 0x7C), 2) + 0x0C
-                smallTemperature =
-                    bit.rshift(bit.band(messageBytes[1], 0x02), 1)
+        if dataType == 0x05 then
+            if
+                deviceSN8 == "11447"
+                or deviceSN8 == "11451"
+                or deviceSN8 == "11453"
+                or deviceSN8 == "11455"
+                or deviceSN8 == "11457"
+                or deviceSN8 == "11459"
+                or deviceSN8 == "11525"
+                or deviceSN8 == "11527"
+                or deviceSN8 == "11533"
+                or deviceSN8 == "11535"
+            then
+                temperatureValue = bit.rshift(bit.band(messageBytes[1], 0x7C), 2) + 0x0C
+                smallTemperature = bit.rshift(bit.band(messageBytes[1], 0x02), 1)
             else
-                temperatureValue =
-                    bit.rshift(bit.band(messageBytes[1], 0x3E), 1) + 0x0C
-                smallTemperature =
-                    bit.rshift(bit.band(messageBytes[1], 0x40), 6)
+                temperatureValue = bit.rshift(bit.band(messageBytes[1], 0x3E), 1) + 0x0C
+                smallTemperature = bit.rshift(bit.band(messageBytes[1], 0x40), 6)
             end
         else
             temperatureValue = bit.band(messageBytes[2], 0x0F) + 0x10
             smallTemperature = bit.rshift(bit.band(messageBytes[2], 0x10), 4)
         end
         fanspeedValue = bit.band(messageBytes[3], 0x7F)
-        if (bit.band(messageBytes[4], BYTE_START_TIMER_SWITCH_ON) ==
-            BYTE_START_TIMER_SWITCH_ON) then
+        if bit.band(messageBytes[4], BYTE_START_TIMER_SWITCH_ON) == BYTE_START_TIMER_SWITCH_ON then
             openTimerSwitch = BYTE_START_TIMER_SWITCH_ON
         else
             openTimerSwitch = BYTE_START_TIMER_SWITCH_OFF
         end
-        if (bit.band(messageBytes[5], BYTE_CLOSE_TIMER_SWITCH_ON) ==
-            BYTE_CLOSE_TIMER_SWITCH_ON) then
+        if bit.band(messageBytes[5], BYTE_CLOSE_TIMER_SWITCH_ON) == BYTE_CLOSE_TIMER_SWITCH_ON then
             closeTimerSwitch = BYTE_CLOSE_TIMER_SWITCH_ON
         else
             closeTimerSwitch = BYTE_CLOSE_TIMER_SWITCH_OFF
@@ -261,11 +259,11 @@ function binToModel(binData)
         dryValue = bit.band(messageBytes[9], 0x04)
         swingLRValue = bit.band(messageBytes[7], 0x03)
         swingUDValue = bit.band(messageBytes[7], 0x0C)
-        if (dataType == 0x02 or dataType == 0x03) then
-            if ((messageBytes[11] ~= 0) and (messageBytes[11] ~= 0xFF)) then
+        if dataType == 0x02 or dataType == 0x03 then
+            if (messageBytes[11] ~= 0) and (messageBytes[11] ~= 0xFF) then
                 indoorTemperatureValue = (messageBytes[11] - 50) / 2
             end
-            if ((messageBytes[12] ~= 0) and (messageBytes[12] ~= 0xFF)) then
+            if (messageBytes[12] ~= 0) and (messageBytes[12] ~= 0xFF) then
                 outdoorTemperatureValue = (messageBytes[12] - 50) / 2
             end
         end
@@ -273,18 +271,18 @@ function binToModel(binData)
         kickQuilt = bit.rshift(bit.band(messageBytes[10], 0x04), 2)
         preventCold = bit.rshift(bit.band(messageBytes[10], 0x08), 3)
     end
-    if ((dataType == 0x04 and messageBytes[0] == 0xA1)) then
-        if (messageBytes[13] ~= 0x00 and messageBytes[13] ~= 0xff) then
+    if dataType == 0x04 and messageBytes[0] == 0xA1 then
+        if messageBytes[13] ~= 0x00 and messageBytes[13] ~= 0xff then
             indoorTemperatureValue = (messageBytes[13] - 50) / 2
         end
-        if (messageBytes[14] ~= 0x00 and messageBytes[14] ~= 0xff) then
+        if messageBytes[14] ~= 0x00 and messageBytes[14] ~= 0xff then
             outdoorTemperatureValue = (messageBytes[14] - 50) / 2
         end
     end
 end
 
 function jsonToData(jsonCmd)
-    if (#jsonCmd == 0) then return nil end
+    if #jsonCmd == 0 then return nil end
     local infoM = {}
     local bodyBytes = {}
     local json = decode(jsonCmd)
@@ -294,8 +292,10 @@ function jsonToData(jsonCmd)
     local query = json["query"]
     local control = json["control"]
     local status = json["status"]
-    if (query) then
-        for i = 0, 21 do bodyBytes[i] = 0 end
+    if query then
+        for i = 0, 21 do
+            bodyBytes[i] = 0
+        end
         bodyBytes[0] = 0x41
         bodyBytes[1] = 0x81
         bodyBytes[3] = 0xFF
@@ -303,45 +303,42 @@ function jsonToData(jsonCmd)
         bodyBytes[20] = math.random(1, 254)
         bodyBytes[21] = crc8_854(bodyBytes, 0, 20)
         infoM = getTotalMsg(bodyBytes, BYTE_QUERYL_REQUEST)
-    elseif (control) then
-        if (status) then jsonToModel(status) end
-        if (control) then jsonToModel(control) end
-        for i = 0, 25 do bodyBytes[i] = 0 end
+    elseif control then
+        if status then jsonToModel(status) end
+        if control then jsonToModel(control) end
+        for i = 0, 25 do
+            bodyBytes[i] = 0
+        end
         bodyBytes[0] = BYTE_CONTROL_CMD
-        bodyBytes[1] = bit.bor(bit.bor(powerValue, BYTE_CLIENT_MODE_MOBILE),
-                               bit.bor(BYTE_TIMER_METHOD_REL, buzzerValue))
+        bodyBytes[1] =
+            bit.bor(bit.bor(powerValue, BYTE_CLIENT_MODE_MOBILE), bit.bor(BYTE_TIMER_METHOD_REL, buzzerValue))
         bodyBytes[2] = bit.bor(
-                           bit.bor(bit.band(modeValue, 0xE0),
-                                   bit.band(0x0F, (temperatureValue - 0x10))),
-                           bit.band(smallTemperature, 0x10))
+            bit.bor(bit.band(modeValue, 0xE0), bit.band(0x0F, (temperatureValue - 0x10))),
+            bit.band(smallTemperature, 0x10)
+        )
         bodyBytes[3] = bit.bor(fanspeedValue, BYTE_TIMER_SWITCH_ON)
-        if (closeTime == nil) then closeTime = 0 end
+        if closeTime == nil then closeTime = 0 end
         closeHour = math.floor(closeTime / 60)
         closeStepMintues = math.floor((closeTime % 60) / 15)
         closeMin = math.floor(((closeTime % 60) % 15))
-        if (openTime == nil) then openTime = 0 end
+        if openTime == nil then openTime = 0 end
         openHour = math.floor(openTime / 60)
         openStepMintues = math.floor((openTime % 60) / 15)
         openMin = math.floor(((openTime % 60) % 15))
-        if (openTimerSwitch == BYTE_START_TIMER_SWITCH_ON) then
-            bodyBytes[4] = bit.bor(bit.bor(openTimerSwitch,
-                                           bit.lshift(openHour, 2)),
-                                   openStepMintues)
-        elseif (openTimerSwitch == BYTE_START_TIMER_SWITCH_OFF) then
+        if openTimerSwitch == BYTE_START_TIMER_SWITCH_ON then
+            bodyBytes[4] = bit.bor(bit.bor(openTimerSwitch, bit.lshift(openHour, 2)), openStepMintues)
+        elseif openTimerSwitch == BYTE_START_TIMER_SWITCH_OFF then
             bodyBytes[4] = 0x7F
         end
-        if (closeTimerSwitch == BYTE_CLOSE_TIMER_SWITCH_ON) then
-            bodyBytes[5] = bit.bor(bit.bor(closeTimerSwitch,
-                                           bit.lshift(closeHour, 2)),
-                                   closeStepMintues)
-        elseif (closeTimerSwitch == BYTE_CLOSE_TIMER_SWITCH_OFF) then
+        if closeTimerSwitch == BYTE_CLOSE_TIMER_SWITCH_ON then
+            bodyBytes[5] = bit.bor(bit.bor(closeTimerSwitch, bit.lshift(closeHour, 2)), closeStepMintues)
+        elseif closeTimerSwitch == BYTE_CLOSE_TIMER_SWITCH_OFF then
             bodyBytes[5] = 0x7F
         end
         bodyBytes[6] = bit.bor(bit.lshift((15 - openMin), 4), (15 - closeMin))
         bodyBytes[7] = bit.bor(bit.bor(swingLRValue, swingUDValue), 0x30)
         bodyBytes[8] = bit.bor(strongWindValue, comfortableSleepValue)
-        bodyBytes[9] = bit.bor(bit.bor(purifierValue, ecoValue),
-                               bit.bor(dryValue, PTCValue))
+        bodyBytes[9] = bit.bor(bit.bor(purifierValue, ecoValue), bit.bor(dryValue, PTCValue))
         math.randomseed(tostring(os.time()):reverse():sub(1, 6))
         bodyBytes[24] = math.random(1, 254)
         bodyBytes[25] = crc8_854(bodyBytes, 0, 24)
@@ -356,27 +353,33 @@ function getTotalMsg(bodyData, cType)
     local bodyLength = #bodyData
     local msgLength = bodyLength + BYTE_PROTOCOL_LENGTH + 1
     local msgBytes = {}
-    for i = 0, msgLength do msgBytes[i] = 0 end
+    for i = 0, msgLength do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = BYTE_PROTOCOL_HEAD
     msgBytes[1] = bodyLength + BYTE_PROTOCOL_LENGTH + 1
     msgBytes[2] = BYTE_DEVICE_TYPE
     msgBytes[9] = cType
-    for i = 0, bodyLength do msgBytes[i + BYTE_PROTOCOL_LENGTH] = bodyData[i] end
+    for i = 0, bodyLength do
+        msgBytes[i + BYTE_PROTOCOL_LENGTH] = bodyData[i]
+    end
     msgBytes[msgLength] = makeSum(msgBytes, 1, msgLength - 1)
     local msgFinal = {}
-    for i = 1, msgLength + 1 do msgFinal[i] = msgBytes[i - 1] end
+    for i = 1, msgLength + 1 do
+        msgFinal[i] = msgBytes[i - 1]
+    end
     return msgFinal
 end
 
 function dataToJson(jsonCmd)
-    if (not jsonCmd) then return nil end
+    if not jsonCmd then return nil end
     local json = decode(jsonCmd)
     local deviceinfo = json["deviceinfo"]
     deviceSubType = deviceinfo["deviceSubType"]
     local deviceSN = json["deviceinfo"]["deviceSN"]
     if deviceSN ~= nil then deviceSN8 = string.sub(deviceSN, 13, 17) end
     local status = json["status"]
-    if (status) then jsonToModel(status) end
+    if status then jsonToModel(status) end
     local binData = json["msg"]["data"]
     local info = {}
     local msgBytes = {}
@@ -384,8 +387,10 @@ function dataToJson(jsonCmd)
     local msgLength = 0
     local bodyLength = 0
     info = string2table(binData)
-    dataType = info[10];
-    for i = 1, #info do msgBytes[i - 1] = info[i] end
+    dataType = info[10]
+    for i = 1, #info do
+        msgBytes[i - 1] = info[i]
+    end
     msgLength = msgBytes[1]
     bodyLength = msgLength - BYTE_PROTOCOL_LENGTH - 1
     for i = 0, bodyLength do
@@ -394,34 +399,33 @@ function dataToJson(jsonCmd)
     binToModel(bodyBytes)
     local streams = {}
     streams[KEY_VERSION] = VALUE_VERSION
-    if (powerValue == BYTE_POWER_ON) then
+    if powerValue == BYTE_POWER_ON then
         streams[KEY_POWER] = VALUE_FUNCTION_ON
-    elseif (powerValue == BYTE_POWER_OFF) then
+    elseif powerValue == BYTE_POWER_OFF then
         streams[KEY_POWER] = VALUE_FUNCTION_OFF
     end
-    if (modeValue == BYTE_MODE_HEAT) then
+    if modeValue == BYTE_MODE_HEAT then
         streams[KEY_MODE] = VALUE_MODE_HEAT
-    elseif (modeValue == BYTE_MODE_COOL) then
+    elseif modeValue == BYTE_MODE_COOL then
         streams[KEY_MODE] = VALUE_MODE_COOL
-    elseif (modeValue == BYTE_MODE_AUTO) then
+    elseif modeValue == BYTE_MODE_AUTO then
         streams[KEY_MODE] = VALUE_MODE_AUTO
-    elseif (modeValue == BYTE_MODE_DRY) then
+    elseif modeValue == BYTE_MODE_DRY then
         streams[KEY_MODE] = VALUE_MODE_DRY
-    elseif (modeValue == BYTE_MODE_FAN) then
+    elseif modeValue == BYTE_MODE_FAN then
         streams[KEY_MODE] = VALUE_MODE_FAN
     end
-    if (purifierValue == BYTE_PURIFIER_ON) then
+    if purifierValue == BYTE_PURIFIER_ON then
         streams[KEY_PURIFIER] = VALUE_FUNCTION_ON
-    elseif (purifierValue == BYTE_PURIFIER_OFF) then
+    elseif purifierValue == BYTE_PURIFIER_OFF then
         streams[KEY_PURIFIER] = VALUE_FUNCTION_OFF
     end
-    if (ecoValue == BYTE_ECO_ON) then
+    if ecoValue == BYTE_ECO_ON then
         streams[KEY_ECO] = VALUE_FUNCTION_ON
-    elseif (ecoValue == BYTE_ECO_OFF) then
+    elseif ecoValue == BYTE_ECO_OFF then
         streams[KEY_ECO] = VALUE_FUNCTION_OFF
     end
-    if (dryValue == BYTE_DRY_ON) and
-        ((modeValue == BYTE_MODE_COOL) or (modeValue == BYTE_MODE_DRY)) then
+    if (dryValue == BYTE_DRY_ON) and ((modeValue == BYTE_MODE_COOL) or (modeValue == BYTE_MODE_DRY)) then
         streams[KEY_DRY] = VALUE_FUNCTION_ON
     else
         streams[KEY_DRY] = VALUE_FUNCTION_OFF
@@ -429,57 +433,56 @@ function dataToJson(jsonCmd)
     streams[KEY_FANSPEED] = fanspeedValue
     streams[VALUE_OUTDOOR_TEMPERATURE] = outdoorTemperatureValue
     streams[VALUE_INDOOR_TEMPERATURE] = indoorTemperatureValue
-    if (swingUDValue == BYTE_SWING_UD_ON) then
+    if swingUDValue == BYTE_SWING_UD_ON then
         streams[KEY_SWING_UD] = VALUE_FUNCTION_ON
-    elseif (swingUDValue == BYTE_SWING_UD_OFF) then
+    elseif swingUDValue == BYTE_SWING_UD_OFF then
         streams[KEY_SWING_UD] = VALUE_FUNCTION_OFF
     end
-    if (swingLRValue == BYTE_SWING_LR_ON) then
+    if swingLRValue == BYTE_SWING_LR_ON then
         streams[KEY_SWING_LR] = VALUE_FUNCTION_ON
-    elseif (swingLRValue == BYTE_SWING_LR_OFF) then
+    elseif swingLRValue == BYTE_SWING_LR_OFF then
         streams[KEY_SWING_LR] = VALUE_FUNCTION_OFF
     end
-    if (PTCValue == BYTE_PTC_ON) and
-        ((modeValue == BYTE_MODE_AUTO) or (modeValue == BYTE_MODE_HEAT)) then
+    if (PTCValue == BYTE_PTC_ON) and ((modeValue == BYTE_MODE_AUTO) or (modeValue == BYTE_MODE_HEAT)) then
         streams[KEY_PTC] = VALUE_FUNCTION_ON
-    elseif (PTCValue == BYTE_PTC_OFF) then
+    elseif PTCValue == BYTE_PTC_OFF then
         streams[KEY_PTC] = VALUE_FUNCTION_OFF
     end
-    if (openTimerSwitch == BYTE_START_TIMER_SWITCH_ON) then
+    if openTimerSwitch == BYTE_START_TIMER_SWITCH_ON then
         streams[KEY_TIME_ON] = VALUE_FUNCTION_ON
-    elseif (openTimerSwitch == BYTE_START_TIMER_SWITCH_OFF) then
+    elseif openTimerSwitch == BYTE_START_TIMER_SWITCH_OFF then
         streams[KEY_TIME_ON] = VALUE_FUNCTION_OFF
     end
-    if (closeTimerSwitch == BYTE_CLOSE_TIMER_SWITCH_ON) then
+    if closeTimerSwitch == BYTE_CLOSE_TIMER_SWITCH_ON then
         streams[KEY_TIME_OFF] = VALUE_FUNCTION_ON
-    elseif (closeTimerSwitch == BYTE_CLOSE_TIMER_SWITCH_OFF) then
+    elseif closeTimerSwitch == BYTE_CLOSE_TIMER_SWITCH_OFF then
         streams[KEY_TIME_OFF] = VALUE_FUNCTION_OFF
     end
-    if (closeTimerSwitch == BYTE_CLOSE_TIMER_SWITCH_OFF) then
+    if closeTimerSwitch == BYTE_CLOSE_TIMER_SWITCH_OFF then
         streams[KEY_CLOSE_TIME] = 0
     else
         streams[KEY_CLOSE_TIME] = closeTime
     end
-    if (openTimerSwitch == BYTE_START_TIMER_SWITCH_OFF) then
+    if openTimerSwitch == BYTE_START_TIMER_SWITCH_OFF then
         streams[KEY_OPEN_TIME] = 0
     else
         streams[KEY_OPEN_TIME] = openTime
     end
     streams[KEY_TEMPERATURE] = temperatureValue
-    if (smallTemperature == 0x01) then
+    if smallTemperature == 0x01 then
         streams["small_temperature"] = 0.5
     else
         streams["small_temperature"] = 0
     end
     streams[KEY_ERROR_CODE] = errorCode
-    if (kickQuilt == 0x00) then
+    if kickQuilt == 0x00 then
         streams["kick_quilt"] = "off"
-    elseif (kickQuilt == 0x01) then
+    elseif kickQuilt == 0x01 then
         streams["kick_quilt"] = "on"
     end
-    if (preventCold == 0x00) then
+    if preventCold == 0x00 then
         streams["prevent_cold"] = "off"
-    elseif (preventCold == 0x01) then
+    elseif preventCold == 0x01 then
         streams["prevent_cold"] = "on"
     end
     local retTable = {}
@@ -513,13 +516,13 @@ function print_lua_table(lua_table, indent)
 end
 
 function checkBoundary(data, min, max)
-    if (not data) then data = 0 end
+    if not data then data = 0 end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
-    if ((data >= min) and (data <= max)) then
+    if data == nil then data = 0 end
+    if (data >= min) and (data <= max) then
         return data
     else
-        if (data < min) then
+        if data < min then
             return min
         else
             return max
@@ -530,7 +533,9 @@ end
 function table2string(cmd)
     local ret = ""
     local i
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 
@@ -548,7 +553,9 @@ end
 
 function string2hexstring(str)
     local ret = ""
-    for i = 1, #str do ret = ret .. string.format("%02x", str:byte(i)) end
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
     return ret
 end
 
@@ -577,22 +584,262 @@ function makeSum(tmpbuf, start_pos, end_pos)
 end
 
 local crc8_854_table = {
-    0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65, 157,
-    195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220, 35, 125,
-    159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98, 190, 224, 2,
-    92, 223, 129, 99, 61, 124, 34, 192, 158, 29, 67, 161, 255, 70, 24, 250, 164,
-    39, 121, 155, 197, 132, 218, 56, 102, 229, 187, 89, 7, 219, 133, 103, 57,
-    186, 228, 6, 88, 25, 71, 165, 251, 120, 38, 196, 154, 101, 59, 217, 135, 4,
-    90, 184, 230, 167, 249, 27, 69, 198, 152, 122, 36, 248, 166, 68, 26, 153,
-    199, 37, 123, 58, 100, 134, 216, 91, 5, 231, 185, 140, 210, 48, 110, 237,
-    179, 81, 15, 78, 16, 242, 172, 47, 113, 147, 205, 17, 79, 173, 243, 112, 46,
-    204, 146, 211, 141, 111, 49, 178, 236, 14, 80, 175, 241, 19, 77, 206, 144,
-    114, 44, 109, 51, 209, 143, 12, 82, 176, 238, 50, 108, 142, 208, 83, 13,
-    239, 177, 240, 174, 76, 18, 145, 207, 45, 115, 202, 148, 118, 40, 171, 245,
-    23, 73, 8, 86, 180, 234, 105, 55, 213, 139, 87, 9, 235, 181, 54, 104, 138,
-    212, 149, 203, 41, 119, 244, 170, 72, 22, 233, 183, 85, 11, 136, 214, 52,
-    106, 43, 117, 151, 201, 74, 20, 246, 168, 116, 42, 200, 150, 21, 75, 169,
-    247, 182, 232, 10, 84, 215, 137, 107, 53
+    0,
+    94,
+    188,
+    226,
+    97,
+    63,
+    221,
+    131,
+    194,
+    156,
+    126,
+    32,
+    163,
+    253,
+    31,
+    65,
+    157,
+    195,
+    33,
+    127,
+    252,
+    162,
+    64,
+    30,
+    95,
+    1,
+    227,
+    189,
+    62,
+    96,
+    130,
+    220,
+    35,
+    125,
+    159,
+    193,
+    66,
+    28,
+    254,
+    160,
+    225,
+    191,
+    93,
+    3,
+    128,
+    222,
+    60,
+    98,
+    190,
+    224,
+    2,
+    92,
+    223,
+    129,
+    99,
+    61,
+    124,
+    34,
+    192,
+    158,
+    29,
+    67,
+    161,
+    255,
+    70,
+    24,
+    250,
+    164,
+    39,
+    121,
+    155,
+    197,
+    132,
+    218,
+    56,
+    102,
+    229,
+    187,
+    89,
+    7,
+    219,
+    133,
+    103,
+    57,
+    186,
+    228,
+    6,
+    88,
+    25,
+    71,
+    165,
+    251,
+    120,
+    38,
+    196,
+    154,
+    101,
+    59,
+    217,
+    135,
+    4,
+    90,
+    184,
+    230,
+    167,
+    249,
+    27,
+    69,
+    198,
+    152,
+    122,
+    36,
+    248,
+    166,
+    68,
+    26,
+    153,
+    199,
+    37,
+    123,
+    58,
+    100,
+    134,
+    216,
+    91,
+    5,
+    231,
+    185,
+    140,
+    210,
+    48,
+    110,
+    237,
+    179,
+    81,
+    15,
+    78,
+    16,
+    242,
+    172,
+    47,
+    113,
+    147,
+    205,
+    17,
+    79,
+    173,
+    243,
+    112,
+    46,
+    204,
+    146,
+    211,
+    141,
+    111,
+    49,
+    178,
+    236,
+    14,
+    80,
+    175,
+    241,
+    19,
+    77,
+    206,
+    144,
+    114,
+    44,
+    109,
+    51,
+    209,
+    143,
+    12,
+    82,
+    176,
+    238,
+    50,
+    108,
+    142,
+    208,
+    83,
+    13,
+    239,
+    177,
+    240,
+    174,
+    76,
+    18,
+    145,
+    207,
+    45,
+    115,
+    202,
+    148,
+    118,
+    40,
+    171,
+    245,
+    23,
+    73,
+    8,
+    86,
+    180,
+    234,
+    105,
+    55,
+    213,
+    139,
+    87,
+    9,
+    235,
+    181,
+    54,
+    104,
+    138,
+    212,
+    149,
+    203,
+    41,
+    119,
+    244,
+    170,
+    72,
+    22,
+    233,
+    183,
+    85,
+    11,
+    136,
+    214,
+    52,
+    106,
+    43,
+    117,
+    151,
+    201,
+    74,
+    20,
+    246,
+    168,
+    116,
+    42,
+    200,
+    150,
+    21,
+    75,
+    169,
+    247,
+    182,
+    232,
+    10,
+    84,
+    215,
+    137,
+    107,
+    53,
 }
 
 function crc8_854(dataBuf, start_pos, end_pos)

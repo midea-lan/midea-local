@@ -1,0 +1,4 @@
+indent_type = "Spaces"
+indent_width = 4
+call_parentheses = "None"
+collapse_simple_statement = "ConditionalOnly"

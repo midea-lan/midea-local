@@ -432,13 +432,13 @@ local function print_lua_table(lua_table, indent)
     end
 end
 local function checkBoundary(data, min, max)
-    if (not data) then data = 0 end
+    if not data then data = 0 end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
-    if ((data >= min) and (data <= max)) then
+    if data == nil then data = 0 end
+    if (data >= min) and (data <= max) then
         return data
     else
-        if (data < min) then
+        if data < min then
             return min
         else
             return max
@@ -448,13 +448,17 @@ end
 local function table2string(cmd)
     local ret = ""
     local i
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 local function table2string2(cmd)
     local ret = ""
     local i
-    for i = 0, #cmd - 1 do ret = ret .. string.char(cmd[i]) end
+    for i = 0, #cmd - 1 do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 local function string2table(hexstr)
@@ -481,7 +485,9 @@ local function numstring2table(hexstr)
 end
 local function string2hexstring(str)
     local ret = ""
-    for i = 1, #str do ret = ret .. string.format("%02x", str:byte(i)) end
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
     return ret
 end
 local function encode(cmd)
@@ -507,34 +513,276 @@ local function makeSum(tmpbuf, start_pos, end_pos)
 end
 local function splitStrByChar(str, sepChar)
     local splitList = {}
-    local pattern = '[^' .. sepChar .. ']+'
-    string.gsub(str, pattern, function(w) table.insert(splitList, w) end)
+    local pattern = "[^" .. sepChar .. "]+"
+    string.gsub(str, pattern, function(w)
+        table.insert(splitList, w)
+    end)
     return splitList
 end
 local function values(t)
     local i = 0
     return function()
-        i = i + 1;
+        i = i + 1
         return t[i]
     end
 end
 local crc8_854_table = {
-    0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65, 157,
-    195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220, 35, 125,
-    159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98, 190, 224, 2,
-    92, 223, 129, 99, 61, 124, 34, 192, 158, 29, 67, 161, 255, 70, 24, 250, 164,
-    39, 121, 155, 197, 132, 218, 56, 102, 229, 187, 89, 7, 219, 133, 103, 57,
-    186, 228, 6, 88, 25, 71, 165, 251, 120, 38, 196, 154, 101, 59, 217, 135, 4,
-    90, 184, 230, 167, 249, 27, 69, 198, 152, 122, 36, 248, 166, 68, 26, 153,
-    199, 37, 123, 58, 100, 134, 216, 91, 5, 231, 185, 140, 210, 48, 110, 237,
-    179, 81, 15, 78, 16, 242, 172, 47, 113, 147, 205, 17, 79, 173, 243, 112, 46,
-    204, 146, 211, 141, 111, 49, 178, 236, 14, 80, 175, 241, 19, 77, 206, 144,
-    114, 44, 109, 51, 209, 143, 12, 82, 176, 238, 50, 108, 142, 208, 83, 13,
-    239, 177, 240, 174, 76, 18, 145, 207, 45, 115, 202, 148, 118, 40, 171, 245,
-    23, 73, 8, 86, 180, 234, 105, 55, 213, 139, 87, 9, 235, 181, 54, 104, 138,
-    212, 149, 203, 41, 119, 244, 170, 72, 22, 233, 183, 85, 11, 136, 214, 52,
-    106, 43, 117, 151, 201, 74, 20, 246, 168, 116, 42, 200, 150, 21, 75, 169,
-    247, 182, 232, 10, 84, 215, 137, 107, 53
+    0,
+    94,
+    188,
+    226,
+    97,
+    63,
+    221,
+    131,
+    194,
+    156,
+    126,
+    32,
+    163,
+    253,
+    31,
+    65,
+    157,
+    195,
+    33,
+    127,
+    252,
+    162,
+    64,
+    30,
+    95,
+    1,
+    227,
+    189,
+    62,
+    96,
+    130,
+    220,
+    35,
+    125,
+    159,
+    193,
+    66,
+    28,
+    254,
+    160,
+    225,
+    191,
+    93,
+    3,
+    128,
+    222,
+    60,
+    98,
+    190,
+    224,
+    2,
+    92,
+    223,
+    129,
+    99,
+    61,
+    124,
+    34,
+    192,
+    158,
+    29,
+    67,
+    161,
+    255,
+    70,
+    24,
+    250,
+    164,
+    39,
+    121,
+    155,
+    197,
+    132,
+    218,
+    56,
+    102,
+    229,
+    187,
+    89,
+    7,
+    219,
+    133,
+    103,
+    57,
+    186,
+    228,
+    6,
+    88,
+    25,
+    71,
+    165,
+    251,
+    120,
+    38,
+    196,
+    154,
+    101,
+    59,
+    217,
+    135,
+    4,
+    90,
+    184,
+    230,
+    167,
+    249,
+    27,
+    69,
+    198,
+    152,
+    122,
+    36,
+    248,
+    166,
+    68,
+    26,
+    153,
+    199,
+    37,
+    123,
+    58,
+    100,
+    134,
+    216,
+    91,
+    5,
+    231,
+    185,
+    140,
+    210,
+    48,
+    110,
+    237,
+    179,
+    81,
+    15,
+    78,
+    16,
+    242,
+    172,
+    47,
+    113,
+    147,
+    205,
+    17,
+    79,
+    173,
+    243,
+    112,
+    46,
+    204,
+    146,
+    211,
+    141,
+    111,
+    49,
+    178,
+    236,
+    14,
+    80,
+    175,
+    241,
+    19,
+    77,
+    206,
+    144,
+    114,
+    44,
+    109,
+    51,
+    209,
+    143,
+    12,
+    82,
+    176,
+    238,
+    50,
+    108,
+    142,
+    208,
+    83,
+    13,
+    239,
+    177,
+    240,
+    174,
+    76,
+    18,
+    145,
+    207,
+    45,
+    115,
+    202,
+    148,
+    118,
+    40,
+    171,
+    245,
+    23,
+    73,
+    8,
+    86,
+    180,
+    234,
+    105,
+    55,
+    213,
+    139,
+    87,
+    9,
+    235,
+    181,
+    54,
+    104,
+    138,
+    212,
+    149,
+    203,
+    41,
+    119,
+    244,
+    170,
+    72,
+    22,
+    233,
+    183,
+    85,
+    11,
+    136,
+    214,
+    52,
+    106,
+    43,
+    117,
+    151,
+    201,
+    74,
+    20,
+    246,
+    168,
+    116,
+    42,
+    200,
+    150,
+    21,
+    75,
+    169,
+    247,
+    182,
+    232,
+    10,
+    84,
+    215,
+    137,
+    107,
+    53,
 }
 local function crc8_854(dataBuf, start_pos, end_pos)
     local crc = 0
@@ -547,940 +795,813 @@ local function bcd2Int(bcd)
     return (bit.band(0x0F, bit.rshift(bcd, 4))) * 10 + bit.band(0x0F, bcd)
 end
 local function setDefaultValue()
-    if (keyP["powerValue"] == nil) then
-        keyP["powerValue"] = keyB["BYTE_POWER_ON"]
-    end
-    if (keyP["modeValue"] == nil) then
-        keyP["modeValue"] = keyB["BYTE_MODE_AUTO"]
-    end
-    if (keyP["smartDryValue"] == nil) then keyP["smartDryValue"] = 50 end
-    if (keyP["temperature"] == nil) then keyP["temperature"] = 26 end
-    if (keyP["smallTemperature"] == nil) then keyP["smallTemperature"] = 0 end
-    if (keyP["fanspeedValue"] == nil) then keyP["fanspeedValue"] = 102 end
-    if (keyP["closeTimerSwitch"] == nil) then
-        keyP["closeTimerSwitch"] = keyB["BYTE_CLOSE_TIMER_SWITCH_OFF"]
-    end
-    if (keyP["openTimerSwitch"] == nil) then
-        keyP["openTimerSwitch"] = keyB["BYTE_START_TIMER_SWITCH_OFF"]
-    end
-    if (keyP["strongWindValue"] == nil) then
-        keyP["strongWindValue"] = keyB["BYTE_STRONG_WIND_OFF"]
-    end
-    if (keyP["comfortableSleepValue"] == nil) then
-        keyP["comfortableSleepValue"] = keyB["BYTE_SLEEP_OFF"]
-    end
-    if (keyP["comfortableSleepSwitch"] == nil) then
-        keyP["comfortableSleepSwitch"] = 0x00
-    end
-    if (keyP["comfortableSleepTime"] == nil) then
-        keyP["comfortableSleepTime"] = 0x00
-    end
-    if (keyP["PTCValue"] == nil) then keyP["PTCValue"] = keyB["BYTE_PTC_OFF"] end
-    if (keyP["purifierValue"] == nil) then
-        keyP["purifierValue"] = keyB["BYTE_PURIFIER_OFF"]
-    end
-    if (keyP["ecoValue"] == nil) then keyP["ecoValue"] = keyB["BYTE_ECO_OFF"] end
-    if (keyP["dryValue"] == nil) then keyP["dryValue"] = keyB["BYTE_DRY_OFF"] end
-    if (keyP["swingLRValue"] == nil) then
-        keyP["swingLRValue"] = keyB["BYTE_SWING_LR_OFF"]
-    end
-    if (keyP["swingUDValue"] == nil) then
-        keyP["swingUDValue"] = keyB["BYTE_SWING_UD_OFF"]
-    end
-    if (keyP["comfortPowerSave"] == nil) then
-        keyP["comfortPowerSave"] = keyB["BYTE_COMFORT_POWER_SAVE_OFF"]
-    end
-    if (keyP["preventCold"] == nil) then keyP["preventCold"] = 0x00 end
-    if (keyP["power_saving"] == nil) then keyP["power_saving"] = 0x00 end
+    if keyP["powerValue"] == nil then keyP["powerValue"] = keyB["BYTE_POWER_ON"] end
+    if keyP["modeValue"] == nil then keyP["modeValue"] = keyB["BYTE_MODE_AUTO"] end
+    if keyP["smartDryValue"] == nil then keyP["smartDryValue"] = 50 end
+    if keyP["temperature"] == nil then keyP["temperature"] = 26 end
+    if keyP["smallTemperature"] == nil then keyP["smallTemperature"] = 0 end
+    if keyP["fanspeedValue"] == nil then keyP["fanspeedValue"] = 102 end
+    if keyP["closeTimerSwitch"] == nil then keyP["closeTimerSwitch"] = keyB["BYTE_CLOSE_TIMER_SWITCH_OFF"] end
+    if keyP["openTimerSwitch"] == nil then keyP["openTimerSwitch"] = keyB["BYTE_START_TIMER_SWITCH_OFF"] end
+    if keyP["strongWindValue"] == nil then keyP["strongWindValue"] = keyB["BYTE_STRONG_WIND_OFF"] end
+    if keyP["comfortableSleepValue"] == nil then keyP["comfortableSleepValue"] = keyB["BYTE_SLEEP_OFF"] end
+    if keyP["comfortableSleepSwitch"] == nil then keyP["comfortableSleepSwitch"] = 0x00 end
+    if keyP["comfortableSleepTime"] == nil then keyP["comfortableSleepTime"] = 0x00 end
+    if keyP["PTCValue"] == nil then keyP["PTCValue"] = keyB["BYTE_PTC_OFF"] end
+    if keyP["purifierValue"] == nil then keyP["purifierValue"] = keyB["BYTE_PURIFIER_OFF"] end
+    if keyP["ecoValue"] == nil then keyP["ecoValue"] = keyB["BYTE_ECO_OFF"] end
+    if keyP["dryValue"] == nil then keyP["dryValue"] = keyB["BYTE_DRY_OFF"] end
+    if keyP["swingLRValue"] == nil then keyP["swingLRValue"] = keyB["BYTE_SWING_LR_OFF"] end
+    if keyP["swingUDValue"] == nil then keyP["swingUDValue"] = keyB["BYTE_SWING_UD_OFF"] end
+    if keyP["comfortPowerSave"] == nil then keyP["comfortPowerSave"] = keyB["BYTE_COMFORT_POWER_SAVE_OFF"] end
+    if keyP["preventCold"] == nil then keyP["preventCold"] = 0x00 end
+    if keyP["power_saving"] == nil then keyP["power_saving"] = 0x00 end
 end
 local function jsonToModel(jsonCmd, jsonType)
     local streams = jsonCmd
-    if (streams[keyT["KEY_POWER"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_POWER"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["powerValue"] = keyB["BYTE_POWER_ON"]
-    elseif (streams[keyT["KEY_POWER"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_POWER"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["powerValue"] = keyB["BYTE_POWER_OFF"]
     end
-    if (streams[keyT["KEY_BUZZER"]] == "VALUE_FUNCTION_ON") then
+    if streams[keyT["KEY_BUZZER"]] == "VALUE_FUNCTION_ON" then
         keyP["buzzerValue"] = keyB["BYTE_BUZZER_ON"]
-    elseif (streams[keyT["KEY_BUZZER"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_BUZZER"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["buzzerValue"] = keyB["BYTE_BUZZER_OFF"]
     end
-    if (streams["ptc_force"] ~= nil) then
-        if (streams["ptc_force"] == "on") then
+    if streams["ptc_force"] ~= nil then
+        if streams["ptc_force"] == "on" then
             keyP["PTCForceValue"] = 1
         else
             keyP["PTCForceValue"] = 0
         end
     end
-    if (streams[keyT["KEY_PURIFIER"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_PURIFIER"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["purifierValue"] = keyB["BYTE_PURIFIER_ON"]
-    elseif (streams[keyT["KEY_PURIFIER"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_PURIFIER"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["purifierValue"] = keyB["BYTE_PURIFIER_OFF"]
     end
-    if (streams[keyT["KEY_ECO"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_ECO"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["ecoValue"] = keyB["BYTE_ECO_ON"]
-    elseif (streams[keyT["KEY_ECO"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_ECO"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["ecoValue"] = keyB["BYTE_ECO_OFF"]
     end
-    if (streams[keyT["KEY_DRY"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_DRY"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["dryValue"] = keyB["BYTE_DRY_ON"]
-    elseif (streams[keyT["KEY_DRY"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_DRY"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["dryValue"] = keyB["BYTE_DRY_OFF"]
     end
-    if (streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_HEAT"]) then
+    if streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_HEAT"] then
         keyP["modeValue"] = keyB["BYTE_MODE_HEAT"]
-    elseif (streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_COOL"]) then
+    elseif streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_COOL"] then
         keyP["modeValue"] = keyB["BYTE_MODE_COOL"]
-    elseif (streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_AUTO"]) then
+    elseif streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_AUTO"] then
         keyP["modeValue"] = keyB["BYTE_MODE_AUTO"]
-    elseif (streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_DRY"]) then
+    elseif streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_DRY"] then
         keyP["modeValue"] = keyB["BYTE_MODE_DRY"]
-    elseif (streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_FAN"]) then
+    elseif streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_FAN"] then
         keyP["modeValue"] = keyB["BYTE_MODE_FAN"]
-    elseif (streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_SMART_DRY"]) then
+    elseif streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_SMART_DRY"] then
         keyP["modeValue"] = keyB["BYTE_MODE_SMART_DRY"]
     end
-    if (streams[keyT["KEY_SMART_DRY"]] ~= nil) then
-        keyP["smartDryValue"] = checkBoundary(streams[keyT["KEY_SMART_DRY"]],
-                                              30, 101)
+    if streams[keyT["KEY_SMART_DRY"]] ~= nil then
+        keyP["smartDryValue"] = checkBoundary(streams[keyT["KEY_SMART_DRY"]], 30, 101)
     end
-    if (streams[keyT["KEY_NATURAL_WIND"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_NATURAL_WIND"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["naturalWind"] = keyB["BYTE_NATURAL_WIND_ON"]
-    elseif (streams[keyT["KEY_NATURAL_WIND"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_NATURAL_WIND"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["naturalWind"] = keyB["BYTE_NATURAL_WIND_OFF"]
     end
-    if (streams[keyT["KEY_PMV"]] ~= nil) then
-        keyP["pmv"] = checkBoundary(streams[keyT["KEY_PMV"]], -3.5, 3)
+    if streams[keyT["KEY_PMV"]] ~= nil then keyP["pmv"] = checkBoundary(streams[keyT["KEY_PMV"]], -3.5, 3) end
+    if streams[keyT["KEY_FANSPEED"]] ~= nil then
+        keyP["fanspeedValue"] = checkBoundary(streams[keyT["KEY_FANSPEED"]], 1, 102)
     end
-    if (streams[keyT["KEY_FANSPEED"]] ~= nil) then
-        keyP["fanspeedValue"] = checkBoundary(streams[keyT["KEY_FANSPEED"]], 1,
-                                              102)
-    end
-    if (streams[keyT["KEY_SWING_UD"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_SWING_UD"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["swingUDValue"] = keyB["BYTE_SWING_UD_ON"]
-    elseif (streams[keyT["KEY_SWING_UD"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_SWING_UD"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["swingUDValue"] = keyB["BYTE_SWING_UD_OFF"]
     end
-    if (streams[keyT["KEY_SWING_LR"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_SWING_LR"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["swingLRValue"] = keyB["BYTE_SWING_LR_ON"]
-    elseif (streams[keyT["KEY_SWING_LR"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_SWING_LR"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["swingLRValue"] = keyB["BYTE_SWING_LR_OFF"]
     end
-    if (jsonType == "control" and streams["wind_swing_lr_left"] ==
-        keyV["VALUE_FUNCTION_ON"]) then
+    if jsonType == "control" and streams["wind_swing_lr_left"] == keyV["VALUE_FUNCTION_ON"] then
         keyP["wind_swing_lr_left"] = 0x02
-    elseif (jsonType == "control" and streams["wind_swing_lr_left"] ==
-        keyV["VALUE_FUNCTION_OFF"]) then
+    elseif jsonType == "control" and streams["wind_swing_lr_left"] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["wind_swing_lr_left"] = 0x00
     end
-    if (jsonType == "control" and streams["wind_swing_lr_left"] ==
-        keyV["VALUE_FUNCTION_ON"]) then
+    if jsonType == "control" and streams["wind_swing_lr_left"] == keyV["VALUE_FUNCTION_ON"] then
         keyP["wind_swing_lr_left"] = 0x01
-    elseif (jsonType == "control" and streams["wind_swing_lr_left"] ==
-        keyV["VALUE_FUNCTION_OFF"]) then
+    elseif jsonType == "control" and streams["wind_swing_lr_left"] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["wind_swing_lr_left"] = 0x00
     end
-    if (streams[keyT["KEY_SWING_LR_UNDER"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_SWING_LR_UNDER"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["swingLRUnderSwitch"] = keyB["BYTE_SWING_LR_UNDER_ENABLE"]
         keyP["swingLRValueUnder"] = keyB["BYTE_SWING_LR_UNDER_ON"]
-    elseif (streams[keyT["KEY_SWING_LR_UNDER"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_SWING_LR_UNDER"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["swingLRUnderSwitch"] = keyB["BYTE_SWING_LR_UNDER_ENABLE"]
         keyP["swingLRValueUnder"] = keyB["BYTE_SWING_LR_UNDER_OFF"]
     end
-    if (streams[keyT["KEY_TIME_ON"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_TIME_ON"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["openTimerSwitch"] = keyB["BYTE_START_TIMER_SWITCH_ON"]
-        if (jsonType == "control") then keyP["timerSignal"] = 1 end
-    elseif (streams[keyT["KEY_TIME_ON"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        if jsonType == "control" then keyP["timerSignal"] = 1 end
+    elseif streams[keyT["KEY_TIME_ON"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["openTimerSwitch"] = keyB["BYTE_START_TIMER_SWITCH_OFF"]
-        if (jsonType == "control") then keyP["timerSignal"] = 1 end
+        if jsonType == "control" then keyP["timerSignal"] = 1 end
     end
-    if (streams[keyT["KEY_TIME_OFF"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_TIME_OFF"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["closeTimerSwitch"] = keyB["BYTE_CLOSE_TIMER_SWITCH_ON"]
-        if (jsonType == "control") then keyP["timerSignal"] = 1 end
-    elseif (streams[keyT["KEY_TIME_OFF"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        if jsonType == "control" then keyP["timerSignal"] = 1 end
+    elseif streams[keyT["KEY_TIME_OFF"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["closeTimerSwitch"] = keyB["BYTE_CLOSE_TIMER_SWITCH_OFF"]
-        if (jsonType == "control") then keyP["timerSignal"] = 1 end
+        if jsonType == "control" then keyP["timerSignal"] = 1 end
     end
-    if (streams[keyT["KEY_CLOSE_TIME"]] ~= nil) then
-        keyP["closeTime"] = streams[keyT["KEY_CLOSE_TIME"]]
-    end
-    if (streams[keyT["KEY_OPEN_TIME"]] ~= nil) then
-        keyP["openTime"] = streams[keyT["KEY_OPEN_TIME"]]
-    end
-    if (streams[keyT["KEY_COMFORT_SLEEP"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_CLOSE_TIME"]] ~= nil then keyP["closeTime"] = streams[keyT["KEY_CLOSE_TIME"]] end
+    if streams[keyT["KEY_OPEN_TIME"]] ~= nil then keyP["openTime"] = streams[keyT["KEY_OPEN_TIME"]] end
+    if streams[keyT["KEY_COMFORT_SLEEP"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["comfortableSleepValue"] = keyB["BYTE_SLEEP_ON"]
         keyP["comfortableSleepSwitch"] = 0x40
         keyP["comfortableSleepTime"] = 0x0A
-    elseif (streams[keyT["KEY_COMFORT_SLEEP"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_COMFORT_SLEEP"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["comfortableSleepValue"] = keyB["BYTE_SLEEP_OFF"]
         keyP["comfortableSleepSwitch"] = 0x00
         keyP["comfortableSleepTime"] = 0x00
     end
-    if (streams[keyT["KEY_COMFORT_SLEEP_CURVE"]] ~= nil) then
-        streams[keyT["KEY_COMFORT_SLEEP_CURVE"]] = string.gsub(
-                                                       streams[keyT["KEY_COMFORT_SLEEP_CURVE"]],
-                                                       ",", "")
+    if streams[keyT["KEY_COMFORT_SLEEP_CURVE"]] ~= nil then
+        streams[keyT["KEY_COMFORT_SLEEP_CURVE"]] = string.gsub(streams[keyT["KEY_COMFORT_SLEEP_CURVE"]], ",", "")
         comfortByte = numstring2table(streams[keyT["KEY_COMFORT_SLEEP_CURVE"]])
     end
-    if (streams[keyT["KEY_PTC"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_PTC"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["PTCValue"] = keyB["BYTE_PTC_ON"]
-    elseif (streams[keyT["KEY_PTC"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_PTC"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["PTCValue"] = keyB["BYTE_PTC_OFF"]
     end
-    if (streams[keyT["KEY_STRONG_WIND"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_STRONG_WIND"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["strongWindValue"] = keyB["BYTE_STRONG_WIND_ON"]
-    elseif (streams[keyT["KEY_STRONG_WIND"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_STRONG_WIND"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["strongWindValue"] = keyB["BYTE_STRONG_WIND_OFF"]
     end
-    if (streams[keyT["KEY_TEMPERATURE"]] ~= nil) then
-        keyP["temperature"] = checkBoundary(streams[keyT["KEY_TEMPERATURE"]],
-                                            16, 30)
+    if streams[keyT["KEY_TEMPERATURE"]] ~= nil then
+        keyP["temperature"] = checkBoundary(streams[keyT["KEY_TEMPERATURE"]], 16, 30)
     end
-    if (streams["small_temperature"] ~= nil) then
-        keyP["smallTemperature"] = checkBoundary(streams["small_temperature"],
-                                                 0, 0.5)
-        if (keyP["smallTemperature"] == 0.5) then
+    if streams["small_temperature"] ~= nil then
+        keyP["smallTemperature"] = checkBoundary(streams["small_temperature"], 0, 0.5)
+        if keyP["smallTemperature"] == 0.5 then
             keyP["smallTemperature"] = 0x01
         else
             keyP["smallTemperature"] = 0x00
         end
     end
-    if (streams[keyT["KEY_COMFORT_POWER_SAVE"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_COMFORT_POWER_SAVE"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["comfortPowerSave"] = keyB["BYTE_COMFORT_POWER_SAVE_ON"]
-    elseif (streams[keyT["KEY_COMFORT_POWER_SAVE"]] ==
-        keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_COMFORT_POWER_SAVE"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["comfortPowerSave"] = keyB["BYTE_COMFORT_POWER_SAVE_OFF"]
     end
-    if (jsonType == "control" and streams[keyT["KEY_PREVENT_SUPER_COOL"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_PREVENT_SUPER_COOL"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_PREVENT_SUPER_COOL"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_PREVENT_SUPER_COOL"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["prevent_super_cool"] = 0x01
-        elseif (streams[keyT["KEY_PREVENT_SUPER_COOL"]] ==
-            keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_PREVENT_SUPER_COOL"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["prevent_super_cool"] = 0x00
         end
     end
-    if (streams[keyT["KEY_PREVENT_COLD"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_PREVENT_COLD"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["preventCold"] = 0x01
-    elseif (streams[keyT["KEY_PREVENT_COLD"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_PREVENT_COLD"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["preventCold"] = 0x00
     end
-    if (jsonType == "control" and streams[keyT["KEY_PREVENT_STRAIGHT_WIND"]] ~=
-        nil) then
+    if jsonType == "control" and streams[keyT["KEY_PREVENT_STRAIGHT_WIND"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        keyP["prevent_straight_wind"] = checkBoundary(
-                                            streams[keyT["KEY_PREVENT_STRAIGHT_WIND"]],
-                                            0, 3)
+        keyP["prevent_straight_wind"] = checkBoundary(streams[keyT["KEY_PREVENT_STRAIGHT_WIND"]], 0, 3)
     end
-    if (jsonType == "control" and streams[keyT["KEY_FA_PREVENT_STRAIGHT_WIND"]] ~=
-        nil) then
+    if jsonType == "control" and streams[keyT["KEY_FA_PREVENT_STRAIGHT_WIND"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        keyP["fa_prevent_straight_wind"] = checkBoundary(
-                                               streams[keyT["KEY_FA_PREVENT_STRAIGHT_WIND"]],
-                                               0, 2)
+        keyP["fa_prevent_straight_wind"] = checkBoundary(streams[keyT["KEY_FA_PREVENT_STRAIGHT_WIND"]], 0, 2)
     end
-    if (jsonType == "control" and
-        streams[keyT["KEY_AUTO_PREVENT_STRAIGHT_WIND"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_AUTO_PREVENT_STRAIGHT_WIND"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_AUTO_PREVENT_STRAIGHT_WIND"]] ==
-            keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_AUTO_PREVENT_STRAIGHT_WIND"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["auto_prevent_straight_wind"] = 0x01
-        elseif (streams[keyT["KEY_AUTO_PREVENT_STRAIGHT_WIND"]] ==
-            keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_AUTO_PREVENT_STRAIGHT_WIND"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["auto_prevent_straight_wind"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_SELF_CLEAN"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_SELF_CLEAN"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_SELF_CLEAN"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_SELF_CLEAN"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["self_clean"] = 0x01
-        elseif (streams[keyT["KEY_SELF_CLEAN"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_SELF_CLEAN"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["self_clean"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_WIND_STRAIGHT"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_WIND_STRAIGHT"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_WIND_STRAIGHT"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_WIND_STRAIGHT"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["wind_straight"] = 0x01
-        elseif (streams[keyT["KEY_WIND_STRAIGHT"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_WIND_STRAIGHT"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["wind_straight"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_WIND_AVOID"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_WIND_AVOID"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_WIND_AVOID"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_WIND_AVOID"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["wind_avoid"] = 0x01
-        elseif (streams[keyT["KEY_WIND_AVOID"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_WIND_AVOID"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["wind_avoid"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_YB_WIND_AVOID"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_YB_WIND_AVOID"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_YB_WIND_AVOID"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_YB_WIND_AVOID"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["yb_wind_avoid"] = 0x02
-        elseif (streams[keyT["KEY_YB_WIND_AVOID"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_YB_WIND_AVOID"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["yb_wind_avoid"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_INTELLIGENT_WIND"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_INTELLIGENT_WIND"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_INTELLIGENT_WIND"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_INTELLIGENT_WIND"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["intelligent_wind"] = 0x01
-        elseif (streams[keyT["KEY_INTELLIGENT_WIND"]] ==
-            keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_INTELLIGENT_WIND"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["intelligent_wind"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_NO_WIND_SENSE"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_NO_WIND_SENSE"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        keyP["no_wind_sense"] = checkBoundary(
-                                    streams[keyT["KEY_NO_WIND_SENSE"]], 0, 5)
+        keyP["no_wind_sense"] = checkBoundary(streams[keyT["KEY_NO_WIND_SENSE"]], 0, 5)
     end
-    if (jsonType == "control" and streams[keyT["KEY_FN_NO_WIND_SENSE"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_FN_NO_WIND_SENSE"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_FN_NO_WIND_SENSE"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_FN_NO_WIND_SENSE"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["fn_no_wind_sense"] = 0x01
-        elseif (streams[keyT["KEY_FN_NO_WIND_SENSE"]] ==
-            keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_FN_NO_WIND_SENSE"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["fn_no_wind_sense"] = 0x00
         end
     end
-    if (streams["no_wind_sense_level"] ~= nil) then
-        keyP["no_wind_sense_level"] = streams["no_wind_sense_level"]
-    end
-    if (jsonType == "control" and streams[keyT["KEY_CHILD_PREVENT_COLD_WIND"]] ~=
-        nil) then
+    if streams["no_wind_sense_level"] ~= nil then keyP["no_wind_sense_level"] = streams["no_wind_sense_level"] end
+    if jsonType == "control" and streams[keyT["KEY_CHILD_PREVENT_COLD_WIND"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_CHILD_PREVENT_COLD_WIND"]] ==
-            keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_CHILD_PREVENT_COLD_WIND"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["child_prevent_cold_wind"] = 0x01
-        elseif (streams[keyT["KEY_CHILD_PREVENT_COLD_WIND"]] ==
-            keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_CHILD_PREVENT_COLD_WIND"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["child_prevent_cold_wind"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_LITTLE_ANGLE"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_LITTLE_ANGLE"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_LITTLE_ANGLE"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_LITTLE_ANGLE"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["little_angel"] = 0x01
-        elseif (streams[keyT["KEY_LITTLE_ANGLE"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_LITTLE_ANGLE"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["little_angel"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_COOL_HOT_SENSE"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_COOL_HOT_SENSE"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_COOL_HOT_SENSE"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_COOL_HOT_SENSE"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["cool_hot_sense"] = 0x01
-        elseif (streams[keyT["KEY_COOL_HOT_SENSE"]] ==
-            keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_COOL_HOT_SENSE"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["cool_hot_sense"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_GENTLE_WIND_SENSE"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_GENTLE_WIND_SENSE"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_GENTLE_WIND_SENSE"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_GENTLE_WIND_SENSE"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["gentle_wind_sense"] = 0x03
-        elseif (streams[keyT["KEY_GENTLE_WIND_SENSE"]] ==
-            keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_GENTLE_WIND_SENSE"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["gentle_wind_sense"] = 0x01
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_SECURITY"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_SECURITY"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_SECURITY"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_SECURITY"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["security"] = 0x01
-        elseif (streams[keyT["KEY_SECURITY"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_SECURITY"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["security"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_EVEN_WIND"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_EVEN_WIND"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_EVEN_WIND"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_EVEN_WIND"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["even_wind"] = 0x01
-        elseif (streams[keyT["KEY_EVEN_WIND"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_EVEN_WIND"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["even_wind"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_SINGLE_TUYERE"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_SINGLE_TUYERE"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_SINGLE_TUYERE"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_SINGLE_TUYERE"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["single_tuyere"] = 0x01
-        elseif (streams[keyT["KEY_SINGLE_TUYERE"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_SINGLE_TUYERE"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["single_tuyere"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_EXTREME_WIND"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_EXTREME_WIND"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_EXTREME_WIND"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_EXTREME_WIND"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["extreme_wind"] = 0x01
-        elseif (streams[keyT["KEY_EXTREME_WIND"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_EXTREME_WIND"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["extreme_wind"] = 0x00
         end
     end
-    if (streams["extreme_wind_level"] ~= nil) then
-        keyP["extreme_wind_level"] = streams["extreme_wind_level"]
-    end
-    if (jsonType == "control" and streams[keyT["KEY_VOICE_CONTROL"]] ~= nil) then
+    if streams["extreme_wind_level"] ~= nil then keyP["extreme_wind_level"] = streams["extreme_wind_level"] end
+    if jsonType == "control" and streams[keyT["KEY_VOICE_CONTROL"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_VOICE_CONTROL"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_VOICE_CONTROL"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["voice_control"] = 0x03
-        elseif (streams[keyT["KEY_VOICE_CONTROL"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_VOICE_CONTROL"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["voice_control"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_PRE_COOL_HOT"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_PRE_COOL_HOT"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_PRE_COOL_HOT"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_PRE_COOL_HOT"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["pre_cool_hot"] = 0x01
-        elseif (streams[keyT["KEY_PRE_COOL_HOT"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_PRE_COOL_HOT"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["pre_cool_hot"] = 0x00
         end
     end
-    if (jsonType == "control" and streams["ptc_default_rule"] ~= nil) then
+    if jsonType == "control" and streams["ptc_default_rule"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["ptc_default_rule"] = streams["ptc_default_rule"]
     end
-    if (jsonType == "control" and streams[keyT["KEY_WATER_WASHING"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_WATER_WASHING"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_WATER_WASHING"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_WATER_WASHING"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["water_washing"] = 0x01
-        elseif (streams[keyT["KEY_WATER_WASHING"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_WATER_WASHING"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["water_washing"] = 0x00
         end
     end
-    if (streams["water_washing_manual"] ~= nil) then
+    if streams["water_washing_manual"] ~= nil then
         keyP["water_washing_manual"] = streams["water_washing_manual"]
         keyP["water_washing_time"] = streams["water_washing_time"]
         keyP["water_washing_stage"] = streams["water_washing_stage"]
     end
-    if (jsonType == "control" and streams[keyT["KEY_FRESH_AIR"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_FRESH_AIR"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_FRESH_AIR"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_FRESH_AIR"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["fresh_air"] = 0x01
-        elseif (streams[keyT["KEY_FRESH_AIR"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_FRESH_AIR"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["fresh_air"] = 0x00
         end
     end
-    if (streams["fresh_air_fan_speed"] ~= nil) then
+    if streams["fresh_air_fan_speed"] ~= nil then
         keyP["fresh_air_fan_speed"] = streams["fresh_air_fan_speed"]
         keyP["fresh_air_temp"] = streams["fresh_air_temp"]
     end
-    if (jsonType == "control" and streams[keyT["KEY_PARENT_CONTROL"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_PARENT_CONTROL"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_PARENT_CONTROL"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_PARENT_CONTROL"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["parent_control"] = 0x01
-        elseif (streams[keyT["KEY_PARENT_CONTROL"]] ==
-            keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_PARENT_CONTROL"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["parent_control"] = 0x00
         end
     end
-    if (streams["parent_control_temp_up"] ~= nil or
-        keyP["parent_control_temp_down"] ~= nil) then
+    if streams["parent_control_temp_up"] ~= nil or keyP["parent_control_temp_down"] ~= nil then
         keyP["parent_control_temp_up"] = streams["parent_control_temp_up"]
         keyP["parent_control_temp_down"] = streams["parent_control_temp_down"]
     end
-    if (jsonType == "control" and streams[keyT["KEY_NOBODY_ENERGY_SAVE"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_NOBODY_ENERGY_SAVE"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_NOBODY_ENERGY_SAVE"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_NOBODY_ENERGY_SAVE"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["nobody_energy_save"] = 0x01
-        elseif (streams[keyT["KEY_NOBODY_ENERGY_SAVE"]] ==
-            keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_NOBODY_ENERGY_SAVE"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["nobody_energy_save"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_PREVENT_STRAIGHT_WIND_LR"]] ~=
-        nil) then
+    if jsonType == "control" and streams[keyT["KEY_PREVENT_STRAIGHT_WIND_LR"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        keyP["prevent_straight_wind_lr"] = checkBoundary(
-                                               streams[keyT["KEY_PREVENT_STRAIGHT_WIND_LR"]],
-                                               0, 3)
+        keyP["prevent_straight_wind_lr"] = checkBoundary(streams[keyT["KEY_PREVENT_STRAIGHT_WIND_LR"]], 0, 3)
     end
-    if (jsonType == "control" and streams[keyT["KEY_PM25_VALUE"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_PM25_VALUE"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["pm25_value"] = streams[keyT["KEY_PM25_VALUE"]]
     end
-    if (jsonType == "control" and streams[keyT["KEY_WATER_PUMP"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_WATER_PUMP"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_WATER_PUMP"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_WATER_PUMP"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["water_pump"] = 0x01
-        elseif (streams[keyT["KEY_WATER_PUMP"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_WATER_PUMP"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["water_pump"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_WIND_SWING_UD_ANGLE"]] ~=
-        nil) then
+    if jsonType == "control" and streams[keyT["KEY_WIND_SWING_UD_ANGLE"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["wind_swing_ud_angle"] = streams["wind_swing_ud_angle"]
     end
-    if (jsonType == "control" and streams[keyT["KEY_WIND_SWING_LR_ANGLE"]] ~=
-        nil) then
+    if jsonType == "control" and streams[keyT["KEY_WIND_SWING_LR_ANGLE"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["wind_swing_lr_angle"] = streams["wind_swing_lr_angle"]
     end
-    if (jsonType == "control" and streams[keyT["KEY_INTENLLIGENT_CONTROL"]] ~=
-        nil) then
+    if jsonType == "control" and streams[keyT["KEY_INTENLLIGENT_CONTROL"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_INTENLLIGENT_CONTROL"]] ==
-            keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_INTENLLIGENT_CONTROL"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["intelligent_control"] = 0x01
-        elseif (streams[keyT["KEY_INTENLLIGENT_CONTROL"]] ==
-            keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_INTENLLIGENT_CONTROL"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["intelligent_control"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_VOLUME_CONTROL"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_VOLUME_CONTROL"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        keyP["volume_control"] = checkBoundary(
-                                     streams[keyT["KEY_VOLUME_CONTROL"]], 0, 100)
+        keyP["volume_control"] = checkBoundary(streams[keyT["KEY_VOLUME_CONTROL"]], 0, 100)
     end
-    if (jsonType == "control" and streams[keyT["KEY_VOICE_CONTROL_NEW"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_VOICE_CONTROL_NEW"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        keyP["voice_control_new"] = checkBoundary(
-                                        streams[keyT["KEY_VOICE_CONTROL_NEW"]],
-                                        0, 3)
+        keyP["voice_control_new"] = checkBoundary(streams[keyT["KEY_VOICE_CONTROL_NEW"]], 0, 3)
     end
-    if (jsonType == "control" and
-        (streams["wind_swing_ud_angle_up"] ~= nil or
-            streams["wind_swing_ud_angle_down"] ~= nil or
-            streams["app_control_remember_ud"] ~= nil)) then
+    if
+        jsonType == "control"
+        and (
+            streams["wind_swing_ud_angle_up"] ~= nil
+            or streams["wind_swing_ud_angle_down"] ~= nil
+            or streams["app_control_remember_ud"] ~= nil
+        )
+    then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["wind_swing_ud_angle_switch"] = 1
     end
-    if (streams["wind_swing_ud_angle_up"] ~= nil) then
+    if streams["wind_swing_ud_angle_up"] ~= nil then
         keyP["wind_swing_ud_angle_up"] = streams["wind_swing_ud_angle_up"]
     end
-    if (streams["wind_swing_ud_angle_down"] ~= nil) then
+    if streams["wind_swing_ud_angle_down"] ~= nil then
         keyP["wind_swing_ud_angle_down"] = streams["wind_swing_ud_angle_down"]
     end
-    if (streams["app_control_remember_ud"] ~= nil) then
+    if streams["app_control_remember_ud"] ~= nil then
         keyP["app_control_remember_ud"] = streams["app_control_remember_ud"]
     end
-    if (jsonType == "control" and
-        (streams["wind_swing_lr_angle_up"] ~= nil or
-            streams["wind_swing_lr_angle_down"] ~= nil or
-            streams["app_control_remember_lr"] ~= nil)) then
+    if
+        jsonType == "control"
+        and (
+            streams["wind_swing_lr_angle_up"] ~= nil
+            or streams["wind_swing_lr_angle_down"] ~= nil
+            or streams["app_control_remember_lr"] ~= nil
+        )
+    then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["wind_swing_lr_angle_switch"] = 1
     end
-    if (streams["wind_swing_lr_angle_up"] ~= nil) then
+    if streams["wind_swing_lr_angle_up"] ~= nil then
         keyP["wind_swing_lr_angle_up"] = streams["wind_swing_lr_angle_up"]
     end
-    if (streams["wind_swing_lr_angle_down"] ~= nil) then
+    if streams["wind_swing_lr_angle_down"] ~= nil then
         keyP["wind_swing_lr_angle_down"] = streams["wind_swing_lr_angle_down"]
     end
-    if (streams["app_control_remember_lr"] ~= nil) then
+    if streams["app_control_remember_lr"] ~= nil then
         keyP["app_control_remember_lr"] = streams["app_control_remember_lr"]
     end
-    if (jsonType == "control" and streams["auto_prevent_cold_wind"] ~= nil) then
+    if jsonType == "control" and streams["auto_prevent_cold_wind"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["auto_prevent_cold_wind"] = streams["auto_prevent_cold_wind"]
     end
-    if (jsonType == "control" and
-        (streams[keyT["KEY_AUTO_TEMP_UP"]] ~= nil or
-            streams[keyT["KEY_AUTO_TEMP_DOWN"]] ~= nil or
-            streams[keyT["KEY_COOL_TEMP_UP"]] ~= nil or
-            streams[keyT["KEY_COOL_TEMP_DOWN"]] ~= nil or
-            streams[keyT["KEY_HEAT_TEMP_UP"]] ~= nil or
-            streams[keyT["KEY_HEAT_TEMP_DOWN"]] ~= nil)) then
+    if
+        jsonType == "control"
+        and (
+            streams[keyT["KEY_AUTO_TEMP_UP"]] ~= nil
+            or streams[keyT["KEY_AUTO_TEMP_DOWN"]] ~= nil
+            or streams[keyT["KEY_COOL_TEMP_UP"]] ~= nil
+            or streams[keyT["KEY_COOL_TEMP_DOWN"]] ~= nil
+            or streams[keyT["KEY_HEAT_TEMP_UP"]] ~= nil
+            or streams[keyT["KEY_HEAT_TEMP_DOWN"]] ~= nil
+        )
+    then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
     end
-    if (streams["cool_temp_up"] ~= nil) then
-        keyP["cool_temp_up"] = streams["cool_temp_up"]
-    end
-    if (streams["cool_temp_down"] ~= nil) then
-        keyP["cool_temp_down"] = streams["cool_temp_down"]
-    end
-    if (streams["auto_temp_up"] ~= nil) then
-        keyP["auto_temp_up"] = streams["auto_temp_up"]
-    end
-    if (streams["auto_temp_down"] ~= nil) then
-        keyP["auto_temp_down"] = streams["auto_temp_down"]
-    end
-    if (streams["heat_temp_up"] ~= nil) then
-        keyP["heat_temp_up"] = streams["heat_temp_up"]
-    end
-    if (streams["heat_temp_down"] ~= nil) then
-        keyP["heat_temp_down"] = streams["heat_temp_down"]
-    end
-    if (streams[keyT["KEY_POWER_SAVING"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams["cool_temp_up"] ~= nil then keyP["cool_temp_up"] = streams["cool_temp_up"] end
+    if streams["cool_temp_down"] ~= nil then keyP["cool_temp_down"] = streams["cool_temp_down"] end
+    if streams["auto_temp_up"] ~= nil then keyP["auto_temp_up"] = streams["auto_temp_up"] end
+    if streams["auto_temp_down"] ~= nil then keyP["auto_temp_down"] = streams["auto_temp_down"] end
+    if streams["heat_temp_up"] ~= nil then keyP["heat_temp_up"] = streams["heat_temp_up"] end
+    if streams["heat_temp_down"] ~= nil then keyP["heat_temp_down"] = streams["heat_temp_down"] end
+    if streams[keyT["KEY_POWER_SAVING"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["power_saving"] = 0x08
-    elseif (streams[keyT["KEY_POWER_SAVING"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_POWER_SAVING"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["power_saving"] = 0x00
     end
-    if (jsonType == "control" and streams[keyT["KEY_POWER_LOCK"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_POWER_LOCK"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_POWER_LOCK"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_POWER_LOCK"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["power_lock"] = 0x01
-        elseif (streams[keyT["KEY_POWER_LOCK"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_POWER_LOCK"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["power_lock"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_PTC_LOCK"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_PTC_LOCK"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_PTC_LOCK"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_PTC_LOCK"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["ptc_lock"] = 0x01
-        elseif (streams[keyT["KEY_PTC_LOCK"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_PTC_LOCK"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["ptc_lock"] = 0x00
         end
     end
-    if (jsonType == "control" and streams[keyT["KEY_OFFLINE_OPERATING_TIME"]] ~=
-        nil) then
+    if jsonType == "control" and streams[keyT["KEY_OFFLINE_OPERATING_TIME"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["offline_operating_time"] = streams["offline_operating_time"]
     end
-    if (jsonType == "control" and streams[keyT["KEY_REMOTE_CONTROL_LOCK"]] ~=
-        nil) then
+    if jsonType == "control" and streams[keyT["KEY_REMOTE_CONTROL_LOCK"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["remote_control_lock"] = streams["remote_control_lock"]
-        keyP["remote_control_lock_control"] =
-            streams["remote_control_lock_control"]
+        keyP["remote_control_lock_control"] = streams["remote_control_lock_control"]
     end
-    if (jsonType == "control" and streams[keyT["KEY_OPERATING_TIME"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_OPERATING_TIME"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["operating_time"] = streams["operating_time"]
     end
-    if (streams[keyT["KEY_FRESH_FILTER_RESET"]] ~= nil) then
-        if (streams[keyT["KEY_FRESH_FILTER_RESET"]] == 0x01) then
-            keyP["fresh_filter_reset"] = 0x80
-        end
+    if streams[keyT["KEY_FRESH_FILTER_RESET"]] ~= nil then
+        if streams[keyT["KEY_FRESH_FILTER_RESET"]] == 0x01 then keyP["fresh_filter_reset"] = 0x80 end
     end
-    if (jsonType == "control" and streams[keyT["KEY_DEGERMING"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_DEGERMING"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_DEGERMING"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_DEGERMING"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["degerming"] = 0x01
-        elseif (streams[keyT["KEY_DEGERMING"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_DEGERMING"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["degerming"] = 0x00
         end
     end
-    if (jsonType == "control" and streams["light"] ~= nil) then
+    if jsonType == "control" and streams["light"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["light"] = checkBoundary(streams["light"], 0, 100)
     end
-    if (jsonType == "control" and streams[keyT["KEY_WIND_AROUND"]] ~= nil) then
+    if jsonType == "control" and streams[keyT["KEY_WIND_AROUND"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_WIND_AROUND"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_WIND_AROUND"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["wind_around"] = 0x01
-        elseif (streams[keyT["KEY_WIND_AROUND"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_WIND_AROUND"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["wind_around"] = 0x00
         end
     end
-    if (streams["wind_around_ud"] ~= nil) then
-        keyP["wind_around_ud"] = streams["wind_around_ud"]
-    end
-    if (jsonType == "control" and streams[keyT["KEY_WIND_TOP"]] ~= nil) then
+    if streams["wind_around_ud"] ~= nil then keyP["wind_around_ud"] = streams["wind_around_ud"] end
+    if jsonType == "control" and streams[keyT["KEY_WIND_TOP"]] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams[keyT["KEY_WIND_TOP"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_WIND_TOP"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["wind_top"] = 0x01
-        elseif (streams[keyT["KEY_WIND_TOP"]] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_WIND_TOP"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["wind_top"] = 0x00
         end
     end
-    if (jsonType == "control" and streams["child_lock"] ~= nil) then
+    if jsonType == "control" and streams["child_lock"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["child_lock"] = streams["child_lock"]
     end
-    if (jsonType == "control" and streams["ilinkId"] ~= nil) then
-        keyP["ilinkId"] = streams["ilinkId"]
-    end
-    if (jsonType == "control" and streams["ticket"] ~= nil) then
-        keyP["ticket"] = streams["ticket"]
-    end
-    if (jsonType == "control" and streams["buzzer_all"] ~= nil) then
+    if jsonType == "control" and streams["ilinkId"] ~= nil then keyP["ilinkId"] = streams["ilinkId"] end
+    if jsonType == "control" and streams["ticket"] ~= nil then keyP["ticket"] = streams["ticket"] end
+    if jsonType == "control" and streams["buzzer_all"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["buzzer_all"] = streams["buzzer_all"]
     end
-    if (jsonType == "control" and streams["self_remove_odor_phase"] ~= nil) then
+    if jsonType == "control" and streams["self_remove_odor_phase"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["self_remove_odor_phase"] = streams["self_remove_odor_phase"]
     end
-    if (jsonType == "control" and streams["high_temp_remove_odor_alone"] ~= nil) then
+    if jsonType == "control" and streams["high_temp_remove_odor_alone"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        keyP["high_temp_remove_odor_alone"] =
-            streams["high_temp_remove_odor_alone"]
+        keyP["high_temp_remove_odor_alone"] = streams["high_temp_remove_odor_alone"]
     end
-    if (jsonType == "control" and streams["ozone"] ~= nil) then
+    if jsonType == "control" and streams["ozone"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["ozone"] = streams["ozone"]
     end
-    if (jsonType == "control" and streams["soft_warm"] ~= nil) then
+    if jsonType == "control" and streams["soft_warm"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["soft_warm"] = streams["soft_warm"]
     end
-    if (jsonType == "control" and streams["fresh_air_parm"] ~= nil) then
+    if jsonType == "control" and streams["fresh_air_parm"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["fresh_air_parm"] = streams["fresh_air_parm"]
     end
-    if (jsonType == "control" and streams["rewarming_dry"] ~= nil) then
+    if jsonType == "control" and streams["rewarming_dry"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["rewarming_dry"] = streams["rewarming_dry"]
     end
-    if (jsonType == "control" and streams["arom"] ~= nil) then
+    if jsonType == "control" and streams["arom"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["arom"] = streams["arom"]
     end
-    if (streams["arom_fan_speed"] ~= nil) then
-        keyP["arom_fan_speed"] = streams["arom_fan_speed"]
-    end
-    if (streams["arom_time"] ~= nil) then
-        keyP["arom_time"] = streams["arom_time"]
-    end
-    if (streams["arom_time_clean"] ~= nil) then
-        keyP["arom_time_clean"] = streams["arom_time_clean"]
-    end
-    if (streams["arom_time_total"] ~= nil) then
-        keyP["arom_time_total"] = streams["arom_time_total"]
-    end
-    if (jsonType == "control" and streams["new_mode_power"] ~= nil) then
+    if streams["arom_fan_speed"] ~= nil then keyP["arom_fan_speed"] = streams["arom_fan_speed"] end
+    if streams["arom_time"] ~= nil then keyP["arom_time"] = streams["arom_time"] end
+    if streams["arom_time_clean"] ~= nil then keyP["arom_time_clean"] = streams["arom_time_clean"] end
+    if streams["arom_time_total"] ~= nil then keyP["arom_time_total"] = streams["arom_time_total"] end
+    if jsonType == "control" and streams["new_mode_power"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["new_mode_power"] = streams["new_mode_power"]
     end
-    if (jsonType == "control" and streams["new_mode"] ~= nil) then
-        if (streams["new_mode"] == "auto") then
+    if jsonType == "control" and streams["new_mode"] ~= nil then
+        if streams["new_mode"] == "auto" then
             keyP["new_mode"] = 1
-        elseif (streams["new_mode"] == "cool") then
+        elseif streams["new_mode"] == "cool" then
             keyP["new_mode"] = 2
-        elseif (streams["new_mode"] == "dry") then
+        elseif streams["new_mode"] == "dry" then
             keyP["new_mode"] = 3
-        elseif (streams["new_mode"] == "heat") then
+        elseif streams["new_mode"] == "heat" then
             keyP["new_mode"] = 4
-        elseif (streams["new_mode"] == "fan") then
+        elseif streams["new_mode"] == "fan" then
             keyP["new_mode"] = 5
         else
             keyP["new_mode"] = 0
         end
     end
-    if (jsonType == "control" and streams["new_temperature"] ~= nil) then
+    if jsonType == "control" and streams["new_temperature"] ~= nil then
         keyP["new_temperature"] = streams["new_temperature"] * 2
     end
-    if (jsonType == "control" and streams["new_wind_speed"] ~= nil) then
+    if jsonType == "control" and streams["new_wind_speed"] ~= nil then
         keyP["new_wind_speed"] = streams["new_wind_speed"]
     end
-    if (jsonType == "control" and
-        (streams["uvc_remove_odor"] ~= nil or streams["uvc_power_off"] ~= nil)) then
+    if jsonType == "control" and (streams["uvc_remove_odor"] ~= nil or streams["uvc_power_off"] ~= nil) then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
     end
-    if (streams["uvc_remove_odor"] ~= nil) then
-        keyP["uvc_remove_odor"] = streams["uvc_remove_odor"]
+    if streams["uvc_remove_odor"] ~= nil then keyP["uvc_remove_odor"] = streams["uvc_remove_odor"] end
+    if streams["uvc_power_off"] ~= nil then keyP["uvc_power_off"] = streams["uvc_power_off"] end
+    if streams["main_horizontal_guide_strip_1"] ~= nil then
+        keyP["main_horizontal_guide_strip_1"] = streams["main_horizontal_guide_strip_1"]
     end
-    if (streams["uvc_power_off"] ~= nil) then
-        keyP["uvc_power_off"] = streams["uvc_power_off"]
+    if streams["main_horizontal_guide_strip_2"] ~= nil then
+        keyP["main_horizontal_guide_strip_2"] = streams["main_horizontal_guide_strip_2"]
     end
-    if (streams["main_horizontal_guide_strip_1"] ~= nil) then
-        keyP["main_horizontal_guide_strip_1"] =
-            streams["main_horizontal_guide_strip_1"]
+    if streams["main_horizontal_guide_strip_3"] ~= nil then
+        keyP["main_horizontal_guide_strip_3"] = streams["main_horizontal_guide_strip_3"]
     end
-    if (streams["main_horizontal_guide_strip_2"] ~= nil) then
-        keyP["main_horizontal_guide_strip_2"] =
-            streams["main_horizontal_guide_strip_2"]
+    if streams["main_horizontal_guide_strip_4"] ~= nil then
+        keyP["main_horizontal_guide_strip_4"] = streams["main_horizontal_guide_strip_4"]
     end
-    if (streams["main_horizontal_guide_strip_3"] ~= nil) then
-        keyP["main_horizontal_guide_strip_3"] =
-            streams["main_horizontal_guide_strip_3"]
-    end
-    if (streams["main_horizontal_guide_strip_4"] ~= nil) then
-        keyP["main_horizontal_guide_strip_4"] =
-            streams["main_horizontal_guide_strip_4"]
-    end
-    if (jsonType == "control" and
-        (streams["main_horizontal_guide_strip_1"] ~= nil or
-            streams["main_horizontal_guide_strip_2"] ~= nil or
-            streams["main_horizontal_guide_strip_3"] ~= nil or
-            streams["main_horizontal_guide_strip_4"] ~= nil)) then
+    if
+        jsonType == "control"
+        and (
+            streams["main_horizontal_guide_strip_1"] ~= nil
+            or streams["main_horizontal_guide_strip_2"] ~= nil
+            or streams["main_horizontal_guide_strip_3"] ~= nil
+            or streams["main_horizontal_guide_strip_4"] ~= nil
+        )
+    then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["main_strip_control"] = 1
     end
-    if (jsonType == "control" and streams["light_sensitive"] ~= nil) then
+    if jsonType == "control" and streams["light_sensitive"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["light_sensitive"] = streams["light_sensitive"]
     end
-    if (jsonType == "control" and streams["prepare_food"] ~= nil) then
+    if jsonType == "control" and streams["prepare_food"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["prepare_food"] = streams["prepare_food"]
     end
-    if (streams["prepare_food_temp"] ~= nil) then
-        keyP["prepare_food_temp"] = streams["prepare_food_temp"]
-    end
-    if (streams["prepare_food_fan_speed"] ~= nil) then
+    if streams["prepare_food_temp"] ~= nil then keyP["prepare_food_temp"] = streams["prepare_food_temp"] end
+    if streams["prepare_food_fan_speed"] ~= nil then
         keyP["prepare_food_fan_speed"] = streams["prepare_food_fan_speed"]
     end
-    if (jsonType == "control" and streams["quick_fry"] ~= nil) then
+    if jsonType == "control" and streams["quick_fry"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["quick_fry"] = streams["quick_fry"]
     end
-    if (streams["quick_fry_temp"] ~= nil) then
-        keyP["quick_fry_temp"] = streams["quick_fry_temp"]
-    end
-    if (streams["quick_fry_fan_speed"] ~= nil) then
-        keyP["quick_fry_fan_speed"] = streams["quick_fry_fan_speed"]
-    end
-    if (jsonType == "control" and
-        (streams["quick_fry_center_point"] ~= nil or streams["quick_fry_angle"] ~=
-            nil)) then
+    if streams["quick_fry_temp"] ~= nil then keyP["quick_fry_temp"] = streams["quick_fry_temp"] end
+    if streams["quick_fry_fan_speed"] ~= nil then keyP["quick_fry_fan_speed"] = streams["quick_fry_fan_speed"] end
+    if jsonType == "control" and (streams["quick_fry_center_point"] ~= nil or streams["quick_fry_angle"] ~= nil) then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["quick_fry_control"] = 1
     end
-    if (streams["quick_fry_center_point"] ~= nil) then
+    if streams["quick_fry_center_point"] ~= nil then
         keyP["quick_fry_center_point"] = streams["quick_fry_center_point"]
     end
-    if (streams["quick_fry_angle"] ~= nil) then
-        keyP["quick_fry_angle"] = streams["quick_fry_angle"]
-    end
-    if (jsonType == "control" and streams["cool_power_saving"] ~= nil) then
+    if streams["quick_fry_angle"] ~= nil then keyP["quick_fry_angle"] = streams["quick_fry_angle"] end
+    if jsonType == "control" and streams["cool_power_saving"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["cool_power_saving"] = streams["cool_power_saving"]
     end
-    if (jsonType == "control" and streams["jet_cool"] ~= nil) then
+    if jsonType == "control" and streams["jet_cool"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
-        if (streams["jet_cool"] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams["jet_cool"] == keyV["VALUE_FUNCTION_ON"] then
             keyP["jet_cool"] = 0x01
-        elseif (streams["jet_cool"] == keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams["jet_cool"] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["jet_cool"] = 0x00
         end
     end
-    if (jsonType == "control" and streams["dust_full_time_reset"] ~= nil) then
-        if (streams["dust_full_time_reset"] == 0x01) then
-            keyP["dust_full_time_reset"] = 0x40
-        end
+    if jsonType == "control" and streams["dust_full_time_reset"] ~= nil then
+        if streams["dust_full_time_reset"] == 0x01 then keyP["dust_full_time_reset"] = 0x40 end
     end
-    if (streams["swing_ud_button"] ~= nil) then
-        if (streams["swing_ud_button"] == 1) then
+    if streams["swing_ud_button"] ~= nil then
+        if streams["swing_ud_button"] == 1 then
             keyP["swing_ud_button"] = 0x02
         else
             keyP["swing_ud_button"] = streams["swing_ud_button"]
         end
     end
-    if (streams["swing_lr_button"] ~= nil) then
-        keyP["swing_lr_button"] = streams["swing_lr_button"]
-    end
-    if (jsonType == "control" and
-        (streams["ieco_target_rate"] ~= nil or streams["ieco_indoor_wind_speed"] ~=
-            nil or streams["ieco_outdoor_wind_speed"] ~= nil or
-            streams["ieco_frame"] ~= nil or streams["ieco_expansion_valve"] ~=
-            nil or streams["ieco_switch"] ~= nil)) then
+    if streams["swing_lr_button"] ~= nil then keyP["swing_lr_button"] = streams["swing_lr_button"] end
+    if
+        jsonType == "control"
+        and (
+            streams["ieco_target_rate"] ~= nil
+            or streams["ieco_indoor_wind_speed"] ~= nil
+            or streams["ieco_outdoor_wind_speed"] ~= nil
+            or streams["ieco_frame"] ~= nil
+            or streams["ieco_expansion_valve"] ~= nil
+            or streams["ieco_switch"] ~= nil
+        )
+    then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["ieco_status"] = 1
     end
-    if (streams["ieco_switch"] ~= nil) then
-        keyP["ieco_switch"] = streams["ieco_switch"]
-    end
-    if (streams["ieco_target_rate"] ~= nil) then
-        keyP["ieco_target_rate"] = streams["ieco_target_rate"]
-    end
-    if (streams["ieco_indoor_wind_speed"] ~= nil) then
+    if streams["ieco_switch"] ~= nil then keyP["ieco_switch"] = streams["ieco_switch"] end
+    if streams["ieco_target_rate"] ~= nil then keyP["ieco_target_rate"] = streams["ieco_target_rate"] end
+    if streams["ieco_indoor_wind_speed"] ~= nil then
         keyP["ieco_indoor_wind_speed"] = streams["ieco_indoor_wind_speed"]
     end
-    if (streams["ieco_outdoor_wind_speed"] ~= nil) then
+    if streams["ieco_outdoor_wind_speed"] ~= nil then
         keyP["ieco_outdoor_wind_speed"] = streams["ieco_outdoor_wind_speed"]
     end
-    if (streams["ieco_frame"] ~= nil) then
-        keyP["ieco_frame"] = streams["ieco_frame"]
+    if streams["ieco_frame"] ~= nil then keyP["ieco_frame"] = streams["ieco_frame"] end
+    if streams["ieco_expansion_valve"] ~= nil then keyP["ieco_expansion_valve"] = streams["ieco_expansion_valve"] end
+    if streams["ieco_indoor_wind_speed_level"] ~= nil then
+        keyP["ieco_indoor_wind_speed_level"] = streams["ieco_indoor_wind_speed_level"]
     end
-    if (streams["ieco_expansion_valve"] ~= nil) then
-        keyP["ieco_expansion_valve"] = streams["ieco_expansion_valve"]
+    if streams["ieco_outdoor_wind_speed_level"] ~= nil then
+        keyP["ieco_outdoor_wind_speed_level"] = streams["ieco_outdoor_wind_speed_level"]
     end
-    if (streams["ieco_indoor_wind_speed_level"] ~= nil) then
-        keyP["ieco_indoor_wind_speed_level"] =
-            streams["ieco_indoor_wind_speed_level"]
-    end
-    if (streams["ieco_outdoor_wind_speed_level"] ~= nil) then
-        keyP["ieco_outdoor_wind_speed_level"] =
-            streams["ieco_outdoor_wind_speed_level"]
-    end
-    if (streams["ieco_number"] ~= nil) then
-        keyP["ieco_number"] = streams["ieco_number"]
-    end
-    if (streams["has_ieco"] ~= nil) then
-        keyP["has_ieco"] = streams["has_ieco"]
-    end
-    if (jsonType == "control" and streams["swing_lr_under_angle"] ~= nil) then
+    if streams["ieco_number"] ~= nil then keyP["ieco_number"] = streams["ieco_number"] end
+    if streams["has_ieco"] ~= nil then keyP["has_ieco"] = streams["has_ieco"] end
+    if jsonType == "control" and streams["swing_lr_under_angle"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["swing_lr_under_angle"] = streams["swing_lr_under_angle"]
     end
-    if (jsonType == "control" and streams["wait_clean"] ~= nil) then
+    if jsonType == "control" and streams["wait_clean"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["wait_clean"] = streams["wait_clean"]
     end
-    if (jsonType == "control" and streams["self_clean_time"] ~= nil) then
+    if jsonType == "control" and streams["self_clean_time"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["self_clean_time"] = streams["self_clean_time"]
     end
-    if (jsonType == "control" and streams["dry_clean_time"] ~= nil) then
+    if jsonType == "control" and streams["dry_clean_time"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["dry_clean_time"] = streams["dry_clean_time"]
     end
-    if (jsonType == "control" and streams["ptc_load"] ~= nil) then
+    if jsonType == "control" and streams["ptc_load"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["ptc_load"] = streams["ptc_load"]
     end
-    if (jsonType == "control" and streams["defrosting_load"] ~= nil) then
+    if jsonType == "control" and streams["defrosting_load"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["defrosting_load"] = streams["defrosting_load"]
     end
-    if (jsonType == "control" and streams["no_wind_sense_judge_param"] ~= nil) then
+    if jsonType == "control" and streams["no_wind_sense_judge_param"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["no_wind_sense_judge_param"] = streams["no_wind_sense_judge_param"]
     end
-    if (jsonType == "control" and streams["soft_cool"] ~= nil) then
+    if jsonType == "control" and streams["soft_cool"] ~= nil then
         keyP["propertyNumber"] = keyP["propertyNumber"] + 1
         keyP["soft_cool"] = streams["soft_cool"]
     end
-    if (jsonType == "status") then keyP["propertyNumber"] = 0 end
+    if jsonType == "status" then keyP["propertyNumber"] = 0 end
 end
 local function binToModel(binData, deviceSN8)
     local messageBytes = binData
     keyP["analysis_value"] = nil
-    if ((dataType == 0x02 and messageBytes[0] == 0xC0) or
-        (dataType == 0x03 and messageBytes[0] == 0xC0) or
-        (dataType == 0x05 and messageBytes[0] == 0xA0)) then
-        if (#binData < 21) then return nil end
+    if
+        (dataType == 0x02 and messageBytes[0] == 0xC0)
+        or (dataType == 0x03 and messageBytes[0] == 0xC0)
+        or (dataType == 0x05 and messageBytes[0] == 0xA0)
+    then
+        if #binData < 21 then return nil end
         keyP["analysis_value"] =
             "power,mode,temperature,wind_speed,power_on_timer,smart_dry_value,power_off_timer,power_off_time_value,power_on_time_value,ptc,eco,dry,wind_swing_lr,wind_swing_lr_under,wind_swing_ud,kick_quilt,prevent_cold,small_temperature,purifier,dust_full_time,power_saving,fault_tag,screen_display_now,strong_wind,soft_cool"
         keyP["powerValue"] = bit.band(messageBytes[1], 0x01)
         keyP["modeValue"] = bit.band(messageBytes[2], 0xE0)
         keyP["fault_tag"] = bit.rshift(bit.band(messageBytes[1], 0x80), 7)
-        if (keyP["modeValue"] == keyB["BYTE_MODE_SMART_DRY"]) then
-            if (dataType == 0x05) then
+        if keyP["modeValue"] == keyB["BYTE_MODE_SMART_DRY"] then
+            if dataType == 0x05 then
                 keyP["smartDryValue"] = bit.band(messageBytes[13], 0x7F)
             else
                 keyP["smartDryValue"] = bit.band(messageBytes[19], 0x7F)
             end
         end
-        if (dataType == 0x05 and messageBytes[0] == 0xA0) then
-            keyP["is_query"] = 0
-        end
-        if (dataType == 0x05) then
-            if deviceSN8 == "11447" or deviceSN8 == "11451" or deviceSN8 ==
-                "11453" or deviceSN8 == "11455" or deviceSN8 == "11457" or
-                deviceSN8 == "11459" or deviceSN8 == "11525" or deviceSN8 ==
-                "11527" or deviceSN8 == "11533" or deviceSN8 == "11535" then
-                keyP["temperature"] = bit.rshift(
-                                          bit.band(messageBytes[1], 0x7C), 2) +
-                                          0x0C
-                keyP["smallTemperature"] = bit.rshift(
-                                               bit.band(messageBytes[1], 0x02),
-                                               1)
+        if dataType == 0x05 and messageBytes[0] == 0xA0 then keyP["is_query"] = 0 end
+        if dataType == 0x05 then
+            if
+                deviceSN8 == "11447"
+                or deviceSN8 == "11451"
+                or deviceSN8 == "11453"
+                or deviceSN8 == "11455"
+                or deviceSN8 == "11457"
+                or deviceSN8 == "11459"
+                or deviceSN8 == "11525"
+                or deviceSN8 == "11527"
+                or deviceSN8 == "11533"
+                or deviceSN8 == "11535"
+            then
+                keyP["temperature"] = bit.rshift(bit.band(messageBytes[1], 0x7C), 2) + 0x0C
+                keyP["smallTemperature"] = bit.rshift(bit.band(messageBytes[1], 0x02), 1)
             else
-                keyP["temperature"] = bit.rshift(
-                                          bit.band(messageBytes[1], 0x3E), 1) +
-                                          0x0C
-                keyP["smallTemperature"] = bit.rshift(
-                                               bit.band(messageBytes[1], 0x40),
-                                               6)
+                keyP["temperature"] = bit.rshift(bit.band(messageBytes[1], 0x3E), 1) + 0x0C
+                keyP["smallTemperature"] = bit.rshift(bit.band(messageBytes[1], 0x40), 6)
             end
         else
             keyP["temperature"] = bit.band(messageBytes[2], 0x0F) + 0x10
-            keyP["smallTemperature"] = bit.rshift(
-                                           bit.band(messageBytes[2], 0x10), 4)
+            keyP["smallTemperature"] = bit.rshift(bit.band(messageBytes[2], 0x10), 4)
         end
         keyP["fanspeedValue"] = bit.band(messageBytes[3], 0x7F)
-        if (bit.band(messageBytes[4], keyB["BYTE_START_TIMER_SWITCH_ON"]) ==
-            keyB["BYTE_START_TIMER_SWITCH_ON"]) then
+        if bit.band(messageBytes[4], keyB["BYTE_START_TIMER_SWITCH_ON"]) == keyB["BYTE_START_TIMER_SWITCH_ON"] then
             keyP["openTimerSwitch"] = keyB["BYTE_START_TIMER_SWITCH_ON"]
         else
             keyP["openTimerSwitch"] = keyB["BYTE_START_TIMER_SWITCH_OFF"]
         end
-        if (bit.band(messageBytes[5], keyB["BYTE_CLOSE_TIMER_SWITCH_ON"]) ==
-            keyB["BYTE_CLOSE_TIMER_SWITCH_ON"]) then
+        if bit.band(messageBytes[5], keyB["BYTE_CLOSE_TIMER_SWITCH_ON"]) == keyB["BYTE_CLOSE_TIMER_SWITCH_ON"] then
             keyP["closeTimerSwitch"] = keyB["BYTE_CLOSE_TIMER_SWITCH_ON"]
         else
             keyP["closeTimerSwitch"] = keyB["BYTE_CLOSE_TIMER_SWITCH_OFF"]
@@ -1488,30 +1609,25 @@ local function binToModel(binData, deviceSN8)
         keyP["closeHour"] = bit.rshift(bit.band(messageBytes[5], 0x7F), 2)
         keyP["closeStepMintues"] = bit.band(messageBytes[5], 0x03)
         keyP["closeMin"] = 15 - bit.band(messageBytes[6], 0x0f)
-        keyP["closeTime"] = keyP["closeHour"] * 60 + keyP["closeStepMintues"] *
-                                15 + keyP["closeMin"]
+        keyP["closeTime"] = keyP["closeHour"] * 60 + keyP["closeStepMintues"] * 15 + keyP["closeMin"]
         keyP["openHour"] = bit.rshift(bit.band(messageBytes[4], 0x7F), 2)
         keyP["openStepMintues"] = bit.band(messageBytes[4], 0x03)
         keyP["openMin"] = 15 - bit.rshift(bit.band(messageBytes[6], 0xf0), 4)
-        keyP["openTime"] =
-            keyP["openHour"] * 60 + keyP["openStepMintues"] * 15 +
-                keyP["openMin"]
+        keyP["openTime"] = keyP["openHour"] * 60 + keyP["openStepMintues"] * 15 + keyP["openMin"]
         keyP["strongWindValue"] = bit.band(messageBytes[8], 0x20)
         keyP["power_saving"] = bit.band(messageBytes[8], 0x08)
         keyP["comfortableSleepValue"] = bit.band(messageBytes[8], 0x03)
         keyP["comfortableSleepSwitch"] = bit.band(messageBytes[9], 0x40)
-        if (dataType == 0x05) then
+        if dataType == 0x05 then
             keyP["comfortableSleepSwitch"] = bit.band(messageBytes[14], 0x01)
             keyP["naturalWind"] = bit.band(messageBytes[10], 0x40)
             keyP["screenDisplayNowValue"] = bit.band(messageBytes[11], 0x07)
-            keyP["pmv"] =
-                bit.rshift(bit.band(messageBytes[11], 0xF0), 4) * 0.5 - 3.5
+            keyP["pmv"] = bit.rshift(bit.band(messageBytes[11], 0xF0), 4) * 0.5 - 3.5
             keyP["swingLRValueUnder"] = bit.band(messageBytes[9], 0x40)
         else
             keyP["comfortableSleepSwitch"] = bit.band(messageBytes[9], 0x40)
             keyP["naturalWind"] = bit.band(messageBytes[9], 0x02)
-            keyP["screenDisplayNowValue"] =
-                bit.rshift(bit.band(messageBytes[14], 0x70), 4)
+            keyP["screenDisplayNowValue"] = bit.rshift(bit.band(messageBytes[14], 0x70), 4)
             keyP["pmv"] = bit.band(messageBytes[14], 0x0f) * 0.5 - 3.5
             keyP["swingLRValueUnder"] = bit.band(messageBytes[20], 0x80)
         end
@@ -1522,1154 +1638,826 @@ local function binToModel(binData, deviceSN8)
         keyP["swingLRValue"] = bit.band(messageBytes[7], 0x03)
         keyP["swingUDValue"] = bit.band(messageBytes[7], 0x0C)
         keyP["swingLRUnderSwitch"] = bit.band(messageBytes[19], 0x80)
-        if (dataType == 0x02 or dataType == 0x03) then
-            if ((messageBytes[11] ~= 0) and (messageBytes[11] ~= 0xFF)) then
+        if dataType == 0x02 or dataType == 0x03 then
+            if (messageBytes[11] ~= 0) and (messageBytes[11] ~= 0xFF) then
                 keyP["indoorTemperatureValue"] = (messageBytes[11] - 50) / 2
-                keyP["smallIndoorTemperatureValue"] =
-                    bit.band(messageBytes[15], 0xF);
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. ",indoor_temperature"
+                keyP["smallIndoorTemperatureValue"] = bit.band(messageBytes[15], 0xF)
+                keyP["analysis_value"] = keyP["analysis_value"] .. ",indoor_temperature"
             end
-            if ((messageBytes[12] ~= 0) and (messageBytes[12] ~= 0xFF)) then
+            if (messageBytes[12] ~= 0) and (messageBytes[12] ~= 0xFF) then
                 keyP["outdoorTemperatureValue"] = (messageBytes[12] - 50) / 2
-                keyP["smallOutdoorTemperatureValue"] = bit.rshift(
-                                                           messageBytes[15], 4);
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. ",outdoor_temperature"
+                keyP["smallOutdoorTemperatureValue"] = bit.rshift(messageBytes[15], 4)
+                keyP["analysis_value"] = keyP["analysis_value"] .. ",outdoor_temperature"
             end
         end
         keyP["errorCode"] = messageBytes[16]
-        if (dataType == 0x02 or dataType == 0x03) then
-            keyP["dust_full_time"] = bit.rshift(
-                                         bit.band(messageBytes[13], 0x20), 5)
+        if dataType == 0x02 or dataType == 0x03 then
+            keyP["dust_full_time"] = bit.rshift(bit.band(messageBytes[13], 0x20), 5)
         end
         keyP["kickQuilt"] = bit.rshift(bit.band(messageBytes[10], 0x04), 2)
-        if (dataType == 0x05) then
-            keyP["preventCold"] =
-                bit.rshift(bit.band(messageBytes[10], 0x08), 3)
+        if dataType == 0x05 then
+            keyP["preventCold"] = bit.rshift(bit.band(messageBytes[10], 0x08), 3)
         else
-            keyP["preventCold"] =
-                bit.rshift(bit.band(messageBytes[10], 0x20), 5)
+            keyP["preventCold"] = bit.rshift(bit.band(messageBytes[10], 0x20), 5)
         end
-        if (dataType == 0x05) then
+        if dataType == 0x05 then
             local temp = bit.rshift(bit.band(messageBytes[12], 0x3E), 1)
-            if (temp > 0 and temp <= 25) then
-                keyP["temperature"] = temp + 12
-            end
+            if temp > 0 and temp <= 25 then keyP["temperature"] = temp + 12 end
         else
             local temp = bit.band(messageBytes[13], 0x1F)
-            if (temp > 0 and temp <= 25) then
-                keyP["temperature"] = temp + 12
-            end
+            if temp > 0 and temp <= 25 then keyP["temperature"] = temp + 12 end
         end
-        if (dataType == 0x05) then
+        if dataType == 0x05 then
             keyP["arom_old"] = bit.rshift(bit.band(messageBytes[21], 0x80), 7)
             keyP["analysis_value"] = keyP["analysis_value"] .. ",arom_old"
         end
-        if (messageBytes[0] == 0xA0) then
+        if messageBytes[0] == 0xA0 then
             keyP["comfortPowerSave"] = bit.band(messageBytes[14], 0x01)
-            keyP["analysis_value"] = keyP["analysis_value"] ..
-                                         ",comfort_power_save"
+            keyP["analysis_value"] = keyP["analysis_value"] .. ",comfort_power_save"
         else
-            if (#binData >= 24) then
+            if #binData >= 24 then
                 keyP["comfortPowerSave"] = bit.band(messageBytes[22], 0x01)
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. ",comfort_power_save"
+                keyP["analysis_value"] = keyP["analysis_value"] .. ",comfort_power_save"
             end
         end
-        if (#binData >= 29) then
-            if (dataType == 0x02 or dataType == 0x03) then
-                keyP["fresh_filter_time_total"] =
-                    messageBytes[25] * 256 + messageBytes[24]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. ",fresh_filter_time_total"
+        if #binData >= 29 then
+            if dataType == 0x02 or dataType == 0x03 then
+                keyP["fresh_filter_time_total"] = messageBytes[25] * 256 + messageBytes[24]
+                keyP["analysis_value"] = keyP["analysis_value"] .. ",fresh_filter_time_total"
             end
-            keyP["fresh_filter_time_use"] =
-                messageBytes[27] * 256 + messageBytes[26]
-            keyP["fresh_filter_timeout"] = bit.rshift(
-                                               bit.band(messageBytes[13], 0x40),
-                                               6)
-            keyP["analysis_value"] = keyP["analysis_value"] ..
-                                         ",fresh_filter_time_use,fresh_filter_timeout"
+            keyP["fresh_filter_time_use"] = messageBytes[27] * 256 + messageBytes[26]
+            keyP["fresh_filter_timeout"] = bit.rshift(bit.band(messageBytes[13], 0x40), 6)
+            keyP["analysis_value"] = keyP["analysis_value"] .. ",fresh_filter_time_use,fresh_filter_timeout"
         end
-        if (#binData >= 37) then
+        if #binData >= 37 then
             keyP["jet_cool"] = bit.rshift(bit.band(messageBytes[37], 0x08), 3)
             keyP["quick_fry"] = bit.rshift(bit.band(messageBytes[37], 0x20), 5)
-            keyP["prepare_food"] = bit.rshift(bit.band(messageBytes[37], 0x40),
-                                              6)
+            keyP["prepare_food"] = bit.rshift(bit.band(messageBytes[37], 0x40), 6)
             keyP["soft_cool"] = bit.rshift(bit.band(messageBytes[37], 0x80), 7)
         end
-        if (dataType == 0x05) then
-            keyP["fresh_filter_time_use"] =
-                messageBytes[16] * 256 + messageBytes[15]
-            keyP["analysis_value"] = keyP["analysis_value"] ..
-                                         ",fresh_filter_time_use"
+        if dataType == 0x05 then
+            keyP["fresh_filter_time_use"] = messageBytes[16] * 256 + messageBytes[15]
+            keyP["analysis_value"] = keyP["analysis_value"] .. ",fresh_filter_time_use"
         end
-        if (dataType == 0x05) then
-            if (#binData >= 42) then
-                keyP["quick_fry_center_point"] =
-                    bit.band(messageBytes[42], 0x7F)
-            end
+        if dataType == 0x05 then
+            if #binData >= 42 then keyP["quick_fry_center_point"] = bit.band(messageBytes[42], 0x7F) end
         end
     end
-    if ((dataType == 0x04 and messageBytes[0] == 0xA1)) then
+    if dataType == 0x04 and messageBytes[0] == 0xA1 then
         keyP["is_query"] = 0
-        keyP["currentWorkTime"] = bit.bor((bit.band(
-                                              bit.lshift(messageBytes[9], 8),
-                                              0xFF00)),
-                                          (bit.band(messageBytes[10], 0x00FF))) *
-                                      60 * 24 + messageBytes[11] * 60 +
-                                      messageBytes[12]
+        keyP["currentWorkTime"] = bit.bor(
+            (bit.band(bit.lshift(messageBytes[9], 8), 0xFF00)),
+            (bit.band(messageBytes[10], 0x00FF))
+        ) * 60 * 24 + messageBytes[11] * 60 + messageBytes[12]
         keyP["analysis_value"] = "current_work_time"
-        if (messageBytes[13] ~= 0x00 and messageBytes[13] ~= 0xff) then
+        if messageBytes[13] ~= 0x00 and messageBytes[13] ~= 0xff then
             keyP["indoorTemperatureValue"] = (messageBytes[13] - 50) / 2
-            keyP["smallIndoorTemperatureValue"] =
-                bit.band(messageBytes[18], 0xF);
-            keyP["analysis_value"] = keyP["analysis_value"] ..
-                                         ",indoor_temperature"
+            keyP["smallIndoorTemperatureValue"] = bit.band(messageBytes[18], 0xF)
+            keyP["analysis_value"] = keyP["analysis_value"] .. ",indoor_temperature"
         end
-        if (messageBytes[14] ~= 0x00 and messageBytes[14] ~= 0xff) then
+        if messageBytes[14] ~= 0x00 and messageBytes[14] ~= 0xff then
             keyP["outdoorTemperatureValue"] = (messageBytes[14] - 50) / 2
-            keyP["smallOutdoorTemperatureValue"] =
-                bit.rshift(messageBytes[18], 4);
-            keyP["analysis_value"] = keyP["analysis_value"] ..
-                                         ",outdoor_temperature"
+            keyP["smallOutdoorTemperatureValue"] = bit.rshift(messageBytes[18], 4)
+            keyP["analysis_value"] = keyP["analysis_value"] .. ",outdoor_temperature"
         end
     end
-    if (messageBytes[0] == 0xC1) then
-        if (messageBytes[3] == 0x40) then
+    if messageBytes[0] == 0xC1 then
+        if messageBytes[3] == 0x40 then
             keyP["analysis_value"] =
                 "electrify_time_day,electrify_time_day,electrify_time_hour,electrify_time_min,electrify_time_second,total_operating_time_day,total_operating_time_hour,total_operating_time_min,total_operating_time_second,current_operating_time_day,current_operating_time_hour,current_operating_time_min,current_operating_time_second"
-            keyP["electrify_time_day"] =
-                bit.bor(messageBytes[5], bit.bor(bit.lshift(messageBytes[4], 8)))
+            keyP["electrify_time_day"] = bit.bor(messageBytes[5], bit.bor(bit.lshift(messageBytes[4], 8)))
             keyP["electrify_time_hour"] = messageBytes[6]
             keyP["electrify_time_min"] = messageBytes[7]
             keyP["electrify_time_second"] = messageBytes[8]
-            keyP["total_operating_time_day"] =
-                bit.bor(messageBytes[10],
-                        bit.bor(bit.lshift(messageBytes[9], 8)))
+            keyP["total_operating_time_day"] = bit.bor(messageBytes[10], bit.bor(bit.lshift(messageBytes[9], 8)))
             keyP["total_operating_time_hour"] = messageBytes[11]
             keyP["total_operating_time_min"] = messageBytes[12]
             keyP["total_operating_time_second"] = messageBytes[13]
-            keyP["current_operating_time_day"] =
-                bit.bor(messageBytes[15],
-                        bit.bor(bit.lshift(messageBytes[14], 8)))
+            keyP["current_operating_time_day"] = bit.bor(messageBytes[15], bit.bor(bit.lshift(messageBytes[14], 8)))
             keyP["current_operating_time_hour"] = messageBytes[16]
             keyP["current_operating_time_min"] = messageBytes[17]
             keyP["current_operating_time_second"] = messageBytes[18]
         end
-        if (messageBytes[3] == 0x44) then
+        if messageBytes[3] == 0x44 then
             keyP["analysis_value"] =
                 "total_power_consumption,total_operating_consumption,current_operating_consumption,current_time_power"
-            keyP["total_power_consumption"] =
-                bcd2Int(messageBytes[4]) * 10000 + bcd2Int(messageBytes[5]) *
-                    100 + bcd2Int(messageBytes[6]) + bcd2Int(messageBytes[7]) /
-                    100
-            keyP["total_operating_consumption"] =
-                bcd2Int(messageBytes[8]) * 10000 + bcd2Int(messageBytes[9]) *
-                    100 + bcd2Int(messageBytes[10]) + bcd2Int(messageBytes[11]) /
-                    100
-            keyP["current_operating_consumption"] =
-                bcd2Int(messageBytes[12]) * 10000 + bcd2Int(messageBytes[13]) *
-                    100 + bcd2Int(messageBytes[14]) + bcd2Int(messageBytes[15]) /
-                    100
-            keyP["current_time_power"] =
-                bcd2Int(messageBytes[16]) + bcd2Int(messageBytes[17]) / 100 +
-                    bcd2Int(messageBytes[18]) / 10000
+            keyP["total_power_consumption"] = bcd2Int(messageBytes[4]) * 10000
+                + bcd2Int(messageBytes[5]) * 100
+                + bcd2Int(messageBytes[6])
+                + bcd2Int(messageBytes[7]) / 100
+            keyP["total_operating_consumption"] = bcd2Int(messageBytes[8]) * 10000
+                + bcd2Int(messageBytes[9]) * 100
+                + bcd2Int(messageBytes[10])
+                + bcd2Int(messageBytes[11]) / 100
+            keyP["current_operating_consumption"] = bcd2Int(messageBytes[12]) * 10000
+                + bcd2Int(messageBytes[13]) * 100
+                + bcd2Int(messageBytes[14])
+                + bcd2Int(messageBytes[15]) / 100
+            keyP["current_time_power"] = bcd2Int(messageBytes[16])
+                + bcd2Int(messageBytes[17]) / 100
+                + bcd2Int(messageBytes[18]) / 10000
         end
-        if (messageBytes[3] == 0x41) then
-            keyP["t2_temp"] = (messageBytes[11] - 30) / 2
-        end
+        if messageBytes[3] == 0x41 then keyP["t2_temp"] = (messageBytes[11] - 30) / 2 end
     end
-    if (dataType == 0x05 and messageBytes[0] == 0xB5) then
-        if (#binData < 7) then return nil end
+    if dataType == 0x05 and messageBytes[0] == 0xB5 then
+        if #binData < 7 then return nil end
         keyP["propertyNumber"] = messageBytes[1]
         keyP["analysis_value"] = ""
         local cursor = 2
         for i = 1, keyP["propertyNumber"] do
-            if (messageBytes[cursor + 0] == 0x49 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x49 and messageBytes[cursor + 1] == 0x00 then
                 keyP["prevent_super_cool"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "prevent_super_cool,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "prevent_super_cool,"
                 cursor = cursor + 8
             end
-            if (messageBytes[cursor + 0] == 0x42 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x42 and messageBytes[cursor + 1] == 0x00 then
                 keyP["prevent_straight_wind"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "prevent_straight_wind,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "prevent_straight_wind,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x26 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x26 and messageBytes[cursor + 1] == 0x02 then
                 keyP["auto_prevent_straight_wind"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "auto_prevent_straight_wind,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "auto_prevent_straight_wind,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x11 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x11 and messageBytes[cursor + 1] == 0x02 then
                 keyP["ptc_default_rule"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "ptc_default_rule,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "ptc_default_rule,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x39 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x39 and messageBytes[cursor + 1] == 0x00 then
                 keyP["self_clean"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "self_clean,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x32 and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 3] == 0x01) then
+            if messageBytes[cursor + 0] == 0x32 and messageBytes[cursor + 1] == 0x00 then
+                if messageBytes[cursor + 3] == 0x01 then
                     keyP["wind_straight"] = 0x01
-                    keyP["analysis_value"] =
-                        keyP["analysis_value"] .. "wind_straight,"
+                    keyP["analysis_value"] = keyP["analysis_value"] .. "wind_straight,"
                 end
-                if (messageBytes[cursor + 3] == 0x02) then
+                if messageBytes[cursor + 3] == 0x02 then
                     keyP["wind_avoid"] = 0x01
                     keyP["yb_wind_avoid"] = 0x02
-                    keyP["analysis_value"] =
-                        keyP["analysis_value"] .. "wind_avoid,yb_wind_avoid,"
+                    keyP["analysis_value"] = keyP["analysis_value"] .. "wind_avoid,yb_wind_avoid,"
                 end
-                if (messageBytes[cursor + 3] == 0x00) then
+                if messageBytes[cursor + 3] == 0x00 then
                     keyP["wind_straight"] = 0x00
                     keyP["wind_avoid"] = 0x00
                     keyP["yb_wind_avoid"] = 0x00
-                    keyP["analysis_value"] =
-                        keyP["analysis_value"] ..
-                            "wind_straight,wind_avoid,yb_wind_avoid,"
+                    keyP["analysis_value"] = keyP["analysis_value"] .. "wind_straight,wind_avoid,yb_wind_avoid,"
                 end
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x33 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x33 and messageBytes[cursor + 1] == 0x00 then
                 keyP["wind_avoid"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "wind_avoid,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x34 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x34 and messageBytes[cursor + 1] == 0x00 then
                 keyP["intelligent_wind"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "intelligent_wind,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "intelligent_wind,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x3A and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x3A and messageBytes[cursor + 1] == 0x00 then
                 keyP["child_prevent_cold_wind"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "child_prevent_cold_wind,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "child_prevent_cold_wind,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x18 and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 2] == 0x02) then
+            if messageBytes[cursor + 0] == 0x18 and messageBytes[cursor + 1] == 0x00 then
+                if messageBytes[cursor + 2] == 0x02 then
                     keyP["fn_no_wind_sense"] = messageBytes[cursor + 3]
                     keyP["no_wind_sense_level"] = messageBytes[cursor + 4]
-                    keyP["analysis_value"] =
-                        keyP["analysis_value"] ..
-                            "fn_no_wind_sense,no_wind_sense_level,"
+                    keyP["analysis_value"] = keyP["analysis_value"] .. "fn_no_wind_sense,no_wind_sense_level,"
                     cursor = cursor + 5
                 else
                     keyP["no_wind_sense"] = messageBytes[cursor + 3]
-                    keyP["analysis_value"] =
-                        keyP["analysis_value"] .. "no_wind_sense,"
+                    keyP["analysis_value"] = keyP["analysis_value"] .. "no_wind_sense,"
                     cursor = cursor + 4
                 end
             end
-            if (messageBytes[cursor + 0] == 0x1B and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x1B and messageBytes[cursor + 1] == 0x02 then
                 keyP["little_angel"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "little_angel,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "little_angel,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x21 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x21 and messageBytes[cursor + 1] == 0x00 then
                 keyP["cool_hot_sense"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "cool_hot_sense,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "cool_hot_sense,"
                 cursor = cursor + 11
             end
-            if (messageBytes[cursor + 0] == 0x29 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x29 and messageBytes[cursor + 1] == 0x00 then
                 keyP["security"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "security,"
-                if (messageBytes[cursor + 3] == 2) then
-                    keyP["security"] = 0
-                end
-                if (messageBytes[cursor + 3] == 3) then
-                    keyP["security"] = 1
-                end
+                if messageBytes[cursor + 3] == 2 then keyP["security"] = 0 end
+                if messageBytes[cursor + 3] == 3 then keyP["security"] = 1 end
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x4E and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x4E and messageBytes[cursor + 1] == 0x00 then
                 keyP["even_wind"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "even_wind,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x4F and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x4F and messageBytes[cursor + 1] == 0x00 then
                 keyP["single_tuyere"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "single_tuyere,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "single_tuyere,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x4C and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x4C and messageBytes[cursor + 1] == 0x00 then
                 keyP["extreme_wind"] = messageBytes[cursor + 3]
                 keyP["extreme_wind_level"] = messageBytes[cursor + 4]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "extreme_wind,extreme_wind_level,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "extreme_wind,extreme_wind_level,"
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x20 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x20 and messageBytes[cursor + 1] == 0x00 then
                 keyP["voice_control"] = messageBytes[cursor + 3]
                 keyP["voice_control_new"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "voice_control,voice_control_new,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "voice_control,voice_control_new,"
                 cursor = cursor + 23
             end
-            if (messageBytes[cursor + 0] == 0x01 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x01 and messageBytes[cursor + 1] == 0x02 then
                 keyP["pre_cool_hot"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "pre_cool_hot,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "pre_cool_hot,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x4A and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x4A and messageBytes[cursor + 1] == 0x00 then
                 keyP["water_washing_manual"] = messageBytes[cursor + 3]
                 keyP["water_washing"] = messageBytes[cursor + 4]
                 keyP["water_washing_time"] = messageBytes[cursor + 5]
                 keyP["water_washing_stage"] = messageBytes[cursor + 6]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] ..
-                        "water_washing_manual,water_washing,water_washing_time,water_washing_stage,"
+                keyP["analysis_value"] = keyP["analysis_value"]
+                    .. "water_washing_manual,water_washing,water_washing_time,water_washing_stage,"
                 cursor = cursor + 7
             end
-            if (messageBytes[cursor + 0] == 0x4B and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x4B and messageBytes[cursor + 1] == 0x00 then
                 keyP["fresh_air"] = messageBytes[cursor + 3]
                 keyP["fresh_air_fan_speed"] = messageBytes[cursor + 4]
                 keyP["fresh_air_temp"] = messageBytes[cursor + 5]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] ..
-                        "fresh_air,fresh_air_fan_speed,fresh_air_temp,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "fresh_air,fresh_air_fan_speed,fresh_air_temp,"
                 cursor = cursor + 6
             end
-            if (messageBytes[cursor + 0] == 0x51 and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 2] == 0x00) then
+            if messageBytes[cursor + 0] == 0x51 and messageBytes[cursor + 1] == 0x00 then
+                if messageBytes[cursor + 2] == 0x00 then
                     cursor = cursor + 3
                 else
                     keyP["parent_control"] = messageBytes[cursor + 3]
                     keyP["parent_control_temp_up"] = messageBytes[cursor + 4]
                     keyP["parent_control_temp_down"] = messageBytes[cursor + 5]
-                    keyP["analysis_value"] =
-                        keyP["analysis_value"] ..
-                            "parent_control,parent_control_temp_up,parent_control_temp_down,"
+                    keyP["analysis_value"] = keyP["analysis_value"]
+                        .. "parent_control,parent_control_temp_up,parent_control_temp_down,"
                     cursor = cursor + 8
                 end
             end
-            if (messageBytes[cursor + 0] == 0x43 and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 3] == 0x01 or messageBytes[cursor + 3] ==
-                    0x00) then
+            if messageBytes[cursor + 0] == 0x43 and messageBytes[cursor + 1] == 0x00 then
+                if messageBytes[cursor + 3] == 0x01 or messageBytes[cursor + 3] == 0x00 then
                     keyP["gentle_wind_sense"] = 0x01
                     keyP["fa_prevent_straight_wind"] = 0x01
-                    keyP["analysis_value"] =
-                        keyP["analysis_value"] ..
-                            "gentle_wind_sense,fa_prevent_straight_wind,"
+                    keyP["analysis_value"] = keyP["analysis_value"] .. "gentle_wind_sense,fa_prevent_straight_wind,"
                 end
-                if (messageBytes[cursor + 3] == 0x02) then
+                if messageBytes[cursor + 3] == 0x02 then
                     keyP["gentle_wind_sense"] = 0x01
                     keyP["fa_prevent_straight_wind"] = 0x02
-                    keyP["analysis_value"] =
-                        keyP["analysis_value"] ..
-                            "gentle_wind_sense,fa_prevent_straight_wind,"
+                    keyP["analysis_value"] = keyP["analysis_value"] .. "gentle_wind_sense,fa_prevent_straight_wind,"
                 end
-                if (messageBytes[cursor + 3] == 0x03) then
+                if messageBytes[cursor + 3] == 0x03 then
                     keyP["gentle_wind_sense"] = 0x03
-                    keyP["analysis_value"] =
-                        keyP["analysis_value"] .. "gentle_wind_sense,"
+                    keyP["analysis_value"] = keyP["analysis_value"] .. "gentle_wind_sense,"
                 end
-                if (messageBytes[cursor + 3] == 0x04) then
+                if messageBytes[cursor + 3] == 0x04 then
                     keyP["gentle_wind_sense"] = 0x01
-                    keyP["analysis_value"] =
-                        keyP["analysis_value"] .. "gentle_wind_sense,"
+                    keyP["analysis_value"] = keyP["analysis_value"] .. "gentle_wind_sense,"
                 end
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x30 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x30 and messageBytes[cursor + 1] == 0x00 then
                 keyP["nobody_energy_save"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "nobody_energy_save,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "nobody_energy_save,"
                 cursor = cursor + 9
             end
-            if (messageBytes[cursor + 0] == 0x09 and messageBytes[cursor + 1] ==
-                0x04) then
+            if messageBytes[cursor + 0] == 0x09 and messageBytes[cursor + 1] == 0x04 then
                 keyP["filter_level"] = messageBytes[cursor + 4]
                 keyP["filter_value"] = messageBytes[cursor + 13]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "filter_level,filter_value,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "filter_level,filter_value,"
                 cursor = cursor + 16
             end
-            if (messageBytes[cursor + 0] == 0x58 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x58 and messageBytes[cursor + 1] == 0x00 then
                 keyP["prevent_straight_wind_lr"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "prevent_straight_wind_lr,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "prevent_straight_wind_lr,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x0B and messageBytes[cursor + 1] ==
-                0x02) then
-                keyP["pm25_value"] = messageBytes[cursor + 5] * 256 +
-                                         messageBytes[cursor + 4]
+            if messageBytes[cursor + 0] == 0x0B and messageBytes[cursor + 1] == 0x02 then
+                keyP["pm25_value"] = messageBytes[cursor + 5] * 256 + messageBytes[cursor + 4]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "pm25_value,"
                 cursor = cursor + 6
             end
-            if (messageBytes[cursor + 0] == 0x50 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x50 and messageBytes[cursor + 1] == 0x00 then
                 keyP["water_pump"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "water_pump,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x31 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x31 and messageBytes[cursor + 1] == 0x00 then
                 keyP["intelligent_control"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "intelligent_control,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "intelligent_control,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x24 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x24 and messageBytes[cursor + 1] == 0x00 then
                 keyP["volume_control"] = messageBytes[cursor + 4]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "volume_control,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "volume_control,"
                 cursor = cursor + 7
             end
-            if (messageBytes[cursor + 0] == 0x09 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x09 and messageBytes[cursor + 1] == 0x00 then
                 keyP["wind_swing_ud_angle"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "wind_swing_ud_angle,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "wind_swing_ud_angle,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x0A and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x0A and messageBytes[cursor + 1] == 0x00 then
                 keyP["wind_swing_lr_angle"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "wind_swing_lr_angle,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "wind_swing_lr_angle,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x44 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x44 and messageBytes[cursor + 1] == 0x00 then
                 keyP["face_register"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "face_register,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "face_register,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x5A and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x5A and messageBytes[cursor + 1] == 0x00 then
                 keyP["degerming"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "degerming,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x5B and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x5B and messageBytes[cursor + 1] == 0x00 then
                 keyP["light"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "light,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x61 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x61 and messageBytes[cursor + 1] == 0x00 then
                 keyP["wind_top"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "wind_top,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x59 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x59 and messageBytes[cursor + 1] == 0x00 then
                 keyP["wind_around"] = messageBytes[cursor + 3]
                 keyP["wind_around_ud"] = messageBytes[cursor + 4]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "wind_around,wind_around_ud,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "wind_around,wind_around_ud,"
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x1A and messageBytes[cursor + 1] ==
-                0x00) then cursor = cursor + 4 end
-            if (messageBytes[cursor + 0] == 0x25 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x1A and messageBytes[cursor + 1] == 0x00 then cursor = cursor + 4 end
+            if messageBytes[cursor + 0] == 0x25 and messageBytes[cursor + 1] == 0x02 then
                 keyP["cool_temp_down"] = messageBytes[cursor + 3]
                 keyP["cool_temp_up"] = messageBytes[cursor + 4]
                 keyP["auto_temp_down"] = messageBytes[cursor + 5]
                 keyP["auto_temp_up"] = messageBytes[cursor + 6]
                 keyP["heat_temp_down"] = messageBytes[cursor + 7]
                 keyP["heat_temp_up"] = messageBytes[cursor + 8]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] ..
-                        "cool_temp_down,cool_temp_up,auto_temp_down,auto_temp_up,heat_temp_down,heat_temp_up,"
+                keyP["analysis_value"] = keyP["analysis_value"]
+                    .. "cool_temp_down,cool_temp_up,auto_temp_down,auto_temp_up,heat_temp_down,heat_temp_up,"
                 cursor = cursor + 10
             end
-            if (messageBytes[cursor + 0] == 0x79 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x79 and messageBytes[cursor + 1] == 0x00 then
                 keyP["wind_swing_ud_angle_up"] = messageBytes[cursor + 3]
                 keyP["wind_swing_ud_angle_down"] = messageBytes[cursor + 4]
                 keyP["app_control_remember_ud"] = messageBytes[cursor + 5]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] ..
-                        "wind_swing_ud_angle_up,wind_swing_ud_angle_down,app_control_remember_ud,"
+                keyP["analysis_value"] = keyP["analysis_value"]
+                    .. "wind_swing_ud_angle_up,wind_swing_ud_angle_down,app_control_remember_ud,"
                 cursor = cursor + 6
             end
-            if (messageBytes[cursor + 0] == 0x7A and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x7A and messageBytes[cursor + 1] == 0x00 then
                 keyP["wind_swing_lr_angle_up"] = messageBytes[cursor + 3]
                 keyP["wind_swing_lr_angle_down"] = messageBytes[cursor + 4]
                 keyP["app_control_remember_lr"] = messageBytes[cursor + 5]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] ..
-                        "wind_swing_lr_angle_up,wind_swing_lr_angle_down,app_control_remember_lr,"
+                keyP["analysis_value"] = keyP["analysis_value"]
+                    .. "wind_swing_lr_angle_up,wind_swing_lr_angle_down,app_control_remember_lr,"
                 cursor = cursor + 6
             end
-            if (messageBytes[cursor + 0] == 0x78 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x78 and messageBytes[cursor + 1] == 0x00 then
                 keyP["auto_prevent_cold_wind"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "auto_prevent_cold_wind,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "auto_prevent_cold_wind,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x27 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x27 and messageBytes[cursor + 1] == 0x02 then
                 keyP["power_lock"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "power_lock,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x29 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x29 and messageBytes[cursor + 1] == 0x02 then
                 keyP["ptc_lock"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "ptc_lock,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x2B and messageBytes[cursor + 1] ==
-                0x02) then
-                keyP["offline_operating_time"] = bit.bor(bit.lshift(
-                                                             messageBytes[cursor +
-                                                                 4], 8),
-                                                         messageBytes[cursor + 3])
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "offline_operating_time,"
+            if messageBytes[cursor + 0] == 0x2B and messageBytes[cursor + 1] == 0x02 then
+                keyP["offline_operating_time"] =
+                    bit.bor(bit.lshift(messageBytes[cursor + 4], 8), messageBytes[cursor + 3])
+                keyP["analysis_value"] = keyP["analysis_value"] .. "offline_operating_time,"
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x28 and messageBytes[cursor + 1] ==
-                0x02) then
-                keyP["operating_time"] =
-                    bit.bor(messageBytes[cursor + 3],
-                            bit.bor(bit.lshift(messageBytes[cursor + 4], 8),
-                                    bit.lshift(messageBytes[cursor + 5], 16)))
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "operating_time,"
+            if messageBytes[cursor + 0] == 0x28 and messageBytes[cursor + 1] == 0x02 then
+                keyP["operating_time"] = bit.bor(
+                    messageBytes[cursor + 3],
+                    bit.bor(bit.lshift(messageBytes[cursor + 4], 8), bit.lshift(messageBytes[cursor + 5], 16))
+                )
+                keyP["analysis_value"] = keyP["analysis_value"] .. "operating_time,"
                 cursor = cursor + 6
             end
-            if (messageBytes[cursor + 0] == 0x15 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x15 and messageBytes[cursor + 1] == 0x00 then
                 keyP["indoor_humidity"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "indoor_humidity,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "indoor_humidity,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x5C and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x5C and messageBytes[cursor + 1] == 0x00 then
                 keyP["child_lock"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "child_lock,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x2C and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x2C and messageBytes[cursor + 1] == 0x02 then
                 keyP["buzzer_all"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "buzzer_all,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x5D and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x5D and messageBytes[cursor + 1] == 0x00 then
                 keyP["self_remove_odor_phase"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "self_remove_odor_phase,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "self_remove_odor_phase,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x5E and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x5E and messageBytes[cursor + 1] == 0x00 then
                 keyP["high_temp_remove_odor_alone"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "high_temp_remove_odor_alone,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "high_temp_remove_odor_alone,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x5F and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x5F and messageBytes[cursor + 1] == 0x00 then
                 keyP["ozone"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "ozone,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x63 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x63 and messageBytes[cursor + 1] == 0x00 then
                 keyP["soft_warm"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "soft_warm,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x50 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x50 and messageBytes[cursor + 1] == 0x02 then
                 keyP["fresh_air_parm"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "fresh_air_parm,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "fresh_air_parm,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x68 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x68 and messageBytes[cursor + 1] == 0x00 then
                 keyP["rewarming_dry"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "rewarming_dry,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "rewarming_dry,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x69 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x69 and messageBytes[cursor + 1] == 0x00 then
                 keyP["arom"] = messageBytes[cursor + 3]
                 keyP["arom_fan_speed"] = messageBytes[cursor + 4]
                 keyP["arom_time_clean"] = messageBytes[cursor + 5]
-                keyP["arom_time"] = bit.bor(
-                                        bit.lshift(messageBytes[cursor + 7], 8),
-                                        messageBytes[cursor + 6])
-                keyP["arom_time_total"] = bit.bor(bit.lshift(
-                                                      messageBytes[cursor + 9],
-                                                      8),
-                                                  messageBytes[cursor + 8])
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] ..
-                        "arom,arom_fan_speed,arom_time_clean,arom_time,arom_time_total,"
+                keyP["arom_time"] = bit.bor(bit.lshift(messageBytes[cursor + 7], 8), messageBytes[cursor + 6])
+                keyP["arom_time_total"] = bit.bor(bit.lshift(messageBytes[cursor + 9], 8), messageBytes[cursor + 8])
+                keyP["analysis_value"] = keyP["analysis_value"]
+                    .. "arom,arom_fan_speed,arom_time_clean,arom_time,arom_time_total,"
                 cursor = cursor + 10
             end
-            if (messageBytes[cursor + 0] == 0x30 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x30 and messageBytes[cursor + 1] == 0x02 then
                 keyP["main_horizontal_guide_strip_1"] = messageBytes[cursor + 3]
                 keyP["main_horizontal_guide_strip_2"] = messageBytes[cursor + 4]
                 keyP["main_horizontal_guide_strip_3"] = messageBytes[cursor + 5]
                 keyP["main_horizontal_guide_strip_4"] = messageBytes[cursor + 6]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] ..
-                        "main_horizontal_guide_strip_1,main_horizontal_guide_strip_2,main_horizontal_guide_strip_3,main_horizontal_guide_strip_4,"
+                keyP["analysis_value"] = keyP["analysis_value"]
+                    .. "main_horizontal_guide_strip_1,main_horizontal_guide_strip_2,main_horizontal_guide_strip_3,main_horizontal_guide_strip_4,"
                 cursor = cursor + 7
             end
-            if (messageBytes[cursor + 0] == 0x6F and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x6F and messageBytes[cursor + 1] == 0x00 then
                 keyP["uvc_remove_odor"] = messageBytes[cursor + 3]
                 keyP["uvc_power_off"] = messageBytes[cursor + 4]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "uvc_remove_odor,uvc_power_off,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "uvc_remove_odor,uvc_power_off,"
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x08 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x08 and messageBytes[cursor + 1] == 0x02 then
                 keyP["light_sensitive"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "light_sensitive,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "light_sensitive,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x54 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x54 and messageBytes[cursor + 1] == 0x02 then
                 keyP["prepare_food"] = messageBytes[cursor + 3]
                 keyP["prepare_food_temp"] = messageBytes[cursor + 4]
                 keyP["prepare_food_fan_speed"] = messageBytes[cursor + 5]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] ..
-                        "prepare_food,prepare_food_temp,prepare_food_fan_speed,"
+                keyP["analysis_value"] = keyP["analysis_value"]
+                    .. "prepare_food,prepare_food_temp,prepare_food_fan_speed,"
                 cursor = cursor + 6
             end
-            if (messageBytes[cursor + 0] == 0x55 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x55 and messageBytes[cursor + 1] == 0x02 then
                 keyP["quick_fry"] = messageBytes[cursor + 3]
                 keyP["quick_fry_temp"] = messageBytes[cursor + 4]
                 keyP["quick_fry_fan_speed"] = messageBytes[cursor + 5]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] ..
-                        "quick_fry,quick_fry_temp,quick_fry_fan_speed,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "quick_fry,quick_fry_temp,quick_fry_fan_speed,"
                 cursor = cursor + 6
             end
-            if (messageBytes[cursor + 0] == 0x89 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x89 and messageBytes[cursor + 1] == 0x00 then
                 keyP["cool_power_saving"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "cool_power_saving,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "cool_power_saving,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x67 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x67 and messageBytes[cursor + 1] == 0x00 then
                 keyP["jet_cool"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "jet_cool,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x8B and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x8B and messageBytes[cursor + 1] == 0x00 then
                 keyP["quick_fry_center_point"] = messageBytes[cursor + 3]
                 keyP["quick_fry_angle"] = messageBytes[cursor + 4]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] ..
-                        "quick_fry_center_point,quick_fry_angle,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "quick_fry_center_point,quick_fry_angle,"
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x96 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x96 and messageBytes[cursor + 1] == 0x00 then
                 keyP["swing_lr_under_angle"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "swing_lr_under_angle,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "swing_lr_under_angle,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x99 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x99 and messageBytes[cursor + 1] == 0x00 then
                 keyP["wait_clean"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "wait_clean,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x9A and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x9A and messageBytes[cursor + 1] == 0x00 then
                 keyP["self_clean_stage"] = messageBytes[cursor + 3]
                 keyP["self_clean_time"] = messageBytes[cursor + 4]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] ..
-                        "self_clean_time,self_clean_stage,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "self_clean_time,self_clean_stage,"
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x9B and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x9B and messageBytes[cursor + 1] == 0x00 then
                 keyP["dry_clean_stage"] = messageBytes[cursor + 3]
                 keyP["dry_clean_time"] = messageBytes[cursor + 4]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "dry_clean_time,dry_clean_stage"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "dry_clean_time,dry_clean_stage"
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0xA0 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0xA0 and messageBytes[cursor + 1] == 0x00 then
                 keyP["ptc_load"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "ptc_load,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0x9E and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x9E and messageBytes[cursor + 1] == 0x00 then
                 keyP["soft_cool"] = messageBytes[cursor + 3]
                 keyP["analysis_value"] = keyP["analysis_value"] .. "soft_cool,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0xA8 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0xA8 and messageBytes[cursor + 1] == 0x00 then
                 keyP["defrosting_load"] = messageBytes[cursor + 3]
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] .. "defrosting_load,"
+                keyP["analysis_value"] = keyP["analysis_value"] .. "defrosting_load,"
                 cursor = cursor + 4
             end
-            if (messageBytes[cursor + 0] == 0xE2 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0xE2 and messageBytes[cursor + 1] == 0x00 then
                 keyP["left_down_real_wind_speed"] = messageBytes[cursor + 15]
                 keyP["right_up_real_wind_speed"] = messageBytes[cursor + 45]
-                keyP["defrosting_load"] =
-                    bit.band(messageBytes[cursor + 16], 0x01)
-                keyP["ptc_load"] = bit.rshift(bit.band(
-                                                  messageBytes[cursor + 16],
-                                                  0x02), 1)
+                keyP["defrosting_load"] = bit.band(messageBytes[cursor + 16], 0x01)
+                keyP["ptc_load"] = bit.rshift(bit.band(messageBytes[cursor + 16], 0x02), 1)
                 keyP["self_clean_stage"] = messageBytes[cursor + 42]
                 keyP["self_clean_time"] = messageBytes[cursor + 43]
-                keyP["dry_clean_stage"] =
-                    bit.rshift(bit.band(messageBytes[cursor + 44], 0x80), 7)
-                keyP["dry_clean_time"] =
-                    bit.band(messageBytes[cursor + 44], 0x7F)
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] ..
-                        "defrosting_load,ptc_load,dry_clean_stage,dry_clean_time,self_clean_stage,self_clean_time,"
+                keyP["dry_clean_stage"] = bit.rshift(bit.band(messageBytes[cursor + 44], 0x80), 7)
+                keyP["dry_clean_time"] = bit.band(messageBytes[cursor + 44], 0x7F)
+                keyP["analysis_value"] = keyP["analysis_value"]
+                    .. "defrosting_load,ptc_load,dry_clean_stage,dry_clean_time,self_clean_stage,self_clean_time,"
                 cursor = cursor + messageBytes[cursor + 2] + 3
             end
-            if (messageBytes[cursor + 0] == 0xE1 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0xE1 and messageBytes[cursor + 1] == 0x00 then
                 cursor = cursor + messageBytes[cursor + 2] + 3
             end
-            if (messageBytes[cursor + 0] == 0xE0 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0xE0 and messageBytes[cursor + 1] == 0x00 then
                 cursor = cursor + messageBytes[cursor + 2] + 3
             end
-            if (messageBytes[cursor + 0] == 0x7E and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x7E and messageBytes[cursor + 1] == 0x00 then
                 cursor = cursor - 1
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] ..
-                        "power,mode,temperature,wind_speed,power_on_timer,smart_dry_value,power_off_timer,power_off_time_value,power_on_time_value,ptc,eco,dry,wind_swing_lr,wind_swing_lr_under,wind_swing_ud,kick_quilt,prevent_cold,small_temperature,purifier,dust_full_time,power_saving,fault_tag,screen_display_now,strong_wind"
+                keyP["analysis_value"] = keyP["analysis_value"]
+                    .. "power,mode,temperature,wind_speed,power_on_timer,smart_dry_value,power_off_timer,power_off_time_value,power_on_time_value,ptc,eco,dry,wind_swing_lr,wind_swing_lr_under,wind_swing_ud,kick_quilt,prevent_cold,small_temperature,purifier,dust_full_time,power_saving,fault_tag,screen_display_now,strong_wind"
                 keyP["propertyNumber"] = 0
                 keyP["powerValue"] = bit.band(messageBytes[cursor + 5], 0x01)
                 keyP["modeValue"] = bit.band(messageBytes[cursor + 6], 0xE0)
-                if (dataType == 0x05) then
-                    if deviceSN8 == "11447" or deviceSN8 == "11451" or deviceSN8 ==
-                        "11453" or deviceSN8 == "11455" or deviceSN8 == "11457" or
-                        deviceSN8 == "11459" or deviceSN8 == "11525" or
-                        deviceSN8 == "11527" or deviceSN8 == "11533" or
-                        deviceSN8 == "11535" then
-                        keyP["temperature"] =
-                            bit.rshift(bit.band(
-                                           messageBytes[cursor + 5], 0x7C), 2) +
-                                0x0C
-                        keyP["smallTemperature"] =
-                            bit.rshift(bit.band(
-                                           messageBytes[cursor + 5], 0x02), 1)
+                if dataType == 0x05 then
+                    if
+                        deviceSN8 == "11447"
+                        or deviceSN8 == "11451"
+                        or deviceSN8 == "11453"
+                        or deviceSN8 == "11455"
+                        or deviceSN8 == "11457"
+                        or deviceSN8 == "11459"
+                        or deviceSN8 == "11525"
+                        or deviceSN8 == "11527"
+                        or deviceSN8 == "11533"
+                        or deviceSN8 == "11535"
+                    then
+                        keyP["temperature"] = bit.rshift(bit.band(messageBytes[cursor + 5], 0x7C), 2) + 0x0C
+                        keyP["smallTemperature"] = bit.rshift(bit.band(messageBytes[cursor + 5], 0x02), 1)
                     else
-                        keyP["temperature"] =
-                            bit.rshift(bit.band(
-                                           messageBytes[cursor + 5], 0x3E), 1) +
-                                0x0C
-                        keyP["smallTemperature"] =
-                            bit.rshift(bit.band(
-                                           messageBytes[cursor + 5], 0x40), 6)
+                        keyP["temperature"] = bit.rshift(bit.band(messageBytes[cursor + 5], 0x3E), 1) + 0x0C
+                        keyP["smallTemperature"] = bit.rshift(bit.band(messageBytes[cursor + 5], 0x40), 6)
                     end
                 end
                 keyP["fanspeedValue"] = bit.band(messageBytes[cursor + 7], 0x7F)
-                if (bit.band(messageBytes[cursor + 8],
-                             keyB["BYTE_START_TIMER_SWITCH_ON"]) ==
-                    keyB["BYTE_START_TIMER_SWITCH_ON"]) then
+                if
+                    bit.band(messageBytes[cursor + 8], keyB["BYTE_START_TIMER_SWITCH_ON"])
+                    == keyB["BYTE_START_TIMER_SWITCH_ON"]
+                then
                     keyP["openTimerSwitch"] = keyB["BYTE_START_TIMER_SWITCH_ON"]
                 else
-                    keyP["openTimerSwitch"] =
-                        keyB["BYTE_START_TIMER_SWITCH_OFF"]
+                    keyP["openTimerSwitch"] = keyB["BYTE_START_TIMER_SWITCH_OFF"]
                 end
-                if (bit.band(messageBytes[cursor + 9],
-                             keyB["BYTE_CLOSE_TIMER_SWITCH_ON"]) ==
-                    keyB["BYTE_CLOSE_TIMER_SWITCH_ON"]) then
-                    keyP["closeTimerSwitch"] =
-                        keyB["BYTE_CLOSE_TIMER_SWITCH_ON"]
+                if
+                    bit.band(messageBytes[cursor + 9], keyB["BYTE_CLOSE_TIMER_SWITCH_ON"])
+                    == keyB["BYTE_CLOSE_TIMER_SWITCH_ON"]
+                then
+                    keyP["closeTimerSwitch"] = keyB["BYTE_CLOSE_TIMER_SWITCH_ON"]
                 else
-                    keyP["closeTimerSwitch"] =
-                        keyB["BYTE_CLOSE_TIMER_SWITCH_OFF"]
+                    keyP["closeTimerSwitch"] = keyB["BYTE_CLOSE_TIMER_SWITCH_OFF"]
                 end
-                keyP["closeHour"] = bit.rshift(bit.band(
-                                                   messageBytes[cursor + 9],
-                                                   0x7F), 2)
-                keyP["closeStepMintues"] =
-                    bit.band(messageBytes[cursor + 9], 0x03)
-                keyP["closeMin"] = 15 -
-                                       bit.band(messageBytes[cursor + 10], 0x0f)
-                keyP["closeTime"] = keyP["closeHour"] * 60 +
-                                        keyP["closeStepMintues"] * 15 +
-                                        keyP["closeMin"]
-                keyP["openHour"] = bit.rshift(
-                                       bit.band(messageBytes[cursor + 8], 0x7F),
-                                       2)
-                keyP["openStepMintues"] =
-                    bit.band(messageBytes[cursor + 8], 0x03)
-                keyP["openMin"] = 15 -
-                                      bit.rshift(
-                                          bit.band(messageBytes[cursor + 10],
-                                                   0xf0), 4)
-                keyP["openTime"] = keyP["openHour"] * 60 +
-                                       keyP["openStepMintues"] * 15 +
-                                       keyP["openMin"]
-                keyP["strongWindValue"] =
-                    bit.band(messageBytes[cursor + 12], 0x20)
+                keyP["closeHour"] = bit.rshift(bit.band(messageBytes[cursor + 9], 0x7F), 2)
+                keyP["closeStepMintues"] = bit.band(messageBytes[cursor + 9], 0x03)
+                keyP["closeMin"] = 15 - bit.band(messageBytes[cursor + 10], 0x0f)
+                keyP["closeTime"] = keyP["closeHour"] * 60 + keyP["closeStepMintues"] * 15 + keyP["closeMin"]
+                keyP["openHour"] = bit.rshift(bit.band(messageBytes[cursor + 8], 0x7F), 2)
+                keyP["openStepMintues"] = bit.band(messageBytes[cursor + 8], 0x03)
+                keyP["openMin"] = 15 - bit.rshift(bit.band(messageBytes[cursor + 10], 0xf0), 4)
+                keyP["openTime"] = keyP["openHour"] * 60 + keyP["openStepMintues"] * 15 + keyP["openMin"]
+                keyP["strongWindValue"] = bit.band(messageBytes[cursor + 12], 0x20)
                 keyP["power_saving"] = bit.band(messageBytes[cursor + 12], 0x08)
-                keyP["comfortableSleepValue"] = bit.band(
-                                                    messageBytes[cursor + 12],
-                                                    0x03)
-                keyP["comfortableSleepSwitch"] = bit.band(
-                                                     messageBytes[cursor + 12],
-                                                     0x40)
-                if (dataType == 0x05) then
-                    keyP["comfortableSleepSwitch"] = bit.band(
-                                                         messageBytes[cursor +
-                                                             18], 0x01)
-                    keyP["naturalWind"] =
-                        bit.band(messageBytes[cursor + 14], 0x40)
-                    keyP["screenDisplayNowValue"] = bit.band(
-                                                        messageBytes[cursor + 15],
-                                                        0x07)
-                    keyP["pmv"] = bit.rshift(
-                                      bit.band(messageBytes[cursor + 15], 0xF0),
-                                      4) * 0.5 - 3.5
-                    keyP["swingLRValueUnder"] = bit.band(
-                                                    messageBytes[cursor + 13],
-                                                    0x40)
+                keyP["comfortableSleepValue"] = bit.band(messageBytes[cursor + 12], 0x03)
+                keyP["comfortableSleepSwitch"] = bit.band(messageBytes[cursor + 12], 0x40)
+                if dataType == 0x05 then
+                    keyP["comfortableSleepSwitch"] = bit.band(messageBytes[cursor + 18], 0x01)
+                    keyP["naturalWind"] = bit.band(messageBytes[cursor + 14], 0x40)
+                    keyP["screenDisplayNowValue"] = bit.band(messageBytes[cursor + 15], 0x07)
+                    keyP["pmv"] = bit.rshift(bit.band(messageBytes[cursor + 15], 0xF0), 4) * 0.5 - 3.5
+                    keyP["swingLRValueUnder"] = bit.band(messageBytes[cursor + 13], 0x40)
                 end
                 keyP["PTCValue"] = bit.band(messageBytes[cursor + 13], 0x08)
-                keyP["purifierValue"] =
-                    bit.band(messageBytes[cursor + 13], 0x20)
-                keyP["inner_purifier"] =
-                    bit.rshift(bit.band(messageBytes[cursor + 13], 0x20), 5)
-                keyP["ecoValue"] = bit.lshift(bit.band(
-                                                  messageBytes[cursor + 13],
-                                                  0x10), 3)
+                keyP["purifierValue"] = bit.band(messageBytes[cursor + 13], 0x20)
+                keyP["inner_purifier"] = bit.rshift(bit.band(messageBytes[cursor + 13], 0x20), 5)
+                keyP["ecoValue"] = bit.lshift(bit.band(messageBytes[cursor + 13], 0x10), 3)
                 keyP["dryValue"] = bit.band(messageBytes[cursor + 13], 0x04)
                 keyP["swingLRValue"] = bit.band(messageBytes[cursor + 11], 0x03)
-                keyP["wind_swing_lr_right"] = bit.band(
-                                                  messageBytes[cursor + 11],
-                                                  0x01)
-                keyP["wind_swing_lr_left"] =
-                    bit.band(messageBytes[cursor + 11], 0x02)
+                keyP["wind_swing_lr_right"] = bit.band(messageBytes[cursor + 11], 0x01)
+                keyP["wind_swing_lr_left"] = bit.band(messageBytes[cursor + 11], 0x02)
                 keyP["swingUDValue"] = bit.band(messageBytes[cursor + 11], 0x0C)
-                keyP["wind_swing_ud_right"] = bit.band(
-                                                  messageBytes[cursor + 11],
-                                                  0x04)
-                keyP["wind_swing_ud_left"] =
-                    bit.band(messageBytes[cursor + 11], 0x08)
-                keyP["swingLRUnderSwitch"] =
-                    bit.band(messageBytes[cursor + 23], 0x80)
+                keyP["wind_swing_ud_right"] = bit.band(messageBytes[cursor + 11], 0x04)
+                keyP["wind_swing_ud_left"] = bit.band(messageBytes[cursor + 11], 0x08)
+                keyP["swingLRUnderSwitch"] = bit.band(messageBytes[cursor + 23], 0x80)
                 keyP["errorCode"] = messageBytes[cursor + 20]
-                keyP["kickQuilt"] = bit.rshift(bit.band(
-                                                   messageBytes[cursor + 14],
-                                                   0x04), 2)
-                keyP["preventCold"] = bit.rshift(bit.band(
-                                                     messageBytes[cursor + 14],
-                                                     0x08), 3)
-                local temp = bit.rshift(
-                                 bit.band(messageBytes[cursor + 16], 0x3E), 1)
-                if (temp > 0 and temp <= 25) then
-                    keyP["temperature"] = temp + 12
+                keyP["kickQuilt"] = bit.rshift(bit.band(messageBytes[cursor + 14], 0x04), 2)
+                keyP["preventCold"] = bit.rshift(bit.band(messageBytes[cursor + 14], 0x08), 3)
+                local temp = bit.rshift(bit.band(messageBytes[cursor + 16], 0x3E), 1)
+                if temp > 0 and temp <= 25 then keyP["temperature"] = temp + 12 end
+                if messageBytes[cursor + 4] == 0xA0 then
+                    keyP["arom_old"] = bit.rshift(bit.band(messageBytes[cursor + 25], 0x80), 7)
                 end
-                if (messageBytes[cursor + 4] == 0xA0) then
-                    keyP["arom_old"] = bit.rshift(bit.band(
-                                                      messageBytes[cursor + 25],
-                                                      0x80), 7)
+                keyP["comfortPowerSave"] = bit.band(messageBytes[cursor + 18], 0x01)
+                keyP["rewarming_dry"] = bit.rshift(bit.band(messageBytes[cursor + 27], 0x02), 1)
+                if #binData >= 24 then keyP["wind_speed_right"] = bit.band(messageBytes[cursor + 28], 0x7F) end
+                if #binData >= 26 then
+                    keyP["indoor_co2"] = bit.bor(bit.lshift(messageBytes[cursor + 30], 8), messageBytes[cursor + 29])
+                    keyP["whirl_wind_right"] = bit.rshift(bit.band(messageBytes[cursor + 31], 0x08), 3)
+                    keyP["whirl_wind_left"] = bit.rshift(bit.band(messageBytes[cursor + 31], 0x04), 2)
+                    keyP["analysis_value"] = keyP["analysis_value"] .. ",indoor_co2,whirl_wind_left,whirl_wind_right"
                 end
-                keyP["comfortPowerSave"] =
-                    bit.band(messageBytes[cursor + 18], 0x01)
-                keyP["rewarming_dry"] = bit.rshift(bit.band(
-                                                       messageBytes[cursor + 27],
-                                                       0x02), 1)
-                if (#binData >= 24) then
-                    keyP["wind_speed_right"] = bit.band(
-                                                   messageBytes[cursor + 28],
-                                                   0x7F)
-                end
-                if (#binData >= 26) then
-                    keyP["indoor_co2"] = bit.bor(bit.lshift(
-                                                     messageBytes[cursor + 30],
-                                                     8),
-                                                 messageBytes[cursor + 29])
-                    keyP["whirl_wind_right"] =
-                        bit.rshift(bit.band(
-                                       messageBytes[cursor + 31], 0x08), 3)
-                    keyP["whirl_wind_left"] =
-                        bit.rshift(bit.band(
-                                       messageBytes[cursor + 31], 0x04), 2)
-                    keyP["analysis_value"] =
-                        keyP["analysis_value"] ..
-                            ",indoor_co2,whirl_wind_left,whirl_wind_right"
-                end
-                keyP["self_clean"] = bit.rshift(bit.band(
-                                                    messageBytes[cursor + 12],
-                                                    0x04), 2)
-                keyP["prevent_super_cool"] =
-                    bit.rshift(bit.band(messageBytes[cursor + 22], 0x40), 6)
-                keyP["no_wind_sense_left"] =
-                    bit.band(messageBytes[cursor + 31], 0x01) + 1
-                keyP["no_wind_sense_right"] =
-                    bit.rshift(bit.band(messageBytes[cursor + 31], 0x02), 1) + 1
-                keyP["moisturizing"] = bit.rshift(bit.band(
-                                                      messageBytes[cursor + 31],
-                                                      0x80), 7)
-                keyP["linkage"] = bit.rshift(
-                                      bit.band(messageBytes[cursor + 31], 0x20),
-                                      5)
-                keyP["linkage_sync"] = bit.rshift(bit.band(
-                                                      messageBytes[cursor + 31],
-                                                      0x40), 6)
-                keyP["no_wind_sense"] = bit.rshift(bit.band(
-                                                       messageBytes[cursor + 18],
-                                                       0x08), 3)
-                keyP["prevent_straight_wind"] =
-                    bit.rshift(bit.band(messageBytes[cursor + 18], 0x40), 6)
-                if (keyP["prevent_straight_wind"] == 1) then
+                keyP["self_clean"] = bit.rshift(bit.band(messageBytes[cursor + 12], 0x04), 2)
+                keyP["prevent_super_cool"] = bit.rshift(bit.band(messageBytes[cursor + 22], 0x40), 6)
+                keyP["no_wind_sense_left"] = bit.band(messageBytes[cursor + 31], 0x01) + 1
+                keyP["no_wind_sense_right"] = bit.rshift(bit.band(messageBytes[cursor + 31], 0x02), 1) + 1
+                keyP["moisturizing"] = bit.rshift(bit.band(messageBytes[cursor + 31], 0x80), 7)
+                keyP["linkage"] = bit.rshift(bit.band(messageBytes[cursor + 31], 0x20), 5)
+                keyP["linkage_sync"] = bit.rshift(bit.band(messageBytes[cursor + 31], 0x40), 6)
+                keyP["no_wind_sense"] = bit.rshift(bit.band(messageBytes[cursor + 18], 0x08), 3)
+                keyP["prevent_straight_wind"] = bit.rshift(bit.band(messageBytes[cursor + 18], 0x40), 6)
+                if keyP["prevent_straight_wind"] == 1 then
                     keyP["prevent_straight_wind"] = 2
-                elseif (keyP["prevent_straight_wind"] == 0) then
+                elseif keyP["prevent_straight_wind"] == 0 then
                     keyP["prevent_straight_wind"] = 1
                 end
-                keyP["wind_swing_ud_angle"] = bit.band(
-                                                  messageBytes[cursor + 21],
-                                                  0x0F)
-                if (keyP["wind_swing_ud_angle"] == 2) then
+                keyP["wind_swing_ud_angle"] = bit.band(messageBytes[cursor + 21], 0x0F)
+                if keyP["wind_swing_ud_angle"] == 2 then
                     keyP["wind_swing_ud_angle"] = 13
-                elseif (keyP["wind_swing_ud_angle"] == 3) then
+                elseif keyP["wind_swing_ud_angle"] == 3 then
                     keyP["wind_swing_ud_angle"] = 25
-                elseif (keyP["wind_swing_ud_angle"] == 4) then
+                elseif keyP["wind_swing_ud_angle"] == 4 then
                     keyP["wind_swing_ud_angle"] = 38
-                elseif (keyP["wind_swing_ud_angle"] == 5) then
+                elseif keyP["wind_swing_ud_angle"] == 5 then
                     keyP["wind_swing_ud_angle"] = 50
-                elseif (keyP["wind_swing_ud_angle"] == 6) then
+                elseif keyP["wind_swing_ud_angle"] == 6 then
                     keyP["wind_swing_ud_angle"] = 62
-                elseif (keyP["wind_swing_ud_angle"] == 7) then
+                elseif keyP["wind_swing_ud_angle"] == 7 then
                     keyP["wind_swing_ud_angle"] = 75
-                elseif (keyP["wind_swing_ud_angle"] == 8) then
+                elseif keyP["wind_swing_ud_angle"] == 8 then
                     keyP["wind_swing_ud_angle"] = 88
-                elseif (keyP["wind_swing_ud_angle"] == 9) then
+                elseif keyP["wind_swing_ud_angle"] == 9 then
                     keyP["wind_swing_ud_angle"] = 100
                 end
-                keyP["wind_swing_lr_angle"] =
-                    bit.rshift(bit.band(messageBytes[cursor + 21], 0xF0), 4)
-                if (keyP["wind_swing_lr_angle"] == 2) then
+                keyP["wind_swing_lr_angle"] = bit.rshift(bit.band(messageBytes[cursor + 21], 0xF0), 4)
+                if keyP["wind_swing_lr_angle"] == 2 then
                     keyP["wind_swing_lr_angle"] = 13
-                elseif (keyP["wind_swing_lr_angle"] == 3) then
+                elseif keyP["wind_swing_lr_angle"] == 3 then
                     keyP["wind_swing_lr_angle"] = 25
-                elseif (keyP["wind_swing_lr_angle"] == 4) then
+                elseif keyP["wind_swing_lr_angle"] == 4 then
                     keyP["wind_swing_lr_angle"] = 38
-                elseif (keyP["wind_swing_lr_angle"] == 5) then
+                elseif keyP["wind_swing_lr_angle"] == 5 then
                     keyP["wind_swing_lr_angle"] = 50
-                elseif (keyP["wind_swing_lr_angle"] == 6) then
+                elseif keyP["wind_swing_lr_angle"] == 6 then
                     keyP["wind_swing_lr_angle"] = 62
-                elseif (keyP["wind_swing_lr_angle"] == 7) then
+                elseif keyP["wind_swing_lr_angle"] == 7 then
                     keyP["wind_swing_lr_angle"] = 75
-                elseif (keyP["wind_swing_lr_angle"] == 8) then
+                elseif keyP["wind_swing_lr_angle"] == 8 then
                     keyP["wind_swing_lr_angle"] = 88
-                elseif (keyP["wind_swing_lr_angle"] == 9) then
+                elseif keyP["wind_swing_lr_angle"] == 9 then
                     keyP["wind_swing_lr_angle"] = 100
                 end
-                keyP["degerming"] = bit.rshift(bit.band(
-                                                   messageBytes[cursor + 23],
-                                                   0x02), 1)
-                if (messageBytes[cursor + 3] >= 33) then
-                    keyP["fresh_air_mode"] =
-                        bit.band(messageBytes[cursor + 37], 0x0F)
-                    keyP["fresh_air_mode_two"] =
-                        bit.rshift(bit.band(
-                                       messageBytes[cursor + 37], 0x30), 4)
-                    keyP["inner_purifier_mode"] =
-                        bit.rshift(bit.band(
-                                       messageBytes[cursor + 37], 0x40), 6)
+                keyP["degerming"] = bit.rshift(bit.band(messageBytes[cursor + 23], 0x02), 1)
+                if messageBytes[cursor + 3] >= 33 then
+                    keyP["fresh_air_mode"] = bit.band(messageBytes[cursor + 37], 0x0F)
+                    keyP["fresh_air_mode_two"] = bit.rshift(bit.band(messageBytes[cursor + 37], 0x30), 4)
+                    keyP["inner_purifier_mode"] = bit.rshift(bit.band(messageBytes[cursor + 37], 0x40), 6)
                     keyP["moisturizing_fan_speed"] = messageBytes[cursor + 36]
                     keyP["fresh_air_fan_speed"] = messageBytes[cursor + 38]
                     keyP["inner_purifier_fan_speed"] = messageBytes[cursor + 39]
                     keyP["indoor_humidity"] = messageBytes[cursor + 40]
-                    keyP["five_dimension_mode"] = bit.band(
-                                                      messageBytes[cursor + 41],
-                                                      0x03)
-                    keyP["total_status_switch"] =
-                        bit.rshift(bit.band(
-                                       messageBytes[cursor + 41], 0x04), 2)
-                    keyP["wind_no_linkage"] =
-                        bit.rshift(bit.band(
-                                       messageBytes[cursor + 41], 0x10), 4)
-                    keyP["soft_cool"] = bit.rshift(bit.band(
-                                                       messageBytes[cursor + 41],
-                                                       0x80), 7)
-                    keyP["analysis_value"] =
-                        keyP["analysis_value"] ..
-                            ",fresh_air_mode,fresh_air_mode_two,inner_purifier_mode,moisturizing_fan_speed,fresh_air_fan_speed,inner_purifier_fan_speed,indoor_humidity,five_dimension_mode,total_status_switch,wind_no_linkage,soft_cool"
+                    keyP["five_dimension_mode"] = bit.band(messageBytes[cursor + 41], 0x03)
+                    keyP["total_status_switch"] = bit.rshift(bit.band(messageBytes[cursor + 41], 0x04), 2)
+                    keyP["wind_no_linkage"] = bit.rshift(bit.band(messageBytes[cursor + 41], 0x10), 4)
+                    keyP["soft_cool"] = bit.rshift(bit.band(messageBytes[cursor + 41], 0x80), 7)
+                    keyP["analysis_value"] = keyP["analysis_value"]
+                        .. ",fresh_air_mode,fresh_air_mode_two,inner_purifier_mode,moisturizing_fan_speed,fresh_air_fan_speed,inner_purifier_fan_speed,indoor_humidity,five_dimension_mode,total_status_switch,wind_no_linkage,soft_cool"
                 end
-                keyP["ieco_switch"] = bit.rshift(bit.band(
-                                                     messageBytes[cursor + 45],
-                                                     0x10), 4)
-                keyP["cool_power_saving"] =
-                    bit.rshift(bit.band(messageBytes[cursor + 45], 0x10), 4)
-                keyP["linkage_fan_speed"] =
-                    bit.band(messageBytes[cursor + 42], 0x7F)
-                keyP["indoorTemperatureValue"] =
-                    (messageBytes[cursor + 44] - 50) / 2
-                keyP["smallIndoorTemperatureValue"] = bit.band(
-                                                          messageBytes[cursor +
-                                                              45], 0x0F)
-                keyP["fresh_air"] = bit.rshift(bit.band(
-                                                   messageBytes[cursor + 22],
-                                                   0x80), 7)
-                keyP["ptc_default_rule"] =
-                    bit.rshift(bit.band(messageBytes[cursor + 27], 0x20), 5)
-                keyP["light_sensitive"] =
-                    bit.rshift(bit.band(messageBytes[cursor + 27], 0xC0), 6)
-                keyP["analysis_value"] =
-                    keyP["analysis_value"] ..
-                        ",rewarming_dry,self_clean,no_wind_sense_left,prevent_super_cool,no_wind_sense_right,moisturizing,linkage,linkage_sync,no_wind_sense,prevent_straight_wind,wind_swing_ud_angle,degerming,ieco_switch,linkage_fan_speed,indoor_temperature,fresh_air,ptc_default_rule,light_sensitive,fresh_filter_time_use,wind_swing_lr_angle,cool_power_saving"
-                if (#binData >= 29) then
-                    keyP["fresh_filter_time_total"] =
-                        messageBytes[cursor + 29] * 256 +
-                            messageBytes[cursor + 28]
-                    keyP["fresh_filter_time_use"] =
-                        messageBytes[cursor + 31] * 256 +
-                            messageBytes[cursor + 30]
-                    keyP["fresh_filter_timeout"] =
-                        bit.rshift(bit.band(
-                                       messageBytes[cursor + 17], 0x40), 6)
-                    keyP["analysis_value"] =
-                        keyP["analysis_value"] ..
-                            ",fresh_filter_time_total,fresh_filter_time_use,fresh_filter_timeout"
+                keyP["ieco_switch"] = bit.rshift(bit.band(messageBytes[cursor + 45], 0x10), 4)
+                keyP["cool_power_saving"] = bit.rshift(bit.band(messageBytes[cursor + 45], 0x10), 4)
+                keyP["linkage_fan_speed"] = bit.band(messageBytes[cursor + 42], 0x7F)
+                keyP["indoorTemperatureValue"] = (messageBytes[cursor + 44] - 50) / 2
+                keyP["smallIndoorTemperatureValue"] = bit.band(messageBytes[cursor + 45], 0x0F)
+                keyP["fresh_air"] = bit.rshift(bit.band(messageBytes[cursor + 22], 0x80), 7)
+                keyP["ptc_default_rule"] = bit.rshift(bit.band(messageBytes[cursor + 27], 0x20), 5)
+                keyP["light_sensitive"] = bit.rshift(bit.band(messageBytes[cursor + 27], 0xC0), 6)
+                keyP["analysis_value"] = keyP["analysis_value"]
+                    .. ",rewarming_dry,self_clean,no_wind_sense_left,prevent_super_cool,no_wind_sense_right,moisturizing,linkage,linkage_sync,no_wind_sense,prevent_straight_wind,wind_swing_ud_angle,degerming,ieco_switch,linkage_fan_speed,indoor_temperature,fresh_air,ptc_default_rule,light_sensitive,fresh_filter_time_use,wind_swing_lr_angle,cool_power_saving"
+                if #binData >= 29 then
+                    keyP["fresh_filter_time_total"] = messageBytes[cursor + 29] * 256 + messageBytes[cursor + 28]
+                    keyP["fresh_filter_time_use"] = messageBytes[cursor + 31] * 256 + messageBytes[cursor + 30]
+                    keyP["fresh_filter_timeout"] = bit.rshift(bit.band(messageBytes[cursor + 17], 0x40), 6)
+                    keyP["analysis_value"] = keyP["analysis_value"]
+                        .. ",fresh_filter_time_total,fresh_filter_time_use,fresh_filter_timeout"
                 end
-                keyP["fresh_filter_time_use"] =
-                    messageBytes[cursor + 20] * 256 + messageBytes[cursor + 19]
+                keyP["fresh_filter_time_use"] = messageBytes[cursor + 20] * 256 + messageBytes[cursor + 19]
                 keyP["analysis_value"] = keyP["analysis_value"] .. ","
                 cursor = cursor + 42
             end
         end
-        if (#keyP["analysis_value"] > 1) then
-            keyP["analysis_value"] = string.sub(keyP["analysis_value"], 1, -2)
-        end
+        if #keyP["analysis_value"] > 1 then keyP["analysis_value"] = string.sub(keyP["analysis_value"], 1, -2) end
     end
-    if ((dataType == 0x02 and messageBytes[0] == 0xB0) or
-        (dataType == 0x03 and messageBytes[0] == 0xB1)) then
-        if (#binData < 8) then return nil end
+    if (dataType == 0x02 and messageBytes[0] == 0xB0) or (dataType == 0x03 and messageBytes[0] == 0xB1) then
+        if #binData < 8 then return nil end
         keyP["propertyNumber"] = messageBytes[1]
         local cursor = 2
         for i = 1, keyP["propertyNumber"] do
-            if (messageBytes[cursor + 0] == 0x49 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x49 and messageBytes[cursor + 1] == 0x00 then
                 keyP["prevent_super_cool"] = messageBytes[cursor + 4]
                 cursor = cursor + 9
             end
-            if (messageBytes[cursor + 0] == 0x42 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x42 and messageBytes[cursor + 1] == 0x00 then
                 keyP["prevent_straight_wind"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x26 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x26 and messageBytes[cursor + 1] == 0x02 then
                 keyP["auto_prevent_straight_wind"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x39 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x39 and messageBytes[cursor + 1] == 0x00 then
                 keyP["self_clean"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x32 and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 4] == 0x01) then
-                    keyP["wind_straight"] = 0x01
-                end
-                if (messageBytes[cursor + 4] == 0x02) then
+            if messageBytes[cursor + 0] == 0x32 and messageBytes[cursor + 1] == 0x00 then
+                if messageBytes[cursor + 4] == 0x01 then keyP["wind_straight"] = 0x01 end
+                if messageBytes[cursor + 4] == 0x02 then
                     keyP["wind_avoid"] = 0x01
                     keyP["yb_wind_avoid"] = 0x02
                 end
-                if (messageBytes[cursor + 4] == 0x00) then
+                if messageBytes[cursor + 4] == 0x00 then
                     keyP["wind_straight"] = 0x00
                     keyP["wind_avoid"] = 0x00
                     keyP["yb_wind_avoid"] = 0x00
                 end
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x33 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x33 and messageBytes[cursor + 1] == 0x00 then
                 keyP["wind_avoid"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x34 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x34 and messageBytes[cursor + 1] == 0x00 then
                 keyP["intelligent_wind"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x3A and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x3A and messageBytes[cursor + 1] == 0x00 then
                 keyP["child_prevent_cold_wind"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x18 and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0x18 and messageBytes[cursor + 1] == 0x00 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_no_wind_sense"] = 0
                 else
                     keyP["has_no_wind_sense"] = 1
                 end
-                if (messageBytes[cursor + 3] == 0x02) then
+                if messageBytes[cursor + 3] == 0x02 then
                     keyP["fn_no_wind_sense"] = messageBytes[cursor + 4]
                     keyP["no_wind_sense_level"] = messageBytes[cursor + 5]
                     cursor = cursor + 6
@@ -2678,136 +2466,109 @@ local function binToModel(binData, deviceSN8)
                     cursor = cursor + 5
                 end
             end
-            if (messageBytes[cursor + 0] == 0x1B and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x1B and messageBytes[cursor + 1] == 0x02 then
                 keyP["little_angel"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x21 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x21 and messageBytes[cursor + 1] == 0x00 then
                 keyP["cool_hot_sense"] = messageBytes[cursor + 4]
                 cursor = cursor + 12
             end
-            if (messageBytes[cursor + 0] == 0x29 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x29 and messageBytes[cursor + 1] == 0x00 then
                 keyP["security"] = messageBytes[cursor + 4]
-                if (messageBytes[cursor + 4] == 2) then
-                    keyP["security"] = 0
-                end
-                if (messageBytes[cursor + 4] == 3) then
-                    keyP["security"] = 1
-                end
+                if messageBytes[cursor + 4] == 2 then keyP["security"] = 0 end
+                if messageBytes[cursor + 4] == 3 then keyP["security"] = 1 end
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x4E and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x4E and messageBytes[cursor + 1] == 0x00 then
                 keyP["even_wind"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x4F and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x4F and messageBytes[cursor + 1] == 0x00 then
                 keyP["single_tuyere"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x4C and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x4C and messageBytes[cursor + 1] == 0x00 then
                 keyP["extreme_wind"] = messageBytes[cursor + 4]
                 keyP["extreme_wind_level"] = messageBytes[cursor + 5]
                 cursor = cursor + 6
             end
-            if (messageBytes[cursor + 0] == 0x20 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x20 and messageBytes[cursor + 1] == 0x00 then
                 keyP["voice_control"] = messageBytes[cursor + 4]
                 keyP["voice_control_new"] = messageBytes[cursor + 4]
                 cursor = cursor + 24
             end
-            if (messageBytes[cursor + 0] == 0x01 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x01 and messageBytes[cursor + 1] == 0x02 then
                 keyP["pre_cool_hot"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x4A and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x4A and messageBytes[cursor + 1] == 0x00 then
                 keyP["water_washing_manual"] = messageBytes[cursor + 4]
                 keyP["water_washing"] = messageBytes[cursor + 5]
                 keyP["water_washing_time"] = messageBytes[cursor + 6]
                 keyP["water_washing_stage"] = messageBytes[cursor + 7]
                 cursor = cursor + 8
             end
-            if (messageBytes[cursor + 0] == 0x4B and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x4B and messageBytes[cursor + 1] == 0x00 then
                 keyP["fresh_air"] = messageBytes[cursor + 4]
                 keyP["fresh_air_fan_speed"] = messageBytes[cursor + 5]
                 keyP["fresh_air_temp"] = messageBytes[cursor + 6]
                 cursor = cursor + 7
             end
-            if (messageBytes[cursor + 0] == 0x51 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x51 and messageBytes[cursor + 1] == 0x00 then
                 keyP["parent_control"] = messageBytes[cursor + 4]
                 keyP["parent_control_temp_up"] = messageBytes[cursor + 5]
                 keyP["parent_control_temp_down"] = messageBytes[cursor + 6]
                 cursor = cursor + 9
             end
-            if (messageBytes[cursor + 0] == 0x43 and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 4] == 0x01 or messageBytes[cursor + 4] ==
-                    0x00) then
+            if messageBytes[cursor + 0] == 0x43 and messageBytes[cursor + 1] == 0x00 then
+                if messageBytes[cursor + 4] == 0x01 or messageBytes[cursor + 4] == 0x00 then
                     keyP["gentle_wind_sense"] = 0x01
                     keyP["fa_prevent_straight_wind"] = 0x01
                 end
-                if (messageBytes[cursor + 4] == 0x02) then
+                if messageBytes[cursor + 4] == 0x02 then
                     keyP["gentle_wind_sense"] = 0x01
                     keyP["fa_prevent_straight_wind"] = 0x02
                 end
-                if (messageBytes[cursor + 4] == 0x03) then
-                    keyP["gentle_wind_sense"] = 0x03
-                end
-                if (messageBytes[cursor + 4] == 0x04) then
-                    keyP["gentle_wind_sense"] = 0x01
-                end
+                if messageBytes[cursor + 4] == 0x03 then keyP["gentle_wind_sense"] = 0x03 end
+                if messageBytes[cursor + 4] == 0x04 then keyP["gentle_wind_sense"] = 0x01 end
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x30 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x30 and messageBytes[cursor + 1] == 0x00 then
                 keyP["nobody_energy_save"] = messageBytes[cursor + 4]
                 cursor = cursor + 10
             end
-            if (messageBytes[cursor + 0] == 0x09 and messageBytes[cursor + 1] ==
-                0x04) then
+            if messageBytes[cursor + 0] == 0x09 and messageBytes[cursor + 1] == 0x04 then
                 keyP["filter_level"] = messageBytes[cursor + 5]
                 keyP["filter_value"] = messageBytes[cursor + 14]
                 cursor = cursor + 17
             end
-            if (messageBytes[cursor + 0] == 0x58 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x58 and messageBytes[cursor + 1] == 0x00 then
                 keyP["prevent_straight_wind_lr"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x0B and messageBytes[cursor + 1] ==
-                0x02) then
-                keyP["pm25_value"] = messageBytes[cursor + 6] * 256 +
-                                         messageBytes[cursor + 5]
+            if messageBytes[cursor + 0] == 0x0B and messageBytes[cursor + 1] == 0x02 then
+                keyP["pm25_value"] = messageBytes[cursor + 6] * 256 + messageBytes[cursor + 5]
                 cursor = cursor + 7
             end
-            if (messageBytes[cursor + 0] == 0x50 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x50 and messageBytes[cursor + 1] == 0x00 then
                 keyP["water_pump"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x31 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x31 and messageBytes[cursor + 1] == 0x00 then
                 keyP["intelligent_control"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x24 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x24 and messageBytes[cursor + 1] == 0x00 then
                 keyP["volume_control"] = messageBytes[cursor + 5]
                 cursor = cursor + 8
             end
-            if (messageBytes[cursor + 0] == 0x09 and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0x09 and messageBytes[cursor + 1] == 0x00 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_wind_swing_ud_angle"] = 0
                     cursor = cursor + 4
                 else
@@ -2816,10 +2577,12 @@ local function binToModel(binData, deviceSN8)
                     cursor = cursor + 5
                 end
             end
-            if (messageBytes[cursor + 0] == 0x0A and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0x0A and messageBytes[cursor + 1] == 0x00 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_wind_swing_lr_angle"] = 0
                     cursor = cursor + 4
                 else
@@ -2828,38 +2591,34 @@ local function binToModel(binData, deviceSN8)
                     cursor = cursor + 5
                 end
             end
-            if (messageBytes[cursor + 0] == 0x44 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x44 and messageBytes[cursor + 1] == 0x00 then
                 keyP["face_register"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x5A and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x5A and messageBytes[cursor + 1] == 0x00 then
                 keyP["degerming"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x5B and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x5B and messageBytes[cursor + 1] == 0x00 then
                 keyP["light"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x61 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x61 and messageBytes[cursor + 1] == 0x00 then
                 keyP["wind_top"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x59 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x59 and messageBytes[cursor + 1] == 0x00 then
                 keyP["wind_around"] = messageBytes[cursor + 4]
                 keyP["wind_around_ud"] = messageBytes[cursor + 5]
                 cursor = cursor + 6
             end
-            if (messageBytes[cursor + 0] == 0x1A and messageBytes[cursor + 1] ==
-                0x00) then cursor = cursor + 5 end
-            if (messageBytes[cursor + 0] == 0x79 and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0x1A and messageBytes[cursor + 1] == 0x00 then cursor = cursor + 5 end
+            if messageBytes[cursor + 0] == 0x79 and messageBytes[cursor + 1] == 0x00 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_wind_swing_ud_angle_diy"] = 0
                     cursor = cursor + 4
                 else
@@ -2870,10 +2629,12 @@ local function binToModel(binData, deviceSN8)
                     cursor = cursor + 7
                 end
             end
-            if (messageBytes[cursor + 0] == 0x7A and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0x7A and messageBytes[cursor + 1] == 0x00 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_wind_swing_lr_angle_diy"] = 0
                     cursor = cursor + 4
                 else
@@ -2884,13 +2645,11 @@ local function binToModel(binData, deviceSN8)
                     cursor = cursor + 7
                 end
             end
-            if (messageBytes[cursor + 0] == 0x78 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x78 and messageBytes[cursor + 1] == 0x00 then
                 keyP["auto_prevent_cold_wind"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x25 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x25 and messageBytes[cursor + 1] == 0x02 then
                 keyP["cool_temp_down"] = messageBytes[cursor + 4]
                 keyP["cool_temp_up"] = messageBytes[cursor + 5]
                 keyP["auto_temp_down"] = messageBytes[cursor + 6]
@@ -2899,51 +2658,44 @@ local function binToModel(binData, deviceSN8)
                 keyP["heat_temp_up"] = messageBytes[cursor + 9]
                 cursor = cursor + 11
             end
-            if (messageBytes[cursor + 0] == 0x27 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x27 and messageBytes[cursor + 1] == 0x02 then
                 keyP["power_lock"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x29 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x29 and messageBytes[cursor + 1] == 0x02 then
                 keyP["ptc_lock"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x2B and messageBytes[cursor + 1] ==
-                0x02) then
-                keyP["offline_operating_time"] = bit.bor(bit.lshift(
-                                                             messageBytes[cursor +
-                                                                 5], 8),
-                                                         messageBytes[cursor + 4])
+            if messageBytes[cursor + 0] == 0x2B and messageBytes[cursor + 1] == 0x02 then
+                keyP["offline_operating_time"] =
+                    bit.bor(bit.lshift(messageBytes[cursor + 5], 8), messageBytes[cursor + 4])
                 cursor = cursor + 6
             end
-            if (messageBytes[cursor + 0] == 0x28 and messageBytes[cursor + 1] ==
-                0x02) then
-                keyP["operating_time"] =
-                    bit.bor(messageBytes[cursor + 4],
-                            bit.bor(bit.lshift(messageBytes[cursor + 5], 8),
-                                    bit.lshift(messageBytes[cursor + 6], 16)))
+            if messageBytes[cursor + 0] == 0x28 and messageBytes[cursor + 1] == 0x02 then
+                keyP["operating_time"] = bit.bor(
+                    messageBytes[cursor + 4],
+                    bit.bor(bit.lshift(messageBytes[cursor + 5], 8), bit.lshift(messageBytes[cursor + 6], 16))
+                )
                 cursor = cursor + 7
             end
-            if (messageBytes[cursor + 0] == 0x15 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x15 and messageBytes[cursor + 1] == 0x00 then
                 keyP["indoor_humidity"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x5C and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x5C and messageBytes[cursor + 1] == 0x00 then
                 keyP["child_lock"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x2C and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x2C and messageBytes[cursor + 1] == 0x02 then
                 keyP["buzzer_all"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x5D and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0x5D and messageBytes[cursor + 1] == 0x00 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_self_remove_odor_phase"] = 0
                     cursor = cursor + 4
                 else
@@ -2952,43 +2704,42 @@ local function binToModel(binData, deviceSN8)
                     cursor = cursor + 5
                 end
             end
-            if (messageBytes[cursor + 0] == 0x5E and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0x5E and messageBytes[cursor + 1] == 0x00 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_high_temp_remove_odor_alone"] = 0
                     cursor = cursor + 4
                 else
                     keyP["has_high_temp_remove_odor_alone"] = 1
-                    keyP["high_temp_remove_odor_alone"] =
-                        messageBytes[cursor + 4]
+                    keyP["high_temp_remove_odor_alone"] = messageBytes[cursor + 4]
                     cursor = cursor + 5
                 end
             end
-            if (messageBytes[cursor + 0] == 0x5F and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x5F and messageBytes[cursor + 1] == 0x00 then
                 keyP["ozone"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x63 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x63 and messageBytes[cursor + 1] == 0x00 then
                 keyP["soft_warm"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x50 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x50 and messageBytes[cursor + 1] == 0x02 then
                 keyP["fresh_air_parm"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x68 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x68 and messageBytes[cursor + 1] == 0x00 then
                 keyP["rewarming_dry"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x69 and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0x69 and messageBytes[cursor + 1] == 0x00 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_arom"] = 0
                     cursor = cursor + 4
                 else
@@ -2996,86 +2747,71 @@ local function binToModel(binData, deviceSN8)
                     keyP["arom"] = messageBytes[cursor + 4]
                     keyP["arom_fan_speed"] = messageBytes[cursor + 5]
                     keyP["arom_time_clean"] = messageBytes[cursor + 6]
-                    keyP["arom_time"] = bit.bor(bit.lshift(
-                                                    messageBytes[cursor + 8], 8),
-                                                messageBytes[cursor + 7])
-                    keyP["arom_time_total"] = bit.bor(bit.lshift(
-                                                          messageBytes[cursor +
-                                                              10], 8),
-                                                      messageBytes[cursor + 9])
+                    keyP["arom_time"] = bit.bor(bit.lshift(messageBytes[cursor + 8], 8), messageBytes[cursor + 7])
+                    keyP["arom_time_total"] =
+                        bit.bor(bit.lshift(messageBytes[cursor + 10], 8), messageBytes[cursor + 9])
                     cursor = cursor + 11
                 end
             end
-            if (messageBytes[cursor + 0] == 0x01 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x01 and messageBytes[cursor + 1] == 0x00 then
                 keyP["new_mode_power"] = messageBytes[cursor + 4]
                 keyP["new_mode"] = messageBytes[cursor + 5]
                 keyP["new_temperature"] = messageBytes[cursor + 6] / 2
                 keyP["new_wind_speed"] = messageBytes[cursor + 7]
                 cursor = cursor + 8
             end
-            if (messageBytes[cursor + 0] == 0x30 and messageBytes[cursor + 1] ==
-                0x02) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0x30 and messageBytes[cursor + 1] == 0x02 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_guide_strip"] = 0
                     cursor = cursor + 4
                 else
                     keyP["has_guide_strip"] = 1
-                    keyP["main_horizontal_guide_strip_1"] =
-                        messageBytes[cursor + 4]
-                    keyP["main_horizontal_guide_strip_2"] =
-                        messageBytes[cursor + 5]
-                    keyP["main_horizontal_guide_strip_3"] =
-                        messageBytes[cursor + 6]
-                    keyP["main_horizontal_guide_strip_4"] =
-                        messageBytes[cursor + 7]
+                    keyP["main_horizontal_guide_strip_1"] = messageBytes[cursor + 4]
+                    keyP["main_horizontal_guide_strip_2"] = messageBytes[cursor + 5]
+                    keyP["main_horizontal_guide_strip_3"] = messageBytes[cursor + 6]
+                    keyP["main_horizontal_guide_strip_4"] = messageBytes[cursor + 7]
                     cursor = cursor + 8
                 end
             end
-            if (messageBytes[cursor + 0] == 0x6F and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x6F and messageBytes[cursor + 1] == 0x00 then
                 keyP["uvc_remove_odor"] = messageBytes[cursor + 4]
                 keyP["uvc_power_off"] = messageBytes[cursor + 5]
                 cursor = cursor + 6
             end
-            if (messageBytes[cursor + 0] == 0x54 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x54 and messageBytes[cursor + 1] == 0x02 then
                 keyP["prepare_food"] = messageBytes[cursor + 4]
                 keyP["prepare_food_temp"] = messageBytes[cursor + 5]
                 keyP["prepare_food_fan_speed"] = messageBytes[cursor + 6]
                 cursor = cursor + 7
             end
-            if (messageBytes[cursor + 0] == 0x55 and messageBytes[cursor + 1] ==
-                0x02) then
+            if messageBytes[cursor + 0] == 0x55 and messageBytes[cursor + 1] == 0x02 then
                 keyP["quick_fry"] = messageBytes[cursor + 4]
                 keyP["quick_fry_temp"] = messageBytes[cursor + 5]
                 keyP["quick_fry_fan_speed"] = messageBytes[cursor + 6]
                 cursor = cursor + 7
             end
-            if (messageBytes[cursor + 0] == 0x8B and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x8B and messageBytes[cursor + 1] == 0x00 then
                 keyP["quick_fry_center_point"] = messageBytes[cursor + 4]
                 keyP["quick_fry_angle"] = messageBytes[cursor + 5]
                 cursor = cursor + 6
             end
-            if (messageBytes[cursor + 0] == 0x89 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x89 and messageBytes[cursor + 1] == 0x00 then
                 keyP["cool_power_saving"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x67 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x67 and messageBytes[cursor + 1] == 0x00 then
                 keyP["jet_cool"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x96 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x96 and messageBytes[cursor + 1] == 0x00 then
                 keyP["swing_lr_under_angle"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x97 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x97 and messageBytes[cursor + 1] == 0x00 then
                 keyP["left_ud_wind_horizontal"] = messageBytes[cursor + 4]
                 keyP["right_ud_wind_horizontal"] = messageBytes[cursor + 5]
                 keyP["up_ud_wind_horizontal"] = messageBytes[cursor + 6]
@@ -3086,10 +2822,12 @@ local function binToModel(binData, deviceSN8)
                 keyP["under_lr_wind_vertical"] = messageBytes[cursor + 11]
                 cursor = cursor + 12
             end
-            if (messageBytes[cursor + 0] == 0x08 and messageBytes[cursor + 1] ==
-                0x02) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0x08 and messageBytes[cursor + 1] == 0x02 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_light_sensitive"] = 0
                     cursor = cursor + 4
                 else
@@ -3098,10 +2836,12 @@ local function binToModel(binData, deviceSN8)
                     cursor = cursor + 5
                 end
             end
-            if (messageBytes[cursor + 0] == 0x11 and messageBytes[cursor + 1] ==
-                0x02) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0x11 and messageBytes[cursor + 1] == 0x02 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_ptc_default_rule"] = 0
                     cursor = cursor + 4
                 else
@@ -3110,10 +2850,12 @@ local function binToModel(binData, deviceSN8)
                     cursor = cursor + 5
                 end
             end
-            if (messageBytes[cursor + 0] == 0xE3 and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0xE3 and messageBytes[cursor + 1] == 0x00 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_ieco"] = 0
                     cursor = cursor + 4
                 else
@@ -3123,39 +2865,29 @@ local function binToModel(binData, deviceSN8)
                     cursor = cursor + 6
                 end
             end
-            if (messageBytes[cursor + 0] == 0xE0 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0xE0 and messageBytes[cursor + 1] == 0x00 then
                 keyP["ieco_frame"] = messageBytes[cursor + 4]
                 keyP["ieco_target_rate"] =
-                    bit.bor(messageBytes[cursor + 5],
-                            bit.bor(bit.lshift(messageBytes[cursor + 6], 8)))
+                    bit.bor(messageBytes[cursor + 5], bit.bor(bit.lshift(messageBytes[cursor + 6], 8)))
                 keyP["ieco_indoor_wind_speed_level"] = messageBytes[cursor + 7]
-                keyP["ieco_indoor_wind_speed"] = bit.bor(
-                                                     messageBytes[cursor + 8],
-                                                     bit.bor(
-                                                         bit.lshift(
-                                                             messageBytes[cursor +
-                                                                 9], 8)))
-                keyP["ieco_outdoor_wind_speed_level"] =
-                    messageBytes[cursor + 10]
-                keyP["ieco_outdoor_wind_speed"] = bit.bor(
-                                                      messageBytes[cursor + 11],
-                                                      bit.bor(
-                                                          bit.lshift(
-                                                              messageBytes[cursor +
-                                                                  12], 8)))
+                keyP["ieco_indoor_wind_speed"] =
+                    bit.bor(messageBytes[cursor + 8], bit.bor(bit.lshift(messageBytes[cursor + 9], 8)))
+                keyP["ieco_outdoor_wind_speed_level"] = messageBytes[cursor + 10]
+                keyP["ieco_outdoor_wind_speed"] =
+                    bit.bor(messageBytes[cursor + 11], bit.bor(bit.lshift(messageBytes[cursor + 12], 8)))
                 keyP["ieco_expansion_valve"] = messageBytes[cursor + 13]
                 cursor = cursor + messageBytes[cursor + 3] + 4
             end
-            if (messageBytes[cursor + 0] == 0x99 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0x99 and messageBytes[cursor + 1] == 0x00 then
                 keyP["wait_clean"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x9A and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0x9A and messageBytes[cursor + 1] == 0x00 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_self_clean_time"] = 0
                     cursor = cursor + 4
                 else
@@ -3165,10 +2897,12 @@ local function binToModel(binData, deviceSN8)
                     cursor = cursor + 6
                 end
             end
-            if (messageBytes[cursor + 0] == 0x9B and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0x9B and messageBytes[cursor + 1] == 0x00 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_dry_clean_time"] = 0
                     cursor = cursor + 4
                 else
@@ -3178,15 +2912,16 @@ local function binToModel(binData, deviceSN8)
                     cursor = cursor + 6
                 end
             end
-            if (messageBytes[cursor + 0] == 0xA0 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0xA0 and messageBytes[cursor + 1] == 0x00 then
                 keyP["ptc_load"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0x9E and messageBytes[cursor + 1] ==
-                0x00) then
-                if (messageBytes[cursor + 2] == 0x11 or messageBytes[cursor + 2] ==
-                    0x10 or messageBytes[cursor + 3] == 0x00) then
+            if messageBytes[cursor + 0] == 0x9E and messageBytes[cursor + 1] == 0x00 then
+                if
+                    messageBytes[cursor + 2] == 0x11
+                    or messageBytes[cursor + 2] == 0x10
+                    or messageBytes[cursor + 3] == 0x00
+                then
                     keyP["has_soft_cool"] = 0
                     cursor = cursor + 4
                 else
@@ -3195,35 +2930,26 @@ local function binToModel(binData, deviceSN8)
                     cursor = cursor + 5
                 end
             end
-            if (messageBytes[cursor + 0] == 0xA8 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0xA8 and messageBytes[cursor + 1] == 0x00 then
                 keyP["defrosting_load"] = messageBytes[cursor + 4]
                 cursor = cursor + 5
             end
-            if (messageBytes[cursor + 0] == 0xE1 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0xE1 and messageBytes[cursor + 1] == 0x00 then
                 cursor = cursor + messageBytes[cursor + 3] + 4
             end
-            if (messageBytes[cursor + 0] == 0xE0 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0xE0 and messageBytes[cursor + 1] == 0x00 then
                 cursor = cursor + messageBytes[cursor + 3] + 4
             end
-            if (messageBytes[cursor + 0] == 0xE2 and messageBytes[cursor + 1] ==
-                0x00) then
+            if messageBytes[cursor + 0] == 0xE2 and messageBytes[cursor + 1] == 0x00 then
                 keyP["real_mode"] = messageBytes[cursor + 16]
                 keyP["left_down_real_wind_speed"] = messageBytes[cursor + 16]
                 keyP["right_up_real_wind_speed"] = messageBytes[cursor + 46]
-                keyP["defrosting_load"] =
-                    bit.band(messageBytes[cursor + 17], 0x01)
-                keyP["ptc_load"] = bit.rshift(bit.band(
-                                                  messageBytes[cursor + 17],
-                                                  0x02), 1)
+                keyP["defrosting_load"] = bit.band(messageBytes[cursor + 17], 0x01)
+                keyP["ptc_load"] = bit.rshift(bit.band(messageBytes[cursor + 17], 0x02), 1)
                 keyP["self_clean_stage"] = messageBytes[cursor + 43]
                 keyP["self_clean_time"] = messageBytes[cursor + 44]
-                keyP["dry_clean_stage"] =
-                    bit.rshift(bit.band(messageBytes[cursor + 45], 0x80), 7)
-                keyP["dry_clean_time"] =
-                    bit.band(messageBytes[cursor + 45], 0x7F)
+                keyP["dry_clean_stage"] = bit.rshift(bit.band(messageBytes[cursor + 45], 0x80), 7)
+                keyP["dry_clean_time"] = bit.band(messageBytes[cursor + 45], 0x7F)
                 cursor = cursor + messageBytes[cursor + 3] + 4
             end
         end
@@ -3233,22 +2959,26 @@ local function getTotalMsg(bodyData, cType)
     local bodyLength = #bodyData
     local msgLength = bodyLength + keyB["BYTE_PROTOCOL_LENGTH"] + 1
     local msgBytes = {}
-    for i = 0, msgLength do msgBytes[i] = 0 end
+    for i = 0, msgLength do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = keyB["BYTE_PROTOCOL_HEAD"]
     msgBytes[1] = bodyLength + keyB["BYTE_PROTOCOL_LENGTH"] + 1
     msgBytes[2] = keyB["BYTE_DEVICE_TYPE"]
-    if (keyP["propertyNumber"] > 0) then msgBytes[8] = 0x02 end
+    if keyP["propertyNumber"] > 0 then msgBytes[8] = 0x02 end
     msgBytes[9] = cType
     for i = 0, bodyLength do
         msgBytes[i + keyB["BYTE_PROTOCOL_LENGTH"]] = bodyData[i]
     end
     msgBytes[msgLength] = makeSum(msgBytes, 1, msgLength - 1)
     local msgFinal = {}
-    for i = 1, msgLength + 1 do msgFinal[i] = msgBytes[i - 1] end
+    for i = 1, msgLength + 1 do
+        msgFinal[i] = msgBytes[i - 1]
+    end
     return msgFinal
 end
 function jsonToData(jsonCmd)
-    if (#jsonCmd == 0) then return nil end
+    if #jsonCmd == 0 then return nil end
     local infoM = {}
     local bodyBytes = {}
     local json = decode(jsonCmd)
@@ -3258,11 +2988,13 @@ function jsonToData(jsonCmd)
     local query = json["query"]
     local control = json["control"]
     local status = json["status"]
-    if (query) then
+    if query then
         local queryType = nil
-        if (type(query) == "table") then queryType = query["query_type"] end
-        if (queryType == nil) then
-            for i = 0, 21 do bodyBytes[i] = 0 end
+        if type(query) == "table" then queryType = query["query_type"] end
+        if queryType == nil then
+            for i = 0, 21 do
+                bodyBytes[i] = 0
+            end
             bodyBytes[0] = 0x41
             bodyBytes[1] = 0x81
             bodyBytes[3] = 0xFF
@@ -3271,24 +3003,43 @@ function jsonToData(jsonCmd)
             bodyBytes[20] = math.random(1, 254)
             bodyBytes[21] = crc8_854(bodyBytes, 0, 20)
             infoM = getTotalMsg(bodyBytes, keyB["BYTE_QUERYL_REQUEST"])
-        elseif (queryType == "power" or queryType == "purifier" or queryType ==
-            "mode" or queryType == "temperature" or queryType ==
-            "small_temperature" or queryType == "buzzer" or queryType ==
-            "wind_swing_lr" or queryType == "wind_swing_lr_under" or queryType ==
-            "wind_swing_ud" or queryType == "wind_speed" or queryType ==
-            "power_on_timer" or queryType == "power_off_timer" or queryType ==
-            "power_on_time_value" or queryType == "power_off_time_value" or
-            queryType == "indoor_temperature" or queryType ==
-            "outdoor_temperature" or queryType == "eco" or queryType ==
-            "kick_quilt" or queryType == "prevent_cold" or queryType == "dry" or
-            queryType == "ptc" or queryType == "screen_display" or queryType ==
-            "screen_display_now" or queryType == "strong_wind" or queryType ==
-            "current_work_time" or queryType == "comfort_power_save" or
-            queryType == "comfort_sleep" or queryType == "natural_wind" or
-            queryType == "power_saving" or queryType ==
-            "fresh_filter_time_total" or queryType == "fresh_filter_time_use" or
-            queryType == "fresh_filter_timeout") then
-            for i = 0, 21 do bodyBytes[i] = 0 end
+        elseif
+            queryType == "power"
+            or queryType == "purifier"
+            or queryType == "mode"
+            or queryType == "temperature"
+            or queryType == "small_temperature"
+            or queryType == "buzzer"
+            or queryType == "wind_swing_lr"
+            or queryType == "wind_swing_lr_under"
+            or queryType == "wind_swing_ud"
+            or queryType == "wind_speed"
+            or queryType == "power_on_timer"
+            or queryType == "power_off_timer"
+            or queryType == "power_on_time_value"
+            or queryType == "power_off_time_value"
+            or queryType == "indoor_temperature"
+            or queryType == "outdoor_temperature"
+            or queryType == "eco"
+            or queryType == "kick_quilt"
+            or queryType == "prevent_cold"
+            or queryType == "dry"
+            or queryType == "ptc"
+            or queryType == "screen_display"
+            or queryType == "screen_display_now"
+            or queryType == "strong_wind"
+            or queryType == "current_work_time"
+            or queryType == "comfort_power_save"
+            or queryType == "comfort_sleep"
+            or queryType == "natural_wind"
+            or queryType == "power_saving"
+            or queryType == "fresh_filter_time_total"
+            or queryType == "fresh_filter_time_use"
+            or queryType == "fresh_filter_timeout"
+        then
+            for i = 0, 21 do
+                bodyBytes[i] = 0
+            end
             bodyBytes[0] = 0x41
             bodyBytes[1] = 0x81
             bodyBytes[3] = 0xFF
@@ -3297,21 +3048,16 @@ function jsonToData(jsonCmd)
             bodyBytes[20] = math.random(1, 254)
             bodyBytes[21] = crc8_854(bodyBytes, 0, 20)
             infoM = getTotalMsg(bodyBytes, keyB["BYTE_QUERYL_REQUEST"])
-        elseif (queryType == "group_data_zero" or queryType == "group_data_four" or
-            queryType == "group_data_one") then
-            for i = 0, 21 do bodyBytes[i] = 0 end
+        elseif queryType == "group_data_zero" or queryType == "group_data_four" or queryType == "group_data_one" then
+            for i = 0, 21 do
+                bodyBytes[i] = 0
+            end
             bodyBytes[0] = 0x41
             bodyBytes[1] = 0x21
             bodyBytes[2] = 0x01
-            if (queryType == "group_data_zero") then
-                bodyBytes[3] = 0x40
-            end
-            if (queryType == "group_data_four") then
-                bodyBytes[3] = 0x44
-            end
-            if (queryType == "group_data_one") then
-                bodyBytes[3] = 0x41
-            end
+            if queryType == "group_data_zero" then bodyBytes[3] = 0x40 end
+            if queryType == "group_data_four" then bodyBytes[3] = 0x44 end
+            if queryType == "group_data_one" then bodyBytes[3] = 0x41 end
             math.randomseed(tostring(os.time() * #bodyBytes):reverse():sub(1, 7))
             math.random()
             bodyBytes[20] = math.random(1, 254)
@@ -3321,17 +3067,22 @@ function jsonToData(jsonCmd)
             bodyBytes[0] = 0xB1
             local propertyNum = 0
             local queryList = {}
-            if (string.match(queryType, ",") == ",") then
+            if string.match(queryType, ",") == "," then
                 queryList = splitStrByChar(queryType, ",")
             else
                 table.insert(queryList, queryType)
             end
             for v in values(queryList) do
                 queryType = v
-                if (queryType == "no_wind_sense") then
-                    if (deviceSN8 == "12035" or deviceSN8 == "12037" or
-                        deviceSN8 == "Z1312" or deviceSN8 == "Z1262" or
-                        deviceSN8 == "12179" or deviceSN8 == "Z1261") then
+                if queryType == "no_wind_sense" then
+                    if
+                        deviceSN8 == "12035"
+                        or deviceSN8 == "12037"
+                        or deviceSN8 == "Z1312"
+                        or deviceSN8 == "Z1262"
+                        or deviceSN8 == "12179"
+                        or deviceSN8 == "Z1261"
+                    then
                         bodyBytes[1 + propertyNum * 2 + 1] = 0x43
                     else
                         bodyBytes[1 + propertyNum * 2 + 1] = 0x18
@@ -3339,50 +3090,55 @@ function jsonToData(jsonCmd)
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "fn_no_wind_sense") then
+                if queryType == "fn_no_wind_sense" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x18
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "cool_hot_sense") then
+                if queryType == "cool_hot_sense" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x21
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "ptc_default_rule") then
+                if queryType == "ptc_default_rule" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x11
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "nobody_energy_save") then
+                if queryType == "nobody_energy_save" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x30
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "self_clean") then
+                if queryType == "self_clean" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x39
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "child_prevent_cold_wind") then
+                if queryType == "child_prevent_cold_wind" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x3A
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "error_code_query") then
+                if queryType == "error_code_query" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x3F
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "mode_query") then
+                if queryType == "mode_query" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x41
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "prevent_straight_wind") then
-                    if (deviceSN8 == "12035" or deviceSN8 == "12037" or
-                        deviceSN8 == "Z1312" or deviceSN8 == "Z1262" or
-                        deviceSN8 == "12179" or deviceSN8 == "Z1261") then
+                if queryType == "prevent_straight_wind" then
+                    if
+                        deviceSN8 == "12035"
+                        or deviceSN8 == "12037"
+                        or deviceSN8 == "Z1312"
+                        or deviceSN8 == "Z1262"
+                        or deviceSN8 == "12179"
+                        or deviceSN8 == "Z1261"
+                    then
                         bodyBytes[1 + propertyNum * 2 + 1] = 0x43
                     else
                         bodyBytes[1 + propertyNum * 2 + 1] = 0x42
@@ -3390,375 +3146,390 @@ function jsonToData(jsonCmd)
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "gentle_wind_sense") then
+                if queryType == "gentle_wind_sense" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x43
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "fa_prevent_straight_wind") then
+                if queryType == "fa_prevent_straight_wind" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x43
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "prevent_super_cool") then
+                if queryType == "prevent_super_cool" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x49
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "high_temperature_monitor") then
+                if queryType == "high_temperature_monitor" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x47
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "rate_select") then
+                if queryType == "rate_select" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x48
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "intelligent_wind") then
+                if queryType == "intelligent_wind" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x34
-                    if (deviceSN8 == "50939" or deviceSN8 == "51001" or
-                        deviceSN8 == "Z1304" or deviceSN8 == "Z1259" or
-                        deviceSN8 == "Z2272") then
+                    if
+                        deviceSN8 == "50939"
+                        or deviceSN8 == "51001"
+                        or deviceSN8 == "Z1304"
+                        or deviceSN8 == "Z1259"
+                        or deviceSN8 == "Z2272"
+                    then
                         bodyBytes[1 + propertyNum * 2 + 1] = 0x33
                     end
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "wind_straight" or queryType == "yb_wind_avoid") then
+                if queryType == "wind_straight" or queryType == "yb_wind_avoid" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x32
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "wind_avoid") then
+                if queryType == "wind_avoid" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x33
-                    if (deviceSN8 == "50939" or deviceSN8 == "51001" or
-                        deviceSN8 == "Z1304" or deviceSN8 == "Z1259" or
-                        deviceSN8 == "Z2272") then
+                    if
+                        deviceSN8 == "50939"
+                        or deviceSN8 == "51001"
+                        or deviceSN8 == "Z1304"
+                        or deviceSN8 == "Z1259"
+                        or deviceSN8 == "Z2272"
+                    then
                         bodyBytes[1 + propertyNum * 2 + 1] = 0x32
                     end
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "auto_prevent_straight_wind") then
+                if queryType == "auto_prevent_straight_wind" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x26
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "security") then
+                if queryType == "security" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x29
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "even_wind") then
+                if queryType == "even_wind" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x4E
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "single_tuyere") then
+                if queryType == "single_tuyere" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x4F
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "extreme_wind") then
+                if queryType == "extreme_wind" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x4C
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "voice_control") then
+                if queryType == "voice_control" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x20
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "pre_cool_hot") then
+                if queryType == "pre_cool_hot" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x01
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "water_washing") then
+                if queryType == "water_washing" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x4A
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "fresh_air") then
+                if queryType == "fresh_air" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x4B
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "parent_control") then
+                if queryType == "parent_control" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x51
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "filter_value") then
+                if queryType == "filter_value" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x09
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x04
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "wind_swing_ud_angle") then
+                if queryType == "wind_swing_ud_angle" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x09
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "wind_swing_lr_angle") then
+                if queryType == "wind_swing_lr_angle" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x0A
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "prevent_straight_wind_lr") then
+                if queryType == "prevent_straight_wind_lr" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x58
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "pm25_value") then
+                if queryType == "pm25_value" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x0B
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "water_pump") then
+                if queryType == "water_pump" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x50
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "intelligent_control") then
+                if queryType == "intelligent_control" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x31
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "volume_control") then
+                if queryType == "volume_control" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x24
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "voice_control_new") then
+                if queryType == "voice_control_new" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x20
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "face_register") then
+                if queryType == "face_register" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x44
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "cool_temp_down" or queryType == "cool_temp_up" or
-                    queryType == "auto_temp_down" or queryType == "auto_temp_up" or
-                    queryType == "heat_temp_down" or queryType == "heat_temp_up") then
+                if
+                    queryType == "cool_temp_down"
+                    or queryType == "cool_temp_up"
+                    or queryType == "auto_temp_down"
+                    or queryType == "auto_temp_up"
+                    or queryType == "heat_temp_down"
+                    or queryType == "heat_temp_up"
+                then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x25
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "wind_swing_ud_angle_up" or queryType ==
-                    "wind_swing_ud_angle_down" or queryType ==
-                    "app_control_remember_ud") then
+                if
+                    queryType == "wind_swing_ud_angle_up"
+                    or queryType == "wind_swing_ud_angle_down"
+                    or queryType == "app_control_remember_ud"
+                then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x79
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "wind_swing_lr_angle_up" or queryType ==
-                    "wind_swing_lr_angle_down" or queryType ==
-                    "app_control_remember_lr") then
+                if
+                    queryType == "wind_swing_lr_angle_up"
+                    or queryType == "wind_swing_lr_angle_down"
+                    or queryType == "app_control_remember_lr"
+                then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x7A
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "auto_prevent_cold_wind") then
+                if queryType == "auto_prevent_cold_wind" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x78
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "remote_control_lock") then
+                if queryType == "remote_control_lock" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x27
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "operating_time") then
+                if queryType == "operating_time" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x28
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "indoor_humidity") then
+                if queryType == "indoor_humidity" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x15
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "degerming") then
+                if queryType == "degerming" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x5A
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "light") then
+                if queryType == "light" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x5B
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "wind_around") then
+                if queryType == "wind_around" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x59
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "wind_top") then
+                if queryType == "wind_top" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x61
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "child_lock") then
+                if queryType == "child_lock" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x5C
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "buzzer_all") then
+                if queryType == "buzzer_all" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x2C
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "self_remove_odor_phase") then
+                if queryType == "self_remove_odor_phase" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x5D
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "high_temp_remove_odor_alone") then
+                if queryType == "high_temp_remove_odor_alone" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x5E
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "power_lock") then
+                if queryType == "power_lock" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x27
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "ptc_lock") then
+                if queryType == "ptc_lock" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x29
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "offline_operating_time") then
+                if queryType == "offline_operating_time" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x2B
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "ozone") then
+                if queryType == "ozone" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x5F
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "soft_warm") then
+                if queryType == "soft_warm" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x63
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "fresh_air_parm") then
+                if queryType == "fresh_air_parm" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x50
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "rewarming_dry") then
+                if queryType == "rewarming_dry" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x68
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "arom") then
+                if queryType == "arom" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x69
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "new_mode_power") then
+                if queryType == "new_mode_power" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x01
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "uvc_remove_odor") then
+                if queryType == "uvc_remove_odor" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x6F
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "light_sensitive") then
+                if queryType == "light_sensitive" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x08
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "main_horizontal_guide_strip_1" or queryType ==
-                    "main_horizontal_guide_strip_2" or queryType ==
-                    "main_horizontal_guide_strip_3" or queryType ==
-                    "main_horizontal_guide_strip_4") then
+                if
+                    queryType == "main_horizontal_guide_strip_1"
+                    or queryType == "main_horizontal_guide_strip_2"
+                    or queryType == "main_horizontal_guide_strip_3"
+                    or queryType == "main_horizontal_guide_strip_4"
+                then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x30
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "prepare_food") then
+                if queryType == "prepare_food" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x54
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "quick_fry") then
+                if queryType == "quick_fry" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x55
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x02
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "cool_power_saving") then
+                if queryType == "cool_power_saving" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x89
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "jet_cool") then
+                if queryType == "jet_cool" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x67
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "quick_fry_center_point" or queryType ==
-                    "quick_fry_angle") then
+                if queryType == "quick_fry_center_point" or queryType == "quick_fry_angle" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x8B
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "ieco_switch") then
+                if queryType == "ieco_switch" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0xE3
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "swing_lr_under_angle") then
+                if queryType == "swing_lr_under_angle" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x96
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "left_ud_wind_horizontal" or queryType ==
-                    "left_lr_wind_vertical") then
+                if queryType == "left_ud_wind_horizontal" or queryType == "left_lr_wind_vertical" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x97
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "wait_clean") then
+                if queryType == "wait_clean" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x99
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "ptc_load") then
+                if queryType == "ptc_load" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0xA0
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "self_clean_time" or queryType ==
-                    "self_clean_stage") then
+                if queryType == "self_clean_time" or queryType == "self_clean_stage" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x9A
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "dry_clean_time" or queryType ==
-                    "dry_clean_stage") then
+                if queryType == "dry_clean_time" or queryType == "dry_clean_stage" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x9B
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "defrosting_load") then
+                if queryType == "defrosting_load" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0xA8
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "soft_cool") then
+                if queryType == "soft_cool" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0x9E
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
                 end
-                if (queryType == "e2_query") then
+                if queryType == "e2_query" then
                     bodyBytes[1 + propertyNum * 2 + 1] = 0xE2
                     bodyBytes[1 + propertyNum * 2 + 2] = 0x00
                     propertyNum = propertyNum + 1
@@ -3768,19 +3539,19 @@ function jsonToData(jsonCmd)
             math.randomseed(tostring(os.time() * #bodyBytes):reverse():sub(1, 7))
             math.random()
             bodyBytes[1 + propertyNum * 2 + 1] = math.random(1, 254)
-            bodyBytes[1 + propertyNum * 2 + 2] =
-                crc8_854(bodyBytes, 0, 1 + propertyNum * 2 + 1)
+            bodyBytes[1 + propertyNum * 2 + 2] = crc8_854(bodyBytes, 0, 1 + propertyNum * 2 + 1)
             infoM = getTotalMsg(bodyBytes, keyB["BYTE_QUERYL_REQUEST"])
         end
-    elseif (control) then
-        if (status) then jsonToModel(status, "status") end
-        if (control) then
-            if (control[keyT["KEY_SCREEN_DISPLAY"]] ~= nil) then
-                for i = 0, 24 do bodyBytes[i] = 0 end
+    elseif control then
+        if status then jsonToModel(status, "status") end
+        if control then
+            if control[keyT["KEY_SCREEN_DISPLAY"]] ~= nil then
+                for i = 0, 24 do
+                    bodyBytes[i] = 0
+                end
                 bodyBytes[0] = 0x41
                 bodyBytes[1] = 0xC1
-                if (control[keyT["KEY_BUZZER"]] ~= nil and
-                    control[keyT["KEY_BUZZER"]] == "off") then
+                if control[keyT["KEY_BUZZER"]] ~= nil and control[keyT["KEY_BUZZER"]] == "off" then
                     bodyBytes[1] = 0x81
                 end
                 bodyBytes[3] = 0xFF
@@ -3788,8 +3559,7 @@ function jsonToData(jsonCmd)
                 bodyBytes[5] = 0xFF
                 bodyBytes[6] = 0x02
                 bodyBytes[7] = 0x02
-                math.randomseed(tostring(os.time() * #bodyBytes):reverse():sub(
-                                    1, 7))
+                math.randomseed(tostring(os.time() * #bodyBytes):reverse():sub(1, 7))
                 math.random()
                 bodyBytes[23] = math.random(1, 254)
                 bodyBytes[24] = crc8_854(bodyBytes, 0, 23)
@@ -3798,12 +3568,13 @@ function jsonToData(jsonCmd)
                 ret = string2hexstring(ret)
                 return ret
             end
-            if (control["ilinkId"] ~= nil and control["ticket"] ~= nil) then
-                local short_length = 4 + #control["ilinkId"] +
-                                         #control["ticket"]
+            if control["ilinkId"] ~= nil and control["ticket"] ~= nil then
+                local short_length = 4 + #control["ilinkId"] + #control["ticket"]
                 local length = short_length + 12
                 local count = 0
-                for i = 0, length + 1 do bodyBytes[i] = 0 end
+                for i = 0, length + 1 do
+                    bodyBytes[i] = 0
+                end
                 bodyBytes[0] = 0xAA
                 bodyBytes[1] = length
                 bodyBytes[2] = 0xAC
@@ -3816,14 +3587,11 @@ function jsonToData(jsonCmd)
                 bodyBytes[14] = #control["ilinkId"]
                 bodyBytes[15] = #control["ticket"]
                 for i = 0, #control["ilinkId"] - 1 do
-                    bodyBytes[16 + i] = string.byte(string.sub(
-                                                        control["ilinkId"],
-                                                        i + 1, i + 1))
+                    bodyBytes[16 + i] = string.byte(string.sub(control["ilinkId"], i + 1, i + 1))
                     count = count + 1
                 end
                 for i = 0, #control["ticket"] - 1 do
-                    bodyBytes[16 + count + i] =
-                        string.byte(string.sub(control["ticket"], i + 1, i + 1))
+                    bodyBytes[16 + count + i] = string.byte(string.sub(control["ticket"], i + 1, i + 1))
                 end
                 bodyBytes[length] = makeSum(bodyBytes, 1, length - 1)
                 local ret = table2string2(bodyBytes)
@@ -3832,157 +3600,123 @@ function jsonToData(jsonCmd)
             end
             jsonToModel(control, "control")
         end
-        if (keyP["propertyNumber"] == 0) then
-            for i = 0, 26 do bodyBytes[i] = 0 end
+        if keyP["propertyNumber"] == 0 then
+            for i = 0, 26 do
+                bodyBytes[i] = 0
+            end
             setDefaultValue()
             bodyBytes[0] = keyB["BYTE_CONTROL_CMD"]
-            bodyBytes[1] = bit.bor(bit.bor(keyP["powerValue"],
-                                           keyB["BYTE_CLIENT_MODE_MOBILE"]),
-                                   bit.bor(keyB["BYTE_TIMER_METHOD_REL"],
-                                           keyP["buzzerValue"]))
-            bodyBytes[2] = bit.bor(bit.bor(bit.band(keyP["modeValue"], 0xE0),
-                                           bit.band(0x0F, (keyP["temperature"] -
-                                                        0x10))), bit.lshift(
-                                       bit.band(keyP["smallTemperature"], 0x01),
-                                       4))
+            bodyBytes[1] = bit.bor(
+                bit.bor(keyP["powerValue"], keyB["BYTE_CLIENT_MODE_MOBILE"]),
+                bit.bor(keyB["BYTE_TIMER_METHOD_REL"], keyP["buzzerValue"])
+            )
+            bodyBytes[2] = bit.bor(
+                bit.bor(bit.band(keyP["modeValue"], 0xE0), bit.band(0x0F, (keyP["temperature"] - 0x10))),
+                bit.lshift(bit.band(keyP["smallTemperature"], 0x01), 4)
+            )
             bodyBytes[3] = keyP["fanspeedValue"]
-            if (keyP["timerSignal"] == 1) then
-                bodyBytes[3] = bit.bor(bodyBytes[3],
-                                       keyB["BYTE_TIMER_SWITCH_ON"])
-            end
-            if (keyP["closeTime"] == nil) then keyP["closeTime"] = 0 end
+            if keyP["timerSignal"] == 1 then bodyBytes[3] = bit.bor(bodyBytes[3], keyB["BYTE_TIMER_SWITCH_ON"]) end
+            if keyP["closeTime"] == nil then keyP["closeTime"] = 0 end
             keyP["closeHour"] = math.floor(keyP["closeTime"] / 60)
             keyP["closeStepMintues"] = math.floor((keyP["closeTime"] % 60) / 15)
             keyP["closeMin"] = math.floor(((keyP["closeTime"] % 60) % 15))
-            if (keyP["openTime"] == nil) then keyP["openTime"] = 0 end
+            if keyP["openTime"] == nil then keyP["openTime"] = 0 end
             keyP["openHour"] = math.floor(keyP["openTime"] / 60)
             keyP["openStepMintues"] = math.floor((keyP["openTime"] % 60) / 15)
             keyP["openMin"] = math.floor(((keyP["openTime"] % 60) % 15))
-            if (keyP["openTimerSwitch"] == keyB["BYTE_START_TIMER_SWITCH_ON"]) then
-                bodyBytes[4] = bit.bor(bit.bor(keyP["openTimerSwitch"],
-                                               bit.lshift(keyP["openHour"], 2)),
-                                       keyP["openStepMintues"])
-            elseif (keyP["openTimerSwitch"] ==
-                keyB["BYTE_START_TIMER_SWITCH_OFF"]) then
+            if keyP["openTimerSwitch"] == keyB["BYTE_START_TIMER_SWITCH_ON"] then
+                bodyBytes[4] =
+                    bit.bor(bit.bor(keyP["openTimerSwitch"], bit.lshift(keyP["openHour"], 2)), keyP["openStepMintues"])
+            elseif keyP["openTimerSwitch"] == keyB["BYTE_START_TIMER_SWITCH_OFF"] then
                 bodyBytes[4] = 0x7F
             end
-            if (keyP["closeTimerSwitch"] == keyB["BYTE_CLOSE_TIMER_SWITCH_ON"]) then
-                bodyBytes[5] = bit.bor(bit.bor(keyP["closeTimerSwitch"],
-                                               bit.lshift(keyP["closeHour"], 2)),
-                                       keyP["closeStepMintues"])
-            elseif (keyP["closeTimerSwitch"] ==
-                keyB["BYTE_CLOSE_TIMER_SWITCH_OFF"]) then
+            if keyP["closeTimerSwitch"] == keyB["BYTE_CLOSE_TIMER_SWITCH_ON"] then
+                bodyBytes[5] = bit.bor(
+                    bit.bor(keyP["closeTimerSwitch"], bit.lshift(keyP["closeHour"], 2)),
+                    keyP["closeStepMintues"]
+                )
+            elseif keyP["closeTimerSwitch"] == keyB["BYTE_CLOSE_TIMER_SWITCH_OFF"] then
                 bodyBytes[5] = 0x7F
             end
-            bodyBytes[6] = bit.bor(bit.lshift((15 - keyP["openMin"]), 4),
-                                   (15 - keyP["closeMin"]))
-            bodyBytes[7] = bit.bor(bit.bor(keyP["swingLRValue"],
-                                           keyP["swingUDValue"]), 0x30)
-            bodyBytes[8] = bit.bor(bit.bor(keyP["strongWindValue"],
-                                           keyP["comfortableSleepValue"]),
-                                   keyP["power_saving"])
-            bodyBytes[9] = bit.bor(bit.bor(
-                                       bit.bor(keyP["purifierValue"],
-                                               keyP["ecoValue"]), bit.bor(
-                                           keyP["dryValue"], keyP["PTCValue"])),
-                                   keyP["comfortableSleepSwitch"])
-            if ((keyP["PTCForceValue"] ~= nil) and (keyP["PTCForceValue"] == 1)) then
+            bodyBytes[6] = bit.bor(bit.lshift((15 - keyP["openMin"]), 4), (15 - keyP["closeMin"]))
+            bodyBytes[7] = bit.bor(bit.bor(keyP["swingLRValue"], keyP["swingUDValue"]), 0x30)
+            bodyBytes[8] =
+                bit.bor(bit.bor(keyP["strongWindValue"], keyP["comfortableSleepValue"]), keyP["power_saving"])
+            bodyBytes[9] = bit.bor(
+                bit.bor(bit.bor(keyP["purifierValue"], keyP["ecoValue"]), bit.bor(keyP["dryValue"], keyP["PTCValue"])),
+                keyP["comfortableSleepSwitch"]
+            )
+            if (keyP["PTCForceValue"] ~= nil) and (keyP["PTCForceValue"] == 1) then
                 bodyBytes[9] = bit.bor(bodyBytes[9], 0x10)
             end
             bodyBytes[10] = bit.lshift(bit.band(keyP["preventCold"], 0x01), 3)
-            if (keyP["dust_full_time_reset"] ~= nil) then
-                bodyBytes[10] = bit.bor(keyP["dust_full_time_reset"],
-                                        bodyBytes[10])
+            if keyP["dust_full_time_reset"] ~= nil then
+                bodyBytes[10] = bit.bor(keyP["dust_full_time_reset"], bodyBytes[10])
             end
-            if (keyP["fresh_filter_reset"] ~= nil) then
-                bodyBytes[10] = bit.bor(keyP["fresh_filter_reset"],
-                                        bodyBytes[10])
+            if keyP["fresh_filter_reset"] ~= nil then
+                bodyBytes[10] = bit.bor(keyP["fresh_filter_reset"], bodyBytes[10])
             end
-            if (keyP["comfortableSleepValue"] == keyB["BYTE_SLEEP_ON"] and
-                comfortByte == nil) then
-                if (keyP["modeValue"] == keyB["BYTE_MODE_HEAT"]) then
-                    firstHourTemp = checkBoundary(keyP["temperature"] - 1, 17,
-                                                  30)
-                    otherHourTemp = checkBoundary(keyP["temperature"] - 2, 17,
-                                                  30)
+            if keyP["comfortableSleepValue"] == keyB["BYTE_SLEEP_ON"] and comfortByte == nil then
+                if keyP["modeValue"] == keyB["BYTE_MODE_HEAT"] then
+                    firstHourTemp = checkBoundary(keyP["temperature"] - 1, 17, 30)
+                    otherHourTemp = checkBoundary(keyP["temperature"] - 2, 17, 30)
                 else
-                    firstHourTemp = checkBoundary(keyP["temperature"] + 1, 17,
-                                                  30)
-                    otherHourTemp = checkBoundary(keyP["temperature"] + 2, 17,
-                                                  30)
+                    firstHourTemp = checkBoundary(keyP["temperature"] + 1, 17, 30)
+                    otherHourTemp = checkBoundary(keyP["temperature"] + 2, 17, 30)
                 end
-                bodyBytes[11] = bit.bor(firstHourTemp - 17,
-                                        bit.lshift((otherHourTemp - 17), 4))
-                bodyBytes[12] = bit.bor(otherHourTemp - 17,
-                                        bit.lshift((otherHourTemp - 17), 4))
-                bodyBytes[13] = bit.bor(otherHourTemp - 17,
-                                        bit.lshift((otherHourTemp - 17), 4))
-                bodyBytes[14] = bit.bor(otherHourTemp - 17,
-                                        bit.lshift((otherHourTemp - 17), 4))
-                bodyBytes[15] = bit.bor(otherHourTemp - 17,
-                                        bit.lshift((otherHourTemp - 17), 4))
-                if (keyP["smallTemperature"] ~= 0) then
+                bodyBytes[11] = bit.bor(firstHourTemp - 17, bit.lshift((otherHourTemp - 17), 4))
+                bodyBytes[12] = bit.bor(otherHourTemp - 17, bit.lshift((otherHourTemp - 17), 4))
+                bodyBytes[13] = bit.bor(otherHourTemp - 17, bit.lshift((otherHourTemp - 17), 4))
+                bodyBytes[14] = bit.bor(otherHourTemp - 17, bit.lshift((otherHourTemp - 17), 4))
+                bodyBytes[15] = bit.bor(otherHourTemp - 17, bit.lshift((otherHourTemp - 17), 4))
+                if keyP["smallTemperature"] ~= 0 then
                     bodyBytes[16] = 0xFF
                     bodyBytes[17] = bit.bor(keyP["comfortableSleepTime"], 0x30)
                 else
                     bodyBytes[17] = keyP["comfortableSleepTime"]
                 end
-            elseif (keyP["comfortableSleepValue"] == keyB["BYTE_SLEEP_ON"] and
-                comfortByte ~= nil) then
-                bodyBytes[11] = bit.bor(checkBoundary(comfortByte[1], 17, 30) -
-                                            17, bit.lshift(
-                                            (checkBoundary(comfortByte[2], 17,
-                                                           30) - 17), 4))
-                bodyBytes[12] = bit.bor(checkBoundary(comfortByte[3], 17, 30) -
-                                            17, bit.lshift(
-                                            (checkBoundary(comfortByte[4], 17,
-                                                           30) - 17), 4))
-                bodyBytes[13] = bit.bor(checkBoundary(comfortByte[5], 17, 30) -
-                                            17,
-                                        bit.lshift((comfortByte[6] - 17), 4))
-                bodyBytes[14] = bit.bor(checkBoundary(comfortByte[7], 17, 30) -
-                                            17,
-                                        bit.lshift((comfortByte[8] - 17), 4))
-                bodyBytes[15] = bit.bor(checkBoundary(comfortByte[9], 17, 30) -
-                                            17,
-                                        bit.lshift((comfortByte[10] - 17), 4))
-                if (keyP["smallTemperature"] ~= 0) then
+            elseif keyP["comfortableSleepValue"] == keyB["BYTE_SLEEP_ON"] and comfortByte ~= nil then
+                bodyBytes[11] = bit.bor(
+                    checkBoundary(comfortByte[1], 17, 30) - 17,
+                    bit.lshift((checkBoundary(comfortByte[2], 17, 30) - 17), 4)
+                )
+                bodyBytes[12] = bit.bor(
+                    checkBoundary(comfortByte[3], 17, 30) - 17,
+                    bit.lshift((checkBoundary(comfortByte[4], 17, 30) - 17), 4)
+                )
+                bodyBytes[13] =
+                    bit.bor(checkBoundary(comfortByte[5], 17, 30) - 17, bit.lshift((comfortByte[6] - 17), 4))
+                bodyBytes[14] =
+                    bit.bor(checkBoundary(comfortByte[7], 17, 30) - 17, bit.lshift((comfortByte[8] - 17), 4))
+                bodyBytes[15] =
+                    bit.bor(checkBoundary(comfortByte[9], 17, 30) - 17, bit.lshift((comfortByte[10] - 17), 4))
+                if keyP["smallTemperature"] ~= 0 then
                     bodyBytes[16] = 0xFF
                     bodyBytes[17] = bit.bor(keyP["comfortableSleepTime"], 0x30)
                 else
                     bodyBytes[17] = keyP["comfortableSleepTime"]
                 end
             end
-            if (keyP["pmv"] ~= nil) then
+            if keyP["pmv"] ~= nil then
                 local pmvValue = (keyP["pmv"] + 3.5) * 2
-                bodyBytes[17] = bit.bor(bit.lshift(bit.band(pmvValue, 0x08), 4),
-                                        bodyBytes[17])
-                bodyBytes[18] = bit.bor(bit.lshift(bit.band(pmvValue, 0x07), 5),
-                                        bodyBytes[18])
+                bodyBytes[17] = bit.bor(bit.lshift(bit.band(pmvValue, 0x08), 4), bodyBytes[17])
+                bodyBytes[18] = bit.bor(bit.lshift(bit.band(pmvValue, 0x07), 5), bodyBytes[18])
             end
-            if (keyP["naturalWind"] ~= nil) then
-                bodyBytes[17] = bit.bor(keyP["naturalWind"], bodyBytes[17])
+            if keyP["naturalWind"] ~= nil then bodyBytes[17] = bit.bor(keyP["naturalWind"], bodyBytes[17]) end
+            if keyP["temperature"] < 17 or keyP["temperature"] > 30 then
+                bodyBytes[18] = bit.bor(bit.band(0x1F, (keyP["temperature"] - 12)), bodyBytes[18])
             end
-            if (keyP["temperature"] < 17 or keyP["temperature"] > 30) then
-                bodyBytes[18] = bit.bor(bit.band(0x1F,
-                                                 (keyP["temperature"] - 12)),
-                                        bodyBytes[18])
-            end
-            if (keyP["modeValue"] == keyB["BYTE_MODE_SMART_DRY"] and
-                keyP["smartDryValue"] ~= nil) then
-                bodyBytes[19] = bit.bor(bit.band(0x7F, keyP["smartDryValue"]),
-                                        bodyBytes[19])
+            if keyP["modeValue"] == keyB["BYTE_MODE_SMART_DRY"] and keyP["smartDryValue"] ~= nil then
+                bodyBytes[19] = bit.bor(bit.band(0x7F, keyP["smartDryValue"]), bodyBytes[19])
             end
             bodyBytes[19] = bit.bor(keyP["swingLRUnderSwitch"], bodyBytes[19])
             bodyBytes[20] = bit.bor(keyP["swingLRValueUnder"], bodyBytes[20])
-            if (keyP["comfortPowerSave"] == keyB["BYTE_COMFORT_POWER_SAVE_ON"]) then
+            if keyP["comfortPowerSave"] == keyB["BYTE_COMFORT_POWER_SAVE_ON"] then
                 bodyBytes[22] = 0x01
-            elseif (keyP["comfortPowerSave"] ==
-                keyB["BYTE_COMFORT_POWER_SAVE_OFF"]) then
+            elseif keyP["comfortPowerSave"] == keyB["BYTE_COMFORT_POWER_SAVE_OFF"] then
                 bodyBytes[22] = 0x00
             end
-            bodyBytes[24] = bit.bor(keyP["swing_lr_button"],
-                                    keyP["swing_ud_button"])
+            bodyBytes[24] = bit.bor(keyP["swing_lr_button"], keyP["swing_ud_button"])
             math.randomseed(tostring(os.time() * #bodyBytes):reverse():sub(1, 7))
             math.random()
             bodyBytes[25] = math.random(1, 254)
@@ -3991,7 +3725,7 @@ function jsonToData(jsonCmd)
             bodyBytes[0] = keyB["BYTE_CONTROL_PROPERTY_CMD"]
             bodyBytes[1] = keyP["propertyNumber"]
             local cursor = 2
-            if (keyP["prevent_super_cool"] ~= nil) then
+            if keyP["prevent_super_cool"] ~= nil then
                 bodyBytes[cursor + 0] = 0x49
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x05
@@ -4002,17 +3736,22 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 7] = 0xFF
                 cursor = cursor + 8
             end
-            if (keyP["prevent_straight_wind"] ~= nil) then
-                if (deviceSN8 == "12035" or deviceSN8 == "12037" or deviceSN8 ==
-                    "Z1312" or deviceSN8 == "Z1262" or deviceSN8 == "12179" or
-                    deviceSN8 == "Z1261") then
+            if keyP["prevent_straight_wind"] ~= nil then
+                if
+                    deviceSN8 == "12035"
+                    or deviceSN8 == "12037"
+                    or deviceSN8 == "Z1312"
+                    or deviceSN8 == "Z1262"
+                    or deviceSN8 == "12179"
+                    or deviceSN8 == "Z1261"
+                then
                     bodyBytes[cursor + 0] = 0x43
                     bodyBytes[cursor + 1] = 0x00
                     bodyBytes[cursor + 2] = 0x01
                     bodyBytes[cursor + 3] = 0x00
-                    if (keyP["prevent_straight_wind"] == 2) then
+                    if keyP["prevent_straight_wind"] == 2 then
                         bodyBytes[cursor + 3] = 0x02
-                    elseif (keyP["prevent_straight_wind"] == 1) then
+                    elseif keyP["prevent_straight_wind"] == 1 then
                         bodyBytes[cursor + 3] = 0x01
                     end
                     cursor = cursor + 4
@@ -4024,60 +3763,65 @@ function jsonToData(jsonCmd)
                     cursor = cursor + 4
                 end
             end
-            if (keyP["fa_prevent_straight_wind"] ~= nil) then
+            if keyP["fa_prevent_straight_wind"] ~= nil then
                 bodyBytes[cursor + 0] = 0x43
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = 0x00
-                if (keyP["fa_prevent_straight_wind"] == 2) then
+                if keyP["fa_prevent_straight_wind"] == 2 then
                     bodyBytes[cursor + 3] = 0x02
-                elseif (keyP["fa_prevent_straight_wind"] == 1) then
+                elseif keyP["fa_prevent_straight_wind"] == 1 then
                     bodyBytes[cursor + 3] = 0x01
                 end
                 cursor = cursor + 4
             end
-            if (keyP["auto_prevent_straight_wind"] ~= nil) then
+            if keyP["auto_prevent_straight_wind"] ~= nil then
                 bodyBytes[cursor + 0] = 0x26
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["auto_prevent_straight_wind"]
                 cursor = cursor + 4
             end
-            if (keyP["ptc_default_rule"] ~= nil) then
+            if keyP["ptc_default_rule"] ~= nil then
                 bodyBytes[cursor + 0] = 0x11
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["ptc_default_rule"]
                 cursor = cursor + 4
             end
-            if (keyP["self_clean"] ~= nil) then
+            if keyP["self_clean"] ~= nil then
                 bodyBytes[cursor + 0] = 0x39
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["self_clean"]
                 cursor = cursor + 4
             end
-            if (keyP["wind_straight"] ~= nil) then
+            if keyP["wind_straight"] ~= nil then
                 bodyBytes[cursor + 0] = 0x32
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["wind_straight"]
                 cursor = cursor + 4
             end
-            if (keyP["yb_wind_avoid"] ~= nil) then
+            if keyP["yb_wind_avoid"] ~= nil then
                 bodyBytes[cursor + 0] = 0x32
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["yb_wind_avoid"]
                 cursor = cursor + 4
             end
-            if (keyP["wind_avoid"] ~= nil) then
-                if (deviceSN8 == "50939" or deviceSN8 == "51001" or deviceSN8 ==
-                    "Z1304" or deviceSN8 == "Z1259" or deviceSN8 == "Z2272") then
+            if keyP["wind_avoid"] ~= nil then
+                if
+                    deviceSN8 == "50939"
+                    or deviceSN8 == "51001"
+                    or deviceSN8 == "Z1304"
+                    or deviceSN8 == "Z1259"
+                    or deviceSN8 == "Z2272"
+                then
                     bodyBytes[cursor + 0] = 0x32
                     bodyBytes[cursor + 1] = 0x00
                     bodyBytes[cursor + 2] = 0x01
-                    if (keyP["wind_avoid"] == 0x01) then
+                    if keyP["wind_avoid"] == 0x01 then
                         bodyBytes[cursor + 3] = 0x02
                     else
                         bodyBytes[cursor + 3] = 0x00
@@ -4091,28 +3835,33 @@ function jsonToData(jsonCmd)
                     cursor = cursor + 4
                 end
             end
-            if (keyP["intelligent_wind"] ~= nil) then
+            if keyP["intelligent_wind"] ~= nil then
                 bodyBytes[cursor + 0] = 0x34
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["intelligent_wind"]
                 cursor = cursor + 4
             end
-            if (keyP["no_wind_sense"] ~= nil) then
-                if (deviceSN8 == "12035" or deviceSN8 == "12037" or deviceSN8 ==
-                    "Z1312" or deviceSN8 == "Z1262" or deviceSN8 == "12179" or
-                    deviceSN8 == "Z1261") then
+            if keyP["no_wind_sense"] ~= nil then
+                if
+                    deviceSN8 == "12035"
+                    or deviceSN8 == "12037"
+                    or deviceSN8 == "Z1312"
+                    or deviceSN8 == "Z1262"
+                    or deviceSN8 == "12179"
+                    or deviceSN8 == "Z1261"
+                then
                     bodyBytes[cursor + 0] = 0x43
                     bodyBytes[cursor + 1] = 0x00
                     bodyBytes[cursor + 2] = 0x01
                     bodyBytes[cursor + 3] = 0x00
-                    if (keyP["no_wind_sense"] == 1) then
+                    if keyP["no_wind_sense"] == 1 then
                         bodyBytes[cursor + 3] = 0x04
-                    elseif (keyP["no_wind_sense"] == 0) then
+                    elseif keyP["no_wind_sense"] == 0 then
                         bodyBytes[cursor + 3] = 0x01
                     end
                     cursor = cursor + 4
-                elseif (deviceSN8 == "51023") then
+                elseif deviceSN8 == "51023" then
                     bodyBytes[cursor + 0] = 0x18
                     bodyBytes[cursor + 1] = 0x00
                     bodyBytes[cursor + 2] = 0x02
@@ -4127,33 +3876,33 @@ function jsonToData(jsonCmd)
                     cursor = cursor + 4
                 end
             end
-            if (keyP["fn_no_wind_sense"] ~= nil) then
+            if keyP["fn_no_wind_sense"] ~= nil then
                 bodyBytes[cursor + 0] = 0x18
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x02
                 bodyBytes[cursor + 3] = keyP["fn_no_wind_sense"]
-                if (keyP["no_wind_sense_level"] ~= nil) then
+                if keyP["no_wind_sense_level"] ~= nil then
                     bodyBytes[cursor + 4] = keyP["no_wind_sense_level"]
                 else
                     bodyBytes[cursor + 4] = 10
                 end
                 cursor = cursor + 5
             end
-            if (keyP["child_prevent_cold_wind"] ~= nil) then
+            if keyP["child_prevent_cold_wind"] ~= nil then
                 bodyBytes[cursor + 0] = 0x3A
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["child_prevent_cold_wind"]
                 cursor = cursor + 4
             end
-            if (keyP["little_angel"] ~= nil) then
+            if keyP["little_angel"] ~= nil then
                 bodyBytes[cursor + 0] = 0x1B
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["little_angel"]
                 cursor = cursor + 4
             end
-            if (keyP["cool_hot_sense"] ~= nil) then
+            if keyP["cool_hot_sense"] ~= nil then
                 bodyBytes[cursor + 0] = 0x21
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x08
@@ -4167,28 +3916,28 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 10] = 0x00
                 cursor = cursor + 11
             end
-            if (keyP["gentle_wind_sense"] ~= nil) then
+            if keyP["gentle_wind_sense"] ~= nil then
                 bodyBytes[cursor + 0] = 0x43
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["gentle_wind_sense"]
                 cursor = cursor + 4
             end
-            if (keyP["even_wind"] ~= nil) then
+            if keyP["even_wind"] ~= nil then
                 bodyBytes[cursor + 0] = 0x4E
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["even_wind"]
                 cursor = cursor + 4
             end
-            if (keyP["single_tuyere"] ~= nil) then
+            if keyP["single_tuyere"] ~= nil then
                 bodyBytes[cursor + 0] = 0x4F
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["single_tuyere"]
                 cursor = cursor + 4
             end
-            if (keyP["extreme_wind"] ~= nil) then
+            if keyP["extreme_wind"] ~= nil then
                 bodyBytes[cursor + 0] = 0x4C
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x02
@@ -4196,14 +3945,14 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 4] = 0x01
                 cursor = cursor + 5
             end
-            if (keyP["security"] ~= nil) then
+            if keyP["security"] ~= nil then
                 bodyBytes[cursor + 0] = 0x29
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["security"]
                 cursor = cursor + 4
             end
-            if (keyP["voice_control"] ~= nil) then
+            if keyP["voice_control"] ~= nil then
                 bodyBytes[cursor + 0] = 0x20
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x09
@@ -4218,14 +3967,14 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 11] = 0xFF
                 cursor = cursor + 12
             end
-            if (keyP["pre_cool_hot"] ~= nil) then
+            if keyP["pre_cool_hot"] ~= nil then
                 bodyBytes[cursor + 0] = 0x01
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["pre_cool_hot"]
                 cursor = cursor + 4
             end
-            if (keyP["water_washing"] ~= nil) then
+            if keyP["water_washing"] ~= nil then
                 bodyBytes[cursor + 0] = 0x4A
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x04
@@ -4235,7 +3984,7 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 6] = 0xFF
                 cursor = cursor + 7
             end
-            if (keyP["fresh_air"] ~= nil) then
+            if keyP["fresh_air"] ~= nil then
                 bodyBytes[cursor + 0] = 0x4B
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x03
@@ -4244,7 +3993,7 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 5] = 0xFF
                 cursor = cursor + 6
             end
-            if (keyP["parent_control"] ~= nil) then
+            if keyP["parent_control"] ~= nil then
                 bodyBytes[cursor + 0] = 0x51
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x05
@@ -4255,32 +4004,30 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 7] = 0xFF
                 cursor = cursor + 8
             end
-            if (keyP["buzzerValue"] ~= nil) then
+            if keyP["buzzerValue"] ~= nil then
                 bodyBytes[cursor + 0] = 0x1A
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = 0x00
-                if (keyP["buzzerValue"] == 0x40) then
-                    bodyBytes[cursor + 3] = 0x01
-                end
+                if keyP["buzzerValue"] == 0x40 then bodyBytes[cursor + 3] = 0x01 end
                 cursor = cursor + 4
                 bodyBytes[1] = keyP["propertyNumber"] + 1
             end
-            if (keyP["wind_swing_ud_angle"] ~= nil) then
+            if keyP["wind_swing_ud_angle"] ~= nil then
                 bodyBytes[cursor + 0] = 0x09
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["wind_swing_ud_angle"]
                 cursor = cursor + 4
             end
-            if (keyP["wind_swing_lr_angle"] ~= nil) then
+            if keyP["wind_swing_lr_angle"] ~= nil then
                 bodyBytes[cursor + 0] = 0x0A
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["wind_swing_lr_angle"]
                 cursor = cursor + 4
             end
-            if (keyP["nobody_energy_save"] ~= nil) then
+            if keyP["nobody_energy_save"] ~= nil then
                 bodyBytes[cursor + 0] = 0x30
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x06
@@ -4293,7 +4040,7 @@ function jsonToData(jsonCmd)
                 cursor = cursor + 9
                 bodyBytes[1] = keyP["propertyNumber"] + 1
             end
-            if (keyP["prevent_straight_wind_lr"] ~= nil) then
+            if keyP["prevent_straight_wind_lr"] ~= nil then
                 bodyBytes[cursor + 0] = 0x58
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
@@ -4301,7 +4048,7 @@ function jsonToData(jsonCmd)
                 cursor = cursor + 4
                 bodyBytes[1] = keyP["propertyNumber"] + 1
             end
-            if (keyP["water_pump"] ~= nil) then
+            if keyP["water_pump"] ~= nil then
                 bodyBytes[cursor + 0] = 0x50
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
@@ -4309,7 +4056,7 @@ function jsonToData(jsonCmd)
                 cursor = cursor + 4
                 bodyBytes[1] = keyP["propertyNumber"] + 1
             end
-            if (keyP["intelligent_control"] ~= nil) then
+            if keyP["intelligent_control"] ~= nil then
                 bodyBytes[cursor + 0] = 0x31
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
@@ -4317,7 +4064,7 @@ function jsonToData(jsonCmd)
                 cursor = cursor + 4
                 bodyBytes[1] = keyP["propertyNumber"] + 1
             end
-            if (keyP["volume_control"] ~= nil) then
+            if keyP["volume_control"] ~= nil then
                 bodyBytes[cursor + 0] = 0x24
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x04
@@ -4328,7 +4075,7 @@ function jsonToData(jsonCmd)
                 cursor = cursor + 7
                 bodyBytes[1] = keyP["propertyNumber"] + 1
             end
-            if (keyP["voice_control_new"] ~= nil) then
+            if keyP["voice_control_new"] ~= nil then
                 bodyBytes[cursor + 0] = 0x20
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x14
@@ -4354,7 +4101,7 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 22] = 0xFF
                 cursor = cursor + 23
             end
-            if (keyP["wind_swing_ud_angle_switch"] ~= nil) then
+            if keyP["wind_swing_ud_angle_switch"] ~= nil then
                 bodyBytes[cursor + 0] = 0x79
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x03
@@ -4363,7 +4110,7 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 5] = keyP["app_control_remember_ud"]
                 cursor = cursor + 6
             end
-            if (keyP["wind_swing_lr_angle_switch"] ~= nil) then
+            if keyP["wind_swing_lr_angle_switch"] ~= nil then
                 bodyBytes[cursor + 0] = 0x7A
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x03
@@ -4372,9 +4119,14 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 5] = keyP["app_control_remember_lr"]
                 cursor = cursor + 6
             end
-            if (keyP["cool_temp_down"] ~= nil or keyP["cool_temp_up"] ~= nil or
-                keyP["auto_temp_down"] ~= nil or keyP["auto_temp_up"] ~= nil or
-                keyP["heat_temp_down"] ~= nil or keyP["heat_temp_up"] ~= nil) then
+            if
+                keyP["cool_temp_down"] ~= nil
+                or keyP["cool_temp_up"] ~= nil
+                or keyP["auto_temp_down"] ~= nil
+                or keyP["auto_temp_up"] ~= nil
+                or keyP["heat_temp_down"] ~= nil
+                or keyP["heat_temp_up"] ~= nil
+            then
                 bodyBytes[cursor + 0] = 0x25
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x07
@@ -4387,7 +4139,7 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 9] = 0x00
                 cursor = cursor + 10
             end
-            if (keyP["remote_control_lock"] ~= nil) then
+            if keyP["remote_control_lock"] ~= nil then
                 bodyBytes[cursor + 0] = 0x27
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x02
@@ -4395,27 +4147,23 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 4] = keyP["remote_control_lock_control"]
                 cursor = cursor + 5
             end
-            if (keyP["auto_prevent_cold_wind"] ~= nil) then
+            if keyP["auto_prevent_cold_wind"] ~= nil then
                 bodyBytes[cursor + 0] = 0x78
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["auto_prevent_cold_wind"]
                 cursor = cursor + 4
             end
-            if (keyP["operating_time"] ~= nil) then
+            if keyP["operating_time"] ~= nil then
                 bodyBytes[cursor + 0] = 0x28
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x03
                 bodyBytes[cursor + 3] = bit.band(keyP["operating_time"], 0xff)
-                bodyBytes[cursor + 4] = bit.band(bit.rshift(
-                                                     keyP["operating_time"], 8),
-                                                 0xff)
-                bodyBytes[cursor + 5] = bit.band(bit.rshift(
-                                                     keyP["operating_time"], 16),
-                                                 0xff)
+                bodyBytes[cursor + 4] = bit.band(bit.rshift(keyP["operating_time"], 8), 0xff)
+                bodyBytes[cursor + 5] = bit.band(bit.rshift(keyP["operating_time"], 16), 0xff)
                 cursor = cursor + 6
             end
-            if (keyP["degerming"] ~= nil) then
+            if keyP["degerming"] ~= nil then
                 bodyBytes[cursor + 0] = 0x5A
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
@@ -4423,113 +4171,108 @@ function jsonToData(jsonCmd)
                 cursor = cursor + 4
                 bodyBytes[1] = keyP["propertyNumber"] + 1
             end
-            if (keyP["light"] ~= nil) then
+            if keyP["light"] ~= nil then
                 bodyBytes[cursor + 0] = 0x5B
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["light"]
                 cursor = cursor + 4
             end
-            if (keyP["wind_top"] ~= nil) then
+            if keyP["wind_top"] ~= nil then
                 bodyBytes[cursor + 0] = 0x61
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["wind_top"]
                 cursor = cursor + 4
             end
-            if (keyP["child_lock"] ~= nil) then
+            if keyP["child_lock"] ~= nil then
                 bodyBytes[cursor + 0] = 0x5C
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["child_lock"]
                 cursor = cursor + 4
             end
-            if (keyP["buzzer_all"] ~= nil) then
+            if keyP["buzzer_all"] ~= nil then
                 bodyBytes[cursor + 0] = 0x2C
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["buzzer_all"]
                 cursor = cursor + 4
             end
-            if (keyP["wind_around"] ~= nil) then
+            if keyP["wind_around"] ~= nil then
                 bodyBytes[cursor + 0] = 0x59
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x02
                 bodyBytes[cursor + 3] = keyP["wind_around"]
                 bodyBytes[cursor + 4] = 0
-                if (keyP["wind_around_ud"] ~= nil) then
-                    bodyBytes[cursor + 4] = keyP["wind_around_ud"]
-                end
+                if keyP["wind_around_ud"] ~= nil then bodyBytes[cursor + 4] = keyP["wind_around_ud"] end
                 cursor = cursor + 5
             end
-            if (keyP["self_remove_odor_phase"] ~= nil) then
+            if keyP["self_remove_odor_phase"] ~= nil then
                 bodyBytes[cursor + 0] = 0x5D
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["self_remove_odor_phase"]
                 cursor = cursor + 4
             end
-            if (keyP["high_temp_remove_odor_alone"] ~= nil) then
+            if keyP["high_temp_remove_odor_alone"] ~= nil then
                 bodyBytes[cursor + 0] = 0x5E
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["high_temp_remove_odor_alone"]
                 cursor = cursor + 4
             end
-            if (keyP["power_lock"] ~= nil) then
+            if keyP["power_lock"] ~= nil then
                 bodyBytes[cursor + 0] = 0x27
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["power_lock"]
                 cursor = cursor + 4
             end
-            if (keyP["ptc_lock"] ~= nil) then
+            if keyP["ptc_lock"] ~= nil then
                 bodyBytes[cursor + 0] = 0x29
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["ptc_lock"]
                 cursor = cursor + 4
             end
-            if (keyP["offline_operating_time"] ~= nil) then
+            if keyP["offline_operating_time"] ~= nil then
                 bodyBytes[cursor + 0] = 0x2B
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x02
-                bodyBytes[cursor + 3] = bit.band(keyP["offline_operating_time"],
-                                                 0xff)
-                bodyBytes[cursor + 4] = bit.band(bit.rshift(
-                                                     keyP["offline_operating_time"],
-                                                     8), 0xff)
+                bodyBytes[cursor + 3] = bit.band(keyP["offline_operating_time"], 0xff)
+                bodyBytes[cursor + 4] = bit.band(bit.rshift(keyP["offline_operating_time"], 8), 0xff)
                 cursor = cursor + 5
             end
-            if (keyP["ozone"] ~= nil) then
+            if keyP["ozone"] ~= nil then
                 bodyBytes[cursor + 0] = 0x5F
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["ozone"]
                 cursor = cursor + 4
             end
-            if (keyP["soft_warm"] ~= nil) then
+            if keyP["soft_warm"] ~= nil then
                 bodyBytes[cursor + 0] = 0x63
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["soft_warm"]
                 cursor = cursor + 4
             end
-            if (keyP["fresh_air_parm"] ~= nil) then
+            if keyP["fresh_air_parm"] ~= nil then
                 bodyBytes[cursor + 0] = 0x50
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["fresh_air_parm"]
                 cursor = cursor + 4
             end
-            if (keyP["rewarming_dry"] ~= nil) then
+            if keyP["rewarming_dry"] ~= nil then
                 bodyBytes[cursor + 0] = 0x68
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["rewarming_dry"]
                 cursor = cursor + 4
             end
-            if (keyP["arom"] ~= nil) then
+            if keyP["arom"] ~= nil then
                 bodyBytes[cursor + 0] = 0x69
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x07
@@ -4537,16 +4280,12 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 4] = keyP["arom_fan_speed"]
                 bodyBytes[cursor + 5] = keyP["arom_time_clean"]
                 bodyBytes[cursor + 6] = bit.band(keyP["arom_time"], 0xff)
-                bodyBytes[cursor + 7] = bit.band(
-                                            bit.rshift(keyP["arom_time"], 8),
-                                            0xff)
+                bodyBytes[cursor + 7] = bit.band(bit.rshift(keyP["arom_time"], 8), 0xff)
                 bodyBytes[cursor + 8] = bit.band(keyP["arom_time_total"], 0xff)
-                bodyBytes[cursor + 9] = bit.band(bit.rshift(
-                                                     keyP["arom_time_total"], 8),
-                                                 0xff)
+                bodyBytes[cursor + 9] = bit.band(bit.rshift(keyP["arom_time_total"], 8), 0xff)
                 cursor = cursor + 10
             end
-            if (keyP["new_mode_power"] ~= nil) then
+            if keyP["new_mode_power"] ~= nil then
                 bodyBytes[cursor + 0] = 0x01
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x04
@@ -4556,7 +4295,7 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 6] = keyP["new_wind_speed"]
                 cursor = cursor + 7
             end
-            if (keyP["uvc_remove_odor"] ~= nil) then
+            if keyP["uvc_remove_odor"] ~= nil then
                 bodyBytes[cursor + 0] = 0x6F
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x02
@@ -4564,7 +4303,7 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 4] = keyP["uvc_power_off"]
                 cursor = cursor + 5
             end
-            if (keyP["main_strip_control"] ~= nil) then
+            if keyP["main_strip_control"] ~= nil then
                 bodyBytes[cursor + 0] = 0x30
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x04
@@ -4574,14 +4313,14 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 6] = keyP["main_horizontal_guide_strip_4"]
                 cursor = cursor + 7
             end
-            if (keyP["light_sensitive"] ~= nil) then
+            if keyP["light_sensitive"] ~= nil then
                 bodyBytes[cursor + 0] = 0x08
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["light_sensitive"]
                 cursor = cursor + 4
             end
-            if (keyP["prepare_food"] ~= nil) then
+            if keyP["prepare_food"] ~= nil then
                 bodyBytes[cursor + 0] = 0x54
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x03
@@ -4590,7 +4329,7 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 5] = keyP["prepare_food_fan_speed"]
                 cursor = cursor + 6
             end
-            if (keyP["quick_fry"] ~= nil) then
+            if keyP["quick_fry"] ~= nil then
                 bodyBytes[cursor + 0] = 0x55
                 bodyBytes[cursor + 1] = 0x02
                 bodyBytes[cursor + 2] = 0x03
@@ -4599,21 +4338,21 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 5] = keyP["quick_fry_fan_speed"]
                 cursor = cursor + 6
             end
-            if (keyP["cool_power_saving"] ~= nil) then
+            if keyP["cool_power_saving"] ~= nil then
                 bodyBytes[cursor + 0] = 0x89
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["cool_power_saving"]
                 cursor = cursor + 4
             end
-            if (keyP["jet_cool"] ~= nil) then
+            if keyP["jet_cool"] ~= nil then
                 bodyBytes[cursor + 0] = 0x67
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["jet_cool"]
                 cursor = cursor + 4
             end
-            if (keyP["quick_fry_control"] ~= nil) then
+            if keyP["quick_fry_control"] ~= nil then
                 bodyBytes[cursor + 0] = 0x8B
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x02
@@ -4621,7 +4360,7 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 4] = keyP["quick_fry_angle"]
                 cursor = cursor + 5
             end
-            if (keyP["ieco_status"] == 1) then
+            if keyP["ieco_status"] == 1 then
                 bodyBytes[cursor + 0] = 0xE3
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x0D
@@ -4629,63 +4368,53 @@ function jsonToData(jsonCmd)
                 bodyBytes[cursor + 4] = keyP["ieco_number"]
                 bodyBytes[cursor + 5] = keyP["ieco_switch"]
                 bodyBytes[cursor + 6] = bit.band(keyP["ieco_target_rate"], 0xff)
-                bodyBytes[cursor + 7] = bit.band(bit.rshift(
-                                                     keyP["ieco_target_rate"], 8),
-                                                 0xff)
+                bodyBytes[cursor + 7] = bit.band(bit.rshift(keyP["ieco_target_rate"], 8), 0xff)
                 bodyBytes[cursor + 8] = keyP["ieco_indoor_wind_speed_level"]
-                bodyBytes[cursor + 9] = bit.band(keyP["ieco_indoor_wind_speed"],
-                                                 0xff)
-                bodyBytes[cursor + 10] =
-                    bit.band(bit.rshift(keyP["ieco_indoor_wind_speed"], 8), 0xff)
+                bodyBytes[cursor + 9] = bit.band(keyP["ieco_indoor_wind_speed"], 0xff)
+                bodyBytes[cursor + 10] = bit.band(bit.rshift(keyP["ieco_indoor_wind_speed"], 8), 0xff)
                 bodyBytes[cursor + 11] = keyP["ieco_outdoor_wind_speed_level"]
-                bodyBytes[cursor + 12] = bit.band(
-                                             keyP["ieco_outdoor_wind_speed"],
-                                             0xff)
-                bodyBytes[cursor + 13] =
-                    bit.band(bit.rshift(keyP["ieco_outdoor_wind_speed"], 8),
-                             0xff)
-                bodyBytes[cursor + 14] =
-                    bit.band(keyP["ieco_expansion_valve"], 0xff)
-                bodyBytes[cursor + 15] =
-                    bit.band(bit.rshift(keyP["ieco_expansion_valve"], 8), 0xff)
+                bodyBytes[cursor + 12] = bit.band(keyP["ieco_outdoor_wind_speed"], 0xff)
+                bodyBytes[cursor + 13] = bit.band(bit.rshift(keyP["ieco_outdoor_wind_speed"], 8), 0xff)
+                bodyBytes[cursor + 14] = bit.band(keyP["ieco_expansion_valve"], 0xff)
+                bodyBytes[cursor + 15] = bit.band(bit.rshift(keyP["ieco_expansion_valve"], 8), 0xff)
                 cursor = cursor + 16
             end
-            if (keyP["swing_lr_under_angle"] ~= nil) then
+            if keyP["swing_lr_under_angle"] ~= nil then
                 bodyBytes[cursor + 0] = 0x96
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["swing_lr_under_angle"]
                 cursor = cursor + 4
             end
-            if (keyP["wait_clean"] ~= nil) then
+            if keyP["wait_clean"] ~= nil then
                 bodyBytes[cursor + 0] = 0x99
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["wait_clean"]
                 cursor = cursor + 4
             end
-            if (keyP["self_clean_time"] ~= nil) then
+            if keyP["self_clean_time"] ~= nil then
                 bodyBytes[cursor + 0] = 0x9A
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["self_clean_time"]
                 cursor = cursor + 4
             end
-            if (keyP["dry_clean_time"] ~= nil) then
+            if keyP["dry_clean_time"] ~= nil then
                 bodyBytes[cursor + 0] = 0x9B
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["dry_clean_time"]
                 cursor = cursor + 4
             end
-            if (keyP["ptc_load"] ~= nil) then
+            if keyP["ptc_load"] ~= nil then
                 bodyBytes[cursor + 0] = 0xA0
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
                 bodyBytes[cursor + 3] = keyP["ptc_load"]
                 cursor = cursor + 4
             end
-            if (keyP["soft_cool"] ~= nil) then
+            if keyP["soft_cool"] ~= nil then
                 bodyBytes[cursor + 0] = 0x9E
                 bodyBytes[cursor + 1] = 0x00
                 bodyBytes[cursor + 2] = 0x01
@@ -4805,14 +4534,14 @@ function jsonToData(jsonCmd)
 end
 function dataToJson(jsonCmd)
     init_keyP()
-    if (not jsonCmd) then return nil end
+    if not jsonCmd then return nil end
     local json = decode(jsonCmd)
     local deviceinfo = json["deviceinfo"]
     deviceSubType = deviceinfo["deviceSubType"]
     local deviceSN = json["deviceinfo"]["deviceSN"]
     if deviceSN ~= nil then deviceSN8 = string.sub(deviceSN, 13, 17) end
     local status = json["status"]
-    if (status) then jsonToModel(status, "status") end
+    if status then jsonToModel(status, "status") end
     local binData = json["msg"]["data"]
     local info = {}
     local msgBytes = {}
@@ -4820,8 +4549,10 @@ function dataToJson(jsonCmd)
     local msgLength = 0
     local bodyLength = 0
     info = string2table(binData)
-    dataType = info[10];
-    for i = 1, #info do msgBytes[i - 1] = info[i] end
+    dataType = info[10]
+    for i = 1, #info do
+        msgBytes[i - 1] = info[i]
+    end
     msgLength = msgBytes[1]
     bodyLength = msgLength - keyB["BYTE_PROTOCOL_LENGTH"] - 1
     for i = 0, bodyLength do
@@ -4830,860 +4561,639 @@ function dataToJson(jsonCmd)
     binToModel(bodyBytes, deviceSN8)
     local streams = {}
     streams[keyT["KEY_VERSION"]] = keyV["VALUE_VERSION"]
-    if (keyP["powerValue"] ~= nil) then
-        if (keyP["powerValue"] == keyB["BYTE_POWER_ON"]) then
+    if keyP["powerValue"] ~= nil then
+        if keyP["powerValue"] == keyB["BYTE_POWER_ON"] then
             streams[keyT["KEY_POWER"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["powerValue"] == keyB["BYTE_POWER_OFF"]) then
+        elseif keyP["powerValue"] == keyB["BYTE_POWER_OFF"] then
             streams[keyT["KEY_POWER"]] = keyV["VALUE_FUNCTION_OFF"]
         else
             streams[keyT["KEY_POWER"]] = keyV["VALUE_FUNCTION_OFF"]
         end
     end
-    if (keyP["modeValue"] ~= nil) then
-        if (keyP["modeValue"] == keyB["BYTE_MODE_HEAT"]) then
+    if keyP["modeValue"] ~= nil then
+        if keyP["modeValue"] == keyB["BYTE_MODE_HEAT"] then
             streams[keyT["KEY_MODE"]] = keyV["VALUE_MODE_HEAT"]
-        elseif (keyP["modeValue"] == keyB["BYTE_MODE_COOL"]) then
+        elseif keyP["modeValue"] == keyB["BYTE_MODE_COOL"] then
             streams[keyT["KEY_MODE"]] = keyV["VALUE_MODE_COOL"]
-        elseif (keyP["modeValue"] == keyB["BYTE_MODE_AUTO"]) then
+        elseif keyP["modeValue"] == keyB["BYTE_MODE_AUTO"] then
             streams[keyT["KEY_MODE"]] = keyV["VALUE_MODE_AUTO"]
-        elseif (keyP["modeValue"] == keyB["BYTE_MODE_DRY"]) then
+        elseif keyP["modeValue"] == keyB["BYTE_MODE_DRY"] then
             streams[keyT["KEY_MODE"]] = keyV["VALUE_MODE_DRY"]
-        elseif (keyP["modeValue"] == keyB["BYTE_MODE_FAN"]) then
+        elseif keyP["modeValue"] == keyB["BYTE_MODE_FAN"] then
             streams[keyT["KEY_MODE"]] = keyV["VALUE_MODE_FAN"]
-        elseif (keyP["modeValue"] == keyB["BYTE_MODE_SMART_DRY"]) then
+        elseif keyP["modeValue"] == keyB["BYTE_MODE_SMART_DRY"] then
             streams[keyT["KEY_MODE"]] = keyV["VALUE_MODE_SMART_DRY"]
-            if (keyP["smartDryValue"] ~= nil and keyP["smartDryValue"] >= 30 and
-                keyP["smartDryValue"] <= 101) then
+            if keyP["smartDryValue"] ~= nil and keyP["smartDryValue"] >= 30 and keyP["smartDryValue"] <= 101 then
                 streams[keyT["KEY_SMART_DRY"]] = keyP["smartDryValue"]
             end
         end
     end
-    if (keyP["purifierValue"] ~= nil) then
-        if (keyP["purifierValue"] == keyB["BYTE_PURIFIER_ON"]) then
+    if keyP["purifierValue"] ~= nil then
+        if keyP["purifierValue"] == keyB["BYTE_PURIFIER_ON"] then
             streams[keyT["KEY_PURIFIER"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["purifierValue"] == keyB["BYTE_PURIFIER_OFF"]) then
+        elseif keyP["purifierValue"] == keyB["BYTE_PURIFIER_OFF"] then
             streams[keyT["KEY_PURIFIER"]] = keyV["VALUE_FUNCTION_OFF"]
         end
     end
-    if (keyP["ecoValue"] ~= nil) then
-        if (keyP["ecoValue"] == keyB["BYTE_ECO_ON"]) then
+    if keyP["ecoValue"] ~= nil then
+        if keyP["ecoValue"] == keyB["BYTE_ECO_ON"] then
             streams[keyT["KEY_ECO"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["ecoValue"] == keyB["BYTE_ECO_OFF"]) then
+        elseif keyP["ecoValue"] == keyB["BYTE_ECO_OFF"] then
             streams[keyT["KEY_ECO"]] = keyV["VALUE_FUNCTION_OFF"]
         end
     end
-    if ((keyP["dryValue"] ~= nil) and (keyP["modeValue"] ~= nil)) then
-        if (keyP["dryValue"] == keyB["BYTE_DRY_ON"]) then
+    if (keyP["dryValue"] ~= nil) and (keyP["modeValue"] ~= nil) then
+        if keyP["dryValue"] == keyB["BYTE_DRY_ON"] then
             streams[keyT["KEY_DRY"]] = keyV["VALUE_FUNCTION_ON"]
         else
             streams[keyT["KEY_DRY"]] = keyV["VALUE_FUNCTION_OFF"]
         end
     end
-    if (keyP["fanspeedValue"] ~= nil) then
-        streams[keyT["KEY_FANSPEED"]] = keyP["fanspeedValue"]
-    end
-    if ((keyP["outdoorTemperatureValue"] ~= nil) and
-        (keyP["smallOutdoorTemperatureValue"] ~= nil)) then
+    if keyP["fanspeedValue"] ~= nil then streams[keyT["KEY_FANSPEED"]] = keyP["fanspeedValue"] end
+    if (keyP["outdoorTemperatureValue"] ~= nil) and (keyP["smallOutdoorTemperatureValue"] ~= nil) then
         local t1, t2 = math.modf(keyP["outdoorTemperatureValue"])
-        if (keyP["outdoorTemperatureValue"] < 0) then
-            streams[keyV["VALUE_OUTDOOR_TEMPERATURE"]] = t1 -
-                                                             keyP["smallOutdoorTemperatureValue"] /
-                                                             10
+        if keyP["outdoorTemperatureValue"] < 0 then
+            streams[keyV["VALUE_OUTDOOR_TEMPERATURE"]] = t1 - keyP["smallOutdoorTemperatureValue"] / 10
         else
-            streams[keyV["VALUE_OUTDOOR_TEMPERATURE"]] = t1 +
-                                                             keyP["smallOutdoorTemperatureValue"] /
-                                                             10
+            streams[keyV["VALUE_OUTDOOR_TEMPERATURE"]] = t1 + keyP["smallOutdoorTemperatureValue"] / 10
         end
     end
-    if ((keyP["indoorTemperatureValue"] ~= nil) and
-        (keyP["smallIndoorTemperatureValue"] ~= nil)) then
+    if (keyP["indoorTemperatureValue"] ~= nil) and (keyP["smallIndoorTemperatureValue"] ~= nil) then
         local t1, t2 = math.modf(keyP["indoorTemperatureValue"])
-        if (keyP["indoorTemperatureValue"] < 0) then
-            streams[keyV["VALUE_INDOOR_TEMPERATURE"]] = t1 -
-                                                            keyP["smallIndoorTemperatureValue"] /
-                                                            10
+        if keyP["indoorTemperatureValue"] < 0 then
+            streams[keyV["VALUE_INDOOR_TEMPERATURE"]] = t1 - keyP["smallIndoorTemperatureValue"] / 10
         else
-            streams[keyV["VALUE_INDOOR_TEMPERATURE"]] = t1 +
-                                                            keyP["smallIndoorTemperatureValue"] /
-                                                            10
+            streams[keyV["VALUE_INDOOR_TEMPERATURE"]] = t1 + keyP["smallIndoorTemperatureValue"] / 10
         end
     end
-    if (keyP["swingUDValue"] ~= nil) then
-        if (keyP["swingUDValue"] == keyB["BYTE_SWING_UD_ON"]) then
+    if keyP["swingUDValue"] ~= nil then
+        if keyP["swingUDValue"] == keyB["BYTE_SWING_UD_ON"] then
             streams[keyT["KEY_SWING_UD"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["swingUDValue"] == keyB["BYTE_SWING_UD_OFF"]) then
+        elseif keyP["swingUDValue"] == keyB["BYTE_SWING_UD_OFF"] then
             streams[keyT["KEY_SWING_UD"]] = keyV["VALUE_FUNCTION_OFF"]
         end
     end
-    if (keyP["swingLRValue"] ~= nil) then
-        if (keyP["swingLRValue"] == keyB["BYTE_SWING_LR_ON"]) then
+    if keyP["swingLRValue"] ~= nil then
+        if keyP["swingLRValue"] == keyB["BYTE_SWING_LR_ON"] then
             streams[keyT["KEY_SWING_LR"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["swingLRValue"] == keyB["BYTE_SWING_LR_OFF"]) then
+        elseif keyP["swingLRValue"] == keyB["BYTE_SWING_LR_OFF"] then
             streams[keyT["KEY_SWING_LR"]] = keyV["VALUE_FUNCTION_OFF"]
         end
     end
-    if (keyP["swingLRValueUnder"] == keyB["BYTE_SWING_LR_UNDER_ON"] or
-        keyP["swingLRValueUnder"] == 0x40) then
+    if keyP["swingLRValueUnder"] == keyB["BYTE_SWING_LR_UNDER_ON"] or keyP["swingLRValueUnder"] == 0x40 then
         streams[keyT["KEY_SWING_LR_UNDER"]] = keyV["VALUE_FUNCTION_ON"]
-    elseif (keyP["swingLRValueUnder"] == keyB["BYTE_SWING_LR_UNDER_OFF"]) then
+    elseif keyP["swingLRValueUnder"] == keyB["BYTE_SWING_LR_UNDER_OFF"] then
         streams[keyT["KEY_SWING_LR_UNDER"]] = keyV["VALUE_FUNCTION_OFF"]
     end
-    if ((keyP["PTCValue"] ~= nil) and (keyP["modeValue"] ~= nil)) then
-        if (keyP["PTCValue"] == keyB["BYTE_PTC_ON"]) then
+    if (keyP["PTCValue"] ~= nil) and (keyP["modeValue"] ~= nil) then
+        if keyP["PTCValue"] == keyB["BYTE_PTC_ON"] then
             streams[keyT["KEY_PTC"]] = keyV["VALUE_FUNCTION_ON"]
         else
             streams[keyT["KEY_PTC"]] = keyV["VALUE_FUNCTION_OFF"]
         end
     end
-    if (keyP["openTimerSwitch"] ~= nil) then
-        if (keyP["openTimerSwitch"] == keyB["BYTE_START_TIMER_SWITCH_ON"]) then
+    if keyP["openTimerSwitch"] ~= nil then
+        if keyP["openTimerSwitch"] == keyB["BYTE_START_TIMER_SWITCH_ON"] then
             streams[keyT["KEY_TIME_ON"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["openTimerSwitch"] == keyB["BYTE_START_TIMER_SWITCH_OFF"]) then
+        elseif keyP["openTimerSwitch"] == keyB["BYTE_START_TIMER_SWITCH_OFF"] then
             streams[keyT["KEY_TIME_ON"]] = keyV["VALUE_FUNCTION_OFF"]
         end
     end
-    if (keyP["closeTimerSwitch"] ~= nil) then
-        if (keyP["closeTimerSwitch"] == keyB["BYTE_CLOSE_TIMER_SWITCH_ON"]) then
+    if keyP["closeTimerSwitch"] ~= nil then
+        if keyP["closeTimerSwitch"] == keyB["BYTE_CLOSE_TIMER_SWITCH_ON"] then
             streams[keyT["KEY_TIME_OFF"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["closeTimerSwitch"] == keyB["BYTE_CLOSE_TIMER_SWITCH_OFF"]) then
+        elseif keyP["closeTimerSwitch"] == keyB["BYTE_CLOSE_TIMER_SWITCH_OFF"] then
             streams[keyT["KEY_TIME_OFF"]] = keyV["VALUE_FUNCTION_OFF"]
         end
     end
-    if (keyP["closeTimerSwitch"] ~= nil) then
-        if (keyP["closeTimerSwitch"] == keyB["BYTE_CLOSE_TIMER_SWITCH_OFF"]) then
+    if keyP["closeTimerSwitch"] ~= nil then
+        if keyP["closeTimerSwitch"] == keyB["BYTE_CLOSE_TIMER_SWITCH_OFF"] then
             streams[keyT["KEY_CLOSE_TIME"]] = 0
         else
             streams[keyT["KEY_CLOSE_TIME"]] = keyP["closeTime"]
         end
     end
-    if (keyP["openTimerSwitch"] ~= nil) then
-        if (keyP["openTimerSwitch"] == keyB["BYTE_START_TIMER_SWITCH_OFF"]) then
+    if keyP["openTimerSwitch"] ~= nil then
+        if keyP["openTimerSwitch"] == keyB["BYTE_START_TIMER_SWITCH_OFF"] then
             streams[keyT["KEY_OPEN_TIME"]] = 0
         else
             streams[keyT["KEY_OPEN_TIME"]] = keyP["openTime"]
         end
     end
-    if (keyP["currentWorkTime"] ~= nil) then
-        streams[keyT["KEY_CURRENT_WORK_TIME"]] = keyP["currentWorkTime"]
-    end
-    if (keyP["strongWindValue"] ~= nil) then
-        if (keyP["strongWindValue"] == keyB["BYTE_STRONG_WIND_ON"]) then
+    if keyP["currentWorkTime"] ~= nil then streams[keyT["KEY_CURRENT_WORK_TIME"]] = keyP["currentWorkTime"] end
+    if keyP["strongWindValue"] ~= nil then
+        if keyP["strongWindValue"] == keyB["BYTE_STRONG_WIND_ON"] then
             streams[keyT["KEY_STRONG_WIND"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["strongWindValue"] == keyB["BYTE_STRONG_WIND_OFF"]) then
+        elseif keyP["strongWindValue"] == keyB["BYTE_STRONG_WIND_OFF"] then
             streams[keyT["KEY_STRONG_WIND"]] = keyV["VALUE_FUNCTION_OFF"]
         end
     end
-    if (keyP["power_saving"] ~= nil) then
-        if (keyP["power_saving"] == 0x08) then
+    if keyP["power_saving"] ~= nil then
+        if keyP["power_saving"] == 0x08 then
             streams["power_saving"] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["power_saving"] == 0x00) then
+        elseif keyP["power_saving"] == 0x00 then
             streams["power_saving"] = keyV["VALUE_FUNCTION_OFF"]
         end
     end
-    if (keyP["temperature"] ~= nil) then
-        streams[keyT["KEY_TEMPERATURE"]] = keyP["temperature"]
-    end
-    if (keyP["smallTemperature"] ~= nil) then
-        if (keyP["smallTemperature"] == 0x01) then
+    if keyP["temperature"] ~= nil then streams[keyT["KEY_TEMPERATURE"]] = keyP["temperature"] end
+    if keyP["smallTemperature"] ~= nil then
+        if keyP["smallTemperature"] == 0x01 then
             streams["small_temperature"] = 0.5
         else
             streams["small_temperature"] = 0
         end
     end
     streams[keyT["KEY_ERROR_CODE"]] = keyP["errorCode"]
-    if (keyP["kickQuilt"] ~= nil) then
-        if (keyP["kickQuilt"] == 0x00) then
+    if keyP["kickQuilt"] ~= nil then
+        if keyP["kickQuilt"] == 0x00 then
             streams["kick_quilt"] = "off"
-        elseif (keyP["kickQuilt"] == 0x01) then
+        elseif keyP["kickQuilt"] == 0x01 then
             streams["kick_quilt"] = "on"
         end
     end
-    if (keyP["comfortPowerSave"] ~= nil) then
-        if (keyP["comfortPowerSave"] == 0x00) then
+    if keyP["comfortPowerSave"] ~= nil then
+        if keyP["comfortPowerSave"] == 0x00 then
             streams["comfort_power_save"] = "off"
-        elseif (keyP["comfortPowerSave"] == 0x01) then
+        elseif keyP["comfortPowerSave"] == 0x01 then
             streams["comfort_power_save"] = "on"
         end
     end
-    if (keyP["no_wind_sense"] ~= nil) then
-        streams["no_wind_sense"] = keyP["no_wind_sense"]
-    end
-    if (keyP["fn_no_wind_sense"] ~= nil) then
-        if (keyP["fn_no_wind_sense"] == 0x00) then
+    if keyP["no_wind_sense"] ~= nil then streams["no_wind_sense"] = keyP["no_wind_sense"] end
+    if keyP["fn_no_wind_sense"] ~= nil then
+        if keyP["fn_no_wind_sense"] == 0x00 then
             streams["fn_no_wind_sense"] = "off"
-        elseif (keyP["fn_no_wind_sense"] == 0x01) then
+        elseif keyP["fn_no_wind_sense"] == 0x01 then
             streams["fn_no_wind_sense"] = "on"
         end
     end
-    if (keyP["no_wind_sense_level"] ~= nil) then
-        streams["no_wind_sense_level"] = keyP["no_wind_sense_level"]
-    end
-    if (keyP["preventCold"] ~= nil) then
-        if (keyP["preventCold"] == 0x00) then
+    if keyP["no_wind_sense_level"] ~= nil then streams["no_wind_sense_level"] = keyP["no_wind_sense_level"] end
+    if keyP["preventCold"] ~= nil then
+        if keyP["preventCold"] == 0x00 then
             streams["prevent_cold"] = "off"
-        elseif (keyP["preventCold"] == 0x01) then
+        elseif keyP["preventCold"] == 0x01 then
             streams["prevent_cold"] = "on"
         end
     end
-    if (keyP["comfortableSleepValue"] ~= nil) then
-        if (keyP["comfortableSleepValue"] == 0x00) then
+    if keyP["comfortableSleepValue"] ~= nil then
+        if keyP["comfortableSleepValue"] == 0x00 then
             streams["comfort_sleep"] = "off"
-        elseif (keyP["comfortableSleepValue"] == 0x03) then
+        elseif keyP["comfortableSleepValue"] == 0x03 then
             streams["comfort_sleep"] = "on"
         end
     end
-    if (keyP["screenDisplayNowValue"] ~= nil) then
-        if (keyP["screenDisplayNowValue"] == 0x07) then
+    if keyP["screenDisplayNowValue"] ~= nil then
+        if keyP["screenDisplayNowValue"] == 0x07 then
             streams["screen_display_now"] = "off"
         else
             streams["screen_display_now"] = "on"
         end
     end
-    if (keyP["naturalWind"] ~= nil) then
-        if (keyP["naturalWind"] == 0x02 or keyP["naturalWind"] == 0x40) then
+    if keyP["naturalWind"] ~= nil then
+        if keyP["naturalWind"] == 0x02 or keyP["naturalWind"] == 0x40 then
             streams["natural_wind"] = "on"
-        elseif (keyP["naturalWind"] == 0x00) then
+        elseif keyP["naturalWind"] == 0x00 then
             streams["natural_wind"] = "off"
         end
     end
-    if (keyP["pmv"] ~= nil) then streams["pmv"] = keyP["pmv"] end
-    if (keyP["fresh_filter_time_total"] ~= nil) then
+    if keyP["pmv"] ~= nil then streams["pmv"] = keyP["pmv"] end
+    if keyP["fresh_filter_time_total"] ~= nil then
         streams["fresh_filter_time_total"] = keyP["fresh_filter_time_total"]
     end
-    if (keyP["fresh_filter_time_use"] ~= nil) then
-        streams["fresh_filter_time_use"] = keyP["fresh_filter_time_use"]
-    end
-    if (keyP["fresh_filter_timeout"] ~= nil) then
-        streams["fresh_filter_timeout"] = keyP["fresh_filter_timeout"]
-    end
-    if (keyP["electrify_time_day"] ~= nil) then
-        streams["electrify_time_day"] = keyP["electrify_time_day"]
-    end
-    if (keyP["electrify_time_hour"] ~= nil) then
-        streams["electrify_time_hour"] = keyP["electrify_time_hour"]
-    end
-    if (keyP["electrify_time_min"] ~= nil) then
-        streams["electrify_time_min"] = keyP["electrify_time_min"]
-    end
-    if (keyP["electrify_time_second"] ~= nil) then
-        streams["electrify_time_second"] = keyP["electrify_time_second"]
-    end
-    if (keyP["total_operating_time_day"] ~= nil) then
+    if keyP["fresh_filter_time_use"] ~= nil then streams["fresh_filter_time_use"] = keyP["fresh_filter_time_use"] end
+    if keyP["fresh_filter_timeout"] ~= nil then streams["fresh_filter_timeout"] = keyP["fresh_filter_timeout"] end
+    if keyP["electrify_time_day"] ~= nil then streams["electrify_time_day"] = keyP["electrify_time_day"] end
+    if keyP["electrify_time_hour"] ~= nil then streams["electrify_time_hour"] = keyP["electrify_time_hour"] end
+    if keyP["electrify_time_min"] ~= nil then streams["electrify_time_min"] = keyP["electrify_time_min"] end
+    if keyP["electrify_time_second"] ~= nil then streams["electrify_time_second"] = keyP["electrify_time_second"] end
+    if keyP["total_operating_time_day"] ~= nil then
         streams["total_operating_time_day"] = keyP["total_operating_time_day"]
     end
-    if (keyP["total_operating_time_hour"] ~= nil) then
+    if keyP["total_operating_time_hour"] ~= nil then
         streams["total_operating_time_hour"] = keyP["total_operating_time_hour"]
     end
-    if (keyP["total_operating_time_min"] ~= nil) then
+    if keyP["total_operating_time_min"] ~= nil then
         streams["total_operating_time_min"] = keyP["total_operating_time_min"]
     end
-    if (keyP["total_operating_time_second"] ~= nil) then
-        streams["total_operating_time_second"] =
-            keyP["total_operating_time_second"]
+    if keyP["total_operating_time_second"] ~= nil then
+        streams["total_operating_time_second"] = keyP["total_operating_time_second"]
     end
-    if (keyP["current_operating_time_day"] ~= nil) then
-        streams["current_operating_time_day"] =
-            keyP["current_operating_time_day"]
+    if keyP["current_operating_time_day"] ~= nil then
+        streams["current_operating_time_day"] = keyP["current_operating_time_day"]
     end
-    if (keyP["current_operating_time_hour"] ~= nil) then
-        streams["current_operating_time_hour"] =
-            keyP["current_operating_time_hour"]
+    if keyP["current_operating_time_hour"] ~= nil then
+        streams["current_operating_time_hour"] = keyP["current_operating_time_hour"]
     end
-    if (keyP["current_operating_time_min"] ~= nil) then
-        streams["current_operating_time_min"] =
-            keyP["current_operating_time_min"]
+    if keyP["current_operating_time_min"] ~= nil then
+        streams["current_operating_time_min"] = keyP["current_operating_time_min"]
     end
-    if (keyP["current_operating_time_second"] ~= nil) then
-        streams["current_operating_time_second"] =
-            keyP["current_operating_time_second"]
+    if keyP["current_operating_time_second"] ~= nil then
+        streams["current_operating_time_second"] = keyP["current_operating_time_second"]
     end
-    if (keyP["total_power_consumption"] ~= nil) then
+    if keyP["total_power_consumption"] ~= nil then
         streams["total_power_consumption"] = keyP["total_power_consumption"]
     end
-    if (keyP["total_operating_consumption"] ~= nil) then
-        streams["total_operating_consumption"] =
-            keyP["total_operating_consumption"]
+    if keyP["total_operating_consumption"] ~= nil then
+        streams["total_operating_consumption"] = keyP["total_operating_consumption"]
     end
-    if (keyP["current_operating_consumption"] ~= nil) then
-        streams["current_operating_consumption"] =
-            keyP["current_operating_consumption"]
+    if keyP["current_operating_consumption"] ~= nil then
+        streams["current_operating_consumption"] = keyP["current_operating_consumption"]
     end
-    if (keyP["current_time_power"] ~= nil) then
-        streams["current_time_power"] = keyP["current_time_power"]
-    end
-    if (keyP["analysis_value"] ~= nil) then
-        streams["analysis_value"] = keyP["analysis_value"]
-    end
-    if (keyP["t2_temp"] ~= nil) then streams["t2_temp"] = keyP["t2_temp"] end
-    if (keyP["dust_full_time"] ~= nil) then
-        streams["dust_full_time"] = keyP["dust_full_time"]
-    end
-    if (keyP["fault_tag"] ~= nil) then
-        streams["fault_tag"] = keyP["fault_tag"]
-    end
-    if (keyP["arom_old"] ~= nil) then streams["arom_old"] = keyP["arom_old"] end
-    if (keyP["prepare_food"] ~= nil) then
-        streams["prepare_food"] = keyP["prepare_food"]
-    end
-    if (keyP["quick_fry"] ~= nil) then
-        streams["quick_fry"] = keyP["quick_fry"]
-    end
-    if (keyP["quick_fry_center_point"] ~= nil) then
-        streams["quick_fry_center_point"] = keyP["quick_fry_center_point"]
-    end
-    if (keyP["quick_fry_angle"] ~= nil) then
-        streams["quick_fry_angle"] = keyP["quick_fry_angle"]
-    end
-    if (keyP["prevent_super_cool"] ~= nil) then
-        if (keyP["prevent_super_cool"] == 0x00) then
+    if keyP["current_time_power"] ~= nil then streams["current_time_power"] = keyP["current_time_power"] end
+    if keyP["analysis_value"] ~= nil then streams["analysis_value"] = keyP["analysis_value"] end
+    if keyP["t2_temp"] ~= nil then streams["t2_temp"] = keyP["t2_temp"] end
+    if keyP["dust_full_time"] ~= nil then streams["dust_full_time"] = keyP["dust_full_time"] end
+    if keyP["fault_tag"] ~= nil then streams["fault_tag"] = keyP["fault_tag"] end
+    if keyP["arom_old"] ~= nil then streams["arom_old"] = keyP["arom_old"] end
+    if keyP["prepare_food"] ~= nil then streams["prepare_food"] = keyP["prepare_food"] end
+    if keyP["quick_fry"] ~= nil then streams["quick_fry"] = keyP["quick_fry"] end
+    if keyP["quick_fry_center_point"] ~= nil then streams["quick_fry_center_point"] = keyP["quick_fry_center_point"] end
+    if keyP["quick_fry_angle"] ~= nil then streams["quick_fry_angle"] = keyP["quick_fry_angle"] end
+    if keyP["prevent_super_cool"] ~= nil then
+        if keyP["prevent_super_cool"] == 0x00 then
             streams["prevent_super_cool"] = "off"
-        elseif (keyP["prevent_super_cool"] == 0x01) then
+        elseif keyP["prevent_super_cool"] == 0x01 then
             streams["prevent_super_cool"] = "on"
         end
     end
-    if (keyP["prevent_straight_wind"] ~= nil) then
-        streams["prevent_straight_wind"] = keyP["prevent_straight_wind"]
-    end
-    if (keyP["fa_prevent_straight_wind"] ~= nil) then
+    if keyP["prevent_straight_wind"] ~= nil then streams["prevent_straight_wind"] = keyP["prevent_straight_wind"] end
+    if keyP["fa_prevent_straight_wind"] ~= nil then
         streams["fa_prevent_straight_wind"] = keyP["fa_prevent_straight_wind"]
     end
-    if (keyP["auto_prevent_straight_wind"] ~= nil) then
-        if (keyP["auto_prevent_straight_wind"] == 0x00) then
+    if keyP["auto_prevent_straight_wind"] ~= nil then
+        if keyP["auto_prevent_straight_wind"] == 0x00 then
             streams["auto_prevent_straight_wind"] = "off"
-        elseif (keyP["auto_prevent_straight_wind"] == 0x01) then
+        elseif keyP["auto_prevent_straight_wind"] == 0x01 then
             streams["auto_prevent_straight_wind"] = "on"
         end
     end
-    if (keyP["self_clean"] ~= nil) then
-        if (keyP["self_clean"] == 0x00) then
+    if keyP["self_clean"] ~= nil then
+        if keyP["self_clean"] == 0x00 then
             streams["self_clean"] = "off"
-        elseif (keyP["self_clean"] == 0x01) then
+        elseif keyP["self_clean"] == 0x01 then
             streams["self_clean"] = "on"
         end
     end
-    if (keyP["wind_straight"] ~= nil) then
-        if (keyP["wind_straight"] == 0x00) then
+    if keyP["wind_straight"] ~= nil then
+        if keyP["wind_straight"] == 0x00 then
             streams["wind_straight"] = "off"
-        elseif (keyP["wind_straight"] == 0x01) then
+        elseif keyP["wind_straight"] == 0x01 then
             streams["wind_straight"] = "on"
         end
     end
-    if (keyP["yb_wind_avoid"] ~= nil) then
-        if (keyP["yb_wind_avoid"] == 0x00) then
+    if keyP["yb_wind_avoid"] ~= nil then
+        if keyP["yb_wind_avoid"] == 0x00 then
             streams["yb_wind_avoid"] = "off"
-        elseif (keyP["yb_wind_avoid"] == 0x02) then
+        elseif keyP["yb_wind_avoid"] == 0x02 then
             streams["yb_wind_avoid"] = "on"
         end
     end
-    if (keyP["wind_avoid"] ~= nil) then
-        if (keyP["wind_avoid"] == 0x00) then
+    if keyP["wind_avoid"] ~= nil then
+        if keyP["wind_avoid"] == 0x00 then
             streams["wind_avoid"] = "off"
-        elseif (keyP["wind_avoid"] == 0x01 or keyP["wind_avoid"] == 0x02) then
+        elseif keyP["wind_avoid"] == 0x01 or keyP["wind_avoid"] == 0x02 then
             streams["wind_avoid"] = "on"
         end
     end
-    if (keyP["intelligent_wind"] ~= nil) then
-        if (keyP["intelligent_wind"] == 0x00) then
+    if keyP["intelligent_wind"] ~= nil then
+        if keyP["intelligent_wind"] == 0x00 then
             streams["intelligent_wind"] = "off"
-        elseif (keyP["intelligent_wind"] == 0x01) then
+        elseif keyP["intelligent_wind"] == 0x01 then
             streams["intelligent_wind"] = "on"
         end
     end
-    if (keyP["child_prevent_cold_wind"] ~= nil) then
-        if (keyP["child_prevent_cold_wind"] == 0x00) then
+    if keyP["child_prevent_cold_wind"] ~= nil then
+        if keyP["child_prevent_cold_wind"] == 0x00 then
             streams["child_prevent_cold_wind"] = "off"
-        elseif (keyP["child_prevent_cold_wind"] == 0x01) then
+        elseif keyP["child_prevent_cold_wind"] == 0x01 then
             streams["child_prevent_cold_wind"] = "on"
         end
     end
-    if (keyP["no_wind_sense"] ~= nil) then
-        streams["no_wind_sense"] = keyP["no_wind_sense"]
-    end
-    if (keyP["fn_no_wind_sense"] ~= nil) then
-        if (keyP["fn_no_wind_sense"] == 0x00) then
+    if keyP["no_wind_sense"] ~= nil then streams["no_wind_sense"] = keyP["no_wind_sense"] end
+    if keyP["fn_no_wind_sense"] ~= nil then
+        if keyP["fn_no_wind_sense"] == 0x00 then
             streams["fn_no_wind_sense"] = "off"
-        elseif (keyP["fn_no_wind_sense"] == 0x01) then
+        elseif keyP["fn_no_wind_sense"] == 0x01 then
             streams["fn_no_wind_sense"] = "on"
         end
     end
-    if (keyP["no_wind_sense_level"] ~= nil) then
-        streams["no_wind_sense_level"] = keyP["no_wind_sense_level"]
-    end
-    if (keyP["little_angel"] ~= nil) then
-        if (keyP["little_angel"] == 0x00) then
+    if keyP["no_wind_sense_level"] ~= nil then streams["no_wind_sense_level"] = keyP["no_wind_sense_level"] end
+    if keyP["little_angel"] ~= nil then
+        if keyP["little_angel"] == 0x00 then
             streams["little_angel"] = "off"
-        elseif (keyP["little_angel"] == 0x01) then
+        elseif keyP["little_angel"] == 0x01 then
             streams["little_angel"] = "on"
         end
     end
-    if (keyP["ptc_default_rule"] ~= nil) then
-        streams["ptc_default_rule"] = keyP["ptc_default_rule"]
-    end
-    if (keyP["cool_hot_sense"] ~= nil) then
-        if (keyP["cool_hot_sense"] == 0x00) then
+    if keyP["ptc_default_rule"] ~= nil then streams["ptc_default_rule"] = keyP["ptc_default_rule"] end
+    if keyP["cool_hot_sense"] ~= nil then
+        if keyP["cool_hot_sense"] == 0x00 then
             streams["cool_hot_sense"] = "off"
-        elseif (keyP["cool_hot_sense"] == 0x01) then
+        elseif keyP["cool_hot_sense"] == 0x01 then
             streams["cool_hot_sense"] = "on"
         end
     end
-    if (keyP["gentle_wind_sense"] ~= nil) then
-        if (keyP["gentle_wind_sense"] == 0x01) then
+    if keyP["gentle_wind_sense"] ~= nil then
+        if keyP["gentle_wind_sense"] == 0x01 then
             streams["gentle_wind_sense"] = "off"
-        elseif (keyP["gentle_wind_sense"] == 0x03) then
+        elseif keyP["gentle_wind_sense"] == 0x03 then
             streams["gentle_wind_sense"] = "on"
         end
     end
-    if (keyP["security"] ~= nil) then
-        if (keyP["security"] == 0x00) then
+    if keyP["security"] ~= nil then
+        if keyP["security"] == 0x00 then
             streams["security"] = "off"
-        elseif (keyP["security"] == 0x01) then
+        elseif keyP["security"] == 0x01 then
             streams["security"] = "on"
         end
     end
-    if (keyP["even_wind"] ~= nil) then
-        if (keyP["even_wind"] == 0x00) then
+    if keyP["even_wind"] ~= nil then
+        if keyP["even_wind"] == 0x00 then
             streams["even_wind"] = "off"
-        elseif (keyP["even_wind"] == 0x01) then
+        elseif keyP["even_wind"] == 0x01 then
             streams["even_wind"] = "on"
         end
     end
-    if (keyP["single_tuyere"] ~= nil) then
-        if (keyP["single_tuyere"] == 0x00) then
+    if keyP["single_tuyere"] ~= nil then
+        if keyP["single_tuyere"] == 0x00 then
             streams["single_tuyere"] = "off"
-        elseif (keyP["single_tuyere"] == 0x01) then
+        elseif keyP["single_tuyere"] == 0x01 then
             streams["single_tuyere"] = "on"
         end
     end
-    if (keyP["extreme_wind"] ~= nil) then
-        if (keyP["extreme_wind"] == 0x00) then
+    if keyP["extreme_wind"] ~= nil then
+        if keyP["extreme_wind"] == 0x00 then
             streams["extreme_wind"] = "off"
-        elseif (keyP["extreme_wind"] == 0x01) then
+        elseif keyP["extreme_wind"] == 0x01 then
             streams["extreme_wind"] = "on"
         end
         streams["extreme_wind_level"] = keyP["extreme_wind_level"]
     end
-    if (keyP["degerming"] ~= nil) then
-        if (keyP["degerming"] == 0x00) then
+    if keyP["degerming"] ~= nil then
+        if keyP["degerming"] == 0x00 then
             streams["degerming"] = "off"
-        elseif (keyP["degerming"] == 0x01) then
+        elseif keyP["degerming"] == 0x01 then
             streams["degerming"] = "on"
             streams["power"] = "on"
         end
     end
-    if (keyP["light"] ~= nil) then streams["light"] = keyP["light"] end
-    if (keyP["wind_top"] ~= nil) then
-        if (keyP["wind_top"] == 0x00) then
+    if keyP["light"] ~= nil then streams["light"] = keyP["light"] end
+    if keyP["wind_top"] ~= nil then
+        if keyP["wind_top"] == 0x00 then
             streams["wind_top"] = "off"
-        elseif (keyP["wind_top"] == 0x01) then
+        elseif keyP["wind_top"] == 0x01 then
             streams["wind_top"] = "on"
         end
     end
-    if (keyP["wind_around"] ~= nil) then
-        if (keyP["wind_around"] == 0x00) then
+    if keyP["wind_around"] ~= nil then
+        if keyP["wind_around"] == 0x00 then
             streams["wind_around"] = "off"
-        elseif (keyP["wind_around"] == 0x01) then
+        elseif keyP["wind_around"] == 0x01 then
             streams["wind_around"] = "on"
         end
     end
-    if (keyP["wind_around_ud"] ~= nil) then
-        streams["wind_around_ud"] = keyP["wind_around_ud"]
-    end
-    if (keyP["wind_swing_lr_angle"] ~= nil) then
-        streams["wind_swing_lr_angle"] = keyP["wind_swing_lr_angle"]
-    end
-    if (keyP["wind_swing_ud_angle"] ~= nil) then
-        streams["wind_swing_ud_angle"] = keyP["wind_swing_ud_angle"]
-    end
-    if (keyP["voice_control"] ~= nil) then
-        if (keyP["voice_control"] == 0x00) then
+    if keyP["wind_around_ud"] ~= nil then streams["wind_around_ud"] = keyP["wind_around_ud"] end
+    if keyP["wind_swing_lr_angle"] ~= nil then streams["wind_swing_lr_angle"] = keyP["wind_swing_lr_angle"] end
+    if keyP["wind_swing_ud_angle"] ~= nil then streams["wind_swing_ud_angle"] = keyP["wind_swing_ud_angle"] end
+    if keyP["voice_control"] ~= nil then
+        if keyP["voice_control"] == 0x00 then
             streams["voice_control"] = "off"
-        elseif (keyP["voice_control"] == 0x03) then
+        elseif keyP["voice_control"] == 0x03 then
             streams["voice_control"] = "on"
         end
     end
-    if (keyP["pre_cool_hot"] ~= nil) then
-        if (keyP["pre_cool_hot"] == 0x00) then
+    if keyP["pre_cool_hot"] ~= nil then
+        if keyP["pre_cool_hot"] == 0x00 then
             streams["pre_cool_hot"] = "off"
-        elseif (keyP["pre_cool_hot"] == 0x01) then
+        elseif keyP["pre_cool_hot"] == 0x01 then
             streams["pre_cool_hot"] = "on"
         end
     end
-    if (keyP["water_washing"] ~= nil) then
-        if (keyP["water_washing"] == 0x01) then
+    if keyP["water_washing"] ~= nil then
+        if keyP["water_washing"] == 0x01 then
             streams["water_washing"] = "on"
-        elseif (keyP["water_washing"] == 0x00) then
+        elseif keyP["water_washing"] == 0x00 then
             streams["water_washing"] = "off"
         end
         streams["water_washing_manual"] = keyP["water_washing_manual"]
         streams["water_washing_time"] = keyP["water_washing_time"]
         streams["water_washing_stage"] = keyP["water_washing_stage"]
     end
-    if (keyP["fresh_air"] ~= nil) then
-        if (keyP["fresh_air"] == 0x00) then
+    if keyP["fresh_air"] ~= nil then
+        if keyP["fresh_air"] == 0x00 then
             streams["fresh_air"] = "off"
-        elseif (keyP["fresh_air"] == 0x01) then
+        elseif keyP["fresh_air"] == 0x01 then
             streams["fresh_air"] = "on"
         end
         streams["fresh_air_fan_speed"] = keyP["fresh_air_fan_speed"]
         streams["fresh_air_temp"] = keyP["fresh_air_temp"]
     end
-    if (keyP["parent_control"] ~= nil) then
-        if (keyP["parent_control"] == 0x00) then
+    if keyP["parent_control"] ~= nil then
+        if keyP["parent_control"] == 0x00 then
             streams["parent_control"] = "off"
-        elseif (keyP["parent_control"] == 0x01) then
+        elseif keyP["parent_control"] == 0x01 then
             streams["parent_control"] = "on"
         end
         streams["parent_control_temp_up"] = keyP["parent_control_temp_up"]
         streams["parent_control_temp_down"] = keyP["parent_control_temp_down"]
     end
-    if (keyP["nobody_energy_save"] ~= nil) then
-        if (keyP["nobody_energy_save"] == 0x00) then
+    if keyP["nobody_energy_save"] ~= nil then
+        if keyP["nobody_energy_save"] == 0x00 then
             streams["nobody_energy_save"] = "off"
-        elseif (keyP["nobody_energy_save"] == 0x01) then
+        elseif keyP["nobody_energy_save"] == 0x01 then
             streams["nobody_energy_save"] = "on"
         end
     end
-    if (keyP["filter_value"] ~= nil) then
+    if keyP["filter_value"] ~= nil then
         streams["filter_value"] = keyP["filter_value"]
         streams["filter_level"] = keyP["filter_level"]
     end
-    if (keyP["prevent_straight_wind_lr"] ~= nil) then
+    if keyP["prevent_straight_wind_lr"] ~= nil then
         streams["prevent_straight_wind_lr"] = keyP["prevent_straight_wind_lr"]
     end
-    if (keyP["pm25_value"] ~= nil) then
-        streams["pm25_value"] = keyP["pm25_value"]
-    end
-    if (keyP["water_pump"] ~= nil) then
-        if (keyP["water_pump"] == 0x00) then
+    if keyP["pm25_value"] ~= nil then streams["pm25_value"] = keyP["pm25_value"] end
+    if keyP["water_pump"] ~= nil then
+        if keyP["water_pump"] == 0x00 then
             streams["water_pump"] = "off"
-        elseif (keyP["water_pump"] == 0x01) then
+        elseif keyP["water_pump"] == 0x01 then
             streams["water_pump"] = "on"
         end
     end
-    if (keyP["intelligent_control"] ~= nil) then
-        if (keyP["intelligent_control"] == 0x00) then
+    if keyP["intelligent_control"] ~= nil then
+        if keyP["intelligent_control"] == 0x00 then
             streams["intelligent_control"] = "off"
-        elseif (keyP["intelligent_control"] == 0x01) then
+        elseif keyP["intelligent_control"] == 0x01 then
             streams["intelligent_control"] = "on"
         end
     end
-    if (keyP["volume_control"] ~= nil) then
-        streams["volume_control"] = keyP["volume_control"]
-    end
-    if (keyP["voice_control_new"] ~= nil) then
-        streams["voice_control_new"] = keyP["voice_control_new"]
-    end
-    if (keyP["face_register"] ~= nil) then
-        streams["face_register"] = keyP["face_register"]
-    end
-    if (keyP["wind_swing_ud_angle_up"] ~= nil) then
-        streams["wind_swing_ud_angle_up"] = keyP["wind_swing_ud_angle_up"]
-    end
-    if (keyP["wind_swing_ud_angle_down"] ~= nil) then
+    if keyP["volume_control"] ~= nil then streams["volume_control"] = keyP["volume_control"] end
+    if keyP["voice_control_new"] ~= nil then streams["voice_control_new"] = keyP["voice_control_new"] end
+    if keyP["face_register"] ~= nil then streams["face_register"] = keyP["face_register"] end
+    if keyP["wind_swing_ud_angle_up"] ~= nil then streams["wind_swing_ud_angle_up"] = keyP["wind_swing_ud_angle_up"] end
+    if keyP["wind_swing_ud_angle_down"] ~= nil then
         streams["wind_swing_ud_angle_down"] = keyP["wind_swing_ud_angle_down"]
     end
-    if (keyP["app_control_remember_ud"] ~= nil) then
+    if keyP["app_control_remember_ud"] ~= nil then
         streams["app_control_remember_ud"] = keyP["app_control_remember_ud"]
     end
-    if (keyP["wind_swing_lr_angle_up"] ~= nil) then
-        streams["wind_swing_lr_angle_up"] = keyP["wind_swing_lr_angle_up"]
-    end
-    if (keyP["wind_swing_lr_angle_down"] ~= nil) then
+    if keyP["wind_swing_lr_angle_up"] ~= nil then streams["wind_swing_lr_angle_up"] = keyP["wind_swing_lr_angle_up"] end
+    if keyP["wind_swing_lr_angle_down"] ~= nil then
         streams["wind_swing_lr_angle_down"] = keyP["wind_swing_lr_angle_down"]
     end
-    if (keyP["app_control_remember_lr"] ~= nil) then
+    if keyP["app_control_remember_lr"] ~= nil then
         streams["app_control_remember_lr"] = keyP["app_control_remember_lr"]
     end
-    if (keyP["auto_prevent_cold_wind"] ~= nil) then
-        streams["auto_prevent_cold_wind"] = keyP["auto_prevent_cold_wind"]
+    if keyP["auto_prevent_cold_wind"] ~= nil then streams["auto_prevent_cold_wind"] = keyP["auto_prevent_cold_wind"] end
+    if keyP["cool_temp_up"] ~= nil then streams["cool_temp_up"] = keyP["cool_temp_up"] end
+    if keyP["cool_temp_down"] ~= nil then streams["cool_temp_down"] = keyP["cool_temp_down"] end
+    if keyP["auto_temp_up"] ~= nil then streams["auto_temp_up"] = keyP["auto_temp_up"] end
+    if keyP["auto_temp_down"] ~= nil then streams["auto_temp_down"] = keyP["auto_temp_down"] end
+    if keyP["heat_temp_up"] ~= nil then streams["heat_temp_up"] = keyP["heat_temp_up"] end
+    if keyP["heat_temp_down"] ~= nil then streams["heat_temp_down"] = keyP["heat_temp_down"] end
+    if keyP["remote_control_lock"] ~= nil then streams["remote_control_lock"] = keyP["remote_control_lock"] end
+    if keyP["remote_control_lock_control"] ~= nil then
+        streams["remote_control_lock_control"] = keyP["remote_control_lock_control"]
     end
-    if (keyP["cool_temp_up"] ~= nil) then
-        streams["cool_temp_up"] = keyP["cool_temp_up"]
+    if keyP["operating_time"] ~= nil then streams["operating_time"] = keyP["operating_time"] end
+    if keyP["indoor_humidity"] ~= nil then streams["indoor_humidity"] = keyP["indoor_humidity"] end
+    if keyP["child_lock"] ~= nil then streams["child_lock"] = keyP["child_lock"] end
+    if keyP["is_query"] ~= nil then streams["is_query"] = keyP["is_query"] end
+    if keyP["analysis_value"] ~= nil then streams["analysis_value"] = keyP["analysis_value"] end
+    if keyP["buzzer_all"] ~= nil then streams["buzzer_all"] = keyP["buzzer_all"] end
+    if keyP["self_remove_odor_phase"] ~= nil then streams["self_remove_odor_phase"] = keyP["self_remove_odor_phase"] end
+    if keyP["has_self_remove_odor_phase"] ~= nil then
+        streams["has_self_remove_odor_phase"] = keyP["has_self_remove_odor_phase"]
     end
-    if (keyP["cool_temp_down"] ~= nil) then
-        streams["cool_temp_down"] = keyP["cool_temp_down"]
+    if keyP["high_temp_remove_odor_alone"] ~= nil then
+        streams["high_temp_remove_odor_alone"] = keyP["high_temp_remove_odor_alone"]
     end
-    if (keyP["auto_temp_up"] ~= nil) then
-        streams["auto_temp_up"] = keyP["auto_temp_up"]
+    if keyP["has_high_temp_remove_odor_alone"] ~= nil then
+        streams["has_high_temp_remove_odor_alone"] = keyP["has_high_temp_remove_odor_alone"]
     end
-    if (keyP["auto_temp_down"] ~= nil) then
-        streams["auto_temp_down"] = keyP["auto_temp_down"]
-    end
-    if (keyP["heat_temp_up"] ~= nil) then
-        streams["heat_temp_up"] = keyP["heat_temp_up"]
-    end
-    if (keyP["heat_temp_down"] ~= nil) then
-        streams["heat_temp_down"] = keyP["heat_temp_down"]
-    end
-    if (keyP["remote_control_lock"] ~= nil) then
-        streams["remote_control_lock"] = keyP["remote_control_lock"]
-    end
-    if (keyP["remote_control_lock_control"] ~= nil) then
-        streams["remote_control_lock_control"] =
-            keyP["remote_control_lock_control"]
-    end
-    if (keyP["operating_time"] ~= nil) then
-        streams["operating_time"] = keyP["operating_time"]
-    end
-    if (keyP["indoor_humidity"] ~= nil) then
-        streams["indoor_humidity"] = keyP["indoor_humidity"]
-    end
-    if (keyP["child_lock"] ~= nil) then
-        streams["child_lock"] = keyP["child_lock"]
-    end
-    if (keyP["is_query"] ~= nil) then streams["is_query"] = keyP["is_query"] end
-    if (keyP["analysis_value"] ~= nil) then
-        streams["analysis_value"] = keyP["analysis_value"]
-    end
-    if (keyP["buzzer_all"] ~= nil) then
-        streams["buzzer_all"] = keyP["buzzer_all"]
-    end
-    if (keyP["self_remove_odor_phase"] ~= nil) then
-        streams["self_remove_odor_phase"] = keyP["self_remove_odor_phase"]
-    end
-    if (keyP["has_self_remove_odor_phase"] ~= nil) then
-        streams["has_self_remove_odor_phase"] =
-            keyP["has_self_remove_odor_phase"]
-    end
-    if (keyP["high_temp_remove_odor_alone"] ~= nil) then
-        streams["high_temp_remove_odor_alone"] =
-            keyP["high_temp_remove_odor_alone"]
-    end
-    if (keyP["has_high_temp_remove_odor_alone"] ~= nil) then
-        streams["has_high_temp_remove_odor_alone"] =
-            keyP["has_high_temp_remove_odor_alone"]
-    end
-    if (keyP["power_lock"] ~= nil) then
-        if (keyP["power_lock"] == 0x00) then
+    if keyP["power_lock"] ~= nil then
+        if keyP["power_lock"] == 0x00 then
             streams["power_lock"] = "off"
-        elseif (keyP["power_lock"] == 0x01) then
+        elseif keyP["power_lock"] == 0x01 then
             streams["power_lock"] = "on"
         end
     end
-    if (keyP["ptc_lock"] ~= nil) then
-        if (keyP["ptc_lock"] == 0x00) then
+    if keyP["ptc_lock"] ~= nil then
+        if keyP["ptc_lock"] == 0x00 then
             streams["ptc_lock"] = "off"
-        elseif (keyP["ptc_lock"] == 0x01) then
+        elseif keyP["ptc_lock"] == 0x01 then
             streams["ptc_lock"] = "on"
         end
     end
-    if (keyP["offline_operating_time"] ~= nil) then
-        streams["offline_operating_time"] = keyP["offline_operating_time"]
-    end
-    if (keyP["ozone"] ~= nil) then streams["ozone"] = keyP["ozone"] end
-    if (keyP["soft_warm"] ~= nil) then
-        streams["soft_warm"] = keyP["soft_warm"]
-    end
-    if (keyP["fresh_air_parm"] ~= nil) then
-        streams["fresh_air_parm"] = keyP["fresh_air_parm"]
-    end
-    if (keyP["rewarming_dry"] ~= nil) then
-        streams["rewarming_dry"] = keyP["rewarming_dry"]
-    end
-    if (keyP["arom"] ~= nil) then streams["arom"] = keyP["arom"] end
-    if (keyP["arom_fan_speed"] ~= nil) then
-        streams["arom_fan_speed"] = keyP["arom_fan_speed"]
-    end
-    if (keyP["arom_time_clean"] ~= nil) then
-        streams["arom_time_clean"] = keyP["arom_time_clean"]
-    end
-    if (keyP["arom_time"] ~= nil) then
-        streams["arom_time"] = keyP["arom_time"]
-    end
-    if (keyP["arom_time_total"] ~= nil) then
-        streams["arom_time_total"] = keyP["arom_time_total"]
-    end
-    if (keyP["new_mode_power"] ~= nil) then
-        streams["new_mode_power"] = keyP["new_mode_power"]
-    end
-    if (keyP["new_temperature"] ~= nil) then
-        streams["new_temperature"] = keyP["new_temperature"]
-    end
-    if (keyP["new_wind_speed"] ~= nil) then
-        streams["new_wind_speed"] = keyP["new_wind_speed"]
-    end
-    if (keyP["new_mode"] ~= nil) then
-        if (keyP["new_mode"] == 1) then
+    if keyP["offline_operating_time"] ~= nil then streams["offline_operating_time"] = keyP["offline_operating_time"] end
+    if keyP["ozone"] ~= nil then streams["ozone"] = keyP["ozone"] end
+    if keyP["soft_warm"] ~= nil then streams["soft_warm"] = keyP["soft_warm"] end
+    if keyP["fresh_air_parm"] ~= nil then streams["fresh_air_parm"] = keyP["fresh_air_parm"] end
+    if keyP["rewarming_dry"] ~= nil then streams["rewarming_dry"] = keyP["rewarming_dry"] end
+    if keyP["arom"] ~= nil then streams["arom"] = keyP["arom"] end
+    if keyP["arom_fan_speed"] ~= nil then streams["arom_fan_speed"] = keyP["arom_fan_speed"] end
+    if keyP["arom_time_clean"] ~= nil then streams["arom_time_clean"] = keyP["arom_time_clean"] end
+    if keyP["arom_time"] ~= nil then streams["arom_time"] = keyP["arom_time"] end
+    if keyP["arom_time_total"] ~= nil then streams["arom_time_total"] = keyP["arom_time_total"] end
+    if keyP["new_mode_power"] ~= nil then streams["new_mode_power"] = keyP["new_mode_power"] end
+    if keyP["new_temperature"] ~= nil then streams["new_temperature"] = keyP["new_temperature"] end
+    if keyP["new_wind_speed"] ~= nil then streams["new_wind_speed"] = keyP["new_wind_speed"] end
+    if keyP["new_mode"] ~= nil then
+        if keyP["new_mode"] == 1 then
             streams["new_mode"] = "auto"
-        elseif (keyP["new_mode"] == 2) then
+        elseif keyP["new_mode"] == 2 then
             streams["new_mode"] = "cool"
-        elseif (keyP["new_mode"] == 3) then
+        elseif keyP["new_mode"] == 3 then
             streams["new_mode"] = "dry"
-        elseif (keyP["new_mode"] == 4) then
+        elseif keyP["new_mode"] == 4 then
             streams["new_mode"] = "heat"
-        elseif (keyP["new_mode"] == 5) then
+        elseif keyP["new_mode"] == 5 then
             streams["new_mode"] = "fan"
         end
     end
-    if (keyP["uvc_remove_odor"] ~= nil) then
-        streams["uvc_remove_odor"] = keyP["uvc_remove_odor"]
+    if keyP["uvc_remove_odor"] ~= nil then streams["uvc_remove_odor"] = keyP["uvc_remove_odor"] end
+    if keyP["uvc_power_off"] ~= nil then streams["uvc_power_off"] = keyP["uvc_power_off"] end
+    if keyP["main_horizontal_guide_strip_1"] ~= nil then
+        streams["main_horizontal_guide_strip_1"] = keyP["main_horizontal_guide_strip_1"]
     end
-    if (keyP["uvc_power_off"] ~= nil) then
-        streams["uvc_power_off"] = keyP["uvc_power_off"]
+    if keyP["main_horizontal_guide_strip_2"] ~= nil then
+        streams["main_horizontal_guide_strip_2"] = keyP["main_horizontal_guide_strip_2"]
     end
-    if (keyP["main_horizontal_guide_strip_1"] ~= nil) then
-        streams["main_horizontal_guide_strip_1"] =
-            keyP["main_horizontal_guide_strip_1"]
+    if keyP["main_horizontal_guide_strip_3"] ~= nil then
+        streams["main_horizontal_guide_strip_3"] = keyP["main_horizontal_guide_strip_3"]
     end
-    if (keyP["main_horizontal_guide_strip_2"] ~= nil) then
-        streams["main_horizontal_guide_strip_2"] =
-            keyP["main_horizontal_guide_strip_2"]
+    if keyP["main_horizontal_guide_strip_4"] ~= nil then
+        streams["main_horizontal_guide_strip_4"] = keyP["main_horizontal_guide_strip_4"]
     end
-    if (keyP["main_horizontal_guide_strip_3"] ~= nil) then
-        streams["main_horizontal_guide_strip_3"] =
-            keyP["main_horizontal_guide_strip_3"]
+    if keyP["has_guide_strip"] ~= nil then streams["has_guide_strip"] = keyP["has_guide_strip"] end
+    if keyP["has_no_wind_sense"] ~= nil then streams["has_no_wind_sense"] = keyP["has_no_wind_sense"] end
+    if keyP["light_sensitive"] ~= nil then streams["light_sensitive"] = keyP["light_sensitive"] end
+    if keyP["has_arom"] ~= nil then streams["has_arom"] = keyP["has_arom"] end
+    if keyP["has_wind_swing_ud_angle_diy"] ~= nil then
+        streams["has_wind_swing_ud_angle_diy"] = keyP["has_wind_swing_ud_angle_diy"]
     end
-    if (keyP["main_horizontal_guide_strip_4"] ~= nil) then
-        streams["main_horizontal_guide_strip_4"] =
-            keyP["main_horizontal_guide_strip_4"]
+    if keyP["has_wind_swing_lr_angle_diy"] ~= nil then
+        streams["has_wind_swing_lr_angle_diy"] = keyP["has_wind_swing_lr_angle_diy"]
     end
-    if (keyP["has_guide_strip"] ~= nil) then
-        streams["has_guide_strip"] = keyP["has_guide_strip"]
-    end
-    if (keyP["has_no_wind_sense"] ~= nil) then
-        streams["has_no_wind_sense"] = keyP["has_no_wind_sense"]
-    end
-    if (keyP["light_sensitive"] ~= nil) then
-        streams["light_sensitive"] = keyP["light_sensitive"]
-    end
-    if (keyP["has_arom"] ~= nil) then streams["has_arom"] = keyP["has_arom"] end
-    if (keyP["has_wind_swing_ud_angle_diy"] ~= nil) then
-        streams["has_wind_swing_ud_angle_diy"] =
-            keyP["has_wind_swing_ud_angle_diy"]
-    end
-    if (keyP["has_wind_swing_lr_angle_diy"] ~= nil) then
-        streams["has_wind_swing_lr_angle_diy"] =
-            keyP["has_wind_swing_lr_angle_diy"]
-    end
-    if (keyP["prepare_food"] ~= nil) then
-        streams["prepare_food"] = keyP["prepare_food"]
-    end
-    if (keyP["prepare_food_temp"] ~= nil) then
-        streams["prepare_food_temp"] = keyP["prepare_food_temp"]
-    end
-    if (keyP["prepare_food_fan_speed"] ~= nil) then
-        streams["prepare_food_fan_speed"] = keyP["prepare_food_fan_speed"]
-    end
-    if (keyP["quick_fry"] ~= nil) then
-        streams["quick_fry"] = keyP["quick_fry"]
-    end
-    if (keyP["quick_fry_temp"] ~= nil) then
-        streams["quick_fry_temp"] = keyP["quick_fry_temp"]
-    end
-    if (keyP["quick_fry_fan_speed"] ~= nil) then
-        streams["quick_fry_fan_speed"] = keyP["quick_fry_fan_speed"]
-    end
-    if (keyP["cool_power_saving"] ~= nil) then
-        streams["cool_power_saving"] = keyP["cool_power_saving"]
-    end
-    if (keyP["jet_cool"] ~= nil) then
-        if (keyP["jet_cool"] == 0x00) then
+    if keyP["prepare_food"] ~= nil then streams["prepare_food"] = keyP["prepare_food"] end
+    if keyP["prepare_food_temp"] ~= nil then streams["prepare_food_temp"] = keyP["prepare_food_temp"] end
+    if keyP["prepare_food_fan_speed"] ~= nil then streams["prepare_food_fan_speed"] = keyP["prepare_food_fan_speed"] end
+    if keyP["quick_fry"] ~= nil then streams["quick_fry"] = keyP["quick_fry"] end
+    if keyP["quick_fry_temp"] ~= nil then streams["quick_fry_temp"] = keyP["quick_fry_temp"] end
+    if keyP["quick_fry_fan_speed"] ~= nil then streams["quick_fry_fan_speed"] = keyP["quick_fry_fan_speed"] end
+    if keyP["cool_power_saving"] ~= nil then streams["cool_power_saving"] = keyP["cool_power_saving"] end
+    if keyP["jet_cool"] ~= nil then
+        if keyP["jet_cool"] == 0x00 then
             streams["jet_cool"] = "off"
-        elseif (keyP["jet_cool"] == 0x01) then
+        elseif keyP["jet_cool"] == 0x01 then
             streams["jet_cool"] = "on"
         end
     end
-    if (keyP["has_ptc_default_rule"] ~= nil) then
-        streams["has_ptc_default_rule"] = keyP["has_ptc_default_rule"]
-    end
-    if (keyP["has_light_sensitive"] ~= nil) then
-        streams["has_light_sensitive"] = keyP["has_light_sensitive"]
-    end
-    if (keyP["quick_fry_center_point"] ~= nil) then
-        streams["quick_fry_center_point"] = keyP["quick_fry_center_point"]
-    end
-    if (keyP["quick_fry_angle"] ~= nil) then
-        streams["quick_fry_angle"] = keyP["quick_fry_angle"]
-    end
-    if (keyP["ieco_switch"] ~= nil) then
-        streams["ieco_switch"] = keyP["ieco_switch"]
-    end
-    if (keyP["ieco_target_rate"] ~= nil) then
-        streams["ieco_target_rate"] = keyP["ieco_target_rate"]
-    end
-    if (keyP["ieco_indoor_wind_speed"] ~= nil) then
-        streams["ieco_indoor_wind_speed"] = keyP["ieco_indoor_wind_speed"]
-    end
-    if (keyP["ieco_outdoor_wind_speed"] ~= nil) then
+    if keyP["has_ptc_default_rule"] ~= nil then streams["has_ptc_default_rule"] = keyP["has_ptc_default_rule"] end
+    if keyP["has_light_sensitive"] ~= nil then streams["has_light_sensitive"] = keyP["has_light_sensitive"] end
+    if keyP["quick_fry_center_point"] ~= nil then streams["quick_fry_center_point"] = keyP["quick_fry_center_point"] end
+    if keyP["quick_fry_angle"] ~= nil then streams["quick_fry_angle"] = keyP["quick_fry_angle"] end
+    if keyP["ieco_switch"] ~= nil then streams["ieco_switch"] = keyP["ieco_switch"] end
+    if keyP["ieco_target_rate"] ~= nil then streams["ieco_target_rate"] = keyP["ieco_target_rate"] end
+    if keyP["ieco_indoor_wind_speed"] ~= nil then streams["ieco_indoor_wind_speed"] = keyP["ieco_indoor_wind_speed"] end
+    if keyP["ieco_outdoor_wind_speed"] ~= nil then
         streams["ieco_outdoor_wind_speed"] = keyP["ieco_outdoor_wind_speed"]
     end
-    if (keyP["ieco_expansion_valve"] ~= nil) then
-        streams["ieco_expansion_valve"] = keyP["ieco_expansion_valve"]
-    end
-    if (keyP["ieco_frame"] ~= nil) then
-        streams["ieco_frame"] = keyP["ieco_frame"]
-    end
-    if (keyP["ieco_number"] ~= nil) then
-        streams["ieco_number"] = keyP["ieco_number"]
-    end
-    if (keyP["has_ieco"] ~= nil) then streams["has_ieco"] = keyP["has_ieco"] end
-    if (keyP["swing_lr_under_angle"] ~= nil) then
-        streams["swing_lr_under_angle"] = keyP["swing_lr_under_angle"]
-    end
-    if (keyP["left_ud_wind_horizontal"] ~= nil) then
+    if keyP["ieco_expansion_valve"] ~= nil then streams["ieco_expansion_valve"] = keyP["ieco_expansion_valve"] end
+    if keyP["ieco_frame"] ~= nil then streams["ieco_frame"] = keyP["ieco_frame"] end
+    if keyP["ieco_number"] ~= nil then streams["ieco_number"] = keyP["ieco_number"] end
+    if keyP["has_ieco"] ~= nil then streams["has_ieco"] = keyP["has_ieco"] end
+    if keyP["swing_lr_under_angle"] ~= nil then streams["swing_lr_under_angle"] = keyP["swing_lr_under_angle"] end
+    if keyP["left_ud_wind_horizontal"] ~= nil then
         streams["left_ud_wind_horizontal"] = keyP["left_ud_wind_horizontal"]
     end
-    if (keyP["right_ud_wind_horizontal"] ~= nil) then
+    if keyP["right_ud_wind_horizontal"] ~= nil then
         streams["right_ud_wind_horizontal"] = keyP["right_ud_wind_horizontal"]
     end
-    if (keyP["up_ud_wind_horizontal"] ~= nil) then
-        streams["up_ud_wind_horizontal"] = keyP["up_ud_wind_horizontal"]
-    end
-    if (keyP["under_ud_wind_horizontal"] ~= nil) then
+    if keyP["up_ud_wind_horizontal"] ~= nil then streams["up_ud_wind_horizontal"] = keyP["up_ud_wind_horizontal"] end
+    if keyP["under_ud_wind_horizontal"] ~= nil then
         streams["under_ud_wind_horizontal"] = keyP["under_ud_wind_horizontal"]
     end
-    if (keyP["left_lr_wind_vertical"] ~= nil) then
-        streams["left_lr_wind_vertical"] = keyP["left_lr_wind_vertical"]
-    end
-    if (keyP["right_lr_wind_vertical"] ~= nil) then
-        streams["right_lr_wind_vertical"] = keyP["right_lr_wind_vertical"]
-    end
-    if (keyP["up_lr_wind_vertical"] ~= nil) then
-        streams["up_lr_wind_vertical"] = keyP["up_lr_wind_vertical"]
-    end
-    if (keyP["under_lr_wind_vertical"] ~= nil) then
-        streams["under_lr_wind_vertical"] = keyP["under_lr_wind_vertical"]
-    end
-    if (keyP["has_wind_swing_lr_angle"] ~= nil) then
+    if keyP["left_lr_wind_vertical"] ~= nil then streams["left_lr_wind_vertical"] = keyP["left_lr_wind_vertical"] end
+    if keyP["right_lr_wind_vertical"] ~= nil then streams["right_lr_wind_vertical"] = keyP["right_lr_wind_vertical"] end
+    if keyP["up_lr_wind_vertical"] ~= nil then streams["up_lr_wind_vertical"] = keyP["up_lr_wind_vertical"] end
+    if keyP["under_lr_wind_vertical"] ~= nil then streams["under_lr_wind_vertical"] = keyP["under_lr_wind_vertical"] end
+    if keyP["has_wind_swing_lr_angle"] ~= nil then
         streams["has_wind_swing_lr_angle"] = keyP["has_wind_swing_lr_angle"]
     end
-    if (keyP["has_wind_swing_ud_angle"] ~= nil) then
+    if keyP["has_wind_swing_ud_angle"] ~= nil then
         streams["has_wind_swing_ud_angle"] = keyP["has_wind_swing_ud_angle"]
     end
-    if (keyP["wait_clean"] ~= nil) then
-        streams["wait_clean"] = keyP["wait_clean"]
-    end
-    if (keyP["self_clean_time"] ~= nil) then
-        streams["self_clean_time"] = keyP["self_clean_time"]
-    end
-    if (keyP["dry_clean_time"] ~= nil) then
-        streams["dry_clean_time"] = keyP["dry_clean_time"]
-    end
-    if (keyP["ptc_load"] ~= nil) then streams["ptc_load"] = keyP["ptc_load"] end
-    if (keyP["defrosting_load"] ~= nil) then
-        streams["defrosting_load"] = keyP["defrosting_load"]
-    end
-    if (keyP["soft_cool"] ~= nil) then
-        streams["soft_cool"] = keyP["soft_cool"]
-    end
-    if (keyP["has_soft_cool"] ~= nil) then
-        streams["has_soft_cool"] = keyP["has_soft_cool"]
-    end
-    if (keyP["self_clean_stage"] ~= nil) then
-        streams["self_clean_stage"] = keyP["self_clean_stage"]
-    end
-    if (keyP["dry_clean_stage"] ~= nil) then
-        streams["dry_clean_stage"] = keyP["dry_clean_stage"]
-    end
-    if (keyP["real_mode"] ~= nil) then
-        streams["real_mode"] = keyP["real_mode"]
-    end
-    if (keyP["has_self_clean_time"] ~= nil) then
-        streams["has_self_clean_time"] = keyP["has_self_clean_time"]
-    end
-    if (keyP["has_dry_clean_time"] ~= nil) then
-        streams["has_dry_clean_time"] = keyP["has_dry_clean_time"]
-    end
+    if keyP["wait_clean"] ~= nil then streams["wait_clean"] = keyP["wait_clean"] end
+    if keyP["self_clean_time"] ~= nil then streams["self_clean_time"] = keyP["self_clean_time"] end
+    if keyP["dry_clean_time"] ~= nil then streams["dry_clean_time"] = keyP["dry_clean_time"] end
+    if keyP["ptc_load"] ~= nil then streams["ptc_load"] = keyP["ptc_load"] end
+    if keyP["defrosting_load"] ~= nil then streams["defrosting_load"] = keyP["defrosting_load"] end
+    if keyP["soft_cool"] ~= nil then streams["soft_cool"] = keyP["soft_cool"] end
+    if keyP["has_soft_cool"] ~= nil then streams["has_soft_cool"] = keyP["has_soft_cool"] end
+    if keyP["self_clean_stage"] ~= nil then streams["self_clean_stage"] = keyP["self_clean_stage"] end
+    if keyP["dry_clean_stage"] ~= nil then streams["dry_clean_stage"] = keyP["dry_clean_stage"] end
+    if keyP["real_mode"] ~= nil then streams["real_mode"] = keyP["real_mode"] end
+    if keyP["has_self_clean_time"] ~= nil then streams["has_self_clean_time"] = keyP["has_self_clean_time"] end
+    if keyP["has_dry_clean_time"] ~= nil then streams["has_dry_clean_time"] = keyP["has_dry_clean_time"] end
     keyP["propertyNumber"] = 0
     keyP["prevent_super_cool"] = nil
     keyP["prevent_straight_wind"] = nil
