@@ -22,7 +22,7 @@ local JSON_KEY_TAB = {
     KEY_WORK_STAGE = "work_stage",
     KEY_WORK_FLAG = "work_flag",
     KEY_RICE_LEVEL = "rice_level",
-    KEY_CONTROL_SRC = "control_src"
+    KEY_CONTROL_SRC = "control_src",
 }
 
 local VALUE_WORK_STATUS_KEEP_WARM = "keep_warm"
@@ -127,15 +127,15 @@ local VALUE_WORK_MODE_TAB = {
     [192] = "clean",
     [198] = "keep_warm",
     [199] = "diy",
-    [0] = "smart"
+    [0] = "smart",
 }
-local VALUE_MOUTHFEEL_TAB = {"soft", "middle", "hard", [0] = "none"}
+local VALUE_MOUTHFEEL_TAB = { "soft", "middle", "hard", [0] = "none" }
 local VALUE_RICE_TYPE_TAB = {
     "northeast",
     "longrain",
     "fragrant",
     "five",
-    [0] = "none"
+    [0] = "none",
 }
 
 local BYTE_DEVICE_TYPE = 0xEA
@@ -200,41 +200,49 @@ end
 
 local function string2hexstring(str)
     local ret = ""
-    for i = 1, #str do ret = ret .. string.format("%02x", str:byte(i)) end
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
     return ret
 end
 
 local function table2string(cmd)
     local ret = ""
     local i
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 
 local function int2String(data)
-    if (not data) then data = tostring(0) end
+    if not data then data = tostring(0) end
     data = tostring(data)
-    if (data == nil) then data = "0" end
+    if data == nil then data = "0" end
     return data
 end
 
 local function string2Int(data)
-    if (not data) then data = tonumber("0") end
+    if not data then data = tonumber "0" end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
+    if data == nil then data = 0 end
     return data
 end
 
 local function tableMerge(tDest, tSrc)
     if tSrc.left_time_hour == nil then tSrc.left_time_hour = 0 end
     if tSrc.left_time_min == nil then tSrc.left_time_min = 0 end
-    for k, v in pairs(tSrc) do tDest[k] = v end
+    for k, v in pairs(tSrc) do
+        tDest[k] = v
+    end
 end
 
 local function splitStrByChar(str, sepChar)
     local splitList = {}
-    local pattern = '[^' .. sepChar .. ']+'
-    string.gsub(str, pattern, function(w) table.insert(splitList, w) end)
+    local pattern = "[^" .. sepChar .. "]+"
+    string.gsub(str, pattern, function(w)
+        table.insert(splitList, w)
+    end)
     return splitList
 end
 
@@ -242,7 +250,9 @@ local function extractBodyBytes(byteData)
     local msgLength = #byteData
     local msgBytes = {}
     local bodyBytes = {}
-    for i = 1, msgLength do msgBytes[i - 1] = byteData[i] end
+    for i = 1, msgLength do
+        msgBytes[i - 1] = byteData[i]
+    end
     local bodyLength = msgLength - BYTE_PROTOCOL_LENGTH - 1
     for i = 0, bodyLength - 1 do
         bodyBytes[i] = msgBytes[i + BYTE_PROTOCOL_LENGTH]
@@ -252,7 +262,9 @@ end
 
 local function makeSum(tmpbuf, start_pos, end_pos)
     local resVal = 0
-    for si = start_pos, end_pos do resVal = resVal + tmpbuf[si] end
+    for si = start_pos, end_pos do
+        resVal = resVal + tmpbuf[si]
+    end
     resVal = bit.bnot(resVal) + 1
     resVal = bit.band(resVal, 0x00ff)
     return resVal
@@ -263,7 +275,9 @@ local function assembleUart(bodyBytes, type)
     if #bodyBytes == 0 then return nil end
     local msgLength = (bodyLength + BYTE_PROTOCOL_LENGTH + 1)
     local msgBytes = {}
-    for i = 0, msgLength - 1 do msgBytes[i] = 0 end
+    for i = 0, msgLength - 1 do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = BYTE_PROTOCOL_HEAD
     msgBytes[1] = msgLength - 1
     msgBytes[2] = BYTE_DEVICE_TYPE
@@ -312,38 +326,32 @@ local function getNoScheduleTime()
 end
 
 local function jsonToModel(luaTable)
-    if (luaTable[JSON_KEY_TAB.KEY_WORK_STATUS] ~= nil) then
+    if luaTable[JSON_KEY_TAB.KEY_WORK_STATUS] ~= nil then
         if luaTable[JSON_KEY_TAB.KEY_WORK_STATUS] == VALUE_WORK_STATUS_KEEP_WARM then
             workstatus = BYTE_STATUS_KEEP_WARM
-        elseif luaTable[JSON_KEY_TAB.KEY_WORK_STATUS] ==
-            VALUE_WORK_STATUS_SCHEDULE then
+        elseif luaTable[JSON_KEY_TAB.KEY_WORK_STATUS] == VALUE_WORK_STATUS_SCHEDULE then
             workstatus = BYTE_SCHEDULE
         elseif luaTable[JSON_KEY_TAB.KEY_WORK_STATUS] == VALUE_BYTE_COOKING then
             workstatus = BYTE_COOKING
         elseif luaTable[JSON_KEY_TAB.KEY_WORK_STATUS] == VALUE_BYTE_CANCEL then
             workstatus = BYTE_CANCEL
-        elseif luaTable[JSON_KEY_TAB.KEY_WORK_STATUS] ==
-            VALUE_BYTE_AWAKENING_RICE then
+        elseif luaTable[JSON_KEY_TAB.KEY_WORK_STATUS] == VALUE_BYTE_AWAKENING_RICE then
             workstatus = BYTE_AWAKENING_RICE
         else
             workstatus = string2Int(luaTable[JSON_KEY_TAB.KEY_WORK_STATUS])
         end
     end
-    if (luaTable[JSON_KEY_TAB.KEY_CONTROL_SRC] ~= nil) then
+    if luaTable[JSON_KEY_TAB.KEY_CONTROL_SRC] ~= nil then
         control_src = string2Int(luaTable[JSON_KEY_TAB.KEY_CONTROL_SRC])
     end
-    if (luaTable[JSON_KEY_TAB.KEY_MODE] ~= nil) then
-        mode = getPropertyIntegerByString(luaTable[JSON_KEY_TAB.KEY_MODE],
-                                          VALUE_WORK_MODE_TAB)
+    if luaTable[JSON_KEY_TAB.KEY_MODE] ~= nil then
+        mode = getPropertyIntegerByString(luaTable[JSON_KEY_TAB.KEY_MODE], VALUE_WORK_MODE_TAB)
     end
-    if (luaTable[JSON_KEY_TAB.KEY_MOUTHFEEL] ~= nil) then
-        mouthFeel = getPropertyIntegerByString(
-                        luaTable[JSON_KEY_TAB.KEY_MOUTHFEEL],
-                        VALUE_MOUTHFEEL_TAB)
+    if luaTable[JSON_KEY_TAB.KEY_MOUTHFEEL] ~= nil then
+        mouthFeel = getPropertyIntegerByString(luaTable[JSON_KEY_TAB.KEY_MOUTHFEEL], VALUE_MOUTHFEEL_TAB)
     end
-    if (luaTable[JSON_KEY_TAB.KEY_RICE_TYPE] ~= nil) then
-        riceType = getPropertyIntegerByString(
-                       luaTable[JSON_KEY_TAB.KEY_RICE_TYPE], VALUE_RICE_TYPE_TAB)
+    if luaTable[JSON_KEY_TAB.KEY_RICE_TYPE] ~= nil then
+        riceType = getPropertyIntegerByString(luaTable[JSON_KEY_TAB.KEY_RICE_TYPE], VALUE_RICE_TYPE_TAB)
     end
     if luaTable[JSON_KEY_TAB.KEY_ORDER_TIME_HOUR] ~= nil then
         orderHour = string2Int(luaTable[JSON_KEY_TAB.KEY_ORDER_TIME_HOUR])
@@ -368,10 +376,12 @@ local function jsonToModel(luaTable)
 end
 
 local function binToModel(messageBytes)
-    if (#messageBytes == 0) then return nil end
-    if ((dataType == 0x02 and messageBytes[3] == 0x02) or
-        (dataType == 0x03 and messageBytes[3] == 0x03) or
-        (dataType == 0x04 and messageBytes[3] == 0x04)) then
+    if #messageBytes == 0 then return nil end
+    if
+        (dataType == 0x02 and messageBytes[3] == 0x02)
+        or (dataType == 0x03 and messageBytes[3] == 0x03)
+        or (dataType == 0x04 and messageBytes[3] == 0x04)
+    then
         control_src = messageBytes[2]
         mode = messageBytes[4] + bit.lshift(messageBytes[5], 8)
         workstatus = messageBytes[8]
@@ -403,9 +413,9 @@ end
 local function assembleJsonByGlobalProperty()
     local streams = {}
     streams[JSON_KEY_TAB.KEY_VERSION] = VALUE_VERSION
-    if (workstatus == BYTE_STATUS_KEEP_WARM) then
+    if workstatus == BYTE_STATUS_KEEP_WARM then
         streams[JSON_KEY_TAB.KEY_WORK_STATUS] = VALUE_WORK_STATUS_KEEP_WARM
-    elseif (workstatus == BYTE_SCHEDULE) then
+    elseif workstatus == BYTE_SCHEDULE then
         streams[JSON_KEY_TAB.KEY_WORK_STATUS] = VALUE_WORK_STATUS_SCHEDULE
     elseif workstatus == BYTE_COOKING then
         streams[JSON_KEY_TAB.KEY_WORK_STATUS] = VALUE_BYTE_COOKING
@@ -417,13 +427,10 @@ local function assembleJsonByGlobalProperty()
         streams[JSON_KEY_TAB.KEY_WORK_STATUS] = int2String(workstatus)
     end
     streams[JSON_KEY_TAB.KEY_CONTROL_SRC] = int2String(control_src)
-    streams[JSON_KEY_TAB.KEY_MODE] = getPropertyStringByInteger(mode,
-                                                                VALUE_WORK_MODE_TAB)
+    streams[JSON_KEY_TAB.KEY_MODE] = getPropertyStringByInteger(mode, VALUE_WORK_MODE_TAB)
     streams[JSON_KEY_TAB.KEY_CMD_CODE] = int2String(mode)
-    streams[JSON_KEY_TAB.KEY_MOUTHFEEL] =
-        getPropertyStringByInteger(mouthFeel, VALUE_MOUTHFEEL_TAB)
-    streams[JSON_KEY_TAB.KEY_RICE_TYPE] =
-        getPropertyStringByInteger(riceType, VALUE_RICE_TYPE_TAB)
+    streams[JSON_KEY_TAB.KEY_MOUTHFEEL] = getPropertyStringByInteger(mouthFeel, VALUE_MOUTHFEEL_TAB)
+    streams[JSON_KEY_TAB.KEY_RICE_TYPE] = getPropertyStringByInteger(riceType, VALUE_RICE_TYPE_TAB)
     streams[JSON_KEY_TAB.KEY_ERROR_CODE] = errorCode
     streams[JSON_KEY_TAB.KEY_ORDER_TIME_HOUR] = orderHour
     streams[JSON_KEY_TAB.KEY_ORDER_TIME_MIN] = orderMin
@@ -446,7 +453,7 @@ local function assembleJsonByGlobalProperty()
     streams["flank_hot"] = bit.band(bit.rshift(workFlag, 2), 0x01)
     streams["top_hot"] = bit.band(bit.rshift(workFlag, 1), 0x01)
     streams["bottom_hot"] = bit.band(workFlag, 0x01)
-    if (stepExpectTime <= 1) then
+    if stepExpectTime <= 1 then
         streams["step_expect_time"] = 1
     else
         streams["step_expect_time"] = stepExpectTime
@@ -456,10 +463,10 @@ local function assembleJsonByGlobalProperty()
     streams["init_order_time_min"] = init_order_time_min
     streams["init_work_time_hour"] = init_work_time_hour
     streams["init_work_time_min"] = init_work_time_min
-    if (pressure_state ~= nil) then
-        if (pressure_state == 0) then
+    if pressure_state ~= nil then
+        if pressure_state == 0 then
             streams["pressure_state"] = "inexistence"
-        elseif (pressure_state == 1) then
+        elseif pressure_state == 1 then
             streams["pressure_state"] = "existence"
         else
             streams["pressure_state"] = int2String(pressure_state)
@@ -473,37 +480,142 @@ local function getDiyCmd(control)
     local msgTx
     if control[JSON_KEY_TAB.KEY_MODE] == "diy" then
         msgTx = {
-            0xAA, 0x78, 0xEA, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0xAA,
-            0x55, 0x01, 0x05, 0xC7, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+            0xAA,
+            0x78,
+            0xEA,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0x02,
+            0xAA,
+            0x55,
+            0x01,
+            0x05,
+            0xC7,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
         }
         if control[JSON_KEY_TAB.KEY_WORK_STATUS] == VALUE_BYTE_COOKING then
             msgTx[19] = 2
             msgTx[20] = no_schedule_order_time
             msgTx[21] = no_schedule_order_time
-        elseif control[JSON_KEY_TAB.KEY_WORK_STATUS] ==
-            VALUE_WORK_STATUS_SCHEDULE then
+        elseif control[JSON_KEY_TAB.KEY_WORK_STATUS] == VALUE_WORK_STATUS_SCHEDULE then
             msgTx[19] = 1
             msgTx[20] = string2Int(control[JSON_KEY_TAB.KEY_ORDER_TIME_HOUR])
             msgTx[21] = string2Int(control[JSON_KEY_TAB.KEY_ORDER_TIME_MIN])
         end
-        if (control[JSON_KEY_TAB.KEY_MOUTHFEEL] ~= nil) then
-            msgTx[24] = getPropertyIntegerByString(
-                            control[JSON_KEY_TAB.KEY_MOUTHFEEL],
-                            VALUE_MOUTHFEEL_TAB)
+        if control[JSON_KEY_TAB.KEY_MOUTHFEEL] ~= nil then
+            msgTx[24] = getPropertyIntegerByString(control[JSON_KEY_TAB.KEY_MOUTHFEEL], VALUE_MOUTHFEEL_TAB)
         end
-        if (control[JSON_KEY_TAB.KEY_RICE_TYPE] ~= nil) then
-            riceType = getPropertyIntegerByString(
-                           control[JSON_KEY_TAB.KEY_RICE_TYPE],
-                           VALUE_RICE_TYPE_TAB)
+        if control[JSON_KEY_TAB.KEY_RICE_TYPE] ~= nil then
+            riceType = getPropertyIntegerByString(control[JSON_KEY_TAB.KEY_RICE_TYPE], VALUE_RICE_TYPE_TAB)
             msgTx[25] = bit.band(riceType, 0xFF)
             msgTx[26] = bit.band(bit.rshift(riceType, 8), 0xFF)
         end
@@ -530,14 +642,14 @@ local function getDiyCmd(control)
 end
 
 function jsonToData(jsonCmdStr)
-    if (#jsonCmdStr == 0) then return nil end
+    if #jsonCmdStr == 0 then return nil end
     local msgBytes
     local json = decode(jsonCmdStr)
     local query = json["query"]
     local control = json["control"]
     local status = json["status"]
-    if (control) then
-        if (status) then
+    if control then
+        if status then
             tableMerge(status, control)
             control = status
         end
@@ -546,7 +658,9 @@ function jsonToData(jsonCmdStr)
         if flag == 1 then return diyCmd end
         local bodyLength = 16
         local bodyBytes = {}
-        for i = 0, bodyLength - 1 do bodyBytes[i] = 0 end
+        for i = 0, bodyLength - 1 do
+            bodyBytes[i] = 0
+        end
         bodyBytes[0] = 0xAA
         bodyBytes[1] = 0x55
         bodyBytes[2] = control_src
@@ -568,23 +682,25 @@ function jsonToData(jsonCmdStr)
         msgBytes = assembleUart(bodyBytes, BYTE_CONTROL_REQUEST)
         local infoM = {}
         local length = #msgBytes + 1
-        for i = 1, length do infoM[i] = msgBytes[i - 1] end
+        for i = 1, length do
+            infoM[i] = msgBytes[i - 1]
+        end
         local ret = table2string(infoM)
         ret = string2hexstring(ret)
         return ret
-    elseif (query) then
+    elseif query then
         return "AA0FEA00000000000103AA5501030000"
     end
 end
 
 function dataToJson(jsonStr)
-    if (not jsonStr) then return nil end
+    if not jsonStr then return nil end
     local json = decode(jsonStr)
     local binData = json["msg"]["data"]
     local status = json["status"]
     local bodyBytes = {}
     local byteData = string2table(binData)
-    dataType = byteData[10];
+    dataType = byteData[10]
     bodyBytes = extractBodyBytes(byteData)
     local ret = binToModel(bodyBytes)
     local retTable = {}

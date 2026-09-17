@@ -1,14 +1,12 @@
 local cloud_bl = true
-local JSON = require 'cjson'
-local KEY_VERSION = 'version'
-local VALUE_UNKNOWN = 'unknown'
-local VALUE_INVALID = 'invalid'
+local JSON = require "cjson"
+local KEY_VERSION = "version"
+local VALUE_UNKNOWN = "unknown"
+local VALUE_INVALID = "invalid"
 local VALUE_VERSION = 1
 
 function jsonToData(jsonCmdStr)
-    if jsonCmdStr == nil or #jsonCmdStr == 0 then
-        return nil
-    end
+    if jsonCmdStr == nil or #jsonCmdStr == 0 then return nil end
     local t = decodeJsonStrToTable(jsonCmdStr)
     local control = t.control
     local query = t.query
@@ -44,40 +42,32 @@ function jsonToData(jsonCmdStr)
             [26] = 0x00,
             [27] = 0x00,
             [28] = 0x00,
-            [29] = 0x00
+            [29] = 0x00,
         }
         local switch_mode = {
-            ['0'] = function()
+            ["0"] = function()
                 for i = #tdlist, 10, -1 do
                     table.remove(tdlist, i)
                 end
                 if control.query_type ~= nil then
                     tdlist[9] = 3
                     tdlist[10] = control.query_type
-                    if control.query_type == '50' then
-                        tdlist[11] = '03'
-                    end
+                    if control.query_type == "50" then tdlist[11] = "03" end
                 end
             end,
-            ['1'] = function()
+            ["1"] = function()
                 for i = #tdlist, 21, -1 do
                     table.remove(tdlist, i)
                 end
                 if control.function_control ~= nil then
                     tdlist[11] = 0x01
                     tdlist[12] = control.function_control
-                    if tdlist[12] == '3' then
-                        if control.left_gear ~= nil then
-                            tdlist[15] = control.left_gear
-                        end
-                    elseif tdlist[12] == '4' then
-                        if control.left_surplus_hours ~= nil then
-                            tdlist[13] = control.left_surplus_hours
-                        end
-                        if control.left_surplus_minutes ~= nil then
-                            tdlist[14] = control.left_surplus_minutes
-                        end
-                    elseif tdlist[12] == '11' or tdlist[12] == '12' or tdlist[12] == '13' or tdlist[12] == '14' then
+                    if tdlist[12] == "3" then
+                        if control.left_gear ~= nil then tdlist[15] = control.left_gear end
+                    elseif tdlist[12] == "4" then
+                        if control.left_surplus_hours ~= nil then tdlist[13] = control.left_surplus_hours end
+                        if control.left_surplus_minutes ~= nil then tdlist[14] = control.left_surplus_minutes end
+                    elseif tdlist[12] == "11" or tdlist[12] == "12" or tdlist[12] == "13" or tdlist[12] == "14" then
                         if control.left_temp ~= nil then
                             tdlist[17] = control.left_temp % 256
                             tdlist[16] = (control.left_temp - tdlist[17]) / 256
@@ -85,28 +75,20 @@ function jsonToData(jsonCmdStr)
                     end
                 end
             end,
-            ['2'] = function()
+            ["2"] = function()
                 for i = #tdlist, 21, -1 do
                     table.remove(tdlist, i)
                 end
                 if control.function_control ~= nil then
                     tdlist[11] = 0x02
                     tdlist[12] = control.function_control
-                    if tdlist[12] == '3' then
-                        if control.right_gear ~= nil then
-                            tdlist[15] = control.right_gear
-                        end
-                        if control.right_temp ~= nil then
-                            tdlist[15] = control.right_temp
-                        end
-                    elseif tdlist[12] == '4' then
-                        if control.right_surplus_hours ~= nil then
-                            tdlist[13] = control.right_surplus_hours
-                        end
-                        if control.right_surplus_minutes ~= nil then
-                            tdlist[14] = control.right_surplus_minutes
-                        end
-                    elseif tdlist[12] == '11' or tdlist[12] == '12' or tdlist[12] == '13' or tdlist[12] == '14' then
+                    if tdlist[12] == "3" then
+                        if control.right_gear ~= nil then tdlist[15] = control.right_gear end
+                        if control.right_temp ~= nil then tdlist[15] = control.right_temp end
+                    elseif tdlist[12] == "4" then
+                        if control.right_surplus_hours ~= nil then tdlist[13] = control.right_surplus_hours end
+                        if control.right_surplus_minutes ~= nil then tdlist[14] = control.right_surplus_minutes end
+                    elseif tdlist[12] == "11" or tdlist[12] == "12" or tdlist[12] == "13" or tdlist[12] == "14" then
                         if control.right_temp ~= nil then
                             tdlist[19] = control.right_temp % 256
                             tdlist[18] = (control.right_temp - tdlist[19]) / 256
@@ -114,29 +96,27 @@ function jsonToData(jsonCmdStr)
                     end
                 end
             end,
-            ['3'] = function()
+            ["3"] = function()
                 for i = #tdlist, 21, -1 do
                     table.remove(tdlist, i)
                 end
                 tdlist[11] = 0x03
-                if control.function_control == '1' then
-                    tdlist[12] = control.function_control
-                end
-                if control.lock == '0' then
+                if control.function_control == "1" then tdlist[12] = control.function_control end
+                if control.lock == "0" then
                     tdlist[12] = 0x07
-                elseif control.lock == '1' then
+                elseif control.lock == "1" then
                     tdlist[12] = 0x08
                 end
             end,
-            ['4'] = function()
+            ["4"] = function()
                 for i = #tdlist, 19, -1 do
                     table.remove(tdlist, i)
                 end
                 tdlist[10] = 0x27
                 if control.bind_pot ~= nil then
                     tdlist[11] = control.bind_pot
-                    if tdlist[11] == '1' then
-                        if (control.bind_mac_add) then
+                    if tdlist[11] == "1" then
+                        if control.bind_mac_add then
                             mac_temp = control.bind_mac_add
                             local straw = {}
                             j = 12
@@ -147,15 +127,15 @@ function jsonToData(jsonCmdStr)
                                 tdlist[j] = tonumber(straw[i], 16)
                             end
                         end
-                    elseif tdlist[11] == '3' then
+                    elseif tdlist[11] == "3" then
                     end
                 end
             end,
-            ['5'] = function()
+            ["5"] = function()
                 tdlist[10] = 0xCA
                 if control.dl_menu ~= nil then
                     tdlist[11] = control.dl_menu
-                    if tdlist[11] == '1' then
+                    if tdlist[11] == "1" then
                         if control.dl_menu_id then
                             tdlist[14] = control.dl_menu_id % 256
                             tdlist[13] = (control.dl_menu_id - tdlist[14]) / 256
@@ -164,9 +144,7 @@ function jsonToData(jsonCmdStr)
                                 tdlist[13] = tdlist[13] % 256
                             end
                         end
-                        if control.dl_menu_link_str ~= nil then
-                            tdlist[32] = #control.dl_menu_link_str
-                        end
+                        if control.dl_menu_link_str ~= nil then tdlist[32] = #control.dl_menu_link_str end
                         if control.dl_menu_link_str ~= nil then
                             k = 32
                             local dl_char_array = {}
@@ -176,9 +154,7 @@ function jsonToData(jsonCmdStr)
                                 tdlist[k] = dl_char_array[i]
                             end
                         end
-                        if dl_menu_pid ~= nil then
-                            tdlist[15] = dl_menu_pid
-                        end
+                        if dl_menu_pid ~= nil then tdlist[15] = dl_menu_pid end
                         if control.dl_menu_md5 ~= nil then
                             md5_temp = control.dl_menu_md5
                             local straw2 = {}
@@ -193,7 +169,7 @@ function jsonToData(jsonCmdStr)
                     end
                 end
             end,
-            ['6'] = function()
+            ["6"] = function()
                 for i = #tdlist, 21, -1 do
                     table.remove(tdlist, i)
                 end
@@ -210,27 +186,26 @@ function jsonToData(jsonCmdStr)
                 end
                 tdlist[17] = pot_temp_moren % 256
                 tdlist[16] = (pot_temp_moren - tdlist[17]) / 256
-            end}
-        if control.work_burner_control ~= nil then
-            switch_mode[control.work_burner_control]()
-        end
+            end,
+        }
+        if control.work_burner_control ~= nil then switch_mode[control.work_burner_control]() end
         tdlist[#tdlist + 1] = 0
         tdlist[1] = #tdlist
         tdlist[#tdlist] = checkSum(tdlist)
         return byteArrayToHexStr(tdlist)
     elseif query then
         if query.query_type then
-            if query.query_type == '31' then
-                query_cmd = 'AA0BB7000000000001033109'
-            elseif query.query_type == '32' then
-                query_cmd = 'AA0CB700000000000103320304'
-            elseif query.query_type == '37' then
-                query_cmd = 'AA0BB7000000000001033703'
-            elseif query.query_type == '202' then
-                query_cmd = 'AA0BB700000000000103CA70'
+            if query.query_type == "31" then
+                query_cmd = "AA0BB7000000000001033109"
+            elseif query.query_type == "32" then
+                query_cmd = "AA0CB700000000000103320304"
+            elseif query.query_type == "37" then
+                query_cmd = "AA0BB7000000000001033703"
+            elseif query.query_type == "202" then
+                query_cmd = "AA0BB700000000000103CA70"
             end
         else
-            query_cmd = 'AA0BB7000000000001033109'
+            query_cmd = "AA0BB7000000000001033109"
         end
         return query_cmd
     end
@@ -250,16 +225,12 @@ function dataToJson(jsonCmdStr)
             right_surplus_minutes = 0,
             error_code = 0,
             tips_code = 0,
-            fail_resp_reason = 0
-        }
+            fail_resp_reason = 0,
+        },
     }
-    if jsonCmdStr == nil or #jsonCmdStr == 0 then
-        return nil
-    end
+    if jsonCmdStr == nil or #jsonCmdStr == 0 then return nil end
     local t = decodeJsonStrToTable(jsonCmdStr)
-    if t.msg == nil or t.msg.data == nil then
-        return nil
-    end
+    if t.msg == nil or t.msg.data == nil then return nil end
     cmdStr = t.msg.data
     bytecmd = {}
     for i = 0, (#cmdStr / 2), 1 do
@@ -269,7 +240,7 @@ function dataToJson(jsonCmdStr)
             bytecmd[i] = 00
         end
     end
-    if bytecmd[9] == '04' and bytecmd[10] == '41' or bytecmd[9] == '03' and bytecmd[10] == '31' then
+    if bytecmd[9] == "04" and bytecmd[10] == "41" or bytecmd[9] == "03" and bytecmd[10] == "31" then
         result.status.left_status = tonumber(bytecmd[11], 16)
         result.status.right_status = tonumber(bytecmd[12], 16)
         result.status.left_surplus_hours = tonumber(bytecmd[13], 16)
@@ -341,15 +312,21 @@ function dataToJson(jsonCmdStr)
             end
             result.status.pots[i].pot_menu_step = tonumber(bytecmd[math_front + 9], 16)
             result.status.pots[i].pot_menu_step_dt = tonumber(bytecmd[math_front + 10], 16)
-            result.status.pots[i].pot_temp_menu_tag = tonumber(bytecmd[math_front + 7], 16) * 255 + tonumber(bytecmd[math_front + 8], 16)
-            result.status.pots[i].pot_temp_top = tonumber(bytecmd[math_front + 1], 16) * 255 + tonumber(bytecmd[math_front + 2], 16)
-            result.status.pots[i].pot_temp_bot = tonumber(bytecmd[math_front + 3], 16) * 255 + tonumber(bytecmd[math_front + 4], 16)
-            result.status.pots[i].pot_temp_chao = tonumber(bytecmd[math_front + 13], 16) * 255 + tonumber(bytecmd[math_front + 14], 16)
-            result.status.pots[i].pot_temp_dun = tonumber(bytecmd[math_front + 15], 16) * 255 + tonumber(bytecmd[math_front + 16], 16)
-            result.status.pots[i].pot_temp_zha = tonumber(bytecmd[math_front + 17], 16) * 255 + tonumber(bytecmd[math_front + 18], 16)
+            result.status.pots[i].pot_temp_menu_tag = tonumber(bytecmd[math_front + 7], 16) * 255
+                + tonumber(bytecmd[math_front + 8], 16)
+            result.status.pots[i].pot_temp_top = tonumber(bytecmd[math_front + 1], 16) * 255
+                + tonumber(bytecmd[math_front + 2], 16)
+            result.status.pots[i].pot_temp_bot = tonumber(bytecmd[math_front + 3], 16) * 255
+                + tonumber(bytecmd[math_front + 4], 16)
+            result.status.pots[i].pot_temp_chao = tonumber(bytecmd[math_front + 13], 16) * 255
+                + tonumber(bytecmd[math_front + 14], 16)
+            result.status.pots[i].pot_temp_dun = tonumber(bytecmd[math_front + 15], 16) * 255
+                + tonumber(bytecmd[math_front + 16], 16)
+            result.status.pots[i].pot_temp_zha = tonumber(bytecmd[math_front + 17], 16) * 255
+                + tonumber(bytecmd[math_front + 18], 16)
             result.status.pots[i].pot_temp_dadao = tonumber(bytecmd[math_front + 12], 16)
         end
-    elseif bytecmd[9] == '04' and bytecmd[10] == '47' or bytecmd[9] == '03' and bytecmd[10] == '37' then
+    elseif bytecmd[9] == "04" and bytecmd[10] == "47" or bytecmd[9] == "03" and bytecmd[10] == "37" then
         result.status.bt_device_mount = tonumber(bytecmd[11], 16)
         if result.status.bt_device_mount ~= 0 and result.status.bt_device_mount ~= 255 then
             result.status.bt_device = {}
@@ -357,28 +334,29 @@ function dataToJson(jsonCmdStr)
                 result.status.bt_device[i] = {}
                 math_front = 11 + 12 * (i - 1)
                 result.status.bt_device[i].bt_device_type = tonumber(bytecmd[math_front + 1], 16)
-                result.status.bt_device[i].bt_device_mac = ''
+                result.status.bt_device[i].bt_device_mac = ""
                 j = math_front + 1
                 for k = 0, 5, 1 do
                     j = j + 1
                     result.status.bt_device[i].bt_device_mac = result.status.bt_device[i].bt_device_mac .. bytecmd[j]
                 end
                 result.status.bt_device[i].bt_device_cp = tonumber(bytecmd[math_front + 8], 16)
-                result.status.bt_device[i].bt_device_sname = string.char(tonumber(bytecmd[math_front + 9], 16)) ..
-                        string.char(tonumber(bytecmd[math_front + 10], 16)) ..
-                        string.char(tonumber(bytecmd[math_front + 11], 16))
+                result.status.bt_device[i].bt_device_sname = string.char(tonumber(bytecmd[math_front + 9], 16))
+                    .. string.char(tonumber(bytecmd[math_front + 10], 16))
+                    .. string.char(tonumber(bytecmd[math_front + 11], 16))
                 result.status.bt_device[i].bt_device_mac_bind_bl = tonumber(bytecmd[math_front + 12], 16)
             end
         end
     elseif
-    bytecmd[9] == '04' and bytecmd[10] == 'CA' or bytecmd[9] == '03' and bytecmd[10] == 'CA' or
-            bytecmd[9] == '04' and bytecmd[10] == 'ca' or
-            bytecmd[9] == '03' and bytecmd[10] == 'ca'
+        bytecmd[9] == "04" and bytecmd[10] == "CA"
+        or bytecmd[9] == "03" and bytecmd[10] == "CA"
+        or bytecmd[9] == "04" and bytecmd[10] == "ca"
+        or bytecmd[9] == "03" and bytecmd[10] == "ca"
     then
         result.status.dl_menu = tonumber(bytecmd[11], 16)
         result.status.dl_menu_pid = tonumber(bytecmd[15], 16)
         result.status.dl_menu_process = tonumber(bytecmd[16], 16)
-        result.status.dl_menu_md5 = ''
+        result.status.dl_menu_md5 = ""
         j = 16
         for i = 0, 15, 1 do
             j = j + 1
@@ -386,64 +364,58 @@ function dataToJson(jsonCmdStr)
         end
         k = 33
         result.status.dl_menu_link_str_len = tonumber(bytecmd[33], 16)
-        result.status.dl_menu_link_str = ''
+        result.status.dl_menu_link_str = ""
         for i = 0, result.status.dl_menu_link_str_len - 1, 1 do
             k = k + 1
             result.status.dl_menu_link_str = result.status.dl_menu_link_str .. string.char(tonumber(bytecmd[k], 16))
         end
-    elseif bytecmd[9] == '03' and bytecmd[10] == '32' then
-        if bytecmd[11] == '03' then
+    elseif bytecmd[9] == "03" and bytecmd[10] == "32" then
+        if bytecmd[11] == "03" then
             for i = 0, 7 do
                 bitN = getBit(bytecmd[12], i)
-                if bitN == '1' then
+                if bitN == "1" then
                     result.status.error_code = i + 1
                     return encodeTableToJson(result)
                 end
             end
             for i = 0, 7 do
                 bitN = getBit(bytecmd[13], i)
-                if bitN == '1' then
+                if bitN == "1" then
                     result.status.error_code = i + 9
                     return encodeTableToJson(result)
                 end
             end
             for i = 0, 5 do
                 bitN = getBit(bytecmd[14], i)
-                if bitN == '1' then
+                if bitN == "1" then
                     result.status.tips_code = i + 1
                     return encodeTableToJson(result)
                 end
             end
             for i = 0, 1 do
                 bitN = getBit(bytecmd[15], i)
-                if bitN == '1' then
+                if bitN == "1" then
                     result.status.tips_code = i + 7
                     return encodeTableToJson(result)
                 end
             end
         end
-    elseif bytecmd[9] == '02' then
-        if bytecmd[11] == 'FE' then
-            result.status.fail_resp_reason = tonumber(bytecmd[13], 16)
-        end
+    elseif bytecmd[9] == "02" then
+        if bytecmd[11] == "FE" then result.status.fail_resp_reason = tonumber(bytecmd[13], 16) end
     end
     return encodeTableToJson(result)
 end
 
 function decodeJsonStrToTable(cmd)
     local tb
-    if JSON == nil then
-        JSON = require 'cjson'
-    end
+    if JSON == nil then JSON = require "cjson" end
     tb = JSON.decode(cmd)
     return tb
 end
 
 function encodeTableToJson(luaTable)
     local jsonStr
-    if JSON == nil then
-        JSON = require 'cjson'
-    end
+    if JSON == nil then JSON = require "cjson" end
     jsonStr = JSON.encode(luaTable)
     return jsonStr
 end
@@ -461,10 +433,10 @@ function checkSum(data)
 end
 
 function byteArrayToHexStr(byteTable)
-    local hexStr = ''
+    local hexStr = ""
     local length = #byteTable
     for i = 0, length, 1 do
-        hexStr = hexStr .. string.format('%02X', byteTable[i])
+        hexStr = hexStr .. string.format("%02X", byteTable[i])
     end
     return hexStr
 end
@@ -480,49 +452,33 @@ function getBit(oneByte, bitIndex)
     local bytes_low = tonumber(string.sub(oneByte, 2, 2), 16)
     if bitIndex > 3 and bitIndex < 8 then
         if bitIndex == 7 then
-            if bit_band(bytes_high, 8) == 8 then
-                return '1'
-            end
+            if bit_band(bytes_high, 8) == 8 then return "1" end
         elseif bitIndex == 6 then
-            if bit_band(bytes_high, 4) == 4 then
-                return '1'
-            end
+            if bit_band(bytes_high, 4) == 4 then return "1" end
         elseif bitIndex == 5 then
-            if bit_band(bytes_high, 2) == 2 then
-                return '1'
-            end
+            if bit_band(bytes_high, 2) == 2 then return "1" end
         elseif bitIndex == 4 then
-            if bit_band(bytes_high, 1) == 1 then
-                return '1'
-            end
+            if bit_band(bytes_high, 1) == 1 then return "1" end
         end
-        return '0'
+        return "0"
     elseif bitIndex >= 0 and bitIndex <= 3 then
         if bitIndex == 3 then
-            if bit_band(bytes_low, 8) == 8 then
-                return '1'
-            end
+            if bit_band(bytes_low, 8) == 8 then return "1" end
         elseif bitIndex == 2 then
-            if bit_band(bytes_low, 4) == 4 then
-                return '1'
-            end
+            if bit_band(bytes_low, 4) == 4 then return "1" end
         elseif bitIndex == 1 then
-            if bit_band(bytes_low, 2) == 2 then
-                return '1'
-            end
+            if bit_band(bytes_low, 2) == 2 then return "1" end
         elseif bitIndex == 0 then
-            if bit_band(bytes_low, 1) == 1 then
-                return '1'
-            end
+            if bit_band(bytes_low, 1) == 1 then return "1" end
         end
-        return '0'
+        return "0"
     end
-    return '2'
+    return "2"
 end
 
 function bit_band(a, b)
     local ret
-    if (cloud_bl) then
+    if cloud_bl then
         ret = bit.band(a, b)
     else
         ret = bit32.band(a, b)
@@ -532,10 +488,10 @@ end
 
 function tenToSixteen(src)
     src = tonumber(src)
-    return string.format('%#x', src)
+    return string.format("%#x", src)
 end
 
 function sixteenToTen(src)
     src = tonumber(src, 16)
-    return string.format('%d', src)
+    return string.format("%d", src)
 end

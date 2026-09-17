@@ -1,64 +1,64 @@
-local JSON = require 'cjson'
-local KEY_VERSION = 'version'
-local KEY_POWER = 'power'
-local KEY_CONTROL_WORK_STATUS = 'control_status'
-local KEY_RUNNING_WORK_STATUS = 'running_status'
-local KEY_MODE = 'mode'
-local KEY_PROGRAM = 'program'
-local KEY_WASH_LEVEL = 'wash_level'
-local KEY_RINSE_LEVEL = 'rinse_level'
-local KEY_WASH_STRENGTH = 'wash_strength'
-local KEY_DEHYDRATION_SPEED = 'dehydration_speed'
-local KEY_RINSE_COUNT = 'rinse_count'
-local KEY_TEMPERATURE = 'temperature'
-local KEY_DEHYDRATION_TIME = 'dehydration_time'
-local KEY_WASH_TIME = 'wash_time'
-local KEY_LOCK = 'lock'
-local KEY_INTELLIGENT_WASH = 'intelligent_wash'
-local KEY_REMAIN_TIME = 'remain_time'
-local KEY_ERROR_CODE = 'error_code'
+local JSON = require "cjson"
+local KEY_VERSION = "version"
+local KEY_POWER = "power"
+local KEY_CONTROL_WORK_STATUS = "control_status"
+local KEY_RUNNING_WORK_STATUS = "running_status"
+local KEY_MODE = "mode"
+local KEY_PROGRAM = "program"
+local KEY_WASH_LEVEL = "wash_level"
+local KEY_RINSE_LEVEL = "rinse_level"
+local KEY_WASH_STRENGTH = "wash_strength"
+local KEY_DEHYDRATION_SPEED = "dehydration_speed"
+local KEY_RINSE_COUNT = "rinse_count"
+local KEY_TEMPERATURE = "temperature"
+local KEY_DEHYDRATION_TIME = "dehydration_time"
+local KEY_WASH_TIME = "wash_time"
+local KEY_LOCK = "lock"
+local KEY_INTELLIGENT_WASH = "intelligent_wash"
+local KEY_REMAIN_TIME = "remain_time"
+local KEY_ERROR_CODE = "error_code"
 
 local VALUE_VERSION = 7
-local VALUE_ON = 'on'
-local VALUE_OFF = 'off'
-local VALUE_CONTROL_WORK_STATUS_START = 'start'
-local VALUE_CONTROL_WORK_STATUS_PAUSE = 'pause'
-local VALUE_RUNNING_WORK_STATUS_STANDBY = 'standby'
-local VALUE_RUNNING_WORK_STATUS_WORK = 'work'
-local VALUE_RUNNING_WORK_STATUS_PAUSE = 'pause'
-local VALUE_RUNNING_WORK_STATUS_END = 'end'
-local VALUE_RUNNING_WORK_STATUS_ERROR = 'error'
-local VALUE_RUNNING_WORK_STATUS_ORDER = 'order'
-local VALUE_MODE_NORMAL = 'normal'
-local VALUE_MODE_DRY = 'dry'
-local VALUE_MODE_CONTINUS = 'continus'
-local VALUE_PROGRAM_STANDARD = 'standard'
-local VALUE_PROGRAM_FAST = 'fast'
-local VALUE_PROGRAM_BLANKE = 'blanket'
-local VALUE_PROGRAM_WOOL = 'wool'
-local VALUE_PROGRAM_EMBATHE = 'embathe'
-local VALUE_PROGRAM_MEMORY = 'memory'
-local VALUE_PROGRAM_CHILD = 'child'
-local VALUE_PROGRAM_STRONG_WASH = 'strong_wash'
-local VALUE_PROGRAM_DOWN_JACKET = 'down_jacket'
-local VALUE_PROGRAM_STIR = 'stir'
-local VALUE_PROGRAM_MUTE = 'mute'
-local VALUE_PROGRAM_BUCKET_SELF_CLEAN = 'bucket_self_clean'
-local VALUE_PROGRAM_AIR_DRY = 'air_dry'
-local VALUE_PROGRAM_CYCLE = 'cycle'
-local VALUE_PROGRAM_REMAIN_WATER = 'remain_water'
-local VALUE_PROGRAM_SUMMER = 'summer'
-local VALUE_PROGRAM_BIG = 'big'
-local VALUE_PROGRAM_HOME = 'home'
-local VALUE_PROGRAM_COWBAY = 'cowboy'
-local VALUE_PROGRAM_SOFT = 'soft'
-local VALUE_PROGRAM_HAND_WASH = 'hand_wash'
-local VALUE_PROGRAM_WATER_FLOW = 'water_flow'
-local VALUE_PROGRAM_FOG = 'fog'
-local VALUE_PROGRAM_BUCKET_DRY = 'bucket_dry'
-local VALUE_PROGRAM_FAST_CLEAN_WASH = 'fast_clean_wash'
-local VALUE_PROGRAM_DEHYDRATION = 'dehydration'
-local VALUE_PROGRAM_UNDER_WEAR = 'under_wear'
+local VALUE_ON = "on"
+local VALUE_OFF = "off"
+local VALUE_CONTROL_WORK_STATUS_START = "start"
+local VALUE_CONTROL_WORK_STATUS_PAUSE = "pause"
+local VALUE_RUNNING_WORK_STATUS_STANDBY = "standby"
+local VALUE_RUNNING_WORK_STATUS_WORK = "work"
+local VALUE_RUNNING_WORK_STATUS_PAUSE = "pause"
+local VALUE_RUNNING_WORK_STATUS_END = "end"
+local VALUE_RUNNING_WORK_STATUS_ERROR = "error"
+local VALUE_RUNNING_WORK_STATUS_ORDER = "order"
+local VALUE_MODE_NORMAL = "normal"
+local VALUE_MODE_DRY = "dry"
+local VALUE_MODE_CONTINUS = "continus"
+local VALUE_PROGRAM_STANDARD = "standard"
+local VALUE_PROGRAM_FAST = "fast"
+local VALUE_PROGRAM_BLANKE = "blanket"
+local VALUE_PROGRAM_WOOL = "wool"
+local VALUE_PROGRAM_EMBATHE = "embathe"
+local VALUE_PROGRAM_MEMORY = "memory"
+local VALUE_PROGRAM_CHILD = "child"
+local VALUE_PROGRAM_STRONG_WASH = "strong_wash"
+local VALUE_PROGRAM_DOWN_JACKET = "down_jacket"
+local VALUE_PROGRAM_STIR = "stir"
+local VALUE_PROGRAM_MUTE = "mute"
+local VALUE_PROGRAM_BUCKET_SELF_CLEAN = "bucket_self_clean"
+local VALUE_PROGRAM_AIR_DRY = "air_dry"
+local VALUE_PROGRAM_CYCLE = "cycle"
+local VALUE_PROGRAM_REMAIN_WATER = "remain_water"
+local VALUE_PROGRAM_SUMMER = "summer"
+local VALUE_PROGRAM_BIG = "big"
+local VALUE_PROGRAM_HOME = "home"
+local VALUE_PROGRAM_COWBAY = "cowboy"
+local VALUE_PROGRAM_SOFT = "soft"
+local VALUE_PROGRAM_HAND_WASH = "hand_wash"
+local VALUE_PROGRAM_WATER_FLOW = "water_flow"
+local VALUE_PROGRAM_FOG = "fog"
+local VALUE_PROGRAM_BUCKET_DRY = "bucket_dry"
+local VALUE_PROGRAM_FAST_CLEAN_WASH = "fast_clean_wash"
+local VALUE_PROGRAM_DEHYDRATION = "dehydration"
+local VALUE_PROGRAM_UNDER_WEAR = "under_wear"
 
 local BYTE_DEVICE_TYPE = 0xDA
 local BYTE_CONTROL_REQUEST = 0x02
@@ -209,75 +209,59 @@ function updateGlobalPropertyValueByJson(luaTable)
         program = BYTE_PROGRAM_DEHYDRATION
     elseif luaTable[KEY_PROGRAM] == VALUE_PROGRAM_UNDER_WEAR then
         program = BYTE_PROGRAM_UNDER_WEAR
-    elseif luaTable[KEY_PROGRAM] == 'rinse_dehydration' then
+    elseif luaTable[KEY_PROGRAM] == "rinse_dehydration" then
         program = 0x1D
-    elseif luaTable[KEY_PROGRAM] == 'five_clean' then
+    elseif luaTable[KEY_PROGRAM] == "five_clean" then
         program = 0x1E
-    elseif luaTable[KEY_PROGRAM] == 'degerm' then
+    elseif luaTable[KEY_PROGRAM] == "degerm" then
         program = 0x1F
-    elseif luaTable[KEY_PROGRAM] == 'in_15' then
+    elseif luaTable[KEY_PROGRAM] == "in_15" then
         program = 0x20
-    elseif luaTable[KEY_PROGRAM] == 'in_25' then
+    elseif luaTable[KEY_PROGRAM] == "in_25" then
         program = 0x21
-    elseif luaTable[KEY_PROGRAM] == 'love_baby' then
+    elseif luaTable[KEY_PROGRAM] == "love_baby" then
         program = 0x22
-    elseif luaTable[KEY_PROGRAM] == 'outdoor' then
+    elseif luaTable[KEY_PROGRAM] == "outdoor" then
         program = 0x23
-    elseif luaTable[KEY_PROGRAM] == 'silk' then
+    elseif luaTable[KEY_PROGRAM] == "silk" then
         program = 0x24
-    elseif luaTable[KEY_PROGRAM] == 'shirt' then
+    elseif luaTable[KEY_PROGRAM] == "shirt" then
         program = 0x25
-    elseif luaTable[KEY_PROGRAM] == 'cook_wash' then
+    elseif luaTable[KEY_PROGRAM] == "cook_wash" then
         program = 0x26
-    elseif luaTable[KEY_PROGRAM] == 'towel' then
+    elseif luaTable[KEY_PROGRAM] == "towel" then
         program = 0x27
-    elseif luaTable[KEY_PROGRAM] == 'memory_2' then
+    elseif luaTable[KEY_PROGRAM] == "memory_2" then
         program = 0x28
-    elseif luaTable[KEY_PROGRAM] == 'memory_3' then
+    elseif luaTable[KEY_PROGRAM] == "memory_3" then
         program = 0x29
-    elseif luaTable[KEY_PROGRAM] == 'half_energy' then
+    elseif luaTable[KEY_PROGRAM] == "half_energy" then
         program = 0x2A
-    elseif luaTable[KEY_PROGRAM] == 'all_energy' then
+    elseif luaTable[KEY_PROGRAM] == "all_energy" then
         program = 0x2B
-    elseif luaTable[KEY_PROGRAM] == 'soft_wash' then
+    elseif luaTable[KEY_PROGRAM] == "soft_wash" then
         program = 0x2C
-    elseif luaTable[KEY_PROGRAM] == 'prevent_allergy' then
+    elseif luaTable[KEY_PROGRAM] == "prevent_allergy" then
         program = 0x2D
-    elseif luaTable[KEY_PROGRAM] == 'wash_cube' then
+    elseif luaTable[KEY_PROGRAM] == "wash_cube" then
         program = 0x2E
-    elseif luaTable[KEY_PROGRAM] == 'winter_jacket' then
+    elseif luaTable[KEY_PROGRAM] == "winter_jacket" then
         program = 0x2F
-    elseif luaTable[KEY_PROGRAM] == 'leisure_wash' then
+    elseif luaTable[KEY_PROGRAM] == "leisure_wash" then
         program = 0x30
-    elseif luaTable[KEY_PROGRAM] == 'no_iron' then
+    elseif luaTable[KEY_PROGRAM] == "no_iron" then
         program = 0x31
-    elseif luaTable[KEY_PROGRAM] == 'invalid' then
+    elseif luaTable[KEY_PROGRAM] == "invalid" then
         program = 0xFF
     end
-    if luaTable[KEY_WASH_LEVEL] ~= nil then
-        washLevel = string2Int(luaTable[KEY_WASH_LEVEL])
-    end
-    if luaTable[KEY_RINSE_LEVEL] ~= nil then
-        rinseLevel = string2Int(luaTable[KEY_RINSE_LEVEL])
-    end
-    if luaTable[KEY_WASH_STRENGTH] ~= nil then
-        washStrength = string2Int(luaTable[KEY_WASH_STRENGTH])
-    end
-    if luaTable[KEY_DEHYDRATION_SPEED] ~= nil then
-        dehydrationSpeed = string2Int(luaTable[KEY_DEHYDRATION_SPEED])
-    end
-    if luaTable[KEY_RINSE_COUNT] ~= nil then
-        rinseCount = string2Int(luaTable[KEY_RINSE_COUNT])
-    end
-    if luaTable[KEY_TEMPERATURE] ~= nil then
-        temperature = string2Int(luaTable[KEY_TEMPERATURE])
-    end
-    if luaTable[KEY_DEHYDRATION_TIME] ~= nil then
-        dehydrationTime = string2Int(luaTable[KEY_DEHYDRATION_TIME])
-    end
-    if luaTable[KEY_WASH_TIME] ~= nil then
-        washTime = string2Int(luaTable[KEY_WASH_TIME])
-    end
+    if luaTable[KEY_WASH_LEVEL] ~= nil then washLevel = string2Int(luaTable[KEY_WASH_LEVEL]) end
+    if luaTable[KEY_RINSE_LEVEL] ~= nil then rinseLevel = string2Int(luaTable[KEY_RINSE_LEVEL]) end
+    if luaTable[KEY_WASH_STRENGTH] ~= nil then washStrength = string2Int(luaTable[KEY_WASH_STRENGTH]) end
+    if luaTable[KEY_DEHYDRATION_SPEED] ~= nil then dehydrationSpeed = string2Int(luaTable[KEY_DEHYDRATION_SPEED]) end
+    if luaTable[KEY_RINSE_COUNT] ~= nil then rinseCount = string2Int(luaTable[KEY_RINSE_COUNT]) end
+    if luaTable[KEY_TEMPERATURE] ~= nil then temperature = string2Int(luaTable[KEY_TEMPERATURE]) end
+    if luaTable[KEY_DEHYDRATION_TIME] ~= nil then dehydrationTime = string2Int(luaTable[KEY_DEHYDRATION_TIME]) end
+    if luaTable[KEY_WASH_TIME] ~= nil then washTime = string2Int(luaTable[KEY_WASH_TIME]) end
     if luaTable[KEY_LOCK] == VALUE_ON then
         lock = BYTE_LOCK_ON
     elseif luaTable[KEY_LOCK] == VALUE_OFF then
@@ -291,8 +275,8 @@ function updateGlobalPropertyValueByJson(luaTable)
 end
 
 function updateGlobalPropertyValueByByte(messageBytes)
-    if (#messageBytes == 0) then return nil end
-    if (dataType == 0x02 or dataType == 0x03 or dataType == 0x04) then
+    if #messageBytes == 0 then return nil end
+    if dataType == 0x02 or dataType == 0x03 or dataType == 0x04 then
         power = messageBytes[1]
         runningWorkStatus = messageBytes[2]
         mode = messageBytes[3]
@@ -318,7 +302,7 @@ function updateGlobalPropertyValueByByte(messageBytes)
         remainTime = messageBytes[17] + messageBytes[18] * 60
         errorCode = messageBytes[24]
     end
-    if (dataType == 0x06) then
+    if dataType == 0x06 then
         runningWorkStatus = messageBytes[1]
         mode = messageBytes[2]
         program = messageBytes[3]
@@ -329,29 +313,29 @@ end
 function assembleJsonByGlobalProperty()
     local streams = {}
     streams[KEY_VERSION] = VALUE_VERSION
-    if (power == BYTE_POWER_ON) then
+    if power == BYTE_POWER_ON then
         streams[KEY_POWER] = VALUE_ON
-    elseif (power == BYTE_POWER_OFF) then
+    elseif power == BYTE_POWER_OFF then
         streams[KEY_POWER] = VALUE_OFF
     end
-    if (runningWorkStatus == BYTE_RUNNING_STATUS_STANDBY) then
+    if runningWorkStatus == BYTE_RUNNING_STATUS_STANDBY then
         streams[KEY_RUNNING_WORK_STATUS] = VALUE_RUNNING_WORK_STATUS_STANDBY
-    elseif (runningWorkStatus == BYTE_RUNNING_STATUS_WORK) then
+    elseif runningWorkStatus == BYTE_RUNNING_STATUS_WORK then
         streams[KEY_RUNNING_WORK_STATUS] = VALUE_RUNNING_WORK_STATUS_WORK
-    elseif (runningWorkStatus == BYTE_RUNNING_STATUS_PAUSE) then
+    elseif runningWorkStatus == BYTE_RUNNING_STATUS_PAUSE then
         streams[KEY_RUNNING_WORK_STATUS] = VALUE_RUNNING_WORK_STATUS_PAUSE
-    elseif (runningWorkStatus == BYTE_RUNNING_STATUS_END) then
+    elseif runningWorkStatus == BYTE_RUNNING_STATUS_END then
         streams[KEY_RUNNING_WORK_STATUS] = VALUE_RUNNING_WORK_STATUS_END
-    elseif (runningWorkStatus == BYTE_RUNNING_STATUS_ERROR) then
+    elseif runningWorkStatus == BYTE_RUNNING_STATUS_ERROR then
         streams[KEY_RUNNING_WORK_STATUS] = VALUE_RUNNING_WORK_STATUS_ERROR
-    elseif (runningWorkStatus == BYTE_RUNNING_STATUS_ORDER) then
+    elseif runningWorkStatus == BYTE_RUNNING_STATUS_ORDER then
         streams[KEY_RUNNING_WORK_STATUS] = VALUE_RUNNING_WORK_STATUS_ORDER
     end
-    if (mode == BYTE_MODE_NORMAL) then
+    if mode == BYTE_MODE_NORMAL then
         streams[KEY_MODE] = VALUE_MODE_NORMAL
-    elseif (mode == BYTE_MODE_DRY) then
+    elseif mode == BYTE_MODE_DRY then
         streams[KEY_MODE] = VALUE_MODE_DRY
-    elseif (mode == BYTE_MODE_CONTINUS) then
+    elseif mode == BYTE_MODE_CONTINUS then
         streams[KEY_MODE] = VALUE_MODE_CONTINUS
     end
     if program == BYTE_PROGRAM_STANDARD then
@@ -409,49 +393,49 @@ function assembleJsonByGlobalProperty()
     elseif program == BYTE_PROGRAM_UNDER_WEAR then
         streams[KEY_PROGRAM] = VALUE_PROGRAM_UNDER_WEAR
     elseif program == 0x1D then
-        streams[KEY_PROGRAM] = 'rinse_dehydration'
+        streams[KEY_PROGRAM] = "rinse_dehydration"
     elseif program == 0x1E then
-        streams[KEY_PROGRAM] = 'five_clean'
+        streams[KEY_PROGRAM] = "five_clean"
     elseif program == 0x1F then
-        streams[KEY_PROGRAM] = 'degerm'
+        streams[KEY_PROGRAM] = "degerm"
     elseif program == 0x20 then
-        streams[KEY_PROGRAM] = 'in_15'
+        streams[KEY_PROGRAM] = "in_15"
     elseif program == 0x21 then
-        streams[KEY_PROGRAM] = 'in_25'
+        streams[KEY_PROGRAM] = "in_25"
     elseif program == 0x22 then
-        streams[KEY_PROGRAM] = 'love_baby'
+        streams[KEY_PROGRAM] = "love_baby"
     elseif program == 0x23 then
-        streams[KEY_PROGRAM] = 'outdoor'
+        streams[KEY_PROGRAM] = "outdoor"
     elseif program == 0x24 then
-        streams[KEY_PROGRAM] = 'silk'
+        streams[KEY_PROGRAM] = "silk"
     elseif program == 0x25 then
-        streams[KEY_PROGRAM] = 'shirt'
+        streams[KEY_PROGRAM] = "shirt"
     elseif program == 0x26 then
-        streams[KEY_PROGRAM] = 'cook_wash'
+        streams[KEY_PROGRAM] = "cook_wash"
     elseif program == 0x27 then
-        streams[KEY_PROGRAM] = 'towel'
+        streams[KEY_PROGRAM] = "towel"
     elseif program == 0x28 then
-        streams[KEY_PROGRAM] = 'memory_2'
+        streams[KEY_PROGRAM] = "memory_2"
     elseif program == 0x29 then
-        streams[KEY_PROGRAM] = 'memory_3'
+        streams[KEY_PROGRAM] = "memory_3"
     elseif program == 0x2A then
-        streams[KEY_PROGRAM] = 'half_energy'
+        streams[KEY_PROGRAM] = "half_energy"
     elseif program == 0x2B then
-        streams[KEY_PROGRAM] = 'all_energy'
+        streams[KEY_PROGRAM] = "all_energy"
     elseif program == 0x2C then
-        streams[KEY_PROGRAM] = 'soft_wash'
+        streams[KEY_PROGRAM] = "soft_wash"
     elseif program == 0x2D then
-        streams[KEY_PROGRAM] = 'prevent_allergy'
+        streams[KEY_PROGRAM] = "prevent_allergy"
     elseif program == 0x2E then
-        streams[KEY_PROGRAM] = 'wash_cube'
+        streams[KEY_PROGRAM] = "wash_cube"
     elseif program == 0x2F then
-        streams[KEY_PROGRAM] = 'winter_jacket'
+        streams[KEY_PROGRAM] = "winter_jacket"
     elseif program == 0x30 then
-        streams[KEY_PROGRAM] = 'leisure_wash'
+        streams[KEY_PROGRAM] = "leisure_wash"
     elseif program == 0x31 then
-        streams[KEY_PROGRAM] = 'no_iron'
+        streams[KEY_PROGRAM] = "no_iron"
     elseif program == 0xFF then
-        streams[KEY_PROGRAM] = 'invalid'
+        streams[KEY_PROGRAM] = "invalid"
     end
     streams[KEY_WASH_LEVEL] = washLevel
     streams[KEY_RINSE_LEVEL] = rinseLevel
@@ -477,51 +461,40 @@ function assembleJsonByGlobalProperty()
 end
 
 function jsonToData(jsonCmdStr)
-    if (#jsonCmdStr == 0) then return nil end
+    if #jsonCmdStr == 0 then return nil end
     local msgBytes = {}
     local json = decodeJsonToTable(jsonCmdStr)
-    local deviceSubType = json['deviceinfo']['deviceSubType']
-    local query = json['query']
-    local control = json['control']
-    local status = json['status']
-    if (control) then
-        if (status) then updateGlobalPropertyValueByJson(status) end
-        if (control) then updateGlobalPropertyValueByJson(control) end
+    local deviceSubType = json["deviceinfo"]["deviceSubType"]
+    local query = json["query"]
+    local control = json["control"]
+    local status = json["status"]
+    if control then
+        if status then updateGlobalPropertyValueByJson(status) end
+        if control then updateGlobalPropertyValueByJson(control) end
         local bodyLength = 20
         local bodyBytes = {}
-        for i = 0, bodyLength - 1 do bodyBytes[i] = 0xFF end
+        for i = 0, bodyLength - 1 do
+            bodyBytes[i] = 0xFF
+        end
         bodyBytes[0] = BYTE_CONTROL_REQUEST
         if control[KEY_POWER] ~= nil then bodyBytes[1] = power end
         if control[KEY_PROGRAM] ~= nil then bodyBytes[4] = program end
-        if control[KEY_LOCK] ~= nil then
-            bodyBytes[7] = bit.bor(lock, intelligentWash)
-        end
+        if control[KEY_LOCK] ~= nil then bodyBytes[7] = bit.bor(lock, intelligentWash) end
         if control[KEY_CONTROL_WORK_STATUS] ~= nil then
             bodyBytes[2] = controlWorkStatus
-            if (control[KEY_PROGRAM] ~= nil) then
-                bodyBytes[4] = program
-            end
-            if (control[KEY_WASH_LEVEL] ~= nil and control[KEY_RINSE_LEVEL] ~=
-                nil) then
+            if control[KEY_PROGRAM] ~= nil then bodyBytes[4] = program end
+            if control[KEY_WASH_LEVEL] ~= nil and control[KEY_RINSE_LEVEL] ~= nil then
                 bodyBytes[5] = bit.bor(washLevel, bit.lshift(rinseLevel, 4))
             end
-            if (control[KEY_WASH_STRENGTH] ~= nil and
-                control[KEY_DEHYDRATION_SPEED] ~= nil) then
-                bodyBytes[6] = bit.bor(washStrength,
-                                       bit.lshift(dehydrationSpeed, 4))
+            if control[KEY_WASH_STRENGTH] ~= nil and control[KEY_DEHYDRATION_SPEED] ~= nil then
+                bodyBytes[6] = bit.bor(washStrength, bit.lshift(dehydrationSpeed, 4))
             end
             bodyBytes[7] = bit.bor(lock, intelligentWash)
-            if (control[KEY_WASH_TIME] ~= nil) then
-                bodyBytes[9] = washTime
+            if control[KEY_WASH_TIME] ~= nil then bodyBytes[9] = washTime end
+            if control[KEY_RINSE_COUNT] ~= nil and control[KEY_DEHYDRATION_TIME] ~= nil then
+                bodyBytes[10] = bit.bor(rinseCount, bit.lshift(dehydrationTime, 4))
             end
-            if (control[KEY_RINSE_COUNT] ~= nil and
-                control[KEY_DEHYDRATION_TIME] ~= nil) then
-                bodyBytes[10] = bit.bor(rinseCount,
-                                        bit.lshift(dehydrationTime, 4))
-            end
-            if (control[KEY_TEMPERATURE] ~= nil) then
-                bodyBytes[15] = bit.bor(0xF0, temperature)
-            end
+            if control[KEY_TEMPERATURE] ~= nil then bodyBytes[15] = bit.bor(0xF0, temperature) end
             bodyBytes[12] = 0x00
             bodyBytes[13] = 0x00
             bodyBytes[14] = 0x00
@@ -529,35 +502,38 @@ function jsonToData(jsonCmdStr)
             bodyBytes[18] = 0xD5
         end
         msgBytes = assembleUart(bodyBytes, BYTE_CONTROL_REQUEST)
-    elseif (query) then
+    elseif query then
         local bodyBytes = {}
         bodyBytes[0] = 0x03
         msgBytes = assembleUart(bodyBytes, BYTE_QUERY_REQUEST)
     end
     local infoM = {}
     local length = #msgBytes + 1
-    for i = 1, length do infoM[i] = msgBytes[i - 1] end
+    for i = 1, length do
+        infoM[i] = msgBytes[i - 1]
+    end
     local ret = table2string(infoM)
     ret = string2hexstring(ret)
     return ret
 end
 
 function dataToJson(jsonStr)
-    if (not jsonStr) then return nil end
+    if not jsonStr then return nil end
     local json = decodeJsonToTable(jsonStr)
-    local deviceinfo = json['deviceinfo']
-    local deviceSubType = deviceinfo['deviceSubType']
-    if (deviceSubType == 1) then end
-    local binData = json['msg']['data']
-    local status = json['status']
-    if (status) then updateGlobalPropertyValueByJson(status) end
+    local deviceinfo = json["deviceinfo"]
+    local deviceSubType = deviceinfo["deviceSubType"]
+    if deviceSubType == 1 then
+    end
+    local binData = json["msg"]["data"]
+    local status = json["status"]
+    if status then updateGlobalPropertyValueByJson(status) end
     local bodyBytes = {}
     local byteData = string2table(binData)
     dataType = byteData[10]
     bodyBytes = extractBodyBytes(byteData)
     local ret = updateGlobalPropertyValueByByte(bodyBytes)
     local retTable = {}
-    retTable['status'] = assembleJsonByGlobalProperty()
+    retTable["status"] = assembleJsonByGlobalProperty()
     local ret = encodeTableToJson(retTable)
     return ret
 end
@@ -566,7 +542,9 @@ function extractBodyBytes(byteData)
     local msgLength = #byteData
     local msgBytes = {}
     local bodyBytes = {}
-    for i = 1, msgLength do msgBytes[i - 1] = byteData[i] end
+    for i = 1, msgLength do
+        msgBytes[i - 1] = byteData[i]
+    end
     local bodyLength = msgLength - BYTE_PROTOCOL_LENGTH - 1
     for i = 0, bodyLength - 1 do
         bodyBytes[i] = msgBytes[i + BYTE_PROTOCOL_LENGTH]
@@ -578,7 +556,9 @@ function assembleUart(bodyBytes, type)
     local bodyLength = #bodyBytes + 1
     local msgLength = (bodyLength + BYTE_PROTOCOL_LENGTH + 1)
     local msgBytes = {}
-    for i = 0, msgLength - 1 do msgBytes[i] = 0 end
+    for i = 0, msgLength - 1 do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = BYTE_PROTOCOL_HEAD
     msgBytes[1] = msgLength - 1
     msgBytes[2] = BYTE_DEVICE_TYPE
@@ -602,22 +582,262 @@ function makeSum(tmpbuf, start_pos, end_pos)
 end
 
 local crc8_854_table = {
-    0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65, 157,
-    195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220, 35, 125,
-    159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98, 190, 224, 2,
-    92, 223, 129, 99, 61, 124, 34, 192, 158, 29, 67, 161, 255, 70, 24, 250, 164,
-    39, 121, 155, 197, 132, 218, 56, 102, 229, 187, 89, 7, 219, 133, 103, 57,
-    186, 228, 6, 88, 25, 71, 165, 251, 120, 38, 196, 154, 101, 59, 217, 135, 4,
-    90, 184, 230, 167, 249, 27, 69, 198, 152, 122, 36, 248, 166, 68, 26, 153,
-    199, 37, 123, 58, 100, 134, 216, 91, 5, 231, 185, 140, 210, 48, 110, 237,
-    179, 81, 15, 78, 16, 242, 172, 47, 113, 147, 205, 17, 79, 173, 243, 112, 46,
-    204, 146, 211, 141, 111, 49, 178, 236, 14, 80, 175, 241, 19, 77, 206, 144,
-    114, 44, 109, 51, 209, 143, 12, 82, 176, 238, 50, 108, 142, 208, 83, 13,
-    239, 177, 240, 174, 76, 18, 145, 207, 45, 115, 202, 148, 118, 40, 171, 245,
-    23, 73, 8, 86, 180, 234, 105, 55, 213, 139, 87, 9, 235, 181, 54, 104, 138,
-    212, 149, 203, 41, 119, 244, 170, 72, 22, 233, 183, 85, 11, 136, 214, 52,
-    106, 43, 117, 151, 201, 74, 20, 246, 168, 116, 42, 200, 150, 21, 75, 169,
-    247, 182, 232, 10, 84, 215, 137, 107, 53
+    0,
+    94,
+    188,
+    226,
+    97,
+    63,
+    221,
+    131,
+    194,
+    156,
+    126,
+    32,
+    163,
+    253,
+    31,
+    65,
+    157,
+    195,
+    33,
+    127,
+    252,
+    162,
+    64,
+    30,
+    95,
+    1,
+    227,
+    189,
+    62,
+    96,
+    130,
+    220,
+    35,
+    125,
+    159,
+    193,
+    66,
+    28,
+    254,
+    160,
+    225,
+    191,
+    93,
+    3,
+    128,
+    222,
+    60,
+    98,
+    190,
+    224,
+    2,
+    92,
+    223,
+    129,
+    99,
+    61,
+    124,
+    34,
+    192,
+    158,
+    29,
+    67,
+    161,
+    255,
+    70,
+    24,
+    250,
+    164,
+    39,
+    121,
+    155,
+    197,
+    132,
+    218,
+    56,
+    102,
+    229,
+    187,
+    89,
+    7,
+    219,
+    133,
+    103,
+    57,
+    186,
+    228,
+    6,
+    88,
+    25,
+    71,
+    165,
+    251,
+    120,
+    38,
+    196,
+    154,
+    101,
+    59,
+    217,
+    135,
+    4,
+    90,
+    184,
+    230,
+    167,
+    249,
+    27,
+    69,
+    198,
+    152,
+    122,
+    36,
+    248,
+    166,
+    68,
+    26,
+    153,
+    199,
+    37,
+    123,
+    58,
+    100,
+    134,
+    216,
+    91,
+    5,
+    231,
+    185,
+    140,
+    210,
+    48,
+    110,
+    237,
+    179,
+    81,
+    15,
+    78,
+    16,
+    242,
+    172,
+    47,
+    113,
+    147,
+    205,
+    17,
+    79,
+    173,
+    243,
+    112,
+    46,
+    204,
+    146,
+    211,
+    141,
+    111,
+    49,
+    178,
+    236,
+    14,
+    80,
+    175,
+    241,
+    19,
+    77,
+    206,
+    144,
+    114,
+    44,
+    109,
+    51,
+    209,
+    143,
+    12,
+    82,
+    176,
+    238,
+    50,
+    108,
+    142,
+    208,
+    83,
+    13,
+    239,
+    177,
+    240,
+    174,
+    76,
+    18,
+    145,
+    207,
+    45,
+    115,
+    202,
+    148,
+    118,
+    40,
+    171,
+    245,
+    23,
+    73,
+    8,
+    86,
+    180,
+    234,
+    105,
+    55,
+    213,
+    139,
+    87,
+    9,
+    235,
+    181,
+    54,
+    104,
+    138,
+    212,
+    149,
+    203,
+    41,
+    119,
+    244,
+    170,
+    72,
+    22,
+    233,
+    183,
+    85,
+    11,
+    136,
+    214,
+    52,
+    106,
+    43,
+    117,
+    151,
+    201,
+    74,
+    20,
+    246,
+    168,
+    116,
+    42,
+    200,
+    150,
+    21,
+    75,
+    169,
+    247,
+    182,
+    232,
+    10,
+    84,
+    215,
+    137,
+    107,
+    53,
 }
 
 function crc8_854(dataBuf, start_pos, end_pos)
@@ -630,22 +850,22 @@ end
 
 function decodeJsonToTable(cmd)
     local tb
-    if JSON == nil then JSON = require 'cjson' end
+    if JSON == nil then JSON = require "cjson" end
     tb = JSON.decode(cmd)
     return tb
 end
 
 function encodeTableToJson(luaTable)
     local jsonStr
-    if JSON == nil then JSON = require 'cjson' end
+    if JSON == nil then JSON = require "cjson" end
     jsonStr = JSON.encode(luaTable)
     return jsonStr
 end
 
 function string2Int(data)
-    if (not data) then data = tonumber('0') end
+    if not data then data = tonumber "0" end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
+    if data == nil then data = 0 end
     return data
 end
 
@@ -662,25 +882,29 @@ function string2table(hexstr)
 end
 
 function string2hexstring(str)
-    local ret = ''
-    for i = 1, #str do ret = ret .. string.format('%02x', str:byte(i)) end
+    local ret = ""
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
     return ret
 end
 
 function table2string(cmd)
-    local ret = ''
+    local ret = ""
     local i
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 
 function checkBoundary(data, min, max)
-    if (not data) then data = 0 end
+    if not data then data = 0 end
     data = tonumber(data)
-    if ((data >= min) and (data <= max)) then
+    if (data >= min) and (data <= max) then
         return data
     else
-        if (data < min) then
+        if data < min then
             return min
         else
             return max
@@ -691,23 +915,23 @@ end
 function print_lua_table(lua_table, indent)
     indent = indent or 0
     for k, v in pairs(lua_table) do
-        if type(k) == 'string' then k = string.format('%q', k) end
-        local szSuffix = ''
-        if type(v) == 'table' then szSuffix = '{' end
-        local szPrefix = string.rep('    ', indent)
-        formatting = szPrefix .. '[' .. k .. ']' .. ' = ' .. szSuffix
-        if type(v) == 'table' then
+        if type(k) == "string" then k = string.format("%q", k) end
+        local szSuffix = ""
+        if type(v) == "table" then szSuffix = "{" end
+        local szPrefix = string.rep("    ", indent)
+        formatting = szPrefix .. "[" .. k .. "]" .. " = " .. szSuffix
+        if type(v) == "table" then
             print(formatting)
             print_lua_table(v, indent + 1)
-            print(szPrefix .. '},')
+            print(szPrefix .. "},")
         else
-            local szValue = ''
-            if type(v) == 'string' then
-                szValue = string.format('%q', v)
+            local szValue = ""
+            if type(v) == "string" then
+                szValue = string.format("%q", v)
             else
                 szValue = tostring(v)
             end
-            print(formatting .. szValue .. ',')
+            print(formatting .. szValue .. ",")
         end
     end
 end
