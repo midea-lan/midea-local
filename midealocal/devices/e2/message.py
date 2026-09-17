@@ -9,6 +9,10 @@ from midealocal.message import (
     MessageType,
 )
 
+ERR_BYTE = 3
+FLOW_BYTE = 6
+TANK_BYTE = 15
+TANK_BOTTOM = 0x40
 HEATING_POWER_BYTE = 34
 PROTECTION_BYTE = 22
 WATER_CONSUMPTION_BYTE = 25
@@ -223,8 +227,10 @@ class E2GeneralMessageBody(MessageBody):
         self.water_flow = (body[2] & 0x10) > 0  # water_flow
         self.sterilization = (body[2] & 0x40) > 0  # sterilization
         self.variable_heating = (body[2] & 0x80) > 0  # frequency_hot
+        self.error_code = int(body[ERR_BYTE]) if len(body) > ERR_BYTE else 0
         self.current_temperature = float(body[4])
         self.heat_water_level = body[5]  # heat_water_level
+        self.flow_rate = int(body[FLOW_BYTE]) if len(body) > FLOW_BYTE else 0
         self.eplus = (body[7] & 0x01) > 0  # eplus
         self.fast_wash = (body[7] & 0x02) > 0  # fast_wash
         self.half_heat = (body[7] & 0x04) > 0  # half_heat
@@ -246,9 +252,10 @@ class E2GeneralMessageBody(MessageBody):
         self.uv_sterilize = (body[12] & 0x80) > 0
         self.discharge_status = body[13]
         self.top_temp = body[14]
-        self.bottom_heat = (body[15] & 0x01) > 0
-        self.top_heat = (body[15] & 0x02) > 0
-        self.water_cyclic = (body[15] & 0x80) > 0
+        self.bottom_heat = (body[TANK_BYTE] & 0x01) > 0
+        self.top_heat = (body[TANK_BYTE] & 0x02) > 0
+        self.bottom_temp = len(body) > TANK_BYTE and body[TANK_BYTE] & TANK_BOTTOM > 0
+        self.water_cyclic = (body[TANK_BYTE] & 0x80) > 0
         self.water_system = body[16]
         # in_temperature
         self.in_temperature = float(body[18]) if len(body) > PROTECTION_BYTE else None
@@ -281,6 +288,7 @@ class MessageE2Response(MessageResponse):
     def __init__(self, message: bytes) -> None:
         """Initialize E2 message response."""
         super().__init__(bytearray(message))
+        body = super().body
         if (
             self.message_type in [MessageType.query, MessageType.notify1]
             and self.body_type == 0x01
@@ -288,5 +296,5 @@ class MessageE2Response(MessageResponse):
             self.message_type == MessageType.set
             and self.body_type in [0x01, 0x02, 0x04, 0x14]
         ):
-            self.set_body(E2GeneralMessageBody(super().body))
+            self.set_body(E2GeneralMessageBody(body))
         self.set_attr()
