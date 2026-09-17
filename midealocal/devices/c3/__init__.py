@@ -493,7 +493,7 @@ class MideaC3Device(MideaClimateDevice):
         if (
             not isinstance(target_temperature, list)
             or zone is None
-            or len(target_temperature) <= zone
+            or zone not in range(len(target_temperature))
         ):
             return None
         return float(target_temperature[zone])
