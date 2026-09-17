@@ -139,6 +139,30 @@ class MideaClimateDevice(MideaDevice, ABC):
             zone=zone,
         )
 
+    @abstractmethod
+    def target_temperature(self, zone: int | None = None) -> float | None:
+        """Return the current target temperature, or None if unknown.
+
+        Takes a zone like set_target_temperature: ignored by every device
+        except C3, whose two zones have independent target temperatures.
+        """
+
+    @abstractmethod
+    def current_temperature(self) -> float | None:
+        """Return the current temperature, or None if unknown."""
+
+    @abstractmethod
+    def current_humidity(self) -> float | None:
+        """Return the current humidity, or None if unknown."""
+
+    @abstractmethod
+    def turn_on(self, zone: int | None = None) -> None:
+        """Turn the device on. See set_target_temperature for the zone parameter."""
+
+    @abstractmethod
+    def turn_off(self, zone: int | None = None) -> None:
+        """Turn the device off. See set_target_temperature for the zone parameter."""
+
     def min_temperature(self, zone: int | None = None) -> float:  # noqa: ARG002
         """Return the minimum settable target temperature.
 

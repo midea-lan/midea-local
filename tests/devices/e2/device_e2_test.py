@@ -52,6 +52,9 @@ class TestMideaE2Device:
 
         class FakeMessage:
             heating_power = 2000
+            error_code = 5
+            flow_rate = 12
+            bottom_temp = True
 
         device = self._device(customize)
 
@@ -64,6 +67,12 @@ class TestMideaE2Device:
         assert status[DeviceAttributes.heating_power.value] == expected_power
         assert isinstance(status[DeviceAttributes.heating_power.value], int)
         assert device.attributes[DeviceAttributes.heating_power] == expected_power
+        assert status[DeviceAttributes.error_code.value] == 5
+        assert status[DeviceAttributes.flow_rate.value] == 12
+        assert status[DeviceAttributes.bottom_temp.value]
+        assert device.attributes[DeviceAttributes.error_code] == 5
+        assert device.attributes[DeviceAttributes.flow_rate] == 12
+        assert device.attributes[DeviceAttributes.bottom_temp]
 
     @pytest.mark.parametrize(
         "customize",
@@ -101,6 +110,9 @@ class TestMideaE2Device:
         assert device.temperature_step == 1.0
         assert device.attributes[DeviceAttributes.temperature_max] == 75.0
         assert device.attributes[DeviceAttributes.temperature_min] == 30.0
+        assert device.attributes[DeviceAttributes.error_code] == 0
+        assert device.attributes[DeviceAttributes.flow_rate] == 0
+        assert not device.attributes[DeviceAttributes.bottom_temp]
 
     def test_set_customize(self) -> None:
         """Test customize sets old protocol, step and precision halves."""

@@ -83,6 +83,9 @@ class DeviceAttributes(StrEnum):
     day_water_consumption = "day_water_consumption"
     volume = "volume"
     rate = "rate"
+    error_code = "error_code"
+    flow_rate = "flow_rate"
+    bottom_temp = "bottom_temp"
 
 
 # E2 subtype 255 devices use literal Celsius values in the target-temperature
@@ -148,6 +151,9 @@ class MideaE2Device(MideaDevice):
                 DeviceAttributes.day_water_consumption: None,
                 DeviceAttributes.volume: None,
                 DeviceAttributes.rate: None,
+                DeviceAttributes.error_code: 0,
+                DeviceAttributes.flow_rate: 0,
+                DeviceAttributes.bottom_temp: False,
             },
         )
         self._default_old_protocol = OldProtocol.auto

@@ -1,6 +1,7 @@
 """Midea Local shared base classes test."""
 
 from collections.abc import Mapping
+from typing import cast
 
 import pytest
 
@@ -45,6 +46,21 @@ class _MinimalClimateDevice(MideaClimateDevice):
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         self._attributes[attr] = value
+
+    def current_temperature(self) -> float | None:
+        return cast("float | None", self._attributes.get("current_temperature"))
+
+    def target_temperature(self, zone: int | None = None) -> float | None:  # noqa: ARG002
+        return cast("float | None", self._attributes.get("target_temperature"))
+
+    def turn_on(self, zone: int | None = None) -> None:  # noqa: ARG002
+        self._attributes["power"] = True
+
+    def turn_off(self, zone: int | None = None) -> None:  # noqa: ARG002
+        self._attributes["power"] = False
+
+    def current_humidity(self) -> float | None:
+        return cast("float | None", self._attributes.get("current_humidity"))
 
 
 class _FlagPresetClimateDevice(_MinimalClimateDevice):
