@@ -57,6 +57,20 @@ class TestMideaFBDevice:
             "fast_heating",
             "standby",
         ]
+        assert self.device.current_temperature() is None
+        assert self.device.current_humidity() is None
+        assert self.device.target_temperature() is None
+
+    def test_power_on_power_off(self) -> None:
+        """Test power on and power off."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.turn_on()
+            assert mock_build_send.call_count == 1
+            assert mock_build_send.call_args[0][0].power is True
+            mock_build_send.reset_mock()
+            self.device.turn_off()
+            assert mock_build_send.call_count == 1
+            assert mock_build_send.call_args[0][0].power is False
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -93,6 +107,8 @@ class TestMideaFBDevice:
         assert self.device.attributes[DeviceAttributes.current_temperature] == 25
         assert self.device.attributes[DeviceAttributes.child_lock] is True
         assert new_status[DeviceAttributes.mode.value] == "eco"
+        assert self.device.current_temperature() == 25.0
+        assert self.device.target_temperature() == 25.0
 
     def test_process_message_unknown_mode_and_short_body(self) -> None:
         """Test process message with an unknown mode and a short body."""

@@ -48,6 +48,24 @@ class TestMideaCFDevice:
         assert self.device.attributes[DeviceAttributes.min_temperature] == 5
         assert self.device.attributes[DeviceAttributes.defrost] is False
         assert self.device.attributes[DeviceAttributes.freeze] is False
+        assert self.device.target_temperature() is None
+        assert self.device.current_temperature() == 0
+        assert self.device.current_humidity() is None
+        self.device._attributes[DeviceAttributes.current_temperature] = None
+        assert self.device.current_temperature() is None
+
+    def test_power_on_power_off(self) -> None:
+        """Test power on and power off."""
+        with (
+            patch.object(self.device, "build_send") as mock_build_send,
+        ):
+            self.device.turn_on()
+            assert mock_build_send.call_count == 1
+            assert mock_build_send.call_args[0][0].power is True
+            mock_build_send.reset_mock()
+            self.device.turn_off()
+            assert mock_build_send.call_count == 1
+            assert mock_build_send.call_args[0][0].power is False
 
     def test_target_temperature_bounds(self) -> None:
         """Test min/max target temperature read the device attributes, with fallback."""
@@ -94,6 +112,8 @@ class TestMideaCFDevice:
         assert self.device.attributes[DeviceAttributes.current_temperature] == 40
         assert self.device.attributes[DeviceAttributes.max_temperature] == 55
         assert self.device.attributes[DeviceAttributes.min_temperature] == 20
+        assert self.device.target_temperature() == 45.0
+        assert self.device.current_temperature() == 40.0
 
     def test_query_response_cool_mode(self) -> None:
         """Test query response with cool mode temperature range."""

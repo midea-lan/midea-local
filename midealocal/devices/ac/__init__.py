@@ -489,6 +489,40 @@ class MideaACDevice(MideaClimateDevice):
         return self._temperature_step
 
     @override
+    def target_temperature(self, zone: int | None = None) -> float | None:
+        """Midea AC device target temperature."""
+        return cast(
+            "float | None",
+            self._attributes.get(DeviceAttributes.target_temperature, None),
+        )
+
+    @override
+    def current_temperature(self) -> float | None:
+        """Midea AC device current temperature."""
+        return cast(
+            "float | None",
+            self._attributes.get(DeviceAttributes.indoor_temperature, None),
+        )
+
+    @override
+    def current_humidity(self) -> float | None:
+        """Midea AC device current humidity."""
+        return cast(
+            "float | None",
+            self._attributes.get(DeviceAttributes.indoor_humidity, None),
+        )
+
+    @override
+    def turn_on(self, zone: int | None = None) -> None:
+        """Midea AC device turn on."""
+        self.set_attribute(attr=DeviceAttributes.power, value=True)
+
+    @override
+    def turn_off(self, zone: int | None = None) -> None:
+        """Midea AC device turn off."""
+        self.set_attribute(attr=DeviceAttributes.power, value=False)
+
+    @override
     def min_temperature(self, zone: int | None = None) -> float:
         """Midea AC device minimum target temperature."""
         value = self._attributes[DeviceAttributes.min_temperature]

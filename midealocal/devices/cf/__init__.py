@@ -143,6 +143,37 @@ class MideaCFDevice(MideaClimateDevice):
             hvac_mode=hvac_mode,
         )
 
+    @override
+    def target_temperature(self, zone: int | None = None) -> float | None:
+        """Midea CF device target temperature."""
+        value = self._attributes.get(DeviceAttributes.target_temperature, None)
+        if not isinstance(value, (int, float)):
+            return None
+        return float(value)
+
+    @override
+    def current_temperature(self) -> float | None:
+        """Midea CF device current temperature."""
+        value = self._attributes.get(DeviceAttributes.current_temperature, None)
+        if not isinstance(value, (int, float)):
+            return None
+        return float(value)
+
+    @override
+    def current_humidity(self) -> float | None:
+        """Midea CF device current humidity."""
+        return None
+
+    @override
+    def turn_on(self, zone: int | None = None) -> None:
+        """Midea CF device turn on."""
+        self.set_attribute(attr=DeviceAttributes.power, value=True)
+
+    @override
+    def turn_off(self, zone: int | None = None) -> None:
+        """Midea CF device turn off."""
+        self.set_attribute(attr=DeviceAttributes.power, value=False)
+
     def build_query(self) -> list[MessageQuery]:
         """Midea CF device build query."""
         return [MessageQuery(self._message_protocol_version)]

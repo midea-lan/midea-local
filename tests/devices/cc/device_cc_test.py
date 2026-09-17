@@ -100,6 +100,24 @@ class TestMideaCCDevice:
         assert self.device.attributes[DeviceAttributes.aux_heating] is False
         assert self.device.raw_fan_modes is not None
         assert len(self.device.raw_fan_modes) == 0
+        assert self.device.target_temperature() == 26.0
+        assert self.device.current_temperature() is None
+        assert self.device.current_humidity() is None
+        self.device._attributes[DeviceAttributes.target_temperature] = None
+        assert self.device.target_temperature() is None
+
+    def test_power_on_power_off(self) -> None:
+        """Test power on and power off."""
+        with (
+            patch.object(self.device, "build_send") as mock_build_send,
+        ):
+            self.device.turn_on()
+            assert mock_build_send.call_count == 1
+            assert mock_build_send.call_args[0][0].power is True
+            mock_build_send.reset_mock()
+            self.device.turn_off()
+            assert mock_build_send.call_count == 1
+            assert mock_build_send.call_args[0][0].power is False
 
     def test_preset_modes(self) -> None:
         """Test the flag-style preset read/write for CC."""
@@ -150,6 +168,8 @@ class TestMideaCCDevice:
         assert self.device.attributes[DeviceAttributes.aux_heating] is False
         assert new_status[DeviceAttributes.fan_speed.value] == "level_5"
         assert self.device.raw_fan_modes == [m.name.lower() for m in CCFanSpeed7Level]
+        assert self.device.current_temperature() == 25.0
+        assert self.device.target_temperature() == 24.5
 
     def test_process_message_legacy_3level_and_aux(self) -> None:
         """3-level flag selects the 3-level table; aux heat status 1 sets aux."""
