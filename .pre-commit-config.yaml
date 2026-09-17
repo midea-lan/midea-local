@@ -1,6 +1,6 @@
 # Run via prek: https://github.com/j178/prek
 # See https://pre-commit.com/hooks.html for more hooks (prek uses the same config format)
-exclude: "CHANGELOG.md|.copier-answers.yml|^lua/"
+exclude: "CHANGELOG.md|.copier-answers.yml|^lua/|^tests/lua_conformance/GENERATED_.*[.]md$"
 default_stages: [pre-commit]
 
 repos:
