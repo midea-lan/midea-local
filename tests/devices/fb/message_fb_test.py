@@ -81,6 +81,28 @@ class TestMessageSet:
         assert body[9] == 0x00
         assert body[18] == 0x00
 
+    @pytest.mark.parametrize(
+        ("target_humidity", "expected_value"),
+        [
+            (50, 50),
+            (0, 0),
+            (100, 100),
+            (120, 0),
+            (-1, 0),
+            (None, 0),
+        ],
+    )
+    def test_set_target_humidity(
+        self,
+        target_humidity: int | None,
+        expected_value: int,
+    ) -> None:
+        """Test set body with target humidity."""
+        msg = MessageSet(protocol_version=ProtocolVersion.V1, subtype=1)
+        msg.target_humidity = target_humidity
+        body = msg.body
+        assert body[7] == expected_value
+
     @pytest.mark.parametrize("target_temperature", [0x80, 87])
     def test_set_body_special_target_temperature(
         self,

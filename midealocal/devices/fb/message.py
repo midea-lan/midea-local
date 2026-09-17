@@ -95,7 +95,17 @@ class MessageSet(MessageFBBase):
                 & 0xFF
             )
         )
-        target_humidity = 0 if self.target_humidity is None else self.target_humidity
+        target_humidity = (
+            0
+            if self.target_humidity is None
+            else (
+                int(
+                    (self.target_humidity)
+                    if 1 <= self.target_humidity <= MAX_HUMIDITY
+                    else 0,
+                )
+            )
+        )
         humidity_mode = 0 if self.humidity_mode is None else self.humidity_mode
         target_temperature = (
             0
