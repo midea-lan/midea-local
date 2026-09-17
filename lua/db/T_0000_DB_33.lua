@@ -83,9 +83,9 @@ local ca_cloud_program_status
 local ca_cvv
 local ca_infrared_door
 local protocol_02ca_control = {
-    ["ca_dirty_level"] = {["type"] = 0xd2, ["length"] = 1},
-    ["ca_care_level"] = {["type"] = 0xd3, ["length"] = 1},
-    ["ca_infrared_door"] = {["type"] = 0xde, ["length"] = 1}
+    ["ca_dirty_level"] = { ["type"] = 0xd2, ["length"] = 1 },
+    ["ca_care_level"] = { ["type"] = 0xd3, ["length"] = 1 },
+    ["ca_infrared_door"] = { ["type"] = 0xde, ["length"] = 1 },
 }
 local water_consumption
 local power_consumption
@@ -129,13 +129,13 @@ local function updateGlobalPropertyValueByJson(luaTable)
     elseif luaTable["program"] == "eco" then
         program = 0x01
     elseif luaTable["program"] == "fast_wash" then
-        if (deviceSubType == "14393" or deviceSubType == "28261") then
+        if deviceSubType == "14393" or deviceSubType == "28261" then
             program = 0x27
         else
             program = 0x02
         end
     elseif luaTable["program"] == "mixed_wash" then
-        if (deviceSubType == "14393" or deviceSubType == "28261") then
+        if deviceSubType == "14393" or deviceSubType == "28261" then
             program = 0x28
         else
             program = 0x03
@@ -143,7 +143,7 @@ local function updateGlobalPropertyValueByJson(luaTable)
     elseif luaTable["program"] == "wool" then
         program = 0x05
     elseif luaTable["program"] == "ssp" then
-        if (deviceSubType == "14393" or deviceSubType == "28261") then
+        if deviceSubType == "14393" or deviceSubType == "28261" then
             program = 0x2a
         else
             program = 0x07
@@ -151,7 +151,7 @@ local function updateGlobalPropertyValueByJson(luaTable)
     elseif luaTable["program"] == "sport_clothes" then
         program = 0x08
     elseif luaTable["program"] == "single_dehytration" then
-        if (deviceSubType == "14393" or deviceSubType == "28261") then
+        if deviceSubType == "14393" or deviceSubType == "28261" then
             program = 0x29
         else
             program = 0x09
@@ -191,7 +191,7 @@ local function updateGlobalPropertyValueByJson(luaTable)
     elseif luaTable["program"] == "steep" then
         program = 0x1D
     elseif luaTable["program"] == "kids" then
-        if (deviceSubType == "14393" or deviceSubType == "28261") then
+        if deviceSubType == "14393" or deviceSubType == "28261" then
             program = 0x2b
         else
             program = 0x13
@@ -461,11 +461,9 @@ local function updateGlobalPropertyValueByJson(luaTable)
     end
     if luaTable["appointment"] == "on" then
         appointment = 1
-        if (luaTable["appointment_time"] ~= nil) then
-            appointment_time_low_byte = bit.band(luaTable["appointment_time"],
-                                                 0x00ff)
-            appointment_time_high_byte =
-                bit.rshift(bit.band(luaTable["appointment_time"], 0xff00), 8)
+        if luaTable["appointment_time"] ~= nil then
+            appointment_time_low_byte = bit.band(luaTable["appointment_time"], 0x00ff)
+            appointment_time_high_byte = bit.rshift(bit.band(luaTable["appointment_time"], 0xff00), 8)
         end
     elseif luaTable["appointment"] == "off" then
         appointment = 0
@@ -625,8 +623,8 @@ local function updateGlobalPropertyValueByJson(luaTable)
     end
 end
 local function updateGlobalPropertyValueByByte(messageBytes)
-    if (#messageBytes == 0) then return nil end
-    if (dataType == '0202' or dataType == '0303' or dataType == '0404') then
+    if #messageBytes == 0 then return nil end
+    if dataType == "0202" or dataType == "0303" or dataType == "0404" then
         power = messageBytes[1]
         runningWorkStatus = messageBytes[2]
         mode = messageBytes[3]
@@ -656,29 +654,26 @@ local function updateGlobalPropertyValueByByte(messageBytes)
         dirty_degree = messageBytes[30]
         expertStep = messageBytes[19]
         if messageBytes[31] ~= nil then byte31 = messageBytes[31] end
-    elseif (dataType == '04ca' or dataType == '03ca' or dataType == '02ca') then
+    elseif dataType == "04ca" or dataType == "03ca" or dataType == "02ca" then
         local ca_start_offset = 23
         while ca_start_offset <= #binData - 2 do
-            local type = string.sub(binData, ca_start_offset,
-                                    ca_start_offset + 1)
-            local length = string.sub(binData, ca_start_offset + 2,
-                                      ca_start_offset + 3)
-            local value = string.sub(binData, ca_start_offset + 4,
-                                     ca_start_offset + 4 + 2 * length - 1)
-            if type == 'd2' then
+            local type = string.sub(binData, ca_start_offset, ca_start_offset + 1)
+            local length = string.sub(binData, ca_start_offset + 2, ca_start_offset + 3)
+            local value = string.sub(binData, ca_start_offset + 4, ca_start_offset + 4 + 2 * length - 1)
+            if type == "d2" then
                 ca_dirty_level = tonumber(value, 16)
-            elseif type == 'd3' then
+            elseif type == "d3" then
                 ca_care_level = tonumber(value, 16)
-            elseif type == 'd4' then
+            elseif type == "d4" then
                 ca_cloud_program_status = tonumber(value, 16)
-            elseif type == 'dd' then
+            elseif type == "dd" then
                 ca_cvv = tonumber(value, 16)
-            elseif type == 'de' then
+            elseif type == "de" then
                 ca_infrared_door = tonumber(value, 16)
             end
             ca_start_offset = ca_start_offset + 4 + 2 * length
         end
-    elseif (dataType == '0405') then
+    elseif dataType == "0405" then
         water_consumption = 256 * messageBytes[2] + messageBytes[1]
         power_consumption = 256 * messageBytes[4] + messageBytes[3]
         clean_notification = messageBytes[7]
@@ -688,37 +683,37 @@ end
 local function assembleJsonByGlobalProperty()
     local streams = {}
     streams["version"] = VALUE_VERSION
-    if (power == BYTE_POWER_ON) then
+    if power == BYTE_POWER_ON then
         streams["power"] = "on"
-    elseif (power == BYTE_POWER_OFF) then
+    elseif power == BYTE_POWER_OFF then
         streams["power"] = "off"
     end
-    if (runningWorkStatus == BYTE_RUNNING_WORK_STATUS_START) then
+    if runningWorkStatus == BYTE_RUNNING_WORK_STATUS_START then
         streams[KEY_RUNNING_WORK_STATUS] = "start"
-    elseif (runningWorkStatus == BYTE_RUNNING_WORK_STATUS_PAUSE) then
-        if (errorCode ~= 0) then
+    elseif runningWorkStatus == BYTE_RUNNING_WORK_STATUS_PAUSE then
+        if errorCode ~= 0 then
             streams[KEY_RUNNING_WORK_STATUS] = "fault"
         else
             streams[KEY_RUNNING_WORK_STATUS] = "pause"
         end
-    elseif (runningWorkStatus == BYTE_RUNNING_WORK_STATUS_STANDBY) then
+    elseif runningWorkStatus == BYTE_RUNNING_WORK_STATUS_STANDBY then
         streams[KEY_RUNNING_WORK_STATUS] = "standby"
-    elseif (runningWorkStatus == BYTE_RUNNING_WORK_STATUS_END) then
+    elseif runningWorkStatus == BYTE_RUNNING_WORK_STATUS_END then
         streams[KEY_RUNNING_WORK_STATUS] = "end"
-    elseif (runningWorkStatus == BYTE_RUNNING_WORK_STATUS_FAULT) then
+    elseif runningWorkStatus == BYTE_RUNNING_WORK_STATUS_FAULT then
         streams[KEY_RUNNING_WORK_STATUS] = "fault"
-    elseif (runningWorkStatus == BYTE_RUNNING_WORK_STATUS_DELAY) then
+    elseif runningWorkStatus == BYTE_RUNNING_WORK_STATUS_DELAY then
         streams[KEY_RUNNING_WORK_STATUS] = "delay"
-    elseif (runningWorkStatus == BYTE_RUNNING_WORK_STATUS_IDLE) then
+    elseif runningWorkStatus == BYTE_RUNNING_WORK_STATUS_IDLE then
         streams[KEY_RUNNING_WORK_STATUS] = "idle"
     end
-    if (mode == BYTE_MODE_NORMAL) then
+    if mode == BYTE_MODE_NORMAL then
         streams["mode"] = "normal"
-    elseif (mode == BYTE_MODE_FACTORY_TEST) then
+    elseif mode == BYTE_MODE_FACTORY_TEST then
         streams["mode"] = "factory_test"
-    elseif (mode == BYTE_MODE_SERVICE) then
+    elseif mode == BYTE_MODE_SERVICE then
         streams["mode"] = "service"
-    elseif (mode == BYTE_MODE_NORMAL_CONTINUS) then
+    elseif mode == BYTE_MODE_NORMAL_CONTINUS then
         streams["mode"] = "normal_continus"
     end
     if program == 0x00 then
@@ -1070,11 +1065,9 @@ local function assembleJsonByGlobalProperty()
         streams["easy_ironing"] = "off"
     end
     streams["appointment_time"] = tonumber(
-                                      string.format("%02x",
-                                                    appointment_time_high_byte) ..
-                                          string.format("%02x",
-                                                        appointment_time_low_byte),
-                                      16)
+        string.format("%02x", appointment_time_high_byte) .. string.format("%02x", appointment_time_low_byte),
+        16
+    )
     if bit.band(byte16, 0x01) == 0x01 then
         streams["beforehand_wash"] = "on"
     else
@@ -1115,8 +1108,7 @@ local function assembleJsonByGlobalProperty()
     else
         streams["active_oxygen"] = "0"
     end
-    streams["project_no"] = tonumber(string.format("%02x", byte22) ..
-                                         string.format("%02x", byte21), 16)
+    streams["project_no"] = tonumber(string.format("%02x", byte22) .. string.format("%02x", byte21), 16)
     streams["remain_time"] = remainTime
     streams["error_code"] = errorCode
     streams["expert_step"] = expertStep
@@ -1124,7 +1116,9 @@ local function assembleJsonByGlobalProperty()
 end
 local function makeSum(tmpbuf, start_pos, end_pos)
     local resVal = 0
-    for si = start_pos, end_pos do resVal = resVal + tmpbuf[si] end
+    for si = start_pos, end_pos do
+        resVal = resVal + tmpbuf[si]
+    end
     resVal = bit.bnot(resVal) + 1
     resVal = bit.band(resVal, 0x00ff)
     return resVal
@@ -1133,7 +1127,9 @@ local function extractBodyBytes(byteData)
     local msgLength = #byteData
     local msgBytes = {}
     local bodyBytes = {}
-    for i = 1, msgLength do msgBytes[i - 1] = byteData[i] end
+    for i = 1, msgLength do
+        msgBytes[i - 1] = byteData[i]
+    end
     local bodyLength = msgLength - BYTE_PROTOCOL_LENGTH - 1
     for i = 0, bodyLength - 1 do
         bodyBytes[i] = msgBytes[i + BYTE_PROTOCOL_LENGTH]
@@ -1144,7 +1140,9 @@ local function assembleUart(bodyBytes, type)
     local bodyLength = #bodyBytes + 1
     local msgLength = (bodyLength + BYTE_PROTOCOL_LENGTH + 1)
     local msgBytes = {}
-    for i = 0, msgLength - 1 do msgBytes[i] = 0 end
+    for i = 0, msgLength - 1 do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = BYTE_PROTOCOL_HEAD
     msgBytes[1] = msgLength - 1
     msgBytes[2] = BYTE_DEVICE_TYPE
@@ -1156,22 +1154,262 @@ local function assembleUart(bodyBytes, type)
     return msgBytes
 end
 local crc8_854_table = {
-    0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65, 157,
-    195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220, 35, 125,
-    159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98, 190, 224, 2,
-    92, 223, 129, 99, 61, 124, 34, 192, 158, 29, 67, 161, 255, 70, 24, 250, 164,
-    39, 121, 155, 197, 132, 218, 56, 102, 229, 187, 89, 7, 219, 133, 103, 57,
-    186, 228, 6, 88, 25, 71, 165, 251, 120, 38, 196, 154, 101, 59, 217, 135, 4,
-    90, 184, 230, 167, 249, 27, 69, 198, 152, 122, 36, 248, 166, 68, 26, 153,
-    199, 37, 123, 58, 100, 134, 216, 91, 5, 231, 185, 140, 210, 48, 110, 237,
-    179, 81, 15, 78, 16, 242, 172, 47, 113, 147, 205, 17, 79, 173, 243, 112, 46,
-    204, 146, 211, 141, 111, 49, 178, 236, 14, 80, 175, 241, 19, 77, 206, 144,
-    114, 44, 109, 51, 209, 143, 12, 82, 176, 238, 50, 108, 142, 208, 83, 13,
-    239, 177, 240, 174, 76, 18, 145, 207, 45, 115, 202, 148, 118, 40, 171, 245,
-    23, 73, 8, 86, 180, 234, 105, 55, 213, 139, 87, 9, 235, 181, 54, 104, 138,
-    212, 149, 203, 41, 119, 244, 170, 72, 22, 233, 183, 85, 11, 136, 214, 52,
-    106, 43, 117, 151, 201, 74, 20, 246, 168, 116, 42, 200, 150, 21, 75, 169,
-    247, 182, 232, 10, 84, 215, 137, 107, 53
+    0,
+    94,
+    188,
+    226,
+    97,
+    63,
+    221,
+    131,
+    194,
+    156,
+    126,
+    32,
+    163,
+    253,
+    31,
+    65,
+    157,
+    195,
+    33,
+    127,
+    252,
+    162,
+    64,
+    30,
+    95,
+    1,
+    227,
+    189,
+    62,
+    96,
+    130,
+    220,
+    35,
+    125,
+    159,
+    193,
+    66,
+    28,
+    254,
+    160,
+    225,
+    191,
+    93,
+    3,
+    128,
+    222,
+    60,
+    98,
+    190,
+    224,
+    2,
+    92,
+    223,
+    129,
+    99,
+    61,
+    124,
+    34,
+    192,
+    158,
+    29,
+    67,
+    161,
+    255,
+    70,
+    24,
+    250,
+    164,
+    39,
+    121,
+    155,
+    197,
+    132,
+    218,
+    56,
+    102,
+    229,
+    187,
+    89,
+    7,
+    219,
+    133,
+    103,
+    57,
+    186,
+    228,
+    6,
+    88,
+    25,
+    71,
+    165,
+    251,
+    120,
+    38,
+    196,
+    154,
+    101,
+    59,
+    217,
+    135,
+    4,
+    90,
+    184,
+    230,
+    167,
+    249,
+    27,
+    69,
+    198,
+    152,
+    122,
+    36,
+    248,
+    166,
+    68,
+    26,
+    153,
+    199,
+    37,
+    123,
+    58,
+    100,
+    134,
+    216,
+    91,
+    5,
+    231,
+    185,
+    140,
+    210,
+    48,
+    110,
+    237,
+    179,
+    81,
+    15,
+    78,
+    16,
+    242,
+    172,
+    47,
+    113,
+    147,
+    205,
+    17,
+    79,
+    173,
+    243,
+    112,
+    46,
+    204,
+    146,
+    211,
+    141,
+    111,
+    49,
+    178,
+    236,
+    14,
+    80,
+    175,
+    241,
+    19,
+    77,
+    206,
+    144,
+    114,
+    44,
+    109,
+    51,
+    209,
+    143,
+    12,
+    82,
+    176,
+    238,
+    50,
+    108,
+    142,
+    208,
+    83,
+    13,
+    239,
+    177,
+    240,
+    174,
+    76,
+    18,
+    145,
+    207,
+    45,
+    115,
+    202,
+    148,
+    118,
+    40,
+    171,
+    245,
+    23,
+    73,
+    8,
+    86,
+    180,
+    234,
+    105,
+    55,
+    213,
+    139,
+    87,
+    9,
+    235,
+    181,
+    54,
+    104,
+    138,
+    212,
+    149,
+    203,
+    41,
+    119,
+    244,
+    170,
+    72,
+    22,
+    233,
+    183,
+    85,
+    11,
+    136,
+    214,
+    52,
+    106,
+    43,
+    117,
+    151,
+    201,
+    74,
+    20,
+    246,
+    168,
+    116,
+    42,
+    200,
+    150,
+    21,
+    75,
+    169,
+    247,
+    182,
+    232,
+    10,
+    84,
+    215,
+    137,
+    107,
+    53,
 }
 local function crc8_854(dataBuf, start_pos, end_pos)
     local crc = 0
@@ -1205,22 +1443,26 @@ local function string2table(hexstr)
 end
 local function string2hexstring(str)
     local ret = ""
-    for i = 1, #str do ret = ret .. string.format("%02x", str:byte(i)) end
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
     return ret
 end
 local function table2string(cmd)
     local ret = ""
     local i
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 local function checkBoundary(data, min, max)
-    if (not data) then data = 0 end
+    if not data then data = 0 end
     data = tonumber(data)
-    if ((data >= min) and (data <= max)) then
+    if (data >= min) and (data <= max) then
         return data
     else
-        if (data < min) then
+        if data < min then
             return min
         else
             return max
@@ -1250,23 +1492,26 @@ local function print_lua_table(lua_table, indent)
         end
     end
 end
-local function bitBor(num1, num2) return bit.bor(num1, num2) end
+local function bitBor(num1, num2)
+    return bit.bor(num1, num2)
+end
 local function judge_if_protocol_02ca_control(tab)
     for k in pairs(tab) do
-        if (protocol_02ca_control[k] ~= nil) then return true end
+        if protocol_02ca_control[k] ~= nil then return true end
     end
     return nil
 end
 function jsonToData(jsonCmdStr)
-    if (#jsonCmdStr == 0) then return nil end
+    if #jsonCmdStr == 0 then return nil end
     local msgBytes = {}
     local json = decodeJsonToTable(jsonCmdStr)
     deviceSubType = json["deviceinfo"]["deviceSubType"]
-    if (deviceSubType == 1) then end
+    if deviceSubType == 1 then
+    end
     local query = json["query"]
     local control = json["control"]
     local status = json["status"]
-    if (control) then
+    if control then
         if judge_if_protocol_02ca_control(control) ~= nil then
             local bodyBytes = {}
             bodyBytes[0] = 0xca
@@ -1279,20 +1524,18 @@ function jsonToData(jsonCmdStr)
             end
             msgBytes = assembleUart(bodyBytes, BYTE_CONTROL_REQUEST)
         else
-            if (status) then updateGlobalPropertyValueByJson(status) end
-            if (control) then
-                updateGlobalPropertyValueByJson(control)
-            end
+            if status then updateGlobalPropertyValueByJson(status) end
+            if control then updateGlobalPropertyValueByJson(control) end
             local bodyLength = 22
             local bodyBytes = {}
-            for i = 0, bodyLength - 1 do bodyBytes[i] = 0xFF end
+            for i = 0, bodyLength - 1 do
+                bodyBytes[i] = 0xFF
+            end
             bodyBytes[0] = BYTE_CONTROL_REQUEST
             if control["power"] ~= nil then
                 bodyBytes[1] = power
             else
-                if control["control_status"] ~= nil then
-                    bodyBytes[2] = controlWorkStatus
-                end
+                if control["control_status"] ~= nil then bodyBytes[2] = controlWorkStatus end
                 bodyBytes[4] = program
                 bodyBytes[5] = waterLevel
                 bodyBytes[6] = bit.band(soakCount, dryer)
@@ -1302,39 +1545,34 @@ function jsonToData(jsonCmdStr)
                 bodyBytes[10] = dehydrationMin
                 bodyBytes[11] = detergent
                 bodyBytes[12] = softener
-                bodyBytes[13] = bitBor(bitBor(bitBor(memory,
-                                                     bit.lshift(appointment, 1)),
-                                              bitBor(bit.lshift(spray_wash, 2),
-                                                     bit.lshift(old_speedy, 3))),
-                                       bitBor(
-                                           bitBor(bit.lshift(lock, 5),
-                                                  bit.lshift(nightly, 4)),
-                                           bitBor(bit.lshift(down_light, 6),
-                                                  bit.lshift(easy_ironing, 7))))
+                bodyBytes[13] = bitBor(
+                    bitBor(
+                        bitBor(memory, bit.lshift(appointment, 1)),
+                        bitBor(bit.lshift(spray_wash, 2), bit.lshift(old_speedy, 3))
+                    ),
+                    bitBor(
+                        bitBor(bit.lshift(lock, 5), bit.lshift(nightly, 4)),
+                        bitBor(bit.lshift(down_light, 6), bit.lshift(easy_ironing, 7))
+                    )
+                )
                 bodyBytes[14] = appointment_time_low_byte
                 bodyBytes[15] = appointment_time_high_byte
-                bodyBytes[16] = bitBor(bitBor(
-                                           bitBor(beforehand_wash, bit.lshift(
-                                                      super_clean_wash, 1)),
-                                           bitBor(
-                                               bit.lshift(intelligent_wash, 2),
-                                               bit.lshift(strong_wash, 3))),
-                                       bitBor(
-                                           bitBor(bit.lshift(steam_wash, 4),
-                                                  bit.lshift(fast_clean_wash, 5)),
-                                           bit.lshift(soak, 6)))
+                bodyBytes[16] = bitBor(
+                    bitBor(
+                        bitBor(beforehand_wash, bit.lshift(super_clean_wash, 1)),
+                        bitBor(bit.lshift(intelligent_wash, 2), bit.lshift(strong_wash, 3))
+                    ),
+                    bitBor(bitBor(bit.lshift(steam_wash, 4), bit.lshift(fast_clean_wash, 5)), bit.lshift(soak, 6))
+                )
                 bodyBytes[17] = stains
-                bodyBytes[18] = bitBor(bitBor(add_rinse,
-                                              bit.lshift(ultraviolet_lamp, 2)),
-                                       bitBor(bit.lshift(eye_wash, 4),
-                                              bit.lshift(microbubble, 6)))
+                bodyBytes[18] = bitBor(
+                    bitBor(add_rinse, bit.lshift(ultraviolet_lamp, 2)),
+                    bitBor(bit.lshift(eye_wash, 4), bit.lshift(microbubble, 6))
+                )
                 bodyBytes[19] = bitBor(wind_dispel, bit.lshift(speedy, 2))
                 bodyBytes[20] = dirty_degree
-                bodyBytes[21] = bitBor(bitBor(active_oxygen, bit.lshift(ai, 2)),
-                                       bit.lshift(disinfectant, 4))
-                if control["control_status"] == "pause" then
-                    bodyBytes[4] = 0xff
-                end
+                bodyBytes[21] = bitBor(bitBor(active_oxygen, bit.lshift(ai, 2)), bit.lshift(disinfectant, 4))
+                if control["control_status"] == "pause" then bodyBytes[4] = 0xff end
                 if control["merge"] == "false" then
                     bodyBytes[13] = 0xff
                     bodyBytes[16] = 0xff
@@ -1342,13 +1580,13 @@ function jsonToData(jsonCmdStr)
             end
             msgBytes = assembleUart(bodyBytes, BYTE_CONTROL_REQUEST)
         end
-    elseif (query) then
+    elseif query then
         local bodyBytes = {}
-        if (query["protocol"] and query["protocol"] == "03ca") then
+        if query["protocol"] and query["protocol"] == "03ca" then
             bodyBytes[0] = 0xca
             local offset = 1
             for k in pairs(query) do
-                if (k ~= "protocol") then
+                if k ~= "protocol" then
                     bodyBytes[offset] = protocol_02ca_control[k]["type"]
                     bodyBytes[offset + 1] = 0x00
                     offset = offset + 2
@@ -1362,27 +1600,30 @@ function jsonToData(jsonCmdStr)
     end
     local infoM = {}
     local length = #msgBytes + 1
-    for i = 1, length do infoM[i] = msgBytes[i - 1] end
+    for i = 1, length do
+        infoM[i] = msgBytes[i - 1]
+    end
     local ret = table2string(infoM)
     ret = string2hexstring(ret)
     return ret
 end
 function dataToJson(jsonStr)
-    if (not jsonStr) then return nil end
+    if not jsonStr then return nil end
     local json = decodeJsonToTable(jsonStr)
     local deviceinfo = json["deviceinfo"]
     deviceSubType = deviceinfo["deviceSubType"]
-    if (deviceSubType == 1) then end
+    if deviceSubType == 1 then
+    end
     binData = string.lower(json["msg"]["data"])
     local status = json["status"]
-    if (status) then updateGlobalPropertyValueByJson(status) end
+    if status then updateGlobalPropertyValueByJson(status) end
     local bodyBytes = {}
     local byteData = string2table(binData)
     dataType = string.sub(binData, 19, 22)
     bodyBytes = extractBodyBytes(byteData)
     local ret = updateGlobalPropertyValueByByte(bodyBytes)
     local retTable = {}
-    if (dataType == '04ca' or dataType == '03ca' or dataType == '02ca') then
+    if dataType == "04ca" or dataType == "03ca" or dataType == "02ca" then
         local temTable = {}
         temTable["version"] = VALUE_VERSION
         temTable["data_type"] = dataType
@@ -1392,7 +1633,7 @@ function dataToJson(jsonStr)
         temTable["ca_infrared_door"] = ca_infrared_door
         temTable["ca_cvv"] = ca_cvv
         retTable["status"] = temTable
-    elseif (dataType == '0405') then
+    elseif dataType == "0405" then
         local temTable = {}
         temTable["version"] = VALUE_VERSION
         temTable["data_type"] = dataType

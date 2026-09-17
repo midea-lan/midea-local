@@ -349,7 +349,7 @@ local myTable = {
     ["autoSterilizeWeek"] = 0,
     ["autoSterilizeHour"] = 0,
     ["autoSterilizeMinute"] = 0,
-    ["fahrenheitEffect"] = 0
+    ["fahrenheitEffect"] = 0,
 }
 local function print_lua_table(lua_table, indent)
     indent = indent or 0
@@ -375,13 +375,13 @@ local function print_lua_table(lua_table, indent)
     end
 end
 local function checkBoundary(data, min, max)
-    if (not data) then data = 0 end
+    if not data then data = 0 end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
-    if ((data >= min) and (data <= max)) then
+    if data == nil then data = 0 end
+    if (data >= min) and (data <= max) then
         return data
     else
-        if (data < min) then
+        if data < min then
             return min
         else
             return max
@@ -389,21 +389,23 @@ local function checkBoundary(data, min, max)
     end
 end
 local function string2Int(data)
-    if (not data) then data = tonumber("0") end
+    if not data then data = tonumber "0" end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
+    if data == nil then data = 0 end
     return data
 end
 local function int2String(data)
-    if (not data) then data = tostring(0) end
+    if not data then data = tostring(0) end
     data = tostring(data)
-    if (data == nil) then data = "0" end
+    if data == nil then data = "0" end
     return data
 end
 local function table2string(cmd)
     local ret = ""
     local i
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 local function string2table(hexstr)
@@ -419,7 +421,9 @@ local function string2table(hexstr)
 end
 local function string2hexstring(str)
     local ret = ""
-    for i = 1, #str do ret = ret .. string.format("%02x", str:byte(i)) end
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
     return ret
 end
 local function encode(cmd)
@@ -436,28 +440,270 @@ local function decode(cmd)
 end
 local function makeSum(tmpbuf, start_pos, end_pos)
     local resVal = 0
-    for si = start_pos, end_pos do resVal = resVal + tmpbuf[si] end
+    for si = start_pos, end_pos do
+        resVal = resVal + tmpbuf[si]
+    end
     resVal = bit.bnot(resVal) + 1
     resVal = bit.band(resVal, 0x00ff)
     return resVal
 end
 local crc8_854_table = {
-    0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65, 157,
-    195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220, 35, 125,
-    159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98, 190, 224, 2,
-    92, 223, 129, 99, 61, 124, 34, 192, 158, 29, 67, 161, 255, 70, 24, 250, 164,
-    39, 121, 155, 197, 132, 218, 56, 102, 229, 187, 89, 7, 219, 133, 103, 57,
-    186, 228, 6, 88, 25, 71, 165, 251, 120, 38, 196, 154, 101, 59, 217, 135, 4,
-    90, 184, 230, 167, 249, 27, 69, 198, 152, 122, 36, 248, 166, 68, 26, 153,
-    199, 37, 123, 58, 100, 134, 216, 91, 5, 231, 185, 140, 210, 48, 110, 237,
-    179, 81, 15, 78, 16, 242, 172, 47, 113, 147, 205, 17, 79, 173, 243, 112, 46,
-    204, 146, 211, 141, 111, 49, 178, 236, 14, 80, 175, 241, 19, 77, 206, 144,
-    114, 44, 109, 51, 209, 143, 12, 82, 176, 238, 50, 108, 142, 208, 83, 13,
-    239, 177, 240, 174, 76, 18, 145, 207, 45, 115, 202, 148, 118, 40, 171, 245,
-    23, 73, 8, 86, 180, 234, 105, 55, 213, 139, 87, 9, 235, 181, 54, 104, 138,
-    212, 149, 203, 41, 119, 244, 170, 72, 22, 233, 183, 85, 11, 136, 214, 52,
-    106, 43, 117, 151, 201, 74, 20, 246, 168, 116, 42, 200, 150, 21, 75, 169,
-    247, 182, 232, 10, 84, 215, 137, 107, 53
+    0,
+    94,
+    188,
+    226,
+    97,
+    63,
+    221,
+    131,
+    194,
+    156,
+    126,
+    32,
+    163,
+    253,
+    31,
+    65,
+    157,
+    195,
+    33,
+    127,
+    252,
+    162,
+    64,
+    30,
+    95,
+    1,
+    227,
+    189,
+    62,
+    96,
+    130,
+    220,
+    35,
+    125,
+    159,
+    193,
+    66,
+    28,
+    254,
+    160,
+    225,
+    191,
+    93,
+    3,
+    128,
+    222,
+    60,
+    98,
+    190,
+    224,
+    2,
+    92,
+    223,
+    129,
+    99,
+    61,
+    124,
+    34,
+    192,
+    158,
+    29,
+    67,
+    161,
+    255,
+    70,
+    24,
+    250,
+    164,
+    39,
+    121,
+    155,
+    197,
+    132,
+    218,
+    56,
+    102,
+    229,
+    187,
+    89,
+    7,
+    219,
+    133,
+    103,
+    57,
+    186,
+    228,
+    6,
+    88,
+    25,
+    71,
+    165,
+    251,
+    120,
+    38,
+    196,
+    154,
+    101,
+    59,
+    217,
+    135,
+    4,
+    90,
+    184,
+    230,
+    167,
+    249,
+    27,
+    69,
+    198,
+    152,
+    122,
+    36,
+    248,
+    166,
+    68,
+    26,
+    153,
+    199,
+    37,
+    123,
+    58,
+    100,
+    134,
+    216,
+    91,
+    5,
+    231,
+    185,
+    140,
+    210,
+    48,
+    110,
+    237,
+    179,
+    81,
+    15,
+    78,
+    16,
+    242,
+    172,
+    47,
+    113,
+    147,
+    205,
+    17,
+    79,
+    173,
+    243,
+    112,
+    46,
+    204,
+    146,
+    211,
+    141,
+    111,
+    49,
+    178,
+    236,
+    14,
+    80,
+    175,
+    241,
+    19,
+    77,
+    206,
+    144,
+    114,
+    44,
+    109,
+    51,
+    209,
+    143,
+    12,
+    82,
+    176,
+    238,
+    50,
+    108,
+    142,
+    208,
+    83,
+    13,
+    239,
+    177,
+    240,
+    174,
+    76,
+    18,
+    145,
+    207,
+    45,
+    115,
+    202,
+    148,
+    118,
+    40,
+    171,
+    245,
+    23,
+    73,
+    8,
+    86,
+    180,
+    234,
+    105,
+    55,
+    213,
+    139,
+    87,
+    9,
+    235,
+    181,
+    54,
+    104,
+    138,
+    212,
+    149,
+    203,
+    41,
+    119,
+    244,
+    170,
+    72,
+    22,
+    233,
+    183,
+    85,
+    11,
+    136,
+    214,
+    52,
+    106,
+    43,
+    117,
+    151,
+    201,
+    74,
+    20,
+    246,
+    168,
+    116,
+    42,
+    200,
+    150,
+    21,
+    75,
+    169,
+    247,
+    182,
+    232,
+    10,
+    84,
+    215,
+    137,
+    107,
+    53,
 }
 local function crc8_854(dataBuf, start_pos, end_pos)
     local crc = 0
@@ -467,39 +713,43 @@ local function crc8_854(dataBuf, start_pos, end_pos)
     return crc
 end
 local function string2Int(data)
-    if (not data) then data = tonumber("0") end
+    if not data then data = tonumber "0" end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
+    if data == nil then data = 0 end
     return data
 end
 local function int2String(data)
-    if (not data) then data = tostring(0) end
+    if not data then data = tostring(0) end
     data = tostring(data)
-    if (data == nil) then data = "0" end
+    if data == nil then data = "0" end
     return data
 end
 local function getTotalMsg(bodyData, cType)
     local bodyLength = #bodyData
     local msgLength = bodyLength + BYTE_PROTOCOL_LENGTH + 1
     local msgBytes = {}
-    for i = 0, msgLength do msgBytes[i] = 0 end
+    for i = 0, msgLength do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = BYTE_PROTOCOL_HEAD
     msgBytes[1] = bodyLength + BYTE_PROTOCOL_LENGTH + 1
     msgBytes[2] = BYTE_DEVICE_TYPE
     msgBytes[9] = cType
-    for i = 0, bodyLength do msgBytes[i + BYTE_PROTOCOL_LENGTH] = bodyData[i] end
+    for i = 0, bodyLength do
+        msgBytes[i + BYTE_PROTOCOL_LENGTH] = bodyData[i]
+    end
     msgBytes[msgLength] = makeSum(msgBytes, 1, msgLength - 1)
     local msgFinal = {}
-    for i = 1, msgLength + 1 do msgFinal[i] = msgBytes[i - 1] end
+    for i = 1, msgLength + 1 do
+        msgFinal[i] = msgBytes[i - 1]
+    end
     return msgFinal
 end
 local function jsonToModel(controlJson)
     local controlCmd = controlJson
-    myTable["controlType"] = 0x01;
-    if (controlCmd["control_type"] ~= nil) then
-        myTable["controlType"] = string2Int(controlCmd["control_type"])
-    end
-    if (myTable["controlType"] == 0x01) then
+    myTable["controlType"] = 0x01
+    if controlCmd["control_type"] ~= nil then myTable["controlType"] = string2Int(controlCmd["control_type"]) end
+    if myTable["controlType"] == 0x01 then
         if controlCmd[KEY_POWER] ~= nil then
             if controlCmd[KEY_POWER] == VALUE_FUNCTION_ON then
                 myTable["powerValue"] = BYTE_POWER_ON
@@ -535,9 +785,7 @@ local function jsonToModel(controlJson)
                 myTable["openPTC"] = 0x02
             end
         end
-        if controlCmd["ptc_temperature"] ~= nil then
-            myTable["ptcTemp"] = string2Int(controlCmd["ptc_temperature"])
-        end
+        if controlCmd["ptc_temperature"] ~= nil then myTable["ptcTemp"] = string2Int(controlCmd["ptc_temperature"]) end
         if controlCmd["water_pump"] ~= nil then
             if controlCmd["water_pump"] == VALUE_FUNCTION_ON then
                 myTable["waterPump"] = BYTE_POWER_ON
@@ -588,44 +836,27 @@ local function jsonToModel(controlJson)
             end
         end
         if controlCmd["set_vacationdays"] ~= nil then
-            myTable["vacadaysValue"] =
-                string2Int(controlCmd["set_vacationdays"])
+            myTable["vacadaysValue"] = string2Int(controlCmd["set_vacationdays"])
         end
         if controlCmd["set_vacation_start_year"] ~= nil then
-            myTable["vacadaysStartYearValue"] = string2Int(
-                                                    controlCmd["set_vacation_start_year"])
+            myTable["vacadaysStartYearValue"] = string2Int(controlCmd["set_vacation_start_year"])
         end
         if controlCmd["set_vacation_start_month"] ~= nil then
-            myTable["vacadaysStartMonthValue"] = string2Int(
-                                                     controlCmd["set_vacation_start_month"])
+            myTable["vacadaysStartMonthValue"] = string2Int(controlCmd["set_vacation_start_month"])
         end
         if controlCmd["set_vacation_start_day"] ~= nil then
-            myTable["vacadaysStartDayValue"] = string2Int(
-                                                   controlCmd["set_vacation_start_day"])
+            myTable["vacadaysStartDayValue"] = string2Int(controlCmd["set_vacation_start_day"])
         end
         if controlCmd["set_vacation_temperature"] ~= nil then
-            myTable["vacationTsValue"] = string2Int(
-                                             controlCmd["set_vacation_temperature"])
+            myTable["vacationTsValue"] = string2Int(controlCmd["set_vacation_temperature"])
         end
-        if controlCmd["date_year"] ~= nil then
-            myTable["dateYearValue"] = string2Int(controlCmd["date_year"])
-        end
-        if controlCmd["date_month"] ~= nil then
-            myTable["dateMonthValue"] = string2Int(controlCmd["date_month"])
-        end
-        if controlCmd["date_day"] ~= nil then
-            myTable["dateDayValue"] = string2Int(controlCmd["date_day"])
-        end
-        if controlCmd["date_week"] ~= nil then
-            myTable["dateWeekValue"] = string2Int(controlCmd["date_week"])
-        end
-        if controlCmd["date_hour"] ~= nil then
-            myTable["dateHourValue"] = string2Int(controlCmd["date_hour"])
-        end
-        if controlCmd["date_minute"] ~= nil then
-            myTable["dateMinuteValue"] = string2Int(controlCmd["date_minute"])
-        end
-    elseif (myTable["controlType"] == 0x02) then
+        if controlCmd["date_year"] ~= nil then myTable["dateYearValue"] = string2Int(controlCmd["date_year"]) end
+        if controlCmd["date_month"] ~= nil then myTable["dateMonthValue"] = string2Int(controlCmd["date_month"]) end
+        if controlCmd["date_day"] ~= nil then myTable["dateDayValue"] = string2Int(controlCmd["date_day"]) end
+        if controlCmd["date_week"] ~= nil then myTable["dateWeekValue"] = string2Int(controlCmd["date_week"]) end
+        if controlCmd["date_hour"] ~= nil then myTable["dateHourValue"] = string2Int(controlCmd["date_hour"]) end
+        if controlCmd["date_minute"] ~= nil then myTable["dateMinuteValue"] = string2Int(controlCmd["date_minute"]) end
+    elseif myTable["controlType"] == 0x02 then
         if controlCmd["timer1_effect"] ~= nil then
             if controlCmd["timer1_effect"] == VALUE_FUNCTION_ON then
                 myTable["timer1Effect"] = 0x01
@@ -669,12 +900,10 @@ local function jsonToModel(controlJson)
             end
         end
         if controlCmd["timer1_openHour"] ~= nil then
-            myTable["timer1OpenHour"] =
-                string2Int(controlCmd["timer1_openHour"])
+            myTable["timer1OpenHour"] = string2Int(controlCmd["timer1_openHour"])
         end
         if controlCmd["timer1_openhour"] ~= nil then
-            myTable["timer1OpenHour"] =
-                string2Int(controlCmd["timer1_openhour"])
+            myTable["timer1OpenHour"] = string2Int(controlCmd["timer1_openhour"])
         end
         if controlCmd["timer1_openMin"] ~= nil then
             myTable["timer1OpenMin"] = string2Int(controlCmd["timer1_openMin"])
@@ -683,32 +912,25 @@ local function jsonToModel(controlJson)
             myTable["timer1OpenMin"] = string2Int(controlCmd["timer1_openmin"])
         end
         if controlCmd["timer1_closeHour"] ~= nil then
-            myTable["timer1CloseHour"] = string2Int(
-                                             controlCmd["timer1_closeHour"])
+            myTable["timer1CloseHour"] = string2Int(controlCmd["timer1_closeHour"])
         end
         if controlCmd["timer1_closehour"] ~= nil then
-            myTable["timer1CloseHour"] = string2Int(
-                                             controlCmd["timer1_closehour"])
+            myTable["timer1CloseHour"] = string2Int(controlCmd["timer1_closehour"])
         end
         if controlCmd["timer1_closeMin"] ~= nil then
-            myTable["timer1CloseMin"] =
-                string2Int(controlCmd["timer1_closeMin"])
+            myTable["timer1CloseMin"] = string2Int(controlCmd["timer1_closeMin"])
         end
         if controlCmd["timer1_closemin"] ~= nil then
-            myTable["timer1CloseMin"] =
-                string2Int(controlCmd["timer1_closemin"])
+            myTable["timer1CloseMin"] = string2Int(controlCmd["timer1_closemin"])
         end
         if controlCmd["timer1_set_temperature"] ~= nil then
-            myTable["timer1SetTemperature"] = string2Int(
-                                                  controlCmd["timer1_set_temperature"])
+            myTable["timer1SetTemperature"] = string2Int(controlCmd["timer1_set_temperature"])
         end
         if controlCmd["timer2_openHour"] ~= nil then
-            myTable["timer2OpenHour"] =
-                string2Int(controlCmd["timer2_openHour"])
+            myTable["timer2OpenHour"] = string2Int(controlCmd["timer2_openHour"])
         end
         if controlCmd["timer2_openhour"] ~= nil then
-            myTable["timer2OpenHour"] =
-                string2Int(controlCmd["timer2_openhour"])
+            myTable["timer2OpenHour"] = string2Int(controlCmd["timer2_openhour"])
         end
         if controlCmd["timer2_openMin"] ~= nil then
             myTable["timer2OpenMin"] = string2Int(controlCmd["timer2_openMin"])
@@ -717,100 +939,79 @@ local function jsonToModel(controlJson)
             myTable["timer2OpenMin"] = string2Int(controlCmd["timer2_openmin"])
         end
         if controlCmd["timer2_closeHour"] ~= nil then
-            myTable["timer2CloseHour"] = string2Int(
-                                             controlCmd["timer2_closeHour"])
+            myTable["timer2CloseHour"] = string2Int(controlCmd["timer2_closeHour"])
         end
         if controlCmd["timer2_closehour"] ~= nil then
-            myTable["timer2CloseHour"] = string2Int(
-                                             controlCmd["timer2_closehour"])
+            myTable["timer2CloseHour"] = string2Int(controlCmd["timer2_closehour"])
         end
         if controlCmd["timer2_closeMin"] ~= nil then
-            myTable["timer2CloseMin"] =
-                string2Int(controlCmd["timer2_closeMin"])
+            myTable["timer2CloseMin"] = string2Int(controlCmd["timer2_closeMin"])
         end
         if controlCmd["timer2_closemin"] ~= nil then
-            myTable["timer2CloseMin"] =
-                string2Int(controlCmd["timer2_closemin"])
+            myTable["timer2CloseMin"] = string2Int(controlCmd["timer2_closemin"])
         end
         if controlCmd["timer2_set_temperature"] ~= nil then
-            myTable["timer2SetTemperature"] = string2Int(
-                                                  controlCmd["timer2_set_temperature"])
+            myTable["timer2SetTemperature"] = string2Int(controlCmd["timer2_set_temperature"])
         end
         if controlCmd["timer3_openhour"] ~= nil then
-            myTable["timer3OpenHour"] =
-                string2Int(controlCmd["timer3_openhour"])
+            myTable["timer3OpenHour"] = string2Int(controlCmd["timer3_openhour"])
         end
         if controlCmd["timer3_openmin"] ~= nil then
             myTable["timer3OpenMin"] = string2Int(controlCmd["timer3_openmin"])
         end
         if controlCmd["timer3_closehour"] ~= nil then
-            myTable["timer3CloseHour"] = string2Int(
-                                             controlCmd["timer3_closehour"])
+            myTable["timer3CloseHour"] = string2Int(controlCmd["timer3_closehour"])
         end
         if controlCmd["timer3_closemin"] ~= nil then
-            myTable["timer3CloseMin"] =
-                string2Int(controlCmd["timer3_closemin"])
+            myTable["timer3CloseMin"] = string2Int(controlCmd["timer3_closemin"])
         end
         if controlCmd["timer3_set_temperature"] ~= nil then
-            myTable["timer3SetTemperature"] = string2Int(
-                                                  controlCmd["timer3_set_temperature"])
+            myTable["timer3SetTemperature"] = string2Int(controlCmd["timer3_set_temperature"])
         end
         if controlCmd["timer4_openhour"] ~= nil then
-            myTable["timer4OpenHour"] =
-                string2Int(controlCmd["timer4_openhour"])
+            myTable["timer4OpenHour"] = string2Int(controlCmd["timer4_openhour"])
         end
         if controlCmd["timer4_openmin"] ~= nil then
             myTable["timer4OpenMin"] = string2Int(controlCmd["timer4_openmin"])
         end
         if controlCmd["timer4_closehour"] ~= nil then
-            myTable["timer4CloseHour"] = string2Int(
-                                             controlCmd["timer4_closehour"])
+            myTable["timer4CloseHour"] = string2Int(controlCmd["timer4_closehour"])
         end
         if controlCmd["timer4_closemin"] ~= nil then
-            myTable["timer4CloseMin"] =
-                string2Int(controlCmd["timer4_closemin"])
+            myTable["timer4CloseMin"] = string2Int(controlCmd["timer4_closemin"])
         end
         if controlCmd["timer4_set_temperature"] ~= nil then
-            myTable["timer4SetTemperature"] = string2Int(
-                                                  controlCmd["timer4_set_temperature"])
+            myTable["timer4SetTemperature"] = string2Int(controlCmd["timer4_set_temperature"])
         end
         if controlCmd["timer5_openhour"] ~= nil then
-            myTable["timer5OpenHour"] =
-                string2Int(controlCmd["timer5_openhour"])
+            myTable["timer5OpenHour"] = string2Int(controlCmd["timer5_openhour"])
         end
         if controlCmd["timer5_openmin"] ~= nil then
             myTable["timer5OpenMin"] = string2Int(controlCmd["timer5_openmin"])
         end
         if controlCmd["timer5_closehour"] ~= nil then
-            myTable["timer5CloseHour"] = string2Int(
-                                             controlCmd["timer5_closehour"])
+            myTable["timer5CloseHour"] = string2Int(controlCmd["timer5_closehour"])
         end
         if controlCmd["timer5_closemin"] ~= nil then
-            myTable["timer5CloseMin"] =
-                string2Int(controlCmd["timer5_closemin"])
+            myTable["timer5CloseMin"] = string2Int(controlCmd["timer5_closemin"])
         end
         if controlCmd["timer5_set_temperature"] ~= nil then
-            myTable["timer5SetTemperature"] = string2Int(
-                                                  controlCmd["timer5_set_temperature"])
+            myTable["timer5SetTemperature"] = string2Int(controlCmd["timer5_set_temperature"])
         end
         if controlCmd["timer6_openhour"] ~= nil then
-            myTable["timer6OpenHour"] =
-                string2Int(controlCmd["timer6_openhour"])
+            myTable["timer6OpenHour"] = string2Int(controlCmd["timer6_openhour"])
         end
         if controlCmd["timer6_openmin"] ~= nil then
             myTable["timer6OpenMin"] = string2Int(controlCmd["timer6_openmin"])
         end
         if controlCmd["timer6_closehour"] ~= nil then
-            myTable["timer6CloseHour"] = string2Int(
-                                             controlCmd["timer6_closehour"])
+            myTable["timer6CloseHour"] = string2Int(controlCmd["timer6_closehour"])
         end
         if controlCmd["timer6_closemin"] ~= nil then
-            myTable["timer6CloseMin"] =
-                string2Int(controlCmd["timer6_closemin"])
+            myTable["timer6CloseMin"] = string2Int(controlCmd["timer6_closemin"])
         end
         if controlCmd["timer6_set_temperature"] ~= nil then
-            myTable["timer6SetTemperature"] = string2Int(
-                                                  controlCmd["timer6_set_temperature"])
+            myTable["timer6SetTemperature"] = string2Int(controlCmd["timer6_set_temperature"])
         end
         if controlCmd["timer1_modevalue"] ~= nil then
             if controlCmd["timer1_modevalue"] == "energy" then
@@ -878,7 +1079,7 @@ local function jsonToModel(controlJson)
                 myTable["timer6ModeValue"] = 0x04
             end
         end
-    elseif (myTable["controlType"] == 0x03) then
+    elseif myTable["controlType"] == 0x03 then
         if controlCmd["order1_effect"] ~= nil then
             if controlCmd["order1_effect"] == VALUE_FUNCTION_ON then
                 myTable["order1Effect"] = 0x01
@@ -894,12 +1095,10 @@ local function jsonToModel(controlJson)
             end
         end
         if controlCmd["order1_timeHour"] ~= nil then
-            myTable["order1TimeHour"] =
-                string2Int(controlCmd["order1_timeHour"])
+            myTable["order1TimeHour"] = string2Int(controlCmd["order1_timeHour"])
         end
         if controlCmd["order1_timehour"] ~= nil then
-            myTable["order1TimeHour"] =
-                string2Int(controlCmd["order1_timehour"])
+            myTable["order1TimeHour"] = string2Int(controlCmd["order1_timehour"])
         end
         if controlCmd["order1_timeMin"] ~= nil then
             myTable["order1TimeMin"] = string2Int(controlCmd["order1_timeMin"])
@@ -908,28 +1107,22 @@ local function jsonToModel(controlJson)
             myTable["order1TimeMin"] = string2Int(controlCmd["order1_timemin"])
         end
         if controlCmd["order1_stoptimeHour"] ~= nil then
-            myTable["order1StopTimeHour"] = string2Int(
-                                                controlCmd["order1_stoptimeHour"])
+            myTable["order1StopTimeHour"] = string2Int(controlCmd["order1_stoptimeHour"])
         end
         if controlCmd["order1_stoptimehour"] ~= nil then
-            myTable["order1StopTimeHour"] = string2Int(
-                                                controlCmd["order1_stoptimehour"])
+            myTable["order1StopTimeHour"] = string2Int(controlCmd["order1_stoptimehour"])
         end
         if controlCmd["order1_stoptimeMin"] ~= nil then
-            myTable["order1StopTimeMin"] = string2Int(
-                                               controlCmd["order1_stoptimeMin"])
+            myTable["order1StopTimeMin"] = string2Int(controlCmd["order1_stoptimeMin"])
         end
         if controlCmd["order1_stoptimemin"] ~= nil then
-            myTable["order1StopTimeMin"] = string2Int(
-                                               controlCmd["order1_stoptimemin"])
+            myTable["order1StopTimeMin"] = string2Int(controlCmd["order1_stoptimemin"])
         end
         if controlCmd["order2_timeHour"] ~= nil then
-            myTable["order2TimeHour"] =
-                string2Int(controlCmd["order2_timeHour"])
+            myTable["order2TimeHour"] = string2Int(controlCmd["order2_timeHour"])
         end
         if controlCmd["order2_timehour"] ~= nil then
-            myTable["order2TimeHour"] =
-                string2Int(controlCmd["order2_timehour"])
+            myTable["order2TimeHour"] = string2Int(controlCmd["order2_timehour"])
         end
         if controlCmd["order2_timeMin"] ~= nil then
             myTable["order2TimeMin"] = string2Int(controlCmd["order2_timeMin"])
@@ -938,28 +1131,20 @@ local function jsonToModel(controlJson)
             myTable["order2TimeMin"] = string2Int(controlCmd["order2_timemin"])
         end
         if controlCmd["order2_stoptimeHour"] ~= nil then
-            myTable["order2StopTimeHour"] = string2Int(
-                                                controlCmd["order2_stoptimeHour"])
+            myTable["order2StopTimeHour"] = string2Int(controlCmd["order2_stoptimeHour"])
         end
         if controlCmd["order2_stoptimehour"] ~= nil then
-            myTable["order2StopTimeHour"] = string2Int(
-                                                controlCmd["order2_stoptimehour"])
+            myTable["order2StopTimeHour"] = string2Int(controlCmd["order2_stoptimehour"])
         end
         if controlCmd["order2_stoptimeMin"] ~= nil then
-            myTable["order2StopTimeMin"] = string2Int(
-                                               controlCmd["order2_stoptimeMin"])
+            myTable["order2StopTimeMin"] = string2Int(controlCmd["order2_stoptimeMin"])
         end
         if controlCmd["order2_stoptimemin"] ~= nil then
-            myTable["order2StopTimeMin"] = string2Int(
-                                               controlCmd["order2_stoptimemin"])
+            myTable["order2StopTimeMin"] = string2Int(controlCmd["order2_stoptimemin"])
         end
-        if controlCmd["order1_temp"] ~= nil then
-            myTable["order1Temp"] = string2Int(controlCmd["order1_temp"])
-        end
-        if controlCmd["order2_temp"] ~= nil then
-            myTable["order2Temp"] = string2Int(controlCmd["order2_temp"])
-        end
-    elseif (myTable["controlType"] == 0x05) then
+        if controlCmd["order1_temp"] ~= nil then myTable["order1Temp"] = string2Int(controlCmd["order1_temp"]) end
+        if controlCmd["order2_temp"] ~= nil then myTable["order2Temp"] = string2Int(controlCmd["order2_temp"]) end
+    elseif myTable["controlType"] == 0x05 then
         if controlCmd["backwater_effect"] ~= nil then
             if controlCmd["backwater_effect"] == VALUE_FUNCTION_ON then
                 myTable["backwaterEffect"] = BYTE_POWER_ON
@@ -967,7 +1152,7 @@ local function jsonToModel(controlJson)
                 myTable["backwaterEffect"] = BYTE_POWER_OFF
             end
         end
-    elseif (myTable["controlType"] == 0x06) then
+    elseif myTable["controlType"] == 0x06 then
         if controlCmd["sterilize_effect"] ~= nil then
             if controlCmd["sterilize_effect"] == VALUE_FUNCTION_ON then
                 myTable["sterilizeEffect"] = 0x80
@@ -975,19 +1160,16 @@ local function jsonToModel(controlJson)
                 myTable["sterilizeEffect"] = BYTE_POWER_OFF
             end
             if controlCmd["auto_sterilize_week"] ~= nil then
-                myTable["autoSterilizeWeek"] = string2Int(
-                                                   controlCmd["auto_sterilize_week"])
+                myTable["autoSterilizeWeek"] = string2Int(controlCmd["auto_sterilize_week"])
             end
             if controlCmd["auto_sterilize_hour"] ~= nil then
-                myTable["autoSterilizeHour"] = string2Int(
-                                                   controlCmd["auto_sterilize_hour"])
+                myTable["autoSterilizeHour"] = string2Int(controlCmd["auto_sterilize_hour"])
             end
             if controlCmd["auto_sterilize_minute"] ~= nil then
-                myTable["autoSterilizeMinute"] = string2Int(
-                                                     controlCmd["auto_sterilize_minute"])
+                myTable["autoSterilizeMinute"] = string2Int(controlCmd["auto_sterilize_minute"])
             end
         end
-    elseif (myTable["controlType"] == 0x07) then
+    elseif myTable["controlType"] == 0x07 then
         if controlCmd["week0timer1_effect"] ~= nil then
             if controlCmd["week0timer1_effect"] == VALUE_FUNCTION_ON then
                 myTable["week0timer1Effect"] = 0x01
@@ -1283,508 +1465,382 @@ local function jsonToModel(controlJson)
             end
         end
         if controlCmd["week0timer1_opentime"] ~= nil then
-            myTable["week0timer1OpenTime"] = string2Int(
-                                                 controlCmd["week0timer1_opentime"])
+            myTable["week0timer1OpenTime"] = string2Int(controlCmd["week0timer1_opentime"])
         end
         if controlCmd["week0timer1_closetime"] ~= nil then
-            myTable["week0timer1CloseTime"] = string2Int(
-                                                  controlCmd["week0timer1_closetime"])
+            myTable["week0timer1CloseTime"] = string2Int(controlCmd["week0timer1_closetime"])
         end
         if controlCmd["week0timer1_set_temperature"] ~= nil then
-            myTable["week0timer1SetTemperature"] = string2Int(
-                                                       controlCmd["week0timer1_set_temperature"])
+            myTable["week0timer1SetTemperature"] = string2Int(controlCmd["week0timer1_set_temperature"])
         end
         if controlCmd["week0timer2_opentime"] ~= nil then
-            myTable["week0timer2OpenTime"] = string2Int(
-                                                 controlCmd["week0timer2_opentime"])
+            myTable["week0timer2OpenTime"] = string2Int(controlCmd["week0timer2_opentime"])
         end
         if controlCmd["week0timer2_closetime"] ~= nil then
-            myTable["week0timer2CloseTime"] = string2Int(
-                                                  controlCmd["week0timer2_closetime"])
+            myTable["week0timer2CloseTime"] = string2Int(controlCmd["week0timer2_closetime"])
         end
         if controlCmd["week0timer2_set_temperature"] ~= nil then
-            myTable["week0timer2SetTemperature"] = string2Int(
-                                                       controlCmd["week0timer2_set_temperature"])
+            myTable["week0timer2SetTemperature"] = string2Int(controlCmd["week0timer2_set_temperature"])
         end
         if controlCmd["week0timer3_opentime"] ~= nil then
-            myTable["week0timer3OpenTime"] = string2Int(
-                                                 controlCmd["week0timer3_opentime"])
+            myTable["week0timer3OpenTime"] = string2Int(controlCmd["week0timer3_opentime"])
         end
         if controlCmd["week0timer3_closetime"] ~= nil then
-            myTable["week0timer3CloseTime"] = string2Int(
-                                                  controlCmd["week0timer3_closetime"])
+            myTable["week0timer3CloseTime"] = string2Int(controlCmd["week0timer3_closetime"])
         end
         if controlCmd["week0timer3_set_temperature"] ~= nil then
-            myTable["week0timer3SetTemperature"] = string2Int(
-                                                       controlCmd["week0timer3_set_temperature"])
+            myTable["week0timer3SetTemperature"] = string2Int(controlCmd["week0timer3_set_temperature"])
         end
         if controlCmd["week0timer4_opentime"] ~= nil then
-            myTable["week0timer4OpenTime"] = string2Int(
-                                                 controlCmd["week0timer4_opentime"])
+            myTable["week0timer4OpenTime"] = string2Int(controlCmd["week0timer4_opentime"])
         end
         if controlCmd["week0timer4_closetime"] ~= nil then
-            myTable["week0timer4CloseTime"] = string2Int(
-                                                  controlCmd["week0timer4_closetime"])
+            myTable["week0timer4CloseTime"] = string2Int(controlCmd["week0timer4_closetime"])
         end
         if controlCmd["week0timer4_set_temperature"] ~= nil then
-            myTable["week0timer4SetTemperature"] = string2Int(
-                                                       controlCmd["week0timer4_set_temperature"])
+            myTable["week0timer4SetTemperature"] = string2Int(controlCmd["week0timer4_set_temperature"])
         end
         if controlCmd["week0timer5_opentime"] ~= nil then
-            myTable["week0timer5OpenTime"] = string2Int(
-                                                 controlCmd["week0timer5_opentime"])
+            myTable["week0timer5OpenTime"] = string2Int(controlCmd["week0timer5_opentime"])
         end
         if controlCmd["week0timer5_closetime"] ~= nil then
-            myTable["week0timer5CloseTime"] = string2Int(
-                                                  controlCmd["week0timer5_closetime"])
+            myTable["week0timer5CloseTime"] = string2Int(controlCmd["week0timer5_closetime"])
         end
         if controlCmd["week0timer5_set_temperature"] ~= nil then
-            myTable["week0timer5SetTemperature"] = string2Int(
-                                                       controlCmd["week0timer5_set_temperature"])
+            myTable["week0timer5SetTemperature"] = string2Int(controlCmd["week0timer5_set_temperature"])
         end
         if controlCmd["week0timer6_opentime"] ~= nil then
-            myTable["week0timer6OpenTime"] = string2Int(
-                                                 controlCmd["week0timer6_opentime"])
+            myTable["week0timer6OpenTime"] = string2Int(controlCmd["week0timer6_opentime"])
         end
         if controlCmd["week0timer6_closetime"] ~= nil then
-            myTable["week0timer6CloseTime"] = string2Int(
-                                                  controlCmd["week0timer6_closetime"])
+            myTable["week0timer6CloseTime"] = string2Int(controlCmd["week0timer6_closetime"])
         end
         if controlCmd["week0timer6_set_temperature"] ~= nil then
-            myTable["week0timer6SetTemperature"] = string2Int(
-                                                       controlCmd["week0timer6_set_temperature"])
+            myTable["week0timer6SetTemperature"] = string2Int(controlCmd["week0timer6_set_temperature"])
         end
         if controlCmd["week1timer1_opentime"] ~= nil then
-            myTable["week1timer1OpenTime"] = string2Int(
-                                                 controlCmd["week1timer1_opentime"])
+            myTable["week1timer1OpenTime"] = string2Int(controlCmd["week1timer1_opentime"])
         end
         if controlCmd["week1timer1_closetime"] ~= nil then
-            myTable["week1timer1CloseTime"] = string2Int(
-                                                  controlCmd["week1timer1_closetime"])
+            myTable["week1timer1CloseTime"] = string2Int(controlCmd["week1timer1_closetime"])
         end
         if controlCmd["week1timer1_set_temperature"] ~= nil then
-            myTable["week1timer1SetTemperature"] = string2Int(
-                                                       controlCmd["week1timer1_set_temperature"])
+            myTable["week1timer1SetTemperature"] = string2Int(controlCmd["week1timer1_set_temperature"])
         end
         if controlCmd["week1timer2_opentime"] ~= nil then
-            myTable["week1timer2OpenTime"] = string2Int(
-                                                 controlCmd["week1timer2_opentime"])
+            myTable["week1timer2OpenTime"] = string2Int(controlCmd["week1timer2_opentime"])
         end
         if controlCmd["week1timer2_closetime"] ~= nil then
-            myTable["week1timer2CloseTime"] = string2Int(
-                                                  controlCmd["week1timer2_closetime"])
+            myTable["week1timer2CloseTime"] = string2Int(controlCmd["week1timer2_closetime"])
         end
         if controlCmd["week1timer2_set_temperature"] ~= nil then
-            myTable["week1timer2SetTemperature"] = string2Int(
-                                                       controlCmd["week1timer2_set_temperature"])
+            myTable["week1timer2SetTemperature"] = string2Int(controlCmd["week1timer2_set_temperature"])
         end
         if controlCmd["week1timer3_opentime"] ~= nil then
-            myTable["week1timer3OpenTime"] = string2Int(
-                                                 controlCmd["week1timer3_opentime"])
+            myTable["week1timer3OpenTime"] = string2Int(controlCmd["week1timer3_opentime"])
         end
         if controlCmd["week1timer3_closetime"] ~= nil then
-            myTable["week1timer3CloseTime"] = string2Int(
-                                                  controlCmd["week1timer3_closetime"])
+            myTable["week1timer3CloseTime"] = string2Int(controlCmd["week1timer3_closetime"])
         end
         if controlCmd["week1timer3_set_temperature"] ~= nil then
-            myTable["week1timer3SetTemperature"] = string2Int(
-                                                       controlCmd["week1timer3_set_temperature"])
+            myTable["week1timer3SetTemperature"] = string2Int(controlCmd["week1timer3_set_temperature"])
         end
         if controlCmd["week1timer4_opentime"] ~= nil then
-            myTable["week1timer4OpenTime"] = string2Int(
-                                                 controlCmd["week1timer4_opentime"])
+            myTable["week1timer4OpenTime"] = string2Int(controlCmd["week1timer4_opentime"])
         end
         if controlCmd["week1timer4_closetime"] ~= nil then
-            myTable["week1timer4CloseTime"] = string2Int(
-                                                  controlCmd["week1timer4_closetime"])
+            myTable["week1timer4CloseTime"] = string2Int(controlCmd["week1timer4_closetime"])
         end
         if controlCmd["week1timer4_set_temperature"] ~= nil then
-            myTable["week1timer4SetTemperature"] = string2Int(
-                                                       controlCmd["week1timer4_set_temperature"])
+            myTable["week1timer4SetTemperature"] = string2Int(controlCmd["week1timer4_set_temperature"])
         end
         if controlCmd["week1timer5_opentime"] ~= nil then
-            myTable["week1timer5OpenTime"] = string2Int(
-                                                 controlCmd["week1timer5_opentime"])
+            myTable["week1timer5OpenTime"] = string2Int(controlCmd["week1timer5_opentime"])
         end
         if controlCmd["week1timer5_closetime"] ~= nil then
-            myTable["week1timer5CloseTime"] = string2Int(
-                                                  controlCmd["week1timer5_closetime"])
+            myTable["week1timer5CloseTime"] = string2Int(controlCmd["week1timer5_closetime"])
         end
         if controlCmd["week1timer5_set_temperature"] ~= nil then
-            myTable["week1timer5SetTemperature"] = string2Int(
-                                                       controlCmd["week1timer5_set_temperature"])
+            myTable["week1timer5SetTemperature"] = string2Int(controlCmd["week1timer5_set_temperature"])
         end
         if controlCmd["week1timer6_opentime"] ~= nil then
-            myTable["week1timer6OpenTime"] = string2Int(
-                                                 controlCmd["week1timer6_opentime"])
+            myTable["week1timer6OpenTime"] = string2Int(controlCmd["week1timer6_opentime"])
         end
         if controlCmd["week1timer6_closetime"] ~= nil then
-            myTable["week1timer6CloseTime"] = string2Int(
-                                                  controlCmd["week1timer6_closetime"])
+            myTable["week1timer6CloseTime"] = string2Int(controlCmd["week1timer6_closetime"])
         end
         if controlCmd["week1timer6_set_temperature"] ~= nil then
-            myTable["week1timer6SetTemperature"] = string2Int(
-                                                       controlCmd["week1timer6_set_temperature"])
+            myTable["week1timer6SetTemperature"] = string2Int(controlCmd["week1timer6_set_temperature"])
         end
         if controlCmd["week2timer1_opentime"] ~= nil then
-            myTable["week2timer1OpenTime"] = string2Int(
-                                                 controlCmd["week2timer1_opentime"])
+            myTable["week2timer1OpenTime"] = string2Int(controlCmd["week2timer1_opentime"])
         end
         if controlCmd["week2timer1_closetime"] ~= nil then
-            myTable["week2timer1CloseTime"] = string2Int(
-                                                  controlCmd["week2timer1_closetime"])
+            myTable["week2timer1CloseTime"] = string2Int(controlCmd["week2timer1_closetime"])
         end
         if controlCmd["week2timer1_set_temperature"] ~= nil then
-            myTable["week2timer1SetTemperature"] = string2Int(
-                                                       controlCmd["week2timer1_set_temperature"])
+            myTable["week2timer1SetTemperature"] = string2Int(controlCmd["week2timer1_set_temperature"])
         end
         if controlCmd["week2timer2_opentime"] ~= nil then
-            myTable["week2timer2OpenTime"] = string2Int(
-                                                 controlCmd["week2timer2_opentime"])
+            myTable["week2timer2OpenTime"] = string2Int(controlCmd["week2timer2_opentime"])
         end
         if controlCmd["week2timer2_closetime"] ~= nil then
-            myTable["week2timer2CloseTime"] = string2Int(
-                                                  controlCmd["week2timer2_closetime"])
+            myTable["week2timer2CloseTime"] = string2Int(controlCmd["week2timer2_closetime"])
         end
         if controlCmd["week2timer2_set_temperature"] ~= nil then
-            myTable["week2timer2SetTemperature"] = string2Int(
-                                                       controlCmd["week2timer2_set_temperature"])
+            myTable["week2timer2SetTemperature"] = string2Int(controlCmd["week2timer2_set_temperature"])
         end
         if controlCmd["week2timer3_opentime"] ~= nil then
-            myTable["week2timer3OpenTime"] = string2Int(
-                                                 controlCmd["week2timer3_opentime"])
+            myTable["week2timer3OpenTime"] = string2Int(controlCmd["week2timer3_opentime"])
         end
         if controlCmd["week2timer3_closetime"] ~= nil then
-            myTable["week2timer3CloseTime"] = string2Int(
-                                                  controlCmd["week2timer3_closetime"])
+            myTable["week2timer3CloseTime"] = string2Int(controlCmd["week2timer3_closetime"])
         end
         if controlCmd["week2timer3_set_temperature"] ~= nil then
-            myTable["week2timer3SetTemperature"] = string2Int(
-                                                       controlCmd["week2timer3_set_temperature"])
+            myTable["week2timer3SetTemperature"] = string2Int(controlCmd["week2timer3_set_temperature"])
         end
         if controlCmd["week2timer4_opentime"] ~= nil then
-            myTable["week2timer4OpenTime"] = string2Int(
-                                                 controlCmd["week2timer4_opentime"])
+            myTable["week2timer4OpenTime"] = string2Int(controlCmd["week2timer4_opentime"])
         end
         if controlCmd["week2timer4_closetime"] ~= nil then
-            myTable["week2timer4CloseTime"] = string2Int(
-                                                  controlCmd["week2timer4_closetime"])
+            myTable["week2timer4CloseTime"] = string2Int(controlCmd["week2timer4_closetime"])
         end
         if controlCmd["week2timer4_set_temperature"] ~= nil then
-            myTable["week2timer4SetTemperature"] = string2Int(
-                                                       controlCmd["week2timer4_set_temperature"])
+            myTable["week2timer4SetTemperature"] = string2Int(controlCmd["week2timer4_set_temperature"])
         end
         if controlCmd["week2timer5_opentime"] ~= nil then
-            myTable["week2timer5OpenTime"] = string2Int(
-                                                 controlCmd["week2timer5_opentime"])
+            myTable["week2timer5OpenTime"] = string2Int(controlCmd["week2timer5_opentime"])
         end
         if controlCmd["week2timer5_closetime"] ~= nil then
-            myTable["week2timer5CloseTime"] = string2Int(
-                                                  controlCmd["week2timer5_closetime"])
+            myTable["week2timer5CloseTime"] = string2Int(controlCmd["week2timer5_closetime"])
         end
         if controlCmd["week2timer5_set_temperature"] ~= nil then
-            myTable["week2timer5SetTemperature"] = string2Int(
-                                                       controlCmd["week2timer5_set_temperature"])
+            myTable["week2timer5SetTemperature"] = string2Int(controlCmd["week2timer5_set_temperature"])
         end
         if controlCmd["week2timer6_opentime"] ~= nil then
-            myTable["week2timer6OpenTime"] = string2Int(
-                                                 controlCmd["week2timer6_opentime"])
+            myTable["week2timer6OpenTime"] = string2Int(controlCmd["week2timer6_opentime"])
         end
         if controlCmd["week2timer6_closetime"] ~= nil then
-            myTable["week2timer6CloseTime"] = string2Int(
-                                                  controlCmd["week2timer6_closetime"])
+            myTable["week2timer6CloseTime"] = string2Int(controlCmd["week2timer6_closetime"])
         end
         if controlCmd["week2timer6_set_temperature"] ~= nil then
-            myTable["week2timer6SetTemperature"] = string2Int(
-                                                       controlCmd["week2timer6_set_temperature"])
+            myTable["week2timer6SetTemperature"] = string2Int(controlCmd["week2timer6_set_temperature"])
         end
         if controlCmd["week3timer1_opentime"] ~= nil then
-            myTable["week3timer1OpenTime"] = string2Int(
-                                                 controlCmd["week3timer1_opentime"])
+            myTable["week3timer1OpenTime"] = string2Int(controlCmd["week3timer1_opentime"])
         end
         if controlCmd["week3timer1_closetime"] ~= nil then
-            myTable["week3timer1CloseTime"] = string2Int(
-                                                  controlCmd["week3timer1_closetime"])
+            myTable["week3timer1CloseTime"] = string2Int(controlCmd["week3timer1_closetime"])
         end
         if controlCmd["week3timer1_set_temperature"] ~= nil then
-            myTable["week3timer1SetTemperature"] = string2Int(
-                                                       controlCmd["week3timer1_set_temperature"])
+            myTable["week3timer1SetTemperature"] = string2Int(controlCmd["week3timer1_set_temperature"])
         end
         if controlCmd["week3timer2_opentime"] ~= nil then
-            myTable["week3timer2OpenTime"] = string2Int(
-                                                 controlCmd["week3timer2_opentime"])
+            myTable["week3timer2OpenTime"] = string2Int(controlCmd["week3timer2_opentime"])
         end
         if controlCmd["week3timer2_closetime"] ~= nil then
-            myTable["week3timer2CloseTime"] = string2Int(
-                                                  controlCmd["week3timer2_closetime"])
+            myTable["week3timer2CloseTime"] = string2Int(controlCmd["week3timer2_closetime"])
         end
         if controlCmd["week3timer2_set_temperature"] ~= nil then
-            myTable["week3timer2SetTemperature"] = string2Int(
-                                                       controlCmd["week3timer2_set_temperature"])
+            myTable["week3timer2SetTemperature"] = string2Int(controlCmd["week3timer2_set_temperature"])
         end
         if controlCmd["week3timer3_opentime"] ~= nil then
-            myTable["week3timer3OpenTime"] = string2Int(
-                                                 controlCmd["week3timer3_opentime"])
+            myTable["week3timer3OpenTime"] = string2Int(controlCmd["week3timer3_opentime"])
         end
         if controlCmd["week3timer3_closetime"] ~= nil then
-            myTable["week3timer3CloseTime"] = string2Int(
-                                                  controlCmd["week3timer3_closetime"])
+            myTable["week3timer3CloseTime"] = string2Int(controlCmd["week3timer3_closetime"])
         end
         if controlCmd["week3timer3_set_temperature"] ~= nil then
-            myTable["week3timer3SetTemperature"] = string2Int(
-                                                       controlCmd["week3timer3_set_temperature"])
+            myTable["week3timer3SetTemperature"] = string2Int(controlCmd["week3timer3_set_temperature"])
         end
         if controlCmd["week3timer4_opentime"] ~= nil then
-            myTable["week3timer4OpenTime"] = string2Int(
-                                                 controlCmd["week3timer4_opentime"])
+            myTable["week3timer4OpenTime"] = string2Int(controlCmd["week3timer4_opentime"])
         end
         if controlCmd["week3timer4_closetime"] ~= nil then
-            myTable["week3timer4CloseTime"] = string2Int(
-                                                  controlCmd["week3timer4_closetime"])
+            myTable["week3timer4CloseTime"] = string2Int(controlCmd["week3timer4_closetime"])
         end
         if controlCmd["week3timer4_set_temperature"] ~= nil then
-            myTable["week3timer4SetTemperature"] = string2Int(
-                                                       controlCmd["week3timer4_set_temperature"])
+            myTable["week3timer4SetTemperature"] = string2Int(controlCmd["week3timer4_set_temperature"])
         end
         if controlCmd["week3timer5_opentime"] ~= nil then
-            myTable["week3timer5OpenTime"] = string2Int(
-                                                 controlCmd["week3timer5_opentime"])
+            myTable["week3timer5OpenTime"] = string2Int(controlCmd["week3timer5_opentime"])
         end
         if controlCmd["week3timer5_closetime"] ~= nil then
-            myTable["week3timer5CloseTime"] = string2Int(
-                                                  controlCmd["week3timer5_closetime"])
+            myTable["week3timer5CloseTime"] = string2Int(controlCmd["week3timer5_closetime"])
         end
         if controlCmd["week3timer5_set_temperature"] ~= nil then
-            myTable["week3timer5SetTemperature"] = string2Int(
-                                                       controlCmd["week3timer5_set_temperature"])
+            myTable["week3timer5SetTemperature"] = string2Int(controlCmd["week3timer5_set_temperature"])
         end
         if controlCmd["week3timer6_opentime"] ~= nil then
-            myTable["week3timer6OpenTime"] = string2Int(
-                                                 controlCmd["week3timer6_opentime"])
+            myTable["week3timer6OpenTime"] = string2Int(controlCmd["week3timer6_opentime"])
         end
         if controlCmd["week3timer6_closetime"] ~= nil then
-            myTable["week3timer6CloseTime"] = string2Int(
-                                                  controlCmd["week3timer6_closetime"])
+            myTable["week3timer6CloseTime"] = string2Int(controlCmd["week3timer6_closetime"])
         end
         if controlCmd["week3timer6_set_temperature"] ~= nil then
-            myTable["week3timer6SetTemperature"] = string2Int(
-                                                       controlCmd["week3timer6_set_temperature"])
+            myTable["week3timer6SetTemperature"] = string2Int(controlCmd["week3timer6_set_temperature"])
         end
         if controlCmd["week4timer1_opentime"] ~= nil then
-            myTable["week4timer1OpenTime"] = string2Int(
-                                                 controlCmd["week4timer1_opentime"])
+            myTable["week4timer1OpenTime"] = string2Int(controlCmd["week4timer1_opentime"])
         end
         if controlCmd["week4timer1_closetime"] ~= nil then
-            myTable["week4timer1CloseTime"] = string2Int(
-                                                  controlCmd["week4timer1_closetime"])
+            myTable["week4timer1CloseTime"] = string2Int(controlCmd["week4timer1_closetime"])
         end
         if controlCmd["week4timer1_set_temperature"] ~= nil then
-            myTable["week4timer1SetTemperature"] = string2Int(
-                                                       controlCmd["week4timer1_set_temperature"])
+            myTable["week4timer1SetTemperature"] = string2Int(controlCmd["week4timer1_set_temperature"])
         end
         if controlCmd["week4timer2_opentime"] ~= nil then
-            myTable["week4timer2OpenTime"] = string2Int(
-                                                 controlCmd["week4timer2_opentime"])
+            myTable["week4timer2OpenTime"] = string2Int(controlCmd["week4timer2_opentime"])
         end
         if controlCmd["week4timer2_closetime"] ~= nil then
-            myTable["week4timer2CloseTime"] = string2Int(
-                                                  controlCmd["week4timer2_closetime"])
+            myTable["week4timer2CloseTime"] = string2Int(controlCmd["week4timer2_closetime"])
         end
         if controlCmd["week4timer2_set_temperature"] ~= nil then
-            myTable["week4timer2SetTemperature"] = string2Int(
-                                                       controlCmd["week4timer2_set_temperature"])
+            myTable["week4timer2SetTemperature"] = string2Int(controlCmd["week4timer2_set_temperature"])
         end
         if controlCmd["week4timer3_opentime"] ~= nil then
-            myTable["week4timer3OpenTime"] = string2Int(
-                                                 controlCmd["week4timer3_opentime"])
+            myTable["week4timer3OpenTime"] = string2Int(controlCmd["week4timer3_opentime"])
         end
         if controlCmd["week4timer3_closetime"] ~= nil then
-            myTable["week4timer3CloseTime"] = string2Int(
-                                                  controlCmd["week4timer3_closetime"])
+            myTable["week4timer3CloseTime"] = string2Int(controlCmd["week4timer3_closetime"])
         end
         if controlCmd["week4timer3_set_temperature"] ~= nil then
-            myTable["week4timer3SetTemperature"] = string2Int(
-                                                       controlCmd["week4timer3_set_temperature"])
+            myTable["week4timer3SetTemperature"] = string2Int(controlCmd["week4timer3_set_temperature"])
         end
         if controlCmd["week4timer4_opentime"] ~= nil then
-            myTable["week4timer4OpenTime"] = string2Int(
-                                                 controlCmd["week4timer4_opentime"])
+            myTable["week4timer4OpenTime"] = string2Int(controlCmd["week4timer4_opentime"])
         end
         if controlCmd["week4timer4_closetime"] ~= nil then
-            myTable["week4timer4CloseTime"] = string2Int(
-                                                  controlCmd["week4timer4_closetime"])
+            myTable["week4timer4CloseTime"] = string2Int(controlCmd["week4timer4_closetime"])
         end
         if controlCmd["week4timer4_set_temperature"] ~= nil then
-            myTable["week4timer4SetTemperature"] = string2Int(
-                                                       controlCmd["week4timer4_set_temperature"])
+            myTable["week4timer4SetTemperature"] = string2Int(controlCmd["week4timer4_set_temperature"])
         end
         if controlCmd["week4timer5_opentime"] ~= nil then
-            myTable["week4timer5OpenTime"] = string2Int(
-                                                 controlCmd["week4timer5_opentime"])
+            myTable["week4timer5OpenTime"] = string2Int(controlCmd["week4timer5_opentime"])
         end
         if controlCmd["week4timer5_closetime"] ~= nil then
-            myTable["week4timer5CloseTime"] = string2Int(
-                                                  controlCmd["week4timer5_closetime"])
+            myTable["week4timer5CloseTime"] = string2Int(controlCmd["week4timer5_closetime"])
         end
         if controlCmd["week4timer5_set_temperature"] ~= nil then
-            myTable["week4timer5SetTemperature"] = string2Int(
-                                                       controlCmd["week4timer5_set_temperature"])
+            myTable["week4timer5SetTemperature"] = string2Int(controlCmd["week4timer5_set_temperature"])
         end
         if controlCmd["week4timer6_opentime"] ~= nil then
-            myTable["week4timer6OpenTime"] = string2Int(
-                                                 controlCmd["week4timer6_opentime"])
+            myTable["week4timer6OpenTime"] = string2Int(controlCmd["week4timer6_opentime"])
         end
         if controlCmd["week4timer6_closetime"] ~= nil then
-            myTable["week4timer6CloseTime"] = string2Int(
-                                                  controlCmd["week4timer6_closetime"])
+            myTable["week4timer6CloseTime"] = string2Int(controlCmd["week4timer6_closetime"])
         end
         if controlCmd["week4timer6_set_temperature"] ~= nil then
-            myTable["week4timer6SetTemperature"] = string2Int(
-                                                       controlCmd["week4timer6_set_temperature"])
+            myTable["week4timer6SetTemperature"] = string2Int(controlCmd["week4timer6_set_temperature"])
         end
         if controlCmd["week5timer1_opentime"] ~= nil then
-            myTable["week5timer1OpenTime"] = string2Int(
-                                                 controlCmd["week5timer1_opentime"])
+            myTable["week5timer1OpenTime"] = string2Int(controlCmd["week5timer1_opentime"])
         end
         if controlCmd["week5timer1_closetime"] ~= nil then
-            myTable["week5timer1CloseTime"] = string2Int(
-                                                  controlCmd["week5timer1_closetime"])
+            myTable["week5timer1CloseTime"] = string2Int(controlCmd["week5timer1_closetime"])
         end
         if controlCmd["week5timer1_set_temperature"] ~= nil then
-            myTable["week5timer1SetTemperature"] = string2Int(
-                                                       controlCmd["week5timer1_set_temperature"])
+            myTable["week5timer1SetTemperature"] = string2Int(controlCmd["week5timer1_set_temperature"])
         end
         if controlCmd["week5timer2_opentime"] ~= nil then
-            myTable["week5timer2OpenTime"] = string2Int(
-                                                 controlCmd["week5timer2_opentime"])
+            myTable["week5timer2OpenTime"] = string2Int(controlCmd["week5timer2_opentime"])
         end
         if controlCmd["week5timer2_closetime"] ~= nil then
-            myTable["week5timer2CloseTime"] = string2Int(
-                                                  controlCmd["week5timer2_closetime"])
+            myTable["week5timer2CloseTime"] = string2Int(controlCmd["week5timer2_closetime"])
         end
         if controlCmd["week5timer2_set_temperature"] ~= nil then
-            myTable["week5timer2SetTemperature"] = string2Int(
-                                                       controlCmd["week5timer2_set_temperature"])
+            myTable["week5timer2SetTemperature"] = string2Int(controlCmd["week5timer2_set_temperature"])
         end
         if controlCmd["week5timer3_opentime"] ~= nil then
-            myTable["week5timer3OpenTime"] = string2Int(
-                                                 controlCmd["week5timer3_opentime"])
+            myTable["week5timer3OpenTime"] = string2Int(controlCmd["week5timer3_opentime"])
         end
         if controlCmd["week5timer3_closetime"] ~= nil then
-            myTable["week5timer3CloseTime"] = string2Int(
-                                                  controlCmd["week5timer3_closetime"])
+            myTable["week5timer3CloseTime"] = string2Int(controlCmd["week5timer3_closetime"])
         end
         if controlCmd["week5timer3_set_temperature"] ~= nil then
-            myTable["week5timer3SetTemperature"] = string2Int(
-                                                       controlCmd["week5timer3_set_temperature"])
+            myTable["week5timer3SetTemperature"] = string2Int(controlCmd["week5timer3_set_temperature"])
         end
         if controlCmd["week5timer4_opentime"] ~= nil then
-            myTable["week5timer4OpenTime"] = string2Int(
-                                                 controlCmd["week5timer4_opentime"])
+            myTable["week5timer4OpenTime"] = string2Int(controlCmd["week5timer4_opentime"])
         end
         if controlCmd["week5timer4_closetime"] ~= nil then
-            myTable["week5timer4CloseTime"] = string2Int(
-                                                  controlCmd["week5timer4_closetime"])
+            myTable["week5timer4CloseTime"] = string2Int(controlCmd["week5timer4_closetime"])
         end
         if controlCmd["week5timer4_set_temperature"] ~= nil then
-            myTable["week5timer4SetTemperature"] = string2Int(
-                                                       controlCmd["week5timer4_set_temperature"])
+            myTable["week5timer4SetTemperature"] = string2Int(controlCmd["week5timer4_set_temperature"])
         end
         if controlCmd["week5timer5_opentime"] ~= nil then
-            myTable["week5timer5OpenTime"] = string2Int(
-                                                 controlCmd["week5timer5_opentime"])
+            myTable["week5timer5OpenTime"] = string2Int(controlCmd["week5timer5_opentime"])
         end
         if controlCmd["week5timer5_closetime"] ~= nil then
-            myTable["week5timer5CloseTime"] = string2Int(
-                                                  controlCmd["week5timer5_closetime"])
+            myTable["week5timer5CloseTime"] = string2Int(controlCmd["week5timer5_closetime"])
         end
         if controlCmd["week5timer5_set_temperature"] ~= nil then
-            myTable["week5timer5SetTemperature"] = string2Int(
-                                                       controlCmd["week5timer5_set_temperature"])
+            myTable["week5timer5SetTemperature"] = string2Int(controlCmd["week5timer5_set_temperature"])
         end
         if controlCmd["week5timer6_opentime"] ~= nil then
-            myTable["week5timer6OpenTime"] = string2Int(
-                                                 controlCmd["week5timer6_opentime"])
+            myTable["week5timer6OpenTime"] = string2Int(controlCmd["week5timer6_opentime"])
         end
         if controlCmd["week5timer6_closetime"] ~= nil then
-            myTable["week5timer6CloseTime"] = string2Int(
-                                                  controlCmd["week5timer6_closetime"])
+            myTable["week5timer6CloseTime"] = string2Int(controlCmd["week5timer6_closetime"])
         end
         if controlCmd["week5timer6_set_temperature"] ~= nil then
-            myTable["week5timer6SetTemperature"] = string2Int(
-                                                       controlCmd["week5timer6_set_temperature"])
+            myTable["week5timer6SetTemperature"] = string2Int(controlCmd["week5timer6_set_temperature"])
         end
         if controlCmd["week6timer1_opentime"] ~= nil then
-            myTable["week6timer1OpenTime"] = string2Int(
-                                                 controlCmd["week6timer1_opentime"])
+            myTable["week6timer1OpenTime"] = string2Int(controlCmd["week6timer1_opentime"])
         end
         if controlCmd["week6timer1_closetime"] ~= nil then
-            myTable["week6timer1CloseTime"] = string2Int(
-                                                  controlCmd["week6timer1_closetime"])
+            myTable["week6timer1CloseTime"] = string2Int(controlCmd["week6timer1_closetime"])
         end
         if controlCmd["week6timer1_set_temperature"] ~= nil then
-            myTable["week6timer1SetTemperature"] = string2Int(
-                                                       controlCmd["week6timer1_set_temperature"])
+            myTable["week6timer1SetTemperature"] = string2Int(controlCmd["week6timer1_set_temperature"])
         end
         if controlCmd["week6timer2_opentime"] ~= nil then
-            myTable["week6timer2OpenTime"] = string2Int(
-                                                 controlCmd["week6timer2_opentime"])
+            myTable["week6timer2OpenTime"] = string2Int(controlCmd["week6timer2_opentime"])
         end
         if controlCmd["week6timer2_closetime"] ~= nil then
-            myTable["week6timer2CloseTime"] = string2Int(
-                                                  controlCmd["week6timer2_closetime"])
+            myTable["week6timer2CloseTime"] = string2Int(controlCmd["week6timer2_closetime"])
         end
         if controlCmd["week6timer2_set_temperature"] ~= nil then
-            myTable["week6timer2SetTemperature"] = string2Int(
-                                                       controlCmd["week6timer2_set_temperature"])
+            myTable["week6timer2SetTemperature"] = string2Int(controlCmd["week6timer2_set_temperature"])
         end
         if controlCmd["week6timer3_opentime"] ~= nil then
-            myTable["week6timer3OpenTime"] = string2Int(
-                                                 controlCmd["week6timer3_opentime"])
+            myTable["week6timer3OpenTime"] = string2Int(controlCmd["week6timer3_opentime"])
         end
         if controlCmd["week6timer3_closetime"] ~= nil then
-            myTable["week6timer3CloseTime"] = string2Int(
-                                                  controlCmd["week6timer3_closetime"])
+            myTable["week6timer3CloseTime"] = string2Int(controlCmd["week6timer3_closetime"])
         end
         if controlCmd["week6timer3_set_temperature"] ~= nil then
-            myTable["week6timer3SetTemperature"] = string2Int(
-                                                       controlCmd["week6timer3_set_temperature"])
+            myTable["week6timer3SetTemperature"] = string2Int(controlCmd["week6timer3_set_temperature"])
         end
         if controlCmd["week6timer4_opentime"] ~= nil then
-            myTable["week6timer4OpenTime"] = string2Int(
-                                                 controlCmd["week6timer4_opentime"])
+            myTable["week6timer4OpenTime"] = string2Int(controlCmd["week6timer4_opentime"])
         end
         if controlCmd["week6timer4_closetime"] ~= nil then
-            myTable["week6timer4CloseTime"] = string2Int(
-                                                  controlCmd["week6timer4_closetime"])
+            myTable["week6timer4CloseTime"] = string2Int(controlCmd["week6timer4_closetime"])
         end
         if controlCmd["week6timer4_set_temperature"] ~= nil then
-            myTable["week6timer4SetTemperature"] = string2Int(
-                                                       controlCmd["week6timer4_set_temperature"])
+            myTable["week6timer4SetTemperature"] = string2Int(controlCmd["week6timer4_set_temperature"])
         end
         if controlCmd["week6timer5_opentime"] ~= nil then
-            myTable["week6timer5OpenTime"] = string2Int(
-                                                 controlCmd["week6timer5_opentime"])
+            myTable["week6timer5OpenTime"] = string2Int(controlCmd["week6timer5_opentime"])
         end
         if controlCmd["week6timer5_closetime"] ~= nil then
-            myTable["week6timer5CloseTime"] = string2Int(
-                                                  controlCmd["week6timer5_closetime"])
+            myTable["week6timer5CloseTime"] = string2Int(controlCmd["week6timer5_closetime"])
         end
         if controlCmd["week6timer5_set_temperature"] ~= nil then
-            myTable["week6timer5SetTemperature"] = string2Int(
-                                                       controlCmd["week6timer5_set_temperature"])
+            myTable["week6timer5SetTemperature"] = string2Int(controlCmd["week6timer5_set_temperature"])
         end
         if controlCmd["week6timer6_opentime"] ~= nil then
-            myTable["week6timer6OpenTime"] = string2Int(
-                                                 controlCmd["week6timer6_opentime"])
+            myTable["week6timer6OpenTime"] = string2Int(controlCmd["week6timer6_opentime"])
         end
         if controlCmd["week6timer6_closetime"] ~= nil then
-            myTable["week6timer6CloseTime"] = string2Int(
-                                                  controlCmd["week6timer6_closetime"])
+            myTable["week6timer6CloseTime"] = string2Int(controlCmd["week6timer6_closetime"])
         end
         if controlCmd["week6timer6_set_temperature"] ~= nil then
-            myTable["week6timer6SetTemperature"] = string2Int(
-                                                       controlCmd["week6timer6_set_temperature"])
+            myTable["week6timer6SetTemperature"] = string2Int(controlCmd["week6timer6_set_temperature"])
         end
         if controlCmd["week0timer1_modevalue"] ~= nil then
             if controlCmd["week0timer1_modevalue"] == "energy" then
@@ -2251,24 +2307,28 @@ local function jsonToModel(controlJson)
     end
 end
 local function binToModel(binData)
-    if (#binData == 0) then return nil end
+    if #binData == 0 then return nil end
     local messageBytes = {}
-    for i = 0, 176 do messageBytes[i] = 0 end
-    for i = 0, #binData do messageBytes[i] = binData[i] end
-    if (myTable["dataType"] == 0x03 or myTable["dataType"] == 0x05) then
+    for i = 0, 176 do
+        messageBytes[i] = 0
+    end
+    for i = 0, #binData do
+        messageBytes[i] = binData[i]
+    end
+    if myTable["dataType"] == 0x03 or myTable["dataType"] == 0x05 then
         myTable["queryType"] = messageBytes[0]
         if myTable["queryType"] == 0x01 then
             myTable["powerValue"] = bit.band(messageBytes[2], 0x01)
             myTable["energyMode"] = bit.band(messageBytes[2], 0x02)
             myTable["standardMode"] = bit.band(messageBytes[2], 0x04)
             myTable["compatibilizingMode"] = bit.band(messageBytes[2], 0x08)
-            if (myTable["energyMode"] == 0x02) then
+            if myTable["energyMode"] == 0x02 then
                 myTable["energyMode"] = 0x01
                 myTable["modeValue"] = 0x01
-            elseif (myTable["standardMode"] == 0x04) then
+            elseif myTable["standardMode"] == 0x04 then
                 myTable["standardMode"] = 0x01
                 myTable["modeValue"] = 0x02
-            elseif (myTable["compatibilizingMode"] == 0x08) then
+            elseif myTable["compatibilizingMode"] == 0x08 then
                 myTable["compatibilizingMode"] = 0x01
                 myTable["modeValue"] = 0x03
             end
@@ -2320,9 +2380,7 @@ local function binToModel(binData)
             myTable["order2StopTimeMin"] = messageBytes[33]
             myTable["hotWater"] = messageBytes[34]
             myTable["vacationMode"] = bit.band(messageBytes[35], 0x01)
-            if myTable["vacationMode"] == 0x01 then
-                myTable["vacationMode"] = 0x10
-            end
+            if myTable["vacationMode"] == 0x01 then myTable["vacationMode"] = 0x10 end
             myTable["smartGrid"] = bit.band(messageBytes[35], 0x02)
             myTable["multiTerminal"] = bit.band(messageBytes[35], 0x04)
             myTable["fahrenheitEffect"] = bit.band(messageBytes[35], 0x80)
@@ -2376,7 +2434,7 @@ local function binToModel(binData)
             myTable["vacadaysStartMonthValue"] = messageBytes[49]
             myTable["vacadaysStartDayValue"] = messageBytes[50]
             myTable["vacationTsValue"] = messageBytes[51]
-        elseif (myTable["queryType"] == 0x02) then
+        elseif myTable["queryType"] == 0x02 then
             myTable["week0timer1Effect"] = bit.band(messageBytes[2], 0x01)
             myTable["week0timer2Effect"] = bit.band(messageBytes[2], 0x02)
             myTable["week0timer3Effect"] = bit.band(messageBytes[2], 0x04)
@@ -2587,7 +2645,7 @@ local function binToModel(binData)
             myTable["week6timer6CloseTime"] = messageBytes[174]
             myTable["week6timer6SetTemperature"] = messageBytes[175]
             myTable["week6timer6ModeValue"] = messageBytes[176]
-        elseif (myTable["queryType"] == 0x03) then
+        elseif myTable["queryType"] == 0x03 then
             myTable["timer1Effect"] = bit.band(messageBytes[3], 0x01)
             myTable["timer2Effect"] = bit.band(messageBytes[3], 0x02)
             myTable["timer3Effect"] = bit.band(messageBytes[3], 0x04)
@@ -2652,7 +2710,7 @@ local function binToModel(binData)
             myTable["vacadaysStartMonthValue"] = messageBytes[12]
             myTable["vacadaysStartDayValue"] = messageBytes[13]
             myTable["vacationTsValue"] = messageBytes[14]
-        elseif (myTable["controlType"] == 0x02) then
+        elseif myTable["controlType"] == 0x02 then
             myTable["timer1Effect"] = bit.band(messageBytes[3], 0x01)
             myTable["timer2Effect"] = bit.band(messageBytes[3], 0x02)
             myTable["timer3Effect"] = bit.band(messageBytes[3], 0x04)
@@ -2695,7 +2753,7 @@ local function binToModel(binData)
             myTable["timer6CloseMin"] = messageBytes[37]
             myTable["timer6SetTemperature"] = messageBytes[38]
             myTable["timer6ModeValue"] = messageBytes[39]
-        elseif (myTable["controlType"] == 0x03) then
+        elseif myTable["controlType"] == 0x03 then
             myTable["order1Effect"] = messageBytes[2]
             myTable["order1Temp"] = messageBytes[3]
             myTable["order1TimeHour"] = messageBytes[4]
@@ -2708,14 +2766,14 @@ local function binToModel(binData)
             myTable["order1StopTimeMin"] = messageBytes[11]
             myTable["order2StopTimeHour"] = messageBytes[12]
             myTable["order2StopTimeMin"] = messageBytes[13]
-        elseif (myTable["controlType"] == 0x05) then
+        elseif myTable["controlType"] == 0x05 then
             myTable["backwaterEffect"] = messageBytes[2]
-        elseif (myTable["controlType"] == 0x06) then
+        elseif myTable["controlType"] == 0x06 then
             myTable["sterilizeEffect"] = bit.band(messageBytes[2], 0x80)
             myTable["autoSterilizeWeek"] = messageBytes[3]
             myTable["autoSterilizeHour"] = messageBytes[4]
             myTable["autoSterilizeMinute"] = messageBytes[5]
-        elseif (myTable["controlType"] == 0x07) then
+        elseif myTable["controlType"] == 0x07 then
             myTable["week0timer1Effect"] = bit.band(messageBytes[2], 0x01)
             myTable["week0timer2Effect"] = bit.band(messageBytes[2], 0x02)
             myTable["week0timer3Effect"] = bit.band(messageBytes[2], 0x04)
@@ -2930,22 +2988,23 @@ local function binToModel(binData)
     end
 end
 function jsonToData(jsonCmd)
-    if (#jsonCmd == 0) then return nil end
+    if #jsonCmd == 0 then return nil end
     local json = decode(jsonCmd)
     local deviceSubType = json["deviceinfo"]["deviceSubType"]
-    if (deviceSubType == 1) then end
+    if deviceSubType == 1 then
+    end
     local query = json["query"]
     local control = json["control"]
     local status = json["status"]
     local infoM = {}
     local bodyBytes = {}
-    if (query) then
-        if (query["query_type"] ~= nil) then
-            if (string2Int(query["query_type"]) == 0x01) then
+    if query then
+        if query["query_type"] ~= nil then
+            if string2Int(query["query_type"]) == 0x01 then
                 bodyBytes[0] = 0x01
-            elseif (string2Int(query["query_type"]) == 0x02) then
+            elseif string2Int(query["query_type"]) == 0x02 then
                 bodyBytes[0] = 0x02
-            elseif (string2Int(query["query_type"]) == 0x03) then
+            elseif string2Int(query["query_type"]) == 0x03 then
                 bodyBytes[0] = 0x03
             end
         else
@@ -2953,30 +3012,38 @@ function jsonToData(jsonCmd)
         end
         bodyBytes[1] = 0x01
         infoM = getTotalMsg(bodyBytes, BYTE_QUERYL_REQUEST)
-    elseif (control) then
-        if (status) then jsonToModel(status) end
-        if (control) then jsonToModel(control) end
-        if (myTable["controlType"] == 0x01) then
-            for i = 0, 21 do bodyBytes[i] = 0 end
+    elseif control then
+        if status then jsonToModel(status) end
+        if control then jsonToModel(control) end
+        if myTable["controlType"] == 0x01 then
+            for i = 0, 21 do
+                bodyBytes[i] = 0
+            end
             bodyBytes[0] = 0x01
             bodyBytes[1] = 0x01
             bodyBytes[2] = myTable["powerValue"]
             if control[KEY_MODE] ~= nil then
                 bodyBytes[3] = myTable["modeValue"]
             else
-                if (status["energy_mode"] ~= nil and status["energy_mode"] ==
-                    VALUE_FUNCTION_ON) or myTable["energyMode"] == BYTE_POWER_ON then
+                if
+                    (status["energy_mode"] ~= nil and status["energy_mode"] == VALUE_FUNCTION_ON)
+                    or myTable["energyMode"] == BYTE_POWER_ON
+                then
                     bodyBytes[3] = 0x01
-                elseif (status["standard_mode"] ~= nil and
-                    status["standard_mode"] == VALUE_FUNCTION_ON) or
-                    myTable["standardMode"] == BYTE_POWER_ON then
+                elseif
+                    (status["standard_mode"] ~= nil and status["standard_mode"] == VALUE_FUNCTION_ON)
+                    or myTable["standardMode"] == BYTE_POWER_ON
+                then
                     bodyBytes[3] = 0x02
-                elseif (status["compatibilizing_mode"] ~= nil and
-                    status["compatibilizing_mode"] == VALUE_FUNCTION_ON) or
-                    myTable["compatibilizingMode"] == BYTE_POWER_ON then
+                elseif
+                    (status["compatibilizing_mode"] ~= nil and status["compatibilizing_mode"] == VALUE_FUNCTION_ON)
+                    or myTable["compatibilizingMode"] == BYTE_POWER_ON
+                then
                     bodyBytes[3] = 0x03
-                elseif (status["smart_mode"] ~= nil and status["smart_mode"] ==
-                    VALUE_FUNCTION_ON) or myTable["smartMode"] == BYTE_POWER_ON then
+                elseif
+                    (status["smart_mode"] ~= nil and status["smart_mode"] == VALUE_FUNCTION_ON)
+                    or myTable["smartMode"] == BYTE_POWER_ON
+                then
                     bodyBytes[3] = 0x04
                 else
                     bodyBytes[3] = myTable["modeValue"]
@@ -2986,15 +3053,11 @@ function jsonToData(jsonCmd)
             bodyBytes[5] = myTable["trValue"]
             bodyBytes[6] = myTable["openPTC"]
             bodyBytes[7] = myTable["ptcTemp"]
-            bodyBytes[8] = bit.bor(bit.band(myTable["vacationMode"], 0x10),
-                                   bit.band(myTable["fahrenheitEffect"], 0x80))
+            bodyBytes[8] = bit.bor(bit.band(myTable["vacationMode"], 0x10), bit.band(myTable["fahrenheitEffect"], 0x80))
             bodyBytes[9] = int2String(math.modf(myTable["vacadaysValue"] / 256))
-            bodyBytes[10] =
-                int2String(math.modf(myTable["vacadaysValue"] % 256))
-            bodyBytes[11] =
-                int2String(math.modf(myTable["dateYearValue"] / 100))
-            bodyBytes[12] =
-                int2String(math.modf(myTable["dateYearValue"] % 100))
+            bodyBytes[10] = int2String(math.modf(myTable["vacadaysValue"] % 256))
+            bodyBytes[11] = int2String(math.modf(myTable["dateYearValue"] / 100))
+            bodyBytes[12] = int2String(math.modf(myTable["dateYearValue"] % 100))
             bodyBytes[13] = myTable["dateMonthValue"]
             bodyBytes[14] = myTable["dateDayValue"]
             bodyBytes[15] = myTable["dateWeekValue"]
@@ -3005,56 +3068,62 @@ function jsonToData(jsonCmd)
             bodyBytes[20] = myTable["vacadaysStartDayValue"]
             bodyBytes[21] = myTable["vacationTsValue"]
             infoM = getTotalMsg(bodyBytes, BYTE_CONTROL_REQUEST)
-        elseif (myTable["controlType"] == 0x02) then
-            for i = 0, 39 do bodyBytes[i] = 0 end
+        elseif myTable["controlType"] == 0x02 then
+            for i = 0, 39 do
+                bodyBytes[i] = 0
+            end
             bodyBytes[0] = 0x02
             bodyBytes[1] = 0x01
             bodyBytes[2] = 0x06
-            bodyBytes[3] = bit.bor(bit.band(myTable["timer1Effect"], 0x01),
-                                   bit.band(myTable["timer2Effect"], 0x02),
-                                   bit.band(myTable["timer3Effect"], 0x04),
-                                   bit.band(myTable["timer4Effect"], 0x08),
-                                   bit.band(myTable["timer5Effect"], 0x10),
-                                   bit.band(myTable["timer6Effect"], 0x20))
-            bodyBytes[4] = myTable["timer1OpenHour"];
-            bodyBytes[5] = myTable["timer1OpenMin"];
-            bodyBytes[6] = myTable["timer1CloseHour"];
-            bodyBytes[7] = myTable["timer1CloseMin"];
-            bodyBytes[8] = myTable["timer1SetTemperature"];
-            bodyBytes[9] = myTable["timer1ModeValue"];
-            bodyBytes[10] = myTable["timer2OpenHour"];
-            bodyBytes[11] = myTable["timer2OpenMin"];
-            bodyBytes[12] = myTable["timer2CloseHour"];
-            bodyBytes[13] = myTable["timer2CloseMin"];
-            bodyBytes[14] = myTable["timer2SetTemperature"];
-            bodyBytes[15] = myTable["timer2ModeValue"];
-            bodyBytes[16] = myTable["timer3OpenHour"];
-            bodyBytes[17] = myTable["timer3OpenMin"];
-            bodyBytes[18] = myTable["timer3CloseHour"];
-            bodyBytes[19] = myTable["timer3CloseMin"];
-            bodyBytes[20] = myTable["timer3SetTemperature"];
-            bodyBytes[21] = myTable["timer3ModeValue"];
-            bodyBytes[22] = myTable["timer4OpenHour"];
-            bodyBytes[23] = myTable["timer4OpenMin"];
-            bodyBytes[24] = myTable["timer4CloseHour"];
-            bodyBytes[25] = myTable["timer4CloseMin"];
-            bodyBytes[26] = myTable["timer4SetTemperature"];
-            bodyBytes[27] = myTable["timer4ModeValue"];
-            bodyBytes[28] = myTable["timer5OpenHour"];
-            bodyBytes[29] = myTable["timer5OpenMin"];
-            bodyBytes[30] = myTable["timer5CloseHour"];
-            bodyBytes[31] = myTable["timer5CloseMin"];
-            bodyBytes[32] = myTable["timer5SetTemperature"];
-            bodyBytes[33] = myTable["timer5ModeValue"];
-            bodyBytes[34] = myTable["timer6OpenHour"];
-            bodyBytes[35] = myTable["timer6OpenMin"];
-            bodyBytes[36] = myTable["timer6CloseHour"];
-            bodyBytes[37] = myTable["timer6CloseMin"];
-            bodyBytes[38] = myTable["timer6SetTemperature"];
-            bodyBytes[39] = myTable["timer6ModeValue"];
+            bodyBytes[3] = bit.bor(
+                bit.band(myTable["timer1Effect"], 0x01),
+                bit.band(myTable["timer2Effect"], 0x02),
+                bit.band(myTable["timer3Effect"], 0x04),
+                bit.band(myTable["timer4Effect"], 0x08),
+                bit.band(myTable["timer5Effect"], 0x10),
+                bit.band(myTable["timer6Effect"], 0x20)
+            )
+            bodyBytes[4] = myTable["timer1OpenHour"]
+            bodyBytes[5] = myTable["timer1OpenMin"]
+            bodyBytes[6] = myTable["timer1CloseHour"]
+            bodyBytes[7] = myTable["timer1CloseMin"]
+            bodyBytes[8] = myTable["timer1SetTemperature"]
+            bodyBytes[9] = myTable["timer1ModeValue"]
+            bodyBytes[10] = myTable["timer2OpenHour"]
+            bodyBytes[11] = myTable["timer2OpenMin"]
+            bodyBytes[12] = myTable["timer2CloseHour"]
+            bodyBytes[13] = myTable["timer2CloseMin"]
+            bodyBytes[14] = myTable["timer2SetTemperature"]
+            bodyBytes[15] = myTable["timer2ModeValue"]
+            bodyBytes[16] = myTable["timer3OpenHour"]
+            bodyBytes[17] = myTable["timer3OpenMin"]
+            bodyBytes[18] = myTable["timer3CloseHour"]
+            bodyBytes[19] = myTable["timer3CloseMin"]
+            bodyBytes[20] = myTable["timer3SetTemperature"]
+            bodyBytes[21] = myTable["timer3ModeValue"]
+            bodyBytes[22] = myTable["timer4OpenHour"]
+            bodyBytes[23] = myTable["timer4OpenMin"]
+            bodyBytes[24] = myTable["timer4CloseHour"]
+            bodyBytes[25] = myTable["timer4CloseMin"]
+            bodyBytes[26] = myTable["timer4SetTemperature"]
+            bodyBytes[27] = myTable["timer4ModeValue"]
+            bodyBytes[28] = myTable["timer5OpenHour"]
+            bodyBytes[29] = myTable["timer5OpenMin"]
+            bodyBytes[30] = myTable["timer5CloseHour"]
+            bodyBytes[31] = myTable["timer5CloseMin"]
+            bodyBytes[32] = myTable["timer5SetTemperature"]
+            bodyBytes[33] = myTable["timer5ModeValue"]
+            bodyBytes[34] = myTable["timer6OpenHour"]
+            bodyBytes[35] = myTable["timer6OpenMin"]
+            bodyBytes[36] = myTable["timer6CloseHour"]
+            bodyBytes[37] = myTable["timer6CloseMin"]
+            bodyBytes[38] = myTable["timer6SetTemperature"]
+            bodyBytes[39] = myTable["timer6ModeValue"]
             infoM = getTotalMsg(bodyBytes, BYTE_CONTROL_REQUEST)
-        elseif (myTable["controlType"] == 0x03) then
-            for i = 0, 13 do bodyBytes[i] = 0 end
+        elseif myTable["controlType"] == 0x03 then
+            for i = 0, 13 do
+                bodyBytes[i] = 0
+            end
             bodyBytes[0] = 0x03
             bodyBytes[1] = 0x01
             bodyBytes[2] = myTable["order1Effect"]
@@ -3070,14 +3139,18 @@ function jsonToData(jsonCmd)
             bodyBytes[12] = myTable["order2StopTimeHour"]
             bodyBytes[13] = myTable["order2StopTimeMin"]
             infoM = getTotalMsg(bodyBytes, BYTE_CONTROL_REQUEST)
-        elseif (myTable["controlType"] == 0x05) then
-            for i = 0, 2 do bodyBytes[i] = 0 end
+        elseif myTable["controlType"] == 0x05 then
+            for i = 0, 2 do
+                bodyBytes[i] = 0
+            end
             bodyBytes[0] = 0x05
             bodyBytes[1] = 0x01
             bodyBytes[2] = myTable["backwaterEffect"]
             infoM = getTotalMsg(bodyBytes, BYTE_CONTROL_REQUEST)
-        elseif (myTable["controlType"] == 0x06) then
-            for i = 0, 2 do bodyBytes[i] = 0 end
+        elseif myTable["controlType"] == 0x06 then
+            for i = 0, 2 do
+                bodyBytes[i] = 0
+            end
             bodyBytes[0] = 0x06
             bodyBytes[1] = 0x01
             bodyBytes[2] = myTable["sterilizeEffect"]
@@ -3085,52 +3158,68 @@ function jsonToData(jsonCmd)
             bodyBytes[4] = myTable["autoSterilizeHour"]
             bodyBytes[5] = myTable["autoSterilizeMinute"]
             infoM = getTotalMsg(bodyBytes, BYTE_CONTROL_REQUEST)
-        elseif (myTable["controlType"] == 0x07) then
-            for i = 0, 176 do bodyBytes[i] = 0 end
+        elseif myTable["controlType"] == 0x07 then
+            for i = 0, 176 do
+                bodyBytes[i] = 0
+            end
             bodyBytes[0] = 0x07
             bodyBytes[1] = 0x01
-            bodyBytes[2] = bit.bor(bit.band(myTable["week0timer1Effect"], 0x01),
-                                   bit.band(myTable["week0timer2Effect"], 0x02),
-                                   bit.band(myTable["week0timer3Effect"], 0x04),
-                                   bit.band(myTable["week0timer4Effect"], 0x08),
-                                   bit.band(myTable["week0timer5Effect"], 0x10),
-                                   bit.band(myTable["week0timer6Effect"], 0x20))
-            bodyBytes[3] = bit.bor(bit.band(myTable["week1timer1Effect"], 0x01),
-                                   bit.band(myTable["week1timer2Effect"], 0x02),
-                                   bit.band(myTable["week1timer3Effect"], 0x04),
-                                   bit.band(myTable["week1timer4Effect"], 0x08),
-                                   bit.band(myTable["week1timer5Effect"], 0x10),
-                                   bit.band(myTable["week1timer6Effect"], 0x20))
-            bodyBytes[4] = bit.bor(bit.band(myTable["week2timer1Effect"], 0x01),
-                                   bit.band(myTable["week2timer2Effect"], 0x02),
-                                   bit.band(myTable["week2timer3Effect"], 0x04),
-                                   bit.band(myTable["week2timer4Effect"], 0x08),
-                                   bit.band(myTable["week2timer5Effect"], 0x10),
-                                   bit.band(myTable["week2timer6Effect"], 0x20))
-            bodyBytes[5] = bit.bor(bit.band(myTable["week3timer1Effect"], 0x01),
-                                   bit.band(myTable["week3timer2Effect"], 0x02),
-                                   bit.band(myTable["week3timer3Effect"], 0x04),
-                                   bit.band(myTable["week3timer4Effect"], 0x08),
-                                   bit.band(myTable["week3timer5Effect"], 0x10),
-                                   bit.band(myTable["week3timer6Effect"], 0x20))
-            bodyBytes[6] = bit.bor(bit.band(myTable["week4timer1Effect"], 0x01),
-                                   bit.band(myTable["week4timer2Effect"], 0x02),
-                                   bit.band(myTable["week4timer3Effect"], 0x04),
-                                   bit.band(myTable["week4timer4Effect"], 0x08),
-                                   bit.band(myTable["week4timer5Effect"], 0x10),
-                                   bit.band(myTable["week4timer6Effect"], 0x20))
-            bodyBytes[7] = bit.bor(bit.band(myTable["week5timer1Effect"], 0x01),
-                                   bit.band(myTable["week5timer2Effect"], 0x02),
-                                   bit.band(myTable["week5timer3Effect"], 0x04),
-                                   bit.band(myTable["week5timer4Effect"], 0x08),
-                                   bit.band(myTable["week5timer5Effect"], 0x10),
-                                   bit.band(myTable["week5timer6Effect"], 0x20))
-            bodyBytes[8] = bit.bor(bit.band(myTable["week6timer1Effect"], 0x01),
-                                   bit.band(myTable["week6timer2Effect"], 0x02),
-                                   bit.band(myTable["week6timer3Effect"], 0x04),
-                                   bit.band(myTable["week6timer4Effect"], 0x08),
-                                   bit.band(myTable["week6timer5Effect"], 0x10),
-                                   bit.band(myTable["week6timer6Effect"], 0x20))
+            bodyBytes[2] = bit.bor(
+                bit.band(myTable["week0timer1Effect"], 0x01),
+                bit.band(myTable["week0timer2Effect"], 0x02),
+                bit.band(myTable["week0timer3Effect"], 0x04),
+                bit.band(myTable["week0timer4Effect"], 0x08),
+                bit.band(myTable["week0timer5Effect"], 0x10),
+                bit.band(myTable["week0timer6Effect"], 0x20)
+            )
+            bodyBytes[3] = bit.bor(
+                bit.band(myTable["week1timer1Effect"], 0x01),
+                bit.band(myTable["week1timer2Effect"], 0x02),
+                bit.band(myTable["week1timer3Effect"], 0x04),
+                bit.band(myTable["week1timer4Effect"], 0x08),
+                bit.band(myTable["week1timer5Effect"], 0x10),
+                bit.band(myTable["week1timer6Effect"], 0x20)
+            )
+            bodyBytes[4] = bit.bor(
+                bit.band(myTable["week2timer1Effect"], 0x01),
+                bit.band(myTable["week2timer2Effect"], 0x02),
+                bit.band(myTable["week2timer3Effect"], 0x04),
+                bit.band(myTable["week2timer4Effect"], 0x08),
+                bit.band(myTable["week2timer5Effect"], 0x10),
+                bit.band(myTable["week2timer6Effect"], 0x20)
+            )
+            bodyBytes[5] = bit.bor(
+                bit.band(myTable["week3timer1Effect"], 0x01),
+                bit.band(myTable["week3timer2Effect"], 0x02),
+                bit.band(myTable["week3timer3Effect"], 0x04),
+                bit.band(myTable["week3timer4Effect"], 0x08),
+                bit.band(myTable["week3timer5Effect"], 0x10),
+                bit.band(myTable["week3timer6Effect"], 0x20)
+            )
+            bodyBytes[6] = bit.bor(
+                bit.band(myTable["week4timer1Effect"], 0x01),
+                bit.band(myTable["week4timer2Effect"], 0x02),
+                bit.band(myTable["week4timer3Effect"], 0x04),
+                bit.band(myTable["week4timer4Effect"], 0x08),
+                bit.band(myTable["week4timer5Effect"], 0x10),
+                bit.band(myTable["week4timer6Effect"], 0x20)
+            )
+            bodyBytes[7] = bit.bor(
+                bit.band(myTable["week5timer1Effect"], 0x01),
+                bit.band(myTable["week5timer2Effect"], 0x02),
+                bit.band(myTable["week5timer3Effect"], 0x04),
+                bit.band(myTable["week5timer4Effect"], 0x08),
+                bit.band(myTable["week5timer5Effect"], 0x10),
+                bit.band(myTable["week5timer6Effect"], 0x20)
+            )
+            bodyBytes[8] = bit.bor(
+                bit.band(myTable["week6timer1Effect"], 0x01),
+                bit.band(myTable["week6timer2Effect"], 0x02),
+                bit.band(myTable["week6timer3Effect"], 0x04),
+                bit.band(myTable["week6timer4Effect"], 0x08),
+                bit.band(myTable["week6timer5Effect"], 0x10),
+                bit.band(myTable["week6timer6Effect"], 0x20)
+            )
             bodyBytes[9] = myTable["week0timer1OpenTime"]
             bodyBytes[10] = myTable["week0timer1CloseTime"]
             bodyBytes[11] = myTable["week0timer1SetTemperature"]
@@ -3307,11 +3396,12 @@ function jsonToData(jsonCmd)
     return ret
 end
 function dataToJson(jsonCmd)
-    if (not jsonCmd) then return nil end
+    if not jsonCmd then return nil end
     local json = decode(jsonCmd)
     local deviceinfo = json["deviceinfo"]
     local deviceSubType = deviceinfo["deviceSubType"]
-    if (deviceSubType == 1) then end
+    if deviceSubType == 1 then
+    end
     local binData = json["msg"]["data"]
     local info = {}
     local msgBytes = {}
@@ -3320,375 +3410,374 @@ function dataToJson(jsonCmd)
     local bodyLength = 0
     local msgSubType = 0
     info = string2table(binData)
-    if (#info < 11) then return nil end
-    for i = 1, #info do msgBytes[i - 1] = info[i] end
+    if #info < 11 then return nil end
+    for i = 1, #info do
+        msgBytes[i - 1] = info[i]
+    end
     msgLength = msgBytes[1]
     bodyLength = msgLength - BYTE_PROTOCOL_LENGTH - 1
     myTable["dataType"] = msgBytes[9]
     msgSubType = msgBytes[10]
     local sumRes = makeSum(msgBytes, 1, msgLength - 1)
-    if (sumRes ~= msgBytes[msgLength]) then end
+    if sumRes ~= msgBytes[msgLength] then
+    end
     local streams = {}
     streams[KEY_VERSION] = VALUE_VERSION
     for i = 0, bodyLength do
         bodyBytes[i] = msgBytes[i + BYTE_PROTOCOL_LENGTH]
     end
     binToModel(bodyBytes)
-    if (((myTable["dataType"] == BYTE_AUTO_REPORT) and (msgSubType == 0x01)) or
-        ((myTable["dataType"] == BYTE_QUERYL_REQUEST) and (msgSubType == 0x01))) then
-        if (myTable["powerValue"] == BYTE_POWER_ON) then
+    if
+        ((myTable["dataType"] == BYTE_AUTO_REPORT) and (msgSubType == 0x01))
+        or ((myTable["dataType"] == BYTE_QUERYL_REQUEST) and (msgSubType == 0x01))
+    then
+        if myTable["powerValue"] == BYTE_POWER_ON then
             streams[KEY_POWER] = VALUE_FUNCTION_ON
-        elseif (myTable["powerValue"] == BYTE_POWER_OFF) then
+        elseif myTable["powerValue"] == BYTE_POWER_OFF then
             streams[KEY_POWER] = VALUE_FUNCTION_OFF
         end
-        if (myTable["energyMode"] == BYTE_POWER_ON) then
+        if myTable["energyMode"] == BYTE_POWER_ON then
             streams["energy_mode"] = VALUE_FUNCTION_ON
             streams[KEY_MODE] = "energy"
-        elseif (myTable["energyMode"] == BYTE_POWER_OFF) then
+        elseif myTable["energyMode"] == BYTE_POWER_OFF then
             streams["energy_mode"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["standardMode"] == BYTE_POWER_ON) then
+        if myTable["standardMode"] == BYTE_POWER_ON then
             streams["standard_mode"] = VALUE_FUNCTION_ON
             streams[KEY_MODE] = "standard"
-        elseif (myTable["standardMode"] == BYTE_POWER_OFF) then
+        elseif myTable["standardMode"] == BYTE_POWER_OFF then
             streams["standard_mode"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["compatibilizingMode"] == BYTE_POWER_ON) then
+        if myTable["compatibilizingMode"] == BYTE_POWER_ON then
             streams["compatibilizing_mode"] = VALUE_FUNCTION_ON
             streams[KEY_MODE] = "compatibilizing"
-        elseif (myTable["compatibilizingMode"] == BYTE_POWER_OFF) then
+        elseif myTable["compatibilizingMode"] == BYTE_POWER_OFF then
             streams["compatibilizing_mode"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["heatValue"] == BYTE_POWER_ON) then
+        if myTable["heatValue"] == BYTE_POWER_ON then
             streams["high_heat"] = VALUE_FUNCTION_ON
-        elseif (myTable["heatValue"] == BYTE_POWER_OFF) then
+        elseif myTable["heatValue"] == BYTE_POWER_OFF then
             streams["high_heat"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["dicaryonHeat"] == BYTE_POWER_ON) then
+        if myTable["dicaryonHeat"] == BYTE_POWER_ON then
             streams["dicaryon_heat"] = VALUE_FUNCTION_ON
-        elseif (myTable["dicaryonHeat"] == BYTE_POWER_OFF) then
+        elseif myTable["dicaryonHeat"] == BYTE_POWER_OFF then
             streams["dicaryon_heat"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["eco"] == BYTE_POWER_ON) then
+        if myTable["eco"] == BYTE_POWER_ON then
             streams["eco"] = VALUE_FUNCTION_ON
-        elseif (myTable["eco"] == BYTE_POWER_OFF) then
+        elseif myTable["eco"] == BYTE_POWER_OFF then
             streams["eco"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["vacationMode"] == 0x10) then
+        if myTable["vacationMode"] == 0x10 then
             streams["vacation"] = VALUE_FUNCTION_ON
-        elseif (myTable["vacationMode"] == 0) then
+        elseif myTable["vacationMode"] == 0 then
             streams["vacation"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["fahrenheitEffect"] == 0x80) then
+        if myTable["fahrenheitEffect"] == 0x80 then
             streams["fahrenheit_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["fahrenheitEffect"] == 0) then
+        elseif myTable["fahrenheitEffect"] == 0 then
             streams["fahrenheit_effect"] = VALUE_FUNCTION_OFF
         end
         streams["set_temperature"] = int2String(myTable["tsValue"])
         streams["water_box_temperature"] = int2String(myTable["washBoxTemp"])
         streams["water_box_top_temperature"] = int2String(myTable["boxTopTemp"])
-        streams["water_box_bottom_temperature"] = int2String(
-                                                      myTable["boxBottomTemp"])
+        streams["water_box_bottom_temperature"] = int2String(myTable["boxBottomTemp"])
         streams["condensator_temperature"] = int2String(myTable["t3Value"])
         streams["outdoor_temperature"] = int2String(myTable["t4Value"])
-        streams["compressor_top_temperature"] = int2String(
-                                                    myTable["compressorTopTemp"])
+        streams["compressor_top_temperature"] = int2String(myTable["compressorTopTemp"])
         streams["set_temperature_max"] = int2String(myTable["tsMaxValue"])
         streams["set_temperature_min"] = int2String(myTable["tsMinValue"])
         streams[KEY_ERROR_CODE] = int2String(myTable["errorCode"])
         streams["set_vacationdays"] = int2String(myTable["vacadaysValue"])
-        streams["set_vacation_start_year"] = int2String(
-                                                 myTable["vacadaysStartYearValue"])
-        streams["set_vacation_start_month"] = int2String(
-                                                  myTable["vacadaysStartMonthValue"])
-        streams["set_vacation_start_day"] = int2String(
-                                                myTable["vacadaysStartDayValue"])
-        streams["set_vacation_temperature"] = int2String(
-                                                  myTable["vacationTsValue"])
-        if (myTable["smartGrid"] == 0x02) then
+        streams["set_vacation_start_year"] = int2String(myTable["vacadaysStartYearValue"])
+        streams["set_vacation_start_month"] = int2String(myTable["vacadaysStartMonthValue"])
+        streams["set_vacation_start_day"] = int2String(myTable["vacadaysStartDayValue"])
+        streams["set_vacation_temperature"] = int2String(myTable["vacationTsValue"])
+        if myTable["smartGrid"] == 0x02 then
             streams["smart_grid"] = VALUE_FUNCTION_ON
-        elseif (myTable["smartGrid"] == BYTE_POWER_OFF) then
+        elseif myTable["smartGrid"] == BYTE_POWER_OFF then
             streams["smart_grid"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["multiTerminal"] == 0x04) then
+        if myTable["multiTerminal"] == 0x04 then
             streams["multi_terminal"] = VALUE_FUNCTION_ON
-        elseif (myTable["multiTerminal"] == BYTE_POWER_OFF) then
+        elseif myTable["multiTerminal"] == BYTE_POWER_OFF then
             streams["multi_terminal"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["bottomElecHeat"] == BYTE_POWER_ON) then
+        if myTable["bottomElecHeat"] == BYTE_POWER_ON then
             streams["bottom_elec_heat"] = VALUE_FUNCTION_ON
-        elseif (myTable["bottomElecHeat"] == BYTE_POWER_OFF) then
+        elseif myTable["bottomElecHeat"] == BYTE_POWER_OFF then
             streams["bottom_elec_heat"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["topElecHeat"] == BYTE_POWER_ON) then
+        if myTable["topElecHeat"] == BYTE_POWER_ON then
             streams["top_elec_heat"] = VALUE_FUNCTION_ON
-        elseif (myTable["topElecHeat"] == BYTE_POWER_OFF) then
+        elseif myTable["topElecHeat"] == BYTE_POWER_OFF then
             streams["top_elec_heat"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["waterPump"] == BYTE_POWER_ON) then
+        if myTable["waterPump"] == BYTE_POWER_ON then
             streams["water_pump"] = VALUE_FUNCTION_ON
-        elseif (myTable["waterPump"] == BYTE_POWER_OFF) then
+        elseif myTable["waterPump"] == BYTE_POWER_OFF then
             streams["water_pump"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["compressor"] == BYTE_POWER_ON) then
+        if myTable["compressor"] == BYTE_POWER_ON then
             streams["compressor"] = VALUE_FUNCTION_ON
-        elseif (myTable["compressor"] == BYTE_POWER_OFF) then
+        elseif myTable["compressor"] == BYTE_POWER_OFF then
             streams["compressor"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["middleWind"] == BYTE_POWER_ON) then
+        if myTable["middleWind"] == BYTE_POWER_ON then
             streams["middle_wind"] = VALUE_FUNCTION_ON
-        elseif (myTable["middleWind"] == BYTE_POWER_OFF) then
+        elseif myTable["middleWind"] == BYTE_POWER_OFF then
             streams["middle_wind"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["fourWayValve"] == BYTE_POWER_ON) then
+        if myTable["fourWayValve"] == BYTE_POWER_ON then
             streams["four_way_valve"] = VALUE_FUNCTION_ON
-        elseif (myTable["fourWayValve"] == BYTE_POWER_OFF) then
+        elseif myTable["fourWayValve"] == BYTE_POWER_OFF then
             streams["four_way_valve"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["lowWind"] == BYTE_POWER_ON) then
+        if myTable["lowWind"] == BYTE_POWER_ON then
             streams["low_wind"] = VALUE_FUNCTION_ON
-        elseif (myTable["lowWind"] == BYTE_POWER_OFF) then
+        elseif myTable["lowWind"] == BYTE_POWER_OFF then
             streams["low_wind"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["highWind"] == BYTE_POWER_ON) then
+        if myTable["highWind"] == BYTE_POWER_ON then
             streams["high_wind"] = VALUE_FUNCTION_ON
-        elseif (myTable["highWind"] == BYTE_POWER_OFF) then
+        elseif myTable["highWind"] == BYTE_POWER_OFF then
             streams["high_wind"] = VALUE_FUNCTION_OFF
         end
         streams["type_info"] = int2String(myTable["typeInfo"])
-        if (myTable["smartMode"] == BYTE_POWER_ON) then
+        if myTable["smartMode"] == BYTE_POWER_ON then
             streams["smart_mode"] = VALUE_FUNCTION_ON
-        elseif (myTable["smartMode"] == BYTE_POWER_OFF) then
+        elseif myTable["smartMode"] == BYTE_POWER_OFF then
             streams["smart_mode"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["backwaterEffect"] == BYTE_POWER_ON) then
+        if myTable["backwaterEffect"] == BYTE_POWER_ON then
             streams["backwater_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["backwaterEffect"] == BYTE_POWER_OFF) then
+        elseif myTable["backwaterEffect"] == BYTE_POWER_OFF then
             streams["backwater_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["sterilizeEffect"] == 0x80) then
+        if myTable["sterilizeEffect"] == 0x80 then
             streams["sterilize_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["sterilizeEffect"] == BYTE_POWER_OFF) then
+        elseif myTable["sterilizeEffect"] == BYTE_POWER_OFF then
             streams["sterilize_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["order1Effect"] == BYTE_POWER_ON) then
+        if myTable["order1Effect"] == BYTE_POWER_ON then
             streams["order1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["order1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["order1Effect"] == BYTE_POWER_OFF then
             streams["order1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["order2Effect"] == BYTE_POWER_ON) then
+        if myTable["order2Effect"] == BYTE_POWER_ON then
             streams["order2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["order2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["order2Effect"] == BYTE_POWER_OFF then
             streams["order2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer1Effect"] == 0x01) then
+        if myTable["week0timer1Effect"] == 0x01 then
             streams["week0timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer1Effect"] == 0) then
+        elseif myTable["week0timer1Effect"] == 0 then
             streams["week0timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer2Effect"] == 0x02) then
+        if myTable["week0timer2Effect"] == 0x02 then
             streams["week0timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer2Effect"] == BYTE_POWER_OFF then
             streams["week0timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer3Effect"] == 0x04) then
+        if myTable["week0timer3Effect"] == 0x04 then
             streams["week0timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer3Effect"] == BYTE_POWER_OFF then
             streams["week0timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer4Effect"] == 0x80) then
+        if myTable["week0timer4Effect"] == 0x80 then
             streams["week0timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer4Effect"] == BYTE_POWER_OFF then
             streams["week0timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer5Effect"] == 0x10) then
+        if myTable["week0timer5Effect"] == 0x10 then
             streams["week0timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer5Effect"] == BYTE_POWER_OFF then
             streams["week0timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer6Effect"] == 0x20) then
+        if myTable["week0timer6Effect"] == 0x20 then
             streams["week0timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer6Effect"] == BYTE_POWER_OFF then
             streams["week0timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer1Effect"] == 0x01) then
+        if myTable["week1timer1Effect"] == 0x01 then
             streams["week1timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer1Effect"] == BYTE_POWER_OFF then
             streams["week1timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer2Effect"] == 0x02) then
+        if myTable["week1timer2Effect"] == 0x02 then
             streams["week1timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer2Effect"] == BYTE_POWER_OFF then
             streams["week1timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer3Effect"] == 0x04) then
+        if myTable["week1timer3Effect"] == 0x04 then
             streams["week1timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer3Effect"] == BYTE_POWER_OFF then
             streams["week1timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer4Effect"] == 0x08) then
+        if myTable["week1timer4Effect"] == 0x08 then
             streams["week1timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer4Effect"] == BYTE_POWER_OFF then
             streams["week1timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer5Effect"] == 0x10) then
+        if myTable["week1timer5Effect"] == 0x10 then
             streams["week1timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer5Effect"] == BYTE_POWER_OFF then
             streams["week1timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer6Effect"] == 0x20) then
+        if myTable["week1timer6Effect"] == 0x20 then
             streams["week1timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer6Effect"] == BYTE_POWER_OFF then
             streams["week1timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer1Effect"] == 0x01) then
+        if myTable["week2timer1Effect"] == 0x01 then
             streams["week2timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer1Effect"] == BYTE_POWER_OFF then
             streams["week2timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer2Effect"] == 0x02) then
+        if myTable["week2timer2Effect"] == 0x02 then
             streams["week2timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer2Effect"] == BYTE_POWER_OFF then
             streams["week2timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer3Effect"] == 0x04) then
+        if myTable["week2timer3Effect"] == 0x04 then
             streams["week2timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer3Effect"] == BYTE_POWER_OFF then
             streams["week2timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer4Effect"] == 0x08) then
+        if myTable["week2timer4Effect"] == 0x08 then
             streams["week2timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer4Effect"] == BYTE_POWER_OFF then
             streams["week2timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer5Effect"] == 0x10) then
+        if myTable["week2timer5Effect"] == 0x10 then
             streams["week2timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer5Effect"] == BYTE_POWER_OFF then
             streams["week2timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer6Effect"] == 0x20) then
+        if myTable["week2timer6Effect"] == 0x20 then
             streams["week2timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer6Effect"] == BYTE_POWER_OFF then
             streams["week2timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer1Effect"] == 0x01) then
+        if myTable["week3timer1Effect"] == 0x01 then
             streams["week3timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer1Effect"] == BYTE_POWER_OFF then
             streams["week3timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer2Effect"] == 0x02) then
+        if myTable["week3timer2Effect"] == 0x02 then
             streams["week3timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer2Effect"] == BYTE_POWER_OFF then
             streams["week3timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer3Effect"] == 0x04) then
+        if myTable["week3timer3Effect"] == 0x04 then
             streams["week3timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer3Effect"] == BYTE_POWER_OFF then
             streams["week3timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer4Effect"] == 0x08) then
+        if myTable["week3timer4Effect"] == 0x08 then
             streams["week3timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer4Effect"] == BYTE_POWER_OFF then
             streams["week3timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer5Effect"] == 0x10) then
+        if myTable["week3timer5Effect"] == 0x10 then
             streams["week3timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer5Effect"] == BYTE_POWER_OFF then
             streams["week3timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer6Effect"] == 0x20) then
+        if myTable["week3timer6Effect"] == 0x20 then
             streams["week3timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer6Effect"] == BYTE_POWER_OFF then
             streams["week3timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer1Effect"] == 0x01) then
+        if myTable["week4timer1Effect"] == 0x01 then
             streams["week4timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer1Effect"] == BYTE_POWER_OFF then
             streams["week4timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer2Effect"] == 0x02) then
+        if myTable["week4timer2Effect"] == 0x02 then
             streams["week4timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer2Effect"] == BYTE_POWER_OFF then
             streams["week4timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer3Effect"] == 0x04) then
+        if myTable["week4timer3Effect"] == 0x04 then
             streams["week4timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer3Effect"] == BYTE_POWER_OFF then
             streams["week4timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer4Effect"] == 0x08) then
+        if myTable["week4timer4Effect"] == 0x08 then
             streams["week4timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer4Effect"] == BYTE_POWER_OFF then
             streams["week4timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer5Effect"] == 0x10) then
+        if myTable["week4timer5Effect"] == 0x10 then
             streams["week4timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer5Effect"] == BYTE_POWER_OFF then
             streams["week4timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer6Effect"] == 0x20) then
+        if myTable["week4timer6Effect"] == 0x20 then
             streams["week4timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer6Effect"] == BYTE_POWER_OFF then
             streams["week4timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer1Effect"] == 0x01) then
+        if myTable["week5timer1Effect"] == 0x01 then
             streams["week5timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer1Effect"] == BYTE_POWER_OFF then
             streams["week5timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer2Effect"] == 0x02) then
+        if myTable["week5timer2Effect"] == 0x02 then
             streams["week5timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer2Effect"] == BYTE_POWER_OFF then
             streams["week5timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer3Effect"] == 0x04) then
+        if myTable["week5timer3Effect"] == 0x04 then
             streams["week5timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer3Effect"] == BYTE_POWER_OFF then
             streams["week5timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer4Effect"] == 0x08) then
+        if myTable["week5timer4Effect"] == 0x08 then
             streams["week5timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer4Effect"] == BYTE_POWER_OFF then
             streams["week5timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer5Effect"] == 0x10) then
+        if myTable["week5timer5Effect"] == 0x10 then
             streams["week5timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer5Effect"] == BYTE_POWER_OFF then
             streams["week5timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer6Effect"] == 0x20) then
+        if myTable["week5timer6Effect"] == 0x20 then
             streams["week5timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer6Effect"] == BYTE_POWER_OFF then
             streams["week5timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer1Effect"] == 0x01) then
+        if myTable["week6timer1Effect"] == 0x01 then
             streams["week6timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer1Effect"] == BYTE_POWER_OFF then
             streams["week6timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer2Effect"] == 0x02) then
+        if myTable["week6timer2Effect"] == 0x02 then
             streams["week6timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer2Effect"] == BYTE_POWER_OFF then
             streams["week6timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer3Effect"] == 0x04) then
+        if myTable["week6timer3Effect"] == 0x04 then
             streams["week6timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer3Effect"] == BYTE_POWER_OFF then
             streams["week6timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer4Effect"] == 0x08) then
+        if myTable["week6timer4Effect"] == 0x08 then
             streams["week6timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer4Effect"] == BYTE_POWER_OFF then
             streams["week6timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer5Effect"] == 0x10) then
+        if myTable["week6timer5Effect"] == 0x10 then
             streams["week6timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer5Effect"] == BYTE_POWER_OFF then
             streams["week6timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer6Effect"] == 0x20) then
+        if myTable["week6timer6Effect"] == 0x20 then
             streams["week6timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer6Effect"] == BYTE_POWER_OFF then
             streams["week6timer6_effect"] = VALUE_FUNCTION_OFF
         end
         streams["timer1_openHour"] = int2String(myTable["timer1OpenHour"])
@@ -3712,10 +3801,8 @@ function dataToJson(jsonCmd)
         streams["order1_timehour"] = int2String(myTable["order1TimeHour"])
         streams["order1_timeMin"] = int2String(myTable["order1TimeMin"])
         streams["order1_timemin"] = int2String(myTable["order1TimeMin"])
-        streams["order1_stoptimeHour"] = int2String(
-                                             myTable["order1StopTimeHour"])
-        streams["order1_stoptimehour"] = int2String(
-                                             myTable["order1StopTimeHour"])
+        streams["order1_stoptimeHour"] = int2String(myTable["order1StopTimeHour"])
+        streams["order1_stoptimehour"] = int2String(myTable["order1StopTimeHour"])
         streams["order1_stoptimeMin"] = int2String(myTable["order1StopTimeMin"])
         streams["order1_stoptimemin"] = int2String(myTable["order1StopTimeMin"])
         streams["order2_temp"] = int2String(myTable["order2Temp"])
@@ -3723,989 +3810,855 @@ function dataToJson(jsonCmd)
         streams["order2_timehour"] = int2String(myTable["order2TimeHour"])
         streams["order2_timeMin"] = int2String(myTable["order2TimeMin"])
         streams["order2_timemin"] = int2String(myTable["order2TimeMin"])
-        streams["order2_stoptimeHour"] = int2String(
-                                             myTable["order2StopTimeHour"])
-        streams["order2_stoptimehour"] = int2String(
-                                             myTable["order2StopTimeHour"])
+        streams["order2_stoptimeHour"] = int2String(myTable["order2StopTimeHour"])
+        streams["order2_stoptimehour"] = int2String(myTable["order2StopTimeHour"])
         streams["order2_stoptimeMin"] = int2String(myTable["order2StopTimeMin"])
         streams["order2_stoptimemin"] = int2String(myTable["order2StopTimeMin"])
         streams["hotwater_level"] = int2String(myTable["hotWater"])
         streams["elec_heat_support"] = int2String(myTable["elecHeatSupport"])
-        streams["auto_sterilize_week"] =
-            int2String(myTable["autoSterilizeWeek"])
-        streams["auto_sterilize_hour"] =
-            int2String(myTable["autoSterilizeHour"])
-        streams["auto_sterilize_minute"] = int2String(
-                                               myTable["autoSterilizeMinute"])
-    elseif (((myTable["dataType"] == BYTE_AUTO_REPORT) and (msgSubType == 0x02)) or
-        ((myTable["dataType"] == BYTE_QUERYL_REQUEST) and (msgSubType == 0x02))) then
-        if (myTable["week0timer1Effect"] == 0x01) then
+        streams["auto_sterilize_week"] = int2String(myTable["autoSterilizeWeek"])
+        streams["auto_sterilize_hour"] = int2String(myTable["autoSterilizeHour"])
+        streams["auto_sterilize_minute"] = int2String(myTable["autoSterilizeMinute"])
+    elseif
+        ((myTable["dataType"] == BYTE_AUTO_REPORT) and (msgSubType == 0x02))
+        or ((myTable["dataType"] == BYTE_QUERYL_REQUEST) and (msgSubType == 0x02))
+    then
+        if myTable["week0timer1Effect"] == 0x01 then
             streams["week0timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer1Effect"] == BYTE_POWER_OFF then
             streams["week0timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer2Effect"] == 0x02) then
+        if myTable["week0timer2Effect"] == 0x02 then
             streams["week0timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer2Effect"] == BYTE_POWER_OFF then
             streams["week0timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer3Effect"] == 0x04) then
+        if myTable["week0timer3Effect"] == 0x04 then
             streams["week0timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer3Effect"] == BYTE_POWER_OFF then
             streams["week0timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer4Effect"] == 0x08) then
+        if myTable["week0timer4Effect"] == 0x08 then
             streams["week0timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer4Effect"] == BYTE_POWER_OFF then
             streams["week0timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer5Effect"] == 0x10) then
+        if myTable["week0timer5Effect"] == 0x10 then
             streams["week0timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer5Effect"] == BYTE_POWER_OFF then
             streams["week0timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer6Effect"] == 0x20) then
+        if myTable["week0timer6Effect"] == 0x20 then
             streams["week0timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer6Effect"] == BYTE_POWER_OFF then
             streams["week0timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer1Effect"] == 0x01) then
+        if myTable["week1timer1Effect"] == 0x01 then
             streams["week1timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer1Effect"] == BYTE_POWER_OFF then
             streams["week1timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer2Effect"] == 0x02) then
+        if myTable["week1timer2Effect"] == 0x02 then
             streams["week1timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer2Effect"] == BYTE_POWER_OFF then
             streams["week1timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer3Effect"] == 0x04) then
+        if myTable["week1timer3Effect"] == 0x04 then
             streams["week1timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer3Effect"] == BYTE_POWER_OFF then
             streams["week1timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer4Effect"] == 0x08) then
+        if myTable["week1timer4Effect"] == 0x08 then
             streams["week1timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer4Effect"] == BYTE_POWER_OFF then
             streams["week1timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer5Effect"] == 0x10) then
+        if myTable["week1timer5Effect"] == 0x10 then
             streams["week1timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer5Effect"] == BYTE_POWER_OFF then
             streams["week1timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer6Effect"] == 0x20) then
+        if myTable["week1timer6Effect"] == 0x20 then
             streams["week1timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer6Effect"] == BYTE_POWER_OFF then
             streams["week1timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer1Effect"] == 0x01) then
+        if myTable["week2timer1Effect"] == 0x01 then
             streams["week2timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer1Effect"] == BYTE_POWER_OFF then
             streams["week2timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer2Effect"] == 0x02) then
+        if myTable["week2timer2Effect"] == 0x02 then
             streams["week2timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer2Effect"] == BYTE_POWER_OFF then
             streams["week2timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer3Effect"] == 0x04) then
+        if myTable["week2timer3Effect"] == 0x04 then
             streams["week2timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer3Effect"] == BYTE_POWER_OFF then
             streams["week2timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer4Effect"] == 0x08) then
+        if myTable["week2timer4Effect"] == 0x08 then
             streams["week2timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer4Effect"] == BYTE_POWER_OFF then
             streams["week2timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer5Effect"] == 0x10) then
+        if myTable["week2timer5Effect"] == 0x10 then
             streams["week2timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer5Effect"] == BYTE_POWER_OFF then
             streams["week2timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer6Effect"] == 0x20) then
+        if myTable["week2timer6Effect"] == 0x20 then
             streams["week2timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer6Effect"] == BYTE_POWER_OFF then
             streams["week2timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer1Effect"] == 0x01) then
+        if myTable["week3timer1Effect"] == 0x01 then
             streams["week3timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer1Effect"] == BYTE_POWER_OFF then
             streams["week3timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer2Effect"] == 0x02) then
+        if myTable["week3timer2Effect"] == 0x02 then
             streams["week3timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer2Effect"] == BYTE_POWER_OFF then
             streams["week3timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer3Effect"] == 0x04) then
+        if myTable["week3timer3Effect"] == 0x04 then
             streams["week3timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer3Effect"] == BYTE_POWER_OFF then
             streams["week3timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer4Effect"] == 0x08) then
+        if myTable["week3timer4Effect"] == 0x08 then
             streams["week3timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer4Effect"] == BYTE_POWER_OFF then
             streams["week3timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer5Effect"] == 0x10) then
+        if myTable["week3timer5Effect"] == 0x10 then
             streams["week3timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer5Effect"] == BYTE_POWER_OFF then
             streams["week3timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer6Effect"] == 0x20) then
+        if myTable["week3timer6Effect"] == 0x20 then
             streams["week3timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer6Effect"] == BYTE_POWER_OFF then
             streams["week3timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer1Effect"] == 0x01) then
+        if myTable["week4timer1Effect"] == 0x01 then
             streams["week4timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer1Effect"] == BYTE_POWER_OFF then
             streams["week4timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer2Effect"] == 0x02) then
+        if myTable["week4timer2Effect"] == 0x02 then
             streams["week4timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer2Effect"] == BYTE_POWER_OFF then
             streams["week4timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer3Effect"] == 0x04) then
+        if myTable["week4timer3Effect"] == 0x04 then
             streams["week4timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer3Effect"] == BYTE_POWER_OFF then
             streams["week4timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer4Effect"] == 0x08) then
+        if myTable["week4timer4Effect"] == 0x08 then
             streams["week4timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer4Effect"] == BYTE_POWER_OFF then
             streams["week4timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer5Effect"] == 0x10) then
+        if myTable["week4timer5Effect"] == 0x10 then
             streams["week4timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer5Effect"] == BYTE_POWER_OFF then
             streams["week4timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer6Effect"] == 0x20) then
+        if myTable["week4timer6Effect"] == 0x20 then
             streams["week4timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer6Effect"] == BYTE_POWER_OFF then
             streams["week4timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer1Effect"] == 0x01) then
+        if myTable["week5timer1Effect"] == 0x01 then
             streams["week5timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer1Effect"] == BYTE_POWER_OFF then
             streams["week5timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer2Effect"] == 0x02) then
+        if myTable["week5timer2Effect"] == 0x02 then
             streams["week5timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer2Effect"] == BYTE_POWER_OFF then
             streams["week5timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer3Effect"] == 0x04) then
+        if myTable["week5timer3Effect"] == 0x04 then
             streams["week5timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer3Effect"] == BYTE_POWER_OFF then
             streams["week5timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer4Effect"] == 0x08) then
+        if myTable["week5timer4Effect"] == 0x08 then
             streams["week5timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer4Effect"] == BYTE_POWER_OFF then
             streams["week5timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer5Effect"] == 0x10) then
+        if myTable["week5timer5Effect"] == 0x10 then
             streams["week5timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer5Effect"] == BYTE_POWER_OFF then
             streams["week5timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer6Effect"] == 0x20) then
+        if myTable["week5timer6Effect"] == 0x20 then
             streams["week5timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer6Effect"] == BYTE_POWER_OFF then
             streams["week5timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer1Effect"] == 0x01) then
+        if myTable["week6timer1Effect"] == 0x01 then
             streams["week6timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer1Effect"] == BYTE_POWER_OFF then
             streams["week6timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer2Effect"] == 0x02) then
+        if myTable["week6timer2Effect"] == 0x02 then
             streams["week6timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer2Effect"] == BYTE_POWER_OFF then
             streams["week6timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer3Effect"] == 0x04) then
+        if myTable["week6timer3Effect"] == 0x04 then
             streams["week6timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer3Effect"] == BYTE_POWER_OFF then
             streams["week6timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer4Effect"] == 0x08) then
+        if myTable["week6timer4Effect"] == 0x08 then
             streams["week6timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer4Effect"] == BYTE_POWER_OFF then
             streams["week6timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer5Effect"] == 0x10) then
+        if myTable["week6timer5Effect"] == 0x10 then
             streams["week6timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer5Effect"] == BYTE_POWER_OFF then
             streams["week6timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer6Effect"] == 0x20) then
+        if myTable["week6timer6Effect"] == 0x20 then
             streams["week6timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer6Effect"] == BYTE_POWER_OFF then
             streams["week6timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        streams["week0timer1_opentime"] = int2String(
-                                              myTable["week0timer1OpenTime"])
-        streams["week0timer1_closetime"] = int2String(
-                                               myTable["week0timer1CloseTime"])
-        streams["week0timer1_set_temperature"] = int2String(
-                                                     myTable["week0timer1SetTemperature"])
-        streams["week0timer2_opentime"] = int2String(
-                                              myTable["week0timer2OpenTime"])
-        streams["week0timer2_closetime"] = int2String(
-                                               myTable["week0timer2CloseTime"])
-        streams["week0timer2_set_temperature"] = int2String(
-                                                     myTable["week0timer2SetTemperature"])
-        streams["week0timer3_opentime"] = int2String(
-                                              myTable["week0timer3OpenTime"])
-        streams["week0timer3_closetime"] = int2String(
-                                               myTable["week0timer3CloseTime"])
-        streams["week0timer3_set_temperature"] = int2String(
-                                                     myTable["week0timer3SetTemperature"])
-        streams["week0timer4_opentime"] = int2String(
-                                              myTable["week0timer4OpenTime"])
-        streams["week0timer4_closetime"] = int2String(
-                                               myTable["week0timer4CloseTime"])
-        streams["week0timer4_set_temperature"] = int2String(
-                                                     myTable["week0timer4SetTemperature"])
-        streams["week0timer5_opentime"] = int2String(
-                                              myTable["week0timer5OpenTime"])
-        streams["week0timer5_closetime"] = int2String(
-                                               myTable["week0timer5CloseTime"])
-        streams["week0timer5_set_temperature"] = int2String(
-                                                     myTable["week0timer5SetTemperature"])
-        streams["week0timer6_opentime"] = int2String(
-                                              myTable["week0timer6OpenTime"])
-        streams["week0timer6_closetime"] = int2String(
-                                               myTable["week0timer6CloseTime"])
-        streams["week0timer6_set_temperature"] = int2String(
-                                                     myTable["week0timer6SetTemperature"])
-        streams["week1timer1_opentime"] = int2String(
-                                              myTable["week1timer1OpenTime"])
-        streams["week1timer1_closetime"] = int2String(
-                                               myTable["week1timer1CloseTime"])
-        streams["week1timer1_set_temperature"] = int2String(
-                                                     myTable["week1timer1SetTemperature"])
-        streams["week1timer2_opentime"] = int2String(
-                                              myTable["week1timer2OpenTime"])
-        streams["week1timer2_closetime"] = int2String(
-                                               myTable["week1timer2CloseTime"])
-        streams["week1timer2_set_temperature"] = int2String(
-                                                     myTable["week1timer2SetTemperature"])
-        streams["week1timer3_opentime"] = int2String(
-                                              myTable["week1timer3OpenTime"])
-        streams["week1timer3_closetime"] = int2String(
-                                               myTable["week1timer3CloseTime"])
-        streams["week1timer3_set_temperature"] = int2String(
-                                                     myTable["week1timer3SetTemperature"])
-        streams["week1timer4_opentime"] = int2String(
-                                              myTable["week1timer4OpenTime"])
-        streams["week1timer4_closetime"] = int2String(
-                                               myTable["week1timer4CloseTime"])
-        streams["week1timer4_set_temperature"] = int2String(
-                                                     myTable["week1timer4SetTemperature"])
-        streams["week1timer5_opentime"] = int2String(
-                                              myTable["week1timer5OpenTime"])
-        streams["week1timer5_closetime"] = int2String(
-                                               myTable["week1timer5CloseTime"])
-        streams["week1timer5_set_temperature"] = int2String(
-                                                     myTable["week1timer5SetTemperature"])
-        streams["week1timer6_opentime"] = int2String(
-                                              myTable["week1timer6OpenTime"])
-        streams["week1timer6_closetime"] = int2String(
-                                               myTable["week1timer6CloseTime"])
-        streams["week1timer6_set_temperature"] = int2String(
-                                                     myTable["week1timer6SetTemperature"])
-        streams["week2timer1_opentime"] = int2String(
-                                              myTable["week2timer1OpenTime"])
-        streams["week2timer1_closetime"] = int2String(
-                                               myTable["week2timer1CloseTime"])
-        streams["week2timer1_set_temperature"] = int2String(
-                                                     myTable["week2timer1SetTemperature"])
-        streams["week2timer2_opentime"] = int2String(
-                                              myTable["week2timer2OpenTime"])
-        streams["week2timer2_closetime"] = int2String(
-                                               myTable["week2timer2CloseTime"])
-        streams["week2timer2_set_temperature"] = int2String(
-                                                     myTable["week2timer2SetTemperature"])
-        streams["week2timer3_opentime"] = int2String(
-                                              myTable["week2timer3OpenTime"])
-        streams["week2timer3_closetime"] = int2String(
-                                               myTable["week2timer3CloseTime"])
-        streams["week2timer3_set_temperature"] = int2String(
-                                                     myTable["week2timer3SetTemperature"])
-        streams["week2timer4_opentime"] = int2String(
-                                              myTable["week2timer4OpenTime"])
-        streams["week2timer4_closetime"] = int2String(
-                                               myTable["week2timer4CloseTime"])
-        streams["week2timer4_set_temperature"] = int2String(
-                                                     myTable["week2timer4SetTemperature"])
-        streams["week2timer5_opentime"] = int2String(
-                                              myTable["week2timer5OpenTime"])
-        streams["week2timer5_closetime"] = int2String(
-                                               myTable["week2timer5CloseTime"])
-        streams["week2timer5_set_temperature"] = int2String(
-                                                     myTable["week2timer5SetTemperature"])
-        streams["week2timer6_opentime"] = int2String(
-                                              myTable["week2timer6OpenTime"])
-        streams["week2timer6_closetime"] = int2String(
-                                               myTable["week2timer6CloseTime"])
-        streams["week2timer6_set_temperature"] = int2String(
-                                                     myTable["week2timer6SetTemperature"])
-        streams["week3timer1_opentime"] = int2String(
-                                              myTable["week3timer1OpenTime"])
-        streams["week3timer1_closetime"] = int2String(
-                                               myTable["week3timer1CloseTime"])
-        streams["week3timer1_set_temperature"] = int2String(
-                                                     myTable["week3timer1SetTemperature"])
-        streams["week3timer2_opentime"] = int2String(
-                                              myTable["week3timer2OpenTime"])
-        streams["week3timer2_closetime"] = int2String(
-                                               myTable["week3timer2CloseTime"])
-        streams["week3timer2_set_temperature"] = int2String(
-                                                     myTable["week3timer2SetTemperature"])
-        streams["week3timer3_opentime"] = int2String(
-                                              myTable["week3timer3OpenTime"])
-        streams["week3timer3_closetime"] = int2String(
-                                               myTable["week3timer3CloseTime"])
-        streams["week3timer3_set_temperature"] = int2String(
-                                                     myTable["week3timer3SetTemperature"])
-        streams["week3timer4_opentime"] = int2String(
-                                              myTable["week3timer4OpenTime"])
-        streams["week3timer4_closetime"] = int2String(
-                                               myTable["week3timer4CloseTime"])
-        streams["week3timer4_set_temperature"] = int2String(
-                                                     myTable["week3timer4SetTemperature"])
-        streams["week3timer5_opentime"] = int2String(
-                                              myTable["week3timer5OpenTime"])
-        streams["week3timer5_closetime"] = int2String(
-                                               myTable["week3timer5CloseTime"])
-        streams["week3timer5_set_temperature"] = int2String(
-                                                     myTable["week3timer5SetTemperature"])
-        streams["week3timer6_opentime"] = int2String(
-                                              myTable["week3timer6OpenTime"])
-        streams["week3timer6_closetime"] = int2String(
-                                               myTable["week3timer6CloseTime"])
-        streams["week3timer6_set_temperature"] = int2String(
-                                                     myTable["week3timer6SetTemperature"])
-        streams["week4timer1_opentime"] = int2String(
-                                              myTable["week4timer1OpenTime"])
-        streams["week4timer1_closetime"] = int2String(
-                                               myTable["week4timer1CloseTime"])
-        streams["week4timer1_set_temperature"] = int2String(
-                                                     myTable["week4timer1SetTemperature"])
-        streams["week4timer2_opentime"] = int2String(
-                                              myTable["week4timer2OpenTime"])
-        streams["week4timer2_closetime"] = int2String(
-                                               myTable["week4timer2CloseTime"])
-        streams["week4timer2_set_temperature"] = int2String(
-                                                     myTable["week4timer2SetTemperature"])
-        streams["week4timer3_opentime"] = int2String(
-                                              myTable["week4timer3OpenTime"])
-        streams["week4timer3_closetime"] = int2String(
-                                               myTable["week4timer3CloseTime"])
-        streams["week4timer3_set_temperature"] = int2String(
-                                                     myTable["week4timer3SetTemperature"])
-        streams["week4timer4_opentime"] = int2String(
-                                              myTable["week4timer4OpenTime"])
-        streams["week4timer4_closetime"] = int2String(
-                                               myTable["week4timer4CloseTime"])
-        streams["week4timer4_set_temperature"] = int2String(
-                                                     myTable["week4timer4SetTemperature"])
-        streams["week4timer5_opentime"] = int2String(
-                                              myTable["week4timer5OpenTime"])
-        streams["week4timer5_closetime"] = int2String(
-                                               myTable["week4timer5CloseTime"])
-        streams["week4timer5_set_temperature"] = int2String(
-                                                     myTable["week4timer5SetTemperature"])
-        streams["week4timer6_opentime"] = int2String(
-                                              myTable["week4timer6OpenTime"])
-        streams["week4timer6_closetime"] = int2String(
-                                               myTable["week4timer6CloseTime"])
-        streams["week4timer6_set_temperature"] = int2String(
-                                                     myTable["week4timer6SetTemperature"])
-        streams["week5timer1_opentime"] = int2String(
-                                              myTable["week5timer1OpenTime"])
-        streams["week5timer1_closetime"] = int2String(
-                                               myTable["week5timer1CloseTime"])
-        streams["week5timer1_set_temperature"] = int2String(
-                                                     myTable["week5timer1SetTemperature"])
-        streams["week5timer2_opentime"] = int2String(
-                                              myTable["week5timer2OpenTime"])
-        streams["week5timer2_closetime"] = int2String(
-                                               myTable["week5timer2CloseTime"])
-        streams["week5timer2_set_temperature"] = int2String(
-                                                     myTable["week5timer2SetTemperature"])
-        streams["week5timer3_opentime"] = int2String(
-                                              myTable["week5timer3OpenTime"])
-        streams["week5timer3_closetime"] = int2String(
-                                               myTable["week5timer3CloseTime"])
-        streams["week5timer3_set_temperature"] = int2String(
-                                                     myTable["week5timer3SetTemperature"])
-        streams["week5timer4_opentime"] = int2String(
-                                              myTable["week5timer4OpenTime"])
-        streams["week5timer4_closetime"] = int2String(
-                                               myTable["week5timer4CloseTime"])
-        streams["week5timer4_set_temperature"] = int2String(
-                                                     myTable["week5timer4SetTemperature"])
-        streams["week5timer5_opentime"] = int2String(
-                                              myTable["week5timer5OpenTime"])
-        streams["week5timer5_closetime"] = int2String(
-                                               myTable["week5timer5CloseTime"])
-        streams["week5timer5_set_temperature"] = int2String(
-                                                     myTable["week5timer5SetTemperature"])
-        streams["week5timer6_opentime"] = int2String(
-                                              myTable["week5timer6OpenTime"])
-        streams["week5timer6_closetime"] = int2String(
-                                               myTable["week5timer6CloseTime"])
-        streams["week5timer6_set_temperature"] = int2String(
-                                                     myTable["week5timer6SetTemperature"])
-        streams["week6timer1_opentime"] = int2String(
-                                              myTable["week6timer1OpenTime"])
-        streams["week6timer1_closetime"] = int2String(
-                                               myTable["week6timer1CloseTime"])
-        streams["week6timer1_set_temperature"] = int2String(
-                                                     myTable["week6timer1SetTemperature"])
-        streams["week6timer2_opentime"] = int2String(
-                                              myTable["week6timer2OpenTime"])
-        streams["week6timer2_closetime"] = int2String(
-                                               myTable["week6timer2CloseTime"])
-        streams["week6timer2_set_temperature"] = int2String(
-                                                     myTable["week6timer2SetTemperature"])
-        streams["week6timer3_opentime"] = int2String(
-                                              myTable["week6timer3OpenTime"])
-        streams["week6timer3_closetime"] = int2String(
-                                               myTable["week6timer3CloseTime"])
-        streams["week6timer3_set_temperature"] = int2String(
-                                                     myTable["week6timer3SetTemperature"])
-        streams["week6timer4_opentime"] = int2String(
-                                              myTable["week6timer4OpenTime"])
-        streams["week6timer4_closetime"] = int2String(
-                                               myTable["week6timer4CloseTime"])
-        streams["week6timer4_set_temperature"] = int2String(
-                                                     myTable["week6timer4SetTemperature"])
-        streams["week6timer5_opentime"] = int2String(
-                                              myTable["week6timer5OpenTime"])
-        streams["week6timer5_closetime"] = int2String(
-                                               myTable["week6timer5CloseTime"])
-        streams["week6timer5_set_temperature"] = int2String(
-                                                     myTable["week6timer5SetTemperature"])
-        streams["week6timer6_opentime"] = int2String(
-                                              myTable["week6timer6OpenTime"])
-        streams["week6timer6_closetime"] = int2String(
-                                               myTable["week6timer6CloseTime"])
-        streams["week6timer6_set_temperature"] = int2String(
-                                                     myTable["week6timer6SetTemperature"])
-        if (myTable["week0timer1ModeValue"] == 0x01) then
+        streams["week0timer1_opentime"] = int2String(myTable["week0timer1OpenTime"])
+        streams["week0timer1_closetime"] = int2String(myTable["week0timer1CloseTime"])
+        streams["week0timer1_set_temperature"] = int2String(myTable["week0timer1SetTemperature"])
+        streams["week0timer2_opentime"] = int2String(myTable["week0timer2OpenTime"])
+        streams["week0timer2_closetime"] = int2String(myTable["week0timer2CloseTime"])
+        streams["week0timer2_set_temperature"] = int2String(myTable["week0timer2SetTemperature"])
+        streams["week0timer3_opentime"] = int2String(myTable["week0timer3OpenTime"])
+        streams["week0timer3_closetime"] = int2String(myTable["week0timer3CloseTime"])
+        streams["week0timer3_set_temperature"] = int2String(myTable["week0timer3SetTemperature"])
+        streams["week0timer4_opentime"] = int2String(myTable["week0timer4OpenTime"])
+        streams["week0timer4_closetime"] = int2String(myTable["week0timer4CloseTime"])
+        streams["week0timer4_set_temperature"] = int2String(myTable["week0timer4SetTemperature"])
+        streams["week0timer5_opentime"] = int2String(myTable["week0timer5OpenTime"])
+        streams["week0timer5_closetime"] = int2String(myTable["week0timer5CloseTime"])
+        streams["week0timer5_set_temperature"] = int2String(myTable["week0timer5SetTemperature"])
+        streams["week0timer6_opentime"] = int2String(myTable["week0timer6OpenTime"])
+        streams["week0timer6_closetime"] = int2String(myTable["week0timer6CloseTime"])
+        streams["week0timer6_set_temperature"] = int2String(myTable["week0timer6SetTemperature"])
+        streams["week1timer1_opentime"] = int2String(myTable["week1timer1OpenTime"])
+        streams["week1timer1_closetime"] = int2String(myTable["week1timer1CloseTime"])
+        streams["week1timer1_set_temperature"] = int2String(myTable["week1timer1SetTemperature"])
+        streams["week1timer2_opentime"] = int2String(myTable["week1timer2OpenTime"])
+        streams["week1timer2_closetime"] = int2String(myTable["week1timer2CloseTime"])
+        streams["week1timer2_set_temperature"] = int2String(myTable["week1timer2SetTemperature"])
+        streams["week1timer3_opentime"] = int2String(myTable["week1timer3OpenTime"])
+        streams["week1timer3_closetime"] = int2String(myTable["week1timer3CloseTime"])
+        streams["week1timer3_set_temperature"] = int2String(myTable["week1timer3SetTemperature"])
+        streams["week1timer4_opentime"] = int2String(myTable["week1timer4OpenTime"])
+        streams["week1timer4_closetime"] = int2String(myTable["week1timer4CloseTime"])
+        streams["week1timer4_set_temperature"] = int2String(myTable["week1timer4SetTemperature"])
+        streams["week1timer5_opentime"] = int2String(myTable["week1timer5OpenTime"])
+        streams["week1timer5_closetime"] = int2String(myTable["week1timer5CloseTime"])
+        streams["week1timer5_set_temperature"] = int2String(myTable["week1timer5SetTemperature"])
+        streams["week1timer6_opentime"] = int2String(myTable["week1timer6OpenTime"])
+        streams["week1timer6_closetime"] = int2String(myTable["week1timer6CloseTime"])
+        streams["week1timer6_set_temperature"] = int2String(myTable["week1timer6SetTemperature"])
+        streams["week2timer1_opentime"] = int2String(myTable["week2timer1OpenTime"])
+        streams["week2timer1_closetime"] = int2String(myTable["week2timer1CloseTime"])
+        streams["week2timer1_set_temperature"] = int2String(myTable["week2timer1SetTemperature"])
+        streams["week2timer2_opentime"] = int2String(myTable["week2timer2OpenTime"])
+        streams["week2timer2_closetime"] = int2String(myTable["week2timer2CloseTime"])
+        streams["week2timer2_set_temperature"] = int2String(myTable["week2timer2SetTemperature"])
+        streams["week2timer3_opentime"] = int2String(myTable["week2timer3OpenTime"])
+        streams["week2timer3_closetime"] = int2String(myTable["week2timer3CloseTime"])
+        streams["week2timer3_set_temperature"] = int2String(myTable["week2timer3SetTemperature"])
+        streams["week2timer4_opentime"] = int2String(myTable["week2timer4OpenTime"])
+        streams["week2timer4_closetime"] = int2String(myTable["week2timer4CloseTime"])
+        streams["week2timer4_set_temperature"] = int2String(myTable["week2timer4SetTemperature"])
+        streams["week2timer5_opentime"] = int2String(myTable["week2timer5OpenTime"])
+        streams["week2timer5_closetime"] = int2String(myTable["week2timer5CloseTime"])
+        streams["week2timer5_set_temperature"] = int2String(myTable["week2timer5SetTemperature"])
+        streams["week2timer6_opentime"] = int2String(myTable["week2timer6OpenTime"])
+        streams["week2timer6_closetime"] = int2String(myTable["week2timer6CloseTime"])
+        streams["week2timer6_set_temperature"] = int2String(myTable["week2timer6SetTemperature"])
+        streams["week3timer1_opentime"] = int2String(myTable["week3timer1OpenTime"])
+        streams["week3timer1_closetime"] = int2String(myTable["week3timer1CloseTime"])
+        streams["week3timer1_set_temperature"] = int2String(myTable["week3timer1SetTemperature"])
+        streams["week3timer2_opentime"] = int2String(myTable["week3timer2OpenTime"])
+        streams["week3timer2_closetime"] = int2String(myTable["week3timer2CloseTime"])
+        streams["week3timer2_set_temperature"] = int2String(myTable["week3timer2SetTemperature"])
+        streams["week3timer3_opentime"] = int2String(myTable["week3timer3OpenTime"])
+        streams["week3timer3_closetime"] = int2String(myTable["week3timer3CloseTime"])
+        streams["week3timer3_set_temperature"] = int2String(myTable["week3timer3SetTemperature"])
+        streams["week3timer4_opentime"] = int2String(myTable["week3timer4OpenTime"])
+        streams["week3timer4_closetime"] = int2String(myTable["week3timer4CloseTime"])
+        streams["week3timer4_set_temperature"] = int2String(myTable["week3timer4SetTemperature"])
+        streams["week3timer5_opentime"] = int2String(myTable["week3timer5OpenTime"])
+        streams["week3timer5_closetime"] = int2String(myTable["week3timer5CloseTime"])
+        streams["week3timer5_set_temperature"] = int2String(myTable["week3timer5SetTemperature"])
+        streams["week3timer6_opentime"] = int2String(myTable["week3timer6OpenTime"])
+        streams["week3timer6_closetime"] = int2String(myTable["week3timer6CloseTime"])
+        streams["week3timer6_set_temperature"] = int2String(myTable["week3timer6SetTemperature"])
+        streams["week4timer1_opentime"] = int2String(myTable["week4timer1OpenTime"])
+        streams["week4timer1_closetime"] = int2String(myTable["week4timer1CloseTime"])
+        streams["week4timer1_set_temperature"] = int2String(myTable["week4timer1SetTemperature"])
+        streams["week4timer2_opentime"] = int2String(myTable["week4timer2OpenTime"])
+        streams["week4timer2_closetime"] = int2String(myTable["week4timer2CloseTime"])
+        streams["week4timer2_set_temperature"] = int2String(myTable["week4timer2SetTemperature"])
+        streams["week4timer3_opentime"] = int2String(myTable["week4timer3OpenTime"])
+        streams["week4timer3_closetime"] = int2String(myTable["week4timer3CloseTime"])
+        streams["week4timer3_set_temperature"] = int2String(myTable["week4timer3SetTemperature"])
+        streams["week4timer4_opentime"] = int2String(myTable["week4timer4OpenTime"])
+        streams["week4timer4_closetime"] = int2String(myTable["week4timer4CloseTime"])
+        streams["week4timer4_set_temperature"] = int2String(myTable["week4timer4SetTemperature"])
+        streams["week4timer5_opentime"] = int2String(myTable["week4timer5OpenTime"])
+        streams["week4timer5_closetime"] = int2String(myTable["week4timer5CloseTime"])
+        streams["week4timer5_set_temperature"] = int2String(myTable["week4timer5SetTemperature"])
+        streams["week4timer6_opentime"] = int2String(myTable["week4timer6OpenTime"])
+        streams["week4timer6_closetime"] = int2String(myTable["week4timer6CloseTime"])
+        streams["week4timer6_set_temperature"] = int2String(myTable["week4timer6SetTemperature"])
+        streams["week5timer1_opentime"] = int2String(myTable["week5timer1OpenTime"])
+        streams["week5timer1_closetime"] = int2String(myTable["week5timer1CloseTime"])
+        streams["week5timer1_set_temperature"] = int2String(myTable["week5timer1SetTemperature"])
+        streams["week5timer2_opentime"] = int2String(myTable["week5timer2OpenTime"])
+        streams["week5timer2_closetime"] = int2String(myTable["week5timer2CloseTime"])
+        streams["week5timer2_set_temperature"] = int2String(myTable["week5timer2SetTemperature"])
+        streams["week5timer3_opentime"] = int2String(myTable["week5timer3OpenTime"])
+        streams["week5timer3_closetime"] = int2String(myTable["week5timer3CloseTime"])
+        streams["week5timer3_set_temperature"] = int2String(myTable["week5timer3SetTemperature"])
+        streams["week5timer4_opentime"] = int2String(myTable["week5timer4OpenTime"])
+        streams["week5timer4_closetime"] = int2String(myTable["week5timer4CloseTime"])
+        streams["week5timer4_set_temperature"] = int2String(myTable["week5timer4SetTemperature"])
+        streams["week5timer5_opentime"] = int2String(myTable["week5timer5OpenTime"])
+        streams["week5timer5_closetime"] = int2String(myTable["week5timer5CloseTime"])
+        streams["week5timer5_set_temperature"] = int2String(myTable["week5timer5SetTemperature"])
+        streams["week5timer6_opentime"] = int2String(myTable["week5timer6OpenTime"])
+        streams["week5timer6_closetime"] = int2String(myTable["week5timer6CloseTime"])
+        streams["week5timer6_set_temperature"] = int2String(myTable["week5timer6SetTemperature"])
+        streams["week6timer1_opentime"] = int2String(myTable["week6timer1OpenTime"])
+        streams["week6timer1_closetime"] = int2String(myTable["week6timer1CloseTime"])
+        streams["week6timer1_set_temperature"] = int2String(myTable["week6timer1SetTemperature"])
+        streams["week6timer2_opentime"] = int2String(myTable["week6timer2OpenTime"])
+        streams["week6timer2_closetime"] = int2String(myTable["week6timer2CloseTime"])
+        streams["week6timer2_set_temperature"] = int2String(myTable["week6timer2SetTemperature"])
+        streams["week6timer3_opentime"] = int2String(myTable["week6timer3OpenTime"])
+        streams["week6timer3_closetime"] = int2String(myTable["week6timer3CloseTime"])
+        streams["week6timer3_set_temperature"] = int2String(myTable["week6timer3SetTemperature"])
+        streams["week6timer4_opentime"] = int2String(myTable["week6timer4OpenTime"])
+        streams["week6timer4_closetime"] = int2String(myTable["week6timer4CloseTime"])
+        streams["week6timer4_set_temperature"] = int2String(myTable["week6timer4SetTemperature"])
+        streams["week6timer5_opentime"] = int2String(myTable["week6timer5OpenTime"])
+        streams["week6timer5_closetime"] = int2String(myTable["week6timer5CloseTime"])
+        streams["week6timer5_set_temperature"] = int2String(myTable["week6timer5SetTemperature"])
+        streams["week6timer6_opentime"] = int2String(myTable["week6timer6OpenTime"])
+        streams["week6timer6_closetime"] = int2String(myTable["week6timer6CloseTime"])
+        streams["week6timer6_set_temperature"] = int2String(myTable["week6timer6SetTemperature"])
+        if myTable["week0timer1ModeValue"] == 0x01 then
             streams["week0timer1_modevalue"] = "energy"
-        elseif (myTable["week0timer1ModeValue"] == 0x02) then
+        elseif myTable["week0timer1ModeValue"] == 0x02 then
             streams["week0timer1_modevalue"] = "standard"
-        elseif (myTable["week0timer1ModeValue"] == 0x03) then
+        elseif myTable["week0timer1ModeValue"] == 0x03 then
             streams["week0timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["week0timer1ModeValue"] == 0x04) then
+        elseif myTable["week0timer1ModeValue"] == 0x04 then
             streams["week0timer1_modevalue"] = "smart"
         end
-        if (myTable["week0timer2ModeValue"] == 0x01) then
+        if myTable["week0timer2ModeValue"] == 0x01 then
             streams["week0timer2_modevalue"] = "energy"
-        elseif (myTable["week0timer2ModeValue"] == 0x02) then
+        elseif myTable["week0timer2ModeValue"] == 0x02 then
             streams["week0timer2_modevalue"] = "standard"
-        elseif (myTable["week0timer2ModeValue"] == 0x03) then
+        elseif myTable["week0timer2ModeValue"] == 0x03 then
             streams["week0timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["week0timer2ModeValue"] == 0x04) then
+        elseif myTable["week0timer2ModeValue"] == 0x04 then
             streams["week0timer2_modevalue"] = "smart"
         end
-        if (myTable["week0timer3ModeValue"] == 0x01) then
+        if myTable["week0timer3ModeValue"] == 0x01 then
             streams["week0timer3_modevalue"] = "energy"
-        elseif (myTable["week0timer3ModeValue"] == 0x02) then
+        elseif myTable["week0timer3ModeValue"] == 0x02 then
             streams["week0timer3_modevalue"] = "standard"
-        elseif (myTable["week0timer3ModeValue"] == 0x03) then
+        elseif myTable["week0timer3ModeValue"] == 0x03 then
             streams["week0timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["week0timer3ModeValue"] == 0x04) then
+        elseif myTable["week0timer3ModeValue"] == 0x04 then
             streams["week0timer3_modevalue"] = "smart"
         end
-        if (myTable["week0timer4ModeValue"] == 0x01) then
+        if myTable["week0timer4ModeValue"] == 0x01 then
             streams["week0timer4_modevalue"] = "energy"
-        elseif (myTable["week0timer4ModeValue"] == 0x02) then
+        elseif myTable["week0timer4ModeValue"] == 0x02 then
             streams["week0timer4_modevalue"] = "standard"
-        elseif (myTable["week0timer4ModeValue"] == 0x03) then
+        elseif myTable["week0timer4ModeValue"] == 0x03 then
             streams["week0timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["week0timer4ModeValue"] == 0x04) then
+        elseif myTable["week0timer4ModeValue"] == 0x04 then
             streams["week0timer4_modevalue"] = "smart"
         end
-        if (myTable["week0timer5ModeValue"] == 0x01) then
+        if myTable["week0timer5ModeValue"] == 0x01 then
             streams["week0timer5_modevalue"] = "energy"
-        elseif (myTable["week0timer5ModeValue"] == 0x02) then
+        elseif myTable["week0timer5ModeValue"] == 0x02 then
             streams["week0timer5_modevalue"] = "standard"
-        elseif (myTable["week0timer5ModeValue"] == 0x03) then
+        elseif myTable["week0timer5ModeValue"] == 0x03 then
             streams["week0timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["week0timer5ModeValue"] == 0x04) then
+        elseif myTable["week0timer5ModeValue"] == 0x04 then
             streams["week0timer5_modevalue"] = "smart"
         end
-        if (myTable["week0timer6ModeValue"] == 0x01) then
+        if myTable["week0timer6ModeValue"] == 0x01 then
             streams["week0timer6_modevalue"] = "energy"
-        elseif (myTable["week0timer6ModeValue"] == 0x02) then
+        elseif myTable["week0timer6ModeValue"] == 0x02 then
             streams["week0timer6_modevalue"] = "standard"
-        elseif (myTable["week0timer6ModeValue"] == 0x03) then
+        elseif myTable["week0timer6ModeValue"] == 0x03 then
             streams["week0timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["week0timer6ModeValue"] == 0x04) then
+        elseif myTable["week0timer6ModeValue"] == 0x04 then
             streams["week0timer6_modevalue"] = "smart"
         end
-        if (myTable["week1timer1ModeValue"] == 0x01) then
+        if myTable["week1timer1ModeValue"] == 0x01 then
             streams["week1timer1_modevalue"] = "energy"
-        elseif (myTable["week1timer1ModeValue"] == 0x02) then
+        elseif myTable["week1timer1ModeValue"] == 0x02 then
             streams["week1timer1_modevalue"] = "standard"
-        elseif (myTable["week1timer1ModeValue"] == 0x03) then
+        elseif myTable["week1timer1ModeValue"] == 0x03 then
             streams["week1timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["week1timer1ModeValue"] == 0x04) then
+        elseif myTable["week1timer1ModeValue"] == 0x04 then
             streams["week1timer1_modevalue"] = "smart"
         end
-        if (myTable["week1timer2ModeValue"] == 0x01) then
+        if myTable["week1timer2ModeValue"] == 0x01 then
             streams["week1timer2_modevalue"] = "energy"
-        elseif (myTable["week1timer2ModeValue"] == 0x02) then
+        elseif myTable["week1timer2ModeValue"] == 0x02 then
             streams["week1timer2_modevalue"] = "standard"
-        elseif (myTable["week1timer2ModeValue"] == 0x03) then
+        elseif myTable["week1timer2ModeValue"] == 0x03 then
             streams["week1timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["week1timer2ModeValue"] == 0x04) then
+        elseif myTable["week1timer2ModeValue"] == 0x04 then
             streams["week1timer2_modevalue"] = "smart"
         end
-        if (myTable["week1timer3ModeValue"] == 0x01) then
+        if myTable["week1timer3ModeValue"] == 0x01 then
             streams["week1timer3_modevalue"] = "energy"
-        elseif (myTable["week1timer3ModeValue"] == 0x02) then
+        elseif myTable["week1timer3ModeValue"] == 0x02 then
             streams["week1timer3_modevalue"] = "standard"
-        elseif (myTable["week1timer3ModeValue"] == 0x03) then
+        elseif myTable["week1timer3ModeValue"] == 0x03 then
             streams["week1timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["week1timer3ModeValue"] == 0x04) then
+        elseif myTable["week1timer3ModeValue"] == 0x04 then
             streams["week1timer3_modevalue"] = "smart"
         end
-        if (myTable["week1timer4ModeValue"] == 0x01) then
+        if myTable["week1timer4ModeValue"] == 0x01 then
             streams["week1timer4_modevalue"] = "energy"
-        elseif (myTable["week1timer4ModeValue"] == 0x02) then
+        elseif myTable["week1timer4ModeValue"] == 0x02 then
             streams["week1timer4_modevalue"] = "standard"
-        elseif (myTable["week1timer4ModeValue"] == 0x03) then
+        elseif myTable["week1timer4ModeValue"] == 0x03 then
             streams["week1timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["week1timer4ModeValue"] == 0x04) then
+        elseif myTable["week1timer4ModeValue"] == 0x04 then
             streams["week1timer4_modevalue"] = "smart"
         end
-        if (myTable["week1timer5ModeValue"] == 0x01) then
+        if myTable["week1timer5ModeValue"] == 0x01 then
             streams["week1timer5_modevalue"] = "energy"
-        elseif (myTable["week1timer5ModeValue"] == 0x02) then
+        elseif myTable["week1timer5ModeValue"] == 0x02 then
             streams["week1timer5_modevalue"] = "standard"
-        elseif (myTable["week1timer5ModeValue"] == 0x03) then
+        elseif myTable["week1timer5ModeValue"] == 0x03 then
             streams["week1timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["week1timer5ModeValue"] == 0x04) then
+        elseif myTable["week1timer5ModeValue"] == 0x04 then
             streams["week1timer5_modevalue"] = "smart"
         end
-        if (myTable["week1timer6ModeValue"] == 0x01) then
+        if myTable["week1timer6ModeValue"] == 0x01 then
             streams["week1timer6_modevalue"] = "energy"
-        elseif (myTable["week1timer6ModeValue"] == 0x02) then
+        elseif myTable["week1timer6ModeValue"] == 0x02 then
             streams["week1timer6_modevalue"] = "standard"
-        elseif (myTable["week1timer6ModeValue"] == 0x03) then
+        elseif myTable["week1timer6ModeValue"] == 0x03 then
             streams["week1timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["week1timer6ModeValue"] == 0x04) then
+        elseif myTable["week1timer6ModeValue"] == 0x04 then
             streams["week1timer6_modevalue"] = "smart"
         end
-        if (myTable["week2timer1ModeValue"] == 0x01) then
+        if myTable["week2timer1ModeValue"] == 0x01 then
             streams["week2timer1_modevalue"] = "energy"
-        elseif (myTable["week2timer1ModeValue"] == 0x02) then
+        elseif myTable["week2timer1ModeValue"] == 0x02 then
             streams["week2timer1_modevalue"] = "standard"
-        elseif (myTable["week2timer1ModeValue"] == 0x03) then
+        elseif myTable["week2timer1ModeValue"] == 0x03 then
             streams["week2timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["week2timer1ModeValue"] == 0x04) then
+        elseif myTable["week2timer1ModeValue"] == 0x04 then
             streams["week2timer1_modevalue"] = "smart"
         end
-        if (myTable["week2timer2ModeValue"] == 0x01) then
+        if myTable["week2timer2ModeValue"] == 0x01 then
             streams["week2timer2_modevalue"] = "energy"
-        elseif (myTable["week2timer2ModeValue"] == 0x02) then
+        elseif myTable["week2timer2ModeValue"] == 0x02 then
             streams["week2timer2_modevalue"] = "standard"
-        elseif (myTable["week2timer2ModeValue"] == 0x03) then
+        elseif myTable["week2timer2ModeValue"] == 0x03 then
             streams["week2timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["week2timer2ModeValue"] == 0x04) then
+        elseif myTable["week2timer2ModeValue"] == 0x04 then
             streams["week2timer2_modevalue"] = "smart"
         end
-        if (myTable["week2timer3ModeValue"] == 0x01) then
+        if myTable["week2timer3ModeValue"] == 0x01 then
             streams["week2timer3_modevalue"] = "energy"
-        elseif (myTable["week2timer3ModeValue"] == 0x02) then
+        elseif myTable["week2timer3ModeValue"] == 0x02 then
             streams["week2timer3_modevalue"] = "standard"
-        elseif (myTable["week2timer3ModeValue"] == 0x03) then
+        elseif myTable["week2timer3ModeValue"] == 0x03 then
             streams["week2timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["week2timer3ModeValue"] == 0x04) then
+        elseif myTable["week2timer3ModeValue"] == 0x04 then
             streams["week2timer3_modevalue"] = "smart"
         end
-        if (myTable["week2timer4ModeValue"] == 0x01) then
+        if myTable["week2timer4ModeValue"] == 0x01 then
             streams["week2timer4_modevalue"] = "energy"
-        elseif (myTable["week2timer4ModeValue"] == 0x02) then
+        elseif myTable["week2timer4ModeValue"] == 0x02 then
             streams["week2timer4_modevalue"] = "standard"
-        elseif (myTable["week2timer4ModeValue"] == 0x03) then
+        elseif myTable["week2timer4ModeValue"] == 0x03 then
             streams["week2timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["week2timer4ModeValue"] == 0x04) then
+        elseif myTable["week2timer4ModeValue"] == 0x04 then
             streams["week2timer4_modevalue"] = "smart"
         end
-        if (myTable["week2timer5ModeValue"] == 0x01) then
+        if myTable["week2timer5ModeValue"] == 0x01 then
             streams["week2timer5_modevalue"] = "energy"
-        elseif (myTable["week2timer5ModeValue"] == 0x02) then
+        elseif myTable["week2timer5ModeValue"] == 0x02 then
             streams["week2timer5_modevalue"] = "standard"
-        elseif (myTable["week2timer5ModeValue"] == 0x03) then
+        elseif myTable["week2timer5ModeValue"] == 0x03 then
             streams["week2timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["week2timer5ModeValue"] == 0x04) then
+        elseif myTable["week2timer5ModeValue"] == 0x04 then
             streams["week2timer5_modevalue"] = "smart"
         end
-        if (myTable["week2timer6ModeValue"] == 0x01) then
+        if myTable["week2timer6ModeValue"] == 0x01 then
             streams["week2timer6_modevalue"] = "energy"
-        elseif (myTable["week2timer6ModeValue"] == 0x02) then
+        elseif myTable["week2timer6ModeValue"] == 0x02 then
             streams["week2timer6_modevalue"] = "standard"
-        elseif (myTable["week2timer6ModeValue"] == 0x03) then
+        elseif myTable["week2timer6ModeValue"] == 0x03 then
             streams["week2timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["week2timer6ModeValue"] == 0x04) then
+        elseif myTable["week2timer6ModeValue"] == 0x04 then
             streams["week2timer6_modevalue"] = "smart"
         end
-        if (myTable["week3timer1ModeValue"] == 0x01) then
+        if myTable["week3timer1ModeValue"] == 0x01 then
             streams["week3timer1_modevalue"] = "energy"
-        elseif (myTable["week3timer1ModeValue"] == 0x02) then
+        elseif myTable["week3timer1ModeValue"] == 0x02 then
             streams["week3timer1_modevalue"] = "standard"
-        elseif (myTable["week3timer1ModeValue"] == 0x03) then
+        elseif myTable["week3timer1ModeValue"] == 0x03 then
             streams["week3timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["week3timer1ModeValue"] == 0x04) then
+        elseif myTable["week3timer1ModeValue"] == 0x04 then
             streams["week3timer1_modevalue"] = "smart"
         end
-        if (myTable["week3timer2ModeValue"] == 0x01) then
+        if myTable["week3timer2ModeValue"] == 0x01 then
             streams["week3timer2_modevalue"] = "energy"
-        elseif (myTable["week3timer2ModeValue"] == 0x02) then
+        elseif myTable["week3timer2ModeValue"] == 0x02 then
             streams["week3timer2_modevalue"] = "standard"
-        elseif (myTable["week3timer2ModeValue"] == 0x03) then
+        elseif myTable["week3timer2ModeValue"] == 0x03 then
             streams["week3timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["week3timer2ModeValue"] == 0x04) then
+        elseif myTable["week3timer2ModeValue"] == 0x04 then
             streams["week3timer2_modevalue"] = "smart"
         end
-        if (myTable["week3timer3ModeValue"] == 0x01) then
+        if myTable["week3timer3ModeValue"] == 0x01 then
             streams["week3timer3_modevalue"] = "energy"
-        elseif (myTable["week3timer3ModeValue"] == 0x02) then
+        elseif myTable["week3timer3ModeValue"] == 0x02 then
             streams["week3timer3_modevalue"] = "standard"
-        elseif (myTable["week3timer3ModeValue"] == 0x03) then
+        elseif myTable["week3timer3ModeValue"] == 0x03 then
             streams["week3timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["week3timer3ModeValue"] == 0x04) then
+        elseif myTable["week3timer3ModeValue"] == 0x04 then
             streams["week3timer3_modevalue"] = "smart"
         end
-        if (myTable["week3timer4ModeValue"] == 0x01) then
+        if myTable["week3timer4ModeValue"] == 0x01 then
             streams["week3timer4_modevalue"] = "energy"
-        elseif (myTable["week3timer4ModeValue"] == 0x02) then
+        elseif myTable["week3timer4ModeValue"] == 0x02 then
             streams["week3timer4_modevalue"] = "standard"
-        elseif (myTable["week3timer4ModeValue"] == 0x03) then
+        elseif myTable["week3timer4ModeValue"] == 0x03 then
             streams["week3timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["week3timer4ModeValue"] == 0x04) then
+        elseif myTable["week3timer4ModeValue"] == 0x04 then
             streams["week3timer4_modevalue"] = "smart"
         end
-        if (myTable["week3timer5ModeValue"] == 0x01) then
+        if myTable["week3timer5ModeValue"] == 0x01 then
             streams["week3timer5_modevalue"] = "energy"
-        elseif (myTable["week3timer5ModeValue"] == 0x02) then
+        elseif myTable["week3timer5ModeValue"] == 0x02 then
             streams["week3timer5_modevalue"] = "standard"
-        elseif (myTable["week3timer5ModeValue"] == 0x03) then
+        elseif myTable["week3timer5ModeValue"] == 0x03 then
             streams["week3timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["week3timer5ModeValue"] == 0x04) then
+        elseif myTable["week3timer5ModeValue"] == 0x04 then
             streams["week3timer5_modevalue"] = "smart"
         end
-        if (myTable["week3timer6ModeValue"] == 0x01) then
+        if myTable["week3timer6ModeValue"] == 0x01 then
             streams["week3timer6_modevalue"] = "energy"
-        elseif (myTable["week3timer6ModeValue"] == 0x02) then
+        elseif myTable["week3timer6ModeValue"] == 0x02 then
             streams["week3timer6_modevalue"] = "standard"
-        elseif (myTable["week3timer6ModeValue"] == 0x03) then
+        elseif myTable["week3timer6ModeValue"] == 0x03 then
             streams["week3timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["week3timer6ModeValue"] == 0x04) then
+        elseif myTable["week3timer6ModeValue"] == 0x04 then
             streams["week3timer6_modevalue"] = "smart"
         end
-        if (myTable["week4timer1ModeValue"] == 0x01) then
+        if myTable["week4timer1ModeValue"] == 0x01 then
             streams["week4timer1_modevalue"] = "energy"
-        elseif (myTable["week4timer1ModeValue"] == 0x02) then
+        elseif myTable["week4timer1ModeValue"] == 0x02 then
             streams["week4timer1_modevalue"] = "standard"
-        elseif (myTable["week4timer1ModeValue"] == 0x03) then
+        elseif myTable["week4timer1ModeValue"] == 0x03 then
             streams["week4timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["week4timer1ModeValue"] == 0x04) then
+        elseif myTable["week4timer1ModeValue"] == 0x04 then
             streams["week4timer1_modevalue"] = "smart"
         end
-        if (myTable["week4timer2ModeValue"] == 0x01) then
+        if myTable["week4timer2ModeValue"] == 0x01 then
             streams["week4timer2_modevalue"] = "energy"
-        elseif (myTable["week4timer2ModeValue"] == 0x02) then
+        elseif myTable["week4timer2ModeValue"] == 0x02 then
             streams["week4timer2_modevalue"] = "standard"
-        elseif (myTable["week4timer2ModeValue"] == 0x03) then
+        elseif myTable["week4timer2ModeValue"] == 0x03 then
             streams["week4timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["week4timer2ModeValue"] == 0x04) then
+        elseif myTable["week4timer2ModeValue"] == 0x04 then
             streams["week4timer2_modevalue"] = "smart"
         end
-        if (myTable["week4timer3ModeValue"] == 0x01) then
+        if myTable["week4timer3ModeValue"] == 0x01 then
             streams["week4timer3_modevalue"] = "energy"
-        elseif (myTable["week4timer3ModeValue"] == 0x02) then
+        elseif myTable["week4timer3ModeValue"] == 0x02 then
             streams["week4timer3_modevalue"] = "standard"
-        elseif (myTable["week4timer3ModeValue"] == 0x03) then
+        elseif myTable["week4timer3ModeValue"] == 0x03 then
             streams["week4timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["week4timer3ModeValue"] == 0x04) then
+        elseif myTable["week4timer3ModeValue"] == 0x04 then
             streams["week4timer3_modevalue"] = "smart"
         end
-        if (myTable["week4timer4ModeValue"] == 0x01) then
+        if myTable["week4timer4ModeValue"] == 0x01 then
             streams["week4timer4_modevalue"] = "energy"
-        elseif (myTable["week4timer4ModeValue"] == 0x02) then
+        elseif myTable["week4timer4ModeValue"] == 0x02 then
             streams["week4timer4_modevalue"] = "standard"
-        elseif (myTable["week4timer4ModeValue"] == 0x03) then
+        elseif myTable["week4timer4ModeValue"] == 0x03 then
             streams["week4timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["week4timer4ModeValue"] == 0x04) then
+        elseif myTable["week4timer4ModeValue"] == 0x04 then
             streams["week4timer4_modevalue"] = "smart"
         end
-        if (myTable["week4timer5ModeValue"] == 0x01) then
+        if myTable["week4timer5ModeValue"] == 0x01 then
             streams["week4timer5_modevalue"] = "energy"
-        elseif (myTable["week4timer5ModeValue"] == 0x02) then
+        elseif myTable["week4timer5ModeValue"] == 0x02 then
             streams["week4timer5_modevalue"] = "standard"
-        elseif (myTable["week4timer5ModeValue"] == 0x03) then
+        elseif myTable["week4timer5ModeValue"] == 0x03 then
             streams["week4timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["week4timer5ModeValue"] == 0x04) then
+        elseif myTable["week4timer5ModeValue"] == 0x04 then
             streams["week4timer5_modevalue"] = "smart"
         end
-        if (myTable["week4timer6ModeValue"] == 0x01) then
+        if myTable["week4timer6ModeValue"] == 0x01 then
             streams["week4timer6_modevalue"] = "energy"
-        elseif (myTable["week4timer6ModeValue"] == 0x02) then
+        elseif myTable["week4timer6ModeValue"] == 0x02 then
             streams["week4timer6_modevalue"] = "standard"
-        elseif (myTable["week4timer6ModeValue"] == 0x03) then
+        elseif myTable["week4timer6ModeValue"] == 0x03 then
             streams["week4timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["week4timer6ModeValue"] == 0x04) then
+        elseif myTable["week4timer6ModeValue"] == 0x04 then
             streams["week4timer6_modevalue"] = "smart"
         end
-        if (myTable["week5timer1ModeValue"] == 0x01) then
+        if myTable["week5timer1ModeValue"] == 0x01 then
             streams["week5timer1_modevalue"] = "energy"
-        elseif (myTable["week5timer1ModeValue"] == 0x02) then
+        elseif myTable["week5timer1ModeValue"] == 0x02 then
             streams["week5timer1_modevalue"] = "standard"
-        elseif (myTable["week5timer1ModeValue"] == 0x03) then
+        elseif myTable["week5timer1ModeValue"] == 0x03 then
             streams["week5timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["week5timer1ModeValue"] == 0x04) then
+        elseif myTable["week5timer1ModeValue"] == 0x04 then
             streams["week5timer1_modevalue"] = "smart"
         end
-        if (myTable["week5timer2ModeValue"] == 0x01) then
+        if myTable["week5timer2ModeValue"] == 0x01 then
             streams["week5timer2_modevalue"] = "energy"
-        elseif (myTable["week5timer2ModeValue"] == 0x02) then
+        elseif myTable["week5timer2ModeValue"] == 0x02 then
             streams["week5timer2_modevalue"] = "standard"
-        elseif (myTable["week5timer2ModeValue"] == 0x03) then
+        elseif myTable["week5timer2ModeValue"] == 0x03 then
             streams["week5timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["week5timer2ModeValue"] == 0x04) then
+        elseif myTable["week5timer2ModeValue"] == 0x04 then
             streams["week5timer2_modevalue"] = "smart"
         end
-        if (myTable["week5timer3ModeValue"] == 0x01) then
+        if myTable["week5timer3ModeValue"] == 0x01 then
             streams["week5timer3_modevalue"] = "energy"
-        elseif (myTable["week5timer3ModeValue"] == 0x02) then
+        elseif myTable["week5timer3ModeValue"] == 0x02 then
             streams["week5timer3_modevalue"] = "standard"
-        elseif (myTable["week5timer3ModeValue"] == 0x03) then
+        elseif myTable["week5timer3ModeValue"] == 0x03 then
             streams["week5timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["week5timer3ModeValue"] == 0x04) then
+        elseif myTable["week5timer3ModeValue"] == 0x04 then
             streams["week5timer3_modevalue"] = "smart"
         end
-        if (myTable["week5timer4ModeValue"] == 0x01) then
+        if myTable["week5timer4ModeValue"] == 0x01 then
             streams["week5timer4_modevalue"] = "energy"
-        elseif (myTable["week5timer4ModeValue"] == 0x02) then
+        elseif myTable["week5timer4ModeValue"] == 0x02 then
             streams["week5timer4_modevalue"] = "standard"
-        elseif (myTable["week5timer4ModeValue"] == 0x03) then
+        elseif myTable["week5timer4ModeValue"] == 0x03 then
             streams["week5timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["week5timer4ModeValue"] == 0x04) then
+        elseif myTable["week5timer4ModeValue"] == 0x04 then
             streams["week5timer4_modevalue"] = "smart"
         end
-        if (myTable["week5timer5ModeValue"] == 0x01) then
+        if myTable["week5timer5ModeValue"] == 0x01 then
             streams["week5timer5_modevalue"] = "energy"
-        elseif (myTable["week5timer5ModeValue"] == 0x02) then
+        elseif myTable["week5timer5ModeValue"] == 0x02 then
             streams["week5timer5_modevalue"] = "standard"
-        elseif (myTable["week5timer5ModeValue"] == 0x03) then
+        elseif myTable["week5timer5ModeValue"] == 0x03 then
             streams["week5timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["week5timer5ModeValue"] == 0x04) then
+        elseif myTable["week5timer5ModeValue"] == 0x04 then
             streams["week5timer5_modevalue"] = "smart"
         end
-        if (myTable["week5timer6ModeValue"] == 0x01) then
+        if myTable["week5timer6ModeValue"] == 0x01 then
             streams["week5timer6_modevalue"] = "energy"
-        elseif (myTable["week5timer6ModeValue"] == 0x02) then
+        elseif myTable["week5timer6ModeValue"] == 0x02 then
             streams["week5timer6_modevalue"] = "standard"
-        elseif (myTable["week5timer6ModeValue"] == 0x03) then
+        elseif myTable["week5timer6ModeValue"] == 0x03 then
             streams["week5timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["week5timer6ModeValue"] == 0x04) then
+        elseif myTable["week5timer6ModeValue"] == 0x04 then
             streams["week5timer6_modevalue"] = "smart"
         end
-        if (myTable["week6timer1ModeValue"] == 0x01) then
+        if myTable["week6timer1ModeValue"] == 0x01 then
             streams["week6timer1_modevalue"] = "energy"
-        elseif (myTable["week6timer1ModeValue"] == 0x02) then
+        elseif myTable["week6timer1ModeValue"] == 0x02 then
             streams["week6timer1_modevalue"] = "standard"
-        elseif (myTable["week6timer1ModeValue"] == 0x03) then
+        elseif myTable["week6timer1ModeValue"] == 0x03 then
             streams["week6timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["week6timer1ModeValue"] == 0x04) then
+        elseif myTable["week6timer1ModeValue"] == 0x04 then
             streams["week6timer1_modevalue"] = "smart"
         end
-        if (myTable["week6timer2ModeValue"] == 0x01) then
+        if myTable["week6timer2ModeValue"] == 0x01 then
             streams["week6timer2_modevalue"] = "energy"
-        elseif (myTable["week6timer2ModeValue"] == 0x02) then
+        elseif myTable["week6timer2ModeValue"] == 0x02 then
             streams["week6timer2_modevalue"] = "standard"
-        elseif (myTable["week6timer2ModeValue"] == 0x03) then
+        elseif myTable["week6timer2ModeValue"] == 0x03 then
             streams["week6timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["week6timer2ModeValue"] == 0x04) then
+        elseif myTable["week6timer2ModeValue"] == 0x04 then
             streams["week6timer2_modevalue"] = "smart"
         end
-        if (myTable["week6timer3ModeValue"] == 0x01) then
+        if myTable["week6timer3ModeValue"] == 0x01 then
             streams["week6timer3_modevalue"] = "energy"
-        elseif (myTable["week6timer3ModeValue"] == 0x02) then
+        elseif myTable["week6timer3ModeValue"] == 0x02 then
             streams["week6timer3_modevalue"] = "standard"
-        elseif (myTable["week6timer3ModeValue"] == 0x03) then
+        elseif myTable["week6timer3ModeValue"] == 0x03 then
             streams["week6timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["week6timer3ModeValue"] == 0x04) then
+        elseif myTable["week6timer3ModeValue"] == 0x04 then
             streams["week6timer3_modevalue"] = "smart"
         end
-        if (myTable["week6timer4ModeValue"] == 0x01) then
+        if myTable["week6timer4ModeValue"] == 0x01 then
             streams["week6timer4_modevalue"] = "energy"
-        elseif (myTable["week6timer4ModeValue"] == 0x02) then
+        elseif myTable["week6timer4ModeValue"] == 0x02 then
             streams["week6timer4_modevalue"] = "standard"
-        elseif (myTable["week6timer4ModeValue"] == 0x03) then
+        elseif myTable["week6timer4ModeValue"] == 0x03 then
             streams["week6timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["week6timer4ModeValue"] == 0x04) then
+        elseif myTable["week6timer4ModeValue"] == 0x04 then
             streams["week6timer4_modevalue"] = "smart"
         end
-        if (myTable["week6timer5ModeValue"] == 0x01) then
+        if myTable["week6timer5ModeValue"] == 0x01 then
             streams["week6timer5_modevalue"] = "energy"
-        elseif (myTable["week6timer5ModeValue"] == 0x02) then
+        elseif myTable["week6timer5ModeValue"] == 0x02 then
             streams["week6timer5_modevalue"] = "standard"
-        elseif (myTable["week6timer5ModeValue"] == 0x03) then
+        elseif myTable["week6timer5ModeValue"] == 0x03 then
             streams["week6timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["week6timer5ModeValue"] == 0x04) then
+        elseif myTable["week6timer5ModeValue"] == 0x04 then
             streams["week6timer5_modevalue"] = "smart"
         end
-        if (myTable["week6timer6ModeValue"] == 0x01) then
+        if myTable["week6timer6ModeValue"] == 0x01 then
             streams["week6timer6_modevalue"] = "energy"
-        elseif (myTable["week6timer6ModeValue"] == 0x02) then
+        elseif myTable["week6timer6ModeValue"] == 0x02 then
             streams["week6timer6_modevalue"] = "standard"
-        elseif (myTable["week6timer6ModeValue"] == 0x03) then
+        elseif myTable["week6timer6ModeValue"] == 0x03 then
             streams["week6timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["week6timer6ModeValue"] == 0x04) then
+        elseif myTable["week6timer6ModeValue"] == 0x04 then
             streams["week6timer6_modevalue"] = "smart"
         end
-    elseif (((myTable["dataType"] == BYTE_AUTO_REPORT) and (msgSubType == 0x03)) or
-        ((myTable["dataType"] == BYTE_QUERYL_REQUEST) and (msgSubType == 0x03))) then
-        if (myTable["timer1Effect"] == 0x01) then
+    elseif
+        ((myTable["dataType"] == BYTE_AUTO_REPORT) and (msgSubType == 0x03))
+        or ((myTable["dataType"] == BYTE_QUERYL_REQUEST) and (msgSubType == 0x03))
+    then
+        if myTable["timer1Effect"] == 0x01 then
             streams["timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["timer1Effect"] == BYTE_POWER_OFF then
             streams["timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["timer2Effect"] == 0x02) then
+        if myTable["timer2Effect"] == 0x02 then
             streams["timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["timer2Effect"] == BYTE_POWER_OFF then
             streams["timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["timer3Effect"] == 0x04) then
+        if myTable["timer3Effect"] == 0x04 then
             streams["timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["timer3Effect"] == BYTE_POWER_OFF then
             streams["timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["timer4Effect"] == 0x08) then
+        if myTable["timer4Effect"] == 0x08 then
             streams["timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["timer4Effect"] == BYTE_POWER_OFF then
             streams["timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["timer5Effect"] == 0x10) then
+        if myTable["timer5Effect"] == 0x10 then
             streams["timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["timer5Effect"] == BYTE_POWER_OFF then
             streams["timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["timer6Effect"] == 0x20) then
+        if myTable["timer6Effect"] == 0x20 then
             streams["timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["timer6Effect"] == BYTE_POWER_OFF then
             streams["timer6_effect"] = VALUE_FUNCTION_OFF
         end
         streams["timer1_openhour"] = int2String(myTable["timer1OpenHour"])
         streams["timer1_openmin"] = int2String(myTable["timer1OpenMin"])
         streams["timer1_closehour"] = int2String(myTable["timer1CloseHour"])
         streams["timer1_closemin"] = int2String(myTable["timer1CloseMin"])
-        streams["timer1_set_temperature"] = int2String(
-                                                myTable["timer1SetTemperature"])
+        streams["timer1_set_temperature"] = int2String(myTable["timer1SetTemperature"])
         streams["timer2_openhour"] = int2String(myTable["timer2OpenHour"])
         streams["timer2_openmin"] = int2String(myTable["timer2OpenMin"])
         streams["timer2_closehour"] = int2String(myTable["timer2CloseHour"])
         streams["timer2_closemin"] = int2String(myTable["timer2CloseMin"])
-        streams["timer2_set_temperature"] = int2String(
-                                                myTable["timer2SetTemperature"])
+        streams["timer2_set_temperature"] = int2String(myTable["timer2SetTemperature"])
         streams["timer3_openhour"] = int2String(myTable["timer3OpenHour"])
         streams["timer3_openmin"] = int2String(myTable["timer3OpenMin"])
         streams["timer3_closehour"] = int2String(myTable["timer3CloseHour"])
         streams["timer3_closemin"] = int2String(myTable["timer3CloseMin"])
-        streams["timer3_set_temperature"] = int2String(
-                                                myTable["timer3SetTemperature"])
+        streams["timer3_set_temperature"] = int2String(myTable["timer3SetTemperature"])
         streams["timer4_openhour"] = int2String(myTable["timer4OpenHour"])
         streams["timer4_openmin"] = int2String(myTable["timer4OpenMin"])
         streams["timer4_closehour"] = int2String(myTable["timer4CloseHour"])
         streams["timer4_closemin"] = int2String(myTable["timer4CloseMin"])
-        streams["timer4_set_temperature"] = int2String(
-                                                myTable["timer4SetTemperature"])
+        streams["timer4_set_temperature"] = int2String(myTable["timer4SetTemperature"])
         streams["timer5_openhour"] = int2String(myTable["timer5OpenHour"])
         streams["timer5_openmin"] = int2String(myTable["timer5OpenMin"])
         streams["timer5_closehour"] = int2String(myTable["timer5CloseHour"])
         streams["timer5_closemin"] = int2String(myTable["timer5CloseMin"])
-        streams["timer5_set_temperature"] = int2String(
-                                                myTable["timer5SetTemperature"])
+        streams["timer5_set_temperature"] = int2String(myTable["timer5SetTemperature"])
         streams["timer6_openhour"] = int2String(myTable["timer6OpenHour"])
         streams["timer6_openmin"] = int2String(myTable["timer6OpenMin"])
         streams["timer6_closehour"] = int2String(myTable["timer6CloseHour"])
         streams["timer6_closemin"] = int2String(myTable["timer6CloseMin"])
-        streams["timer6_set_temperature"] = int2String(
-                                                myTable["timer6SetTemperature"])
-        if (myTable["timer1ModeValue"] == 0x01) then
+        streams["timer6_set_temperature"] = int2String(myTable["timer6SetTemperature"])
+        if myTable["timer1ModeValue"] == 0x01 then
             streams["timer1_modevalue"] = "energy"
-        elseif (myTable["timer1ModeValue"] == 0x02) then
+        elseif myTable["timer1ModeValue"] == 0x02 then
             streams["timer1_modevalue"] = "standard"
-        elseif (myTable["timer1ModeValue"] == 0x03) then
+        elseif myTable["timer1ModeValue"] == 0x03 then
             streams["timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["timer1ModeValue"] == 0x04) then
+        elseif myTable["timer1ModeValue"] == 0x04 then
             streams["timer1_modevalue"] = "smart"
         end
-        if (myTable["timer2ModeValue"] == 0x01) then
+        if myTable["timer2ModeValue"] == 0x01 then
             streams["timer2_modevalue"] = "energy"
-        elseif (myTable["timer2ModeValue"] == 0x02) then
+        elseif myTable["timer2ModeValue"] == 0x02 then
             streams["timer2_modevalue"] = "standard"
-        elseif (myTable["timer2ModeValue"] == 0x03) then
+        elseif myTable["timer2ModeValue"] == 0x03 then
             streams["timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["timer2ModeValue"] == 0x04) then
+        elseif myTable["timer2ModeValue"] == 0x04 then
             streams["timer2_modevalue"] = "smart"
         end
-        if (myTable["timer3ModeValue"] == 0x01) then
+        if myTable["timer3ModeValue"] == 0x01 then
             streams["timer3_modevalue"] = "energy"
-        elseif (myTable["timer3ModeValue"] == 0x02) then
+        elseif myTable["timer3ModeValue"] == 0x02 then
             streams["timer3_modevalue"] = "standard"
-        elseif (myTable["timer3ModeValue"] == 0x03) then
+        elseif myTable["timer3ModeValue"] == 0x03 then
             streams["timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["timer3ModeValue"] == 0x04) then
+        elseif myTable["timer3ModeValue"] == 0x04 then
             streams["timer3_modevalue"] = "smart"
         end
-        if (myTable["timer4ModeValue"] == 0x01) then
+        if myTable["timer4ModeValue"] == 0x01 then
             streams["timer4_modevalue"] = "energy"
-        elseif (myTable["timer4ModeValue"] == 0x02) then
+        elseif myTable["timer4ModeValue"] == 0x02 then
             streams["timer4_modevalue"] = "standard"
-        elseif (myTable["timer4ModeValue"] == 0x03) then
+        elseif myTable["timer4ModeValue"] == 0x03 then
             streams["timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["timer4ModeValue"] == 0x04) then
+        elseif myTable["timer4ModeValue"] == 0x04 then
             streams["timer4_modevalue"] = "smart"
         end
-        if (myTable["timer5ModeValue"] == 0x01) then
+        if myTable["timer5ModeValue"] == 0x01 then
             streams["timer5_modevalue"] = "energy"
-        elseif (myTable["timer5ModeValue"] == 0x02) then
+        elseif myTable["timer5ModeValue"] == 0x02 then
             streams["timer5_modevalue"] = "standard"
-        elseif (myTable["timer5ModeValue"] == 0x03) then
+        elseif myTable["timer5ModeValue"] == 0x03 then
             streams["timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["timer5ModeValue"] == 0x04) then
+        elseif myTable["timer5ModeValue"] == 0x04 then
             streams["timer5_modevalue"] = "smart"
         end
-        if (myTable["timer6ModeValue"] == 0x01) then
+        if myTable["timer6ModeValue"] == 0x01 then
             streams["timer6_modevalue"] = "energy"
-        elseif (myTable["timer6ModeValue"] == 0x02) then
+        elseif myTable["timer6ModeValue"] == 0x02 then
             streams["timer6_modevalue"] = "standard"
-        elseif (myTable["timer6ModeValue"] == 0x03) then
+        elseif myTable["timer6ModeValue"] == 0x03 then
             streams["timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["timer6ModeValue"] == 0x04) then
+        elseif myTable["timer6ModeValue"] == 0x04 then
             streams["timer6_modevalue"] = "smart"
         end
-    elseif ((myTable["dataType"] == BYTE_CONTROL_REQUEST) and
-        (msgSubType == 0x01)) then
-        if (myTable["powerValue"] == BYTE_POWER_ON) then
+    elseif (myTable["dataType"] == BYTE_CONTROL_REQUEST) and (msgSubType == 0x01) then
+        if myTable["powerValue"] == BYTE_POWER_ON then
             streams[KEY_POWER] = VALUE_FUNCTION_ON
-        elseif (myTable["powerValue"] == BYTE_POWER_OFF) then
+        elseif myTable["powerValue"] == BYTE_POWER_OFF then
             streams[KEY_POWER] = VALUE_FUNCTION_OFF
         end
         if myTable["modeValue"] == 0x01 then
@@ -4720,168 +4673,156 @@ function dataToJson(jsonCmd)
         streams["tr_temperature"] = int2String(math.modf(myTable["trValue"]))
         streams["open_ptc"] = int2String(myTable["openPTC"])
         streams["ptc_temperature"] = int2String(math.modf(myTable["ptcTemp"]))
-        if (myTable["mute"] == BYTE_POWER_ON) then
+        if myTable["mute"] == BYTE_POWER_ON then
             streams["mute"] = VALUE_FUNCTION_ON
-        elseif (myTable["mute"] == BYTE_POWER_OFF) then
+        elseif myTable["mute"] == BYTE_POWER_OFF then
             streams["mute"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["openPTCTemp"] == BYTE_POWER_ON) then
+        if myTable["openPTCTemp"] == BYTE_POWER_ON then
             streams["open_ptc_temperature"] = VALUE_FUNCTION_ON
-        elseif (myTable["openPTCTemp"] == BYTE_POWER_OFF) then
+        elseif myTable["openPTCTemp"] == BYTE_POWER_OFF then
             streams["open_ptc_temperature"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["vacationMode"] == 0x10) then
+        if myTable["vacationMode"] == 0x10 then
             streams["vacation"] = VALUE_FUNCTION_ON
-        elseif (myTable["vacationMode"] == 0) then
+        elseif myTable["vacationMode"] == 0 then
             streams["vacation"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["fahrenheitEffect"] == 0x80) then
+        if myTable["fahrenheitEffect"] == 0x80 then
             streams["fahrenheit_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["fahrenheitEffect"] == 0) then
+        elseif myTable["fahrenheitEffect"] == 0 then
             streams["fahrenheit_effect"] = VALUE_FUNCTION_OFF
         end
         streams["set_vacationdays"] = int2String(myTable["vacadaysValue"])
         streams["set_temperature"] = int2String(myTable["tsValue"])
-        streams["set_vacation_start_year"] = int2String(
-                                                 myTable["vacadaysStartYearValue"])
-        streams["set_vacation_start_month"] = int2String(
-                                                  myTable["vacadaysStartMonthValue"])
-        streams["set_vacation_start_day"] = int2String(
-                                                myTable["vacadaysStartDayValue"])
-        streams["set_vacation_temperature"] = int2String(
-                                                  myTable["vacationTsValue"])
-    elseif ((myTable["dataType"] == BYTE_CONTROL_REQUEST) and
-        (msgSubType == 0x02)) then
-        if (myTable["timer1Effect"] == 0x01) then
+        streams["set_vacation_start_year"] = int2String(myTable["vacadaysStartYearValue"])
+        streams["set_vacation_start_month"] = int2String(myTable["vacadaysStartMonthValue"])
+        streams["set_vacation_start_day"] = int2String(myTable["vacadaysStartDayValue"])
+        streams["set_vacation_temperature"] = int2String(myTable["vacationTsValue"])
+    elseif (myTable["dataType"] == BYTE_CONTROL_REQUEST) and (msgSubType == 0x02) then
+        if myTable["timer1Effect"] == 0x01 then
             streams["timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["timer1Effect"] == BYTE_POWER_OFF then
             streams["timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["timer2Effect"] == 0x02) then
+        if myTable["timer2Effect"] == 0x02 then
             streams["timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["timer2Effect"] == BYTE_POWER_OFF then
             streams["timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["timer3Effect"] == 0x04) then
+        if myTable["timer3Effect"] == 0x04 then
             streams["timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["timer3Effect"] == BYTE_POWER_OFF then
             streams["timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["timer4Effect"] == 0x08) then
+        if myTable["timer4Effect"] == 0x08 then
             streams["timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["timer4Effect"] == BYTE_POWER_OFF then
             streams["timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["timer5Effect"] == 0x10) then
+        if myTable["timer5Effect"] == 0x10 then
             streams["timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["timer5Effect"] == BYTE_POWER_OFF then
             streams["timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["timer6Effect"] == 0x20) then
+        if myTable["timer6Effect"] == 0x20 then
             streams["timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["timer6Effect"] == BYTE_POWER_OFF then
             streams["timer6_effect"] = VALUE_FUNCTION_OFF
         end
         streams["timer1_openhour"] = int2String(myTable["timer1OpenHour"])
         streams["timer1_openmin"] = int2String(myTable["timer1OpenMin"])
         streams["timer1_closehour"] = int2String(myTable["timer1CloseHour"])
         streams["timer1_closemin"] = int2String(myTable["timer1CloseMin"])
-        streams["timer1_set_temperature"] = int2String(
-                                                myTable["timer1SetTemperature"])
+        streams["timer1_set_temperature"] = int2String(myTable["timer1SetTemperature"])
         streams["timer2_openhour"] = int2String(myTable["timer2OpenHour"])
         streams["timer2_openmin"] = int2String(myTable["timer2OpenMin"])
         streams["timer2_closehour"] = int2String(myTable["timer2CloseHour"])
         streams["timer2_closemin"] = int2String(myTable["timer2CloseMin"])
-        streams["timer2_set_temperature"] = int2String(
-                                                myTable["timer2SetTemperature"])
+        streams["timer2_set_temperature"] = int2String(myTable["timer2SetTemperature"])
         streams["timer3_openhour"] = int2String(myTable["timer3OpenHour"])
         streams["timer3_openmin"] = int2String(myTable["timer3OpenMin"])
         streams["timer3_closehour"] = int2String(myTable["timer3CloseHour"])
         streams["timer3_closemin"] = int2String(myTable["timer3CloseMin"])
-        streams["timer3_set_temperature"] = int2String(
-                                                myTable["timer3SetTemperature"])
+        streams["timer3_set_temperature"] = int2String(myTable["timer3SetTemperature"])
         streams["timer4_openhour"] = int2String(myTable["timer4OpenHour"])
         streams["timer4_openmin"] = int2String(myTable["timer4OpenMin"])
         streams["timer4_closehour"] = int2String(myTable["timer4CloseHour"])
         streams["timer4_closemin"] = int2String(myTable["timer4CloseMin"])
-        streams["timer4_set_temperature"] = int2String(
-                                                myTable["timer4SetTemperature"])
+        streams["timer4_set_temperature"] = int2String(myTable["timer4SetTemperature"])
         streams["timer5_openhour"] = int2String(myTable["timer5OpenHour"])
         streams["timer5_openmin"] = int2String(myTable["timer5OpenMin"])
         streams["timer5_closehour"] = int2String(myTable["timer5CloseHour"])
         streams["timer5_closemin"] = int2String(myTable["timer5CloseMin"])
-        streams["timer5_set_temperature"] = int2String(
-                                                myTable["timer5SetTemperature"])
+        streams["timer5_set_temperature"] = int2String(myTable["timer5SetTemperature"])
         streams["timer6_openhour"] = int2String(myTable["timer6OpenHour"])
         streams["timer6_openmin"] = int2String(myTable["timer6OpenMin"])
         streams["timer6_closehour"] = int2String(myTable["timer6CloseHour"])
         streams["timer6_closemin"] = int2String(myTable["timer6CloseMin"])
-        streams["timer6_set_temperature"] = int2String(
-                                                myTable["timer6SetTemperature"])
-        if (myTable["timer1ModeValue"] == 0x01) then
+        streams["timer6_set_temperature"] = int2String(myTable["timer6SetTemperature"])
+        if myTable["timer1ModeValue"] == 0x01 then
             streams["timer1_modevalue"] = "energy"
-        elseif (myTable["timer1ModeValue"] == 0x02) then
+        elseif myTable["timer1ModeValue"] == 0x02 then
             streams["timer1_modevalue"] = "standard"
-        elseif (myTable["timer1ModeValue"] == 0x03) then
+        elseif myTable["timer1ModeValue"] == 0x03 then
             streams["timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["timer1ModeValue"] == 0x04) then
+        elseif myTable["timer1ModeValue"] == 0x04 then
             streams["timer1_modevalue"] = "smart"
         end
-        if (myTable["timer2ModeValue"] == 0x01) then
+        if myTable["timer2ModeValue"] == 0x01 then
             streams["timer2_modevalue"] = "energy"
-        elseif (myTable["timer2ModeValue"] == 0x02) then
+        elseif myTable["timer2ModeValue"] == 0x02 then
             streams["timer2_modevalue"] = "standard"
-        elseif (myTable["timer2ModeValue"] == 0x03) then
+        elseif myTable["timer2ModeValue"] == 0x03 then
             streams["timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["timer2ModeValue"] == 0x04) then
+        elseif myTable["timer2ModeValue"] == 0x04 then
             streams["timer2_modevalue"] = "smart"
         end
-        if (myTable["timer3ModeValue"] == 0x01) then
+        if myTable["timer3ModeValue"] == 0x01 then
             streams["timer3_modevalue"] = "energy"
-        elseif (myTable["timer3ModeValue"] == 0x02) then
+        elseif myTable["timer3ModeValue"] == 0x02 then
             streams["timer3_modevalue"] = "standard"
-        elseif (myTable["timer3ModeValue"] == 0x03) then
+        elseif myTable["timer3ModeValue"] == 0x03 then
             streams["timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["timer3ModeValue"] == 0x04) then
+        elseif myTable["timer3ModeValue"] == 0x04 then
             streams["timer3_modevalue"] = "smart"
         end
-        if (myTable["timer4ModeValue"] == 0x01) then
+        if myTable["timer4ModeValue"] == 0x01 then
             streams["timer4_modevalue"] = "energy"
-        elseif (myTable["timer4ModeValue"] == 0x02) then
+        elseif myTable["timer4ModeValue"] == 0x02 then
             streams["timer4_modevalue"] = "standard"
-        elseif (myTable["timer4ModeValue"] == 0x03) then
+        elseif myTable["timer4ModeValue"] == 0x03 then
             streams["timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["timer4ModeValue"] == 0x04) then
+        elseif myTable["timer4ModeValue"] == 0x04 then
             streams["timer4_modevalue"] = "smart"
         end
-        if (myTable["timer5ModeValue"] == 0x01) then
+        if myTable["timer5ModeValue"] == 0x01 then
             streams["timer5_modevalue"] = "energy"
-        elseif (myTable["timer5ModeValue"] == 0x02) then
+        elseif myTable["timer5ModeValue"] == 0x02 then
             streams["timer5_modevalue"] = "standard"
-        elseif (myTable["timer5ModeValue"] == 0x03) then
+        elseif myTable["timer5ModeValue"] == 0x03 then
             streams["timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["timer5ModeValue"] == 0x04) then
+        elseif myTable["timer5ModeValue"] == 0x04 then
             streams["timer5_modevalue"] = "smart"
         end
-        if (myTable["timer6ModeValue"] == 0x01) then
+        if myTable["timer6ModeValue"] == 0x01 then
             streams["timer6_modevalue"] = "energy"
-        elseif (myTable["timer6ModeValue"] == 0x02) then
+        elseif myTable["timer6ModeValue"] == 0x02 then
             streams["timer6_modevalue"] = "standard"
-        elseif (myTable["timer6ModeValue"] == 0x03) then
+        elseif myTable["timer6ModeValue"] == 0x03 then
             streams["timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["timer6ModeValue"] == 0x04) then
+        elseif myTable["timer6ModeValue"] == 0x04 then
             streams["timer6_modevalue"] = "smart"
         end
-    elseif ((myTable["dataType"] == BYTE_CONTROL_REQUEST) and
-        (msgSubType == 0x03)) then
-        if (myTable["order1Effect"] == BYTE_POWER_ON) then
+    elseif (myTable["dataType"] == BYTE_CONTROL_REQUEST) and (msgSubType == 0x03) then
+        if myTable["order1Effect"] == BYTE_POWER_ON then
             streams["order1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["order1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["order1Effect"] == BYTE_POWER_OFF then
             streams["order1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["order2Effect"] == BYTE_POWER_ON) then
+        if myTable["order2Effect"] == BYTE_POWER_ON then
             streams["order2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["order2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["order2Effect"] == BYTE_POWER_OFF then
             streams["order2_effect"] = VALUE_FUNCTION_OFF
         end
         streams["order1_temp"] = int2String(myTable["order1Temp"])
@@ -4894,878 +4835,742 @@ function dataToJson(jsonCmd)
         streams["order2_timehour"] = int2String(myTable["order2TimeHour"])
         streams["order2_timeMin"] = int2String(myTable["order2TimeMin"])
         streams["order2_timemin"] = int2String(myTable["order2TimeMin"])
-        streams["order1_stoptimeHour"] = int2String(
-                                             myTable["order1StopTimeHour"])
-        streams["order1_stoptimehour"] = int2String(
-                                             myTable["order1StopTimeHour"])
+        streams["order1_stoptimeHour"] = int2String(myTable["order1StopTimeHour"])
+        streams["order1_stoptimehour"] = int2String(myTable["order1StopTimeHour"])
         streams["order1_stoptimeMin"] = int2String(myTable["order1StopTimeMin"])
         streams["order1_stoptimemin"] = int2String(myTable["order1StopTimeMin"])
-        streams["order2_stoptimeHour"] = int2String(
-                                             myTable["order2StopTimeHour"])
-        streams["order2_stoptimehour"] = int2String(
-                                             myTable["order2StopTimeHour"])
+        streams["order2_stoptimeHour"] = int2String(myTable["order2StopTimeHour"])
+        streams["order2_stoptimehour"] = int2String(myTable["order2StopTimeHour"])
         streams["order2_stoptimeMin"] = int2String(myTable["order2StopTimeMin"])
         streams["order2_stoptimemin"] = int2String(myTable["order2StopTimeMin"])
-    elseif ((myTable["dataType"] == BYTE_CONTROL_REQUEST) and
-        (msgSubType == 0x05)) then
-        if (myTable["backwaterEffect"] == BYTE_POWER_ON) then
+    elseif (myTable["dataType"] == BYTE_CONTROL_REQUEST) and (msgSubType == 0x05) then
+        if myTable["backwaterEffect"] == BYTE_POWER_ON then
             streams["backwater_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["backwaterEffect"] == BYTE_POWER_OFF) then
+        elseif myTable["backwaterEffect"] == BYTE_POWER_OFF then
             streams["backwater_effect"] = VALUE_FUNCTION_OFF
         end
-    elseif ((myTable["dataType"] == BYTE_CONTROL_REQUEST) and
-        (msgSubType == 0x06)) then
-        if (myTable["sterilizeEffect"] == 0x80) then
+    elseif (myTable["dataType"] == BYTE_CONTROL_REQUEST) and (msgSubType == 0x06) then
+        if myTable["sterilizeEffect"] == 0x80 then
             streams["sterilize_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["sterilizeEffect"] == BYTE_POWER_OFF) then
+        elseif myTable["sterilizeEffect"] == BYTE_POWER_OFF then
             streams["sterilize_effect"] = VALUE_FUNCTION_OFF
         end
-        streams["auto_sterilize_week"] =
-            int2String(myTable["autoSterilizeWeek"])
-        streams["auto_sterilize_hour"] =
-            int2String(myTable["autoSterilizeHour"])
-        streams["auto_sterilize_minute"] = int2String(
-                                               myTable["autoSterilizeMinute"])
-    elseif ((myTable["dataType"] == BYTE_CONTROL_REQUEST) and
-        (msgSubType == 0x07)) then
-        if (myTable["week0timer1Effect"] == 0x01) then
+        streams["auto_sterilize_week"] = int2String(myTable["autoSterilizeWeek"])
+        streams["auto_sterilize_hour"] = int2String(myTable["autoSterilizeHour"])
+        streams["auto_sterilize_minute"] = int2String(myTable["autoSterilizeMinute"])
+    elseif (myTable["dataType"] == BYTE_CONTROL_REQUEST) and (msgSubType == 0x07) then
+        if myTable["week0timer1Effect"] == 0x01 then
             streams["week0timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer1Effect"] == BYTE_POWER_OFF then
             streams["week0timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer2Effect"] == 0x02) then
+        if myTable["week0timer2Effect"] == 0x02 then
             streams["week0timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer2Effect"] == BYTE_POWER_OFF then
             streams["week0timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer3Effect"] == 0x04) then
+        if myTable["week0timer3Effect"] == 0x04 then
             streams["week0timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer3Effect"] == BYTE_POWER_OFF then
             streams["week0timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer4Effect"] == 0x08) then
+        if myTable["week0timer4Effect"] == 0x08 then
             streams["week0timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer4Effect"] == BYTE_POWER_OFF then
             streams["week0timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer5Effect"] == 0x10) then
+        if myTable["week0timer5Effect"] == 0x10 then
             streams["week0timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer5Effect"] == BYTE_POWER_OFF then
             streams["week0timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week0timer6Effect"] == 0x20) then
+        if myTable["week0timer6Effect"] == 0x20 then
             streams["week0timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week0timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week0timer6Effect"] == BYTE_POWER_OFF then
             streams["week0timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer1Effect"] == 0x01) then
+        if myTable["week1timer1Effect"] == 0x01 then
             streams["week1timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer1Effect"] == BYTE_POWER_OFF then
             streams["week1timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer2Effect"] == 0x02) then
+        if myTable["week1timer2Effect"] == 0x02 then
             streams["week1timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer2Effect"] == BYTE_POWER_OFF then
             streams["week1timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer3Effect"] == 0x04) then
+        if myTable["week1timer3Effect"] == 0x04 then
             streams["week1timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer3Effect"] == BYTE_POWER_OFF then
             streams["week1timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer4Effect"] == 0x08) then
+        if myTable["week1timer4Effect"] == 0x08 then
             streams["week1timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer4Effect"] == BYTE_POWER_OFF then
             streams["week1timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer5Effect"] == 0x10) then
+        if myTable["week1timer5Effect"] == 0x10 then
             streams["week1timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer5Effect"] == BYTE_POWER_OFF then
             streams["week1timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week1timer6Effect"] == 0x20) then
+        if myTable["week1timer6Effect"] == 0x20 then
             streams["week1timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week1timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week1timer6Effect"] == BYTE_POWER_OFF then
             streams["week1timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer1Effect"] == 0x01) then
+        if myTable["week2timer1Effect"] == 0x01 then
             streams["week2timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer1Effect"] == BYTE_POWER_OFF then
             streams["week2timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer2Effect"] == 0x02) then
+        if myTable["week2timer2Effect"] == 0x02 then
             streams["week2timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer2Effect"] == BYTE_POWER_OFF then
             streams["week2timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer3Effect"] == 0x04) then
+        if myTable["week2timer3Effect"] == 0x04 then
             streams["week2timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer3Effect"] == BYTE_POWER_OFF then
             streams["week2timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer4Effect"] == 0x08) then
+        if myTable["week2timer4Effect"] == 0x08 then
             streams["week2timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer4Effect"] == BYTE_POWER_OFF then
             streams["week2timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer5Effect"] == 0x10) then
+        if myTable["week2timer5Effect"] == 0x10 then
             streams["week2timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer5Effect"] == BYTE_POWER_OFF then
             streams["week2timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week2timer6Effect"] == 0x20) then
+        if myTable["week2timer6Effect"] == 0x20 then
             streams["week2timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week2timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week2timer6Effect"] == BYTE_POWER_OFF then
             streams["week2timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer1Effect"] == 0x01) then
+        if myTable["week3timer1Effect"] == 0x01 then
             streams["week3timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer1Effect"] == BYTE_POWER_OFF then
             streams["week3timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer2Effect"] == 0x02) then
+        if myTable["week3timer2Effect"] == 0x02 then
             streams["week3timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer2Effect"] == BYTE_POWER_OFF then
             streams["week3timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer3Effect"] == 0x04) then
+        if myTable["week3timer3Effect"] == 0x04 then
             streams["week3timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer3Effect"] == BYTE_POWER_OFF then
             streams["week3timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer4Effect"] == 0x08) then
+        if myTable["week3timer4Effect"] == 0x08 then
             streams["week3timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer4Effect"] == BYTE_POWER_OFF then
             streams["week3timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer5Effect"] == 0x10) then
+        if myTable["week3timer5Effect"] == 0x10 then
             streams["week3timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer5Effect"] == BYTE_POWER_OFF then
             streams["week3timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week3timer6Effect"] == 0x20) then
+        if myTable["week3timer6Effect"] == 0x20 then
             streams["week3timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week3timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week3timer6Effect"] == BYTE_POWER_OFF then
             streams["week3timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer1Effect"] == 0x01) then
+        if myTable["week4timer1Effect"] == 0x01 then
             streams["week4timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer1Effect"] == BYTE_POWER_OFF then
             streams["week4timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer2Effect"] == 0x02) then
+        if myTable["week4timer2Effect"] == 0x02 then
             streams["week4timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer2Effect"] == BYTE_POWER_OFF then
             streams["week4timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer3Effect"] == 0x04) then
+        if myTable["week4timer3Effect"] == 0x04 then
             streams["week4timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer3Effect"] == BYTE_POWER_OFF then
             streams["week4timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer4Effect"] == 0x08) then
+        if myTable["week4timer4Effect"] == 0x08 then
             streams["week4timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer4Effect"] == BYTE_POWER_OFF then
             streams["week4timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer5Effect"] == 0x10) then
+        if myTable["week4timer5Effect"] == 0x10 then
             streams["week4timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer5Effect"] == BYTE_POWER_OFF then
             streams["week4timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week4timer6Effect"] == 0x20) then
+        if myTable["week4timer6Effect"] == 0x20 then
             streams["week4timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week4timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week4timer6Effect"] == BYTE_POWER_OFF then
             streams["week4timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer1Effect"] == 0x01) then
+        if myTable["week5timer1Effect"] == 0x01 then
             streams["week5timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer1Effect"] == BYTE_POWER_OFF then
             streams["week5timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer2Effect"] == 0x02) then
+        if myTable["week5timer2Effect"] == 0x02 then
             streams["week5timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer2Effect"] == BYTE_POWER_OFF then
             streams["week5timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer3Effect"] == 0x04) then
+        if myTable["week5timer3Effect"] == 0x04 then
             streams["week5timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer3Effect"] == BYTE_POWER_OFF then
             streams["week5timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer4Effect"] == 0x08) then
+        if myTable["week5timer4Effect"] == 0x08 then
             streams["week5timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer4Effect"] == BYTE_POWER_OFF then
             streams["week5timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer5Effect"] == 0x10) then
+        if myTable["week5timer5Effect"] == 0x10 then
             streams["week5timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer5Effect"] == BYTE_POWER_OFF then
             streams["week5timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week5timer6Effect"] == 0x20) then
+        if myTable["week5timer6Effect"] == 0x20 then
             streams["week5timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week5timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week5timer6Effect"] == BYTE_POWER_OFF then
             streams["week5timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer1Effect"] == 0x01) then
+        if myTable["week6timer1Effect"] == 0x01 then
             streams["week6timer1_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer1Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer1Effect"] == BYTE_POWER_OFF then
             streams["week6timer1_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer2Effect"] == 0x02) then
+        if myTable["week6timer2Effect"] == 0x02 then
             streams["week6timer2_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer2Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer2Effect"] == BYTE_POWER_OFF then
             streams["week6timer2_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer3Effect"] == 0x04) then
+        if myTable["week6timer3Effect"] == 0x04 then
             streams["week6timer3_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer3Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer3Effect"] == BYTE_POWER_OFF then
             streams["week6timer3_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer4Effect"] == 0x08) then
+        if myTable["week6timer4Effect"] == 0x08 then
             streams["week6timer4_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer4Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer4Effect"] == BYTE_POWER_OFF then
             streams["week6timer4_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer5Effect"] == 0x10) then
+        if myTable["week6timer5Effect"] == 0x10 then
             streams["week6timer5_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer5Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer5Effect"] == BYTE_POWER_OFF then
             streams["week6timer5_effect"] = VALUE_FUNCTION_OFF
         end
-        if (myTable["week6timer6Effect"] == 0x20) then
+        if myTable["week6timer6Effect"] == 0x20 then
             streams["week6timer6_effect"] = VALUE_FUNCTION_ON
-        elseif (myTable["week6timer6Effect"] == BYTE_POWER_OFF) then
+        elseif myTable["week6timer6Effect"] == BYTE_POWER_OFF then
             streams["week6timer6_effect"] = VALUE_FUNCTION_OFF
         end
-        streams["week0timer1_opentime"] = int2String(
-                                              myTable["week0timer1OpenTime"])
-        streams["week0timer1_closetime"] = int2String(
-                                               myTable["week0timer1CloseTime"])
-        streams["week0timer1_set_temperature"] = int2String(
-                                                     myTable["week0timer1SetTemperature"])
-        streams["week0timer2_opentime"] = int2String(
-                                              myTable["week0timer2OpenTime"])
-        streams["week0timer2_closetime"] = int2String(
-                                               myTable["week0timer2CloseTime"])
-        streams["week0timer2_set_temperature"] = int2String(
-                                                     myTable["week0timer2SetTemperature"])
-        streams["week0timer3_opentime"] = int2String(
-                                              myTable["week0timer3OpenTime"])
-        streams["week0timer3_closetime"] = int2String(
-                                               myTable["week0timer3CloseTime"])
-        streams["week0timer3_set_temperature"] = int2String(
-                                                     myTable["week0timer3SetTemperature"])
-        streams["week0timer4_opentime"] = int2String(
-                                              myTable["week0timer4OpenTime"])
-        streams["week0timer4_closetime"] = int2String(
-                                               myTable["week0timer4CloseTime"])
-        streams["week0timer4_set_temperature"] = int2String(
-                                                     myTable["week0timer4SetTemperature"])
-        streams["week0timer5_opentime"] = int2String(
-                                              myTable["week0timer5OpenTime"])
-        streams["week0timer5_closetime"] = int2String(
-                                               myTable["week0timer5CloseTime"])
-        streams["week0timer5_set_temperature"] = int2String(
-                                                     myTable["week0timer5SetTemperature"])
-        streams["week0timer6_opentime"] = int2String(
-                                              myTable["week0timer6OpenTime"])
-        streams["week0timer6_closetime"] = int2String(
-                                               myTable["week0timer6CloseTime"])
-        streams["week0timer6_set_temperature"] = int2String(
-                                                     myTable["week0timer6SetTemperature"])
-        streams["week1timer1_opentime"] = int2String(
-                                              myTable["week1timer1OpenTime"])
-        streams["week1timer1_closetime"] = int2String(
-                                               myTable["week1timer1CloseTime"])
-        streams["week1timer1_set_temperature"] = int2String(
-                                                     myTable["week1timer1SetTemperature"])
-        streams["week1timer2_opentime"] = int2String(
-                                              myTable["week1timer2OpenTime"])
-        streams["week1timer2_closetime"] = int2String(
-                                               myTable["week1timer2CloseTime"])
-        streams["week1timer2_set_temperature"] = int2String(
-                                                     myTable["week1timer2SetTemperature"])
-        streams["week1timer3_opentime"] = int2String(
-                                              myTable["week1timer3OpenTime"])
-        streams["week1timer3_closetime"] = int2String(
-                                               myTable["week1timer3CloseTime"])
-        streams["week1timer3_set_temperature"] = int2String(
-                                                     myTable["week1timer3SetTemperature"])
-        streams["week1timer4_opentime"] = int2String(
-                                              myTable["week1timer4OpenTime"])
-        streams["week1timer4_closetime"] = int2String(
-                                               myTable["week1timer4CloseTime"])
-        streams["week1timer4_set_temperature"] = int2String(
-                                                     myTable["week1timer4SetTemperature"])
-        streams["week1timer5_opentime"] = int2String(
-                                              myTable["week1timer5OpenTime"])
-        streams["week1timer5_closetime"] = int2String(
-                                               myTable["week1timer5CloseTime"])
-        streams["week1timer5_set_temperature"] = int2String(
-                                                     myTable["week1timer5SetTemperature"])
-        streams["week1timer6_opentime"] = int2String(
-                                              myTable["week1timer6OpenTime"])
-        streams["week1timer6_closetime"] = int2String(
-                                               myTable["week1timer6CloseTime"])
-        streams["week1timer6_set_temperature"] = int2String(
-                                                     myTable["week1timer6SetTemperature"])
-        streams["week2timer1_opentime"] = int2String(
-                                              myTable["week2timer1OpenTime"])
-        streams["week2timer1_closetime"] = int2String(
-                                               myTable["week2timer1CloseTime"])
-        streams["week2timer1_set_temperature"] = int2String(
-                                                     myTable["week2timer1SetTemperature"])
-        streams["week2timer2_opentime"] = int2String(
-                                              myTable["week2timer2OpenTime"])
-        streams["week2timer2_closetime"] = int2String(
-                                               myTable["week2timer2CloseTime"])
-        streams["week2timer2_set_temperature"] = int2String(
-                                                     myTable["week2timer2SetTemperature"])
-        streams["week2timer3_opentime"] = int2String(
-                                              myTable["week2timer3OpenTime"])
-        streams["week2timer3_closetime"] = int2String(
-                                               myTable["week2timer3CloseTime"])
-        streams["week2timer3_set_temperature"] = int2String(
-                                                     myTable["week2timer3SetTemperature"])
-        streams["week2timer4_opentime"] = int2String(
-                                              myTable["week2timer4OpenTime"])
-        streams["week2timer4_closetime"] = int2String(
-                                               myTable["week2timer4CloseTime"])
-        streams["week2timer4_set_temperature"] = int2String(
-                                                     myTable["week2timer4SetTemperature"])
-        streams["week2timer5_opentime"] = int2String(
-                                              myTable["week2timer5OpenTime"])
-        streams["week2timer5_closetime"] = int2String(
-                                               myTable["week2timer5CloseTime"])
-        streams["week2timer5_set_temperature"] = int2String(
-                                                     myTable["week2timer5SetTemperature"])
-        streams["week2timer6_opentime"] = int2String(
-                                              myTable["week2timer6OpenTime"])
-        streams["week2timer6_closetime"] = int2String(
-                                               myTable["week2timer6CloseTime"])
-        streams["week2timer6_set_temperature"] = int2String(
-                                                     myTable["week2timer6SetTemperature"])
-        streams["week3timer1_opentime"] = int2String(
-                                              myTable["week3timer1OpenTime"])
-        streams["week3timer1_closetime"] = int2String(
-                                               myTable["week3timer1CloseTime"])
-        streams["week3timer1_set_temperature"] = int2String(
-                                                     myTable["week3timer1SetTemperature"])
-        streams["week3timer2_opentime"] = int2String(
-                                              myTable["week3timer2OpenTime"])
-        streams["week3timer2_closetime"] = int2String(
-                                               myTable["week3timer2CloseTime"])
-        streams["week3timer2_set_temperature"] = int2String(
-                                                     myTable["week3timer2SetTemperature"])
-        streams["week3timer3_opentime"] = int2String(
-                                              myTable["week3timer3OpenTime"])
-        streams["week3timer3_closetime"] = int2String(
-                                               myTable["week3timer3CloseTime"])
-        streams["week3timer3_set_temperature"] = int2String(
-                                                     myTable["week3timer3SetTemperature"])
-        streams["week3timer4_opentime"] = int2String(
-                                              myTable["week3timer4OpenTime"])
-        streams["week3timer4_closetime"] = int2String(
-                                               myTable["week3timer4CloseTime"])
-        streams["week3timer4_set_temperature"] = int2String(
-                                                     myTable["week3timer4SetTemperature"])
-        streams["week3timer5_opentime"] = int2String(
-                                              myTable["week3timer5OpenTime"])
-        streams["week3timer5_closetime"] = int2String(
-                                               myTable["week3timer5CloseTime"])
-        streams["week3timer5_set_temperature"] = int2String(
-                                                     myTable["week3timer5SetTemperature"])
-        streams["week3timer6_opentime"] = int2String(
-                                              myTable["week3timer6OpenTime"])
-        streams["week3timer6_closetime"] = int2String(
-                                               myTable["week3timer6CloseTime"])
-        streams["week3timer6_set_temperature"] = int2String(
-                                                     myTable["week3timer6SetTemperature"])
-        streams["week4timer1_opentime"] = int2String(
-                                              myTable["week4timer1OpenTime"])
-        streams["week4timer1_closetime"] = int2String(
-                                               myTable["week4timer1CloseTime"])
-        streams["week4timer1_set_temperature"] = int2String(
-                                                     myTable["week4timer1SetTemperature"])
-        streams["week4timer2_opentime"] = int2String(
-                                              myTable["week4timer2OpenTime"])
-        streams["week4timer2_closetime"] = int2String(
-                                               myTable["week4timer2CloseTime"])
-        streams["week4timer2_set_temperature"] = int2String(
-                                                     myTable["week4timer2SetTemperature"])
-        streams["week4timer3_opentime"] = int2String(
-                                              myTable["week4timer3OpenTime"])
-        streams["week4timer3_closetime"] = int2String(
-                                               myTable["week4timer3CloseTime"])
-        streams["week4timer3_set_temperature"] = int2String(
-                                                     myTable["week4timer3SetTemperature"])
-        streams["week4timer4_opentime"] = int2String(
-                                              myTable["week4timer4OpenTime"])
-        streams["week4timer4_closetime"] = int2String(
-                                               myTable["week4timer4CloseTime"])
-        streams["week4timer4_set_temperature"] = int2String(
-                                                     myTable["week4timer4SetTemperature"])
-        streams["week4timer5_opentime"] = int2String(
-                                              myTable["week4timer5OpenTime"])
-        streams["week4timer5_closetime"] = int2String(
-                                               myTable["week4timer5CloseTime"])
-        streams["week4timer5_set_temperature"] = int2String(
-                                                     myTable["week4timer5SetTemperature"])
-        streams["week4timer6_opentime"] = int2String(
-                                              myTable["week4timer6OpenTime"])
-        streams["week4timer6_closetime"] = int2String(
-                                               myTable["week4timer6CloseTime"])
-        streams["week4timer6_set_temperature"] = int2String(
-                                                     myTable["week4timer6SetTemperature"])
-        streams["week5timer1_opentime"] = int2String(
-                                              myTable["week5timer1OpenTime"])
-        streams["week5timer1_closetime"] = int2String(
-                                               myTable["week5timer1CloseTime"])
-        streams["week5timer1_set_temperature"] = int2String(
-                                                     myTable["week5timer1SetTemperature"])
-        streams["week5timer2_opentime"] = int2String(
-                                              myTable["week5timer2OpenTime"])
-        streams["week5timer2_closetime"] = int2String(
-                                               myTable["week5timer2CloseTime"])
-        streams["week5timer2_set_temperature"] = int2String(
-                                                     myTable["week5timer2SetTemperature"])
-        streams["week5timer3_opentime"] = int2String(
-                                              myTable["week5timer3OpenTime"])
-        streams["week5timer3_closetime"] = int2String(
-                                               myTable["week5timer3CloseTime"])
-        streams["week5timer3_set_temperature"] = int2String(
-                                                     myTable["week5timer3SetTemperature"])
-        streams["week5timer4_opentime"] = int2String(
-                                              myTable["week5timer4OpenTime"])
-        streams["week5timer4_closetime"] = int2String(
-                                               myTable["week5timer4CloseTime"])
-        streams["week5timer4_set_temperature"] = int2String(
-                                                     myTable["week5timer4SetTemperature"])
-        streams["week5timer5_opentime"] = int2String(
-                                              myTable["week5timer5OpenTime"])
-        streams["week5timer5_closetime"] = int2String(
-                                               myTable["week5timer5CloseTime"])
-        streams["week5timer5_set_temperature"] = int2String(
-                                                     myTable["week5timer5SetTemperature"])
-        streams["week5timer6_opentime"] = int2String(
-                                              myTable["week5timer6OpenTime"])
-        streams["week5timer6_closetime"] = int2String(
-                                               myTable["week5timer6CloseTime"])
-        streams["week5timer6_set_temperature"] = int2String(
-                                                     myTable["week5timer6SetTemperature"])
-        streams["week6timer1_opentime"] = int2String(
-                                              myTable["week6timer1OpenTime"])
-        streams["week6timer1_closetime"] = int2String(
-                                               myTable["week6timer1CloseTime"])
-        streams["week6timer1_set_temperature"] = int2String(
-                                                     myTable["week6timer1SetTemperature"])
-        streams["week6timer2_opentime"] = int2String(
-                                              myTable["week6timer2OpenTime"])
-        streams["week6timer2_closetime"] = int2String(
-                                               myTable["week6timer2CloseTime"])
-        streams["week6timer2_set_temperature"] = int2String(
-                                                     myTable["week6timer2SetTemperature"])
-        streams["week6timer3_opentime"] = int2String(
-                                              myTable["week6timer3OpenTime"])
-        streams["week6timer3_closetime"] = int2String(
-                                               myTable["week6timer3CloseTime"])
-        streams["week6timer3_set_temperature"] = int2String(
-                                                     myTable["week6timer3SetTemperature"])
-        streams["week6timer4_opentime"] = int2String(
-                                              myTable["week6timer4OpenTime"])
-        streams["week6timer4_closetime"] = int2String(
-                                               myTable["week6timer4CloseTime"])
-        streams["week6timer4_set_temperature"] = int2String(
-                                                     myTable["week6timer4SetTemperature"])
-        streams["week6timer5_opentime"] = int2String(
-                                              myTable["week6timer5OpenTime"])
-        streams["week6timer5_closetime"] = int2String(
-                                               myTable["week6timer5CloseTime"])
-        streams["week6timer5_set_temperature"] = int2String(
-                                                     myTable["week6timer5SetTemperature"])
-        streams["week6timer6_opentime"] = int2String(
-                                              myTable["week6timer6OpenTime"])
-        streams["week6timer6_closetime"] = int2String(
-                                               myTable["week6timer6CloseTime"])
-        streams["week6timer6_set_temperature"] = int2String(
-                                                     myTable["week6timer6SetTemperature"])
-        if (myTable["week0timer1ModeValue"] == 0x01) then
+        streams["week0timer1_opentime"] = int2String(myTable["week0timer1OpenTime"])
+        streams["week0timer1_closetime"] = int2String(myTable["week0timer1CloseTime"])
+        streams["week0timer1_set_temperature"] = int2String(myTable["week0timer1SetTemperature"])
+        streams["week0timer2_opentime"] = int2String(myTable["week0timer2OpenTime"])
+        streams["week0timer2_closetime"] = int2String(myTable["week0timer2CloseTime"])
+        streams["week0timer2_set_temperature"] = int2String(myTable["week0timer2SetTemperature"])
+        streams["week0timer3_opentime"] = int2String(myTable["week0timer3OpenTime"])
+        streams["week0timer3_closetime"] = int2String(myTable["week0timer3CloseTime"])
+        streams["week0timer3_set_temperature"] = int2String(myTable["week0timer3SetTemperature"])
+        streams["week0timer4_opentime"] = int2String(myTable["week0timer4OpenTime"])
+        streams["week0timer4_closetime"] = int2String(myTable["week0timer4CloseTime"])
+        streams["week0timer4_set_temperature"] = int2String(myTable["week0timer4SetTemperature"])
+        streams["week0timer5_opentime"] = int2String(myTable["week0timer5OpenTime"])
+        streams["week0timer5_closetime"] = int2String(myTable["week0timer5CloseTime"])
+        streams["week0timer5_set_temperature"] = int2String(myTable["week0timer5SetTemperature"])
+        streams["week0timer6_opentime"] = int2String(myTable["week0timer6OpenTime"])
+        streams["week0timer6_closetime"] = int2String(myTable["week0timer6CloseTime"])
+        streams["week0timer6_set_temperature"] = int2String(myTable["week0timer6SetTemperature"])
+        streams["week1timer1_opentime"] = int2String(myTable["week1timer1OpenTime"])
+        streams["week1timer1_closetime"] = int2String(myTable["week1timer1CloseTime"])
+        streams["week1timer1_set_temperature"] = int2String(myTable["week1timer1SetTemperature"])
+        streams["week1timer2_opentime"] = int2String(myTable["week1timer2OpenTime"])
+        streams["week1timer2_closetime"] = int2String(myTable["week1timer2CloseTime"])
+        streams["week1timer2_set_temperature"] = int2String(myTable["week1timer2SetTemperature"])
+        streams["week1timer3_opentime"] = int2String(myTable["week1timer3OpenTime"])
+        streams["week1timer3_closetime"] = int2String(myTable["week1timer3CloseTime"])
+        streams["week1timer3_set_temperature"] = int2String(myTable["week1timer3SetTemperature"])
+        streams["week1timer4_opentime"] = int2String(myTable["week1timer4OpenTime"])
+        streams["week1timer4_closetime"] = int2String(myTable["week1timer4CloseTime"])
+        streams["week1timer4_set_temperature"] = int2String(myTable["week1timer4SetTemperature"])
+        streams["week1timer5_opentime"] = int2String(myTable["week1timer5OpenTime"])
+        streams["week1timer5_closetime"] = int2String(myTable["week1timer5CloseTime"])
+        streams["week1timer5_set_temperature"] = int2String(myTable["week1timer5SetTemperature"])
+        streams["week1timer6_opentime"] = int2String(myTable["week1timer6OpenTime"])
+        streams["week1timer6_closetime"] = int2String(myTable["week1timer6CloseTime"])
+        streams["week1timer6_set_temperature"] = int2String(myTable["week1timer6SetTemperature"])
+        streams["week2timer1_opentime"] = int2String(myTable["week2timer1OpenTime"])
+        streams["week2timer1_closetime"] = int2String(myTable["week2timer1CloseTime"])
+        streams["week2timer1_set_temperature"] = int2String(myTable["week2timer1SetTemperature"])
+        streams["week2timer2_opentime"] = int2String(myTable["week2timer2OpenTime"])
+        streams["week2timer2_closetime"] = int2String(myTable["week2timer2CloseTime"])
+        streams["week2timer2_set_temperature"] = int2String(myTable["week2timer2SetTemperature"])
+        streams["week2timer3_opentime"] = int2String(myTable["week2timer3OpenTime"])
+        streams["week2timer3_closetime"] = int2String(myTable["week2timer3CloseTime"])
+        streams["week2timer3_set_temperature"] = int2String(myTable["week2timer3SetTemperature"])
+        streams["week2timer4_opentime"] = int2String(myTable["week2timer4OpenTime"])
+        streams["week2timer4_closetime"] = int2String(myTable["week2timer4CloseTime"])
+        streams["week2timer4_set_temperature"] = int2String(myTable["week2timer4SetTemperature"])
+        streams["week2timer5_opentime"] = int2String(myTable["week2timer5OpenTime"])
+        streams["week2timer5_closetime"] = int2String(myTable["week2timer5CloseTime"])
+        streams["week2timer5_set_temperature"] = int2String(myTable["week2timer5SetTemperature"])
+        streams["week2timer6_opentime"] = int2String(myTable["week2timer6OpenTime"])
+        streams["week2timer6_closetime"] = int2String(myTable["week2timer6CloseTime"])
+        streams["week2timer6_set_temperature"] = int2String(myTable["week2timer6SetTemperature"])
+        streams["week3timer1_opentime"] = int2String(myTable["week3timer1OpenTime"])
+        streams["week3timer1_closetime"] = int2String(myTable["week3timer1CloseTime"])
+        streams["week3timer1_set_temperature"] = int2String(myTable["week3timer1SetTemperature"])
+        streams["week3timer2_opentime"] = int2String(myTable["week3timer2OpenTime"])
+        streams["week3timer2_closetime"] = int2String(myTable["week3timer2CloseTime"])
+        streams["week3timer2_set_temperature"] = int2String(myTable["week3timer2SetTemperature"])
+        streams["week3timer3_opentime"] = int2String(myTable["week3timer3OpenTime"])
+        streams["week3timer3_closetime"] = int2String(myTable["week3timer3CloseTime"])
+        streams["week3timer3_set_temperature"] = int2String(myTable["week3timer3SetTemperature"])
+        streams["week3timer4_opentime"] = int2String(myTable["week3timer4OpenTime"])
+        streams["week3timer4_closetime"] = int2String(myTable["week3timer4CloseTime"])
+        streams["week3timer4_set_temperature"] = int2String(myTable["week3timer4SetTemperature"])
+        streams["week3timer5_opentime"] = int2String(myTable["week3timer5OpenTime"])
+        streams["week3timer5_closetime"] = int2String(myTable["week3timer5CloseTime"])
+        streams["week3timer5_set_temperature"] = int2String(myTable["week3timer5SetTemperature"])
+        streams["week3timer6_opentime"] = int2String(myTable["week3timer6OpenTime"])
+        streams["week3timer6_closetime"] = int2String(myTable["week3timer6CloseTime"])
+        streams["week3timer6_set_temperature"] = int2String(myTable["week3timer6SetTemperature"])
+        streams["week4timer1_opentime"] = int2String(myTable["week4timer1OpenTime"])
+        streams["week4timer1_closetime"] = int2String(myTable["week4timer1CloseTime"])
+        streams["week4timer1_set_temperature"] = int2String(myTable["week4timer1SetTemperature"])
+        streams["week4timer2_opentime"] = int2String(myTable["week4timer2OpenTime"])
+        streams["week4timer2_closetime"] = int2String(myTable["week4timer2CloseTime"])
+        streams["week4timer2_set_temperature"] = int2String(myTable["week4timer2SetTemperature"])
+        streams["week4timer3_opentime"] = int2String(myTable["week4timer3OpenTime"])
+        streams["week4timer3_closetime"] = int2String(myTable["week4timer3CloseTime"])
+        streams["week4timer3_set_temperature"] = int2String(myTable["week4timer3SetTemperature"])
+        streams["week4timer4_opentime"] = int2String(myTable["week4timer4OpenTime"])
+        streams["week4timer4_closetime"] = int2String(myTable["week4timer4CloseTime"])
+        streams["week4timer4_set_temperature"] = int2String(myTable["week4timer4SetTemperature"])
+        streams["week4timer5_opentime"] = int2String(myTable["week4timer5OpenTime"])
+        streams["week4timer5_closetime"] = int2String(myTable["week4timer5CloseTime"])
+        streams["week4timer5_set_temperature"] = int2String(myTable["week4timer5SetTemperature"])
+        streams["week4timer6_opentime"] = int2String(myTable["week4timer6OpenTime"])
+        streams["week4timer6_closetime"] = int2String(myTable["week4timer6CloseTime"])
+        streams["week4timer6_set_temperature"] = int2String(myTable["week4timer6SetTemperature"])
+        streams["week5timer1_opentime"] = int2String(myTable["week5timer1OpenTime"])
+        streams["week5timer1_closetime"] = int2String(myTable["week5timer1CloseTime"])
+        streams["week5timer1_set_temperature"] = int2String(myTable["week5timer1SetTemperature"])
+        streams["week5timer2_opentime"] = int2String(myTable["week5timer2OpenTime"])
+        streams["week5timer2_closetime"] = int2String(myTable["week5timer2CloseTime"])
+        streams["week5timer2_set_temperature"] = int2String(myTable["week5timer2SetTemperature"])
+        streams["week5timer3_opentime"] = int2String(myTable["week5timer3OpenTime"])
+        streams["week5timer3_closetime"] = int2String(myTable["week5timer3CloseTime"])
+        streams["week5timer3_set_temperature"] = int2String(myTable["week5timer3SetTemperature"])
+        streams["week5timer4_opentime"] = int2String(myTable["week5timer4OpenTime"])
+        streams["week5timer4_closetime"] = int2String(myTable["week5timer4CloseTime"])
+        streams["week5timer4_set_temperature"] = int2String(myTable["week5timer4SetTemperature"])
+        streams["week5timer5_opentime"] = int2String(myTable["week5timer5OpenTime"])
+        streams["week5timer5_closetime"] = int2String(myTable["week5timer5CloseTime"])
+        streams["week5timer5_set_temperature"] = int2String(myTable["week5timer5SetTemperature"])
+        streams["week5timer6_opentime"] = int2String(myTable["week5timer6OpenTime"])
+        streams["week5timer6_closetime"] = int2String(myTable["week5timer6CloseTime"])
+        streams["week5timer6_set_temperature"] = int2String(myTable["week5timer6SetTemperature"])
+        streams["week6timer1_opentime"] = int2String(myTable["week6timer1OpenTime"])
+        streams["week6timer1_closetime"] = int2String(myTable["week6timer1CloseTime"])
+        streams["week6timer1_set_temperature"] = int2String(myTable["week6timer1SetTemperature"])
+        streams["week6timer2_opentime"] = int2String(myTable["week6timer2OpenTime"])
+        streams["week6timer2_closetime"] = int2String(myTable["week6timer2CloseTime"])
+        streams["week6timer2_set_temperature"] = int2String(myTable["week6timer2SetTemperature"])
+        streams["week6timer3_opentime"] = int2String(myTable["week6timer3OpenTime"])
+        streams["week6timer3_closetime"] = int2String(myTable["week6timer3CloseTime"])
+        streams["week6timer3_set_temperature"] = int2String(myTable["week6timer3SetTemperature"])
+        streams["week6timer4_opentime"] = int2String(myTable["week6timer4OpenTime"])
+        streams["week6timer4_closetime"] = int2String(myTable["week6timer4CloseTime"])
+        streams["week6timer4_set_temperature"] = int2String(myTable["week6timer4SetTemperature"])
+        streams["week6timer5_opentime"] = int2String(myTable["week6timer5OpenTime"])
+        streams["week6timer5_closetime"] = int2String(myTable["week6timer5CloseTime"])
+        streams["week6timer5_set_temperature"] = int2String(myTable["week6timer5SetTemperature"])
+        streams["week6timer6_opentime"] = int2String(myTable["week6timer6OpenTime"])
+        streams["week6timer6_closetime"] = int2String(myTable["week6timer6CloseTime"])
+        streams["week6timer6_set_temperature"] = int2String(myTable["week6timer6SetTemperature"])
+        if myTable["week0timer1ModeValue"] == 0x01 then
             streams["week0timer1_modevalue"] = "energy"
-        elseif (myTable["week0timer1ModeValue"] == 0x02) then
+        elseif myTable["week0timer1ModeValue"] == 0x02 then
             streams["week0timer1_modevalue"] = "standard"
-        elseif (myTable["week0timer1ModeValue"] == 0x03) then
+        elseif myTable["week0timer1ModeValue"] == 0x03 then
             streams["week0timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["week0timer1ModeValue"] == 0x04) then
+        elseif myTable["week0timer1ModeValue"] == 0x04 then
             streams["week0timer1_modevalue"] = "smart"
         end
-        if (myTable["week0timer2ModeValue"] == 0x01) then
+        if myTable["week0timer2ModeValue"] == 0x01 then
             streams["week0timer2_modevalue"] = "energy"
-        elseif (myTable["week0timer2ModeValue"] == 0x02) then
+        elseif myTable["week0timer2ModeValue"] == 0x02 then
             streams["week0timer2_modevalue"] = "standard"
-        elseif (myTable["week0timer2ModeValue"] == 0x03) then
+        elseif myTable["week0timer2ModeValue"] == 0x03 then
             streams["week0timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["week0timer2ModeValue"] == 0x04) then
+        elseif myTable["week0timer2ModeValue"] == 0x04 then
             streams["week0timer2_modevalue"] = "smart"
         end
-        if (myTable["week0timer3ModeValue"] == 0x01) then
+        if myTable["week0timer3ModeValue"] == 0x01 then
             streams["week0timer3_modevalue"] = "energy"
-        elseif (myTable["week0timer3ModeValue"] == 0x02) then
+        elseif myTable["week0timer3ModeValue"] == 0x02 then
             streams["week0timer3_modevalue"] = "standard"
-        elseif (myTable["week0timer3ModeValue"] == 0x03) then
+        elseif myTable["week0timer3ModeValue"] == 0x03 then
             streams["week0timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["week0timer3ModeValue"] == 0x04) then
+        elseif myTable["week0timer3ModeValue"] == 0x04 then
             streams["week0timer3_modevalue"] = "smart"
         end
-        if (myTable["week0timer4ModeValue"] == 0x01) then
+        if myTable["week0timer4ModeValue"] == 0x01 then
             streams["week0timer4_modevalue"] = "energy"
-        elseif (myTable["week0timer4ModeValue"] == 0x02) then
+        elseif myTable["week0timer4ModeValue"] == 0x02 then
             streams["week0timer4_modevalue"] = "standard"
-        elseif (myTable["week0timer4ModeValue"] == 0x03) then
+        elseif myTable["week0timer4ModeValue"] == 0x03 then
             streams["week0timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["week0timer4ModeValue"] == 0x04) then
+        elseif myTable["week0timer4ModeValue"] == 0x04 then
             streams["week0timer4_modevalue"] = "smart"
         end
-        if (myTable["week0timer5ModeValue"] == 0x01) then
+        if myTable["week0timer5ModeValue"] == 0x01 then
             streams["week0timer5_modevalue"] = "energy"
-        elseif (myTable["week0timer5ModeValue"] == 0x02) then
+        elseif myTable["week0timer5ModeValue"] == 0x02 then
             streams["week0timer5_modevalue"] = "standard"
-        elseif (myTable["week0timer5ModeValue"] == 0x03) then
+        elseif myTable["week0timer5ModeValue"] == 0x03 then
             streams["week0timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["week0timer5ModeValue"] == 0x04) then
+        elseif myTable["week0timer5ModeValue"] == 0x04 then
             streams["week0timer5_modevalue"] = "smart"
         end
-        if (myTable["week0timer6ModeValue"] == 0x01) then
+        if myTable["week0timer6ModeValue"] == 0x01 then
             streams["week0timer6_modevalue"] = "energy"
-        elseif (myTable["week0timer6ModeValue"] == 0x02) then
+        elseif myTable["week0timer6ModeValue"] == 0x02 then
             streams["week0timer6_modevalue"] = "standard"
-        elseif (myTable["week0timer6ModeValue"] == 0x03) then
+        elseif myTable["week0timer6ModeValue"] == 0x03 then
             streams["week0timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["week0timer6ModeValue"] == 0x04) then
+        elseif myTable["week0timer6ModeValue"] == 0x04 then
             streams["week0timer6_modevalue"] = "smart"
         end
-        if (myTable["week1timer1ModeValue"] == 0x01) then
+        if myTable["week1timer1ModeValue"] == 0x01 then
             streams["week1timer1_modevalue"] = "energy"
-        elseif (myTable["week1timer1ModeValue"] == 0x02) then
+        elseif myTable["week1timer1ModeValue"] == 0x02 then
             streams["week1timer1_modevalue"] = "standard"
-        elseif (myTable["week1timer1ModeValue"] == 0x03) then
+        elseif myTable["week1timer1ModeValue"] == 0x03 then
             streams["week1timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["week1timer1ModeValue"] == 0x04) then
+        elseif myTable["week1timer1ModeValue"] == 0x04 then
             streams["week1timer1_modevalue"] = "smart"
         end
-        if (myTable["week1timer2ModeValue"] == 0x01) then
+        if myTable["week1timer2ModeValue"] == 0x01 then
             streams["week1timer2_modevalue"] = "energy"
-        elseif (myTable["week1timer2ModeValue"] == 0x02) then
+        elseif myTable["week1timer2ModeValue"] == 0x02 then
             streams["week1timer2_modevalue"] = "standard"
-        elseif (myTable["week1timer2ModeValue"] == 0x03) then
+        elseif myTable["week1timer2ModeValue"] == 0x03 then
             streams["week1timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["week1timer2ModeValue"] == 0x04) then
+        elseif myTable["week1timer2ModeValue"] == 0x04 then
             streams["week1timer2_modevalue"] = "smart"
         end
-        if (myTable["week1timer3ModeValue"] == 0x01) then
+        if myTable["week1timer3ModeValue"] == 0x01 then
             streams["week1timer3_modevalue"] = "energy"
-        elseif (myTable["week1timer3ModeValue"] == 0x02) then
+        elseif myTable["week1timer3ModeValue"] == 0x02 then
             streams["week1timer3_modevalue"] = "standard"
-        elseif (myTable["week1timer3ModeValue"] == 0x03) then
+        elseif myTable["week1timer3ModeValue"] == 0x03 then
             streams["week1timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["week1timer3ModeValue"] == 0x04) then
+        elseif myTable["week1timer3ModeValue"] == 0x04 then
             streams["week1timer3_modevalue"] = "smart"
         end
-        if (myTable["week1timer4ModeValue"] == 0x01) then
+        if myTable["week1timer4ModeValue"] == 0x01 then
             streams["week1timer4_modevalue"] = "energy"
-        elseif (myTable["week1timer4ModeValue"] == 0x02) then
+        elseif myTable["week1timer4ModeValue"] == 0x02 then
             streams["week1timer4_modevalue"] = "standard"
-        elseif (myTable["week1timer4ModeValue"] == 0x03) then
+        elseif myTable["week1timer4ModeValue"] == 0x03 then
             streams["week1timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["week1timer4ModeValue"] == 0x04) then
+        elseif myTable["week1timer4ModeValue"] == 0x04 then
             streams["week1timer4_modevalue"] = "smart"
         end
-        if (myTable["week1timer5ModeValue"] == 0x01) then
+        if myTable["week1timer5ModeValue"] == 0x01 then
             streams["week1timer5_modevalue"] = "energy"
-        elseif (myTable["week1timer5ModeValue"] == 0x02) then
+        elseif myTable["week1timer5ModeValue"] == 0x02 then
             streams["week1timer5_modevalue"] = "standard"
-        elseif (myTable["week1timer5ModeValue"] == 0x03) then
+        elseif myTable["week1timer5ModeValue"] == 0x03 then
             streams["week1timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["week1timer5ModeValue"] == 0x04) then
+        elseif myTable["week1timer5ModeValue"] == 0x04 then
             streams["week1timer5_modevalue"] = "smart"
         end
-        if (myTable["week1timer6ModeValue"] == 0x01) then
+        if myTable["week1timer6ModeValue"] == 0x01 then
             streams["week1timer6_modevalue"] = "energy"
-        elseif (myTable["week1timer6ModeValue"] == 0x02) then
+        elseif myTable["week1timer6ModeValue"] == 0x02 then
             streams["week1timer6_modevalue"] = "standard"
-        elseif (myTable["week1timer6ModeValue"] == 0x03) then
+        elseif myTable["week1timer6ModeValue"] == 0x03 then
             streams["week1timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["week1timer6ModeValue"] == 0x04) then
+        elseif myTable["week1timer6ModeValue"] == 0x04 then
             streams["week1timer6_modevalue"] = "smart"
         end
-        if (myTable["week2timer1ModeValue"] == 0x01) then
+        if myTable["week2timer1ModeValue"] == 0x01 then
             streams["week2timer1_modevalue"] = "energy"
-        elseif (myTable["week2timer1ModeValue"] == 0x02) then
+        elseif myTable["week2timer1ModeValue"] == 0x02 then
             streams["week2timer1_modevalue"] = "standard"
-        elseif (myTable["week2timer1ModeValue"] == 0x03) then
+        elseif myTable["week2timer1ModeValue"] == 0x03 then
             streams["week2timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["week2timer1ModeValue"] == 0x04) then
+        elseif myTable["week2timer1ModeValue"] == 0x04 then
             streams["week2timer1_modevalue"] = "smart"
         end
-        if (myTable["week2timer2ModeValue"] == 0x01) then
+        if myTable["week2timer2ModeValue"] == 0x01 then
             streams["week2timer2_modevalue"] = "energy"
-        elseif (myTable["week2timer2ModeValue"] == 0x02) then
+        elseif myTable["week2timer2ModeValue"] == 0x02 then
             streams["week2timer2_modevalue"] = "standard"
-        elseif (myTable["week2timer2ModeValue"] == 0x03) then
+        elseif myTable["week2timer2ModeValue"] == 0x03 then
             streams["week2timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["week2timer2ModeValue"] == 0x04) then
+        elseif myTable["week2timer2ModeValue"] == 0x04 then
             streams["week2timer2_modevalue"] = "smart"
         end
-        if (myTable["week2timer3ModeValue"] == 0x01) then
+        if myTable["week2timer3ModeValue"] == 0x01 then
             streams["week2timer3_modevalue"] = "energy"
-        elseif (myTable["week2timer3ModeValue"] == 0x02) then
+        elseif myTable["week2timer3ModeValue"] == 0x02 then
             streams["week2timer3_modevalue"] = "standard"
-        elseif (myTable["week2timer3ModeValue"] == 0x03) then
+        elseif myTable["week2timer3ModeValue"] == 0x03 then
             streams["week2timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["week2timer3ModeValue"] == 0x04) then
+        elseif myTable["week2timer3ModeValue"] == 0x04 then
             streams["week2timer3_modevalue"] = "smart"
         end
-        if (myTable["week2timer4ModeValue"] == 0x01) then
+        if myTable["week2timer4ModeValue"] == 0x01 then
             streams["week2timer4_modevalue"] = "energy"
-        elseif (myTable["week2timer4ModeValue"] == 0x02) then
+        elseif myTable["week2timer4ModeValue"] == 0x02 then
             streams["week2timer4_modevalue"] = "standard"
-        elseif (myTable["week2timer4ModeValue"] == 0x03) then
+        elseif myTable["week2timer4ModeValue"] == 0x03 then
             streams["week2timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["week2timer4ModeValue"] == 0x04) then
+        elseif myTable["week2timer4ModeValue"] == 0x04 then
             streams["week2timer4_modevalue"] = "smart"
         end
-        if (myTable["week2timer5ModeValue"] == 0x01) then
+        if myTable["week2timer5ModeValue"] == 0x01 then
             streams["week2timer5_modevalue"] = "energy"
-        elseif (myTable["week2timer5ModeValue"] == 0x02) then
+        elseif myTable["week2timer5ModeValue"] == 0x02 then
             streams["week2timer5_modevalue"] = "standard"
-        elseif (myTable["week2timer5ModeValue"] == 0x03) then
+        elseif myTable["week2timer5ModeValue"] == 0x03 then
             streams["week2timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["week2timer5ModeValue"] == 0x04) then
+        elseif myTable["week2timer5ModeValue"] == 0x04 then
             streams["week2timer5_modevalue"] = "smart"
         end
-        if (myTable["week2timer6ModeValue"] == 0x01) then
+        if myTable["week2timer6ModeValue"] == 0x01 then
             streams["week2timer6_modevalue"] = "energy"
-        elseif (myTable["week2timer6ModeValue"] == 0x02) then
+        elseif myTable["week2timer6ModeValue"] == 0x02 then
             streams["week2timer6_modevalue"] = "standard"
-        elseif (myTable["week2timer6ModeValue"] == 0x03) then
+        elseif myTable["week2timer6ModeValue"] == 0x03 then
             streams["week2timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["week2timer6ModeValue"] == 0x04) then
+        elseif myTable["week2timer6ModeValue"] == 0x04 then
             streams["week2timer6_modevalue"] = "smart"
         end
-        if (myTable["week3timer1ModeValue"] == 0x01) then
+        if myTable["week3timer1ModeValue"] == 0x01 then
             streams["week3timer1_modevalue"] = "energy"
-        elseif (myTable["week3timer1ModeValue"] == 0x02) then
+        elseif myTable["week3timer1ModeValue"] == 0x02 then
             streams["week3timer1_modevalue"] = "standard"
-        elseif (myTable["week3timer1ModeValue"] == 0x03) then
+        elseif myTable["week3timer1ModeValue"] == 0x03 then
             streams["week3timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["week3timer1ModeValue"] == 0x04) then
+        elseif myTable["week3timer1ModeValue"] == 0x04 then
             streams["week3timer1_modevalue"] = "smart"
         end
-        if (myTable["week3timer2ModeValue"] == 0x01) then
+        if myTable["week3timer2ModeValue"] == 0x01 then
             streams["week3timer2_modevalue"] = "energy"
-        elseif (myTable["week3timer2ModeValue"] == 0x02) then
+        elseif myTable["week3timer2ModeValue"] == 0x02 then
             streams["week3timer2_modevalue"] = "standard"
-        elseif (myTable["week3timer2ModeValue"] == 0x03) then
+        elseif myTable["week3timer2ModeValue"] == 0x03 then
             streams["week3timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["week3timer2ModeValue"] == 0x04) then
+        elseif myTable["week3timer2ModeValue"] == 0x04 then
             streams["week3timer2_modevalue"] = "smart"
         end
-        if (myTable["week3timer3ModeValue"] == 0x01) then
+        if myTable["week3timer3ModeValue"] == 0x01 then
             streams["week3timer3_modevalue"] = "energy"
-        elseif (myTable["week3timer3ModeValue"] == 0x02) then
+        elseif myTable["week3timer3ModeValue"] == 0x02 then
             streams["week3timer3_modevalue"] = "standard"
-        elseif (myTable["week3timer3ModeValue"] == 0x03) then
+        elseif myTable["week3timer3ModeValue"] == 0x03 then
             streams["week3timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["week3timer3ModeValue"] == 0x04) then
+        elseif myTable["week3timer3ModeValue"] == 0x04 then
             streams["week3timer3_modevalue"] = "smart"
         end
-        if (myTable["week3timer4ModeValue"] == 0x01) then
+        if myTable["week3timer4ModeValue"] == 0x01 then
             streams["week3timer4_modevalue"] = "energy"
-        elseif (myTable["week3timer4ModeValue"] == 0x02) then
+        elseif myTable["week3timer4ModeValue"] == 0x02 then
             streams["week3timer4_modevalue"] = "standard"
-        elseif (myTable["week3timer4ModeValue"] == 0x03) then
+        elseif myTable["week3timer4ModeValue"] == 0x03 then
             streams["week3timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["week3timer4ModeValue"] == 0x04) then
+        elseif myTable["week3timer4ModeValue"] == 0x04 then
             streams["week3timer4_modevalue"] = "smart"
         end
-        if (myTable["week3timer5ModeValue"] == 0x01) then
+        if myTable["week3timer5ModeValue"] == 0x01 then
             streams["week3timer5_modevalue"] = "energy"
-        elseif (myTable["week3timer5ModeValue"] == 0x02) then
+        elseif myTable["week3timer5ModeValue"] == 0x02 then
             streams["week3timer5_modevalue"] = "standard"
-        elseif (myTable["week3timer5ModeValue"] == 0x03) then
+        elseif myTable["week3timer5ModeValue"] == 0x03 then
             streams["week3timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["week3timer5ModeValue"] == 0x04) then
+        elseif myTable["week3timer5ModeValue"] == 0x04 then
             streams["week3timer5_modevalue"] = "smart"
         end
-        if (myTable["week3timer6ModeValue"] == 0x01) then
+        if myTable["week3timer6ModeValue"] == 0x01 then
             streams["week3timer6_modevalue"] = "energy"
-        elseif (myTable["week3timer6ModeValue"] == 0x02) then
+        elseif myTable["week3timer6ModeValue"] == 0x02 then
             streams["week3timer6_modevalue"] = "standard"
-        elseif (myTable["week3timer6ModeValue"] == 0x03) then
+        elseif myTable["week3timer6ModeValue"] == 0x03 then
             streams["week3timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["week3timer6ModeValue"] == 0x04) then
+        elseif myTable["week3timer6ModeValue"] == 0x04 then
             streams["week3timer6_modevalue"] = "smart"
         end
-        if (myTable["week4timer1ModeValue"] == 0x01) then
+        if myTable["week4timer1ModeValue"] == 0x01 then
             streams["week4timer1_modevalue"] = "energy"
-        elseif (myTable["week4timer1ModeValue"] == 0x02) then
+        elseif myTable["week4timer1ModeValue"] == 0x02 then
             streams["week4timer1_modevalue"] = "standard"
-        elseif (myTable["week4timer1ModeValue"] == 0x03) then
+        elseif myTable["week4timer1ModeValue"] == 0x03 then
             streams["week4timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["week4timer1ModeValue"] == 0x04) then
+        elseif myTable["week4timer1ModeValue"] == 0x04 then
             streams["week4timer1_modevalue"] = "smart"
         end
-        if (myTable["week4timer2ModeValue"] == 0x01) then
+        if myTable["week4timer2ModeValue"] == 0x01 then
             streams["week4timer2_modevalue"] = "energy"
-        elseif (myTable["week4timer2ModeValue"] == 0x02) then
+        elseif myTable["week4timer2ModeValue"] == 0x02 then
             streams["week4timer2_modevalue"] = "standard"
-        elseif (myTable["week4timer2ModeValue"] == 0x03) then
+        elseif myTable["week4timer2ModeValue"] == 0x03 then
             streams["week4timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["week4timer2ModeValue"] == 0x04) then
+        elseif myTable["week4timer2ModeValue"] == 0x04 then
             streams["week4timer2_modevalue"] = "smart"
         end
-        if (myTable["week4timer3ModeValue"] == 0x01) then
+        if myTable["week4timer3ModeValue"] == 0x01 then
             streams["week4timer3_modevalue"] = "energy"
-        elseif (myTable["week4timer3ModeValue"] == 0x02) then
+        elseif myTable["week4timer3ModeValue"] == 0x02 then
             streams["week4timer3_modevalue"] = "standard"
-        elseif (myTable["week4timer3ModeValue"] == 0x03) then
+        elseif myTable["week4timer3ModeValue"] == 0x03 then
             streams["week4timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["week4timer3ModeValue"] == 0x04) then
+        elseif myTable["week4timer3ModeValue"] == 0x04 then
             streams["week4timer3_modevalue"] = "smart"
         end
-        if (myTable["week4timer4ModeValue"] == 0x01) then
+        if myTable["week4timer4ModeValue"] == 0x01 then
             streams["week4timer4_modevalue"] = "energy"
-        elseif (myTable["week4timer4ModeValue"] == 0x02) then
+        elseif myTable["week4timer4ModeValue"] == 0x02 then
             streams["week4timer4_modevalue"] = "standard"
-        elseif (myTable["week4timer4ModeValue"] == 0x03) then
+        elseif myTable["week4timer4ModeValue"] == 0x03 then
             streams["week4timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["week4timer4ModeValue"] == 0x04) then
+        elseif myTable["week4timer4ModeValue"] == 0x04 then
             streams["week4timer4_modevalue"] = "smart"
         end
-        if (myTable["week4timer5ModeValue"] == 0x01) then
+        if myTable["week4timer5ModeValue"] == 0x01 then
             streams["week4timer5_modevalue"] = "energy"
-        elseif (myTable["week4timer5ModeValue"] == 0x02) then
+        elseif myTable["week4timer5ModeValue"] == 0x02 then
             streams["week4timer5_modevalue"] = "standard"
-        elseif (myTable["week4timer5ModeValue"] == 0x03) then
+        elseif myTable["week4timer5ModeValue"] == 0x03 then
             streams["week4timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["week4timer5ModeValue"] == 0x04) then
+        elseif myTable["week4timer5ModeValue"] == 0x04 then
             streams["week4timer5_modevalue"] = "smart"
         end
-        if (myTable["week4timer6ModeValue"] == 0x01) then
+        if myTable["week4timer6ModeValue"] == 0x01 then
             streams["week4timer6_modevalue"] = "energy"
-        elseif (myTable["week4timer6ModeValue"] == 0x02) then
+        elseif myTable["week4timer6ModeValue"] == 0x02 then
             streams["week4timer6_modevalue"] = "standard"
-        elseif (myTable["week4timer6ModeValue"] == 0x03) then
+        elseif myTable["week4timer6ModeValue"] == 0x03 then
             streams["week4timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["week4timer6ModeValue"] == 0x04) then
+        elseif myTable["week4timer6ModeValue"] == 0x04 then
             streams["week4timer6_modevalue"] = "smart"
         end
-        if (myTable["week5timer1ModeValue"] == 0x01) then
+        if myTable["week5timer1ModeValue"] == 0x01 then
             streams["week5timer1_modevalue"] = "energy"
-        elseif (myTable["week5timer1ModeValue"] == 0x02) then
+        elseif myTable["week5timer1ModeValue"] == 0x02 then
             streams["week5timer1_modevalue"] = "standard"
-        elseif (myTable["week5timer1ModeValue"] == 0x03) then
+        elseif myTable["week5timer1ModeValue"] == 0x03 then
             streams["week5timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["week5timer1ModeValue"] == 0x04) then
+        elseif myTable["week5timer1ModeValue"] == 0x04 then
             streams["week5timer1_modevalue"] = "smart"
         end
-        if (myTable["week5timer2ModeValue"] == 0x01) then
+        if myTable["week5timer2ModeValue"] == 0x01 then
             streams["week5timer2_modevalue"] = "energy"
-        elseif (myTable["week5timer2ModeValue"] == 0x02) then
+        elseif myTable["week5timer2ModeValue"] == 0x02 then
             streams["week5timer2_modevalue"] = "standard"
-        elseif (myTable["week5timer2ModeValue"] == 0x03) then
+        elseif myTable["week5timer2ModeValue"] == 0x03 then
             streams["week5timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["week5timer2ModeValue"] == 0x04) then
+        elseif myTable["week5timer2ModeValue"] == 0x04 then
             streams["week5timer2_modevalue"] = "smart"
         end
-        if (myTable["week5timer3ModeValue"] == 0x01) then
+        if myTable["week5timer3ModeValue"] == 0x01 then
             streams["week5timer3_modevalue"] = "energy"
-        elseif (myTable["week5timer3ModeValue"] == 0x02) then
+        elseif myTable["week5timer3ModeValue"] == 0x02 then
             streams["week5timer3_modevalue"] = "standard"
-        elseif (myTable["week5timer3ModeValue"] == 0x03) then
+        elseif myTable["week5timer3ModeValue"] == 0x03 then
             streams["week5timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["week5timer3ModeValue"] == 0x04) then
+        elseif myTable["week5timer3ModeValue"] == 0x04 then
             streams["week5timer3_modevalue"] = "smart"
         end
-        if (myTable["week5timer4ModeValue"] == 0x01) then
+        if myTable["week5timer4ModeValue"] == 0x01 then
             streams["week5timer4_modevalue"] = "energy"
-        elseif (myTable["week5timer4ModeValue"] == 0x02) then
+        elseif myTable["week5timer4ModeValue"] == 0x02 then
             streams["week5timer4_modevalue"] = "standard"
-        elseif (myTable["week5timer4ModeValue"] == 0x03) then
+        elseif myTable["week5timer4ModeValue"] == 0x03 then
             streams["week5timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["week5timer4ModeValue"] == 0x04) then
+        elseif myTable["week5timer4ModeValue"] == 0x04 then
             streams["week5timer4_modevalue"] = "smart"
         end
-        if (myTable["week5timer5ModeValue"] == 0x01) then
+        if myTable["week5timer5ModeValue"] == 0x01 then
             streams["week5timer5_modevalue"] = "energy"
-        elseif (myTable["week5timer5ModeValue"] == 0x02) then
+        elseif myTable["week5timer5ModeValue"] == 0x02 then
             streams["week5timer5_modevalue"] = "standard"
-        elseif (myTable["week5timer5ModeValue"] == 0x03) then
+        elseif myTable["week5timer5ModeValue"] == 0x03 then
             streams["week5timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["week5timer5ModeValue"] == 0x04) then
+        elseif myTable["week5timer5ModeValue"] == 0x04 then
             streams["week5timer5_modevalue"] = "smart"
         end
-        if (myTable["week5timer6ModeValue"] == 0x01) then
+        if myTable["week5timer6ModeValue"] == 0x01 then
             streams["week5timer6_modevalue"] = "energy"
-        elseif (myTable["week5timer6ModeValue"] == 0x02) then
+        elseif myTable["week5timer6ModeValue"] == 0x02 then
             streams["week5timer6_modevalue"] = "standard"
-        elseif (myTable["week5timer6ModeValue"] == 0x03) then
+        elseif myTable["week5timer6ModeValue"] == 0x03 then
             streams["week5timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["week5timer6ModeValue"] == 0x04) then
+        elseif myTable["week5timer6ModeValue"] == 0x04 then
             streams["week5timer6_modevalue"] = "smart"
         end
-        if (myTable["week6timer1ModeValue"] == 0x01) then
+        if myTable["week6timer1ModeValue"] == 0x01 then
             streams["week6timer1_modevalue"] = "energy"
-        elseif (myTable["week6timer1ModeValue"] == 0x02) then
+        elseif myTable["week6timer1ModeValue"] == 0x02 then
             streams["week6timer1_modevalue"] = "standard"
-        elseif (myTable["week6timer1ModeValue"] == 0x03) then
+        elseif myTable["week6timer1ModeValue"] == 0x03 then
             streams["week6timer1_modevalue"] = "compatibilizing"
-        elseif (myTable["week6timer1ModeValue"] == 0x04) then
+        elseif myTable["week6timer1ModeValue"] == 0x04 then
             streams["week6timer1_modevalue"] = "smart"
         end
-        if (myTable["week6timer2ModeValue"] == 0x01) then
+        if myTable["week6timer2ModeValue"] == 0x01 then
             streams["week6timer2_modevalue"] = "energy"
-        elseif (myTable["week6timer2ModeValue"] == 0x02) then
+        elseif myTable["week6timer2ModeValue"] == 0x02 then
             streams["week6timer2_modevalue"] = "standard"
-        elseif (myTable["week6timer2ModeValue"] == 0x03) then
+        elseif myTable["week6timer2ModeValue"] == 0x03 then
             streams["week6timer2_modevalue"] = "compatibilizing"
-        elseif (myTable["week6timer2ModeValue"] == 0x04) then
+        elseif myTable["week6timer2ModeValue"] == 0x04 then
             streams["week6timer2_modevalue"] = "smart"
         end
-        if (myTable["week6timer3ModeValue"] == 0x01) then
+        if myTable["week6timer3ModeValue"] == 0x01 then
             streams["week6timer3_modevalue"] = "energy"
-        elseif (myTable["week6timer3ModeValue"] == 0x02) then
+        elseif myTable["week6timer3ModeValue"] == 0x02 then
             streams["week6timer3_modevalue"] = "standard"
-        elseif (myTable["week6timer3ModeValue"] == 0x03) then
+        elseif myTable["week6timer3ModeValue"] == 0x03 then
             streams["week6timer3_modevalue"] = "compatibilizing"
-        elseif (myTable["week6timer3ModeValue"] == 0x04) then
+        elseif myTable["week6timer3ModeValue"] == 0x04 then
             streams["week6timer3_modevalue"] = "smart"
         end
-        if (myTable["week6timer4ModeValue"] == 0x01) then
+        if myTable["week6timer4ModeValue"] == 0x01 then
             streams["week6timer4_modevalue"] = "energy"
-        elseif (myTable["week6timer4ModeValue"] == 0x02) then
+        elseif myTable["week6timer4ModeValue"] == 0x02 then
             streams["week6timer4_modevalue"] = "standard"
-        elseif (myTable["week6timer4ModeValue"] == 0x03) then
+        elseif myTable["week6timer4ModeValue"] == 0x03 then
             streams["week6timer4_modevalue"] = "compatibilizing"
-        elseif (myTable["week6timer4ModeValue"] == 0x04) then
+        elseif myTable["week6timer4ModeValue"] == 0x04 then
             streams["week6timer4_modevalue"] = "smart"
         end
-        if (myTable["week6timer5ModeValue"] == 0x01) then
+        if myTable["week6timer5ModeValue"] == 0x01 then
             streams["week6timer5_modevalue"] = "energy"
-        elseif (myTable["week6timer5ModeValue"] == 0x02) then
+        elseif myTable["week6timer5ModeValue"] == 0x02 then
             streams["week6timer5_modevalue"] = "standard"
-        elseif (myTable["week6timer5ModeValue"] == 0x03) then
+        elseif myTable["week6timer5ModeValue"] == 0x03 then
             streams["week6timer5_modevalue"] = "compatibilizing"
-        elseif (myTable["week6timer5ModeValue"] == 0x04) then
+        elseif myTable["week6timer5ModeValue"] == 0x04 then
             streams["week6timer5_modevalue"] = "smart"
         end
-        if (myTable["week6timer6ModeValue"] == 0x01) then
+        if myTable["week6timer6ModeValue"] == 0x01 then
             streams["week6timer6_modevalue"] = "energy"
-        elseif (myTable["week6timer6ModeValue"] == 0x02) then
+        elseif myTable["week6timer6ModeValue"] == 0x02 then
             streams["week6timer6_modevalue"] = "standard"
-        elseif (myTable["week6timer6ModeValue"] == 0x03) then
+        elseif myTable["week6timer6ModeValue"] == 0x03 then
             streams["week6timer6_modevalue"] = "compatibilizing"
-        elseif (myTable["week6timer6ModeValue"] == 0x04) then
+        elseif myTable["week6timer6ModeValue"] == 0x04 then
             streams["week6timer6_modevalue"] = "smart"
         end
     end

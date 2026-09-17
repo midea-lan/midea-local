@@ -120,7 +120,7 @@ local cmdTable = {
     -- ["MSG_TYPE_UP_POWER2"] = 0x02,
     ["MSG_TYPE_UP_POWER3"] = 0x03,
     ["MSG_TYPE_UP_POWER4"] = 0x04,
-    ["MSG_TYPE_UP_UNITPARA"] = 0x05
+    ["MSG_TYPE_UP_UNITPARA"] = 0x05,
 }
 --------------------------------------------------------------------- 变量单位，此表值不可变 -----------------------------
 local unitTable = {
@@ -177,7 +177,7 @@ local unitTable = {
     ["str_room_temperature_type"] = "room_temperature_type",
     -- 水温
     ["water_temperature_type"] = 1,
-    ["str_water_temperature_type"] = "water_temperature_type"
+    ["str_water_temperature_type"] = "water_temperature_type",
 }
 --------------------------------------------------------------------- 定义属性变量--------------------
 -- 变量列表
@@ -1357,8 +1357,7 @@ local myTable = {
     ["SysDhwYearCapacity"] = 0,
     ["SysDhwYearRenewPower"] = 0,
     ["SysDhwYearElecConsum"] = 0,
-    ["SysDhwYearCOPEER"] = 0
-
+    ["SysDhwYearCOPEER"] = 0,
 }
 
 ---------------公共的函数---------------
@@ -1399,16 +1398,16 @@ end
 
 -- 检查取值是否超过边界
 local function checkBoundary(data, min, max)
-    if (not data) then data = 0 end
+    if not data then data = 0 end
 
     data = tonumber(data)
 
-    if (data == nil) then data = 0 end
+    if data == nil then data = 0 end
 
-    if ((data >= min) and (data <= max)) then
+    if (data >= min) and (data <= max) then
         return data
     else
-        if (data < min) then
+        if data < min then
             return min
         else
             return max
@@ -1418,17 +1417,17 @@ end
 
 -- String转int
 local function string2Int(data)
-    if (not data) then data = tonumber("0") end
+    if not data then data = tonumber "0" end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
+    if data == nil then data = 0 end
     return data
 end
 
 -- int转String
 local function int2String(data)
-    if (not data) then data = tostring(0) end
+    if not data then data = tostring(0) end
     data = tostring(data)
-    if (data == nil) then data = "0" end
+    if data == nil then data = "0" end
     return data
 end
 
@@ -1437,7 +1436,9 @@ local function table2string(cmd)
     local ret = ""
     local i
 
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
 
     return ret
 end
@@ -1461,7 +1462,9 @@ end
 local function string2hexstring(str)
     local ret = ""
 
-    for i = 1, #str do ret = ret .. string.format("%02x", str:byte(i)) end
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
 
     return ret
 end
@@ -1490,22 +1493,262 @@ end
 
 -- CRC表
 local crc8_854_table = {
-    0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65, 157,
-    195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220, 35, 125,
-    159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98, 190, 224, 2,
-    92, 223, 129, 99, 61, 124, 34, 192, 158, 29, 67, 161, 255, 70, 24, 250, 164,
-    39, 121, 155, 197, 132, 218, 56, 102, 229, 187, 89, 7, 219, 133, 103, 57,
-    186, 228, 6, 88, 25, 71, 165, 251, 120, 38, 196, 154, 101, 59, 217, 135, 4,
-    90, 184, 230, 167, 249, 27, 69, 198, 152, 122, 36, 248, 166, 68, 26, 153,
-    199, 37, 123, 58, 100, 134, 216, 91, 5, 231, 185, 140, 210, 48, 110, 237,
-    179, 81, 15, 78, 16, 242, 172, 47, 113, 147, 205, 17, 79, 173, 243, 112, 46,
-    204, 146, 211, 141, 111, 49, 178, 236, 14, 80, 175, 241, 19, 77, 206, 144,
-    114, 44, 109, 51, 209, 143, 12, 82, 176, 238, 50, 108, 142, 208, 83, 13,
-    239, 177, 240, 174, 76, 18, 145, 207, 45, 115, 202, 148, 118, 40, 171, 245,
-    23, 73, 8, 86, 180, 234, 105, 55, 213, 139, 87, 9, 235, 181, 54, 104, 138,
-    212, 149, 203, 41, 119, 244, 170, 72, 22, 233, 183, 85, 11, 136, 214, 52,
-    106, 43, 117, 151, 201, 74, 20, 246, 168, 116, 42, 200, 150, 21, 75, 169,
-    247, 182, 232, 10, 84, 215, 137, 107, 53
+    0,
+    94,
+    188,
+    226,
+    97,
+    63,
+    221,
+    131,
+    194,
+    156,
+    126,
+    32,
+    163,
+    253,
+    31,
+    65,
+    157,
+    195,
+    33,
+    127,
+    252,
+    162,
+    64,
+    30,
+    95,
+    1,
+    227,
+    189,
+    62,
+    96,
+    130,
+    220,
+    35,
+    125,
+    159,
+    193,
+    66,
+    28,
+    254,
+    160,
+    225,
+    191,
+    93,
+    3,
+    128,
+    222,
+    60,
+    98,
+    190,
+    224,
+    2,
+    92,
+    223,
+    129,
+    99,
+    61,
+    124,
+    34,
+    192,
+    158,
+    29,
+    67,
+    161,
+    255,
+    70,
+    24,
+    250,
+    164,
+    39,
+    121,
+    155,
+    197,
+    132,
+    218,
+    56,
+    102,
+    229,
+    187,
+    89,
+    7,
+    219,
+    133,
+    103,
+    57,
+    186,
+    228,
+    6,
+    88,
+    25,
+    71,
+    165,
+    251,
+    120,
+    38,
+    196,
+    154,
+    101,
+    59,
+    217,
+    135,
+    4,
+    90,
+    184,
+    230,
+    167,
+    249,
+    27,
+    69,
+    198,
+    152,
+    122,
+    36,
+    248,
+    166,
+    68,
+    26,
+    153,
+    199,
+    37,
+    123,
+    58,
+    100,
+    134,
+    216,
+    91,
+    5,
+    231,
+    185,
+    140,
+    210,
+    48,
+    110,
+    237,
+    179,
+    81,
+    15,
+    78,
+    16,
+    242,
+    172,
+    47,
+    113,
+    147,
+    205,
+    17,
+    79,
+    173,
+    243,
+    112,
+    46,
+    204,
+    146,
+    211,
+    141,
+    111,
+    49,
+    178,
+    236,
+    14,
+    80,
+    175,
+    241,
+    19,
+    77,
+    206,
+    144,
+    114,
+    44,
+    109,
+    51,
+    209,
+    143,
+    12,
+    82,
+    176,
+    238,
+    50,
+    108,
+    142,
+    208,
+    83,
+    13,
+    239,
+    177,
+    240,
+    174,
+    76,
+    18,
+    145,
+    207,
+    45,
+    115,
+    202,
+    148,
+    118,
+    40,
+    171,
+    245,
+    23,
+    73,
+    8,
+    86,
+    180,
+    234,
+    105,
+    55,
+    213,
+    139,
+    87,
+    9,
+    235,
+    181,
+    54,
+    104,
+    138,
+    212,
+    149,
+    203,
+    41,
+    119,
+    244,
+    170,
+    72,
+    22,
+    233,
+    183,
+    85,
+    11,
+    136,
+    214,
+    52,
+    106,
+    43,
+    117,
+    151,
+    201,
+    74,
+    20,
+    246,
+    168,
+    116,
+    42,
+    200,
+    150,
+    21,
+    75,
+    169,
+    247,
+    182,
+    232,
+    10,
+    84,
+    215,
+    137,
+    107,
+    53,
 }
 
 -- CRC校验
@@ -1522,7 +1765,9 @@ end
 -- sum校验
 local function makeSum(tmpbuf, start_pos, end_pos)
     local resVal = 0
-    for si = start_pos, end_pos do resVal = resVal + tmpbuf[si] end
+    for si = start_pos, end_pos do
+        resVal = resVal + tmpbuf[si]
+    end
     resVal = bit.bnot(resVal) + 1
     resVal = bit.band(resVal, 0x00ff)
     return resVal
@@ -1560,168 +1805,286 @@ local function getTotalMsg(bodyData, cType)
 
     local msgFinal = {}
 
-    for i = 1, msgLength + 1 do msgFinal[i] = msgBytes[i - 1] end
+    for i = 1, msgLength + 1 do
+        msgFinal[i] = msgBytes[i - 1]
+    end
     return msgFinal
 end
 
 -- 判定键是否为 on,off 类型
 local function isStrOnOff(strKey)
-    if ("zone1_power_state" == strKey) or ("zone2_power_state" == strKey) or
-        ("dhw_power_state" == strKey) or ("zone1_curve_state" == strKey) or
-        ("zone2_curve_state" == strKey) or ("forcetbh_state" == strKey) or
-        ("fastdhw_state" == strKey) or ("heat_enable" == strKey) or
-        ("cool_enable" == strKey) or ("dhw_enable" == strKey) or
-        ("double_zone_enable" == strKey) or ("silence_on_state" == strKey) or
-        ("holiday_on_state" == strKey) or ("eco_on_state" == strKey) or
-        ("remote_onoff" == strKey) or ("room_thermalen_state" == strKey) or
-        ("room_thermalmode_state" == strKey) or ("time_set_state" == strKey) or
-        ("protocol_newfunction_en" == strKey) or ("boostertbh_en" == strKey) or
-        ("daytimer_timer1en" == strKey) or ("daytimer_timer2en" == strKey) or
-        ("daytimer_timer3en" == strKey) or ("daytimer_timer4en" == strKey) or
-        ("daytimer_timer5en" == strKey) or ("daytimer_timer6en" == strKey) or
+    if
+        ("zone1_power_state" == strKey)
+        or ("zone2_power_state" == strKey)
+        or ("dhw_power_state" == strKey)
+        or ("zone1_curve_state" == strKey)
+        or ("zone2_curve_state" == strKey)
+        or ("forcetbh_state" == strKey)
+        or ("fastdhw_state" == strKey)
+        or ("heat_enable" == strKey)
+        or ("cool_enable" == strKey)
+        or ("dhw_enable" == strKey)
+        or ("double_zone_enable" == strKey)
+        or ("silence_on_state" == strKey)
+        or ("holiday_on_state" == strKey)
+        or ("eco_on_state" == strKey)
+        or ("remote_onoff" == strKey)
+        or ("room_thermalen_state" == strKey)
+        or ("room_thermalmode_state" == strKey)
+        or ("time_set_state" == strKey)
+        or ("protocol_newfunction_en" == strKey)
+        or ("boostertbh_en" == strKey)
+        or ("daytimer_timer1en" == strKey)
+        or ("daytimer_timer2en" == strKey)
+        or ("daytimer_timer3en" == strKey)
+        or ("daytimer_timer4en" == strKey)
+        or ("daytimer_timer5en" == strKey)
+        or ("daytimer_timer6en" == strKey)
         -- 区域2日定时
-        ("zone2daytimer_timer1en" == strKey) or
-        ("zone2daytimer_timer2en" == strKey) or
-        ("zone2daytimer_timer3en" == strKey) or
-        ("zone2daytimer_timer4en" == strKey) or
-        ("zone2daytimer_timer5en" == strKey) or
-        ("zone2daytimer_timer6en" == strKey) or -- 周定时段使能
-    ("weektimer_timer1en" == strKey) or ("weektimer_timer2en" == strKey) or
-        ("weektimer_timer3en" == strKey) or ("weektimer_timer4en" == strKey) or
-        ("weektimer_timer5en" == strKey) or ("weektimer_timer6en" == strKey) or
+        or ("zone2daytimer_timer1en" == strKey)
+        or ("zone2daytimer_timer2en" == strKey)
+        or ("zone2daytimer_timer3en" == strKey)
+        or ("zone2daytimer_timer4en" == strKey)
+        or ("zone2daytimer_timer5en" == strKey)
+        or ("zone2daytimer_timer6en" == strKey) -- 周定时段使能
+        or ("weektimer_timer1en" == strKey)
+        or ("weektimer_timer2en" == strKey)
+        or ("weektimer_timer3en" == strKey)
+        or ("weektimer_timer4en" == strKey)
+        or ("weektimer_timer5en" == strKey)
+        or ("weektimer_timer6en" == strKey)
         -- 周定时区域2时段
-        ("zone2weektimer_timer1en" == strKey) or
-        ("zone2weektimer_timer2en" == strKey) or
-        ("zone2weektimer_timer3en" == strKey) or
-        ("zone2weektimer_timer4en" == strKey) or
-        ("zone2weektimer_timer5en" == strKey) or
-        ("zone2weektimer_timer6en" == strKey) or ("holidayaway_state" == strKey) or
-        ("holidayaway_heat_state" == strKey) or
-        ("holidayaway_dhw_state" == strKey) or
-        ("holidayaway_disinfect_state" == strKey) or
-        ("silence_function_state" == strKey) or
-        ("silence_timer1_state" == strKey) or ("silence_timer2_state" == strKey) or
-        ("holidayhome_state" == strKey) or -- 在家休假
-    ("holhometimer_timer1en" == strKey) or ("holhometimer_timer2en" == strKey) or
-        ("holhometimer_timer3en" == strKey) or
-        ("holhometimer_timer4en" == strKey) or
-        ("holhometimer_timer5en" == strKey) or
-        ("holhometimer_timer6en" == strKey) or
+        or ("zone2weektimer_timer1en" == strKey)
+        or ("zone2weektimer_timer2en" == strKey)
+        or ("zone2weektimer_timer3en" == strKey)
+        or ("zone2weektimer_timer4en" == strKey)
+        or ("zone2weektimer_timer5en" == strKey)
+        or ("zone2weektimer_timer6en" == strKey)
+        or ("holidayaway_state" == strKey)
+        or ("holidayaway_heat_state" == strKey)
+        or ("holidayaway_dhw_state" == strKey)
+        or ("holidayaway_disinfect_state" == strKey)
+        or ("silence_function_state" == strKey)
+        or ("silence_timer1_state" == strKey)
+        or ("silence_timer2_state" == strKey)
+        or ("holidayhome_state" == strKey) -- 在家休假
+        or ("holhometimer_timer1en" == strKey)
+        or ("holhometimer_timer2en" == strKey)
+        or ("holhometimer_timer3en" == strKey)
+        or ("holhometimer_timer4en" == strKey)
+        or ("holhometimer_timer5en" == strKey)
+        or ("holhometimer_timer6en" == strKey)
         -- 在家休假区域2
-        ("zone2holhometimer_timer1en" == strKey) or
-        ("zone2holhometimer_timer2en" == strKey) or
-        ("zone2holhometimer_timer3en" == strKey) or
-        ("zone2holhometimer_timer4en" == strKey) or
-        ("zone2holhometimer_timer5en" == strKey) or
-        ("zone2holhometimer_timer6en" == strKey) or
-
-        ("eco_function_state" == strKey) or ("eco_timer_state" == strKey) or
+        or ("zone2holhometimer_timer1en" == strKey)
+        or ("zone2holhometimer_timer2en" == strKey)
+        or ("zone2holhometimer_timer3en" == strKey)
+        or ("zone2holhometimer_timer4en" == strKey)
+        or ("zone2holhometimer_timer5en" == strKey)
+        or ("zone2holhometimer_timer6en" == strKey)
+        or ("eco_function_state" == strKey)
+        or ("eco_timer_state" == strKey)
         -- DISINFECT
-        ("disinfect_function_state" == strKey) or
-        ("disinfect_run_state" == strKey) or -- 能量消耗参数on/off类型
-    ("isheatrun0" == strKey) or ("iscoolrun0" == strKey) or
-        ("isdhwrun0" == strKey) or ("istbhrun0" == strKey) or
-        ("isibhrun0" == strKey) or ("issmartgrid0" == strKey) or
-        ("ishighprices0" == strKey) or ("isbottomprices0" == strKey) or
-
-        ("isonline0" == strKey) or ("isonline1" == strKey) or
-        ("isonline2" == strKey) or ("isonline3" == strKey) or
-        ("isonline4" == strKey) or ("isonline5" == strKey) or
-        ("isonline6" == strKey) or ("isonline7" == strKey) or
-        ("isonline8" == strKey) or ("isonline9" == strKey) or
-        ("isonline10" == strKey) or ("isonline11" == strKey) or
-        ("isonline12" == strKey) or ("isonline13" == strKey) or
-        ("isonline14" == strKey) or ("isonline15" == strKey) or
-        ("isheatrun1" == strKey) or ("isheatrun2" == strKey) or
-        ("isheatrun3" == strKey) or ("isheatrun4" == strKey) or
-        ("isheatrun5" == strKey) or ("isheatrun6" == strKey) or
-        ("isheatrun7" == strKey) or ("isheatrun8" == strKey) or
-        ("isheatrun9" == strKey) or ("isheatrun10" == strKey) or
-        ("isheatrun11" == strKey) or ("isheatrun12" == strKey) or
-        ("isheatrun13" == strKey) or ("isheatrun14" == strKey) or
-        ("isheatrun15" == strKey) or ("iscoolrun1" == strKey) or
-        ("iscoolrun2" == strKey) or ("iscoolrun3" == strKey) or
-        ("iscoolrun4" == strKey) or ("iscoolrun5" == strKey) or
-        ("iscoolrun6" == strKey) or ("iscoolrun7" == strKey) or
-        ("iscoolrun8" == strKey) or ("iscoolrun9" == strKey) or
-        ("iscoolrun10" == strKey) or ("iscoolrun11" == strKey) or
-        ("iscoolrun12" == strKey) or ("iscoolrun13" == strKey) or
-        ("iscoolrun14" == strKey) or ("iscoolrun15" == strKey) or
-        ("isdhwrun1" == strKey) or ("isdhwrun2" == strKey) or
-        ("isdhwrun3" == strKey) or ("isdhwrun4" == strKey) or
-        ("isdhwrun5" == strKey) or ("isdhwrun6" == strKey) or
-        ("isdhwrun7" == strKey) or ("isdhwrun8" == strKey) or
-        ("isdhwrun9" == strKey) or ("isdhwrun10" == strKey) or
-        ("isdhwrun11" == strKey) or ("isdhwrun12" == strKey) or
-        ("isdhwrun13" == strKey) or ("isdhwrun14" == strKey) or
-        ("isdhwrun15" == strKey) or ("istbhrun1" == strKey) or
-        ("istbhrun2" == strKey) or ("istbhrun3" == strKey) or
-        ("istbhrun4" == strKey) or ("istbhrun5" == strKey) or
-        ("istbhrun6" == strKey) or ("istbhrun7" == strKey) or
-        ("istbhrun8" == strKey) or ("istbhrun9" == strKey) or
-        ("istbhrun10" == strKey) or ("istbhrun11" == strKey) or
-        ("istbhrun12" == strKey) or ("istbhrun13" == strKey) or
-        ("istbhrun14" == strKey) or ("istbhrun15" == strKey) or
-
-        ("isibhrun1" == strKey) or ("isibhrun2" == strKey) or
-        ("isibhrun3" == strKey) or ("isibhrun4" == strKey) or
-        ("isibhrun5" == strKey) or ("isibhrun6" == strKey) or
-        ("isibhrun7" == strKey) or ("isibhrun8" == strKey) or
-        ("isibhrun9" == strKey) or ("isibhrun10" == strKey) or
-        ("isibhrun11" == strKey) or ("isibhrun12" == strKey) or
-        ("isibhrun13" == strKey) or ("isibhrun14" == strKey) or
-        ("isibhrun15" == strKey) or ("isibh2run1 " == strKey) or
-        ("isibh2run2 " == strKey) or ("isibh2run3 " == strKey) or
-        ("isibh2run4 " == strKey) or ("isibh2run5 " == strKey) or
-        ("isibh2run6 " == strKey) or ("isibh2run7 " == strKey) or
-        ("isibh2run8 " == strKey) or ("isibh2run9 " == strKey) or
-        ("isibh2run10 " == strKey) or ("isibh2run11 " == strKey) or
-        ("isibh2run12 " == strKey) or ("isibh2run13 " == strKey) or
-        ("isibh2run14 " == strKey) or ("isibh2run15 " == strKey) or
+        or ("disinfect_function_state" == strKey)
+        or ("disinfect_run_state" == strKey) -- 能量消耗参数on/off类型
+        or ("isheatrun0" == strKey)
+        or ("iscoolrun0" == strKey)
+        or ("isdhwrun0" == strKey)
+        or ("istbhrun0" == strKey)
+        or ("isibhrun0" == strKey)
+        or ("issmartgrid0" == strKey)
+        or ("ishighprices0" == strKey)
+        or ("isbottomprices0" == strKey)
+        or ("isonline0" == strKey)
+        or ("isonline1" == strKey)
+        or ("isonline2" == strKey)
+        or ("isonline3" == strKey)
+        or ("isonline4" == strKey)
+        or ("isonline5" == strKey)
+        or ("isonline6" == strKey)
+        or ("isonline7" == strKey)
+        or ("isonline8" == strKey)
+        or ("isonline9" == strKey)
+        or ("isonline10" == strKey)
+        or ("isonline11" == strKey)
+        or ("isonline12" == strKey)
+        or ("isonline13" == strKey)
+        or ("isonline14" == strKey)
+        or ("isonline15" == strKey)
+        or ("isheatrun1" == strKey)
+        or ("isheatrun2" == strKey)
+        or ("isheatrun3" == strKey)
+        or ("isheatrun4" == strKey)
+        or ("isheatrun5" == strKey)
+        or ("isheatrun6" == strKey)
+        or ("isheatrun7" == strKey)
+        or ("isheatrun8" == strKey)
+        or ("isheatrun9" == strKey)
+        or ("isheatrun10" == strKey)
+        or ("isheatrun11" == strKey)
+        or ("isheatrun12" == strKey)
+        or ("isheatrun13" == strKey)
+        or ("isheatrun14" == strKey)
+        or ("isheatrun15" == strKey)
+        or ("iscoolrun1" == strKey)
+        or ("iscoolrun2" == strKey)
+        or ("iscoolrun3" == strKey)
+        or ("iscoolrun4" == strKey)
+        or ("iscoolrun5" == strKey)
+        or ("iscoolrun6" == strKey)
+        or ("iscoolrun7" == strKey)
+        or ("iscoolrun8" == strKey)
+        or ("iscoolrun9" == strKey)
+        or ("iscoolrun10" == strKey)
+        or ("iscoolrun11" == strKey)
+        or ("iscoolrun12" == strKey)
+        or ("iscoolrun13" == strKey)
+        or ("iscoolrun14" == strKey)
+        or ("iscoolrun15" == strKey)
+        or ("isdhwrun1" == strKey)
+        or ("isdhwrun2" == strKey)
+        or ("isdhwrun3" == strKey)
+        or ("isdhwrun4" == strKey)
+        or ("isdhwrun5" == strKey)
+        or ("isdhwrun6" == strKey)
+        or ("isdhwrun7" == strKey)
+        or ("isdhwrun8" == strKey)
+        or ("isdhwrun9" == strKey)
+        or ("isdhwrun10" == strKey)
+        or ("isdhwrun11" == strKey)
+        or ("isdhwrun12" == strKey)
+        or ("isdhwrun13" == strKey)
+        or ("isdhwrun14" == strKey)
+        or ("isdhwrun15" == strKey)
+        or ("istbhrun1" == strKey)
+        or ("istbhrun2" == strKey)
+        or ("istbhrun3" == strKey)
+        or ("istbhrun4" == strKey)
+        or ("istbhrun5" == strKey)
+        or ("istbhrun6" == strKey)
+        or ("istbhrun7" == strKey)
+        or ("istbhrun8" == strKey)
+        or ("istbhrun9" == strKey)
+        or ("istbhrun10" == strKey)
+        or ("istbhrun11" == strKey)
+        or ("istbhrun12" == strKey)
+        or ("istbhrun13" == strKey)
+        or ("istbhrun14" == strKey)
+        or ("istbhrun15" == strKey)
+        or ("isibhrun1" == strKey)
+        or ("isibhrun2" == strKey)
+        or ("isibhrun3" == strKey)
+        or ("isibhrun4" == strKey)
+        or ("isibhrun5" == strKey)
+        or ("isibhrun6" == strKey)
+        or ("isibhrun7" == strKey)
+        or ("isibhrun8" == strKey)
+        or ("isibhrun9" == strKey)
+        or ("isibhrun10" == strKey)
+        or ("isibhrun11" == strKey)
+        or ("isibhrun12" == strKey)
+        or ("isibhrun13" == strKey)
+        or ("isibhrun14" == strKey)
+        or ("isibhrun15" == strKey)
+        or ("isibh2run1 " == strKey)
+        or ("isibh2run2 " == strKey)
+        or ("isibh2run3 " == strKey)
+        or ("isibh2run4 " == strKey)
+        or ("isibh2run5 " == strKey)
+        or ("isibh2run6 " == strKey)
+        or ("isibh2run7 " == strKey)
+        or ("isibh2run8 " == strKey)
+        or ("isibh2run9 " == strKey)
+        or ("isibh2run10 " == strKey)
+        or ("isibh2run11 " == strKey)
+        or ("isibh2run12 " == strKey)
+        or ("isibh2run13 " == strKey)
+        or ("isibh2run14 " == strKey)
+        or ("isibh2run15 " == strKey)
         -- 安装设定参数查询0x08
-        ("dhwEnable" == strKey) or ("boostertbhEn" == strKey) or
-        ("disinfectEnable" == strKey) or ("dhwPumpEnable" == strKey) or
-        ("dhwPriorityTime" == strKey) or ("dhwPumpDIEnable" == strKey) or
-        ("coolEnable" == strKey) or ("fgZone1CoolTempHigh" == strKey) or
-        ("heatEnable" == strKey) or ("fgZone1HeatTempHigh" == strKey) or
-        ("pumpiSliModeEn" == strKey) or ("roomSensorEn" == strKey) or
-        ("roomTherEn" == strKey) or ("roomTherSetModeEn" == strKey) or
-        ("dualroomThermostatEn" == strKey) or ("fgdhwPriorEn" == strKey) or
-        ("acsEnable" == strKey) or ("dhwHeaterAhsEn" == strKey) or
-        ("tempPcbEn" == strKey) or ("tbt2ProbeEn" == strKey) or
-        ("pipeExceed10m" == strKey) or ("solarCn18En" == strKey) or
-        ("fgOwnSolarEn" == strKey) or ("fgInputDhwHeater" == strKey) or
-        ("smartgridEn" == strKey) or ("t1bProbeEn" == strKey) or
-        ("fgZone2CoolTempHigh" == strKey) or ("fgZone2HeatTempHigh" == strKey) or
-        ("doubleZoneEn" == strKey) or ("fgTaProbeIdu" == strKey) or
-        ("tbt1ProbeEn" == strKey) or ("fgIbhInTank" == strKey) or
+        or ("dhwEnable" == strKey)
+        or ("boostertbhEn" == strKey)
+        or ("disinfectEnable" == strKey)
+        or ("dhwPumpEnable" == strKey)
+        or ("dhwPriorityTime" == strKey)
+        or ("dhwPumpDIEnable" == strKey)
+        or ("coolEnable" == strKey)
+        or ("fgZone1CoolTempHigh" == strKey)
+        or ("heatEnable" == strKey)
+        or ("fgZone1HeatTempHigh" == strKey)
+        or ("pumpiSliModeEn" == strKey)
+        or ("roomSensorEn" == strKey)
+        or ("roomTherEn" == strKey)
+        or ("roomTherSetModeEn" == strKey)
+        or ("dualroomThermostatEn" == strKey)
+        or ("fgdhwPriorEn" == strKey)
+        or ("acsEnable" == strKey)
+        or ("dhwHeaterAhsEn" == strKey)
+        or ("tempPcbEn" == strKey)
+        or ("tbt2ProbeEn" == strKey)
+        or ("pipeExceed10m" == strKey)
+        or ("solarCn18En" == strKey)
+        or ("fgOwnSolarEn" == strKey)
+        or ("fgInputDhwHeater" == strKey)
+        or ("smartgridEn" == strKey)
+        or ("t1bProbeEn" == strKey)
+        or ("fgZone2CoolTempHigh" == strKey)
+        or ("fgZone2HeatTempHigh" == strKey)
+        or ("doubleZoneEn" == strKey)
+        or ("fgTaProbeIdu" == strKey)
+        or ("tbt1ProbeEn" == strKey)
+        or ("fgIbhInTank" == strKey)
         -- ("tbhEnFunc" == strKey) or
         -- 0x10主机查询参数 on/off
-        ("fgReqParaSet" == strKey) or ("fgReqVerAsk" == strKey) or
-        ("fgReqSNAsk" == strKey) or ("fgUnitLockSignal" == strKey) or
-        ("fgEVUSignal" == strKey) or ("fgSGSignal" == strKey) or
-        ("fgTankAntiFreeze" == strKey) or ("fgSolarInput" == strKey) or
-        ("fgRoomTherCoolRun" == strKey) or ("fgRoomTherHeatRun" == strKey) or
-        ("fgOutDoorTestMode" == strKey) or ("fgRemoteOnOff" == strKey) or
-        ("fgBackOil" == strKey) or ("fgAntiFreezeRun" == strKey) or
-        ("fgDefrost" == strKey) or ("fgIsSlaveUnit" == strKey) or
-        ("fgTBHEnable" == strKey) or ("fgAHSIsOwn" == strKey) or
-        ("fgCapTestEnable" == strKey) or ("fgT1BSensorEnable" == strKey) or
-        ("fgAHSDHWMode" == strKey) or ("fgIBH1Enable" == strKey) or
-        ("fgT1SensorEnable" == strKey) or ("fgEdgeVersionType" == strKey) or
-        ("fgFactReqTherHeatOn" == strKey) or ("fgDHWRun" == strKey) or
-        ("fgHeatRun" == strKey) or ("fgCoolRun" == strKey) or
-        ("fgFactReqTherCoolOn" == strKey) or ("fgFactReqSolarOn" == strKey) or
-        ("fgFactoryRun" == strKey) or ("fgDefValveOn" == strKey) or
-        ("fgAHSValveOn" == strKey) or ("fgRunValveOn" == strKey) or
-        ("fgAlmValveOn" == strKey) or ("fgPumpSolarOn" == strKey) or
-        ("fgHeat4ValveOn" == strKey) or ("fgSV3Output" == strKey) or
-        ("fgMixedPumpValveOn" == strKey) or ("fgPumpDHWOn" == strKey) or
-        ("fgPumpOOn" == strKey) or ("fgSV2On" == strKey) or
-        ("fgSV1On" == strKey) or ("fgPumpIOutput" == strKey) or
-        ("fgTBHOutput" == strKey) or ("fgIBH2Output" == strKey) or
-        ("fgIBH1Output" == strKey) or ("HMIEnergyAnaSetEN" == strKey) or
-        ("SysEnergyAnaEN" == strKey) then
+        or ("fgReqParaSet" == strKey)
+        or ("fgReqVerAsk" == strKey)
+        or ("fgReqSNAsk" == strKey)
+        or ("fgUnitLockSignal" == strKey)
+        or ("fgEVUSignal" == strKey)
+        or ("fgSGSignal" == strKey)
+        or ("fgTankAntiFreeze" == strKey)
+        or ("fgSolarInput" == strKey)
+        or ("fgRoomTherCoolRun" == strKey)
+        or ("fgRoomTherHeatRun" == strKey)
+        or ("fgOutDoorTestMode" == strKey)
+        or ("fgRemoteOnOff" == strKey)
+        or ("fgBackOil" == strKey)
+        or ("fgAntiFreezeRun" == strKey)
+        or ("fgDefrost" == strKey)
+        or ("fgIsSlaveUnit" == strKey)
+        or ("fgTBHEnable" == strKey)
+        or ("fgAHSIsOwn" == strKey)
+        or ("fgCapTestEnable" == strKey)
+        or ("fgT1BSensorEnable" == strKey)
+        or ("fgAHSDHWMode" == strKey)
+        or ("fgIBH1Enable" == strKey)
+        or ("fgT1SensorEnable" == strKey)
+        or ("fgEdgeVersionType" == strKey)
+        or ("fgFactReqTherHeatOn" == strKey)
+        or ("fgDHWRun" == strKey)
+        or ("fgHeatRun" == strKey)
+        or ("fgCoolRun" == strKey)
+        or ("fgFactReqTherCoolOn" == strKey)
+        or ("fgFactReqSolarOn" == strKey)
+        or ("fgFactoryRun" == strKey)
+        or ("fgDefValveOn" == strKey)
+        or ("fgAHSValveOn" == strKey)
+        or ("fgRunValveOn" == strKey)
+        or ("fgAlmValveOn" == strKey)
+        or ("fgPumpSolarOn" == strKey)
+        or ("fgHeat4ValveOn" == strKey)
+        or ("fgSV3Output" == strKey)
+        or ("fgMixedPumpValveOn" == strKey)
+        or ("fgPumpDHWOn" == strKey)
+        or ("fgPumpOOn" == strKey)
+        or ("fgSV2On" == strKey)
+        or ("fgSV1On" == strKey)
+        or ("fgPumpIOutput" == strKey)
+        or ("fgTBHOutput" == strKey)
+        or ("fgIBH2Output" == strKey)
+        or ("fgIBH1Output" == strKey)
+        or ("HMIEnergyAnaSetEN" == strKey)
+        or ("SysEnergyAnaEN" == strKey)
+    then
         return true
     else
         return false
@@ -1730,7 +2093,7 @@ end
 
 -- 判定键是否为 on,off,0xff 类型
 local function isStrOnOffInvalid(strKey)
-    if ("pre_heat" == strKey) then
+    if "pre_heat" == strKey then
         return true
     else
         return false
@@ -1739,46 +2102,51 @@ end
 
 -- 判定键是否为 auto,cool,heat 类型
 local function isStrMode(strKey)
-    if ("run_mode_set" == strKey) or ("runmode_under_auto" == strKey) or
+    if
+        ("run_mode_set" == strKey)
+        or ("runmode_under_auto" == strKey)
         -- 日定时模式
-        ("daytimer_timer1_mode" == strKey) or ("daytimer_timer2_mode" == strKey) or
-        ("daytimer_timer3_mode" == strKey) or ("daytimer_timer4_mode" == strKey) or
-        ("daytimer_timer5_mode" == strKey) or ("daytimer_timer6_mode" == strKey) or
+        or ("daytimer_timer1_mode" == strKey)
+        or ("daytimer_timer2_mode" == strKey)
+        or ("daytimer_timer3_mode" == strKey)
+        or ("daytimer_timer4_mode" == strKey)
+        or ("daytimer_timer5_mode" == strKey)
+        or ("daytimer_timer6_mode" == strKey)
         -- 区域2日定时模式
-        ("zone2daytimer_timer1_mode" == strKey) or
-        ("zone2daytimer_timer2_mode" == strKey) or
-        ("zone2daytimer_timer3_mode" == strKey) or
-        ("zone2daytimer_timer4_mode" == strKey) or
-        ("zone2daytimer_timer5_mode" == strKey) or
-        ("zone2daytimer_timer6_mode" == strKey) or
+        or ("zone2daytimer_timer1_mode" == strKey)
+        or ("zone2daytimer_timer2_mode" == strKey)
+        or ("zone2daytimer_timer3_mode" == strKey)
+        or ("zone2daytimer_timer4_mode" == strKey)
+        or ("zone2daytimer_timer5_mode" == strKey)
+        or ("zone2daytimer_timer6_mode" == strKey)
         -- 周定时模式
-        ("weektimer_timer1_mode" == strKey) or
-        ("weektimer_timer2_mode" == strKey) or
-        ("weektimer_timer3_mode" == strKey) or
-        ("weektimer_timer4_mode" == strKey) or
-        ("weektimer_timer5_mode" == strKey) or
-        ("weektimer_timer6_mode" == strKey) or
+        or ("weektimer_timer1_mode" == strKey)
+        or ("weektimer_timer2_mode" == strKey)
+        or ("weektimer_timer3_mode" == strKey)
+        or ("weektimer_timer4_mode" == strKey)
+        or ("weektimer_timer5_mode" == strKey)
+        or ("weektimer_timer6_mode" == strKey)
         -- 周定时区域2模式
-        ("zone2weektimer_timer1_mode" == strKey) or
-        ("zone2weektimer_timer2_mode" == strKey) or
-        ("zone2weektimer_timer3_mode" == strKey) or
-        ("zone2weektimer_timer4_mode" == strKey) or
-        ("zone2weektimer_timer5_mode" == strKey) or
-        ("zone2weektimer_timer6_mode" == strKey) or
-
-        ("holhometimer_timer1_mode" == strKey) or
-        ("holhometimer_timer2_mode" == strKey) or
-        ("holhometimer_timer3_mode" == strKey) or
-        ("holhometimer_timer4_mode" == strKey) or
-        ("holhometimer_timer5_mode" == strKey) or
-        ("holhometimer_timer6_mode" == strKey) or
+        or ("zone2weektimer_timer1_mode" == strKey)
+        or ("zone2weektimer_timer2_mode" == strKey)
+        or ("zone2weektimer_timer3_mode" == strKey)
+        or ("zone2weektimer_timer4_mode" == strKey)
+        or ("zone2weektimer_timer5_mode" == strKey)
+        or ("zone2weektimer_timer6_mode" == strKey)
+        or ("holhometimer_timer1_mode" == strKey)
+        or ("holhometimer_timer2_mode" == strKey)
+        or ("holhometimer_timer3_mode" == strKey)
+        or ("holhometimer_timer4_mode" == strKey)
+        or ("holhometimer_timer5_mode" == strKey)
+        or ("holhometimer_timer6_mode" == strKey)
         -- holhome 区域2
-        ("zone2holhometimer_timer1_mode" == strKey) or
-        ("zone2holhometimer_timer2_mode" == strKey) or
-        ("zone2holhometimer_timer3_mode" == strKey) or
-        ("zone2holhometimer_timer4_mode" == strKey) or
-        ("zone2holhometimer_timer5_mode" == strKey) or
-        ("zone2holhometimer_timer6_mode" == strKey) then
+        or ("zone2holhometimer_timer1_mode" == strKey)
+        or ("zone2holhometimer_timer2_mode" == strKey)
+        or ("zone2holhometimer_timer3_mode" == strKey)
+        or ("zone2holhometimer_timer4_mode" == strKey)
+        or ("zone2holhometimer_timer5_mode" == strKey)
+        or ("zone2holhometimer_timer6_mode" == strKey)
+    then
         return true
     else
         return false
@@ -1803,7 +2171,7 @@ end
 
 -- 判定键是否为 等级 类型
 local function isStrLevelType(strKey)
-    if ("silence_function_level" == strKey) then
+    if "silence_function_level" == strKey then
         return true
     else
         return false
@@ -1812,12 +2180,23 @@ end
 
 -- 单字节字符串有符号整形数据负数转换
 local function isStrSignedByteType(strKey)
-    if ("t4" == strKey) or ("tempT3" == strKey) or ("tempT4" == strKey) or
-        ("tempTp" == strKey) or ("tempTwin" == strKey) or
-        ("tempTwout" == strKey) or ("tempT1" == strKey) or ("tempTw2" == strKey) or
-        ("tempT2" == strKey) or ("tempT2b" == strKey) or ("tempT5" == strKey) or
-        ("tempTh" == strKey) or ("tempTa" == strKey) or
-        ("tank_actual_temp" == strKey) or ("tempTh" == strKey) then
+    if
+        ("t4" == strKey)
+        or ("tempT3" == strKey)
+        or ("tempT4" == strKey)
+        or ("tempTp" == strKey)
+        or ("tempTwin" == strKey)
+        or ("tempTwout" == strKey)
+        or ("tempT1" == strKey)
+        or ("tempTw2" == strKey)
+        or ("tempT2" == strKey)
+        or ("tempT2b" == strKey)
+        or ("tempT5" == strKey)
+        or ("tempTh" == strKey)
+        or ("tempTa" == strKey)
+        or ("tank_actual_temp" == strKey)
+        or ("tempTh" == strKey)
+    then
         --	("zone2_terminal_type" == strKey) then
         return true
     else
@@ -1827,11 +2206,22 @@ end
 
 -- 双字节字节有符号整形数据
 local function isStrSignedDoubleByteType(strKey)
-    if ("t4Dhwmin" == strKey) or ("t4TBHon" == strKey) or ("t4Cmin" == strKey) or
-        ("t4Hmin" == strKey) or ("t4IBHon" == strKey) or ("t4AHSon" == strKey) or
-        ("dT1AHSoff" == strKey) or ("t4C1" == strKey) or ("t4C2" == strKey) or
-        ("t4H1" == strKey) or ("t4H2" == strKey) or ("t4Cmin" == strKey) or
-        ("t4Hmin" == strKey) or ("t4IBHon" == strKey) then
+    if
+        ("t4Dhwmin" == strKey)
+        or ("t4TBHon" == strKey)
+        or ("t4Cmin" == strKey)
+        or ("t4Hmin" == strKey)
+        or ("t4IBHon" == strKey)
+        or ("t4AHSon" == strKey)
+        or ("dT1AHSoff" == strKey)
+        or ("t4C1" == strKey)
+        or ("t4C2" == strKey)
+        or ("t4H1" == strKey)
+        or ("t4H2" == strKey)
+        or ("t4Cmin" == strKey)
+        or ("t4Hmin" == strKey)
+        or ("t4IBHon" == strKey)
+    then
         return true
     else
         return false
@@ -1847,7 +2237,7 @@ local function binToModel(pvar_out, strKey, intvalue, bitx)
     if myTable[strKey] ~= nil then
         if isStrOnOff(strKey) then
             if bitx ~= nil then
-                if (bit.band(_intvalue, bitx) > 0) then
+                if bit.band(_intvalue, bitx) > 0 then
                     _intvalue = unitTable["on"]
                     _strvalue = unitTable["str_on"]
                 else
@@ -1867,7 +2257,7 @@ local function binToModel(pvar_out, strKey, intvalue, bitx)
             end
         elseif isStrLevelType(strKey) then
             if bitx ~= nil then
-                if ((bit.band(_intvalue, bitx)) > 0) then
+                if (bit.band(_intvalue, bitx)) > 0 then
                     _intvalue = unitTable["level_2"]
                     _strvalue = unitTable["str_level_2"]
                 else
@@ -1877,7 +2267,7 @@ local function binToModel(pvar_out, strKey, intvalue, bitx)
             end
         elseif isStrWaterRoomType(strKey) then
             if bitx ~= nil then
-                if ((bit.band(_intvalue, bitx)) > 0) then
+                if (bit.band(_intvalue, bitx)) > 0 then
                     _intvalue = unitTable["water_temperature_type"]
                     _strvalue = unitTable["str_water_temperature_type"]
                 else
@@ -1907,7 +2297,7 @@ local function binToModel(pvar_out, strKey, intvalue, bitx)
             end
         elseif isStrOnOffInvalid(strKey) then
             if bitx ~= nil then
-                if (bit.band(_intvalue, bitx) > 0) then
+                if bit.band(_intvalue, bitx) > 0 then
                     _intvalue = unitTable["on"]
                     _strvalue = unitTable["str_on"]
                 else
@@ -1917,7 +2307,7 @@ local function binToModel(pvar_out, strKey, intvalue, bitx)
             end
         elseif "pre_heat_flag" == strKey then
             if bitx ~= nil then
-                if (bit.band(_intvalue, bitx) > 0) then -- 特殊处理，1为无效，0为有效
+                if bit.band(_intvalue, bitx) > 0 then -- 特殊处理，1为无效，0为有效
                     _intvalue = unitTable["off"]
                     _strvalue = unitTable["str_off"]
                 else
@@ -1956,9 +2346,9 @@ local function modelToBin(pvar, strKey, bitx)
     local _strValue = pvar[strKey]
     if isStrOnOff(strKey) then
         if bitx ~= nil then
-            if (_strValue == unitTable["str_on"]) then
+            if _strValue == unitTable["str_on"] then
                 myTable[strKey] = bitx
-            elseif (_strValue == unitTable["str_off"]) then
+            elseif _strValue == unitTable["str_off"] then
                 myTable[strKey] = 0
             end
         end
@@ -1974,17 +2364,17 @@ local function modelToBin(pvar, strKey, bitx)
         end
     elseif isStrLevelType(strKey) then
         if bitx ~= nil then
-            if (_strValue == unitTable["str_level_2"]) then
+            if _strValue == unitTable["str_level_2"] then
                 myTable[strKey] = bitx
-            elseif (_strValue == unitTable["str_level_1"]) then
+            elseif _strValue == unitTable["str_level_1"] then
                 myTable[strKey] = unitTable["off"]
             end
         end
     elseif isStrOnOffInvalid(strKey) then
         if bitx ~= nil then
-            if (_strValue == unitTable["str_on"]) then
+            if _strValue == unitTable["str_on"] then
                 myTable[strKey] = bitx
-            elseif (_strValue == unitTable["str_off"]) then
+            elseif _strValue == unitTable["str_off"] then
                 myTable[strKey] = unitTable["off"]
             else
                 myTable[strKey] = unitTable["u8_invalid"]
@@ -1993,9 +2383,7 @@ local function modelToBin(pvar, strKey, bitx)
     else
         if _strValue ~= nil then
             local _prop_val = string2Int(_strValue)
-            if _prop_val < 0 then
-                _prop_val = bit.lshift(0x1, 1 * 8) + _prop_val
-            end
+            if _prop_val < 0 then _prop_val = bit.lshift(0x1, 1 * 8) + _prop_val end
             myTable[strKey] = _prop_val
         end
     end
@@ -2429,32 +2817,46 @@ local function createQueryCmd(intQueryType, msg)
     -- 构造消息 body 部分
     -- 查询命令类型
     _bodyBytes[0] = intQueryType
-    if (intQueryType == cmdTable["MSG_TYPE_QUERY_BASIC"]) then
-    elseif (intQueryType == cmdTable["MSG_TYPE_QUERY_DAY_TIME"]) then
-    elseif (intQueryType == cmdTable["MSG_TYPE_QUERY_WEEKS_TIME"]) then
-        if (msg["queryweekday"] ~= nil) then
+    if intQueryType == cmdTable["MSG_TYPE_QUERY_BASIC"] then
+    elseif intQueryType == cmdTable["MSG_TYPE_QUERY_DAY_TIME"] then
+    elseif intQueryType == cmdTable["MSG_TYPE_QUERY_WEEKS_TIME"] then
+        if msg["queryweekday"] ~= nil then
             _bodyBytes[1] = string2Int(msg["queryweekday"])
-            if (_bodyBytes[1] ~= BIT0) and (_bodyBytes[1] ~= BIT1) and
-                (_bodyBytes[1] ~= BIT2) and (_bodyBytes[1] ~= BIT3) and
-                (_bodyBytes[1] ~= BIT4) and (_bodyBytes[1] ~= BIT5) and
-                (_bodyBytes[1] ~= BIT6) then _bodyBytes[1] = BIT0 end
+            if
+                (_bodyBytes[1] ~= BIT0)
+                and (_bodyBytes[1] ~= BIT1)
+                and (_bodyBytes[1] ~= BIT2)
+                and (_bodyBytes[1] ~= BIT3)
+                and (_bodyBytes[1] ~= BIT4)
+                and (_bodyBytes[1] ~= BIT5)
+                and (_bodyBytes[1] ~= BIT6)
+            then
+                _bodyBytes[1] = BIT0
+            end
         else
             _bodyBytes[1] = BIT0
         end
-        if (msg["zone2queryweekday"] ~= nil) then
+        if msg["zone2queryweekday"] ~= nil then
             _bodyBytes[2] = string2Int(msg["zone2queryweekday"])
-            if (_bodyBytes[2] ~= BIT0) and (_bodyBytes[2] ~= BIT1) and
-                (_bodyBytes[2] ~= BIT2) and (_bodyBytes[2] ~= BIT3) and
-                (_bodyBytes[2] ~= BIT4) and (_bodyBytes[2] ~= BIT5) and
-                (_bodyBytes[2] ~= BIT6) then _bodyBytes[2] = BIT0 end
+            if
+                (_bodyBytes[2] ~= BIT0)
+                and (_bodyBytes[2] ~= BIT1)
+                and (_bodyBytes[2] ~= BIT2)
+                and (_bodyBytes[2] ~= BIT3)
+                and (_bodyBytes[2] ~= BIT4)
+                and (_bodyBytes[2] ~= BIT5)
+                and (_bodyBytes[2] ~= BIT6)
+            then
+                _bodyBytes[2] = BIT0
+            end
         else
             _bodyBytes[2] = BIT0
         end
-    elseif (intQueryType == cmdTable["MSG_TYPE_QUERY_HOLIDAY_AWAY"]) then
-    elseif (intQueryType == cmdTable["MSG_TYPE_QUERY_SILENCE"]) then
-    elseif (intQueryType == cmdTable["MSG_TYPE_QUERY_HOLIDAY_HOME"]) then
-    elseif (intQueryType == cmdTable["MSG_TYPE_QUERY_ECO"]) then
-    elseif (intQueryType == cmdTable["MSG_TYPE_QUERY_DISINFECT"]) then
+    elseif intQueryType == cmdTable["MSG_TYPE_QUERY_HOLIDAY_AWAY"] then
+    elseif intQueryType == cmdTable["MSG_TYPE_QUERY_SILENCE"] then
+    elseif intQueryType == cmdTable["MSG_TYPE_QUERY_HOLIDAY_HOME"] then
+    elseif intQueryType == cmdTable["MSG_TYPE_QUERY_ECO"] then
+    elseif intQueryType == cmdTable["MSG_TYPE_QUERY_DISINFECT"] then
     end
     return getTotalMsg(_bodyBytes, cmdTable["MSG_TYPE_QUERY"])
 end
@@ -2465,7 +2867,7 @@ local function createControlCmd(intControlType)
 
     -- 指令类型
     _bodyBytes[0] = intControlType
-    if (_bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_BASIC"]) then
+    if _bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_BASIC"] then
         _bodyBytes[1] = 0
         _bodyBytes[1] = bit.bor(_bodyBytes[1], myTable["zone1_power_state"])
         _bodyBytes[1] = bit.bor(_bodyBytes[1], myTable["zone2_power_state"])
@@ -2482,11 +2884,11 @@ local function createControlCmd(intControlType)
         _bodyBytes[7] = bit.bor(_bodyBytes[7], myTable["zone2_curve_state"])
         _bodyBytes[7] = bit.bor(_bodyBytes[7], myTable["forcetbh_state"])
         _bodyBytes[7] = bit.bor(_bodyBytes[7], myTable["fastdhw_state"])
-        if (1 == myTable["protocol_newfunction_en"]) then
+        if 1 == myTable["protocol_newfunction_en"] then
             _bodyBytes[8] = myTable["zone1_curve_type"]
             _bodyBytes[9] = myTable["zone2_curve_type"]
         end
-    elseif (_bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_DAY_TIMER"]) then
+    elseif _bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_DAY_TIMER"] then
         -- 区域1日定时使能
         _bodyBytes[1] = 0
         _bodyBytes[1] = bit.bor(_bodyBytes[1], myTable["daytimer_timer1en"])
@@ -2538,21 +2940,15 @@ local function createControlCmd(intControlType)
         _bodyBytes[36] = myTable["daytimer_timer6_closehour"]
         _bodyBytes[37] = myTable["daytimer_timer6_closemin"]
         -- 插件下发支持230312V1.2协议
-        if (1 == myTable["protocol_newfunction_en"]) then
+        if 1 == myTable["protocol_newfunction_en"] then
             -- 区域2日定时使能
             _bodyBytes[38] = 0
-            _bodyBytes[38] = bit.bor(_bodyBytes[38],
-                                     myTable["zone2daytimer_timer1en"])
-            _bodyBytes[38] = bit.bor(_bodyBytes[38],
-                                     myTable["zone2daytimer_timer2en"])
-            _bodyBytes[38] = bit.bor(_bodyBytes[38],
-                                     myTable["zone2daytimer_timer3en"])
-            _bodyBytes[38] = bit.bor(_bodyBytes[38],
-                                     myTable["zone2daytimer_timer4en"])
-            _bodyBytes[38] = bit.bor(_bodyBytes[38],
-                                     myTable["zone2daytimer_timer5en"])
-            _bodyBytes[38] = bit.bor(_bodyBytes[38],
-                                     myTable["zone2daytimer_timer6en"])
+            _bodyBytes[38] = bit.bor(_bodyBytes[38], myTable["zone2daytimer_timer1en"])
+            _bodyBytes[38] = bit.bor(_bodyBytes[38], myTable["zone2daytimer_timer2en"])
+            _bodyBytes[38] = bit.bor(_bodyBytes[38], myTable["zone2daytimer_timer3en"])
+            _bodyBytes[38] = bit.bor(_bodyBytes[38], myTable["zone2daytimer_timer4en"])
+            _bodyBytes[38] = bit.bor(_bodyBytes[38], myTable["zone2daytimer_timer5en"])
+            _bodyBytes[38] = bit.bor(_bodyBytes[38], myTable["zone2daytimer_timer6en"])
             -- 日定时1
             _bodyBytes[39] = myTable["zone2daytimer_timer1_mode"]
             _bodyBytes[40] = myTable["zone2daytimer_timer1_temp"]
@@ -2596,8 +2992,7 @@ local function createControlCmd(intControlType)
             _bodyBytes[73] = myTable["zone2daytimer_timer6_closehour"]
             _bodyBytes[74] = myTable["zone2daytimer_timer6_closemin"]
         end
-
-    elseif (_bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_WEEKS_TIMER"]) then
+    elseif _bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_WEEKS_TIMER"] then
         -- 周定时使能标志
         _bodyBytes[1] = bit.band(0x7f, myTable["weektimer_setday"])
         -- 周定时时间段使能标志
@@ -2651,23 +3046,17 @@ local function createControlCmd(intControlType)
         _bodyBytes[37] = myTable["weektimer_timer6_closehour"]
         _bodyBytes[38] = myTable["weektimer_timer6_closemin"]
         -- 插件下发支持230312V1.2协议
-        if (1 == myTable["protocol_newfunction_en"]) then
+        if 1 == myTable["protocol_newfunction_en"] then
             -- 区域2周定时设置日期使能标志
             _bodyBytes[39] = bit.band(0x7f, myTable["zone2weektimer_setday"])
             -- 区域2周定时时间段使能标志
             _bodyBytes[40] = 0
-            _bodyBytes[40] = bit.bor(_bodyBytes[40],
-                                     myTable["zone2weektimer_timer1en"])
-            _bodyBytes[40] = bit.bor(_bodyBytes[40],
-                                     myTable["zone2weektimer_timer2en"])
-            _bodyBytes[40] = bit.bor(_bodyBytes[40],
-                                     myTable["zone2weektimer_timer3en"])
-            _bodyBytes[40] = bit.bor(_bodyBytes[40],
-                                     myTable["zone2weektimer_timer4en"])
-            _bodyBytes[40] = bit.bor(_bodyBytes[40],
-                                     myTable["zone2weektimer_timer5en"])
-            _bodyBytes[40] = bit.bor(_bodyBytes[40],
-                                     myTable["zone2weektimer_timer6en"])
+            _bodyBytes[40] = bit.bor(_bodyBytes[40], myTable["zone2weektimer_timer1en"])
+            _bodyBytes[40] = bit.bor(_bodyBytes[40], myTable["zone2weektimer_timer2en"])
+            _bodyBytes[40] = bit.bor(_bodyBytes[40], myTable["zone2weektimer_timer3en"])
+            _bodyBytes[40] = bit.bor(_bodyBytes[40], myTable["zone2weektimer_timer4en"])
+            _bodyBytes[40] = bit.bor(_bodyBytes[40], myTable["zone2weektimer_timer5en"])
+            _bodyBytes[40] = bit.bor(_bodyBytes[40], myTable["zone2weektimer_timer6en"])
             -- 区域2周定时1
             _bodyBytes[41] = myTable["zone2weektimer_timer1_mode"]
             _bodyBytes[42] = myTable["zone2weektimer_timer1_temp"]
@@ -2711,7 +3100,7 @@ local function createControlCmd(intControlType)
             _bodyBytes[75] = myTable["zone2weektimer_timer6_closehour"]
             _bodyBytes[76] = myTable["zone2weektimer_timer6_closemin"]
         end
-    elseif (_bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_HOLIDAY_AWAY"]) then
+    elseif _bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_HOLIDAY_AWAY"] then
         _bodyBytes[1] = 0
         _bodyBytes[1] = bit.bor(_bodyBytes[1], myTable["holidayaway_state"])
         _bodyBytes[2] = myTable["holidayaway_startyear"]
@@ -2721,22 +3110,17 @@ local function createControlCmd(intControlType)
         _bodyBytes[6] = myTable["holidayaway_endmonth"]
         _bodyBytes[7] = myTable["holidayaway_enddate"]
         -- 插件下发支持230312V1.2协议
-        if (1 == myTable["protocol_newfunction_en"]) then
+        if 1 == myTable["protocol_newfunction_en"] then
             -- 支持新协议
             _bodyBytes[8] = 0
-            _bodyBytes[8] = bit.bor(_bodyBytes[8],
-                                    myTable["holidayaway_heat_state"])
-            _bodyBytes[8] = bit.bor(_bodyBytes[8],
-                                    myTable["holidayaway_dhw_state"])
-            _bodyBytes[8] = bit.bor(_bodyBytes[8],
-                                    myTable["holidayaway_disinfect_state"])
+            _bodyBytes[8] = bit.bor(_bodyBytes[8], myTable["holidayaway_heat_state"])
+            _bodyBytes[8] = bit.bor(_bodyBytes[8], myTable["holidayaway_dhw_state"])
+            _bodyBytes[8] = bit.bor(_bodyBytes[8], myTable["holidayaway_disinfect_state"])
         end
-    elseif (_bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_SILENCE"]) then
+    elseif _bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_SILENCE"] then
         _bodyBytes[1] = 0
-        _bodyBytes[1] =
-            bit.bor(_bodyBytes[1], myTable["silence_function_state"])
-        _bodyBytes[1] =
-            bit.bor(_bodyBytes[1], myTable["silence_function_level"])
+        _bodyBytes[1] = bit.bor(_bodyBytes[1], myTable["silence_function_state"])
+        _bodyBytes[1] = bit.bor(_bodyBytes[1], myTable["silence_function_level"])
         _bodyBytes[1] = bit.bor(_bodyBytes[1], myTable["silence_timer1_state"])
         _bodyBytes[1] = bit.bor(_bodyBytes[1], myTable["silence_timer2_state"])
         -- 静音 定时1
@@ -2749,7 +3133,7 @@ local function createControlCmd(intControlType)
         _bodyBytes[7] = myTable["silence_timer2_startmin"]
         _bodyBytes[8] = myTable["silence_timer2_endhour"]
         _bodyBytes[9] = myTable["silence_timer2_endmin"]
-    elseif (_bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_HOLIDAY_HOME"]) then
+    elseif _bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_HOLIDAY_HOME"] then
         _bodyBytes[1] = myTable["holidayhome_state"]
         _bodyBytes[2] = myTable["holidayhome_startyear"]
         _bodyBytes[3] = myTable["holidayhome_startmonth"]
@@ -2808,21 +3192,15 @@ local function createControlCmd(intControlType)
         _bodyBytes[43] = myTable["holhometimer_timer6_closehour"]
         _bodyBytes[44] = myTable["holhometimer_timer6_closemin"]
         -- 插件下发支持230312V1.2协议
-        if (1 == myTable["protocol_newfunction_en"]) then
+        if 1 == myTable["protocol_newfunction_en"] then
             -- holidayhome 区域2定时段使能
             _bodyBytes[45] = 0
-            _bodyBytes[45] = bit.bor(_bodyBytes[45],
-                                     myTable["zone2holhometimer_timer1en"])
-            _bodyBytes[45] = bit.bor(_bodyBytes[45],
-                                     myTable["zone2holhometimer_timer2en"])
-            _bodyBytes[45] = bit.bor(_bodyBytes[45],
-                                     myTable["zone2holhometimer_timer3en"])
-            _bodyBytes[45] = bit.bor(_bodyBytes[45],
-                                     myTable["zone2holhometimer_timer4en"])
-            _bodyBytes[45] = bit.bor(_bodyBytes[45],
-                                     myTable["zone2holhometimer_timer5en"])
-            _bodyBytes[45] = bit.bor(_bodyBytes[45],
-                                     myTable["zone2holhometimer_timer6en"])
+            _bodyBytes[45] = bit.bor(_bodyBytes[45], myTable["zone2holhometimer_timer1en"])
+            _bodyBytes[45] = bit.bor(_bodyBytes[45], myTable["zone2holhometimer_timer2en"])
+            _bodyBytes[45] = bit.bor(_bodyBytes[45], myTable["zone2holhometimer_timer3en"])
+            _bodyBytes[45] = bit.bor(_bodyBytes[45], myTable["zone2holhometimer_timer4en"])
+            _bodyBytes[45] = bit.bor(_bodyBytes[45], myTable["zone2holhometimer_timer5en"])
+            _bodyBytes[45] = bit.bor(_bodyBytes[45], myTable["zone2holhometimer_timer6en"])
             -- holidayhome区域2定时1
             _bodyBytes[46] = myTable["zone2holhometimer_timer1_mode"]
             _bodyBytes[47] = myTable["zone2holhometimer_timer1_temp"]
@@ -2866,7 +3244,7 @@ local function createControlCmd(intControlType)
             _bodyBytes[80] = myTable["zone2holhometimer_timer6_closehour"]
             _bodyBytes[81] = myTable["zone2holhometimer_timer6_closemin"]
         end
-    elseif (_bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_ECO"]) then
+    elseif _bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_ECO"] then
         _bodyBytes[1] = 0
         _bodyBytes[1] = bit.bor(_bodyBytes[1], myTable["eco_function_state"])
         _bodyBytes[1] = bit.bor(_bodyBytes[1], myTable["eco_timer_state"])
@@ -2876,20 +3254,19 @@ local function createControlCmd(intControlType)
         _bodyBytes[4] = myTable["eco_timer_endhour"]
         _bodyBytes[5] = myTable["eco_timer_endmin"]
         -- 插件下发支持230312V1.2协议
-        if (1 == myTable["protocol_newfunction_en"]) then
+        if 1 == myTable["protocol_newfunction_en"] then
             -- 支持新协议
             _bodyBytes[6] = myTable["eco_curve_type"]
         end
         -- DISINFECT
-    elseif (_bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_DISINFECT"]) then
+    elseif _bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_DISINFECT"] then
         _bodyBytes[1] = 0
-        _bodyBytes[1] = bit.bor(_bodyBytes[1],
-                                myTable["disinfect_function_state"])
+        _bodyBytes[1] = bit.bor(_bodyBytes[1], myTable["disinfect_function_state"])
         _bodyBytes[1] = bit.bor(_bodyBytes[1], myTable["disinfect_run_state"])
         _bodyBytes[2] = bit.band(0xff, myTable["disinfect_setweekday"])
         _bodyBytes[3] = myTable["disinfect_starthour"]
         _bodyBytes[4] = myTable["disinfect_startmin"]
-    elseif (_bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_INSTALL"]) then
+    elseif _bodyBytes[0] == cmdTable["MSG_TYPE_CONTROL_INSTALL"] then
         _bodyBytes[1] = 0
         _bodyBytes[1] = bit.bor(_bodyBytes[1], myTable["dhwEnable"])
         _bodyBytes[1] = bit.bor(_bodyBytes[1], myTable["boostertbhEn"])
@@ -3045,7 +3422,6 @@ local function createControlCmd(intControlType)
         _bodyBytes[138] = 0xff
         _bodyBytes[139] = 0xff
         _bodyBytes[140] = 0xff
-
     end
     -- 构造消息部分
     return getTotalMsg(_bodyBytes, cmdTable["MSG_TYPE_CONTROL"])
@@ -3053,36 +3429,34 @@ end
 
 -- json转二进制，可传入原状态
 function jsonToData(jsonCmd)
-    if (#jsonCmd == 0) then return nil end
+    if #jsonCmd == 0 then return nil end
 
     local _infoM = {}
     local _json = decode(jsonCmd)
     local _deviceSubType = _json["deviceinfo"]["deviceSubType"]
 
     -- 根据设备子类型来处理协议差异
-    if (_deviceSubType == 1) then end
+    if _deviceSubType == 1 then
+    end
 
     local _query = _json[unitTable["str_query"]]
     local _control = _json[unitTable["str_control"]]
     local _status = _json[unitTable["str_status"]]
 
-    if (_query) then
-        if (_query[unitTable["str_query_type"]] ~= nil) then
-            _infoM = createQueryCmd(string2Int(
-                                        _query[unitTable["str_query_type"]]),
-                                    _query)
+    if _query then
+        if _query[unitTable["str_query_type"]] ~= nil then
+            _infoM = createQueryCmd(string2Int(_query[unitTable["str_query_type"]]), _query)
         else
             _infoM = createQueryCmd(cmdTable["MSG_TYPE_QUERY_BASIC"], _query) -- 默认
         end
-    elseif (_control) then
+    elseif _control then
         -- 先将原始状态转为属性
-        if (_status) then jsonToModel(_status) end
+        if _status then jsonToModel(_status) end
         -- 将用户控制jsion转换为属性
         jsonToModel(_control)
 
-        if (_control[unitTable["str_control_type"]] ~= nil) then
-            _infoM = createControlCmd(string2Int(
-                                          _control[unitTable["str_control_type"]]))
+        if _control[unitTable["str_control_type"]] ~= nil then
+            _infoM = createControlCmd(string2Int(_control[unitTable["str_control_type"]]))
         else
             _infoM = createControlCmd(cmdTable["MSG_TYPE_CONTROL_BASIC"]) -- 默认
         end
@@ -3095,21 +3469,22 @@ end
 
 -- 二进制转json
 function dataToJson(jsonCmd)
-    if (not jsonCmd) then return nil end
+    if not jsonCmd then return nil end
 
     local _json = decode(jsonCmd)
     local _deviceinfo = _json["deviceinfo"]
     local _deviceSubType = _deviceinfo["deviceSubType"]
 
     -- 根据设备子类型来处理协议差异
-    if (_deviceSubType == 1) then end
+    if _deviceSubType == 1 then
+    end
 
     local _status = _json[unitTable["str_status"]]
-    if (_status) then jsonToModel(_status) end
+    if _status then jsonToModel(_status) end
 
     local binData = _json["msg"]["data"]
     local info = {}
-    local msgBytes = {0}
+    local msgBytes = { 0 }
     local msgLength = 0
     local _bodyBytes = {}
     local bodyLength = 0
@@ -3118,7 +3493,9 @@ function dataToJson(jsonCmd)
 
     info = string2table(binData)
 
-    for i = 1, #info do msgBytes[i - 1] = info[i] end
+    for i = 1, #info do
+        msgBytes[i - 1] = info[i]
+    end
 
     msgLength = msgBytes[1] -- length
     bodyLength = msgLength - cmdTable["PROTOCOL_LENGTH"] - 1
@@ -3137,12 +3514,13 @@ function dataToJson(jsonCmd)
     -- 版本
     streams["version"] = JSON_VERSION
     -- 将二进制状态解析为属性值
-    if (((_msgType == cmdTable["MSG_TYPE_CONTROL"]) and
-        (_msgBodyType == cmdTable["MSG_TYPE_CONTROL_BASIC"])) or
-        ((_msgType == cmdTable["MSG_TYPE_QUERY"]) and
-            (_msgBodyType == cmdTable["MSG_TYPE_QUERY_BASIC"])) or
-        (_msgType == cmdTable["MSG_TYPE_UP"])) and
-        (_msgBodyType == cmdTable["MSG_TYPE_UP_BASIC"]) then
+    if
+        (
+            ((_msgType == cmdTable["MSG_TYPE_CONTROL"]) and (_msgBodyType == cmdTable["MSG_TYPE_CONTROL_BASIC"]))
+            or ((_msgType == cmdTable["MSG_TYPE_QUERY"]) and (_msgBodyType == cmdTable["MSG_TYPE_QUERY_BASIC"]))
+            or (_msgType == cmdTable["MSG_TYPE_UP"])
+        ) and (_msgBodyType == cmdTable["MSG_TYPE_UP_BASIC"])
+    then
         -- 基本状态的控制回复02-01、查询03-01、上报04-01(电控回复数据组包)
         binToModel(streams, "msg_up_type", cmdTable["MSG_TYPE_UP_BASIC"], nil)
         binToModel(streams, "zone1_power_state", _bodyBytes[1], BIT0)
@@ -3198,7 +3576,7 @@ function dataToJson(jsonCmd)
         -- binToModel(streams, "protocol_newfunction_en", _bodyBytes[24], BIT7)
         binToModel(streams, "boostertbh_en", _bodyBytes[24], BIT7)
         -- 回复支持230312V1.2协议
-        if (bodyLength > 24) then
+        if bodyLength > 24 then
             binToModel(streams, "protocol_newfunction_en", 1, BIT0)
             -- 新增温度曲线设定
             binToModel(streams, "zone1_curve_type", _bodyBytes[25], nil)
@@ -3207,9 +3585,7 @@ function dataToJson(jsonCmd)
             binToModel(streams, "protocol_newfunction_en", 0, BIT0)
             -- 新增温度曲线设定
         end
-
-    elseif ((_msgType == cmdTable["MSG_TYPE_QUERY"]) and
-        (_msgBodyType == cmdTable["MSG_TYPE_QUERY_DAY_TIME"])) then
+    elseif (_msgType == cmdTable["MSG_TYPE_QUERY"]) and (_msgBodyType == cmdTable["MSG_TYPE_QUERY_DAY_TIME"]) then
         -- 日定时查询
         -- 区域1日定时使能
         binToModel(streams, "daytimer_timer1en", _bodyBytes[1], BIT0)
@@ -3263,7 +3639,7 @@ function dataToJson(jsonCmd)
         binToModel(streams, "daytimer_timer6_closehour", _bodyBytes[36], nil)
         binToModel(streams, "daytimer_timer6_closemin", _bodyBytes[37], nil)
         -- 支持230312V1.2协议
-        if (bodyLength > 37) then
+        if bodyLength > 37 then
             binToModel(streams, "protocol_newfunction_en", 1, BIT0)
 
             -- 区域2日定时使能
@@ -3276,72 +3652,47 @@ function dataToJson(jsonCmd)
             -- 区域2日定时 1
             binToModel(streams, "zone2daytimer_timer1_mode", _bodyBytes[39], nil)
             binToModel(streams, "zone2daytimer_timer1_temp", _bodyBytes[40], nil)
-            binToModel(streams, "zone2daytimer_timer1_openhour", _bodyBytes[41],
-                       nil)
-            binToModel(streams, "zone2daytimer_timer1_openmin", _bodyBytes[42],
-                       nil)
-            binToModel(streams, "zone2daytimer_timer1_closehour",
-                       _bodyBytes[43], nil)
-            binToModel(streams, "zone2daytimer_timer1_closemin", _bodyBytes[44],
-                       nil)
+            binToModel(streams, "zone2daytimer_timer1_openhour", _bodyBytes[41], nil)
+            binToModel(streams, "zone2daytimer_timer1_openmin", _bodyBytes[42], nil)
+            binToModel(streams, "zone2daytimer_timer1_closehour", _bodyBytes[43], nil)
+            binToModel(streams, "zone2daytimer_timer1_closemin", _bodyBytes[44], nil)
             -- 区域2日定时 2
             binToModel(streams, "zone2daytimer_timer2_mode", _bodyBytes[45], nil)
             binToModel(streams, "zone2daytimer_timer2_temp", _bodyBytes[46], nil)
-            binToModel(streams, "zone2daytimer_timer2_openhour", _bodyBytes[47],
-                       nil)
-            binToModel(streams, "zone2daytimer_timer2_openmin", _bodyBytes[48],
-                       nil)
-            binToModel(streams, "zone2daytimer_timer2_closehour",
-                       _bodyBytes[49], nil)
-            binToModel(streams, "zone2daytimer_timer2_closemin", _bodyBytes[50],
-                       nil)
+            binToModel(streams, "zone2daytimer_timer2_openhour", _bodyBytes[47], nil)
+            binToModel(streams, "zone2daytimer_timer2_openmin", _bodyBytes[48], nil)
+            binToModel(streams, "zone2daytimer_timer2_closehour", _bodyBytes[49], nil)
+            binToModel(streams, "zone2daytimer_timer2_closemin", _bodyBytes[50], nil)
             -- 区域2日定时 3
             binToModel(streams, "zone2daytimer_timer3_mode", _bodyBytes[51], nil)
             binToModel(streams, "zone2daytimer_timer3_temp", _bodyBytes[52], nil)
-            binToModel(streams, "zone2daytimer_timer3_openhour", _bodyBytes[53],
-                       nil)
-            binToModel(streams, "zone2daytimer_timer3_openmin", _bodyBytes[54],
-                       nil)
-            binToModel(streams, "zone2daytimer_timer3_closehour",
-                       _bodyBytes[55], nil)
-            binToModel(streams, "zone2daytimer_timer3_closemin", _bodyBytes[56],
-                       nil)
+            binToModel(streams, "zone2daytimer_timer3_openhour", _bodyBytes[53], nil)
+            binToModel(streams, "zone2daytimer_timer3_openmin", _bodyBytes[54], nil)
+            binToModel(streams, "zone2daytimer_timer3_closehour", _bodyBytes[55], nil)
+            binToModel(streams, "zone2daytimer_timer3_closemin", _bodyBytes[56], nil)
             -- 区域2日定时 4
             binToModel(streams, "zone2daytimer_timer4_mode", _bodyBytes[57], nil)
             binToModel(streams, "zone2daytimer_timer4_temp", _bodyBytes[58], nil)
-            binToModel(streams, "zone2daytimer_timer4_openhour", _bodyBytes[59],
-                       nil)
-            binToModel(streams, "zone2daytimer_timer4_openmin", _bodyBytes[60],
-                       nil)
-            binToModel(streams, "zone2daytimer_timer4_closehour",
-                       _bodyBytes[61], nil)
-            binToModel(streams, "zone2daytimer_timer4_closemin", _bodyBytes[62],
-                       nil)
+            binToModel(streams, "zone2daytimer_timer4_openhour", _bodyBytes[59], nil)
+            binToModel(streams, "zone2daytimer_timer4_openmin", _bodyBytes[60], nil)
+            binToModel(streams, "zone2daytimer_timer4_closehour", _bodyBytes[61], nil)
+            binToModel(streams, "zone2daytimer_timer4_closemin", _bodyBytes[62], nil)
             -- 区域2日定时 5
             binToModel(streams, "zone2daytimer_timer5_mode", _bodyBytes[63], nil)
             binToModel(streams, "zone2daytimer_timer5_temp", _bodyBytes[64], nil)
-            binToModel(streams, "zone2daytimer_timer5_openhour", _bodyBytes[65],
-                       nil)
-            binToModel(streams, "zone2daytimer_timer5_openmin", _bodyBytes[66],
-                       nil)
-            binToModel(streams, "zone2daytimer_timer5_closehour",
-                       _bodyBytes[67], nil)
-            binToModel(streams, "zone2daytimer_timer5_closemin", _bodyBytes[68],
-                       nil)
+            binToModel(streams, "zone2daytimer_timer5_openhour", _bodyBytes[65], nil)
+            binToModel(streams, "zone2daytimer_timer5_openmin", _bodyBytes[66], nil)
+            binToModel(streams, "zone2daytimer_timer5_closehour", _bodyBytes[67], nil)
+            binToModel(streams, "zone2daytimer_timer5_closemin", _bodyBytes[68], nil)
             -- 区域2日定时 6
             binToModel(streams, "zone2daytimer_timer6_mode", _bodyBytes[69], nil)
             binToModel(streams, "zone2daytimer_timer6_temp", _bodyBytes[70], nil)
-            binToModel(streams, "zone2daytimer_timer6_openhour", _bodyBytes[71],
-                       nil)
-            binToModel(streams, "zone2daytimer_timer6_openmin", _bodyBytes[72],
-                       nil)
-            binToModel(streams, "zone2daytimer_timer6_closehour",
-                       _bodyBytes[73], nil)
-            binToModel(streams, "zone2daytimer_timer6_closemin", _bodyBytes[74],
-                       nil)
+            binToModel(streams, "zone2daytimer_timer6_openhour", _bodyBytes[71], nil)
+            binToModel(streams, "zone2daytimer_timer6_openmin", _bodyBytes[72], nil)
+            binToModel(streams, "zone2daytimer_timer6_closehour", _bodyBytes[73], nil)
+            binToModel(streams, "zone2daytimer_timer6_closemin", _bodyBytes[74], nil)
         end
-    elseif ((_msgType == cmdTable["MSG_TYPE_QUERY"]) and
-        (_msgBodyType == cmdTable["MSG_TYPE_QUERY_WEEKS_TIME"])) then
+    elseif (_msgType == cmdTable["MSG_TYPE_QUERY"]) and (_msgBodyType == cmdTable["MSG_TYPE_QUERY_WEEKS_TIME"]) then
         -- 周定时查询
         -- 周定时使能
         binToModel(streams, "weektimer_weeken", _bodyBytes[1], nil)
@@ -3396,7 +3747,7 @@ function dataToJson(jsonCmd)
         binToModel(streams, "weektimer_timer6_closehour", _bodyBytes[37], nil)
         binToModel(streams, "weektimer_timer6_closemin", _bodyBytes[38], nil)
         -- 支持230312V1.2协议
-        if (bodyLength > 38) then
+        if bodyLength > 38 then
             binToModel(streams, "protocol_newfunction_en", 1, BIT0)
             -- 周定时区域2查询日期及时段使能
             binToModel(streams, "zone2weektimer_weeken", _bodyBytes[39], nil)
@@ -3407,86 +3758,49 @@ function dataToJson(jsonCmd)
             binToModel(streams, "zone2weektimer_timer5en", _bodyBytes[40], BIT4)
             binToModel(streams, "zone2weektimer_timer6en", _bodyBytes[40], BIT5)
             -- 周定时区域2 1
-            binToModel(streams, "zone2weektimer_timer1_mode", _bodyBytes[41],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer1_temp", _bodyBytes[42],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer1_openhour",
-                       _bodyBytes[43], nil)
-            binToModel(streams, "zone2weektimer_timer1_openmin", _bodyBytes[44],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer1_closehour",
-                       _bodyBytes[45], nil)
-            binToModel(streams, "zone2weektimer_timer1_closemin",
-                       _bodyBytes[46], nil)
+            binToModel(streams, "zone2weektimer_timer1_mode", _bodyBytes[41], nil)
+            binToModel(streams, "zone2weektimer_timer1_temp", _bodyBytes[42], nil)
+            binToModel(streams, "zone2weektimer_timer1_openhour", _bodyBytes[43], nil)
+            binToModel(streams, "zone2weektimer_timer1_openmin", _bodyBytes[44], nil)
+            binToModel(streams, "zone2weektimer_timer1_closehour", _bodyBytes[45], nil)
+            binToModel(streams, "zone2weektimer_timer1_closemin", _bodyBytes[46], nil)
             -- 周定时区域2 2
-            binToModel(streams, "zone2weektimer_timer2_mode", _bodyBytes[47],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer2_temp", _bodyBytes[48],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer2_openhour",
-                       _bodyBytes[49], nil)
-            binToModel(streams, "zone2weektimer_timer2_openmin", _bodyBytes[50],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer2_closehour",
-                       _bodyBytes[51], nil)
-            binToModel(streams, "zone2weektimer_timer2_closemin",
-                       _bodyBytes[52], nil)
+            binToModel(streams, "zone2weektimer_timer2_mode", _bodyBytes[47], nil)
+            binToModel(streams, "zone2weektimer_timer2_temp", _bodyBytes[48], nil)
+            binToModel(streams, "zone2weektimer_timer2_openhour", _bodyBytes[49], nil)
+            binToModel(streams, "zone2weektimer_timer2_openmin", _bodyBytes[50], nil)
+            binToModel(streams, "zone2weektimer_timer2_closehour", _bodyBytes[51], nil)
+            binToModel(streams, "zone2weektimer_timer2_closemin", _bodyBytes[52], nil)
             -- 周定时区域2 3
-            binToModel(streams, "zone2weektimer_timer3_mode", _bodyBytes[53],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer3_temp", _bodyBytes[54],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer3_openhour",
-                       _bodyBytes[55], nil)
-            binToModel(streams, "zone2weektimer_timer3_openmin", _bodyBytes[56],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer3_closehour",
-                       _bodyBytes[57], nil)
-            binToModel(streams, "zone2weektimer_timer3_closemin",
-                       _bodyBytes[58], nil)
+            binToModel(streams, "zone2weektimer_timer3_mode", _bodyBytes[53], nil)
+            binToModel(streams, "zone2weektimer_timer3_temp", _bodyBytes[54], nil)
+            binToModel(streams, "zone2weektimer_timer3_openhour", _bodyBytes[55], nil)
+            binToModel(streams, "zone2weektimer_timer3_openmin", _bodyBytes[56], nil)
+            binToModel(streams, "zone2weektimer_timer3_closehour", _bodyBytes[57], nil)
+            binToModel(streams, "zone2weektimer_timer3_closemin", _bodyBytes[58], nil)
             -- 周定时区域2 4
-            binToModel(streams, "zone2weektimer_timer4_mode", _bodyBytes[59],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer4_temp", _bodyBytes[60],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer4_openhour",
-                       _bodyBytes[61], nil)
-            binToModel(streams, "zone2weektimer_timer4_openmin", _bodyBytes[62],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer4_closehour",
-                       _bodyBytes[63], nil)
-            binToModel(streams, "zone2weektimer_timer4_closemin",
-                       _bodyBytes[64], nil)
+            binToModel(streams, "zone2weektimer_timer4_mode", _bodyBytes[59], nil)
+            binToModel(streams, "zone2weektimer_timer4_temp", _bodyBytes[60], nil)
+            binToModel(streams, "zone2weektimer_timer4_openhour", _bodyBytes[61], nil)
+            binToModel(streams, "zone2weektimer_timer4_openmin", _bodyBytes[62], nil)
+            binToModel(streams, "zone2weektimer_timer4_closehour", _bodyBytes[63], nil)
+            binToModel(streams, "zone2weektimer_timer4_closemin", _bodyBytes[64], nil)
             -- 周定时区域2 5
-            binToModel(streams, "zone2weektimer_timer5_mode", _bodyBytes[65],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer5_temp", _bodyBytes[66],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer5_openhour",
-                       _bodyBytes[67], nil)
-            binToModel(streams, "zone2weektimer_timer5_openmin", _bodyBytes[68],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer5_closehour",
-                       _bodyBytes[69], nil)
-            binToModel(streams, "zone2weektimer_timer5_closemin",
-                       _bodyBytes[70], nil)
+            binToModel(streams, "zone2weektimer_timer5_mode", _bodyBytes[65], nil)
+            binToModel(streams, "zone2weektimer_timer5_temp", _bodyBytes[66], nil)
+            binToModel(streams, "zone2weektimer_timer5_openhour", _bodyBytes[67], nil)
+            binToModel(streams, "zone2weektimer_timer5_openmin", _bodyBytes[68], nil)
+            binToModel(streams, "zone2weektimer_timer5_closehour", _bodyBytes[69], nil)
+            binToModel(streams, "zone2weektimer_timer5_closemin", _bodyBytes[70], nil)
             -- 周定时区域2 6
-            binToModel(streams, "zone2weektimer_timer6_mode", _bodyBytes[71],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer6_temp", _bodyBytes[72],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer6_openhour",
-                       _bodyBytes[73], nil)
-            binToModel(streams, "zone2weektimer_timer6_openmin", _bodyBytes[74],
-                       nil)
-            binToModel(streams, "zone2weektimer_timer6_closehour",
-                       _bodyBytes[75], nil)
-            binToModel(streams, "zone2weektimer_timer6_closemin",
-                       _bodyBytes[76], nil)
+            binToModel(streams, "zone2weektimer_timer6_mode", _bodyBytes[71], nil)
+            binToModel(streams, "zone2weektimer_timer6_temp", _bodyBytes[72], nil)
+            binToModel(streams, "zone2weektimer_timer6_openhour", _bodyBytes[73], nil)
+            binToModel(streams, "zone2weektimer_timer6_openmin", _bodyBytes[74], nil)
+            binToModel(streams, "zone2weektimer_timer6_closehour", _bodyBytes[75], nil)
+            binToModel(streams, "zone2weektimer_timer6_closemin", _bodyBytes[76], nil)
         end
-    elseif ((_msgType == cmdTable["MSG_TYPE_QUERY"]) and
-        (_msgBodyType == cmdTable["MSG_TYPE_QUERY_HOLIDAY_AWAY"])) then
+    elseif (_msgType == cmdTable["MSG_TYPE_QUERY"]) and (_msgBodyType == cmdTable["MSG_TYPE_QUERY_HOLIDAY_AWAY"]) then
         -- 外出休假设置查询
         binToModel(streams, "holidayaway_state", _bodyBytes[1], BIT0)
         -- binToModel(streams, "protocol_newfunction_en", _bodyBytes[1], BIT7)
@@ -3497,15 +3811,13 @@ function dataToJson(jsonCmd)
         binToModel(streams, "holidayaway_endmonth", _bodyBytes[6], nil)
         binToModel(streams, "holidayaway_enddate", _bodyBytes[7], nil)
         -- 支持230312V1.2协议
-        if (bodyLength > 7) then
+        if bodyLength > 7 then
             binToModel(streams, "protocol_newfunction_en", 1, BIT0)
             binToModel(streams, "holidayaway_heat_state", _bodyBytes[8], BIT0)
             binToModel(streams, "holidayaway_dhw_state", _bodyBytes[8], BIT1)
-            binToModel(streams, "holidayaway_disinfect_state", _bodyBytes[8],
-                       BIT2)
+            binToModel(streams, "holidayaway_disinfect_state", _bodyBytes[8], BIT2)
         end
-    elseif ((_msgType == cmdTable["MSG_TYPE_QUERY"]) and
-        (_msgBodyType == cmdTable["MSG_TYPE_QUERY_SILENCE"])) then
+    elseif (_msgType == cmdTable["MSG_TYPE_QUERY"]) and (_msgBodyType == cmdTable["MSG_TYPE_QUERY_SILENCE"]) then
         -- 静音设置查询
         -- 状态
         binToModel(streams, "silence_function_state", _bodyBytes[1], BIT0)
@@ -3522,8 +3834,7 @@ function dataToJson(jsonCmd)
         binToModel(streams, "silence_timer2_startmin", _bodyBytes[7], nil)
         binToModel(streams, "silence_timer2_endhour", _bodyBytes[8], nil)
         binToModel(streams, "silence_timer2_endmin", _bodyBytes[9], nil)
-    elseif ((_msgType == cmdTable["MSG_TYPE_QUERY"]) and
-        (_msgBodyType == cmdTable["MSG_TYPE_QUERY_HOLIDAY_HOME"])) then
+    elseif (_msgType == cmdTable["MSG_TYPE_QUERY"]) and (_msgBodyType == cmdTable["MSG_TYPE_QUERY_HOLIDAY_HOME"]) then
         -- 在家休假设置查询-holidayhome
         binToModel(streams, "holidayhome_state", _bodyBytes[1], BIT0)
         binToModel(streams, "holidayhome_startyear", _bodyBytes[2], nil)
@@ -3583,102 +3894,59 @@ function dataToJson(jsonCmd)
         binToModel(streams, "holhometimer_timer6_closehour", _bodyBytes[43], nil)
         binToModel(streams, "holhometimer_timer6_closemin", _bodyBytes[44], nil)
         -- 支持230312V1.2协议
-        if (bodyLength > 44) then
+        if bodyLength > 44 then
             binToModel(streams, "protocol_newfunction_en", 1, BIT0)
             -- HOLIDAY_HOME 区域2定时使能
-            binToModel(streams, "zone2holhometimer_timer1en", _bodyBytes[45],
-                       BIT0)
-            binToModel(streams, "zone2holhometimer_timer2en", _bodyBytes[45],
-                       BIT1)
-            binToModel(streams, "zone2holhometimer_timer3en", _bodyBytes[45],
-                       BIT2)
-            binToModel(streams, "zone2holhometimer_timer4en", _bodyBytes[45],
-                       BIT3)
-            binToModel(streams, "zone2holhometimer_timer5en", _bodyBytes[45],
-                       BIT4)
-            binToModel(streams, "zone2holhometimer_timer6en", _bodyBytes[45],
-                       BIT5)
+            binToModel(streams, "zone2holhometimer_timer1en", _bodyBytes[45], BIT0)
+            binToModel(streams, "zone2holhometimer_timer2en", _bodyBytes[45], BIT1)
+            binToModel(streams, "zone2holhometimer_timer3en", _bodyBytes[45], BIT2)
+            binToModel(streams, "zone2holhometimer_timer4en", _bodyBytes[45], BIT3)
+            binToModel(streams, "zone2holhometimer_timer5en", _bodyBytes[45], BIT4)
+            binToModel(streams, "zone2holhometimer_timer6en", _bodyBytes[45], BIT5)
             -- HOLIDAY_HOME区域2定时 1
-            binToModel(streams, "zone2holhometimer_timer1_mode", _bodyBytes[46],
-                       nil)
-            binToModel(streams, "zone2holhometimer_timer1_temp", _bodyBytes[47],
-                       nil)
-            binToModel(streams, "zone2holhometimer_timer1_openhour",
-                       _bodyBytes[48], nil)
-            binToModel(streams, "zone2holhometimer_timer1_openmin",
-                       _bodyBytes[49], nil)
-            binToModel(streams, "zone2holhometimer_timer1_closehour",
-                       _bodyBytes[50], nil)
-            binToModel(streams, "zone2holhometimer_timer1_closemin",
-                       _bodyBytes[51], nil)
+            binToModel(streams, "zone2holhometimer_timer1_mode", _bodyBytes[46], nil)
+            binToModel(streams, "zone2holhometimer_timer1_temp", _bodyBytes[47], nil)
+            binToModel(streams, "zone2holhometimer_timer1_openhour", _bodyBytes[48], nil)
+            binToModel(streams, "zone2holhometimer_timer1_openmin", _bodyBytes[49], nil)
+            binToModel(streams, "zone2holhometimer_timer1_closehour", _bodyBytes[50], nil)
+            binToModel(streams, "zone2holhometimer_timer1_closemin", _bodyBytes[51], nil)
             -- HOLIDAY_HOME 区域2定时 2
-            binToModel(streams, "zone2holhometimer_timer2_mode", _bodyBytes[52],
-                       nil)
-            binToModel(streams, "zone2holhometimer_timer2_temp", _bodyBytes[53],
-                       nil)
-            binToModel(streams, "zone2holhometimer_timer2_openhour",
-                       _bodyBytes[54], nil)
-            binToModel(streams, "zone2holhometimer_timer2_openmin",
-                       _bodyBytes[55], nil)
-            binToModel(streams, "zone2holhometimer_timer2_closehour",
-                       _bodyBytes[56], nil)
-            binToModel(streams, "zone2holhometimer_timer2_closemin",
-                       _bodyBytes[57], nil)
+            binToModel(streams, "zone2holhometimer_timer2_mode", _bodyBytes[52], nil)
+            binToModel(streams, "zone2holhometimer_timer2_temp", _bodyBytes[53], nil)
+            binToModel(streams, "zone2holhometimer_timer2_openhour", _bodyBytes[54], nil)
+            binToModel(streams, "zone2holhometimer_timer2_openmin", _bodyBytes[55], nil)
+            binToModel(streams, "zone2holhometimer_timer2_closehour", _bodyBytes[56], nil)
+            binToModel(streams, "zone2holhometimer_timer2_closemin", _bodyBytes[57], nil)
             -- HOLIDAY_HOME区域2定时 3
-            binToModel(streams, "zone2holhometimer_timer3_mode", _bodyBytes[58],
-                       nil)
-            binToModel(streams, "zone2holhometimer_timer3_temp", _bodyBytes[59],
-                       nil)
-            binToModel(streams, "zone2holhometimer_timer3_openhour",
-                       _bodyBytes[60], nil)
-            binToModel(streams, "zone2holhometimer_timer3_openmin",
-                       _bodyBytes[61], nil)
-            binToModel(streams, "zone2holhometimer_timer3_closehour",
-                       _bodyBytes[62], nil)
-            binToModel(streams, "zone2holhometimer_timer3_closemin",
-                       _bodyBytes[63], nil)
+            binToModel(streams, "zone2holhometimer_timer3_mode", _bodyBytes[58], nil)
+            binToModel(streams, "zone2holhometimer_timer3_temp", _bodyBytes[59], nil)
+            binToModel(streams, "zone2holhometimer_timer3_openhour", _bodyBytes[60], nil)
+            binToModel(streams, "zone2holhometimer_timer3_openmin", _bodyBytes[61], nil)
+            binToModel(streams, "zone2holhometimer_timer3_closehour", _bodyBytes[62], nil)
+            binToModel(streams, "zone2holhometimer_timer3_closemin", _bodyBytes[63], nil)
             -- HOLIDAY_HOME区域2定时 4
-            binToModel(streams, "zone2holhometimer_timer4_mode", _bodyBytes[64],
-                       nil)
-            binToModel(streams, "zone2holhometimer_timer4_temp", _bodyBytes[65],
-                       nil)
-            binToModel(streams, "zone2holhometimer_timer4_openhour",
-                       _bodyBytes[66], nil)
-            binToModel(streams, "zone2holhometimer_timer4_openmin",
-                       _bodyBytes[67], nil)
-            binToModel(streams, "zone2holhometimer_timer4_closehour",
-                       _bodyBytes[68], nil)
-            binToModel(streams, "zone2holhometimer_timer4_closemin",
-                       _bodyBytes[69], nil)
+            binToModel(streams, "zone2holhometimer_timer4_mode", _bodyBytes[64], nil)
+            binToModel(streams, "zone2holhometimer_timer4_temp", _bodyBytes[65], nil)
+            binToModel(streams, "zone2holhometimer_timer4_openhour", _bodyBytes[66], nil)
+            binToModel(streams, "zone2holhometimer_timer4_openmin", _bodyBytes[67], nil)
+            binToModel(streams, "zone2holhometimer_timer4_closehour", _bodyBytes[68], nil)
+            binToModel(streams, "zone2holhometimer_timer4_closemin", _bodyBytes[69], nil)
             -- HOLIDAY_HOME区域2定时 5
-            binToModel(streams, "zone2holhometimer_timer5_mode", _bodyBytes[70],
-                       nil)
-            binToModel(streams, "zone2holhometimer_timer5_temp", _bodyBytes[71],
-                       nil)
-            binToModel(streams, "zone2holhometimer_timer5_openhour",
-                       _bodyBytes[72], nil)
-            binToModel(streams, "zone2holhometimer_timer5_openmin",
-                       _bodyBytes[73], nil)
-            binToModel(streams, "zone2holhometimer_timer5_closehour",
-                       _bodyBytes[74], nil)
-            binToModel(streams, "zone2holhometimer_timer5_closemin",
-                       _bodyBytes[75], nil)
+            binToModel(streams, "zone2holhometimer_timer5_mode", _bodyBytes[70], nil)
+            binToModel(streams, "zone2holhometimer_timer5_temp", _bodyBytes[71], nil)
+            binToModel(streams, "zone2holhometimer_timer5_openhour", _bodyBytes[72], nil)
+            binToModel(streams, "zone2holhometimer_timer5_openmin", _bodyBytes[73], nil)
+            binToModel(streams, "zone2holhometimer_timer5_closehour", _bodyBytes[74], nil)
+            binToModel(streams, "zone2holhometimer_timer5_closemin", _bodyBytes[75], nil)
             -- HOLIDAY_HOME区域2定时 6
-            binToModel(streams, "zone2holhometimer_timer6_mode", _bodyBytes[76],
-                       nil)
-            binToModel(streams, "zone2holhometimer_timer6_temp", _bodyBytes[77],
-                       nil)
-            binToModel(streams, "zone2holhometimer_timer6_openhour",
-                       _bodyBytes[78], nil)
-            binToModel(streams, "zone2holhometimer_timer6_openmin",
-                       _bodyBytes[79], nil)
-            binToModel(streams, "zone2holhometimer_timer6_closehour",
-                       _bodyBytes[80], nil)
-            binToModel(streams, "zone2holhometimer_timer6_closemin",
-                       _bodyBytes[81], nil)
+            binToModel(streams, "zone2holhometimer_timer6_mode", _bodyBytes[76], nil)
+            binToModel(streams, "zone2holhometimer_timer6_temp", _bodyBytes[77], nil)
+            binToModel(streams, "zone2holhometimer_timer6_openhour", _bodyBytes[78], nil)
+            binToModel(streams, "zone2holhometimer_timer6_openmin", _bodyBytes[79], nil)
+            binToModel(streams, "zone2holhometimer_timer6_closehour", _bodyBytes[80], nil)
+            binToModel(streams, "zone2holhometimer_timer6_closemin", _bodyBytes[81], nil)
         end
-    elseif ((_msgType == cmdTable["MSG_TYPE_QUERY"]) and
-        (_msgBodyType == cmdTable["MSG_TYPE_QUERY_ECO"])) then
+    elseif (_msgType == cmdTable["MSG_TYPE_QUERY"]) and (_msgBodyType == cmdTable["MSG_TYPE_QUERY_ECO"]) then
         -- ECO设置查询
         binToModel(streams, "eco_function_state", _bodyBytes[1], BIT0)
         binToModel(streams, "eco_timer_state", _bodyBytes[1], BIT1)
@@ -3688,11 +3956,8 @@ function dataToJson(jsonCmd)
         binToModel(streams, "eco_timer_endhour", _bodyBytes[4], nil)
         binToModel(streams, "eco_timer_endmin", _bodyBytes[5], nil)
         -- 支持230312V1.2协议
-        if (bodyLength > 5) then
-            binToModel(streams, "eco_curve_type", _bodyBytes[6], nil)
-        end
-    elseif ((_msgType == cmdTable["MSG_TYPE_QUERY"]) and
-        (_msgBodyType == cmdTable["MSG_TYPE_QUERY_DISINFECT"])) then
+        if bodyLength > 5 then binToModel(streams, "eco_curve_type", _bodyBytes[6], nil) end
+    elseif (_msgType == cmdTable["MSG_TYPE_QUERY"]) and (_msgBodyType == cmdTable["MSG_TYPE_QUERY_DISINFECT"]) then
         -- DISINFECT 设置查询
         binToModel(streams, "disinfect_function_state", _bodyBytes[1], BIT0)
         binToModel(streams, "disinfect_run_state", _bodyBytes[1], BIT1)
@@ -3700,9 +3965,7 @@ function dataToJson(jsonCmd)
         binToModel(streams, "disinfect_setweekday", _bodyBytes[2], nil)
         binToModel(streams, "disinfect_starthour", _bodyBytes[3], nil)
         binToModel(streams, "disinfect_startmin", _bodyBytes[4], nil)
-
-    elseif ((_msgType == cmdTable["MSG_TYPE_UP"]) and
-        (_msgBodyType == cmdTable["MSG_TYPE_UP_POWER3"])) then
+    elseif (_msgType == cmdTable["MSG_TYPE_UP"]) and (_msgBodyType == cmdTable["MSG_TYPE_UP_POWER3"]) then
         binToModel(streams, "msg_up_type", cmdTable["MSG_TYPE_UP_POWER3"], nil)
         binToModel(streams, "isheatrun0", _bodyBytes[1], BIT0)
         binToModel(streams, "iscoolrun0", _bodyBytes[1], BIT1)
@@ -3713,21 +3976,25 @@ function dataToJson(jsonCmd)
         binToModel(streams, "ishighprices0", _bodyBytes[1], BIT6)
         binToModel(streams, "isbottomprices0", _bodyBytes[1], BIT7)
 
-        binToModel(streams, "totalelectricity0",
-                   _bodyBytes[2] * 16777216 + _bodyBytes[3] * 65536 +
-                       _bodyBytes[4] * 256 + _bodyBytes[5], nil)
-        binToModel(streams, "totalthermal0",
-                   _bodyBytes[6] * 16777216 + _bodyBytes[7] * 65536 +
-                       _bodyBytes[8] * 256 + _bodyBytes[9], nil)
+        binToModel(
+            streams,
+            "totalelectricity0",
+            _bodyBytes[2] * 16777216 + _bodyBytes[3] * 65536 + _bodyBytes[4] * 256 + _bodyBytes[5],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal0",
+            _bodyBytes[6] * 16777216 + _bodyBytes[7] * 65536 + _bodyBytes[8] * 256 + _bodyBytes[9],
+            nil
+        )
 
         binToModel(streams, "t4", _bodyBytes[10], nil)
         binToModel(streams, "zone1_temp_set", _bodyBytes[11], nil)
         binToModel(streams, "zone2_temp_set", _bodyBytes[12], nil)
         binToModel(streams, "t5s", _bodyBytes[13], nil)
         binToModel(streams, "tas", _bodyBytes[14], nil)
-
-    elseif ((_msgType == cmdTable["MSG_TYPE_UP"]) and
-        (_msgBodyType == cmdTable["MSG_TYPE_UP_POWER4"])) then
+    elseif (_msgType == cmdTable["MSG_TYPE_UP"]) and (_msgBodyType == cmdTable["MSG_TYPE_UP_POWER4"]) then
         -- 上报04-04(电控主动上报能量数据组包)
         binToModel(streams, "msg_up_type", cmdTable["MSG_TYPE_UP_POWER4"], nil)
         binToModel(streams, "isheatrun0", _bodyBytes[1], BIT0)
@@ -3738,12 +4005,18 @@ function dataToJson(jsonCmd)
         binToModel(streams, "issmartgrid0", _bodyBytes[1], BIT5)
         binToModel(streams, "ishighprices0", _bodyBytes[1], BIT6)
         binToModel(streams, "isbottomprices0", _bodyBytes[1], BIT7)
-        binToModel(streams, "totalelectricity0",
-                   _bodyBytes[2] * 16777216 + _bodyBytes[3] * 65536 +
-                       _bodyBytes[4] * 256 + _bodyBytes[5], nil)
-        binToModel(streams, "totalthermal0",
-                   _bodyBytes[6] * 16777216 + _bodyBytes[7] * 65536 +
-                       _bodyBytes[8] * 256 + _bodyBytes[9], nil)
+        binToModel(
+            streams,
+            "totalelectricity0",
+            _bodyBytes[2] * 16777216 + _bodyBytes[3] * 65536 + _bodyBytes[4] * 256 + _bodyBytes[5],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal0",
+            _bodyBytes[6] * 16777216 + _bodyBytes[7] * 65536 + _bodyBytes[8] * 256 + _bodyBytes[9],
+            nil
+        )
         binToModel(streams, "t4", _bodyBytes[10], nil)
         binToModel(streams, "zone1_temp_set", _bodyBytes[11], nil)
         binToModel(streams, "zone2_temp_set", _bodyBytes[12], nil)
@@ -3773,180 +4046,270 @@ function dataToJson(jsonCmd)
         binToModel(streams, "isdhwrun1", _bodyBytes[19], BIT2)
         binToModel(streams, "istbhrun1", _bodyBytes[19], BIT3)
         binToModel(streams, "isibhrun1", _bodyBytes[19], BIT4)
-        binToModel(streams, "totalelectricity1",
-                   _bodyBytes[20] * 16777216 + _bodyBytes[21] * 65536 +
-                       _bodyBytes[22] * 256 + _bodyBytes[23], nil)
-        binToModel(streams, "totalthermal1",
-                   _bodyBytes[24] * 16777216 + _bodyBytes[25] * 65536 +
-                       _bodyBytes[26] * 256 + _bodyBytes[27], nil)
+        binToModel(
+            streams,
+            "totalelectricity1",
+            _bodyBytes[20] * 16777216 + _bodyBytes[21] * 65536 + _bodyBytes[22] * 256 + _bodyBytes[23],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal1",
+            _bodyBytes[24] * 16777216 + _bodyBytes[25] * 65536 + _bodyBytes[26] * 256 + _bodyBytes[27],
+            nil
+        )
 
         binToModel(streams, "isheatrun2", _bodyBytes[28], BIT0)
         binToModel(streams, "iscoolrun2", _bodyBytes[28], BIT1)
         binToModel(streams, "isdhwrun2", _bodyBytes[28], BIT2)
         binToModel(streams, "istbhrun2", _bodyBytes[28], BIT3)
         binToModel(streams, "isibhrun2", _bodyBytes[28], BIT4)
-        binToModel(streams, "totalelectricity2",
-                   _bodyBytes[29] * 16777216 + _bodyBytes[30] * 65536 +
-                       _bodyBytes[31] * 256 + _bodyBytes[32], nil)
-        binToModel(streams, "totalthermal2",
-                   _bodyBytes[33] * 16777216 + _bodyBytes[34] * 65536 +
-                       _bodyBytes[35] * 256 + _bodyBytes[36], nil)
+        binToModel(
+            streams,
+            "totalelectricity2",
+            _bodyBytes[29] * 16777216 + _bodyBytes[30] * 65536 + _bodyBytes[31] * 256 + _bodyBytes[32],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal2",
+            _bodyBytes[33] * 16777216 + _bodyBytes[34] * 65536 + _bodyBytes[35] * 256 + _bodyBytes[36],
+            nil
+        )
 
         binToModel(streams, "isheatrun3", _bodyBytes[37], BIT0)
         binToModel(streams, "iscoolrun3", _bodyBytes[37], BIT1)
         binToModel(streams, "isdhwrun3", _bodyBytes[37], BIT2)
         binToModel(streams, "istbhrun3", _bodyBytes[37], BIT3)
         binToModel(streams, "isibhrun3", _bodyBytes[37], BIT4)
-        binToModel(streams, "totalelectricity3",
-                   _bodyBytes[38] * 16777216 + _bodyBytes[39] * 65536 +
-                       _bodyBytes[40] * 256 + _bodyBytes[41], nil)
-        binToModel(streams, "totalthermal3",
-                   _bodyBytes[42] * 16777216 + _bodyBytes[43] * 65536 +
-                       _bodyBytes[44] * 256 + _bodyBytes[45], nil)
+        binToModel(
+            streams,
+            "totalelectricity3",
+            _bodyBytes[38] * 16777216 + _bodyBytes[39] * 65536 + _bodyBytes[40] * 256 + _bodyBytes[41],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal3",
+            _bodyBytes[42] * 16777216 + _bodyBytes[43] * 65536 + _bodyBytes[44] * 256 + _bodyBytes[45],
+            nil
+        )
 
         binToModel(streams, "isheatrun4", _bodyBytes[46], BIT0)
         binToModel(streams, "iscoolrun4", _bodyBytes[46], BIT1)
         binToModel(streams, "isdhwrun4", _bodyBytes[46], BIT2)
         binToModel(streams, "istbhrun4", _bodyBytes[46], BIT3)
         binToModel(streams, "isibhrun4", _bodyBytes[46], BIT4)
-        binToModel(streams, "totalelectricity4",
-                   _bodyBytes[47] * 16777216 + _bodyBytes[48] * 65536 +
-                       _bodyBytes[49] * 256 + _bodyBytes[50], nil)
-        binToModel(streams, "totalthermal4",
-                   _bodyBytes[51] * 16777216 + _bodyBytes[52] * 65536 +
-                       _bodyBytes[53] * 256 + _bodyBytes[54], nil)
+        binToModel(
+            streams,
+            "totalelectricity4",
+            _bodyBytes[47] * 16777216 + _bodyBytes[48] * 65536 + _bodyBytes[49] * 256 + _bodyBytes[50],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal4",
+            _bodyBytes[51] * 16777216 + _bodyBytes[52] * 65536 + _bodyBytes[53] * 256 + _bodyBytes[54],
+            nil
+        )
 
         binToModel(streams, "isheatrun5", _bodyBytes[55], BIT0)
         binToModel(streams, "iscoolrun5", _bodyBytes[55], BIT1)
         binToModel(streams, "isdhwrun5", _bodyBytes[55], BIT2)
         binToModel(streams, "istbhrun5", _bodyBytes[55], BIT3)
         binToModel(streams, "isibhrun5", _bodyBytes[55], BIT4)
-        binToModel(streams, "totalelectricity5",
-                   _bodyBytes[56] * 16777216 + _bodyBytes[57] * 65536 +
-                       _bodyBytes[58] * 256 + _bodyBytes[59], nil)
-        binToModel(streams, "totalthermal5",
-                   _bodyBytes[60] * 16777216 + _bodyBytes[61] * 65536 +
-                       _bodyBytes[62] * 256 + _bodyBytes[63], nil)
+        binToModel(
+            streams,
+            "totalelectricity5",
+            _bodyBytes[56] * 16777216 + _bodyBytes[57] * 65536 + _bodyBytes[58] * 256 + _bodyBytes[59],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal5",
+            _bodyBytes[60] * 16777216 + _bodyBytes[61] * 65536 + _bodyBytes[62] * 256 + _bodyBytes[63],
+            nil
+        )
 
         binToModel(streams, "isheatrun6", _bodyBytes[64], BIT0)
         binToModel(streams, "iscoolrun6", _bodyBytes[64], BIT1)
         binToModel(streams, "isdhwrun6", _bodyBytes[64], BIT2)
         binToModel(streams, "istbhrun6", _bodyBytes[64], BIT3)
         binToModel(streams, "isibhrun6", _bodyBytes[64], BIT4)
-        binToModel(streams, "totalelectricity6",
-                   _bodyBytes[65] * 16777216 + _bodyBytes[66] * 65536 +
-                       _bodyBytes[67] * 256 + _bodyBytes[68], nil)
-        binToModel(streams, "totalthermal6",
-                   _bodyBytes[69] * 16777216 + _bodyBytes[70] * 65536 +
-                       _bodyBytes[71] * 256 + _bodyBytes[72], nil)
+        binToModel(
+            streams,
+            "totalelectricity6",
+            _bodyBytes[65] * 16777216 + _bodyBytes[66] * 65536 + _bodyBytes[67] * 256 + _bodyBytes[68],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal6",
+            _bodyBytes[69] * 16777216 + _bodyBytes[70] * 65536 + _bodyBytes[71] * 256 + _bodyBytes[72],
+            nil
+        )
 
         binToModel(streams, "isheatrun7", _bodyBytes[73], BIT0)
         binToModel(streams, "iscoolrun7", _bodyBytes[73], BIT1)
         binToModel(streams, "isdhwrun7", _bodyBytes[73], BIT2)
         binToModel(streams, "istbhrun7", _bodyBytes[73], BIT3)
         binToModel(streams, "isibhrun7", _bodyBytes[73], BIT4)
-        binToModel(streams, "totalelectricity7",
-                   _bodyBytes[74] * 16777216 + _bodyBytes[75] * 65536 +
-                       _bodyBytes[76] * 256 + _bodyBytes[77], nil)
-        binToModel(streams, "totalthermal7",
-                   _bodyBytes[78] * 16777216 + _bodyBytes[79] * 65536 +
-                       _bodyBytes[80] * 256 + _bodyBytes[81], nil)
+        binToModel(
+            streams,
+            "totalelectricity7",
+            _bodyBytes[74] * 16777216 + _bodyBytes[75] * 65536 + _bodyBytes[76] * 256 + _bodyBytes[77],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal7",
+            _bodyBytes[78] * 16777216 + _bodyBytes[79] * 65536 + _bodyBytes[80] * 256 + _bodyBytes[81],
+            nil
+        )
 
         binToModel(streams, "isheatrun8", _bodyBytes[82], BIT0)
         binToModel(streams, "iscoolrun8", _bodyBytes[82], BIT1)
         binToModel(streams, "isdhwrun8", _bodyBytes[82], BIT2)
         binToModel(streams, "istbhrun8", _bodyBytes[82], BIT3)
         binToModel(streams, "isibhrun8", _bodyBytes[82], BIT4)
-        binToModel(streams, "totalelectricity8",
-                   _bodyBytes[83] * 16777216 + _bodyBytes[84] * 65536 +
-                       _bodyBytes[85] * 256 + _bodyBytes[86], nil)
-        binToModel(streams, "totalthermal8",
-                   _bodyBytes[87] * 16777216 + _bodyBytes[88] * 65536 +
-                       _bodyBytes[89] * 256 + _bodyBytes[90], nil)
+        binToModel(
+            streams,
+            "totalelectricity8",
+            _bodyBytes[83] * 16777216 + _bodyBytes[84] * 65536 + _bodyBytes[85] * 256 + _bodyBytes[86],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal8",
+            _bodyBytes[87] * 16777216 + _bodyBytes[88] * 65536 + _bodyBytes[89] * 256 + _bodyBytes[90],
+            nil
+        )
 
         binToModel(streams, "isheatrun9", _bodyBytes[91], BIT0)
         binToModel(streams, "iscoolrun9", _bodyBytes[91], BIT1)
         binToModel(streams, "isdhwrun9", _bodyBytes[91], BIT2)
         binToModel(streams, "istbhrun9", _bodyBytes[91], BIT3)
         binToModel(streams, "isibhrun9", _bodyBytes[91], BIT4)
-        binToModel(streams, "totalelectricity9",
-                   _bodyBytes[92] * 16777216 + _bodyBytes[93] * 65536 +
-                       _bodyBytes[94] * 256 + _bodyBytes[95], nil)
-        binToModel(streams, "totalthermal9",
-                   _bodyBytes[96] * 16777216 + _bodyBytes[97] * 65536 +
-                       _bodyBytes[98] * 256 + _bodyBytes[99], nil)
+        binToModel(
+            streams,
+            "totalelectricity9",
+            _bodyBytes[92] * 16777216 + _bodyBytes[93] * 65536 + _bodyBytes[94] * 256 + _bodyBytes[95],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal9",
+            _bodyBytes[96] * 16777216 + _bodyBytes[97] * 65536 + _bodyBytes[98] * 256 + _bodyBytes[99],
+            nil
+        )
 
         binToModel(streams, "isheatrun10", _bodyBytes[100], BIT0)
         binToModel(streams, "iscoolrun10", _bodyBytes[100], BIT1)
         binToModel(streams, "isdhwrun10", _bodyBytes[100], BIT2)
         binToModel(streams, "istbhrun10", _bodyBytes[100], BIT3)
         binToModel(streams, "isibhrun10", _bodyBytes[100], BIT4)
-        binToModel(streams, "totalelectricity10",
-                   _bodyBytes[101] * 16777216 + _bodyBytes[102] * 65536 +
-                       _bodyBytes[103] * 256 + _bodyBytes[104], nil)
-        binToModel(streams, "totalthermal10",
-                   _bodyBytes[105] * 16777216 + _bodyBytes[106] * 65536 +
-                       _bodyBytes[107] * 256 + _bodyBytes[108], nil)
+        binToModel(
+            streams,
+            "totalelectricity10",
+            _bodyBytes[101] * 16777216 + _bodyBytes[102] * 65536 + _bodyBytes[103] * 256 + _bodyBytes[104],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal10",
+            _bodyBytes[105] * 16777216 + _bodyBytes[106] * 65536 + _bodyBytes[107] * 256 + _bodyBytes[108],
+            nil
+        )
 
         binToModel(streams, "isheatrun11", _bodyBytes[109], BIT0)
         binToModel(streams, "iscoolrun11", _bodyBytes[109], BIT1)
         binToModel(streams, "isdhwrun11", _bodyBytes[109], BIT2)
         binToModel(streams, "istbhrun11", _bodyBytes[109], BIT3)
         binToModel(streams, "isibhrun11", _bodyBytes[109], BIT4)
-        binToModel(streams, "totalelectricity11",
-                   _bodyBytes[110] * 16777216 + _bodyBytes[111] * 65536 +
-                       _bodyBytes[112] * 256 + _bodyBytes[113], nil)
-        binToModel(streams, "totalthermal11",
-                   _bodyBytes[114] * 16777216 + _bodyBytes[115] * 65536 +
-                       _bodyBytes[116] * 256 + _bodyBytes[117], nil)
+        binToModel(
+            streams,
+            "totalelectricity11",
+            _bodyBytes[110] * 16777216 + _bodyBytes[111] * 65536 + _bodyBytes[112] * 256 + _bodyBytes[113],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal11",
+            _bodyBytes[114] * 16777216 + _bodyBytes[115] * 65536 + _bodyBytes[116] * 256 + _bodyBytes[117],
+            nil
+        )
 
         binToModel(streams, "isheatrun12", _bodyBytes[118], BIT0)
         binToModel(streams, "iscoolrun12", _bodyBytes[118], BIT1)
         binToModel(streams, "isdhwrun12", _bodyBytes[118], BIT2)
         binToModel(streams, "istbhrun12", _bodyBytes[118], BIT3)
         binToModel(streams, "isibhrun12", _bodyBytes[118], BIT4)
-        binToModel(streams, "totalelectricity12",
-                   _bodyBytes[119] * 16777216 + _bodyBytes[120] * 65536 +
-                       _bodyBytes[121] * 256 + _bodyBytes[122], nil)
-        binToModel(streams, "totalthermal12",
-                   _bodyBytes[123] * 16777216 + _bodyBytes[124] * 65536 +
-                       _bodyBytes[125] * 256 + _bodyBytes[126], nil)
+        binToModel(
+            streams,
+            "totalelectricity12",
+            _bodyBytes[119] * 16777216 + _bodyBytes[120] * 65536 + _bodyBytes[121] * 256 + _bodyBytes[122],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal12",
+            _bodyBytes[123] * 16777216 + _bodyBytes[124] * 65536 + _bodyBytes[125] * 256 + _bodyBytes[126],
+            nil
+        )
 
         binToModel(streams, "isheatrun13", _bodyBytes[127], BIT0)
         binToModel(streams, "iscoolrun13", _bodyBytes[127], BIT1)
         binToModel(streams, "isdhwrun13", _bodyBytes[127], BIT2)
         binToModel(streams, "istbhrun13", _bodyBytes[127], BIT3)
         binToModel(streams, "isibhrun13", _bodyBytes[127], BIT4)
-        binToModel(streams, "totalelectricity13",
-                   _bodyBytes[128] * 16777216 + _bodyBytes[129] * 65536 +
-                       _bodyBytes[130] * 256 + _bodyBytes[131], nil)
-        binToModel(streams, "totalthermal13",
-                   _bodyBytes[132] * 16777216 + _bodyBytes[133] * 65536 +
-                       _bodyBytes[134] * 256 + _bodyBytes[135], nil)
+        binToModel(
+            streams,
+            "totalelectricity13",
+            _bodyBytes[128] * 16777216 + _bodyBytes[129] * 65536 + _bodyBytes[130] * 256 + _bodyBytes[131],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal13",
+            _bodyBytes[132] * 16777216 + _bodyBytes[133] * 65536 + _bodyBytes[134] * 256 + _bodyBytes[135],
+            nil
+        )
 
         binToModel(streams, "isheatrun14", _bodyBytes[136], BIT0)
         binToModel(streams, "iscoolrun14", _bodyBytes[136], BIT1)
         binToModel(streams, "isdhwrun14", _bodyBytes[136], BIT2)
         binToModel(streams, "istbhrun14", _bodyBytes[136], BIT3)
         binToModel(streams, "isibhrun14", _bodyBytes[136], BIT4)
-        binToModel(streams, "totalelectricity14",
-                   _bodyBytes[137] * 16777216 + _bodyBytes[138] * 65536 +
-                       _bodyBytes[139] * 256 + _bodyBytes[140], nil)
-        binToModel(streams, "totalthermal14",
-                   _bodyBytes[141] * 16777216 + _bodyBytes[142] * 65536 +
-                       _bodyBytes[143] * 256 + _bodyBytes[144], nil)
+        binToModel(
+            streams,
+            "totalelectricity14",
+            _bodyBytes[137] * 16777216 + _bodyBytes[138] * 65536 + _bodyBytes[139] * 256 + _bodyBytes[140],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal14",
+            _bodyBytes[141] * 16777216 + _bodyBytes[142] * 65536 + _bodyBytes[143] * 256 + _bodyBytes[144],
+            nil
+        )
 
         binToModel(streams, "isheatrun15", _bodyBytes[145], BIT0)
         binToModel(streams, "iscoolrun15", _bodyBytes[145], BIT1)
         binToModel(streams, "isdhwrun15", _bodyBytes[145], BIT2)
         binToModel(streams, "istbhrun15", _bodyBytes[145], BIT3)
         binToModel(streams, "isibhrun15", _bodyBytes[145], BIT4)
-        binToModel(streams, "totalelectricity15",
-                   _bodyBytes[146] * 16777216 + _bodyBytes[147] * 65536 +
-                       _bodyBytes[148] * 256 + _bodyBytes[149], nil)
-        binToModel(streams, "totalthermal15",
-                   _bodyBytes[150] * 16777216 + _bodyBytes[151] * 65536 +
-                       _bodyBytes[152] * 256 + _bodyBytes[153], nil)
+        binToModel(
+            streams,
+            "totalelectricity15",
+            _bodyBytes[146] * 16777216 + _bodyBytes[147] * 65536 + _bodyBytes[148] * 256 + _bodyBytes[149],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal15",
+            _bodyBytes[150] * 16777216 + _bodyBytes[151] * 65536 + _bodyBytes[152] * 256 + _bodyBytes[153],
+            nil
+        )
 
         binToModel(streams, "isibh2run0", _bodyBytes[154], BIT0)
         binToModel(streams, "isibh2run1 ", _bodyBytes[154], BIT1)
@@ -3985,8 +4348,7 @@ function dataToJson(jsonCmd)
         binToModel(streams, "power_ibh1", _bodyBytes[172], nil)
         binToModel(streams, "power_ibh2", _bodyBytes[173], nil)
         binToModel(streams, "power_tbh", _bodyBytes[174], nil)
-    elseif ((_msgType == cmdTable["MSG_TYPE_QUERY"]) and
-        (_msgBodyType == cmdTable["MSG_TYPE_QUERY_INSTALL"])) then
+    elseif (_msgType == cmdTable["MSG_TYPE_QUERY"]) and (_msgBodyType == cmdTable["MSG_TYPE_QUERY_INSTALL"]) then
         -- 安装设定参数0x08查询
         binToModel(streams, "dhwEnable", _bodyBytes[1], BIT7)
         binToModel(streams, "boostertbhEn", _bodyBytes[1], BIT6)
@@ -4025,158 +4387,97 @@ function dataToJson(jsonCmd)
         binToModel(streams, "dT1S5", _bodyBytes[8], nil)
         binToModel(streams, "tIntervaDhw", _bodyBytes[10], nil)
         binToModel(streams, "t4Dhwmax", _bodyBytes[12], nil)
-        binToModel(streams, "t4Dhwmin", _bodyBytes[13] * 256 + _bodyBytes[14],
-                   nil)
-        binToModel(streams, "tTBHdelay", _bodyBytes[15] * 256 + _bodyBytes[16],
-                   nil)
-        binToModel(streams, "dT5STBHoff", _bodyBytes[17] * 256 + _bodyBytes[18],
-                   nil)
-        binToModel(streams, "t4TBHon", _bodyBytes[19] * 256 + _bodyBytes[20],
-                   nil)
+        binToModel(streams, "t4Dhwmin", _bodyBytes[13] * 256 + _bodyBytes[14], nil)
+        binToModel(streams, "tTBHdelay", _bodyBytes[15] * 256 + _bodyBytes[16], nil)
+        binToModel(streams, "dT5STBHoff", _bodyBytes[17] * 256 + _bodyBytes[18], nil)
+        binToModel(streams, "t4TBHon", _bodyBytes[19] * 256 + _bodyBytes[20], nil)
         binToModel(streams, "t5sDI", _bodyBytes[21] * 256 + _bodyBytes[22], nil)
         binToModel(streams, "tDImax", _bodyBytes[23] * 256 + _bodyBytes[24], nil)
-        binToModel(streams, "tDIhightemp",
-                   _bodyBytes[25] * 256 + _bodyBytes[26], nil)
-        binToModel(streams, "tIntervalC", _bodyBytes[27] * 256 + _bodyBytes[28],
-                   nil)
+        binToModel(streams, "tDIhightemp", _bodyBytes[25] * 256 + _bodyBytes[26], nil)
+        binToModel(streams, "tIntervalC", _bodyBytes[27] * 256 + _bodyBytes[28], nil)
         binToModel(streams, "dT1SC", _bodyBytes[29] * 256 + _bodyBytes[30], nil)
         binToModel(streams, "dTSC", _bodyBytes[31] * 256 + _bodyBytes[32], nil)
         binToModel(streams, "t4Cmax", _bodyBytes[33] * 256 + _bodyBytes[34], nil)
         binToModel(streams, "t4Cmin", _bodyBytes[35] * 256 + _bodyBytes[36], nil)
-        binToModel(streams, "tIntervalH", _bodyBytes[37] * 256 + _bodyBytes[38],
-                   nil)
+        binToModel(streams, "tIntervalH", _bodyBytes[37] * 256 + _bodyBytes[38], nil)
         binToModel(streams, "dT1SH", _bodyBytes[39] * 256 + _bodyBytes[40], nil)
         binToModel(streams, "dTSH", _bodyBytes[41] * 256 + _bodyBytes[42], nil)
         binToModel(streams, "t4Hmax", _bodyBytes[43] * 256 + _bodyBytes[44], nil)
         binToModel(streams, "t4Hmin", _bodyBytes[45] * 256 + _bodyBytes[46], nil)
-        binToModel(streams, "t4IBHon", _bodyBytes[47] * 256 + _bodyBytes[48],
-                   nil)
-        binToModel(streams, "dT1IBHon", _bodyBytes[49] * 256 + _bodyBytes[50],
-                   nil)
-        binToModel(streams, "tIBHdelay", _bodyBytes[51] * 256 + _bodyBytes[52],
-                   nil)
-        binToModel(streams, "tIBH12delay",
-                   _bodyBytes[53] * 256 + _bodyBytes[54], nil)
-        binToModel(streams, "t4AHSon", _bodyBytes[55] * 256 + _bodyBytes[56],
-                   nil)
-        binToModel(streams, "dT1AHSon", _bodyBytes[57] * 256 + _bodyBytes[58],
-                   nil)
-        binToModel(streams, "dT1AHSoff", _bodyBytes[59] * 256 + _bodyBytes[60],
-                   nil)
-        binToModel(streams, "tAHSdelay", _bodyBytes[61] * 256 + _bodyBytes[62],
-                   nil)
-        binToModel(streams, "tDHWHPmax", _bodyBytes[63] * 256 + _bodyBytes[64],
-                   nil)
-        binToModel(streams, "tDHWHPrestrict",
-                   _bodyBytes[65] * 256 + _bodyBytes[66], nil)
-        binToModel(streams, "t4autocmin", _bodyBytes[67] * 256 + _bodyBytes[68],
-                   nil)
-        binToModel(streams, "t4autohmax", _bodyBytes[69] * 256 + _bodyBytes[70],
-                   nil)
-        binToModel(streams, "t1sHolHeat", _bodyBytes[71] * 256 + _bodyBytes[72],
-                   nil)
-        binToModel(streams, "t5SHolDhw", _bodyBytes[73] * 256 + _bodyBytes[74],
-                   nil)
-        binToModel(streams, "perStart", _bodyBytes[75] * 256 + _bodyBytes[76],
-                   nil)
-        binToModel(streams, "timeAdjust", _bodyBytes[77] * 256 + _bodyBytes[78],
-                   nil)
+        binToModel(streams, "t4IBHon", _bodyBytes[47] * 256 + _bodyBytes[48], nil)
+        binToModel(streams, "dT1IBHon", _bodyBytes[49] * 256 + _bodyBytes[50], nil)
+        binToModel(streams, "tIBHdelay", _bodyBytes[51] * 256 + _bodyBytes[52], nil)
+        binToModel(streams, "tIBH12delay", _bodyBytes[53] * 256 + _bodyBytes[54], nil)
+        binToModel(streams, "t4AHSon", _bodyBytes[55] * 256 + _bodyBytes[56], nil)
+        binToModel(streams, "dT1AHSon", _bodyBytes[57] * 256 + _bodyBytes[58], nil)
+        binToModel(streams, "dT1AHSoff", _bodyBytes[59] * 256 + _bodyBytes[60], nil)
+        binToModel(streams, "tAHSdelay", _bodyBytes[61] * 256 + _bodyBytes[62], nil)
+        binToModel(streams, "tDHWHPmax", _bodyBytes[63] * 256 + _bodyBytes[64], nil)
+        binToModel(streams, "tDHWHPrestrict", _bodyBytes[65] * 256 + _bodyBytes[66], nil)
+        binToModel(streams, "t4autocmin", _bodyBytes[67] * 256 + _bodyBytes[68], nil)
+        binToModel(streams, "t4autohmax", _bodyBytes[69] * 256 + _bodyBytes[70], nil)
+        binToModel(streams, "t1sHolHeat", _bodyBytes[71] * 256 + _bodyBytes[72], nil)
+        binToModel(streams, "t5SHolDhw", _bodyBytes[73] * 256 + _bodyBytes[74], nil)
+        binToModel(streams, "perStart", _bodyBytes[75] * 256 + _bodyBytes[76], nil)
+        binToModel(streams, "timeAdjust", _bodyBytes[77] * 256 + _bodyBytes[78], nil)
         binToModel(streams, "dTbt2", _bodyBytes[79] * 256 + _bodyBytes[80], nil)
-        binToModel(streams, "powerIbh1",
-                   (_bodyBytes[81] * 256 + _bodyBytes[82]) / 10, nil)
-        binToModel(streams, "powerIbh2",
-                   (_bodyBytes[83] * 256 + _bodyBytes[84]) / 10, nil)
-        binToModel(streams, "powerTbh",
-                   (_bodyBytes[85] * 256 + _bodyBytes[86]) / 10, nil)
-        binToModel(streams, "ecoHeatT1s", _bodyBytes[87] * 256 + _bodyBytes[88],
-                   nil)
-        binToModel(streams, "ecoHeatTs", _bodyBytes[89] * 256 + _bodyBytes[90],
-                   nil)
+        binToModel(streams, "powerIbh1", (_bodyBytes[81] * 256 + _bodyBytes[82]) / 10, nil)
+        binToModel(streams, "powerIbh2", (_bodyBytes[83] * 256 + _bodyBytes[84]) / 10, nil)
+        binToModel(streams, "powerTbh", (_bodyBytes[85] * 256 + _bodyBytes[86]) / 10, nil)
+        binToModel(streams, "ecoHeatT1s", _bodyBytes[87] * 256 + _bodyBytes[88], nil)
+        binToModel(streams, "ecoHeatTs", _bodyBytes[89] * 256 + _bodyBytes[90], nil)
         binToModel(streams, "tDryup", _bodyBytes[91] * 256 + _bodyBytes[92], nil)
-        binToModel(streams, "tDrypeak", _bodyBytes[93] * 256 + _bodyBytes[94],
-                   nil)
-        binToModel(streams, "tdrydown", _bodyBytes[95] * 256 + _bodyBytes[96],
-                   nil)
-        binToModel(streams, "tempDrypeak",
-                   _bodyBytes[97] * 256 + _bodyBytes[98], nil)
-        binToModel(streams, "timePreheatFloor",
-                   _bodyBytes[99] * 256 + _bodyBytes[100], nil)
-        binToModel(streams, "t1SPreheatFloor",
-                   _bodyBytes[101] * 256 + _bodyBytes[102], nil)
+        binToModel(streams, "tDrypeak", _bodyBytes[93] * 256 + _bodyBytes[94], nil)
+        binToModel(streams, "tdrydown", _bodyBytes[95] * 256 + _bodyBytes[96], nil)
+        binToModel(streams, "tempDrypeak", _bodyBytes[97] * 256 + _bodyBytes[98], nil)
+        binToModel(streams, "timePreheatFloor", _bodyBytes[99] * 256 + _bodyBytes[100], nil)
+        binToModel(streams, "t1SPreheatFloor", _bodyBytes[101] * 256 + _bodyBytes[102], nil)
         -- 103~112为空
-        binToModel(streams, "t1SetC1", _bodyBytes[113] * 256 + _bodyBytes[114],
-                   nil)
-        binToModel(streams, "t1SetC2", _bodyBytes[115] * 256 + _bodyBytes[116],
-                   nil)
+        binToModel(streams, "t1SetC1", _bodyBytes[113] * 256 + _bodyBytes[114], nil)
+        binToModel(streams, "t1SetC2", _bodyBytes[115] * 256 + _bodyBytes[116], nil)
         binToModel(streams, "t4C1", _bodyBytes[117] * 256 + _bodyBytes[118], nil)
         binToModel(streams, "t4C2", _bodyBytes[119] * 256 + _bodyBytes[120], nil)
-        binToModel(streams, "t1SetH1", _bodyBytes[121] * 256 + _bodyBytes[122],
-                   nil)
-        binToModel(streams, "t1SetH2", _bodyBytes[123] * 256 + _bodyBytes[124],
-                   nil)
+        binToModel(streams, "t1SetH1", _bodyBytes[121] * 256 + _bodyBytes[122], nil)
+        binToModel(streams, "t1SetH2", _bodyBytes[123] * 256 + _bodyBytes[124], nil)
         binToModel(streams, "t4H1", _bodyBytes[125] * 256 + _bodyBytes[126], nil)
         binToModel(streams, "t4H2", _bodyBytes[127] * 256 + _bodyBytes[128], nil)
-        binToModel(streams, "typeVolLmt",
-                   _bodyBytes[129] * 256 + _bodyBytes[130], nil)
+        binToModel(streams, "typeVolLmt", _bodyBytes[129] * 256 + _bodyBytes[130], nil)
         binToModel(streams, "timeT4FreshC", _bodyBytes[131] / 2, nil)
         binToModel(streams, "timeT4FreshH", _bodyBytes[132] / 2, nil)
-        binToModel(streams, "tPumpiDelay",
-                   (_bodyBytes[133] * 256 + _bodyBytes[134]) / 2, nil)
+        binToModel(streams, "tPumpiDelay", (_bodyBytes[133] * 256 + _bodyBytes[134]) / 2, nil)
         binToModel(streams, "deltaTsloar", _bodyBytes[135], nil)
         binToModel(streams, "solarFunction", _bodyBytes[136], nil)
         binToModel(streams, "enSwitchPDC", _bodyBytes[138], BIT0)
-        binToModel(streams, "gasCost",
-                   (_bodyBytes[139] * 256 + _bodyBytes[140]) / 100, nil)
-        binToModel(streams, "eleCost",
-                   (_bodyBytes[141] * 256 + _bodyBytes[142]) / 100, nil)
+        binToModel(streams, "gasCost", (_bodyBytes[139] * 256 + _bodyBytes[140]) / 100, nil)
+        binToModel(streams, "eleCost", (_bodyBytes[141] * 256 + _bodyBytes[142]) / 100, nil)
         binToModel(streams, "ahsSetTempMax", _bodyBytes[143], nil)
         binToModel(streams, "ahsSetTempMin", _bodyBytes[144], nil)
         binToModel(streams, "ahsSetTempMaxVolt", _bodyBytes[145], nil)
         binToModel(streams, "ahsSetTempMinVolt", _bodyBytes[146], nil)
-        binToModel(streams, "t2AntiSVRun",
-                   _bodyBytes[147] * 256 + _bodyBytes[148], nil)
+        binToModel(streams, "t2AntiSVRun", _bodyBytes[147] * 256 + _bodyBytes[148], nil)
         binToModel(streams, "dftPortFuncEn", _bodyBytes[150], BIT0)
         -- _bodyBytes[150]~_bodyBytes[180]预留
-        binToModel(streams, "t1AntiPump",
-                   _bodyBytes[181] * 256 + _bodyBytes[182], nil)
-        binToModel(streams, "t2AntiPumpRun",
-                   _bodyBytes[183] * 256 + _bodyBytes[184], nil)
-        binToModel(streams, "t1AntiLockSV",
-                   _bodyBytes[185] * 256 + _bodyBytes[186], nil)
-        binToModel(streams, "tbhEnFunc",
-                   _bodyBytes[187] * 256 + _bodyBytes[188], nil)
-        binToModel(streams, "ibhEnFunc",
-                   _bodyBytes[189] * 256 + _bodyBytes[190], nil)
+        binToModel(streams, "t1AntiPump", _bodyBytes[181] * 256 + _bodyBytes[182], nil)
+        binToModel(streams, "t2AntiPumpRun", _bodyBytes[183] * 256 + _bodyBytes[184], nil)
+        binToModel(streams, "t1AntiLockSV", _bodyBytes[185] * 256 + _bodyBytes[186], nil)
+        binToModel(streams, "tbhEnFunc", _bodyBytes[187] * 256 + _bodyBytes[188], nil)
+        binToModel(streams, "ibhEnFunc", _bodyBytes[189] * 256 + _bodyBytes[190], nil)
         -- binToModel(streams, "", _bodyBytes[191]* 256+_bodyBytes[192], nil)
-        binToModel(streams, "ahsEnFunc",
-                   _bodyBytes[193] * 256 + _bodyBytes[194], nil)
-        binToModel(streams, "ahsPumpiControl",
-                   _bodyBytes[195] * 256 + _bodyBytes[196], nil)
-        binToModel(streams, "modeSetPri",
-                   _bodyBytes[197] * 256 + _bodyBytes[198], nil)
-        binToModel(streams, "pumpType", _bodyBytes[199] * 256 + _bodyBytes[200],
-                   nil)
-        binToModel(streams, "pumpiSilentOutput",
-                   _bodyBytes[201] * 256 + _bodyBytes[202], nil)
-    elseif ((_msgType == cmdTable["MSG_TYPE_QUERY"]) and
-        (_msgBodyType == cmdTable["MSG_TYPE_QUERY_HMIPARA"])) then
+        binToModel(streams, "ahsEnFunc", _bodyBytes[193] * 256 + _bodyBytes[194], nil)
+        binToModel(streams, "ahsPumpiControl", _bodyBytes[195] * 256 + _bodyBytes[196], nil)
+        binToModel(streams, "modeSetPri", _bodyBytes[197] * 256 + _bodyBytes[198], nil)
+        binToModel(streams, "pumpType", _bodyBytes[199] * 256 + _bodyBytes[200], nil)
+        binToModel(streams, "pumpiSilentOutput", _bodyBytes[201] * 256 + _bodyBytes[202], nil)
+    elseif (_msgType == cmdTable["MSG_TYPE_QUERY"]) and (_msgBodyType == cmdTable["MSG_TYPE_QUERY_HMIPARA"]) then
         binToModel(streams, "hmiVersionNum", _bodyBytes[1], nil)
-        binToModel(streams, "compRunCurTime0",
-                   _bodyBytes[2] * 256 + _bodyBytes[3], nil)
-        binToModel(streams, "compRunTotalTime0",
-                   _bodyBytes[4] * 256 + _bodyBytes[5], nil)
-        binToModel(streams, "fanRunTotalTime0",
-                   _bodyBytes[6] * 256 + _bodyBytes[7], nil)
-        binToModel(streams, "pumpiRunTotalTime0",
-                   _bodyBytes[8] * 256 + _bodyBytes[9], nil)
-        binToModel(streams, "ibh1RunTotalTime0",
-                   _bodyBytes[10] * 256 + _bodyBytes[11], nil)
-        binToModel(streams, "ibh2RunTotalTime0",
-                   _bodyBytes[12] * 256 + _bodyBytes[13], nil)
-        binToModel(streams, "tbhRunTotalTime0",
-                   _bodyBytes[14] * 256 + _bodyBytes[15], nil)
-        binToModel(streams, "ahsRunTotalTime0",
-                   _bodyBytes[16] * 256 + _bodyBytes[17], nil)
+        binToModel(streams, "compRunCurTime0", _bodyBytes[2] * 256 + _bodyBytes[3], nil)
+        binToModel(streams, "compRunTotalTime0", _bodyBytes[4] * 256 + _bodyBytes[5], nil)
+        binToModel(streams, "fanRunTotalTime0", _bodyBytes[6] * 256 + _bodyBytes[7], nil)
+        binToModel(streams, "pumpiRunTotalTime0", _bodyBytes[8] * 256 + _bodyBytes[9], nil)
+        binToModel(streams, "ibh1RunTotalTime0", _bodyBytes[10] * 256 + _bodyBytes[11], nil)
+        binToModel(streams, "ibh2RunTotalTime0", _bodyBytes[12] * 256 + _bodyBytes[13], nil)
+        binToModel(streams, "tbhRunTotalTime0", _bodyBytes[14] * 256 + _bodyBytes[15], nil)
+        binToModel(streams, "ahsRunTotalTime0", _bodyBytes[16] * 256 + _bodyBytes[17], nil)
         binToModel(streams, "arrayServiceTel0", _bodyBytes[18], nil)
         binToModel(streams, "arrayServiceTel1", _bodyBytes[19], nil)
         binToModel(streams, "arrayServiceTel2", _bodyBytes[20], nil)
@@ -4260,9 +4561,7 @@ function dataToJson(jsonCmd)
         binToModel(streams, "warnYear8", _bodyBytes[98], nil)
         binToModel(streams, "warnMonth8", _bodyBytes[99], nil)
         binToModel(streams, "warnDate8", _bodyBytes[100], nil)
-
-    elseif ((_msgType == cmdTable["MSG_TYPE_QUERY"]) and
-        (_msgBodyType == cmdTable["MSG_TYPE_QUERY_UNITPARA"])) then
+    elseif (_msgType == cmdTable["MSG_TYPE_QUERY"]) and (_msgBodyType == cmdTable["MSG_TYPE_QUERY_UNITPARA"]) then
         -- 主机运行参数0x10查询
         binToModel(streams, "compRunFreq", _bodyBytes[1], nil)
         binToModel(streams, "unitModeRun", _bodyBytes[2], nil)
@@ -4281,10 +4580,8 @@ function dataToJson(jsonCmd)
         binToModel(streams, "usbIndexMax", _bodyBytes[15], nil)
         binToModel(streams, "p6ErrCode", _bodyBytes[16], nil)
         binToModel(streams, "oduCompCurrent", _bodyBytes[17], nil)
-        binToModel(streams, "oduVoltage", _bodyBytes[18] * 256 + _bodyBytes[19],
-                   nil)
-        binToModel(streams, "exvCurrent", _bodyBytes[20] * 256 + _bodyBytes[21],
-                   nil)
+        binToModel(streams, "oduVoltage", _bodyBytes[18] * 256 + _bodyBytes[19], nil)
+        binToModel(streams, "exvCurrent", _bodyBytes[20] * 256 + _bodyBytes[21], nil)
         binToModel(streams, "oduModel", _bodyBytes[22], nil)
         binToModel(streams, "unitonlineNum", _bodyBytes[23], nil)
         binToModel(streams, "currentCode", _bodyBytes[24], nil)
@@ -4348,11 +4645,9 @@ function dataToJson(jsonCmd)
         binToModel(streams, "tempTbt1", _bodyBytes[40], nil)
         binToModel(streams, "tempTbt2", _bodyBytes[41], nil)
         binToModel(streams, "hydroboxCapacity", _bodyBytes[42], nil)
-        binToModel(streams, "pressureHigh",
-                   _bodyBytes[43] * 256 + _bodyBytes[44], nil)
+        binToModel(streams, "pressureHigh", _bodyBytes[43] * 256 + _bodyBytes[44], nil)
 
-        binToModel(streams, "pressureLow",
-                   _bodyBytes[45] * 256 + _bodyBytes[46], nil)
+        binToModel(streams, "pressureLow", _bodyBytes[45] * 256 + _bodyBytes[46], nil)
 
         binToModel(streams, "tempTh", _bodyBytes[47], nil)
         binToModel(streams, "machineType", _bodyBytes[48], nil)
@@ -4362,46 +4657,56 @@ function dataToJson(jsonCmd)
         binToModel(streams, "tempTf", _bodyBytes[52], nil)
         binToModel(streams, "iduT1s1", _bodyBytes[53], nil)
         binToModel(streams, "iduT1s2", _bodyBytes[54], nil)
-        binToModel(streams, "waterFlow", _bodyBytes[55] * 256 + _bodyBytes[56],
-                   nil)
+        binToModel(streams, "waterFlow", _bodyBytes[55] * 256 + _bodyBytes[56], nil)
 
         binToModel(streams, "oduPlanVolLmt", _bodyBytes[57], nil)
-        binToModel(streams, "currentUnitCapacity",
-                   _bodyBytes[58] * 256 + _bodyBytes[59], nil)
+        binToModel(streams, "currentUnitCapacity", _bodyBytes[58] * 256 + _bodyBytes[59], nil)
 
         binToModel(streams, "spheraAHSVoltage", _bodyBytes[60], nil)
         binToModel(streams, "tempT4Aver", _bodyBytes[61], nil)
-        binToModel(streams, "waterPressure",
-                   _bodyBytes[62] * 256 + _bodyBytes[63], nil)
+        binToModel(streams, "waterPressure", _bodyBytes[62] * 256 + _bodyBytes[63], nil)
 
         binToModel(streams, "roomRelHum", _bodyBytes[64], nil)
         binToModel(streams, "pwmPumpOut", _bodyBytes[65], nil)
         -- 66预留
-        binToModel(streams, "totalelectricity0",
-                   _bodyBytes[67] * 16777216 + _bodyBytes[68] * 65536 +
-                       _bodyBytes[69] * 256 + _bodyBytes[70], nil)
+        binToModel(
+            streams,
+            "totalelectricity0",
+            _bodyBytes[67] * 16777216 + _bodyBytes[68] * 65536 + _bodyBytes[69] * 256 + _bodyBytes[70],
+            nil
+        )
 
-        binToModel(streams, "totalthermal0",
-                   _bodyBytes[71] * 16777216 + _bodyBytes[72] * 65536 +
-                       _bodyBytes[73] * 256 + _bodyBytes[74], nil)
+        binToModel(
+            streams,
+            "totalthermal0",
+            _bodyBytes[71] * 16777216 + _bodyBytes[72] * 65536 + _bodyBytes[73] * 256 + _bodyBytes[74],
+            nil
+        )
 
-        binToModel(streams, "heatElecTotConsum0",
-                   _bodyBytes[75] * 16777216 + _bodyBytes[76] * 65536 +
-                       _bodyBytes[77] * 256 + _bodyBytes[78], nil)
+        binToModel(
+            streams,
+            "heatElecTotConsum0",
+            _bodyBytes[75] * 16777216 + _bodyBytes[76] * 65536 + _bodyBytes[77] * 256 + _bodyBytes[78],
+            nil
+        )
 
-        binToModel(streams, "heatTotCapacity0",
-                   _bodyBytes[79] * 16777216 + _bodyBytes[80] * 65536 +
-                       _bodyBytes[81] * 256 + _bodyBytes[82], nil)
+        binToModel(
+            streams,
+            "heatTotCapacity0",
+            _bodyBytes[79] * 16777216 + _bodyBytes[80] * 65536 + _bodyBytes[81] * 256 + _bodyBytes[82],
+            nil
+        )
 
-        binToModel(streams, "instantPower0",
-                   _bodyBytes[83] * 256 + _bodyBytes[84], nil)
+        binToModel(streams, "instantPower0", _bodyBytes[83] * 256 + _bodyBytes[84], nil)
 
-        binToModel(streams, "instantRenewPower0",
-                   _bodyBytes[85] * 256 + _bodyBytes[86], nil)
+        binToModel(streams, "instantRenewPower0", _bodyBytes[85] * 256 + _bodyBytes[86], nil)
 
-        binToModel(streams, "totalRenewPower0",
-                   _bodyBytes[87] * 16777216 + _bodyBytes[88] * 65536 +
-                       _bodyBytes[89] * 256 + _bodyBytes[90], nil)
+        binToModel(
+            streams,
+            "totalRenewPower0",
+            _bodyBytes[87] * 16777216 + _bodyBytes[88] * 65536 + _bodyBytes[89] * 256 + _bodyBytes[90],
+            nil
+        )
         -- 91-93预留
         binToModel(streams, "iduVersionNum", _bodyBytes[94], nil)
         binToModel(streams, "oduVersionNum", _bodyBytes[95], nil)
@@ -4504,9 +4809,7 @@ function dataToJson(jsonCmd)
         binToModel(streams, "hmiSNCode29", _bodyBytes[189], nil)
         binToModel(streams, "hmiSNCode30", _bodyBytes[190], nil)
         binToModel(streams, "hmiSNCode31", _bodyBytes[191], nil)
-
-    elseif ((_msgType == cmdTable["MSG_TYPE_UP"]) and
-        (_msgBodyType == cmdTable["MSG_TYPE_UP_UNITPARA"])) then
+    elseif (_msgType == cmdTable["MSG_TYPE_UP"]) and (_msgBodyType == cmdTable["MSG_TYPE_UP_UNITPARA"]) then
         binToModel(streams, "msg_up_type", cmdTable["MSG_TYPE_UP_UNITPARA"], nil)
         binToModel(streams, "compRunFreq", _bodyBytes[1], nil)
         binToModel(streams, "fanSpeed", _bodyBytes[2] * 10, nil)
@@ -4516,305 +4819,272 @@ function dataToJson(jsonCmd)
         binToModel(streams, "tempTwin", _bodyBytes[6], nil)
         binToModel(streams, "tempTwout", _bodyBytes[7], nil)
         binToModel(streams, "oduCompCurrent", _bodyBytes[8], nil)
-        binToModel(streams, "oduVoltage", _bodyBytes[9] * 256 + _bodyBytes[10],
-                   nil)
+        binToModel(streams, "oduVoltage", _bodyBytes[9] * 256 + _bodyBytes[10], nil)
         binToModel(streams, "tempT1", _bodyBytes[11], nil)
         binToModel(streams, "tempTw2", _bodyBytes[12], nil)
         binToModel(streams, "tempT2", _bodyBytes[13], nil)
         binToModel(streams, "tempT2b", _bodyBytes[14], nil)
         binToModel(streams, "tempT5", _bodyBytes[15], nil)
         binToModel(streams, "tempTa", _bodyBytes[16], nil)
-        binToModel(streams, "pressureHigh",
-                   _bodyBytes[17] * 256 + _bodyBytes[18], nil)
-        binToModel(streams, "pressureLow",
-                   _bodyBytes[19] * 256 + _bodyBytes[20], nil)
+        binToModel(streams, "pressureHigh", _bodyBytes[17] * 256 + _bodyBytes[18], nil)
+        binToModel(streams, "pressureLow", _bodyBytes[19] * 256 + _bodyBytes[20], nil)
         binToModel(streams, "tempTh", _bodyBytes[21], nil)
         binToModel(streams, "oduTargetFre", _bodyBytes[22], nil)
         binToModel(streams, "tempTf", _bodyBytes[23], nil)
         binToModel(streams, "iduT1s1", _bodyBytes[24], nil)
         binToModel(streams, "iduT1s2", _bodyBytes[25], nil)
-        binToModel(streams, "waterFlow", _bodyBytes[26] * 256 + _bodyBytes[27],
-                   nil)
-        binToModel(streams, "currentUnitCapacity",
-                   _bodyBytes[28] * 256 + _bodyBytes[29], nil)
-        binToModel(streams, "waterPressure",
-                   _bodyBytes[30] * 256 + _bodyBytes[31], nil)
+        binToModel(streams, "waterFlow", _bodyBytes[26] * 256 + _bodyBytes[27], nil)
+        binToModel(streams, "currentUnitCapacity", _bodyBytes[28] * 256 + _bodyBytes[29], nil)
+        binToModel(streams, "waterPressure", _bodyBytes[30] * 256 + _bodyBytes[31], nil)
         binToModel(streams, "roomRelHum", _bodyBytes[32], nil)
-        binToModel(streams, "totalelectricity0",
-                   _bodyBytes[33] * 16777216 + _bodyBytes[34] * 65536 +
-                       _bodyBytes[35] * 256 + _bodyBytes[36], nil)
-        binToModel(streams, "totalthermal0",
-                   _bodyBytes[37] * 16777216 + _bodyBytes[38] * 65536 +
-                       _bodyBytes[39] * 256 + _bodyBytes[40], nil)
+        binToModel(
+            streams,
+            "totalelectricity0",
+            _bodyBytes[33] * 16777216 + _bodyBytes[34] * 65536 + _bodyBytes[35] * 256 + _bodyBytes[36],
+            nil
+        )
+        binToModel(
+            streams,
+            "totalthermal0",
+            _bodyBytes[37] * 16777216 + _bodyBytes[38] * 65536 + _bodyBytes[39] * 256 + _bodyBytes[40],
+            nil
+        )
         -- binToModel(streams, "heatElecTotConsum0", _bodyBytes[41] * 16777216 +  _bodyBytes[42]  *  65536 +  _bodyBytes[43] * 256 +  _bodyBytes[44], nil)
         -- binToModel(streams, "heatTotCapacity0", _bodyBytes[45] * 16777216 +  _bodyBytes[46]  *  65536 +  _bodyBytes[47] * 256 +  _bodyBytes[48], nil)
-        binToModel(streams, "SysHeatDayCapacity",
-                   _bodyBytes[41] * 256 + _bodyBytes[42], nil)
+        binToModel(streams, "SysHeatDayCapacity", _bodyBytes[41] * 256 + _bodyBytes[42], nil)
 
-        binToModel(streams, "SysHeatDayRenewPower",
-                   _bodyBytes[43] * 256 + _bodyBytes[44], nil)
+        binToModel(streams, "SysHeatDayRenewPower", _bodyBytes[43] * 256 + _bodyBytes[44], nil)
 
-        binToModel(streams, "SysHeatDayElecConsum",
-                   _bodyBytes[45] * 256 + _bodyBytes[46], nil)
+        binToModel(streams, "SysHeatDayElecConsum", _bodyBytes[45] * 256 + _bodyBytes[46], nil)
 
-        binToModel(streams, "SysHeatDayCOPEER",
-                   _bodyBytes[47] * 256 + _bodyBytes[48], nil)
+        binToModel(streams, "SysHeatDayCOPEER", _bodyBytes[47] * 256 + _bodyBytes[48], nil)
 
-        binToModel(streams, "instantPower0",
-                   _bodyBytes[49] * 256 + _bodyBytes[50], nil)
-        binToModel(streams, "instantRenewPower0",
-                   _bodyBytes[51] * 256 + _bodyBytes[52], nil)
-        binToModel(streams, "totalRenewPower0",
-                   _bodyBytes[53] * 16777216 + _bodyBytes[54] * 65536 +
-                       _bodyBytes[55] * 256 + _bodyBytes[56], nil)
-        binToModel(streams, "compRunTotalTime0",
-                   _bodyBytes[57] * 256 + _bodyBytes[58], nil)
+        binToModel(streams, "instantPower0", _bodyBytes[49] * 256 + _bodyBytes[50], nil)
+        binToModel(streams, "instantRenewPower0", _bodyBytes[51] * 256 + _bodyBytes[52], nil)
+        binToModel(
+            streams,
+            "totalRenewPower0",
+            _bodyBytes[53] * 16777216 + _bodyBytes[54] * 65536 + _bodyBytes[55] * 256 + _bodyBytes[56],
+            nil
+        )
+        binToModel(streams, "compRunTotalTime0", _bodyBytes[57] * 256 + _bodyBytes[58], nil)
         binToModel(streams, "pwmPumpOut", _bodyBytes[59], nil)
         binToModel(streams, "unitModeRun", _bodyBytes[60], nil)
-        binToModel(streams, "SysInstantHPCapacity",
-                   _bodyBytes[61] * 256 + _bodyBytes[62], nil)
+        binToModel(streams, "SysInstantHPCapacity", _bodyBytes[61] * 256 + _bodyBytes[62], nil)
 
-        binToModel(streams, "SysInstantRenewPower",
-                   _bodyBytes[63] * 256 + _bodyBytes[64], nil)
+        binToModel(streams, "SysInstantRenewPower", _bodyBytes[63] * 256 + _bodyBytes[64], nil)
 
-        binToModel(streams, "SysInstantPower",
-                   _bodyBytes[65] * 256 + _bodyBytes[66], nil)
+        binToModel(streams, "SysInstantPower", _bodyBytes[65] * 256 + _bodyBytes[66], nil)
 
-        binToModel(streams, "SysInstantCopEER",
-                   _bodyBytes[67] * 256 + _bodyBytes[68], nil)
+        binToModel(streams, "SysInstantCopEER", _bodyBytes[67] * 256 + _bodyBytes[68], nil)
 
-        binToModel(streams, "SysTotalHPCapacity",
-                   _bodyBytes[69] * 16777216 + _bodyBytes[70] * 65536 +
-                       _bodyBytes[71] * 256 + _bodyBytes[72], nil)
+        binToModel(
+            streams,
+            "SysTotalHPCapacity",
+            _bodyBytes[69] * 16777216 + _bodyBytes[70] * 65536 + _bodyBytes[71] * 256 + _bodyBytes[72],
+            nil
+        )
 
         -- binToModel(streams, "SysTotalHeatCapacity", _bodyBytes[73] * 16777216 +  _bodyBytes[74]  *  65536 +  _bodyBytes[75] * 256 +  _bodyBytes[76], nil)
 
-        binToModel(streams, "SysTotalRenewPower",
-                   _bodyBytes[73] * 16777216 + _bodyBytes[74] * 65536 +
-                       _bodyBytes[75] * 256 + _bodyBytes[76], nil)
+        binToModel(
+            streams,
+            "SysTotalRenewPower",
+            _bodyBytes[73] * 16777216 + _bodyBytes[74] * 65536 + _bodyBytes[75] * 256 + _bodyBytes[76],
+            nil
+        )
 
-        binToModel(streams, "SysTotalPowerConsum",
-                   _bodyBytes[77] * 16777216 + _bodyBytes[78] * 65536 +
-                       _bodyBytes[79] * 256 + _bodyBytes[80], nil)
+        binToModel(
+            streams,
+            "SysTotalPowerConsum",
+            _bodyBytes[77] * 16777216 + _bodyBytes[78] * 65536 + _bodyBytes[79] * 256 + _bodyBytes[80],
+            nil
+        )
         -- binToModel(streams, "SysTotalHeatElecConsum", _bodyBytes[81] * 16777216 +  _bodyBytes[82]  *  65536 +  _bodyBytes[83] * 256 +  _bodyBytes[84], nil)
-        binToModel(streams, "SysTotalCOPEER",
-                   _bodyBytes[81] * 256 + _bodyBytes[82], nil)
-        binToModel(streams, "SysHeatInsHPCapacity",
-                   _bodyBytes[83] * 256 + _bodyBytes[84], nil)
+        binToModel(streams, "SysTotalCOPEER", _bodyBytes[81] * 256 + _bodyBytes[82], nil)
+        binToModel(streams, "SysHeatInsHPCapacity", _bodyBytes[83] * 256 + _bodyBytes[84], nil)
 
-        binToModel(streams, "SysHeatInsRenewPower",
-                   _bodyBytes[85] * 256 + _bodyBytes[86], nil)
+        binToModel(streams, "SysHeatInsRenewPower", _bodyBytes[85] * 256 + _bodyBytes[86], nil)
 
-        binToModel(streams, "SysHeatInsPower",
-                   _bodyBytes[87] * 256 + _bodyBytes[88], nil)
+        binToModel(streams, "SysHeatInsPower", _bodyBytes[87] * 256 + _bodyBytes[88], nil)
 
-        binToModel(streams, "SysHeatInsCopEER",
-                   _bodyBytes[89] * 256 + _bodyBytes[90], nil)
+        binToModel(streams, "SysHeatInsCopEER", _bodyBytes[89] * 256 + _bodyBytes[90], nil)
 
-        binToModel(streams, "SysHeatCapacity",
-                   _bodyBytes[91] * 16777216 + _bodyBytes[92] * 65536 +
-                       _bodyBytes[93] * 256 + _bodyBytes[94], nil)
+        binToModel(
+            streams,
+            "SysHeatCapacity",
+            _bodyBytes[91] * 16777216 + _bodyBytes[92] * 65536 + _bodyBytes[93] * 256 + _bodyBytes[94],
+            nil
+        )
 
-        binToModel(streams, "SysHeatRenewPower",
-                   _bodyBytes[95] * 16777216 + _bodyBytes[96] * 65536 +
-                       _bodyBytes[97] * 256 + _bodyBytes[98], nil)
+        binToModel(
+            streams,
+            "SysHeatRenewPower",
+            _bodyBytes[95] * 16777216 + _bodyBytes[96] * 65536 + _bodyBytes[97] * 256 + _bodyBytes[98],
+            nil
+        )
 
-        binToModel(streams, "SysHeatElecConsum",
-                   _bodyBytes[99] * 16777216 + _bodyBytes[100] * 65536 +
-                       _bodyBytes[101] * 256 + _bodyBytes[102], nil)
+        binToModel(
+            streams,
+            "SysHeatElecConsum",
+            _bodyBytes[99] * 16777216 + _bodyBytes[100] * 65536 + _bodyBytes[101] * 256 + _bodyBytes[102],
+            nil
+        )
 
-        binToModel(streams, "SysHeatCOPEER",
-                   _bodyBytes[103] * 256 + _bodyBytes[104], nil)
+        binToModel(streams, "SysHeatCOPEER", _bodyBytes[103] * 256 + _bodyBytes[104], nil)
 
-        binToModel(streams, "SysCoolInsHPCapacity",
-                   _bodyBytes[105] * 256 + _bodyBytes[106], nil)
+        binToModel(streams, "SysCoolInsHPCapacity", _bodyBytes[105] * 256 + _bodyBytes[106], nil)
 
-        binToModel(streams, "SysCoolInsRenewPower",
-                   _bodyBytes[107] * 256 + _bodyBytes[108], nil)
+        binToModel(streams, "SysCoolInsRenewPower", _bodyBytes[107] * 256 + _bodyBytes[108], nil)
 
-        binToModel(streams, "SysCoolInsPower",
-                   _bodyBytes[109] * 256 + _bodyBytes[110], nil)
+        binToModel(streams, "SysCoolInsPower", _bodyBytes[109] * 256 + _bodyBytes[110], nil)
 
-        binToModel(streams, "SysCoolInsCopEER",
-                   _bodyBytes[111] * 256 + _bodyBytes[112], nil)
+        binToModel(streams, "SysCoolInsCopEER", _bodyBytes[111] * 256 + _bodyBytes[112], nil)
 
-        binToModel(streams, "SysCoolCapacity",
-                   _bodyBytes[113] * 16777216 + _bodyBytes[114] * 65536 +
-                       _bodyBytes[115] * 256 + _bodyBytes[116], nil)
+        binToModel(
+            streams,
+            "SysCoolCapacity",
+            _bodyBytes[113] * 16777216 + _bodyBytes[114] * 65536 + _bodyBytes[115] * 256 + _bodyBytes[116],
+            nil
+        )
 
-        binToModel(streams, "SysCoolRenewPower",
-                   _bodyBytes[117] * 16777216 + _bodyBytes[118] * 65536 +
-                       _bodyBytes[119] * 256 + _bodyBytes[120], nil)
+        binToModel(
+            streams,
+            "SysCoolRenewPower",
+            _bodyBytes[117] * 16777216 + _bodyBytes[118] * 65536 + _bodyBytes[119] * 256 + _bodyBytes[120],
+            nil
+        )
 
-        binToModel(streams, "SysCoolElecConsum",
-                   _bodyBytes[121] * 16777216 + _bodyBytes[122] * 65536 +
-                       _bodyBytes[123] * 256 + _bodyBytes[124], nil)
+        binToModel(
+            streams,
+            "SysCoolElecConsum",
+            _bodyBytes[121] * 16777216 + _bodyBytes[122] * 65536 + _bodyBytes[123] * 256 + _bodyBytes[124],
+            nil
+        )
 
-        binToModel(streams, "SysCoolCOPEER",
-                   _bodyBytes[125] * 256 + _bodyBytes[126], nil)
+        binToModel(streams, "SysCoolCOPEER", _bodyBytes[125] * 256 + _bodyBytes[126], nil)
 
-        binToModel(streams, "SysDhwInsHPCapacity",
-                   _bodyBytes[127] * 256 + _bodyBytes[128], nil)
+        binToModel(streams, "SysDhwInsHPCapacity", _bodyBytes[127] * 256 + _bodyBytes[128], nil)
 
-        binToModel(streams, "SysDhwInsRenewPower",
-                   _bodyBytes[129] * 256 + _bodyBytes[130], nil)
+        binToModel(streams, "SysDhwInsRenewPower", _bodyBytes[129] * 256 + _bodyBytes[130], nil)
 
-        binToModel(streams, "SysDhwInsPower",
-                   _bodyBytes[131] * 256 + _bodyBytes[132], nil)
+        binToModel(streams, "SysDhwInsPower", _bodyBytes[131] * 256 + _bodyBytes[132], nil)
 
-        binToModel(streams, "SysDhwInsCopEER",
-                   _bodyBytes[133] * 256 + _bodyBytes[134], nil)
+        binToModel(streams, "SysDhwInsCopEER", _bodyBytes[133] * 256 + _bodyBytes[134], nil)
 
-        binToModel(streams, "SysDhwCapacity",
-                   _bodyBytes[135] * 16777216 + _bodyBytes[136] * 65536 +
-                       _bodyBytes[137] * 256 + _bodyBytes[138], nil)
+        binToModel(
+            streams,
+            "SysDhwCapacity",
+            _bodyBytes[135] * 16777216 + _bodyBytes[136] * 65536 + _bodyBytes[137] * 256 + _bodyBytes[138],
+            nil
+        )
 
-        binToModel(streams, "SysDhwRenewPower",
-                   _bodyBytes[139] * 16777216 + _bodyBytes[140] * 65536 +
-                       _bodyBytes[141] * 256 + _bodyBytes[142], nil)
+        binToModel(
+            streams,
+            "SysDhwRenewPower",
+            _bodyBytes[139] * 16777216 + _bodyBytes[140] * 65536 + _bodyBytes[141] * 256 + _bodyBytes[142],
+            nil
+        )
 
-        binToModel(streams, "SysDhwElecConsum",
-                   _bodyBytes[143] * 16777216 + _bodyBytes[144] * 65536 +
-                       _bodyBytes[145] * 256 + _bodyBytes[146], nil)
+        binToModel(
+            streams,
+            "SysDhwElecConsum",
+            _bodyBytes[143] * 16777216 + _bodyBytes[144] * 65536 + _bodyBytes[145] * 256 + _bodyBytes[146],
+            nil
+        )
 
-        binToModel(streams, "SysDhwCOPEER",
-                   _bodyBytes[147] * 256 + _bodyBytes[148], nil)
+        binToModel(streams, "SysDhwCOPEER", _bodyBytes[147] * 256 + _bodyBytes[148], nil)
 
         binToModel(streams, "SysEnergyAnaEN", _bodyBytes[149], BIT0)
         binToModel(streams, "HMIEnergyAnaSetEN", _bodyBytes[149], BIT1)
 
-        binToModel(streams, "SysHeatWeekCapacity",
-                   _bodyBytes[150] * 256 + _bodyBytes[151], nil)
+        binToModel(streams, "SysHeatWeekCapacity", _bodyBytes[150] * 256 + _bodyBytes[151], nil)
 
-        binToModel(streams, "SysHeatWeekRenewPower",
-                   _bodyBytes[152] * 256 + _bodyBytes[153], nil)
+        binToModel(streams, "SysHeatWeekRenewPower", _bodyBytes[152] * 256 + _bodyBytes[153], nil)
 
-        binToModel(streams, "SysHeatWeekElecConsum",
-                   _bodyBytes[154] * 256 + _bodyBytes[155], nil)
+        binToModel(streams, "SysHeatWeekElecConsum", _bodyBytes[154] * 256 + _bodyBytes[155], nil)
 
-        binToModel(streams, "SysHeatWeekCOPEER",
-                   _bodyBytes[156] * 256 + _bodyBytes[157], nil)
+        binToModel(streams, "SysHeatWeekCOPEER", _bodyBytes[156] * 256 + _bodyBytes[157], nil)
 
-        binToModel(streams, "SysHeatMonthCapacity",
-                   _bodyBytes[158] * 256 + _bodyBytes[159], nil)
+        binToModel(streams, "SysHeatMonthCapacity", _bodyBytes[158] * 256 + _bodyBytes[159], nil)
 
-        binToModel(streams, "SysHeatMonthRenewPower",
-                   _bodyBytes[160] * 256 + _bodyBytes[161], nil)
+        binToModel(streams, "SysHeatMonthRenewPower", _bodyBytes[160] * 256 + _bodyBytes[161], nil)
 
-        binToModel(streams, "SysHeatMonthElecConsum",
-                   _bodyBytes[162] * 256 + _bodyBytes[163], nil)
+        binToModel(streams, "SysHeatMonthElecConsum", _bodyBytes[162] * 256 + _bodyBytes[163], nil)
 
-        binToModel(streams, "SysHeatMonthCOPEER",
-                   _bodyBytes[164] * 256 + _bodyBytes[165], nil)
+        binToModel(streams, "SysHeatMonthCOPEER", _bodyBytes[164] * 256 + _bodyBytes[165], nil)
 
-        binToModel(streams, "SysHeatYearCapacity",
-                   _bodyBytes[166] * 256 + _bodyBytes[167], nil)
+        binToModel(streams, "SysHeatYearCapacity", _bodyBytes[166] * 256 + _bodyBytes[167], nil)
 
-        binToModel(streams, "SysHeatYearRenewPower",
-                   _bodyBytes[168] * 256 + _bodyBytes[169], nil)
+        binToModel(streams, "SysHeatYearRenewPower", _bodyBytes[168] * 256 + _bodyBytes[169], nil)
 
-        binToModel(streams, "SysHeatYearElecConsum",
-                   _bodyBytes[170] * 256 + _bodyBytes[171], nil)
+        binToModel(streams, "SysHeatYearElecConsum", _bodyBytes[170] * 256 + _bodyBytes[171], nil)
 
-        binToModel(streams, "SysHeatYearCOPEER",
-                   _bodyBytes[172] * 256 + _bodyBytes[173], nil)
+        binToModel(streams, "SysHeatYearCOPEER", _bodyBytes[172] * 256 + _bodyBytes[173], nil)
 
-        binToModel(streams, "SysCoolDayCapacity",
-                   _bodyBytes[174] * 256 + _bodyBytes[175], nil)
+        binToModel(streams, "SysCoolDayCapacity", _bodyBytes[174] * 256 + _bodyBytes[175], nil)
 
-        binToModel(streams, "SysCoolDayRenewPower",
-                   _bodyBytes[176] * 256 + _bodyBytes[177], nil)
+        binToModel(streams, "SysCoolDayRenewPower", _bodyBytes[176] * 256 + _bodyBytes[177], nil)
 
-        binToModel(streams, "SysCoolDayElecConsum",
-                   _bodyBytes[178] * 256 + _bodyBytes[179], nil)
+        binToModel(streams, "SysCoolDayElecConsum", _bodyBytes[178] * 256 + _bodyBytes[179], nil)
 
-        binToModel(streams, "SysCoolDayCOPEER",
-                   _bodyBytes[180] * 256 + _bodyBytes[181], nil)
+        binToModel(streams, "SysCoolDayCOPEER", _bodyBytes[180] * 256 + _bodyBytes[181], nil)
 
-        binToModel(streams, "SysCoolWeekCapacity",
-                   _bodyBytes[182] * 256 + _bodyBytes[183], nil)
+        binToModel(streams, "SysCoolWeekCapacity", _bodyBytes[182] * 256 + _bodyBytes[183], nil)
 
-        binToModel(streams, "SysCoolWeekRenewPower",
-                   _bodyBytes[184] * 256 + _bodyBytes[185], nil)
+        binToModel(streams, "SysCoolWeekRenewPower", _bodyBytes[184] * 256 + _bodyBytes[185], nil)
 
-        binToModel(streams, "SysCoolWeekElecConsum",
-                   _bodyBytes[186] * 256 + _bodyBytes[187], nil)
+        binToModel(streams, "SysCoolWeekElecConsum", _bodyBytes[186] * 256 + _bodyBytes[187], nil)
 
-        binToModel(streams, "SysCoolWeekCOPEER",
-                   _bodyBytes[188] * 256 + _bodyBytes[189], nil)
+        binToModel(streams, "SysCoolWeekCOPEER", _bodyBytes[188] * 256 + _bodyBytes[189], nil)
 
-        binToModel(streams, "SysCoolMonthCapacity",
-                   _bodyBytes[190] * 256 + _bodyBytes[191], nil)
+        binToModel(streams, "SysCoolMonthCapacity", _bodyBytes[190] * 256 + _bodyBytes[191], nil)
 
-        binToModel(streams, "SysCoolMonthRenewPower",
-                   _bodyBytes[192] * 256 + _bodyBytes[193], nil)
+        binToModel(streams, "SysCoolMonthRenewPower", _bodyBytes[192] * 256 + _bodyBytes[193], nil)
 
-        binToModel(streams, "SysCoolMonthElecConsum",
-                   _bodyBytes[194] * 256 + _bodyBytes[195], nil)
+        binToModel(streams, "SysCoolMonthElecConsum", _bodyBytes[194] * 256 + _bodyBytes[195], nil)
 
-        binToModel(streams, "SysCoolMonthCOPEER",
-                   _bodyBytes[196] * 256 + _bodyBytes[197], nil)
+        binToModel(streams, "SysCoolMonthCOPEER", _bodyBytes[196] * 256 + _bodyBytes[197], nil)
 
-        binToModel(streams, "SysCoolYearCapacity",
-                   _bodyBytes[198] * 256 + _bodyBytes[199], nil)
+        binToModel(streams, "SysCoolYearCapacity", _bodyBytes[198] * 256 + _bodyBytes[199], nil)
 
-        binToModel(streams, "SysCoolYearRenewPower",
-                   _bodyBytes[200] * 256 + _bodyBytes[201], nil)
+        binToModel(streams, "SysCoolYearRenewPower", _bodyBytes[200] * 256 + _bodyBytes[201], nil)
 
-        binToModel(streams, "SysCoolYearElecConsum",
-                   _bodyBytes[202] * 256 + _bodyBytes[203], nil)
+        binToModel(streams, "SysCoolYearElecConsum", _bodyBytes[202] * 256 + _bodyBytes[203], nil)
 
-        binToModel(streams, "SysCoolYearCOPEER",
-                   _bodyBytes[204] * 256 + _bodyBytes[205], nil)
+        binToModel(streams, "SysCoolYearCOPEER", _bodyBytes[204] * 256 + _bodyBytes[205], nil)
 
-        binToModel(streams, "SysDhwDayCapacity",
-                   _bodyBytes[206] * 256 + _bodyBytes[207], nil)
+        binToModel(streams, "SysDhwDayCapacity", _bodyBytes[206] * 256 + _bodyBytes[207], nil)
 
-        binToModel(streams, "SysDhwDayRenewPower",
-                   _bodyBytes[208] * 256 + _bodyBytes[209], nil)
+        binToModel(streams, "SysDhwDayRenewPower", _bodyBytes[208] * 256 + _bodyBytes[209], nil)
 
-        binToModel(streams, "SysDhwDayElecConsum",
-                   _bodyBytes[210] * 256 + _bodyBytes[211], nil)
+        binToModel(streams, "SysDhwDayElecConsum", _bodyBytes[210] * 256 + _bodyBytes[211], nil)
 
-        binToModel(streams, "SysDhwDayCOPEER",
-                   _bodyBytes[212] * 256 + _bodyBytes[213], nil)
+        binToModel(streams, "SysDhwDayCOPEER", _bodyBytes[212] * 256 + _bodyBytes[213], nil)
 
-        binToModel(streams, "SysDhwWeekCapacity",
-                   _bodyBytes[214] * 256 + _bodyBytes[215], nil)
+        binToModel(streams, "SysDhwWeekCapacity", _bodyBytes[214] * 256 + _bodyBytes[215], nil)
 
-        binToModel(streams, "SysDhwWeekRenewPower",
-                   _bodyBytes[216] * 256 + _bodyBytes[217], nil)
+        binToModel(streams, "SysDhwWeekRenewPower", _bodyBytes[216] * 256 + _bodyBytes[217], nil)
 
-        binToModel(streams, "SysDhwWeekElecConsum",
-                   _bodyBytes[218] * 256 + _bodyBytes[219], nil)
+        binToModel(streams, "SysDhwWeekElecConsum", _bodyBytes[218] * 256 + _bodyBytes[219], nil)
 
-        binToModel(streams, "SysDhwWeekCOPEER",
-                   _bodyBytes[220] * 256 + _bodyBytes[221], nil)
+        binToModel(streams, "SysDhwWeekCOPEER", _bodyBytes[220] * 256 + _bodyBytes[221], nil)
 
-        binToModel(streams, "SysDhwMonthCapacity",
-                   _bodyBytes[222] * 256 + _bodyBytes[223], nil)
+        binToModel(streams, "SysDhwMonthCapacity", _bodyBytes[222] * 256 + _bodyBytes[223], nil)
 
-        binToModel(streams, "SysDhwMonthRenewPower",
-                   _bodyBytes[224] * 256 + _bodyBytes[225], nil)
+        binToModel(streams, "SysDhwMonthRenewPower", _bodyBytes[224] * 256 + _bodyBytes[225], nil)
 
-        binToModel(streams, "SysDhwMonthElecConsum",
-                   _bodyBytes[226] * 256 + _bodyBytes[227], nil)
+        binToModel(streams, "SysDhwMonthElecConsum", _bodyBytes[226] * 256 + _bodyBytes[227], nil)
 
-        binToModel(streams, "SysDhwMonthCOPEER",
-                   _bodyBytes[228] * 256 + _bodyBytes[229], nil)
+        binToModel(streams, "SysDhwMonthCOPEER", _bodyBytes[228] * 256 + _bodyBytes[229], nil)
 
-        binToModel(streams, "SysDhwYearCapacity",
-                   _bodyBytes[230] * 256 + _bodyBytes[231], nil)
+        binToModel(streams, "SysDhwYearCapacity", _bodyBytes[230] * 256 + _bodyBytes[231], nil)
 
-        binToModel(streams, "SysDhwYearRenewPower",
-                   _bodyBytes[232] * 256 + _bodyBytes[233], nil)
+        binToModel(streams, "SysDhwYearRenewPower", _bodyBytes[232] * 256 + _bodyBytes[233], nil)
 
-        binToModel(streams, "SysDhwYearElecConsum",
-                   _bodyBytes[234] * 256 + _bodyBytes[235], nil)
+        binToModel(streams, "SysDhwYearElecConsum", _bodyBytes[234] * 256 + _bodyBytes[235], nil)
 
-        binToModel(streams, "SysDhwYearCOPEER",
-                   _bodyBytes[236] * 256 + _bodyBytes[237], nil)
-
+        binToModel(streams, "SysDhwYearCOPEER", _bodyBytes[236] * 256 + _bodyBytes[237], nil)
     end
 
     local retTable = {}
@@ -4822,4 +5092,3 @@ function dataToJson(jsonCmd)
     local ret = encode(retTable)
     return ret
 end
-
