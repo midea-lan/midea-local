@@ -233,7 +233,16 @@ class MideaFBDevice(MideaClimateDevice):
         ]:
             value = self._attributes.get(attr, None)
             if value is not None:
-                setattr(message, str(attr), value)
+                if attr == DeviceAttributes.mode:
+                    message.mode = list(MideaFBDevice._modes.keys())[
+                        list(MideaFBDevice._modes.values()).index(value)
+                    ]
+                elif attr == DeviceAttributes.humidity_mode:
+                    message.humidity_mode = list(MideaFBDevice._humidity_modes.keys())[
+                        list(MideaFBDevice._humidity_modes.values()).index(value)
+                    ]
+                else:
+                    setattr(message, str(attr), value)
         return message
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
@@ -259,7 +268,6 @@ class MideaFBDevice(MideaClimateDevice):
                     )
                 ]
         else:
-            message = MessageSet(self._message_protocol_version, self.subtype)
             setattr(message, str(attr), value)
         self.build_send(message)
 

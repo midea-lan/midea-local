@@ -43,6 +43,7 @@ class TestMideaFBDevice:
         """Test initial attributes."""
         assert self.device.attributes[DeviceAttributes.power] is False
         assert self.device.attributes[DeviceAttributes.mode] is None
+        assert self.device.attributes[DeviceAttributes.humidity_mode] is None
         assert self.device.attributes[DeviceAttributes.heating_level] == 0
         assert self.device.attributes[DeviceAttributes.target_temperature] is None
         assert self.device.attributes[DeviceAttributes.current_temperature] is None
@@ -149,6 +150,15 @@ class TestMideaFBDevice:
         assert self.device.current_temperature() == 25.0
         assert self.device.target_temperature() == 25.0
         assert self.device.current_humidity() == 45.0
+
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.power, False)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert isinstance(message, MessageSet)
+            assert message.power is False
+            assert message.mode == 2
+            assert message.humidity_mode == 0x40
 
     def test_process_message_unknown_mode_and_short_body(self) -> None:
         """Test process message with an unknown mode and a short body."""
