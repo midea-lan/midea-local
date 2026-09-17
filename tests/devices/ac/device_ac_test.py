@@ -73,6 +73,22 @@ class TestMideaACDevice:
         assert self.device.fresh_air_fan_speeds is not None
         assert DeviceAttributes.compressor_frequency in self.device.attributes
         assert not self.device.fresh_air_exhaust_fan_speeds
+        assert self.device.current_humidity() is None
+        assert self.device.current_temperature() is None
+        assert self.device.target_temperature() == 24.0
+
+    def test_turn_on_turn_off(self) -> None:
+        """Test turn on and turn off."""
+        with (
+            patch.object(self.device, "build_send") as mock_build_send,
+        ):
+            self.device.turn_on()
+            assert mock_build_send.call_count == 1
+            assert mock_build_send.call_args[0][0].power is True
+            mock_build_send.reset_mock()
+            self.device.turn_off()
+            assert mock_build_send.call_count == 1
+            assert mock_build_send.call_args[0][0].power is False
 
     @staticmethod
     def _make_device(model: str, subtype: int) -> MideaACDevice:
@@ -698,9 +714,9 @@ class TestMideaACDevice:
             mock_message.screen_display = True
             mock_message.screen_display_alternate = True
             mock_message.full_dust = True
-            mock_message.indoor_temperature = None
+            mock_message.indoor_temperature = 25.0
             mock_message.outdoor_temperature = None
-            mock_message.indoor_humidity = None
+            mock_message.indoor_humidity = 60.0
             mock_message.breezeless = True
             mock_message.total_energy_consumption = None
             mock_message.current_energy_consumption = None
@@ -733,9 +749,9 @@ class TestMideaACDevice:
             assert result[DeviceAttributes.screen_display.value]
             assert result[DeviceAttributes.screen_display_alternate.value]
             assert result[DeviceAttributes.full_dust.value]
-            assert result[DeviceAttributes.indoor_temperature.value] is None
+            assert result[DeviceAttributes.indoor_temperature.value] == 25.0
             assert result[DeviceAttributes.outdoor_temperature.value] is None
-            assert result[DeviceAttributes.indoor_humidity.value] is None
+            assert result[DeviceAttributes.indoor_humidity.value] == 60.0
             assert result[DeviceAttributes.breezeless.value]
             assert result[DeviceAttributes.total_energy_consumption.value] is None
             assert result[DeviceAttributes.current_energy_consumption.value] is None
@@ -759,6 +775,9 @@ class TestMideaACDevice:
             result = self.device.process_message(b"")
             assert not result[DeviceAttributes.screen_display.value]
             assert not self.device.attributes[DeviceAttributes.screen_display]
+
+            assert self.device.current_humidity() == 60.0
+            assert self.device.current_temperature() == 25.0
 
     def test_process_message_group_data(self) -> None:
         """Test that group 1/2/7 data is stored in the device attributes."""
