@@ -10,6 +10,7 @@ from midealocal.devices.fb import (
     FB_MAX_TARGET_TEMPERATURE,
     FB_MIN_TARGET_TEMPERATURE,
     DeviceAttributes,
+    DeviceHumidityMode,
     MideaFBDevice,
 )
 from midealocal.devices.fb.message import MessageQuery, MessageSet
@@ -61,6 +62,42 @@ class TestMideaFBDevice:
         assert self.device.current_humidity() is None
         assert self.device.target_temperature() is None
 
+    @pytest.mark.parametrize(
+        ("mode", "expected_value"),
+        [
+            (DeviceHumidityMode.CLOSE, 0x10),
+            (DeviceHumidityMode.CONST, 0x20),
+            (DeviceHumidityMode.ONE, 0x30),
+            (DeviceHumidityMode.TWO, 0x40),
+            (DeviceHumidityMode.THREE, 0x50),
+        ],
+    )
+    def test_set_humidity_mode(
+        self,
+        mode: DeviceHumidityMode,
+        expected_value: int,
+    ) -> None:
+        """Test set humidity mode."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(
+                DeviceAttributes.humidity_mode.value,
+                mode,
+            )
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert isinstance(message, MessageSet)
+            assert message.humidity_mode == expected_value
+
+    def test_set_humidity_mode_invalid(self) -> None:
+        """Test set humidity mode with an invalid mode is rejected."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            with pytest.raises(ValueError, match="Unsupported humidity mode"):
+                self.device.set_attribute(
+                    DeviceAttributes.humidity_mode.value,
+                    "invalid",
+                )
+            mock_build_send.assert_not_called()
+
     def test_power_on_power_off(self) -> None:
         """Test power on and power off."""
         with patch.object(self.device, "build_send") as mock_build_send:
@@ -109,6 +146,7 @@ class TestMideaFBDevice:
         assert new_status[DeviceAttributes.mode.value] == "eco"
         assert self.device.current_temperature() == 25.0
         assert self.device.target_temperature() == 25.0
+        assert self.device.current_humidity() == 45.0
 
     def test_process_message_unknown_mode_and_short_body(self) -> None:
         """Test process message with an unknown mode and a short body."""
@@ -118,6 +156,7 @@ class TestMideaFBDevice:
         body = bytearray(18)
         body[0] = 0x00  # power off
         body[4] = 0x09  # unknown mode
+        body[12] = 0  # current_humidity = 0
         body[13] = 40  # current_temperature = 20
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
@@ -126,6 +165,8 @@ class TestMideaFBDevice:
         assert self.device.attributes[DeviceAttributes.current_temperature] == 20
         # short body has no child_lock byte, attribute keeps its default
         assert self.device.attributes[DeviceAttributes.child_lock] is False
+        assert self.device.attributes[DeviceAttributes.current_humidity] is None
+        assert self.device.current_humidity() is None
 
     def test_process_message_unhandled_type(self) -> None:
         """Test process message with an unhandled message type updates nothing."""

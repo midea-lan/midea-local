@@ -52,6 +52,8 @@ class TestMessageSet:
         msg.mode = 0x03
         msg.heating_level = 5
         msg.target_temperature = 25
+        msg.humidity_mode = 0x40
+        msg.target_humidity = 66
         msg.child_lock = True
         body = msg.body
         assert len(body) == 20
@@ -59,6 +61,8 @@ class TestMessageSet:
         assert body[4] == 0x03
         assert body[5] == 5
         assert body[6] == 66
+        assert body[7] == 66
+        assert body[9] == 0x40
         assert body[18] == 0x01
 
     def test_set_body_power_off_and_out_of_range(self) -> None:
@@ -67,11 +71,14 @@ class TestMessageSet:
         msg.power = False
         msg.heating_level = 20  # above MAX_HEATING_LEVEL
         msg.target_temperature = 60  # above MAX_TARGET_TEMP
+        msg.target_humidity = None
         msg.child_lock = False
         body = msg.body
         assert body[0] == 0x02
         assert body[5] == 0x00
         assert body[6] == 0x00
+        assert body[7] == 0x00
+        assert body[9] == 0x00
         assert body[18] == 0x00
 
     @pytest.mark.parametrize("target_temperature", [0x80, 87])
