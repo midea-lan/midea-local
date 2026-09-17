@@ -500,19 +500,88 @@ class MideaDevice(threading.Thread):
             if result != MessageResult.PADDING:
                 raise ResponseException
 
+    def _refresh_query(
+        self,
+        cmd: MessageRequest,
+        check_protocol: bool,
+        real_cmds: Sequence[MessageRequest],
+    ) -> int:
+        """Send one refresh_status query, returning 1 if it counts as a failure.
+
+        Only a query that also appears in ``real_cmds`` can return 1: the
+        appliance query (never in ``real_cmds``) blacklists its own protocol
+        on failure without masking, or contributing to, a genuine
+        "all queries failed" verdict for the caller.
+        """
+        if cmd.__class__.__name__ in self._unsupported_protocol:
+            _LOGGER.debug(
+                "[%s] refresh_status with cmd: %s, unsupported protocol, SKIP",
+                self._device_id,
+                cmd,
+            )
+            return 1 if cmd in real_cmds else 0
+        # set socket QUERY_TIMEOUT for query msg
+        # build_send exception should be catch by connect/run
+        self.build_send(cmd, query=True)
+        if not check_protocol:
+            return 0
+        # only catch TimoutError for check_protocol
+        # unexpected exception in recv/settimeout, catch by main loop
+        try:
+            attempt = 0
+            while True:
+                try:
+                    self._wait_for_query_response()
+                    break
+                except TimeoutError:
+                    attempt += 1
+                    if attempt >= QUERY_PROBE_RETRIES:
+                        raise
+                    # retry once before blacklisting: a single timeout
+                    # during the probe can be a slow device, not proof
+                    # the protocol is unsupported
+                    self.build_send(cmd, query=True)
+        except TimeoutError:
+            self._unsupported_protocol.append(cmd.__class__.__name__)
+            _LOGGER.debug(
+                "[%s] Does not supports the protocol %s, cmd %s, ignored",
+                self._device_id,
+                cmd.__class__.__name__,
+                cmd,
+            )
+            return 1 if cmd in real_cmds else 0
+        except ResponseException:
+            # parse msg error
+            _LOGGER.debug(
+                "[%s] refresh_status ResponseException %s, cmd %s",
+                self._device_id,
+                cmd.__class__.__name__,
+                cmd,
+            )
+            return 1 if cmd in real_cmds else 0
+        return 0
+
     def refresh_status(self, check_protocol: bool = False) -> None:
         """Refresh device status."""
-        real_cmds: list = self.build_query()
-        cmds = real_cmds
         if self._appliance_query:
-            cmds = [MessageQueryAppliance(self.device_type), *real_cmds]
+            # Sent (and, when checking, awaited) before build_query() below,
+            # so the real queries it returns pick up the message protocol
+            # version this reply resolves instead of one baked into them
+            # before the reply arrived, which devices that validate it would
+            # silently reject.
+            self._refresh_query(
+                MessageQueryAppliance(self.device_type),
+                check_protocol,
+                (),
+            )
+        real_cmds: list = self.build_query()
         error_count = 0
         _LOGGER.debug(
             "[%s] refresh_status with cmds: %s, check_protocol %s, \
             device %s, type %s, model %s, subtype %s, device_protocol: %s, \
             message_protocol %s, unsupported_protocol: %s",
             self._device_id,
-            cmds,
+            real_cmds,
             check_protocol,
             self._device_name,
             self._device_type,
@@ -522,57 +591,8 @@ class MideaDevice(threading.Thread):
             self._message_protocol_version,
             self._unsupported_protocol,
         )
-        for cmd in cmds:
-            if cmd.__class__.__name__ not in self._unsupported_protocol:
-                # set socket QUERY_TIMEOUT for query msg
-                # build_send exception should be catch by connect/run
-                self.build_send(cmd, query=True)
-                # init check_protocol, skip timeout exception
-                if check_protocol:
-                    # only catch TimoutError for check_protocol
-                    # unexpected exception in recv/settimeout, catch by main loop
-                    try:
-                        attempt = 0
-                        while True:
-                            try:
-                                self._wait_for_query_response()
-                                break
-                            except TimeoutError:
-                                attempt += 1
-                                if attempt >= QUERY_PROBE_RETRIES:
-                                    raise
-                                # retry once before blacklisting: a single timeout
-                                # during the probe can be a slow device, not proof
-                                # the protocol is unsupported
-                                self.build_send(cmd, query=True)
-                    except TimeoutError:
-                        if cmd in real_cmds:
-                            error_count += 1
-                        self._unsupported_protocol.append(cmd.__class__.__name__)
-                        _LOGGER.debug(
-                            "[%s] Does not supports the protocol %s, cmd %s, ignored",
-                            self._device_id,
-                            cmd.__class__.__name__,
-                            cmd,
-                        )
-                    except ResponseException:
-                        # parse msg error
-                        if cmd in real_cmds:
-                            error_count += 1
-                        _LOGGER.debug(
-                            "[%s] refresh_status ResponseException %s, cmd %s",
-                            self._device_id,
-                            cmd.__class__.__name__,
-                            cmd,
-                        )
-            else:
-                _LOGGER.debug(
-                    "[%s] refresh_status with cmd: %s, unsupported protocol, SKIP",
-                    self._device_id,
-                    cmd,
-                )
-                if cmd in real_cmds:
-                    error_count += 1
+        for cmd in real_cmds:
+            error_count += self._refresh_query(cmd, check_protocol, real_cmds)
             # A successful appliance query is not device status: it must not mask
             # every real status query failing. Guard against a subclass whose
             # build_query() returns [], where "all failed" would be vacuous.
@@ -580,7 +600,7 @@ class MideaDevice(threading.Thread):
                 _LOGGER.debug(
                     "[%s] all the query cmds failed %s, please report bug",
                     self._device_id,
-                    cmds,
+                    real_cmds,
                 )
                 raise NoSupportedProtocol
 

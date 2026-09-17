@@ -573,10 +573,11 @@ class TestMideaDevice:
 
     def test_refresh_status(self) -> None:
         """Test refresh status."""
+        # appliance query is sent (and, unchecked, fires-and-forgets) before
+        # build_query() is reached, so disarm it to isolate the NotImplementedError.
+        self.device._appliance_query = False
         with pytest.raises(NotImplementedError):
             self.device.refresh_status()  # build_query not implemented
-
-        self.device._appliance_query = False
         real_cmd = MagicMock()
         socket_mock = MagicMock()
         with (
@@ -713,6 +714,57 @@ class TestMideaDevice:
 
             self.device._unsupported_protocol = []
             self.device.refresh_status(True)  # appliance ResponseException, ignored
+
+    def test_refresh_status_builds_real_queries_after_appliance_reply(self) -> None:
+        """Regression test: build_query() must see the resolved protocol version.
+
+        A query built before the appliance reply keeps whatever protocol
+        version was already known (0 on the very first probe), so a device
+        that validates that header field would reject it even though the
+        reply, parsed moments later in the same call, did resolve it.
+        """
+        assert self.device._appliance_query is True
+        assert self.device._message_protocol_version == 0
+        seen_protocol_version = None
+
+        def _resolve_appliance_reply() -> None:
+            # Stands in for pre_process_message() parsing a successful
+            # appliance reply: it resolves the protocol version and disarms
+            # the appliance query.
+            self.device._message_protocol_version = 8
+            self.device._appliance_query = False
+
+        def _capture_build_query() -> list:
+            nonlocal seen_protocol_version
+            seen_protocol_version = self.device._message_protocol_version
+            return []
+
+        with (
+            patch.object(self.device, "build_send", return_value=None),
+            patch.object(
+                self.device,
+                "_wait_for_query_response",
+                side_effect=_resolve_appliance_reply,
+            ),
+            patch.object(self.device, "build_query", side_effect=_capture_build_query),
+        ):
+            self.device.refresh_status(True)
+
+        assert seen_protocol_version == 8
+
+    def test_refresh_status_periodic_does_not_wait_for_reply(self) -> None:
+        """An unchecked (periodic) refresh sends queries without awaiting a reply."""
+        self.device._appliance_query = False
+        real_cmd = MagicMock()
+        with (
+            patch.object(self.device, "build_query", return_value=[real_cmd]),
+            patch.object(self.device, "build_send", return_value=None) as build_send,
+            patch.object(self.device, "_wait_for_query_response") as wait_mock,
+        ):
+            self.device.refresh_status()
+
+        build_send.assert_called_once_with(real_cmd, query=True)
+        wait_mock.assert_not_called()
 
     def test_parse_message(self) -> None:
         """Test parse message."""
