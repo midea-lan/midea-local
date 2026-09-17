@@ -233,6 +233,37 @@ class MideaCCDevice(MideaClimateDevice):
             value=swing_mode == DeviceSwingMode.ON,
         )
 
+    @override
+    def current_temperature(self) -> float | None:
+        """Midea CC device current temperature."""
+        value = self._attributes.get(DeviceAttributes.indoor_temperature, None)
+        if not isinstance(value, (int, float)):
+            return None
+        return float(value)
+
+    @override
+    def current_humidity(self) -> float | None:
+        """Midea CC device current humidity."""
+        return None
+
+    @override
+    def target_temperature(self, zone: int | None = None) -> float | None:
+        """Midea CC device target temperature."""
+        value = self._attributes.get(DeviceAttributes.target_temperature, None)
+        if not isinstance(value, (int, float)):
+            return None
+        return float(value)
+
+    @override
+    def turn_on(self, zone: int | None = None) -> None:
+        """Midea CC device turn on."""
+        self.set_attribute(attr=DeviceAttributes.power, value=True)
+
+    @override
+    def turn_off(self, zone: int | None = None) -> None:
+        """Midea CC device turn off."""
+        self.set_attribute(attr=DeviceAttributes.power, value=False)
+
     @property
     @override
     def temperature_step(self) -> float | None:

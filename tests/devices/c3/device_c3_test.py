@@ -100,6 +100,46 @@ class TestMideaC3Device:
         assert self.device.attributes[DeviceAttributes.error_code] == 0
         assert self.device.temperature_step == 1
         assert len(self.device.silent_modes) == 3
+        assert self.device.target_temperature(0) == 25
+        assert self.device.target_temperature(1) == 25
+        assert self.device.target_temperature(2) is None
+        assert self.device.target_temperature() is None
+        assert self.device.current_humidity() is None
+        assert self.device.current_temperature() is None
+
+    def test_turn_on_turn_off(self) -> None:
+        """Test turn on and turn off."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            for zone in [0, 1]:
+                self.device.turn_on(zone)
+                assert mock_build_send.call_count == 1
+                assert (
+                    getattr(
+                        mock_build_send.call_args[0][0],
+                        self.device._power_attributes[zone],
+                    )
+                    is True
+                )
+                mock_build_send.reset_mock()
+                self.device.turn_off(zone)
+                assert mock_build_send.call_count == 1
+                assert (
+                    getattr(
+                        mock_build_send.call_args[0][0],
+                        self.device._power_attributes[zone],
+                    )
+                    is False
+                )
+                mock_build_send.reset_mock()
+
+            with pytest.raises(ValueError, match="`zone` must be set"):
+                self.device.turn_on()
+            with pytest.raises(ValueError, match="`zone` must be set"):
+                self.device.turn_off()
+            with pytest.raises(ValueError, match="`zone` must be between 0"):
+                self.device.turn_on(2)
+            with pytest.raises(ValueError, match="`zone` must be between 0"):
+                self.device.turn_off(2)
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
