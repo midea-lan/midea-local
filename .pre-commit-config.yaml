@@ -17,7 +17,7 @@ repos:
   - repo: https://github.com/JohnnyMorganz/StyLua
     rev: v2.5.2
     hooks:
-      - id: stylua-github
+      - id: stylua
         name: check LUA formatting
         files: '\.lua$'
         types: [file]
