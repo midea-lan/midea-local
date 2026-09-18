@@ -17,8 +17,10 @@ class DeviceAttributes(StrEnum):
 
     door = "door"
     status = "status"
+    mode = "mode"
     time_remaining = "time_remaining"
     current_temperature = "current_temperature"
+    target_temperature = "target_temperature"
     tank_ejected = "tank_ejected"
     water_change_reminder = "water_change_reminder"
     water_shortage = "water_shortage"
@@ -49,8 +51,10 @@ class MideaB1Device(MideaDevice):
             attributes={
                 DeviceAttributes.door: False,
                 DeviceAttributes.status: None,
+                DeviceAttributes.mode: None,
                 DeviceAttributes.time_remaining: None,
                 DeviceAttributes.current_temperature: None,
+                DeviceAttributes.target_temperature: None,
                 DeviceAttributes.tank_ejected: False,
                 DeviceAttributes.water_change_reminder: False,
                 DeviceAttributes.water_shortage: False,
