@@ -1,5 +1,25 @@
 # Changelog
 
+## [12.1.0](https://github.com/midea-lan/midea-local/compare/v12.0.0...v12.1.0) (2026-09-18)
+
+
+### Features
+
+* **b1:** decode oven mode and target_temperature ([#809](https://github.com/midea-lan/midea-local/issues/809)) ([280fef5](https://github.com/midea-lan/midea-local/commit/280fef5a1a8cfe58c2d95273013a3d8a2706464a))
+* **climate:** add additional methods ([#803](https://github.com/midea-lan/midea-local/issues/803)) ([5d07711](https://github.com/midea-lan/midea-local/commit/5d077110e1e71d860429a86aab08b8428bd44abc))
+* **e2:** add error_code, flow_rate, bottom_temp ([#800](https://github.com/midea-lan/midea-local/issues/800)) ([362e3e0](https://github.com/midea-lan/midea-local/commit/362e3e081bc95a9268cdacd77fd32e3e6930b9ba))
+* **fb:** add humidity control ([#805](https://github.com/midea-lan/midea-local/issues/805)) ([0b5b2b8](https://github.com/midea-lan/midea-local/commit/0b5b2b8f5050bed617a28bcf9087d4ec68b935ff)), closes [#804](https://github.com/midea-lan/midea-local/issues/804)
+
+
+### Bug Fixes
+
+* **ac:** drop error_code_query default, derive rate_select gears ([#810](https://github.com/midea-lan/midea-local/issues/810)) ([8002b1b](https://github.com/midea-lan/midea-local/commit/8002b1bb0b63a4c73914a5a0f1c35f76fa636a5c))
+* **b3:** sum remaining minutes and seconds instead of dropping one ([#781](https://github.com/midea-lan/midea-local/issues/781)) ([bd6ce1c](https://github.com/midea-lan/midea-local/commit/bd6ce1c1a6d72bd3f416c613dafd5ab536cd3577))
+* **c3:** correct UnitPara byte offsets and expose telemetry ([#807](https://github.com/midea-lan/midea-local/issues/807)) ([897f7fb](https://github.com/midea-lan/midea-local/commit/897f7fb27b11fc3785dcfb54d70b586cea6990ef))
+* **ca:** exception body bit offsets and add missing fields ([#786](https://github.com/midea-lan/midea-local/issues/786)) ([d5314e2](https://github.com/midea-lan/midea-local/commit/d5314e214ce826050dd9ed2fe6ab027d5f2f8a1b))
+* **device:** build real queries after reply with protocol version ([#801](https://github.com/midea-lan/midea-local/issues/801)) ([6566762](https://github.com/midea-lan/midea-local/commit/656676206a6616f482335d45487e1ff444cacb75))
+* **ed:** check TLV bounds before reading, not after ([#782](https://github.com/midea-lan/midea-local/issues/782)) ([3806077](https://github.com/midea-lan/midea-local/commit/380607787cfed07a067d5a32d49ddb7b10c7d44f))
+
 ## [12.0.0](https://github.com/midea-lan/midea-local/compare/v11.0.1...v12.0.0) (2026-09-13)
 
 
