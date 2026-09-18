@@ -299,12 +299,22 @@ class TestMideaB8DeviceV2:
         [
             pytest.param(DeviceAttributes.clean_mode, "auto", id="clean_mode"),
             pytest.param(DeviceAttributes.fan_level, "invalid", id="invalid-value"),
+            pytest.param(
+                DeviceAttributes.voice_volume,
+                "not-a-number",
+                id="voice-volume-non-numeric",
+            ),
+            pytest.param(
+                DeviceAttributes.voice_volume,
+                float("inf"),
+                id="voice-volume-overflow",
+            ),
         ],
     )
     def test_v2_set_attribute_unsupported(
         self,
         attr: DeviceAttributes,
-        value: str,
+        value: str | float,
     ) -> None:
         """Unsupported v2 attributes / bad values do not emit a frame."""
         with patch.object(self.device, "build_send") as mock_send:
@@ -342,6 +352,27 @@ class TestMessageB8V2:
             pytest.param(MessageType.query, 0x50, 52, False, id="other-selector"),
             pytest.param(MessageType.set, 0x01, 52, False, id="set-not-parsed"),
             pytest.param(MessageType.query, 0x01, 2, False, id="too-short"),
+            pytest.param(
+                MessageType.query,
+                0x01,
+                3,
+                False,
+                id="selector-only-incomplete-body",
+            ),
+            pytest.param(
+                MessageType.query,
+                0x01,
+                5,
+                False,
+                id="missing-control-type-byte",
+            ),
+            pytest.param(
+                MessageType.query,
+                0x01,
+                6,
+                True,
+                id="control-type-byte-present",
+            ),
         ],
     )
     def test_response_routing(
@@ -360,6 +391,12 @@ class TestMessageB8V2:
         )
         response = MessageB8V2Response(frame)
         assert hasattr(response, "work_status") is expected
+
+    def test_response_rejects_wrong_version_byte(self) -> None:
+        """A body whose version byte is not 0x01 is not a v2 frame."""
+        frame = _v2_frame({1: 0x02, 3: 0x05})
+        response = MessageB8V2Response(frame)
+        assert hasattr(response, "work_status") is False
 
     def test_response_ignores_non_aa_body(self) -> None:
         """A non-0xAA body type is not a v2 frame."""

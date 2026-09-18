@@ -216,7 +216,7 @@ class MideaB8Device(MideaDevice):
                 _LOGGER.warning("Unsupported v2 attribute set: %s", attr)
                 return
             self.build_send(msg)
-        except KeyError:
+        except (KeyError, ValueError, OverflowError):
             _LOGGER.exception("Wrong value for attribute %s: %s", attr, value)
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:

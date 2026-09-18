@@ -24,6 +24,9 @@ from enum import IntEnum
 
 from midealocal.const import DeviceType
 from midealocal.message import (
+    BoolParser,
+    IntEnumParser,
+    IntParser,
     ListTypes,
     MessageBody,
     MessageRequest,
@@ -398,10 +401,14 @@ class MessageV2SetConfig(MessageB8V2Base):
 
 # Body byte offsets, counted from ``body[0]`` == frame byte 10 (body-type 0xAA).
 # body[1] = version 0x01, body[2] = query/report selector 0x01, data from body[3].
+_VERSION = 1
 _SELECTOR = 2
-_MIN_BODY_LEN = _SELECTOR + 1
 _WORK_STATUS = 3
 _CONTROL_TYPE = 5
+# lua/b8/T_0000_B8_750004CE_2024011101.lua's decode0401Report treats a body
+# without a control_type byte as incomplete and bails out; fields past it are
+# read unguarded there too, so this -- not the full body -- is the real floor.
+_MIN_BODY_LEN = _CONTROL_TYPE + 1
 _MOVE_DIRECTION = 6
 _CLEAN_MODE = 7
 _FAN_LEVEL = 8
@@ -438,68 +445,61 @@ def _enum_or_zero[T: IntEnum](enum_cls: type[T], raw: int) -> T:
 class MessageB8V2Body(MessageBody):
     """B8 v2 work-status body (query reply ``03 AA 01 01`` / report ``04 .. 01``)."""
 
+    # Set by the ``parser_list`` below; declared here so error_desc/sub_work_status
+    # can read them straight back without a static-analysis "no member" error.
+    work_status: B8V2WorkStatus
+    error_type: B8ErrorType
+
     def __init__(self, body: bytearray) -> None:
         """Parse a B8 v2 work-status body."""
-        super().__init__(body)
-        try:
-            self.work_status = B8V2WorkStatus(self.read_byte(body, _WORK_STATUS))
-        except ValueError:
-            self.work_status = B8V2WorkStatus.NONE
-        try:
-            self.control_type = B8ControlType(self.read_byte(body, _CONTROL_TYPE))
-        except ValueError:
-            self.control_type = B8ControlType.NONE
-        try:
-            self.move_direction = B8V2Moviment(self.read_byte(body, _MOVE_DIRECTION))
-        except ValueError:
-            self.move_direction = B8V2Moviment.NONE
-        try:
-            self.clean_mode = B8V2CleanMode(self.read_byte(body, _CLEAN_MODE))
-        except ValueError:
-            self.clean_mode = B8V2CleanMode.NONE
-        try:
-            self.fan_level = B8V2FanLevel(self.read_byte(body, _FAN_LEVEL))
-        except ValueError:
-            self.fan_level = B8V2FanLevel.NORMAL
-        self.area = self.read_byte(body, _AREA)
-        try:
-            self.water_level = B8V2WaterLevel(self.read_byte(body, _WATER_LEVEL))
-        except ValueError:
-            self.water_level = B8V2WaterLevel.LOW
-        self.voice_volume = min(self.read_byte(body, _VOICE_VOLUME), 100)
-        self.have_reserve_task = self.read_byte(body, _HAVE_RESERVE_TASK) != 0
-        self.battery_percent = min(self.read_byte(body, _BATTERY_PERCENT), 100)
-        self.work_time = self.read_byte(body, _WORK_TIME)
-
-        try:
-            self.error_type = B8ErrorType(self.read_byte(body, _ERROR_TYPE))
-        except ValueError:
-            self.error_type = B8ErrorType.NO
+        super().__init__(
+            body,
+            [
+                IntEnumParser("work_status", _WORK_STATUS, B8V2WorkStatus),
+                IntEnumParser("control_type", _CONTROL_TYPE, B8ControlType),
+                IntEnumParser("move_direction", _MOVE_DIRECTION, B8V2Moviment),
+                IntEnumParser("clean_mode", _CLEAN_MODE, B8V2CleanMode),
+                IntEnumParser(
+                    "fan_level",
+                    _FAN_LEVEL,
+                    B8V2FanLevel,
+                    default_value=B8V2FanLevel.NORMAL,
+                ),
+                IntParser("area", _AREA),
+                IntEnumParser(
+                    "water_level",
+                    _WATER_LEVEL,
+                    B8V2WaterLevel,
+                    default_value=B8V2WaterLevel.LOW,
+                ),
+                IntParser("voice_volume", _VOICE_VOLUME, max_value=100),
+                BoolParser("have_reserve_task", _HAVE_RESERVE_TASK),
+                IntParser("battery_percent", _BATTERY_PERCENT, max_value=100),
+                IntParser("work_time", _WORK_TIME),
+                IntEnumParser("error_type", _ERROR_TYPE, B8ErrorType),
+                IntEnumParser(
+                    "mop",
+                    _MOP,
+                    B8MopState,
+                    default_value=B8MopState.LACK_WATER,
+                ),
+                BoolParser("carpet_switch", _CARPET_SWITCH),
+                IntEnumParser("sweep_mop_mode", _SWEEP_MOP_MODE, B8V2SweepMopMode),
+                BoolParser("uv_switch", _STATUS_SUMMARY, bit=0),
+                BoolParser("wifi_switch", _STATUS_SUMMARY, bit=1),
+                BoolParser("voice_switch", _STATUS_SUMMARY, bit=2),
+                BoolParser("command_source", _STATUS_SUMMARY, bit=6),
+                BoolParser("device_error", _STATUS_SUMMARY, bit=7),
+            ],
+        )
+        # error_desc/sub_work_status pick their enum from a field parsed above
+        # (error_type/work_status), so they cannot be plain BodyParser entries.
         self.error_desc: B8V2ErrorDescription = self._parse_error_desc(
             self.read_byte(body, _ERROR_DESC),
         )
-
-        try:
-            self.mop = B8MopState(self.read_byte(body, _MOP))
-        except ValueError:
-            self.mop = B8MopState.LACK_WATER
-        self.carpet_switch = self.read_byte(body, _CARPET_SWITCH) != 0
-        try:
-            self.sweep_mop_mode = B8V2SweepMopMode(
-                self.read_byte(body, _SWEEP_MOP_MODE),
-            )
-        except ValueError:
-            self.sweep_mop_mode = B8V2SweepMopMode.SWEEP_AND_MOP
         self.sub_work_status = self._parse_sub_work_status(
             self.read_byte(body, _SUB_WORK_STATUS),
         )
-
-        status_byte = self.read_byte(body, _STATUS_SUMMARY)
-        self.uv_switch = (status_byte & 0x01) > 0
-        self.wifi_switch = (status_byte & 0x02) > 0
-        self.voice_switch = (status_byte & 0x04) > 0
-        self.command_source = (status_byte & 0x40) > 0
-        self.device_error = (status_byte & 0x80) > 0
 
     def _parse_error_desc(self, raw: int) -> B8V2ErrorDescription:
         table: dict[B8ErrorType, type[B8V2ErrorDescription]] = {
@@ -539,7 +539,11 @@ class MessageB8V2Response(MessageResponse):
     @staticmethod
     def parse_body(message_type: MessageType, body: bytearray) -> MessageBody | None:
         """Parse body."""
-        if len(body) < _MIN_BODY_LEN or body[0] != ListTypes.AA:
+        if (
+            len(body) < _MIN_BODY_LEN
+            or body[0] != ListTypes.AA
+            or body[_VERSION] != 0x01
+        ):
             return None
         selector = body[_SELECTOR]
         if (message_type == MessageType.query and selector == B8V2QueryType.WORK) or (
