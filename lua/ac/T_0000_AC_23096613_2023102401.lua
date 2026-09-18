@@ -699,13 +699,13 @@ local function print_lua_table(lua_table, indent)
     end
 end
 local function checkBoundary(data, min, max)
-    if (not data) then data = 0 end
+    if not data then data = 0 end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
-    if ((data >= min) and (data <= max)) then
+    if data == nil then data = 0 end
+    if (data >= min) and (data <= max) then
         return data
     else
-        if (data < min) then
+        if data < min then
             return min
         else
             return max
@@ -715,7 +715,9 @@ end
 local function table2string(cmd)
     local ret = ""
     local i
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 local function string2table(hexstr)
@@ -731,7 +733,9 @@ local function string2table(hexstr)
 end
 local function string2hexstring(str)
     local ret = ""
-    for i = 1, #str do ret = ret .. string.format("%02x", str:byte(i)) end
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
     return ret
 end
 local function encode(cmd)
@@ -767,22 +771,262 @@ local function makeSum(tmpbuf, start_pos, end_pos)
     return resVal
 end
 local crc8_854_table = {
-    0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65, 157,
-    195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220, 35, 125,
-    159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98, 190, 224, 2,
-    92, 223, 129, 99, 61, 124, 34, 192, 158, 29, 67, 161, 255, 70, 24, 250, 164,
-    39, 121, 155, 197, 132, 218, 56, 102, 229, 187, 89, 7, 219, 133, 103, 57,
-    186, 228, 6, 88, 25, 71, 165, 251, 120, 38, 196, 154, 101, 59, 217, 135, 4,
-    90, 184, 230, 167, 249, 27, 69, 198, 152, 122, 36, 248, 166, 68, 26, 153,
-    199, 37, 123, 58, 100, 134, 216, 91, 5, 231, 185, 140, 210, 48, 110, 237,
-    179, 81, 15, 78, 16, 242, 172, 47, 113, 147, 205, 17, 79, 173, 243, 112, 46,
-    204, 146, 211, 141, 111, 49, 178, 236, 14, 80, 175, 241, 19, 77, 206, 144,
-    114, 44, 109, 51, 209, 143, 12, 82, 176, 238, 50, 108, 142, 208, 83, 13,
-    239, 177, 240, 174, 76, 18, 145, 207, 45, 115, 202, 148, 118, 40, 171, 245,
-    23, 73, 8, 86, 180, 234, 105, 55, 213, 139, 87, 9, 235, 181, 54, 104, 138,
-    212, 149, 203, 41, 119, 244, 170, 72, 22, 233, 183, 85, 11, 136, 214, 52,
-    106, 43, 117, 151, 201, 74, 20, 246, 168, 116, 42, 200, 150, 21, 75, 169,
-    247, 182, 232, 10, 84, 215, 137, 107, 53
+    0,
+    94,
+    188,
+    226,
+    97,
+    63,
+    221,
+    131,
+    194,
+    156,
+    126,
+    32,
+    163,
+    253,
+    31,
+    65,
+    157,
+    195,
+    33,
+    127,
+    252,
+    162,
+    64,
+    30,
+    95,
+    1,
+    227,
+    189,
+    62,
+    96,
+    130,
+    220,
+    35,
+    125,
+    159,
+    193,
+    66,
+    28,
+    254,
+    160,
+    225,
+    191,
+    93,
+    3,
+    128,
+    222,
+    60,
+    98,
+    190,
+    224,
+    2,
+    92,
+    223,
+    129,
+    99,
+    61,
+    124,
+    34,
+    192,
+    158,
+    29,
+    67,
+    161,
+    255,
+    70,
+    24,
+    250,
+    164,
+    39,
+    121,
+    155,
+    197,
+    132,
+    218,
+    56,
+    102,
+    229,
+    187,
+    89,
+    7,
+    219,
+    133,
+    103,
+    57,
+    186,
+    228,
+    6,
+    88,
+    25,
+    71,
+    165,
+    251,
+    120,
+    38,
+    196,
+    154,
+    101,
+    59,
+    217,
+    135,
+    4,
+    90,
+    184,
+    230,
+    167,
+    249,
+    27,
+    69,
+    198,
+    152,
+    122,
+    36,
+    248,
+    166,
+    68,
+    26,
+    153,
+    199,
+    37,
+    123,
+    58,
+    100,
+    134,
+    216,
+    91,
+    5,
+    231,
+    185,
+    140,
+    210,
+    48,
+    110,
+    237,
+    179,
+    81,
+    15,
+    78,
+    16,
+    242,
+    172,
+    47,
+    113,
+    147,
+    205,
+    17,
+    79,
+    173,
+    243,
+    112,
+    46,
+    204,
+    146,
+    211,
+    141,
+    111,
+    49,
+    178,
+    236,
+    14,
+    80,
+    175,
+    241,
+    19,
+    77,
+    206,
+    144,
+    114,
+    44,
+    109,
+    51,
+    209,
+    143,
+    12,
+    82,
+    176,
+    238,
+    50,
+    108,
+    142,
+    208,
+    83,
+    13,
+    239,
+    177,
+    240,
+    174,
+    76,
+    18,
+    145,
+    207,
+    45,
+    115,
+    202,
+    148,
+    118,
+    40,
+    171,
+    245,
+    23,
+    73,
+    8,
+    86,
+    180,
+    234,
+    105,
+    55,
+    213,
+    139,
+    87,
+    9,
+    235,
+    181,
+    54,
+    104,
+    138,
+    212,
+    149,
+    203,
+    41,
+    119,
+    244,
+    170,
+    72,
+    22,
+    233,
+    183,
+    85,
+    11,
+    136,
+    214,
+    52,
+    106,
+    43,
+    117,
+    151,
+    201,
+    74,
+    20,
+    246,
+    168,
+    116,
+    42,
+    200,
+    150,
+    21,
+    75,
+    169,
+    247,
+    182,
+    232,
+    10,
+    84,
+    215,
+    137,
+    107,
+    53,
 }
 local function crc8_854(dataBuf, start_pos, end_pos)
     local crc = 0
@@ -793,1151 +1037,929 @@ local function crc8_854(dataBuf, start_pos, end_pos)
 end
 local function JsonToModel(jsonCmd, jsonType)
     local streams = jsonCmd
-    if (streams[keyT["KEY_POWER"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_POWER"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["powerValue"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_POWER"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_POWER"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["powerValue"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_STANDBY_CLEAN"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_STANDBY_CLEAN"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["standby_clean"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_STANDBY_SELFCLEAN"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_STANDBY_SELFCLEAN"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["standby_clean"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_BUZZER"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_BUZZER"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["buzzerValue"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_BUZZER"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_BUZZER"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["buzzerValue"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_NOWINDSENSE"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_NOWINDSENSE"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["no_wind_sense"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_NOWINDSENSE"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_NOWINDSENSE"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["no_wind_sense"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_DRY"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_DRY"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["dryValue"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_DRY"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_DRY"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["dryValue"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_STRONG_WIND"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_STRONG_WIND"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["strongWindValue"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_STRONG_WIND"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_STRONG_WIND"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["strongWindValue"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_MANUL_NEWWIND"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_MANUL_NEWWIND"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["manulNewWind"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_MANUL_NEWWIND"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_MANUL_NEWWIND"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["manulNewWind"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_AUTO_NEWWIND"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_AUTO_NEWWIND"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["autoNewWind"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_AUTO_NEWWIND"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_AUTO_NEWWIND"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["autoNewWind"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_SWING_UD"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_SWING_UD"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["swingLeftUDValue"] = keyB["BYTE_COMMON_ON"]
         keyP["swingRightUDValue"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_SWING_UD"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_SWING_UD"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["swingLeftUDValue"] = keyB["BYTE_COMMON_OFF"]
         keyP["swingRightUDValue"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_SWING_LR"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_SWING_LR"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["swingUpLRValue"] = keyB["BYTE_COMMON_ON"]
         keyP["swingDownLRValue"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_SWING_LR"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_SWING_LR"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["swingUpLRValue"] = keyB["BYTE_COMMON_OFF"]
         keyP["swingDownLRValue"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_FORCE_COOL_MODE"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_FORCE_COOL_MODE"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["forceCoolMode"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_FORCE_COOL_MODE"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_FORCE_COOL_MODE"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["forceCoolMode"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_FORCE_AUTO_MODE"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_FORCE_AUTO_MODE"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["forceAutoMode"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_FORCE_AUTO_MODE"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_FORCE_AUTO_MODE"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["forceAutoMode"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_PTC"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_PTC"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["PTCValue"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_PTC"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_PTC"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["PTCValue"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_PTC_DEPENDT4"]] == keyV["VALUE_FUNCTION_ON"] and
-        jsonType == "control") then
+    if streams[keyT["KEY_PTC_DEPENDT4"]] == keyV["VALUE_FUNCTION_ON"] and jsonType == "control" then
         keyP["PTCDependT4Value"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_PTC_DEPENDT4"]] == keyV["VALUE_FUNCTION_OFF"] and
-        jsonType == "control") then
+    elseif streams[keyT["KEY_PTC_DEPENDT4"]] == keyV["VALUE_FUNCTION_OFF"] and jsonType == "control" then
         keyP["PTCDependT4Value"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_COOL_HOT_SENSE"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_COOL_HOT_SENSE"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["cool_hot_sense"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_COOL_HOT_SENSE"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_COOL_HOT_SENSE"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["cool_hot_sense"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_PREVENT_COLD"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_PREVENT_COLD"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["preventCold"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_PREVENT_COLD"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_PREVENT_COLD"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["preventCold"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_WIND_STRAIGHT"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_WIND_STRAIGHT"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["wind_straight"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_WIND_STRAIGHT"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_WIND_STRAIGHT"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["wind_straight"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_WIND_AVOID"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_WIND_AVOID"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["wind_avoid"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_WIND_AVOID"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_WIND_AVOID"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["wind_avoid"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_DISINFECT"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_DISINFECT"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["disinfect"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_DISINFECT"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_DISINFECT"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["disinfect"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_ELEC_DUST_REMOVE"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_ELEC_DUST_REMOVE"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["elecDustRemove"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_ELEC_DUST_REMOVE"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_ELEC_DUST_REMOVE"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["elecDustRemove"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_SELFCLEAN"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_SELFCLEAN"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["self_clean"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_SELFCLEAN"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_SELFCLEAN"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["self_clean"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_ENERGY_SAVE"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_ENERGY_SAVE"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["energySaveValue"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_ENERGY_SAVE"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_ENERGY_SAVE"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["energySaveValue"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_AIR_OPTIMIZATION"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_AIR_OPTIMIZATION"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["air_optimization"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_AIR_OPTIMIZATION"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_AIR_OPTIMIZATION"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["air_optimization"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_NOBODY_ENERGY_SAVE"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_NOBODY_ENERGY_SAVE"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["nobody_energy_save"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_NOBODY_ENERGY_SAVE"]] ==
-        keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_NOBODY_ENERGY_SAVE"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["nobody_energy_save"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_AUTO_PURIFY"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_AUTO_PURIFY"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["autoPurify"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_AUTO_PURIFY"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_AUTO_PURIFY"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["autoPurify"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_MANUL_PURIFY"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_MANUL_PURIFY"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["manulPurify"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_MANUL_PURIFY"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_MANUL_PURIFY"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["manulPurify"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_NO_WIND_SENSE_MODE"]] ~= nil) then
-        keyP["no_wind_sense_mode"] = checkBoundary(
-                                         streams[keyT["KEY_NO_WIND_SENSE_MODE"]],
-                                         0, 2)
+    if streams[keyT["KEY_NO_WIND_SENSE_MODE"]] ~= nil then
+        keyP["no_wind_sense_mode"] = checkBoundary(streams[keyT["KEY_NO_WIND_SENSE_MODE"]], 0, 2)
     end
-    if (streams[keyT["KEY_RUN_TEST"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_RUN_TEST"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["run_test"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_RUN_TEST"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_RUN_TEST"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["run_test"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_FAST_CHECK"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_FAST_CHECK"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["fast_check"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_FAST_CHECK"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_FAST_CHECK"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["fast_check"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_AUTO_HUMI"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_AUTO_HUMI"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["autoHumi"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_AUTO_HUMI"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_AUTO_HUMI"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["autoHumi"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_MANUL_HUMI"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_MANUL_HUMI"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["manuHumi"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_MANUL_HUMI"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_MANUL_HUMI"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["manuHumi"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_WIND_STRENGTH"]] ~= nil) then
-        keyP["wind_strength"] = checkBoundary(
-                                    streams[keyT["KEY_WIND_STRENGTH"]], 0, 1)
+    if streams[keyT["KEY_WIND_STRENGTH"]] ~= nil then
+        keyP["wind_strength"] = checkBoundary(streams[keyT["KEY_WIND_STRENGTH"]], 0, 1)
     end
-    if (streams[keyT["KEY_NEW_WIND_MACHINE"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_NEW_WIND_MACHINE"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["new_wind_machine"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_NEW_WIND_MACHINE"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_NEW_WIND_MACHINE"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["new_wind_machine"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_NEW_WIND_MACHINE_LINK"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_NEW_WIND_MACHINE_LINK"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["new_wind_machine_link"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_NEW_WIND_MACHINE_LINK"]] ==
-        keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_NEW_WIND_MACHINE_LINK"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["new_wind_machine_link"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_PROJECT_EVACUATE"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_PROJECT_EVACUATE"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["project_evacuate"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_PROJECT_EVACUATE"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_PROJECT_EVACUATE"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["project_evacuate"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_FOLLOW_BODY_SENSE"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_FOLLOW_BODY_SENSE"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["follow_body_sense"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_FOLLOW_BODY_SENSE"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_FOLLOW_BODY_SENSE"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["follow_body_sense"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_EXHAUST_STRENGTH"]] ~= nil) then
-        keyP["exhaust_strength"] = checkBoundary(
-                                       streams[keyT["KEY_EXHAUST_STRENGTH"]], 0,
-                                       1)
+    if streams[keyT["KEY_EXHAUST_STRENGTH"]] ~= nil then
+        keyP["exhaust_strength"] = checkBoundary(streams[keyT["KEY_EXHAUST_STRENGTH"]], 0, 1)
     end
-    if (streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_HEAT"]) then
+    if streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_HEAT"] then
         keyP["modeValue"] = keyB["BYTE_MODE_HEAT"]
-    elseif (streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_COOL"]) then
+    elseif streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_COOL"] then
         keyP["modeValue"] = keyB["BYTE_MODE_COOL"]
-    elseif (streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_AUTO"]) then
+    elseif streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_AUTO"] then
         keyP["modeValue"] = keyB["BYTE_MODE_AUTO"]
-    elseif (streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_DRY"]) then
+    elseif streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_DRY"] then
         keyP["modeValue"] = keyB["BYTE_MODE_DRY"]
-    elseif (streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_FAN"]) then
+    elseif streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_FAN"] then
         keyP["modeValue"] = keyB["BYTE_MODE_FAN"]
-    elseif (streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_STANDBY"]) then
+    elseif streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_STANDBY"] then
         keyP["modeValue"] = keyB["BYTE_MODE_STANDBY"]
-    elseif (streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_DRYCONSTANT"]) then
+    elseif streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_DRYCONSTANT"] then
         keyP["modeValue"] = keyB["BYTE_MODE_DRYCONSTANT"]
-    elseif (streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_DRYAUTO"]) then
+    elseif streams[keyT["KEY_MODE"]] == keyV["VALUE_MODE_DRYAUTO"] then
         keyP["modeValue"] = keyB["BYTE_MODE_DRYAUTO"]
     end
-    if (streams[keyT["KEY_TEMPERATURE"]] ~= nil) then
-        keyP["temperature"] = checkBoundary(streams[keyT["KEY_TEMPERATURE"]],
-                                            16, 30)
+    if streams[keyT["KEY_TEMPERATURE"]] ~= nil then
+        keyP["temperature"] = checkBoundary(streams[keyT["KEY_TEMPERATURE"]], 16, 30)
     end
-    if (streams["small_temperature"] ~= nil) then
-        keyP["small_temperature"] = checkBoundary(streams["small_temperature"],
-                                                  0, 0.5)
+    if streams["small_temperature"] ~= nil then
+        keyP["small_temperature"] = checkBoundary(streams["small_temperature"], 0, 0.5)
     end
-    if (streams[keyT["KEY_FANSPEED"]] ~= nil) then
-        keyP["fanspeedValue"] = checkBoundary(streams[keyT["KEY_FANSPEED"]], 1,
-                                              103)
+    if streams[keyT["KEY_FANSPEED"]] ~= nil then
+        keyP["fanspeedValue"] = checkBoundary(streams[keyT["KEY_FANSPEED"]], 1, 103)
     end
-    if (streams[keyT["KEY_DEHUMIDITY"]] ~= nil) then
-        keyP["dehumidityValue"] = checkBoundary(streams[keyT["KEY_DEHUMIDITY"]],
-                                                1, 100)
+    if streams[keyT["KEY_DEHUMIDITY"]] ~= nil then
+        keyP["dehumidityValue"] = checkBoundary(streams[keyT["KEY_DEHUMIDITY"]], 1, 100)
     end
-    if (streams[keyT["KEY_HUMIDITY"]] ~= nil) then
-        keyP["humidityValue"] = checkBoundary(streams[keyT["KEY_HUMIDITY"]], 1,
-                                              100)
+    if streams[keyT["KEY_HUMIDITY"]] ~= nil then
+        keyP["humidityValue"] = checkBoundary(streams[keyT["KEY_HUMIDITY"]], 1, 100)
     end
-    if (streams[keyT["KEY_PM25"]] ~= nil) then
+    if streams[keyT["KEY_PM25"]] ~= nil then
         keyP["pm25LowValue"] = math.floor(streams[keyT["KEY_PM25"]] % 256)
         keyP["pm25HighValue"] = math.floor(streams[keyT["KEY_PM25"]] / 256)
     end
-    if (streams[keyT["KEY_CO2"]] ~= nil) then
+    if streams[keyT["KEY_CO2"]] ~= nil then
         keyP["co2LowValue"] = math.floor(streams[keyT["KEY_CO2"]] % 256)
         keyP["co2HighValue"] = math.floor(streams[keyT["KEY_CO2"]] / 256)
     end
-    if (streams[keyT["KEY_NEWWIND_MODE"]] ~= nil) then
-        keyP["newWindModeValue"] = checkBoundary(
-                                       streams[keyT["KEY_NEWWIND_MODE"]], 0, 6)
+    if streams[keyT["KEY_NEWWIND_MODE"]] ~= nil then
+        keyP["newWindModeValue"] = checkBoundary(streams[keyT["KEY_NEWWIND_MODE"]], 0, 6)
     end
-    if (streams[keyT["KEY_NEWWIND_FANSPEED"]] ~= nil) then
-        keyP["newWindSpeedValue"] = checkBoundary(
-                                        streams[keyT["KEY_NEWWIND_FANSPEED"]],
-                                        1, 103)
+    if streams[keyT["KEY_NEWWIND_FANSPEED"]] ~= nil then
+        keyP["newWindSpeedValue"] = checkBoundary(streams[keyT["KEY_NEWWIND_FANSPEED"]], 1, 103)
     end
-    if (streams[keyT["KEY_AIR_OPTIMIZATION_TEMPERATURE"]] ~= nil) then
-        keyP["air_optimization_temperature"] = checkBoundary(
-                                                   streams[keyT["KEY_AIR_OPTIMIZATION_TEMPERATURE"]],
-                                                   16, 30)
+    if streams[keyT["KEY_AIR_OPTIMIZATION_TEMPERATURE"]] ~= nil then
+        keyP["air_optimization_temperature"] = checkBoundary(streams[keyT["KEY_AIR_OPTIMIZATION_TEMPERATURE"]], 16, 30)
     end
-    if (streams[keyT["KEY_AIR_OPTIMIZATION_HUMIDITY"]] ~= nil) then
-        keyP["air_optimization_humidity"] = checkBoundary(
-                                                streams[keyT["KEY_AIR_OPTIMIZATION_HUMIDITY"]],
-                                                1, 100)
+    if streams[keyT["KEY_AIR_OPTIMIZATION_HUMIDITY"]] ~= nil then
+        keyP["air_optimization_humidity"] = checkBoundary(streams[keyT["KEY_AIR_OPTIMIZATION_HUMIDITY"]], 1, 100)
     end
-    if (streams[keyT["KEY_AIR_OPTIMIZATION_WIND"]] ~= nil) then
-        keyP["air_optimization_wind"] = checkBoundary(
-                                            streams[keyT["KEY_AIR_OPTIMIZATION_WIND"]],
-                                            1, 102)
+    if streams[keyT["KEY_AIR_OPTIMIZATION_WIND"]] ~= nil then
+        keyP["air_optimization_wind"] = checkBoundary(streams[keyT["KEY_AIR_OPTIMIZATION_WIND"]], 1, 102)
     end
-    if (streams[keyT["KEY_WATER_MODEL_POWER"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_WATER_MODEL_POWER"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["water_model_power"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_WATER_MODEL_POWER"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_WATER_MODEL_POWER"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["water_model_power"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_WATER_MODEL_POWER"]] == keyV["VALUE_FUNCTION_ON"] and
-        jsonType == "control") then
+    if streams[keyT["KEY_WATER_MODEL_POWER"]] == keyV["VALUE_FUNCTION_ON"] and jsonType == "control" then
         keyP["water_model_flag"] = keyP["water_model_flag"] + 1
     end
-    if (streams[keyT["KEY_WATER_MODEL_POWER_SAVE"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_WATER_MODEL_POWER_SAVE"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["water_model_power_save"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_WATER_MODEL_POWER_SAVE"]] ==
-        keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_WATER_MODEL_POWER_SAVE"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["water_model_power_save"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_WATER_MODEL_CLEAN"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_WATER_MODEL_CLEAN"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["water_model_clean"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_WATER_MODEL_CLEAN"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_WATER_MODEL_CLEAN"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["water_model_clean"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_WATER_MODEL_CLEAN"]] == keyV["VALUE_FUNCTION_ON"] and
-        jsonType == "control") then
+    if streams[keyT["KEY_WATER_MODEL_CLEAN"]] == keyV["VALUE_FUNCTION_ON"] and jsonType == "control" then
         keyP["water_model_flag"] = keyP["water_model_flag"] + 1
     end
-    if (streams[keyT["KEY_WATER_MODEL_TEMPERATURE_AUTO"]] ==
-        keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_WATER_MODEL_TEMPERATURE_AUTO"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["water_model_temperature_auto"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_WATER_MODEL_TEMPERATURE_AUTO"]] ==
-        keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_WATER_MODEL_TEMPERATURE_AUTO"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["water_model_temperature_auto"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_WATER_MODEL_PTC"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_WATER_MODEL_PTC"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["water_model_ptc"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_WATER_MODEL_PTC"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_WATER_MODEL_PTC"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["water_model_ptc"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_WATER_MODEL_GO_OUT"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_WATER_MODEL_GO_OUT"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["water_model_go_out"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_WATER_MODEL_GO_OUT"]] ==
-        keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_WATER_MODEL_GO_OUT"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["water_model_go_out"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_WATER_MODEL_TEMPERATURE_SET"]] ~= nil) then
-        keyP["water_model_temperature_set"] = checkBoundary(
-                                                  streams[keyT["KEY_WATER_MODEL_TEMPERATURE_SET"]],
-                                                  25, 60)
+    if streams[keyT["KEY_WATER_MODEL_TEMPERATURE_SET"]] ~= nil then
+        keyP["water_model_temperature_set"] = checkBoundary(streams[keyT["KEY_WATER_MODEL_TEMPERATURE_SET"]], 25, 60)
     end
-    if (streams[keyT["KEY_SCREEN_DISPLAY"]] ~= nil) then
-        if (propertyPre == nil) then
+    if streams[keyT["KEY_SCREEN_DISPLAY"]] ~= nil then
+        if propertyPre == nil then
             keyP["propertyNumber"] = keyP["propertyNumber"] + 1
             propertyPre = streams[keyT["KEY_SCREEN_DISPLAY"]]
         end
-        if (streams[keyT["KEY_SCREEN_DISPLAY"]] == keyV["VALUE_FUNCTION_ON"]) then
+        if streams[keyT["KEY_SCREEN_DISPLAY"]] == keyV["VALUE_FUNCTION_ON"] then
             keyP["screen_display"] = 0x64
-        elseif (streams[keyT["KEY_SCREEN_DISPLAY"]] ==
-            keyV["VALUE_FUNCTION_OFF"]) then
+        elseif streams[keyT["KEY_SCREEN_DISPLAY"]] == keyV["VALUE_FUNCTION_OFF"] then
             keyP["screen_display"] = 0x00
         end
     end
-    if (streams[keyT["KEY_FILTER_TIME_RESET"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_FILTER_TIME_RESET"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["filterTimeReset"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_FILTER_TIME_RESET"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_FILTER_TIME_RESET"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["filterTimeReset"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_PURIFY_FILTER_TIME_RESET"]] ==
-        keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_PURIFY_FILTER_TIME_RESET"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["purifyFilterTimeReset"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_PURIFY_FILTER_TIME_RESET"]] ==
-        keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_PURIFY_FILTER_TIME_RESET"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["purifyFilterTimeReset"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams[keyT["KEY_FRESH_FILTER_TIME_RESET"]] ==
-        keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_FRESH_FILTER_TIME_RESET"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["freshFilterTimeReset"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams[keyT["KEY_FRESH_FILTER_TIME_RESET"]] ==
-        keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_FRESH_FILTER_TIME_RESET"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["freshFilterTimeReset"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams["humidity_drainage"] == 0x01) then
+    if streams["humidity_drainage"] == 0x01 then
         keyP["humidity_drainage"] = 0x01
-    elseif (streams["humidity_drainage"] == 0x00) then
+    elseif streams["humidity_drainage"] == 0x00 then
         keyP["humidity_drainage"] = 0x00
     end
-    if (jsonType == "control" and streams["humidity_drainage"] ~= nil) then
-        keyP["humidity_drainage_flag"] = 1
-    end
-    if (streams[keyT["KEY_POWER_ON_TIMER"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if jsonType == "control" and streams["humidity_drainage"] ~= nil then keyP["humidity_drainage_flag"] = 1 end
+    if streams[keyT["KEY_POWER_ON_TIMER"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["power_on_timer"] = 0x01
-    elseif (streams[keyT["KEY_POWER_ON_TIMER"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_POWER_ON_TIMER"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["power_on_timer"] = 0x00
     end
-    if (streams[keyT["KEY_POWER_OFF_TIMER"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_POWER_OFF_TIMER"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["power_off_timer"] = 0x01
-    elseif (streams[keyT["KEY_POWER_OFF_TIMER"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_POWER_OFF_TIMER"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["power_off_timer"] = 0x00
     end
-    if (streams[keyT["KEY_CLOSE_TIME"]] ~= nil) then
-        keyP["power_off_time_value"] = streams[keyT["KEY_CLOSE_TIME"]]
-    end
-    if (streams[keyT["KEY_OPEN_TIME"]] ~= nil) then
-        keyP["power_on_time_value"] = streams[keyT["KEY_OPEN_TIME"]]
-    end
-    if (jsonType == "control" and (streams[keyT["KEY_POWER_ON_TIMER"]] ~= nil or
-        streams[keyT["KEY_POWER_OFF_TIMER"]] ~= nil)) then
+    if streams[keyT["KEY_CLOSE_TIME"]] ~= nil then keyP["power_off_time_value"] = streams[keyT["KEY_CLOSE_TIME"]] end
+    if streams[keyT["KEY_OPEN_TIME"]] ~= nil then keyP["power_on_time_value"] = streams[keyT["KEY_OPEN_TIME"]] end
+    if
+        jsonType == "control"
+        and (streams[keyT["KEY_POWER_ON_TIMER"]] ~= nil or streams[keyT["KEY_POWER_OFF_TIMER"]] ~= nil)
+    then
         keyP["timer_enable"] = 1
     else
         keyP["timer_enable"] = 0
     end
-    if (streams[keyT["KEY_COMFORT_SLEEP_CURVE"]] ~= nil) then
-        streams[keyT["KEY_COMFORT_SLEEP_CURVE"]] = string.gsub(
-                                                       streams[keyT["KEY_COMFORT_SLEEP_CURVE"]],
-                                                       ",", "")
+    if streams[keyT["KEY_COMFORT_SLEEP_CURVE"]] ~= nil then
+        streams[keyT["KEY_COMFORT_SLEEP_CURVE"]] = string.gsub(streams[keyT["KEY_COMFORT_SLEEP_CURVE"]], ",", "")
         comfortByte = numstring2table(streams[keyT["KEY_COMFORT_SLEEP_CURVE"]])
     end
-    if (streams[keyT["KEY_COMFORT_SLEEP"]] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams[keyT["KEY_COMFORT_SLEEP"]] == keyV["VALUE_FUNCTION_ON"] then
         keyP["comfortableSleepValue"] = 0x30
         keyP["comfortableSleepTime"] = 0x08
-    elseif (streams[keyT["KEY_COMFORT_SLEEP"]] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams[keyT["KEY_COMFORT_SLEEP"]] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["comfortableSleepValue"] = 0x00
         keyP["comfortableSleepTime"] = 0x00
     end
-    if (streams["up_down_wind_direction"] ~= nil) then
+    if streams["up_down_wind_direction"] ~= nil then
         keyP["up_down_wind_direction"] = streams["up_down_wind_direction"]
     end
-    if (streams["left_right_wind_direction"] ~= nil) then
+    if streams["left_right_wind_direction"] ~= nil then
         keyP["left_right_wind_direction"] = streams["left_right_wind_direction"]
     end
-    if (streams["stop_warm"] == keyV["VALUE_FUNCTION_ON"]) then
+    if streams["stop_warm"] == keyV["VALUE_FUNCTION_ON"] then
         keyP["stop_warm"] = keyB["BYTE_COMMON_ON"]
-    elseif (streams["stop_warm"] == keyV["VALUE_FUNCTION_OFF"]) then
+    elseif streams["stop_warm"] == keyV["VALUE_FUNCTION_OFF"] then
         keyP["stop_warm"] = keyB["BYTE_COMMON_OFF"]
     end
-    if (streams["water_mode"] ~= nil) then
-        keyP["water_mode"] = streams["water_mode"]
+    if streams["water_mode"] ~= nil then keyP["water_mode"] = streams["water_mode"] end
+    if streams["sn8_string"] == "00000001" then
+        if jsonType == "control" then keyP["sn8_flag"] = 1 end
     end
-    if (streams["sn8_string"] == "00000001") then
-        if (jsonType == "control") then keyP["sn8_flag"] = 1 end
-    end
-    if (streams["week1_timer1"] ~= nil) then
-        keyP["week1_timer1"] = streams["week1_timer1"]
-    end
-    if (streams["week1_timer2"] ~= nil) then
-        keyP["week1_timer2"] = streams["week1_timer2"]
-    end
-    if (streams["week1_timer3"] ~= nil) then
-        keyP["week1_timer3"] = streams["week1_timer3"]
-    end
-    if (streams["week1_timer4"] ~= nil) then
-        keyP["week1_timer4"] = streams["week1_timer4"]
-    end
-    if (streams["week1_timer5"] ~= nil) then
-        keyP["week1_timer5"] = streams["week1_timer5"]
-    end
-    if (streams["week2_timer1"] ~= nil) then
-        keyP["week2_timer1"] = streams["week2_timer1"]
-    end
-    if (streams["week2_timer2"] ~= nil) then
-        keyP["week2_timer2"] = streams["week2_timer2"]
-    end
-    if (streams["week2_timer3"] ~= nil) then
-        keyP["week2_timer3"] = streams["week2_timer3"]
-    end
-    if (streams["week2_timer4"] ~= nil) then
-        keyP["week2_timer4"] = streams["week2_timer4"]
-    end
-    if (streams["week2_timer5"] ~= nil) then
-        keyP["week2_timer5"] = streams["week2_timer5"]
-    end
-    if (streams["week3_timer1"] ~= nil) then
-        keyP["week3_timer1"] = streams["week3_timer1"]
-    end
-    if (streams["week3_timer2"] ~= nil) then
-        keyP["week3_timer2"] = streams["week3_timer2"]
-    end
-    if (streams["week3_timer3"] ~= nil) then
-        keyP["week3_timer3"] = streams["week3_timer3"]
-    end
-    if (streams["week3_timer4"] ~= nil) then
-        keyP["week3_timer4"] = streams["week3_timer4"]
-    end
-    if (streams["week3_timer5"] ~= nil) then
-        keyP["week3_timer5"] = streams["week3_timer5"]
-    end
-    if (streams["week4_timer1"] ~= nil) then
-        keyP["week4_timer1"] = streams["week4_timer1"]
-    end
-    if (streams["week4_timer2"] ~= nil) then
-        keyP["week4_timer2"] = streams["week4_timer2"]
-    end
-    if (streams["week4_timer3"] ~= nil) then
-        keyP["week4_timer3"] = streams["week4_timer3"]
-    end
-    if (streams["week4_timer4"] ~= nil) then
-        keyP["week4_timer4"] = streams["week4_timer4"]
-    end
-    if (streams["week4_timer5"] ~= nil) then
-        keyP["week4_timer5"] = streams["week4_timer5"]
-    end
-    if (streams["week5_timer1"] ~= nil) then
-        keyP["week5_timer1"] = streams["week5_timer1"]
-    end
-    if (streams["week5_timer2"] ~= nil) then
-        keyP["week5_timer2"] = streams["week5_timer2"]
-    end
-    if (streams["week5_timer3"] ~= nil) then
-        keyP["week5_timer3"] = streams["week5_timer3"]
-    end
-    if (streams["week5_timer4"] ~= nil) then
-        keyP["week5_timer4"] = streams["week5_timer4"]
-    end
-    if (streams["week5_timer5"] ~= nil) then
-        keyP["week5_timer5"] = streams["week5_timer5"]
-    end
-    if (streams["week6_timer1"] ~= nil) then
-        keyP["week6_timer1"] = streams["week6_timer1"]
-    end
-    if (streams["week6_timer2"] ~= nil) then
-        keyP["week6_timer2"] = streams["week6_timer2"]
-    end
-    if (streams["week6_timer3"] ~= nil) then
-        keyP["week6_timer3"] = streams["week6_timer3"]
-    end
-    if (streams["week6_timer4"] ~= nil) then
-        keyP["week6_timer4"] = streams["week6_timer4"]
-    end
-    if (streams["week6_timer5"] ~= nil) then
-        keyP["week6_timer5"] = streams["week6_timer5"]
-    end
-    if (streams["week0_timer1"] ~= nil) then
-        keyP["week0_timer1"] = streams["week0_timer1"]
-    end
-    if (streams["week0_timer2"] ~= nil) then
-        keyP["week0_timer2"] = streams["week0_timer2"]
-    end
-    if (streams["week0_timer3"] ~= nil) then
-        keyP["week0_timer3"] = streams["week0_timer3"]
-    end
-    if (streams["week0_timer4"] ~= nil) then
-        keyP["week0_timer4"] = streams["week0_timer4"]
-    end
-    if (streams["week0_timer5"] ~= nil) then
-        keyP["week0_timer5"] = streams["week0_timer5"]
-    end
-    if (streams["week1_timer1_open_hour"] ~= nil) then
+    if streams["week1_timer1"] ~= nil then keyP["week1_timer1"] = streams["week1_timer1"] end
+    if streams["week1_timer2"] ~= nil then keyP["week1_timer2"] = streams["week1_timer2"] end
+    if streams["week1_timer3"] ~= nil then keyP["week1_timer3"] = streams["week1_timer3"] end
+    if streams["week1_timer4"] ~= nil then keyP["week1_timer4"] = streams["week1_timer4"] end
+    if streams["week1_timer5"] ~= nil then keyP["week1_timer5"] = streams["week1_timer5"] end
+    if streams["week2_timer1"] ~= nil then keyP["week2_timer1"] = streams["week2_timer1"] end
+    if streams["week2_timer2"] ~= nil then keyP["week2_timer2"] = streams["week2_timer2"] end
+    if streams["week2_timer3"] ~= nil then keyP["week2_timer3"] = streams["week2_timer3"] end
+    if streams["week2_timer4"] ~= nil then keyP["week2_timer4"] = streams["week2_timer4"] end
+    if streams["week2_timer5"] ~= nil then keyP["week2_timer5"] = streams["week2_timer5"] end
+    if streams["week3_timer1"] ~= nil then keyP["week3_timer1"] = streams["week3_timer1"] end
+    if streams["week3_timer2"] ~= nil then keyP["week3_timer2"] = streams["week3_timer2"] end
+    if streams["week3_timer3"] ~= nil then keyP["week3_timer3"] = streams["week3_timer3"] end
+    if streams["week3_timer4"] ~= nil then keyP["week3_timer4"] = streams["week3_timer4"] end
+    if streams["week3_timer5"] ~= nil then keyP["week3_timer5"] = streams["week3_timer5"] end
+    if streams["week4_timer1"] ~= nil then keyP["week4_timer1"] = streams["week4_timer1"] end
+    if streams["week4_timer2"] ~= nil then keyP["week4_timer2"] = streams["week4_timer2"] end
+    if streams["week4_timer3"] ~= nil then keyP["week4_timer3"] = streams["week4_timer3"] end
+    if streams["week4_timer4"] ~= nil then keyP["week4_timer4"] = streams["week4_timer4"] end
+    if streams["week4_timer5"] ~= nil then keyP["week4_timer5"] = streams["week4_timer5"] end
+    if streams["week5_timer1"] ~= nil then keyP["week5_timer1"] = streams["week5_timer1"] end
+    if streams["week5_timer2"] ~= nil then keyP["week5_timer2"] = streams["week5_timer2"] end
+    if streams["week5_timer3"] ~= nil then keyP["week5_timer3"] = streams["week5_timer3"] end
+    if streams["week5_timer4"] ~= nil then keyP["week5_timer4"] = streams["week5_timer4"] end
+    if streams["week5_timer5"] ~= nil then keyP["week5_timer5"] = streams["week5_timer5"] end
+    if streams["week6_timer1"] ~= nil then keyP["week6_timer1"] = streams["week6_timer1"] end
+    if streams["week6_timer2"] ~= nil then keyP["week6_timer2"] = streams["week6_timer2"] end
+    if streams["week6_timer3"] ~= nil then keyP["week6_timer3"] = streams["week6_timer3"] end
+    if streams["week6_timer4"] ~= nil then keyP["week6_timer4"] = streams["week6_timer4"] end
+    if streams["week6_timer5"] ~= nil then keyP["week6_timer5"] = streams["week6_timer5"] end
+    if streams["week0_timer1"] ~= nil then keyP["week0_timer1"] = streams["week0_timer1"] end
+    if streams["week0_timer2"] ~= nil then keyP["week0_timer2"] = streams["week0_timer2"] end
+    if streams["week0_timer3"] ~= nil then keyP["week0_timer3"] = streams["week0_timer3"] end
+    if streams["week0_timer4"] ~= nil then keyP["week0_timer4"] = streams["week0_timer4"] end
+    if streams["week0_timer5"] ~= nil then keyP["week0_timer5"] = streams["week0_timer5"] end
+    if streams["week1_timer1_open_hour"] ~= nil then
         keyP["week1_timer1_open_hour"] = streams["week1_timer1_open_hour"]
     end
-    if (streams["week1_timer1_open_min"] ~= nil) then
-        keyP["week1_timer1_open_min"] = streams["week1_timer1_open_min"]
-    end
-    if (streams["week1_timer1_close_hour"] ~= nil) then
+    if streams["week1_timer1_open_min"] ~= nil then keyP["week1_timer1_open_min"] = streams["week1_timer1_open_min"] end
+    if streams["week1_timer1_close_hour"] ~= nil then
         keyP["week1_timer1_close_hour"] = streams["week1_timer1_close_hour"]
     end
-    if (streams["week1_timer1_close_min"] ~= nil) then
+    if streams["week1_timer1_close_min"] ~= nil then
         keyP["week1_timer1_close_min"] = streams["week1_timer1_close_min"]
     end
-    if (streams["week1_timer1_temperature"] ~= nil) then
+    if streams["week1_timer1_temperature"] ~= nil then
         keyP["week1_timer1_temperature"] = streams["week1_timer1_temperature"]
     end
-    if (streams["week1_timer2_open_hour"] ~= nil) then
+    if streams["week1_timer2_open_hour"] ~= nil then
         keyP["week1_timer2_open_hour"] = streams["week1_timer2_open_hour"]
     end
-    if (streams["week1_timer2_open_min"] ~= nil) then
-        keyP["week1_timer2_open_min"] = streams["week1_timer2_open_min"]
-    end
-    if (streams["week1_timer2_close_hour"] ~= nil) then
+    if streams["week1_timer2_open_min"] ~= nil then keyP["week1_timer2_open_min"] = streams["week1_timer2_open_min"] end
+    if streams["week1_timer2_close_hour"] ~= nil then
         keyP["week1_timer2_close_hour"] = streams["week1_timer2_close_hour"]
     end
-    if (streams["week1_timer2_close_min"] ~= nil) then
+    if streams["week1_timer2_close_min"] ~= nil then
         keyP["week1_timer2_close_min"] = streams["week1_timer2_close_min"]
     end
-    if (streams["week1_timer2_temperature"] ~= nil) then
+    if streams["week1_timer2_temperature"] ~= nil then
         keyP["week1_timer2_temperature"] = streams["week1_timer2_temperature"]
     end
-    if (streams["week1_timer3_open_hour"] ~= nil) then
+    if streams["week1_timer3_open_hour"] ~= nil then
         keyP["week1_timer3_open_hour"] = streams["week1_timer3_open_hour"]
     end
-    if (streams["week1_timer3_open_min"] ~= nil) then
-        keyP["week1_timer3_open_min"] = streams["week1_timer3_open_min"]
-    end
-    if (streams["week1_timer3_close_hour"] ~= nil) then
+    if streams["week1_timer3_open_min"] ~= nil then keyP["week1_timer3_open_min"] = streams["week1_timer3_open_min"] end
+    if streams["week1_timer3_close_hour"] ~= nil then
         keyP["week1_timer3_close_hour"] = streams["week1_timer3_close_hour"]
     end
-    if (streams["week1_timer3_close_min"] ~= nil) then
+    if streams["week1_timer3_close_min"] ~= nil then
         keyP["week1_timer3_close_min"] = streams["week1_timer3_close_min"]
     end
-    if (streams["week1_timer3_temperature"] ~= nil) then
+    if streams["week1_timer3_temperature"] ~= nil then
         keyP["week1_timer3_temperature"] = streams["week1_timer3_temperature"]
     end
-    if (streams["week1_timer4_open_hour"] ~= nil) then
+    if streams["week1_timer4_open_hour"] ~= nil then
         keyP["week1_timer4_open_hour"] = streams["week1_timer4_open_hour"]
     end
-    if (streams["week1_timer4_open_min"] ~= nil) then
-        keyP["week1_timer4_open_min"] = streams["week1_timer4_open_min"]
-    end
-    if (streams["week1_timer4_close_hour"] ~= nil) then
+    if streams["week1_timer4_open_min"] ~= nil then keyP["week1_timer4_open_min"] = streams["week1_timer4_open_min"] end
+    if streams["week1_timer4_close_hour"] ~= nil then
         keyP["week1_timer4_close_hour"] = streams["week1_timer4_close_hour"]
     end
-    if (streams["week1_timer4_close_min"] ~= nil) then
+    if streams["week1_timer4_close_min"] ~= nil then
         keyP["week1_timer4_close_min"] = streams["week1_timer4_close_min"]
     end
-    if (streams["week1_timer4_temperature"] ~= nil) then
+    if streams["week1_timer4_temperature"] ~= nil then
         keyP["week1_timer4_temperature"] = streams["week1_timer4_temperature"]
     end
-    if (streams["week1_timer5_open_hour"] ~= nil) then
+    if streams["week1_timer5_open_hour"] ~= nil then
         keyP["week1_timer5_open_hour"] = streams["week1_timer5_open_hour"]
     end
-    if (streams["week1_timer5_open_min"] ~= nil) then
-        keyP["week1_timer5_open_min"] = streams["week1_timer5_open_min"]
-    end
-    if (streams["week1_timer5_close_hour"] ~= nil) then
+    if streams["week1_timer5_open_min"] ~= nil then keyP["week1_timer5_open_min"] = streams["week1_timer5_open_min"] end
+    if streams["week1_timer5_close_hour"] ~= nil then
         keyP["week1_timer5_close_hour"] = streams["week1_timer5_close_hour"]
     end
-    if (streams["week1_timer5_close_min"] ~= nil) then
+    if streams["week1_timer5_close_min"] ~= nil then
         keyP["week1_timer5_close_min"] = streams["week1_timer5_close_min"]
     end
-    if (streams["week1_timer5_temperature"] ~= nil) then
+    if streams["week1_timer5_temperature"] ~= nil then
         keyP["week1_timer5_temperature"] = streams["week1_timer5_temperature"]
     end
-    if (streams["week2_timer1_open_hour"] ~= nil) then
+    if streams["week2_timer1_open_hour"] ~= nil then
         keyP["week2_timer1_open_hour"] = streams["week2_timer1_open_hour"]
     end
-    if (streams["week2_timer1_open_min"] ~= nil) then
-        keyP["week2_timer1_open_min"] = streams["week2_timer1_open_min"]
-    end
-    if (streams["week2_timer1_close_hour"] ~= nil) then
+    if streams["week2_timer1_open_min"] ~= nil then keyP["week2_timer1_open_min"] = streams["week2_timer1_open_min"] end
+    if streams["week2_timer1_close_hour"] ~= nil then
         keyP["week2_timer1_close_hour"] = streams["week2_timer1_close_hour"]
     end
-    if (streams["week2_timer1_close_min"] ~= nil) then
+    if streams["week2_timer1_close_min"] ~= nil then
         keyP["week2_timer1_close_min"] = streams["week2_timer1_close_min"]
     end
-    if (streams["week2_timer1_temperature"] ~= nil) then
+    if streams["week2_timer1_temperature"] ~= nil then
         keyP["week2_timer1_temperature"] = streams["week2_timer1_temperature"]
     end
-    if (streams["week2_timer2_open_hour"] ~= nil) then
+    if streams["week2_timer2_open_hour"] ~= nil then
         keyP["week2_timer2_open_hour"] = streams["week2_timer2_open_hour"]
     end
-    if (streams["week2_timer2_open_min"] ~= nil) then
-        keyP["week2_timer2_open_min"] = streams["week2_timer2_open_min"]
-    end
-    if (streams["week2_timer2_close_hour"] ~= nil) then
+    if streams["week2_timer2_open_min"] ~= nil then keyP["week2_timer2_open_min"] = streams["week2_timer2_open_min"] end
+    if streams["week2_timer2_close_hour"] ~= nil then
         keyP["week2_timer2_close_hour"] = streams["week2_timer2_close_hour"]
     end
-    if (streams["week2_timer2_close_min"] ~= nil) then
+    if streams["week2_timer2_close_min"] ~= nil then
         keyP["week2_timer2_close_min"] = streams["week2_timer2_close_min"]
     end
-    if (streams["week2_timer2_temperature"] ~= nil) then
+    if streams["week2_timer2_temperature"] ~= nil then
         keyP["week2_timer2_temperature"] = streams["week2_timer2_temperature"]
     end
-    if (streams["week2_timer3_open_hour"] ~= nil) then
+    if streams["week2_timer3_open_hour"] ~= nil then
         keyP["week2_timer3_open_hour"] = streams["week2_timer3_open_hour"]
     end
-    if (streams["week2_timer3_open_min"] ~= nil) then
-        keyP["week2_timer3_open_min"] = streams["week2_timer3_open_min"]
-    end
-    if (streams["week2_timer3_close_hour"] ~= nil) then
+    if streams["week2_timer3_open_min"] ~= nil then keyP["week2_timer3_open_min"] = streams["week2_timer3_open_min"] end
+    if streams["week2_timer3_close_hour"] ~= nil then
         keyP["week2_timer3_close_hour"] = streams["week2_timer3_close_hour"]
     end
-    if (streams["week2_timer3_close_min"] ~= nil) then
+    if streams["week2_timer3_close_min"] ~= nil then
         keyP["week2_timer3_close_min"] = streams["week2_timer3_close_min"]
     end
-    if (streams["week2_timer3_temperature"] ~= nil) then
+    if streams["week2_timer3_temperature"] ~= nil then
         keyP["week2_timer3_temperature"] = streams["week2_timer3_temperature"]
     end
-    if (streams["week2_timer4_open_hour"] ~= nil) then
+    if streams["week2_timer4_open_hour"] ~= nil then
         keyP["week2_timer4_open_hour"] = streams["week2_timer4_open_hour"]
     end
-    if (streams["week2_timer4_open_min"] ~= nil) then
-        keyP["week2_timer4_open_min"] = streams["week2_timer4_open_min"]
-    end
-    if (streams["week2_timer4_close_hour"] ~= nil) then
+    if streams["week2_timer4_open_min"] ~= nil then keyP["week2_timer4_open_min"] = streams["week2_timer4_open_min"] end
+    if streams["week2_timer4_close_hour"] ~= nil then
         keyP["week2_timer4_close_hour"] = streams["week2_timer4_close_hour"]
     end
-    if (streams["week2_timer4_close_min"] ~= nil) then
+    if streams["week2_timer4_close_min"] ~= nil then
         keyP["week2_timer4_close_min"] = streams["week2_timer4_close_min"]
     end
-    if (streams["week2_timer4_temperature"] ~= nil) then
+    if streams["week2_timer4_temperature"] ~= nil then
         keyP["week2_timer4_temperature"] = streams["week2_timer4_temperature"]
     end
-    if (streams["week2_timer5_open_hour"] ~= nil) then
+    if streams["week2_timer5_open_hour"] ~= nil then
         keyP["week2_timer5_open_hour"] = streams["week2_timer5_open_hour"]
     end
-    if (streams["week2_timer5_open_min"] ~= nil) then
-        keyP["week2_timer5_open_min"] = streams["week2_timer5_open_min"]
-    end
-    if (streams["week2_timer5_close_hour"] ~= nil) then
+    if streams["week2_timer5_open_min"] ~= nil then keyP["week2_timer5_open_min"] = streams["week2_timer5_open_min"] end
+    if streams["week2_timer5_close_hour"] ~= nil then
         keyP["week2_timer5_close_hour"] = streams["week2_timer5_close_hour"]
     end
-    if (streams["week2_timer5_close_min"] ~= nil) then
+    if streams["week2_timer5_close_min"] ~= nil then
         keyP["week2_timer5_close_min"] = streams["week2_timer5_close_min"]
     end
-    if (streams["week2_timer5_temperature"] ~= nil) then
+    if streams["week2_timer5_temperature"] ~= nil then
         keyP["week2_timer5_temperature"] = streams["week2_timer5_temperature"]
     end
-    if (streams["week3_timer1_open_hour"] ~= nil) then
+    if streams["week3_timer1_open_hour"] ~= nil then
         keyP["week3_timer1_open_hour"] = streams["week3_timer1_open_hour"]
     end
-    if (streams["week3_timer1_open_min"] ~= nil) then
-        keyP["week3_timer1_open_min"] = streams["week3_timer1_open_min"]
-    end
-    if (streams["week3_timer1_close_hour"] ~= nil) then
+    if streams["week3_timer1_open_min"] ~= nil then keyP["week3_timer1_open_min"] = streams["week3_timer1_open_min"] end
+    if streams["week3_timer1_close_hour"] ~= nil then
         keyP["week3_timer1_close_hour"] = streams["week3_timer1_close_hour"]
     end
-    if (streams["week3_timer1_close_min"] ~= nil) then
+    if streams["week3_timer1_close_min"] ~= nil then
         keyP["week3_timer1_close_min"] = streams["week3_timer1_close_min"]
     end
-    if (streams["week3_timer1_temperature"] ~= nil) then
+    if streams["week3_timer1_temperature"] ~= nil then
         keyP["week3_timer1_temperature"] = streams["week3_timer1_temperature"]
     end
-    if (streams["week3_timer2_open_hour"] ~= nil) then
+    if streams["week3_timer2_open_hour"] ~= nil then
         keyP["week3_timer2_open_hour"] = streams["week3_timer2_open_hour"]
     end
-    if (streams["week3_timer2_open_min"] ~= nil) then
-        keyP["week3_timer2_open_min"] = streams["week3_timer2_open_min"]
-    end
-    if (streams["week3_timer2_close_hour"] ~= nil) then
+    if streams["week3_timer2_open_min"] ~= nil then keyP["week3_timer2_open_min"] = streams["week3_timer2_open_min"] end
+    if streams["week3_timer2_close_hour"] ~= nil then
         keyP["week3_timer2_close_hour"] = streams["week3_timer2_close_hour"]
     end
-    if (streams["week3_timer2_close_min"] ~= nil) then
+    if streams["week3_timer2_close_min"] ~= nil then
         keyP["week3_timer2_close_min"] = streams["week3_timer2_close_min"]
     end
-    if (streams["week3_timer2_temperature"] ~= nil) then
+    if streams["week3_timer2_temperature"] ~= nil then
         keyP["week3_timer2_temperature"] = streams["week3_timer2_temperature"]
     end
-    if (streams["week3_timer3_open_hour"] ~= nil) then
+    if streams["week3_timer3_open_hour"] ~= nil then
         keyP["week3_timer3_open_hour"] = streams["week3_timer3_open_hour"]
     end
-    if (streams["week3_timer3_open_min"] ~= nil) then
-        keyP["week3_timer3_open_min"] = streams["week3_timer3_open_min"]
-    end
-    if (streams["week3_timer3_close_hour"] ~= nil) then
+    if streams["week3_timer3_open_min"] ~= nil then keyP["week3_timer3_open_min"] = streams["week3_timer3_open_min"] end
+    if streams["week3_timer3_close_hour"] ~= nil then
         keyP["week3_timer3_close_hour"] = streams["week3_timer3_close_hour"]
     end
-    if (streams["week3_timer3_close_min"] ~= nil) then
+    if streams["week3_timer3_close_min"] ~= nil then
         keyP["week3_timer3_close_min"] = streams["week3_timer3_close_min"]
     end
-    if (streams["week3_timer3_temperature"] ~= nil) then
+    if streams["week3_timer3_temperature"] ~= nil then
         keyP["week3_timer3_temperature"] = streams["week3_timer3_temperature"]
     end
-    if (streams["week3_timer4_open_hour"] ~= nil) then
+    if streams["week3_timer4_open_hour"] ~= nil then
         keyP["week3_timer4_open_hour"] = streams["week3_timer4_open_hour"]
     end
-    if (streams["week3_timer4_open_min"] ~= nil) then
-        keyP["week3_timer4_open_min"] = streams["week3_timer4_open_min"]
-    end
-    if (streams["week3_timer4_close_hour"] ~= nil) then
+    if streams["week3_timer4_open_min"] ~= nil then keyP["week3_timer4_open_min"] = streams["week3_timer4_open_min"] end
+    if streams["week3_timer4_close_hour"] ~= nil then
         keyP["week3_timer4_close_hour"] = streams["week3_timer4_close_hour"]
     end
-    if (streams["week3_timer4_close_min"] ~= nil) then
+    if streams["week3_timer4_close_min"] ~= nil then
         keyP["week3_timer4_close_min"] = streams["week3_timer4_close_min"]
     end
-    if (streams["week3_timer4_temperature"] ~= nil) then
+    if streams["week3_timer4_temperature"] ~= nil then
         keyP["week3_timer4_temperature"] = streams["week3_timer4_temperature"]
     end
-    if (streams["week3_timer5_open_hour"] ~= nil) then
+    if streams["week3_timer5_open_hour"] ~= nil then
         keyP["week3_timer5_open_hour"] = streams["week3_timer5_open_hour"]
     end
-    if (streams["week3_timer5_open_min"] ~= nil) then
-        keyP["week3_timer5_open_min"] = streams["week3_timer5_open_min"]
-    end
-    if (streams["week3_timer5_close_hour"] ~= nil) then
+    if streams["week3_timer5_open_min"] ~= nil then keyP["week3_timer5_open_min"] = streams["week3_timer5_open_min"] end
+    if streams["week3_timer5_close_hour"] ~= nil then
         keyP["week3_timer5_close_hour"] = streams["week3_timer5_close_hour"]
     end
-    if (streams["week3_timer5_close_min"] ~= nil) then
+    if streams["week3_timer5_close_min"] ~= nil then
         keyP["week3_timer5_close_min"] = streams["week3_timer5_close_min"]
     end
-    if (streams["week3_timer5_temperature"] ~= nil) then
+    if streams["week3_timer5_temperature"] ~= nil then
         keyP["week3_timer5_temperature"] = streams["week3_timer5_temperature"]
     end
-    if (streams["week4_timer1_open_hour"] ~= nil) then
+    if streams["week4_timer1_open_hour"] ~= nil then
         keyP["week4_timer1_open_hour"] = streams["week4_timer1_open_hour"]
     end
-    if (streams["week4_timer1_open_min"] ~= nil) then
-        keyP["week4_timer1_open_min"] = streams["week4_timer1_open_min"]
-    end
-    if (streams["week4_timer1_close_hour"] ~= nil) then
+    if streams["week4_timer1_open_min"] ~= nil then keyP["week4_timer1_open_min"] = streams["week4_timer1_open_min"] end
+    if streams["week4_timer1_close_hour"] ~= nil then
         keyP["week4_timer1_close_hour"] = streams["week4_timer1_close_hour"]
     end
-    if (streams["week4_timer1_close_min"] ~= nil) then
+    if streams["week4_timer1_close_min"] ~= nil then
         keyP["week4_timer1_close_min"] = streams["week4_timer1_close_min"]
     end
-    if (streams["week4_timer1_temperature"] ~= nil) then
+    if streams["week4_timer1_temperature"] ~= nil then
         keyP["week4_timer1_temperature"] = streams["week4_timer1_temperature"]
     end
-    if (streams["week4_timer2_open_hour"] ~= nil) then
+    if streams["week4_timer2_open_hour"] ~= nil then
         keyP["week4_timer2_open_hour"] = streams["week4_timer2_open_hour"]
     end
-    if (streams["week4_timer2_open_min"] ~= nil) then
-        keyP["week4_timer2_open_min"] = streams["week4_timer2_open_min"]
-    end
-    if (streams["week4_timer2_close_hour"] ~= nil) then
+    if streams["week4_timer2_open_min"] ~= nil then keyP["week4_timer2_open_min"] = streams["week4_timer2_open_min"] end
+    if streams["week4_timer2_close_hour"] ~= nil then
         keyP["week4_timer2_close_hour"] = streams["week4_timer2_close_hour"]
     end
-    if (streams["week4_timer2_close_min"] ~= nil) then
+    if streams["week4_timer2_close_min"] ~= nil then
         keyP["week4_timer2_close_min"] = streams["week4_timer2_close_min"]
     end
-    if (streams["week4_timer2_temperature"] ~= nil) then
+    if streams["week4_timer2_temperature"] ~= nil then
         keyP["week4_timer2_temperature"] = streams["week4_timer2_temperature"]
     end
-    if (streams["week4_timer3_open_hour"] ~= nil) then
+    if streams["week4_timer3_open_hour"] ~= nil then
         keyP["week4_timer3_open_hour"] = streams["week4_timer3_open_hour"]
     end
-    if (streams["week4_timer3_open_min"] ~= nil) then
-        keyP["week4_timer3_open_min"] = streams["week4_timer3_open_min"]
-    end
-    if (streams["week4_timer3_close_hour"] ~= nil) then
+    if streams["week4_timer3_open_min"] ~= nil then keyP["week4_timer3_open_min"] = streams["week4_timer3_open_min"] end
+    if streams["week4_timer3_close_hour"] ~= nil then
         keyP["week4_timer3_close_hour"] = streams["week4_timer3_close_hour"]
     end
-    if (streams["week4_timer3_close_min"] ~= nil) then
+    if streams["week4_timer3_close_min"] ~= nil then
         keyP["week4_timer3_close_min"] = streams["week4_timer3_close_min"]
     end
-    if (streams["week4_timer3_temperature"] ~= nil) then
+    if streams["week4_timer3_temperature"] ~= nil then
         keyP["week4_timer3_temperature"] = streams["week4_timer3_temperature"]
     end
-    if (streams["week4_timer4_open_hour"] ~= nil) then
+    if streams["week4_timer4_open_hour"] ~= nil then
         keyP["week4_timer4_open_hour"] = streams["week4_timer4_open_hour"]
     end
-    if (streams["week4_timer4_open_min"] ~= nil) then
-        keyP["week4_timer4_open_min"] = streams["week4_timer4_open_min"]
-    end
-    if (streams["week4_timer4_close_hour"] ~= nil) then
+    if streams["week4_timer4_open_min"] ~= nil then keyP["week4_timer4_open_min"] = streams["week4_timer4_open_min"] end
+    if streams["week4_timer4_close_hour"] ~= nil then
         keyP["week4_timer4_close_hour"] = streams["week4_timer4_close_hour"]
     end
-    if (streams["week4_timer4_close_min"] ~= nil) then
+    if streams["week4_timer4_close_min"] ~= nil then
         keyP["week4_timer4_close_min"] = streams["week4_timer4_close_min"]
     end
-    if (streams["week4_timer4_temperature"] ~= nil) then
+    if streams["week4_timer4_temperature"] ~= nil then
         keyP["week4_timer4_temperature"] = streams["week4_timer4_temperature"]
     end
-    if (streams["week4_timer5_open_hour"] ~= nil) then
+    if streams["week4_timer5_open_hour"] ~= nil then
         keyP["week4_timer5_open_hour"] = streams["week4_timer5_open_hour"]
     end
-    if (streams["week4_timer5_open_min"] ~= nil) then
-        keyP["week4_timer5_open_min"] = streams["week4_timer5_open_min"]
-    end
-    if (streams["week4_timer5_close_hour"] ~= nil) then
+    if streams["week4_timer5_open_min"] ~= nil then keyP["week4_timer5_open_min"] = streams["week4_timer5_open_min"] end
+    if streams["week4_timer5_close_hour"] ~= nil then
         keyP["week4_timer5_close_hour"] = streams["week4_timer5_close_hour"]
     end
-    if (streams["week4_timer5_close_min"] ~= nil) then
+    if streams["week4_timer5_close_min"] ~= nil then
         keyP["week4_timer5_close_min"] = streams["week4_timer5_close_min"]
     end
-    if (streams["week4_timer5_temperature"] ~= nil) then
+    if streams["week4_timer5_temperature"] ~= nil then
         keyP["week4_timer5_temperature"] = streams["week4_timer5_temperature"]
     end
-    if (streams["week5_timer1_open_hour"] ~= nil) then
+    if streams["week5_timer1_open_hour"] ~= nil then
         keyP["week5_timer1_open_hour"] = streams["week5_timer1_open_hour"]
     end
-    if (streams["week5_timer1_open_min"] ~= nil) then
-        keyP["week5_timer1_open_min"] = streams["week5_timer1_open_min"]
-    end
-    if (streams["week5_timer1_close_hour"] ~= nil) then
+    if streams["week5_timer1_open_min"] ~= nil then keyP["week5_timer1_open_min"] = streams["week5_timer1_open_min"] end
+    if streams["week5_timer1_close_hour"] ~= nil then
         keyP["week5_timer1_close_hour"] = streams["week5_timer1_close_hour"]
     end
-    if (streams["week5_timer1_close_min"] ~= nil) then
+    if streams["week5_timer1_close_min"] ~= nil then
         keyP["week5_timer1_close_min"] = streams["week5_timer1_close_min"]
     end
-    if (streams["week5_timer1_temperature"] ~= nil) then
+    if streams["week5_timer1_temperature"] ~= nil then
         keyP["week5_timer1_temperature"] = streams["week5_timer1_temperature"]
     end
-    if (streams["week5_timer2_open_hour"] ~= nil) then
+    if streams["week5_timer2_open_hour"] ~= nil then
         keyP["week5_timer2_open_hour"] = streams["week5_timer2_open_hour"]
     end
-    if (streams["week5_timer2_open_min"] ~= nil) then
-        keyP["week5_timer2_open_min"] = streams["week5_timer2_open_min"]
-    end
-    if (streams["week5_timer2_close_hour"] ~= nil) then
+    if streams["week5_timer2_open_min"] ~= nil then keyP["week5_timer2_open_min"] = streams["week5_timer2_open_min"] end
+    if streams["week5_timer2_close_hour"] ~= nil then
         keyP["week5_timer2_close_hour"] = streams["week5_timer2_close_hour"]
     end
-    if (streams["week5_timer2_close_min"] ~= nil) then
+    if streams["week5_timer2_close_min"] ~= nil then
         keyP["week5_timer2_close_min"] = streams["week5_timer2_close_min"]
     end
-    if (streams["week5_timer2_temperature"] ~= nil) then
+    if streams["week5_timer2_temperature"] ~= nil then
         keyP["week5_timer2_temperature"] = streams["week5_timer2_temperature"]
     end
-    if (streams["week5_timer3_open_hour"] ~= nil) then
+    if streams["week5_timer3_open_hour"] ~= nil then
         keyP["week5_timer3_open_hour"] = streams["week5_timer3_open_hour"]
     end
-    if (streams["week5_timer3_open_min"] ~= nil) then
-        keyP["week5_timer3_open_min"] = streams["week5_timer3_open_min"]
-    end
-    if (streams["week5_timer3_close_hour"] ~= nil) then
+    if streams["week5_timer3_open_min"] ~= nil then keyP["week5_timer3_open_min"] = streams["week5_timer3_open_min"] end
+    if streams["week5_timer3_close_hour"] ~= nil then
         keyP["week5_timer3_close_hour"] = streams["week5_timer3_close_hour"]
     end
-    if (streams["week5_timer3_close_min"] ~= nil) then
+    if streams["week5_timer3_close_min"] ~= nil then
         keyP["week5_timer3_close_min"] = streams["week5_timer3_close_min"]
     end
-    if (streams["week5_timer3_temperature"] ~= nil) then
+    if streams["week5_timer3_temperature"] ~= nil then
         keyP["week5_timer3_temperature"] = streams["week5_timer3_temperature"]
     end
-    if (streams["week5_timer4_open_hour"] ~= nil) then
+    if streams["week5_timer4_open_hour"] ~= nil then
         keyP["week5_timer4_open_hour"] = streams["week5_timer4_open_hour"]
     end
-    if (streams["week5_timer4_open_min"] ~= nil) then
-        keyP["week5_timer4_open_min"] = streams["week5_timer4_open_min"]
-    end
-    if (streams["week5_timer4_close_hour"] ~= nil) then
+    if streams["week5_timer4_open_min"] ~= nil then keyP["week5_timer4_open_min"] = streams["week5_timer4_open_min"] end
+    if streams["week5_timer4_close_hour"] ~= nil then
         keyP["week5_timer4_close_hour"] = streams["week5_timer4_close_hour"]
     end
-    if (streams["week5_timer4_close_min"] ~= nil) then
+    if streams["week5_timer4_close_min"] ~= nil then
         keyP["week5_timer4_close_min"] = streams["week5_timer4_close_min"]
     end
-    if (streams["week5_timer4_temperature"] ~= nil) then
+    if streams["week5_timer4_temperature"] ~= nil then
         keyP["week5_timer4_temperature"] = streams["week5_timer4_temperature"]
     end
-    if (streams["week5_timer5_open_hour"] ~= nil) then
+    if streams["week5_timer5_open_hour"] ~= nil then
         keyP["week5_timer5_open_hour"] = streams["week5_timer5_open_hour"]
     end
-    if (streams["week5_timer5_open_min"] ~= nil) then
-        keyP["week5_timer5_open_min"] = streams["week5_timer5_open_min"]
-    end
-    if (streams["week5_timer5_close_hour"] ~= nil) then
+    if streams["week5_timer5_open_min"] ~= nil then keyP["week5_timer5_open_min"] = streams["week5_timer5_open_min"] end
+    if streams["week5_timer5_close_hour"] ~= nil then
         keyP["week5_timer5_close_hour"] = streams["week5_timer5_close_hour"]
     end
-    if (streams["week5_timer5_close_min"] ~= nil) then
+    if streams["week5_timer5_close_min"] ~= nil then
         keyP["week5_timer5_close_min"] = streams["week5_timer5_close_min"]
     end
-    if (streams["week5_timer5_temperature"] ~= nil) then
+    if streams["week5_timer5_temperature"] ~= nil then
         keyP["week5_timer5_temperature"] = streams["week5_timer5_temperature"]
     end
-    if (streams["week6_timer1_open_hour"] ~= nil) then
+    if streams["week6_timer1_open_hour"] ~= nil then
         keyP["week6_timer1_open_hour"] = streams["week6_timer1_open_hour"]
     end
-    if (streams["week6_timer1_open_min"] ~= nil) then
-        keyP["week6_timer1_open_min"] = streams["week6_timer1_open_min"]
-    end
-    if (streams["week6_timer1_close_hour"] ~= nil) then
+    if streams["week6_timer1_open_min"] ~= nil then keyP["week6_timer1_open_min"] = streams["week6_timer1_open_min"] end
+    if streams["week6_timer1_close_hour"] ~= nil then
         keyP["week6_timer1_close_hour"] = streams["week6_timer1_close_hour"]
     end
-    if (streams["week6_timer1_close_min"] ~= nil) then
+    if streams["week6_timer1_close_min"] ~= nil then
         keyP["week6_timer1_close_min"] = streams["week6_timer1_close_min"]
     end
-    if (streams["week6_timer1_temperature"] ~= nil) then
+    if streams["week6_timer1_temperature"] ~= nil then
         keyP["week6_timer1_temperature"] = streams["week6_timer1_temperature"]
     end
-    if (streams["week6_timer2_open_hour"] ~= nil) then
+    if streams["week6_timer2_open_hour"] ~= nil then
         keyP["week6_timer2_open_hour"] = streams["week6_timer2_open_hour"]
     end
-    if (streams["week6_timer2_open_min"] ~= nil) then
-        keyP["week6_timer2_open_min"] = streams["week6_timer2_open_min"]
-    end
-    if (streams["week6_timer2_close_hour"] ~= nil) then
+    if streams["week6_timer2_open_min"] ~= nil then keyP["week6_timer2_open_min"] = streams["week6_timer2_open_min"] end
+    if streams["week6_timer2_close_hour"] ~= nil then
         keyP["week6_timer2_close_hour"] = streams["week6_timer2_close_hour"]
     end
-    if (streams["week6_timer2_close_min"] ~= nil) then
+    if streams["week6_timer2_close_min"] ~= nil then
         keyP["week6_timer2_close_min"] = streams["week6_timer2_close_min"]
     end
-    if (streams["week6_timer2_temperature"] ~= nil) then
+    if streams["week6_timer2_temperature"] ~= nil then
         keyP["week6_timer2_temperature"] = streams["week6_timer2_temperature"]
     end
-    if (streams["week6_timer3_open_hour"] ~= nil) then
+    if streams["week6_timer3_open_hour"] ~= nil then
         keyP["week6_timer3_open_hour"] = streams["week6_timer3_open_hour"]
     end
-    if (streams["week6_timer3_open_min"] ~= nil) then
-        keyP["week6_timer3_open_min"] = streams["week6_timer3_open_min"]
-    end
-    if (streams["week6_timer3_close_hour"] ~= nil) then
+    if streams["week6_timer3_open_min"] ~= nil then keyP["week6_timer3_open_min"] = streams["week6_timer3_open_min"] end
+    if streams["week6_timer3_close_hour"] ~= nil then
         keyP["week6_timer3_close_hour"] = streams["week6_timer3_close_hour"]
     end
-    if (streams["week6_timer3_close_min"] ~= nil) then
+    if streams["week6_timer3_close_min"] ~= nil then
         keyP["week6_timer3_close_min"] = streams["week6_timer3_close_min"]
     end
-    if (streams["week6_timer3_temperature"] ~= nil) then
+    if streams["week6_timer3_temperature"] ~= nil then
         keyP["week6_timer3_temperature"] = streams["week6_timer3_temperature"]
     end
-    if (streams["week6_timer4_open_hour"] ~= nil) then
+    if streams["week6_timer4_open_hour"] ~= nil then
         keyP["week6_timer4_open_hour"] = streams["week6_timer4_open_hour"]
     end
-    if (streams["week6_timer4_open_min"] ~= nil) then
-        keyP["week6_timer4_open_min"] = streams["week6_timer4_open_min"]
-    end
-    if (streams["week6_timer4_close_hour"] ~= nil) then
+    if streams["week6_timer4_open_min"] ~= nil then keyP["week6_timer4_open_min"] = streams["week6_timer4_open_min"] end
+    if streams["week6_timer4_close_hour"] ~= nil then
         keyP["week6_timer4_close_hour"] = streams["week6_timer4_close_hour"]
     end
-    if (streams["week6_timer4_close_min"] ~= nil) then
+    if streams["week6_timer4_close_min"] ~= nil then
         keyP["week6_timer4_close_min"] = streams["week6_timer4_close_min"]
     end
-    if (streams["week6_timer4_temperature"] ~= nil) then
+    if streams["week6_timer4_temperature"] ~= nil then
         keyP["week6_timer4_temperature"] = streams["week6_timer4_temperature"]
     end
-    if (streams["week6_timer5_open_hour"] ~= nil) then
+    if streams["week6_timer5_open_hour"] ~= nil then
         keyP["week6_timer5_open_hour"] = streams["week6_timer5_open_hour"]
     end
-    if (streams["week6_timer5_open_min"] ~= nil) then
-        keyP["week6_timer5_open_min"] = streams["week6_timer5_open_min"]
-    end
-    if (streams["week6_timer5_close_hour"] ~= nil) then
+    if streams["week6_timer5_open_min"] ~= nil then keyP["week6_timer5_open_min"] = streams["week6_timer5_open_min"] end
+    if streams["week6_timer5_close_hour"] ~= nil then
         keyP["week6_timer5_close_hour"] = streams["week6_timer5_close_hour"]
     end
-    if (streams["week6_timer5_close_min"] ~= nil) then
+    if streams["week6_timer5_close_min"] ~= nil then
         keyP["week6_timer5_close_min"] = streams["week6_timer5_close_min"]
     end
-    if (streams["week6_timer5_temperature"] ~= nil) then
+    if streams["week6_timer5_temperature"] ~= nil then
         keyP["week6_timer5_temperature"] = streams["week6_timer5_temperature"]
     end
-    if (streams["week0_timer1_open_hour"] ~= nil) then
+    if streams["week0_timer1_open_hour"] ~= nil then
         keyP["week0_timer1_open_hour"] = streams["week0_timer1_open_hour"]
     end
-    if (streams["week0_timer1_open_min"] ~= nil) then
-        keyP["week0_timer1_open_min"] = streams["week0_timer1_open_min"]
-    end
-    if (streams["week0_timer1_close_hour"] ~= nil) then
+    if streams["week0_timer1_open_min"] ~= nil then keyP["week0_timer1_open_min"] = streams["week0_timer1_open_min"] end
+    if streams["week0_timer1_close_hour"] ~= nil then
         keyP["week0_timer1_close_hour"] = streams["week0_timer1_close_hour"]
     end
-    if (streams["week0_timer1_close_min"] ~= nil) then
+    if streams["week0_timer1_close_min"] ~= nil then
         keyP["week0_timer1_close_min"] = streams["week0_timer1_close_min"]
     end
-    if (streams["week0_timer1_temperature"] ~= nil) then
+    if streams["week0_timer1_temperature"] ~= nil then
         keyP["week0_timer1_temperature"] = streams["week0_timer1_temperature"]
     end
-    if (streams["week0_timer2_open_hour"] ~= nil) then
+    if streams["week0_timer2_open_hour"] ~= nil then
         keyP["week0_timer2_open_hour"] = streams["week0_timer2_open_hour"]
     end
-    if (streams["week0_timer2_open_min"] ~= nil) then
-        keyP["week0_timer2_open_min"] = streams["week0_timer2_open_min"]
-    end
-    if (streams["week0_timer2_close_hour"] ~= nil) then
+    if streams["week0_timer2_open_min"] ~= nil then keyP["week0_timer2_open_min"] = streams["week0_timer2_open_min"] end
+    if streams["week0_timer2_close_hour"] ~= nil then
         keyP["week0_timer2_close_hour"] = streams["week0_timer2_close_hour"]
     end
-    if (streams["week0_timer2_close_min"] ~= nil) then
+    if streams["week0_timer2_close_min"] ~= nil then
         keyP["week0_timer2_close_min"] = streams["week0_timer2_close_min"]
     end
-    if (streams["week0_timer2_temperature"] ~= nil) then
+    if streams["week0_timer2_temperature"] ~= nil then
         keyP["week0_timer2_temperature"] = streams["week0_timer2_temperature"]
     end
-    if (streams["week0_timer3_open_hour"] ~= nil) then
+    if streams["week0_timer3_open_hour"] ~= nil then
         keyP["week0_timer3_open_hour"] = streams["week0_timer3_open_hour"]
     end
-    if (streams["week0_timer3_open_min"] ~= nil) then
-        keyP["week0_timer3_open_min"] = streams["week0_timer3_open_min"]
-    end
-    if (streams["week0_timer3_close_hour"] ~= nil) then
+    if streams["week0_timer3_open_min"] ~= nil then keyP["week0_timer3_open_min"] = streams["week0_timer3_open_min"] end
+    if streams["week0_timer3_close_hour"] ~= nil then
         keyP["week0_timer3_close_hour"] = streams["week0_timer3_close_hour"]
     end
-    if (streams["week0_timer3_close_min"] ~= nil) then
+    if streams["week0_timer3_close_min"] ~= nil then
         keyP["week0_timer3_close_min"] = streams["week0_timer3_close_min"]
     end
-    if (streams["week0_timer3_temperature"] ~= nil) then
+    if streams["week0_timer3_temperature"] ~= nil then
         keyP["week0_timer3_temperature"] = streams["week0_timer3_temperature"]
     end
-    if (streams["week0_timer4_open_hour"] ~= nil) then
+    if streams["week0_timer4_open_hour"] ~= nil then
         keyP["week0_timer4_open_hour"] = streams["week0_timer4_open_hour"]
     end
-    if (streams["week0_timer4_open_min"] ~= nil) then
-        keyP["week0_timer4_open_min"] = streams["week0_timer4_open_min"]
-    end
-    if (streams["week0_timer4_close_hour"] ~= nil) then
+    if streams["week0_timer4_open_min"] ~= nil then keyP["week0_timer4_open_min"] = streams["week0_timer4_open_min"] end
+    if streams["week0_timer4_close_hour"] ~= nil then
         keyP["week0_timer4_close_hour"] = streams["week0_timer4_close_hour"]
     end
-    if (streams["week0_timer4_close_min"] ~= nil) then
+    if streams["week0_timer4_close_min"] ~= nil then
         keyP["week0_timer4_close_min"] = streams["week0_timer4_close_min"]
     end
-    if (streams["week0_timer4_temperature"] ~= nil) then
+    if streams["week0_timer4_temperature"] ~= nil then
         keyP["week0_timer4_temperature"] = streams["week0_timer4_temperature"]
     end
-    if (streams["week0_timer5_open_hour"] ~= nil) then
+    if streams["week0_timer5_open_hour"] ~= nil then
         keyP["week0_timer5_open_hour"] = streams["week0_timer5_open_hour"]
     end
-    if (streams["week0_timer5_open_min"] ~= nil) then
-        keyP["week0_timer5_open_min"] = streams["week0_timer5_open_min"]
-    end
-    if (streams["week0_timer5_close_hour"] ~= nil) then
+    if streams["week0_timer5_open_min"] ~= nil then keyP["week0_timer5_open_min"] = streams["week0_timer5_open_min"] end
+    if streams["week0_timer5_close_hour"] ~= nil then
         keyP["week0_timer5_close_hour"] = streams["week0_timer5_close_hour"]
     end
-    if (streams["week0_timer5_close_min"] ~= nil) then
+    if streams["week0_timer5_close_min"] ~= nil then
         keyP["week0_timer5_close_min"] = streams["week0_timer5_close_min"]
     end
-    if (streams["week0_timer5_temperature"] ~= nil) then
+    if streams["week0_timer5_temperature"] ~= nil then
         keyP["week0_timer5_temperature"] = streams["week0_timer5_temperature"]
     end
-    if (streams["week0_duplicate_timer_on_1"] ~= nil) then
-        keyP["week0_duplicate_timer_on_1"] =
-            streams["week0_duplicate_timer_on_1"]
+    if streams["week0_duplicate_timer_on_1"] ~= nil then
+        keyP["week0_duplicate_timer_on_1"] = streams["week0_duplicate_timer_on_1"]
     end
-    if (streams["week0_duplicate_timer_off_2"] ~= nil) then
-        keyP["week0_duplicate_timer_off_2"] =
-            streams["week0_duplicate_timer_off_2"]
+    if streams["week0_duplicate_timer_off_2"] ~= nil then
+        keyP["week0_duplicate_timer_off_2"] = streams["week0_duplicate_timer_off_2"]
     end
-    if (streams["week1_duplicate_timer_on_1"] ~= nil) then
-        keyP["week1_duplicate_timer_on_1"] =
-            streams["week1_duplicate_timer_on_1"]
+    if streams["week1_duplicate_timer_on_1"] ~= nil then
+        keyP["week1_duplicate_timer_on_1"] = streams["week1_duplicate_timer_on_1"]
     end
-    if (streams["week1_duplicate_timer_off_2"] ~= nil) then
-        keyP["week1_duplicate_timer_off_2"] =
-            streams["week1_duplicate_timer_off_2"]
+    if streams["week1_duplicate_timer_off_2"] ~= nil then
+        keyP["week1_duplicate_timer_off_2"] = streams["week1_duplicate_timer_off_2"]
     end
-    if (streams["week2_duplicate_timer_on_1"] ~= nil) then
-        keyP["week2_duplicate_timer_on_1"] =
-            streams["week2_duplicate_timer_on_1"]
+    if streams["week2_duplicate_timer_on_1"] ~= nil then
+        keyP["week2_duplicate_timer_on_1"] = streams["week2_duplicate_timer_on_1"]
     end
-    if (streams["week2_duplicate_timer_off_2"] ~= nil) then
-        keyP["week2_duplicate_timer_off_2"] =
-            streams["week2_duplicate_timer_off_2"]
+    if streams["week2_duplicate_timer_off_2"] ~= nil then
+        keyP["week2_duplicate_timer_off_2"] = streams["week2_duplicate_timer_off_2"]
     end
-    if (streams["week3_duplicate_timer_on_1"] ~= nil) then
-        keyP["week3_duplicate_timer_on_1"] =
-            streams["week3_duplicate_timer_on_1"]
+    if streams["week3_duplicate_timer_on_1"] ~= nil then
+        keyP["week3_duplicate_timer_on_1"] = streams["week3_duplicate_timer_on_1"]
     end
-    if (streams["week3_duplicate_timer_off_2"] ~= nil) then
-        keyP["week3_duplicate_timer_off_2"] =
-            streams["week3_duplicate_timer_off_2"]
+    if streams["week3_duplicate_timer_off_2"] ~= nil then
+        keyP["week3_duplicate_timer_off_2"] = streams["week3_duplicate_timer_off_2"]
     end
-    if (streams["week4_duplicate_timer_on_1"] ~= nil) then
-        keyP["week4_duplicate_timer_on_1"] =
-            streams["week4_duplicate_timer_on_1"]
+    if streams["week4_duplicate_timer_on_1"] ~= nil then
+        keyP["week4_duplicate_timer_on_1"] = streams["week4_duplicate_timer_on_1"]
     end
-    if (streams["week4_duplicate_timer_off_2"] ~= nil) then
-        keyP["week4_duplicate_timer_off_2"] =
-            streams["week4_duplicate_timer_off_2"]
+    if streams["week4_duplicate_timer_off_2"] ~= nil then
+        keyP["week4_duplicate_timer_off_2"] = streams["week4_duplicate_timer_off_2"]
     end
-    if (streams["week5_duplicate_timer_on_1"] ~= nil) then
-        keyP["week5_duplicate_timer_on_1"] =
-            streams["week5_duplicate_timer_on_1"]
+    if streams["week5_duplicate_timer_on_1"] ~= nil then
+        keyP["week5_duplicate_timer_on_1"] = streams["week5_duplicate_timer_on_1"]
     end
-    if (streams["week5_duplicate_timer_off_2"] ~= nil) then
-        keyP["week5_duplicate_timer_off_2"] =
-            streams["week5_duplicate_timer_off_2"]
+    if streams["week5_duplicate_timer_off_2"] ~= nil then
+        keyP["week5_duplicate_timer_off_2"] = streams["week5_duplicate_timer_off_2"]
     end
-    if (streams["week6_duplicate_timer_on_1"] ~= nil) then
-        keyP["week6_duplicate_timer_on_1"] =
-            streams["week6_duplicate_timer_on_1"]
+    if streams["week6_duplicate_timer_on_1"] ~= nil then
+        keyP["week6_duplicate_timer_on_1"] = streams["week6_duplicate_timer_on_1"]
     end
-    if (streams["week6_duplicate_timer_off_2"] ~= nil) then
-        keyP["week6_duplicate_timer_off_2"] =
-            streams["week6_duplicate_timer_off_2"]
+    if streams["week6_duplicate_timer_off_2"] ~= nil then
+        keyP["week6_duplicate_timer_off_2"] = streams["week6_duplicate_timer_off_2"]
     end
-    if (streams["timer_control"] ~= nil) then keyP["timer_control"] = 1 end
-    if (streams["eco"] ~= nil) then keyP["eco"] = streams["eco"] end
-    if (streams["prevent_super_cool"] ~= nil) then
-        keyP["prevent_super_cool"] = streams["prevent_super_cool"]
+    if streams["timer_control"] ~= nil then keyP["timer_control"] = 1 end
+    if streams["eco"] ~= nil then keyP["eco"] = streams["eco"] end
+    if streams["prevent_super_cool"] ~= nil then keyP["prevent_super_cool"] = streams["prevent_super_cool"] end
+    if streams["fresh_air_remove_odor"] ~= nil then keyP["fresh_air_remove_odor"] = streams["fresh_air_remove_odor"] end
+    if streams["dry_type"] ~= nil then keyP["dry_type"] = streams["dry_type"] end
+    if streams["inner_cycle_switch"] ~= nil then keyP["inner_cycle_switch"] = streams["inner_cycle_switch"] end
+    if streams["inner_cycle_mode"] ~= nil then keyP["inner_cycle_mode"] = streams["inner_cycle_mode"] end
+    if streams["total_time_switch"] ~= nil then keyP["total_time_switch"] = streams["total_time_switch"] end
+    if streams["airoptimization_or_total_time"] ~= nil then
+        keyP["airoptimization_or_total_time"] = streams["airoptimization_or_total_time"]
     end
-    if (streams["fresh_air_remove_odor"] ~= nil) then
-        keyP["fresh_air_remove_odor"] = streams["fresh_air_remove_odor"]
-    end
-    if (streams["dry_type"] ~= nil) then
-        keyP["dry_type"] = streams["dry_type"]
-    end
-    if (streams["inner_cycle_switch"] ~= nil) then
-        keyP["inner_cycle_switch"] = streams["inner_cycle_switch"]
-    end
-    if (streams["inner_cycle_mode"] ~= nil) then
-        keyP["inner_cycle_mode"] = streams["inner_cycle_mode"]
-    end
-    if (streams["total_time_switch"] ~= nil) then
-        keyP["total_time_switch"] = streams["total_time_switch"]
-    end
-    if (streams["airoptimization_or_total_time"] ~= nil) then
-        keyP["airoptimization_or_total_time"] =
-            streams["airoptimization_or_total_time"]
-    end
-    if (streams["total_time_support"] ~= nil) then
-        keyP["total_time_support"] = streams["total_time_support"]
-    end
-    if (streams["remove_arofene"] ~= nil) then
-        keyP["remove_arofene"] = streams["remove_arofene"]
-    end
-    if (streams["voice_control"] ~= nil) then
-        keyP["voice_control"] = streams["voice_control"]
-    end
-    if (streams["voice_control_speaking"] ~= nil) then
+    if streams["total_time_support"] ~= nil then keyP["total_time_support"] = streams["total_time_support"] end
+    if streams["remove_arofene"] ~= nil then keyP["remove_arofene"] = streams["remove_arofene"] end
+    if streams["voice_control"] ~= nil then keyP["voice_control"] = streams["voice_control"] end
+    if streams["voice_control_speaking"] ~= nil then
         keyP["voice_control_speaking"] = streams["voice_control_speaking"]
     end
-    if (streams["fengguan_remove_odor"] ~= nil) then
-        keyP["fengguan_remove_odor"] = streams["fengguan_remove_odor"]
-    end
-    if (streams["timer_announcement"] ~= nil) then
-        keyP["timer_announcement"] = streams["timer_announcement"]
-    end
-    if (streams["new_home_remove_arofene"] ~= nil) then
+    if streams["fengguan_remove_odor"] ~= nil then keyP["fengguan_remove_odor"] = streams["fengguan_remove_odor"] end
+    if streams["timer_announcement"] ~= nil then keyP["timer_announcement"] = streams["timer_announcement"] end
+    if streams["new_home_remove_arofene"] ~= nil then
         keyP["new_home_remove_arofene"] = streams["new_home_remove_arofene"]
     end
-    if (streams["new_home_remove_arofene_exit"] ~= nil) then
-        keyP["new_home_remove_arofene_exit"] =
-            streams["new_home_remove_arofene_exit"]
+    if streams["new_home_remove_arofene_exit"] ~= nil then
+        keyP["new_home_remove_arofene_exit"] = streams["new_home_remove_arofene_exit"]
     end
-    if (streams["shortest_remove_odor_time"] ~= nil) then
+    if streams["shortest_remove_odor_time"] ~= nil then
         keyP["shortest_remove_odor_time"] = streams["shortest_remove_odor_time"]
     end
-    if (streams["longest_remove_odor_time"] ~= nil) then
+    if streams["longest_remove_odor_time"] ~= nil then
         keyP["longest_remove_odor_time"] = streams["longest_remove_odor_time"]
     end
 end
 local function binToModel(binData)
     local messageBytes = binData
-    if (dataType == 0x20 or dataType == 0x11) then
-        if (#binData < 15) then return nil end
+    if dataType == 0x20 or dataType == 0x11 then
+        if #binData < 15 then return nil end
         keyP["powerValue"] = bit.band(messageBytes[0], 0x01)
         keyP["standby_clean"] = bit.rshift(bit.band(messageBytes[0], 0x02), 1)
         keyP["no_wind_sense"] = bit.rshift(bit.band(messageBytes[0], 0x08), 3)
@@ -1946,16 +1968,13 @@ local function binToModel(binData)
         keyP["manulNewWind"] = bit.rshift(bit.band(messageBytes[0], 0x40), 6)
         keyP["autoNewWind"] = bit.rshift(bit.band(messageBytes[0], 0x80), 7)
         keyP["swingLeftUDValue"] = bit.band(messageBytes[1], 0x01)
-        keyP["swingRightUDValue"] = bit.rshift(bit.band(messageBytes[1], 0x02),
-                                               1)
+        keyP["swingRightUDValue"] = bit.rshift(bit.band(messageBytes[1], 0x02), 1)
         keyP["swingUpLRValue"] = bit.rshift(bit.band(messageBytes[1], 0x04), 2)
-        keyP["swingDownLRValue"] =
-            bit.rshift(bit.band(messageBytes[1], 0x08), 3)
+        keyP["swingDownLRValue"] = bit.rshift(bit.band(messageBytes[1], 0x08), 3)
         keyP["forceCoolMode"] = bit.rshift(bit.band(messageBytes[1], 0x10), 4)
         keyP["forceAutoMode"] = bit.rshift(bit.band(messageBytes[1], 0x20), 5)
         keyP["PTCValue"] = bit.rshift(bit.band(messageBytes[1], 0x40), 6)
-        keyP["PTCDependT4Value"] =
-            bit.rshift(bit.band(messageBytes[1], 0x80), 7)
+        keyP["PTCDependT4Value"] = bit.rshift(bit.band(messageBytes[1], 0x80), 7)
         keyP["cool_hot_sense"] = bit.band(messageBytes[2], 0x01)
         keyP["preventCold"] = bit.rshift(bit.band(messageBytes[2], 0x02), 1)
         keyP["wind_straight"] = bit.rshift(bit.band(messageBytes[2], 0x04), 2)
@@ -1965,31 +1984,22 @@ local function binToModel(binData)
         keyP["self_clean"] = bit.rshift(bit.band(messageBytes[2], 0x40), 6)
         keyP["energySaveValue"] = bit.rshift(bit.band(messageBytes[2], 0x80), 7)
         keyP["air_optimization"] = bit.band(messageBytes[3], 0x01)
-        keyP["nobody_energy_save"] = bit.rshift(bit.band(messageBytes[3], 0x02),
-                                                1)
+        keyP["nobody_energy_save"] = bit.rshift(bit.band(messageBytes[3], 0x02), 1)
         keyP["autoPurify"] = bit.rshift(bit.band(messageBytes[3], 0x04), 2)
         keyP["manuPurify"] = bit.rshift(bit.band(messageBytes[3], 0x08), 3)
-        keyP["no_wind_sense_mode"] = bit.rshift(bit.band(messageBytes[3], 0x30),
-                                                4)
+        keyP["no_wind_sense_mode"] = bit.rshift(bit.band(messageBytes[3], 0x30), 4)
         keyP["run_test"] = bit.rshift(bit.band(messageBytes[3], 0x40), 6)
         keyP["fast_check"] = bit.rshift(bit.band(messageBytes[3], 0x80), 7)
         keyP["autoHumi"] = bit.band(messageBytes[4], 0x01)
         keyP["manuHumi"] = bit.rshift(bit.band(messageBytes[4], 0x02), 1)
         keyP["wind_strength"] = bit.rshift(bit.band(messageBytes[4], 0x04), 2)
-        keyP["new_wind_machine"] =
-            bit.rshift(bit.band(messageBytes[4], 0x08), 3)
-        keyP["new_wind_machine_link"] = bit.rshift(
-                                            bit.band(messageBytes[4], 0x10), 4)
-        keyP["project_evacuate"] =
-            bit.rshift(bit.band(messageBytes[4], 0x20), 5)
-        keyP["follow_body_sense"] = bit.rshift(bit.band(messageBytes[4], 0x40),
-                                               6)
-        keyP["exhaust_strength"] =
-            bit.rshift(bit.band(messageBytes[4], 0x80), 7)
+        keyP["new_wind_machine"] = bit.rshift(bit.band(messageBytes[4], 0x08), 3)
+        keyP["new_wind_machine_link"] = bit.rshift(bit.band(messageBytes[4], 0x10), 4)
+        keyP["project_evacuate"] = bit.rshift(bit.band(messageBytes[4], 0x20), 5)
+        keyP["follow_body_sense"] = bit.rshift(bit.band(messageBytes[4], 0x40), 6)
+        keyP["exhaust_strength"] = bit.rshift(bit.band(messageBytes[4], 0x80), 7)
         keyP["modeValue"] = messageBytes[5]
-        keyP["temperature"], keyP["small_temperature"] = math.modf(
-                                                             (messageBytes[6] -
-                                                                 30) / 2)
+        keyP["temperature"], keyP["small_temperature"] = math.modf((messageBytes[6] - 30) / 2)
         keyP["fanspeedValue"] = messageBytes[7]
         keyP["deHumidityValue"] = messageBytes[8]
         keyP["pm25LowValue"] = messageBytes[9]
@@ -2000,127 +2010,84 @@ local function binToModel(binData)
         keyP["newWindModeValue"] = messageBytes[15]
         keyP["newWindSpeedValue"] = messageBytes[16]
         keyP["water_model_power"] = bit.band(messageBytes[17], 0x01)
-        keyP["water_model_power_save"] = bit.rshift(
-                                             bit.band(messageBytes[17], 0x02), 1)
-        keyP["water_model_clean"] = bit.rshift(bit.band(messageBytes[17], 0x04),
-                                               2)
-        keyP["water_model_temperature_auto"] =
-            bit.rshift(bit.band(messageBytes[17], 0x08), 3)
-        keyP["water_model_ptc"] =
-            bit.rshift(bit.band(messageBytes[17], 0x10), 4)
-        keyP["water_model_go_out"] = bit.rshift(
-                                         bit.band(messageBytes[17], 0x80), 7)
+        keyP["water_model_power_save"] = bit.rshift(bit.band(messageBytes[17], 0x02), 1)
+        keyP["water_model_clean"] = bit.rshift(bit.band(messageBytes[17], 0x04), 2)
+        keyP["water_model_temperature_auto"] = bit.rshift(bit.band(messageBytes[17], 0x08), 3)
+        keyP["water_model_ptc"] = bit.rshift(bit.band(messageBytes[17], 0x10), 4)
+        keyP["water_model_go_out"] = bit.rshift(bit.band(messageBytes[17], 0x80), 7)
         keyP["water_mode"] = messageBytes[18]
         keyP["water_model_temperature_set"] = (messageBytes[19] - 50) / 2
         keyP["has_huifeng"] = bit.band(messageBytes[20], 0x01)
         keyP["has_chufeng"] = bit.rshift(bit.band(messageBytes[20], 0x02), 1)
         keyP["has_wind_lr"] = bit.rshift(bit.band(messageBytes[20], 0x04), 2)
-        keyP["has_no_wind_sense"] = bit.rshift(bit.band(messageBytes[20], 0x08),
-                                               3)
+        keyP["has_no_wind_sense"] = bit.rshift(bit.band(messageBytes[20], 0x08), 3)
         keyP["has_xinfeng"] = bit.rshift(bit.band(messageBytes[20], 0x10), 4)
         keyP["has_humidifer"] = bit.rshift(bit.band(messageBytes[20], 0x20), 5)
-        keyP["has_water_model"] =
-            bit.rshift(bit.band(messageBytes[20], 0x40), 6)
+        keyP["has_water_model"] = bit.rshift(bit.band(messageBytes[20], 0x40), 6)
         keyP["air_optimization_temperature"] = (messageBytes[21] - 30) / 2
         keyP["air_optimization_humidity"] = messageBytes[22]
         keyP["air_optimization_wind"] = messageBytes[23]
-        if (#binData > 26) then
+        if #binData > 26 then
             keyP["comfortableSleepValue"] = bit.band(messageBytes[25], 0x30)
             keyP["power_on_timer"] = bit.band(messageBytes[25], 0x01)
-            keyP["power_off_timer"] = bit.rshift(
-                                          bit.band(messageBytes[25], 0x02), 1)
-            keyP["timer_enable"] = bit.rshift(bit.band(messageBytes[25], 0x04),
-                                              2)
+            keyP["power_off_timer"] = bit.rshift(bit.band(messageBytes[25], 0x02), 1)
+            keyP["timer_enable"] = bit.rshift(bit.band(messageBytes[25], 0x04), 2)
             keyP["stop_warm"] = bit.rshift(bit.band(messageBytes[25], 0x08), 3)
             keyP["eco"] = bit.rshift(bit.band(messageBytes[25], 0x40), 6)
-            keyP["prevent_super_cool"] = bit.rshift(
-                                             bit.band(messageBytes[25], 0x80), 7)
-            keyP["power_on_time_value"] = bit.bor(
-                                              bit.lshift(bit.band(
-                                                             messageBytes[28],
-                                                             0x0F), 8),
-                                              messageBytes[26])
-            keyP["power_off_time_value"] = bit.bor(
-                                               bit.lshift(bit.band(
-                                                              messageBytes[28],
-                                                              0xF0), 4),
-                                               messageBytes[27])
+            keyP["prevent_super_cool"] = bit.rshift(bit.band(messageBytes[25], 0x80), 7)
+            keyP["power_on_time_value"] = bit.bor(bit.lshift(bit.band(messageBytes[28], 0x0F), 8), messageBytes[26])
+            keyP["power_off_time_value"] = bit.bor(bit.lshift(bit.band(messageBytes[28], 0xF0), 4), messageBytes[27])
             keyP["up_down_wind_direction"] = bit.band(messageBytes[29], 0x0F)
-            keyP["left_right_wind_direction"] =
-                bit.rshift(bit.band(messageBytes[29], 0xF0), 4)
+            keyP["left_right_wind_direction"] = bit.rshift(bit.band(messageBytes[29], 0xF0), 4)
         end
-        if (#binData > 35) then
-            keyP["fresh_air_remove_odor"] =
-                bit.rshift(bit.band(messageBytes[36], 0x80), 7)
-        end
-        if (#binData > 36) then
-            keyP["total_time_support"] = bit.rshift(
-                                             bit.band(messageBytes[37], 0x04), 2)
-            keyP["airoptimization_or_total_time"] =
-                bit.rshift(bit.band(messageBytes[37], 0x08), 3)
-            keyP["total_time_switch"] = bit.rshift(
-                                            bit.band(messageBytes[37], 0x10), 4)
+        if #binData > 35 then keyP["fresh_air_remove_odor"] = bit.rshift(bit.band(messageBytes[36], 0x80), 7) end
+        if #binData > 36 then
+            keyP["total_time_support"] = bit.rshift(bit.band(messageBytes[37], 0x04), 2)
+            keyP["airoptimization_or_total_time"] = bit.rshift(bit.band(messageBytes[37], 0x08), 3)
+            keyP["total_time_switch"] = bit.rshift(bit.band(messageBytes[37], 0x10), 4)
             keyP["dry_type"] = bit.band(messageBytes[37], 0x03)
-            keyP["inner_cycle_mode"] = bit.rshift(
-                                           bit.band(messageBytes[37], 0x04), 2)
-            keyP["inner_cycle_switch"] = bit.rshift(
-                                             bit.band(messageBytes[37], 0x08), 3)
-            keyP["remove_arofene"] = bit.rshift(
-                                         bit.band(messageBytes[37], 0x20), 5)
-            keyP["voice_control"] = bit.rshift(bit.band(messageBytes[37], 0x40),
-                                               6)
-            keyP["voice_control_speaking"] =
-                bit.rshift(bit.band(messageBytes[37], 0x80), 7)
+            keyP["inner_cycle_mode"] = bit.rshift(bit.band(messageBytes[37], 0x04), 2)
+            keyP["inner_cycle_switch"] = bit.rshift(bit.band(messageBytes[37], 0x08), 3)
+            keyP["remove_arofene"] = bit.rshift(bit.band(messageBytes[37], 0x20), 5)
+            keyP["voice_control"] = bit.rshift(bit.band(messageBytes[37], 0x40), 6)
+            keyP["voice_control_speaking"] = bit.rshift(bit.band(messageBytes[37], 0x80), 7)
         end
-        if (#binData > 38) then
+        if #binData > 38 then
             keyP["fengguan_remove_odor"] = bit.band(messageBytes[38], 0x01)
-            keyP["new_home_remove_arofene"] =
-                bit.rshift(bit.band(messageBytes[38], 0x08), 3)
-            keyP["new_home_remove_arofene_exit"] =
-                bit.rshift(bit.band(messageBytes[38], 0x10), 4)
+            keyP["new_home_remove_arofene"] = bit.rshift(bit.band(messageBytes[38], 0x08), 3)
+            keyP["new_home_remove_arofene_exit"] = bit.rshift(bit.band(messageBytes[38], 0x10), 4)
         end
-        if (#binData > 39) then
+        if #binData > 39 then
             keyP["shortest_remove_odor_time"] = messageBytes[39] / 10
             keyP["longest_remove_odor_time"] = messageBytes[40] / 10
         end
     end
-    if (dataType == 0x10) then
-        if (#binData < 15) then return nil end
+    if dataType == 0x10 then
+        if #binData < 15 then return nil end
         keyP["fanspeedRealValue"] = messageBytes[5]
-        if (bit.band(messageBytes[8], 0x80) == 0x80) then
-            keyP["indoorTemperature"] = (0 -
-                                            bit.band(
-                                                bit.bnot(
-                                                    messageBytes[8] * 256 +
-                                                        messageBytes[7]) + 1,
-                                                0xffff)) / 100
+        if bit.band(messageBytes[8], 0x80) == 0x80 then
+            keyP["indoorTemperature"] = (0 - bit.band(bit.bnot(messageBytes[8] * 256 + messageBytes[7]) + 1, 0xffff))
+                / 100
         else
-            keyP["indoorTemperature"] =
-                (messageBytes[7] + messageBytes[8] * 256) / 100
+            keyP["indoorTemperature"] = (messageBytes[7] + messageBytes[8] * 256) / 100
         end
-        keyP["in_out_transport"] = bit.rshift(bit.band(messageBytes[15], 0x08),
-                                              3)
+        keyP["in_out_transport"] = bit.rshift(bit.band(messageBytes[15], 0x08), 3)
         keyP["modeClashValue"] = bit.rshift(bit.band(messageBytes[17], 0x04), 2)
-        keyP["refrigerant_leakage_fault"] =
-            bit.rshift(bit.band(messageBytes[17], 0x08), 3)
+        keyP["refrigerant_leakage_fault"] = bit.rshift(bit.band(messageBytes[17], 0x08), 3)
         keyP["ptc_status"] = bit.band(messageBytes[19], 0x01)
-        keyP["water_full_fault"] = bit.rshift(bit.band(messageBytes[22], 0x20),
-                                              5)
+        keyP["water_full_fault"] = bit.rshift(bit.band(messageBytes[22], 0x20), 5)
         keyP["indoorPm25"] = (messageBytes[24] + messageBytes[25] * 256)
         keyP["indoorTvoc"] = (messageBytes[26] + messageBytes[27] * 256)
         keyP["indoorCo2"] = (messageBytes[28] + messageBytes[29] * 256)
         keyP["indoorHumidity"] = messageBytes[30]
         keyP["filterTime"] = messageBytes[32]
-        keyP["humidity_enabling"] = bit.rshift(bit.band(messageBytes[33], 0x08),
-                                               3)
+        keyP["humidity_enabling"] = bit.rshift(bit.band(messageBytes[33], 0x08), 3)
         keyP["purifyFilterTime"] = messageBytes[34]
         keyP["freshFilterTime"] = messageBytes[63]
         keyP["returnAirPanelSelect"] = bit.band(messageBytes[64], 0x01)
         keyP["airPanelSelect"] = bit.rshift(bit.band(messageBytes[64], 0x02), 1)
-        keyP["windLeftRightSelect"] = bit.rshift(
-                                          bit.band(messageBytes[64], 0x04), 2)
-        keyP["noWindSenseSelect"] = bit.rshift(bit.band(messageBytes[64], 0x08),
-                                               3)
+        keyP["windLeftRightSelect"] = bit.rshift(bit.band(messageBytes[64], 0x04), 2)
+        keyP["noWindSenseSelect"] = bit.rshift(bit.band(messageBytes[64], 0x08), 3)
         keyP["has_stop_warm"] = bit.rshift(bit.band(messageBytes[64], 0x10), 4)
         keyP["has_purifier"] = bit.rshift(bit.band(messageBytes[64], 0x20), 5)
         keyP["selfCleanState"] = messageBytes[71]
@@ -2128,214 +2095,134 @@ local function binToModel(binData)
         keyP["humidifier_water_tank"] = bit.band(messageBytes[73], 0x0F)
         keyP["auto_piping"] = bit.rshift(bit.band(messageBytes[73], 0x10), 4)
         keyP["force_drainage"] = bit.rshift(bit.band(messageBytes[73], 0x20), 5)
-        keyP["prevent_condensation"] = bit.rshift(
-                                           bit.band(messageBytes[73], 0x40), 6)
-        keyP["water_tank_load"] =
-            bit.rshift(bit.band(messageBytes[73], 0x80), 7)
+        keyP["prevent_condensation"] = bit.rshift(bit.band(messageBytes[73], 0x40), 6)
+        keyP["water_tank_load"] = bit.rshift(bit.band(messageBytes[73], 0x80), 7)
         keyP["humidifier_over_flow_protect"] = bit.band(messageBytes[74], 0x01)
-        keyP["heat_water_tank_protect"] = bit.rshift(
-                                              bit.band(messageBytes[74], 0x02),
-                                              1)
-        keyP["voltage_protect"] =
-            bit.rshift(bit.band(messageBytes[74], 0x04), 2)
+        keyP["heat_water_tank_protect"] = bit.rshift(bit.band(messageBytes[74], 0x02), 1)
+        keyP["voltage_protect"] = bit.rshift(bit.band(messageBytes[74], 0x04), 2)
         keyP["ptc_protect"] = bit.rshift(bit.band(messageBytes[74], 0x08), 3)
-        keyP["electric_leakage_protect"] = bit.rshift(
-                                               bit.band(messageBytes[74], 0x10),
-                                               4)
-        keyP["machine_electric_protect"] = bit.rshift(
-                                               bit.band(messageBytes[74], 0x20),
-                                               5)
-        keyP["relay_bonding_fault"] = bit.rshift(
-                                          bit.band(messageBytes[74], 0x40), 6)
-        keyP["humidifier_freezing_protect"] =
-            bit.rshift(bit.band(messageBytes[74], 0x80), 7)
+        keyP["electric_leakage_protect"] = bit.rshift(bit.band(messageBytes[74], 0x10), 4)
+        keyP["machine_electric_protect"] = bit.rshift(bit.band(messageBytes[74], 0x20), 5)
+        keyP["relay_bonding_fault"] = bit.rshift(bit.band(messageBytes[74], 0x40), 6)
+        keyP["humidifier_freezing_protect"] = bit.rshift(bit.band(messageBytes[74], 0x80), 7)
         keyP["error_linking_fault"] = bit.band(messageBytes[75], 0x01)
-        keyP["zero_point_fault"] = bit.rshift(bit.band(messageBytes[75], 0x02),
-                                              1)
-        keyP["humidity_sensor_lock"] = bit.rshift(
-                                           bit.band(messageBytes[75], 0x04), 2)
-        keyP["drain_valve_leakage"] = bit.rshift(
-                                          bit.band(messageBytes[75], 0x08), 3)
-        keyP["hydrate_valve_leakage"] = bit.rshift(
-                                            bit.band(messageBytes[75], 0x10), 4)
-        keyP["humidity_sensor_fault"] = bit.rshift(
-                                            bit.band(messageBytes[75], 0x20), 5)
-        keyP["humidifier_communicate_fault"] =
-            bit.rshift(bit.band(messageBytes[75], 0x40), 6)
-        keyP["humidifier_water_sensor_fault"] =
-            bit.rshift(bit.band(messageBytes[75], 0x80), 7)
+        keyP["zero_point_fault"] = bit.rshift(bit.band(messageBytes[75], 0x02), 1)
+        keyP["humidity_sensor_lock"] = bit.rshift(bit.band(messageBytes[75], 0x04), 2)
+        keyP["drain_valve_leakage"] = bit.rshift(bit.band(messageBytes[75], 0x08), 3)
+        keyP["hydrate_valve_leakage"] = bit.rshift(bit.band(messageBytes[75], 0x10), 4)
+        keyP["humidity_sensor_fault"] = bit.rshift(bit.band(messageBytes[75], 0x20), 5)
+        keyP["humidifier_communicate_fault"] = bit.rshift(bit.band(messageBytes[75], 0x40), 6)
+        keyP["humidifier_water_sensor_fault"] = bit.rshift(bit.band(messageBytes[75], 0x80), 7)
         keyP["linking_humidifier_address"] = messageBytes[76]
         keyP["humidifier_temp_low"] = messageBytes[77]
         keyP["humidifier_temp_high"] = messageBytes[78]
         keyP["pm_sensor_chosen"] = bit.band(messageBytes[79], 0x01)
-        keyP["co2_sensor_chosen"] = bit.rshift(bit.band(messageBytes[79], 0x02),
-                                               1)
-        keyP["tvoc_sensor_chosen"] = bit.rshift(
-                                         bit.band(messageBytes[79], 0x04), 2)
-        keyP["pyroelectricity_sensor_chosen"] =
-            bit.rshift(bit.band(messageBytes[79], 0x08), 3)
-        keyP["thermopile_sensor_chosen"] = bit.rshift(
-                                               bit.band(messageBytes[79], 0x10),
-                                               4)
-        keyP["colmo_in_machine"] = bit.rshift(bit.band(messageBytes[79], 0x40),
-                                              6)
+        keyP["co2_sensor_chosen"] = bit.rshift(bit.band(messageBytes[79], 0x02), 1)
+        keyP["tvoc_sensor_chosen"] = bit.rshift(bit.band(messageBytes[79], 0x04), 2)
+        keyP["pyroelectricity_sensor_chosen"] = bit.rshift(bit.band(messageBytes[79], 0x08), 3)
+        keyP["thermopile_sensor_chosen"] = bit.rshift(bit.band(messageBytes[79], 0x10), 4)
+        keyP["colmo_in_machine"] = bit.rshift(bit.band(messageBytes[79], 0x40), 6)
         keyP["temperatureLevel"] = bit.band(messageBytes[86], 0x03)
         keyP["humidityLevel"] = bit.rshift(bit.band(messageBytes[86], 0x0C), 2)
         keyP["purifierLevel"] = bit.rshift(bit.band(messageBytes[86], 0x30), 4)
         keyP["freshLevel"] = bit.rshift(bit.band(messageBytes[86], 0xC0), 6)
         keyP["tvocLevel"] = bit.band(messageBytes[87], 0x03)
         keyP["totalAirLevel"] = bit.rshift(bit.band(messageBytes[87], 0x0C), 2)
-        keyP["has_inner_cycle"] =
-            bit.rshift(bit.band(messageBytes[87], 0x10), 4)
-        keyP["has_remove_odor"] =
-            bit.rshift(bit.band(messageBytes[87], 0x20), 5)
+        keyP["has_inner_cycle"] = bit.rshift(bit.band(messageBytes[87], 0x10), 4)
+        keyP["has_remove_odor"] = bit.rshift(bit.band(messageBytes[87], 0x20), 5)
         keyP["anion_status"] = bit.rshift(bit.band(messageBytes[87], 0x40), 6)
-        keyP["auto_inner_cycle"] = bit.rshift(bit.band(messageBytes[87], 0x80),
-                                              7)
-        keyP["total_elec"] =
-            messageBytes[46] + bit.lshift(messageBytes[47], 8) +
-                bit.lshift(messageBytes[48], 16) +
-                bit.lshift(messageBytes[49], 24)
-        if (#binData > 89) then
+        keyP["auto_inner_cycle"] = bit.rshift(bit.band(messageBytes[87], 0x80), 7)
+        keyP["total_elec"] = messageBytes[46]
+            + bit.lshift(messageBytes[47], 8)
+            + bit.lshift(messageBytes[48], 16)
+            + bit.lshift(messageBytes[49], 24)
+        if #binData > 89 then
             keyP["has_remove_arofene"] = bit.band(messageBytes[90], 0x01)
             keyP["has_eco"] = bit.rshift(bit.band(messageBytes[90], 0x02), 1)
-            keyP["has_prevent_super_cool"] =
-                bit.rshift(bit.band(messageBytes[90], 0x04), 2)
-            keyP["has_voice_control"] = bit.rshift(
-                                            bit.band(messageBytes[90], 0x08), 3)
-            keyP["has_fresh_air_link"] = bit.rshift(
-                                             bit.band(messageBytes[90], 0x10), 4)
-            keyP["has_common_remove_odor"] =
-                bit.rshift(bit.band(messageBytes[90], 0x20), 5)
+            keyP["has_prevent_super_cool"] = bit.rshift(bit.band(messageBytes[90], 0x04), 2)
+            keyP["has_voice_control"] = bit.rshift(bit.band(messageBytes[90], 0x08), 3)
+            keyP["has_fresh_air_link"] = bit.rshift(bit.band(messageBytes[90], 0x10), 4)
+            keyP["has_common_remove_odor"] = bit.rshift(bit.band(messageBytes[90], 0x20), 5)
             keyP["has_ptc"] = bit.rshift(bit.band(messageBytes[90], 0x40), 6)
         end
-        if (#binData > 91) then
+        if #binData > 91 then
             keyP["has_water_model_timer"] = bit.band(messageBytes[91], 0x01)
-            keyP["has_weekly_timer"] = bit.rshift(
-                                           bit.band(messageBytes[91], 0x02), 1)
-            keyP["has_new_home_remove_arofene"] =
-                bit.rshift(bit.band(messageBytes[91], 0x04), 2)
-            keyP["remove_odor_run_time"] =
-                (messageBytes[92] + messageBytes[93] * 256)
+            keyP["has_weekly_timer"] = bit.rshift(bit.band(messageBytes[91], 0x02), 1)
+            keyP["has_new_home_remove_arofene"] = bit.rshift(bit.band(messageBytes[91], 0x04), 2)
+            keyP["remove_odor_run_time"] = (messageBytes[92] + messageBytes[93] * 256)
         end
-        if (messageBytes[80] == 0x31) then
+        if messageBytes[80] == 0x31 then
             keyP["sn8_string"] = "00000001"
         else
             keyP["sn8_string"] = "00000000"
         end
         keyP["machine_type"] = messageBytes[80]
-        keyP["wire_controller_indoor_transport_ten"] = bit.band(
-                                                           messageBytes[15],
-                                                           0x01)
-        keyP["indoor_return_panel_transport"] =
-            bit.rshift(bit.band(messageBytes[15], 0x02), 1)
-        keyP["indoor_outlet_panel_transport"] =
-            bit.rshift(bit.band(messageBytes[15], 0x04), 2)
-        keyP["indoor_pyroelectric_sensor"] =
-            bit.rshift(bit.band(messageBytes[15], 0x40), 6)
+        keyP["wire_controller_indoor_transport_ten"] = bit.band(messageBytes[15], 0x01)
+        keyP["indoor_return_panel_transport"] = bit.rshift(bit.band(messageBytes[15], 0x02), 1)
+        keyP["indoor_outlet_panel_transport"] = bit.rshift(bit.band(messageBytes[15], 0x04), 2)
+        keyP["indoor_pyroelectric_sensor"] = bit.rshift(bit.band(messageBytes[15], 0x40), 6)
         keyP["tvoc_sensor"] = bit.band(messageBytes[16], 0x01)
         keyP["sensor_t1"] = bit.rshift(bit.band(messageBytes[16], 0x02), 1)
         keyP["sensor_t2"] = bit.rshift(bit.band(messageBytes[16], 0x04), 2)
-        keyP["sensor_t2b_indoor"] = bit.rshift(bit.band(messageBytes[16], 0x08),
-                                               3)
-        keyP["indoor_fan_lose_speed"] = bit.rshift(
-                                            bit.band(messageBytes[16], 0x10), 4)
-        keyP["indoor_hum_sensor"] = bit.rshift(bit.band(messageBytes[16], 0x20),
-                                               5)
+        keyP["sensor_t2b_indoor"] = bit.rshift(bit.band(messageBytes[16], 0x08), 3)
+        keyP["indoor_fan_lose_speed"] = bit.rshift(bit.band(messageBytes[16], 0x10), 4)
+        keyP["indoor_hum_sensor"] = bit.rshift(bit.band(messageBytes[16], 0x20), 5)
         keyP["indoor_e"] = bit.rshift(bit.band(messageBytes[16], 0x40), 6)
-        keyP["indoor_e_parameter"] = bit.rshift(
-                                         bit.band(messageBytes[16], 0x80), 7)
+        keyP["indoor_e_parameter"] = bit.rshift(bit.band(messageBytes[16], 0x80), 7)
         keyP["ammeter"] = bit.band(messageBytes[17], 0x01)
         keyP["co2_sensor"] = bit.rshift(bit.band(messageBytes[17], 0x02), 1)
         keyP["mode_conflict"] = bit.rshift(bit.band(messageBytes[17], 0x04), 2)
-        keyP["prevent_cold_wind_protect"] =
-            bit.rshift(bit.band(messageBytes[17], 0x10), 4)
-        keyP["sensor_t2c_indoor"] = bit.rshift(bit.band(messageBytes[17], 0x20),
-                                               5)
-        keyP["sensor_t2d_indoor"] = bit.rshift(bit.band(messageBytes[17], 0x40),
-                                               6)
-        keyP["sensor_t2a_indoor"] = bit.rshift(bit.band(messageBytes[17], 0x80),
-                                               7)
-        keyP["evaporator_temp_high_protect"] =
-            bit.rshift(bit.band(messageBytes[18], 0x04), 2)
-        keyP["evaporator_temp_fre_limit"] =
-            bit.rshift(bit.band(messageBytes[18], 0x08), 3)
-        keyP["new_wind_anti_condensation_protect"] =
-            bit.rshift(bit.band(messageBytes[18], 0x10), 4)
-        keyP["new_wind_out_temp_low_protect"] =
-            bit.rshift(bit.band(messageBytes[18], 0x20), 5)
-        keyP["new_wind_out_temp_high_protect"] =
-            bit.rshift(bit.band(messageBytes[18], 0x40), 6)
-        keyP["new_wind_pm_high_protect"] = bit.rshift(
-                                               bit.band(messageBytes[18], 0x80),
-                                               7)
+        keyP["prevent_cold_wind_protect"] = bit.rshift(bit.band(messageBytes[17], 0x10), 4)
+        keyP["sensor_t2c_indoor"] = bit.rshift(bit.band(messageBytes[17], 0x20), 5)
+        keyP["sensor_t2d_indoor"] = bit.rshift(bit.band(messageBytes[17], 0x40), 6)
+        keyP["sensor_t2a_indoor"] = bit.rshift(bit.band(messageBytes[17], 0x80), 7)
+        keyP["evaporator_temp_high_protect"] = bit.rshift(bit.band(messageBytes[18], 0x04), 2)
+        keyP["evaporator_temp_fre_limit"] = bit.rshift(bit.band(messageBytes[18], 0x08), 3)
+        keyP["new_wind_anti_condensation_protect"] = bit.rshift(bit.band(messageBytes[18], 0x10), 4)
+        keyP["new_wind_out_temp_low_protect"] = bit.rshift(bit.band(messageBytes[18], 0x20), 5)
+        keyP["new_wind_out_temp_high_protect"] = bit.rshift(bit.band(messageBytes[18], 0x40), 6)
+        keyP["new_wind_pm_high_protect"] = bit.rshift(bit.band(messageBytes[18], 0x80), 7)
         keyP["new_wind_out_low_temp"] = bit.band(messageBytes[21], 0x01)
-        keyP["new_wind_low_anti_condensation_protect"] =
-            bit.rshift(bit.band(messageBytes[21], 0x02), 1)
-        keyP["new_wind_pm_high"] = bit.rshift(bit.band(messageBytes[21], 0x04),
-                                              2)
-        keyP["indoor_smart_eye"] = bit.rshift(bit.band(messageBytes[21], 0x08),
-                                              3)
-        keyP["new_wind_temp_sensor"] = bit.rshift(
-                                           bit.band(messageBytes[21], 0x10), 4)
-        keyP["new_wind_hum_sensor"] = bit.rshift(
-                                          bit.band(messageBytes[21], 0x20), 5)
-        keyP["new_wind_pm2_5_sensor"] = bit.rshift(
-                                            bit.band(messageBytes[21], 0x40), 6)
+        keyP["new_wind_low_anti_condensation_protect"] = bit.rshift(bit.band(messageBytes[21], 0x02), 1)
+        keyP["new_wind_pm_high"] = bit.rshift(bit.band(messageBytes[21], 0x04), 2)
+        keyP["indoor_smart_eye"] = bit.rshift(bit.band(messageBytes[21], 0x08), 3)
+        keyP["new_wind_temp_sensor"] = bit.rshift(bit.band(messageBytes[21], 0x10), 4)
+        keyP["new_wind_hum_sensor"] = bit.rshift(bit.band(messageBytes[21], 0x20), 5)
+        keyP["new_wind_pm2_5_sensor"] = bit.rshift(bit.band(messageBytes[21], 0x40), 6)
         keyP["indoor_new_wind_device"] = bit.band(messageBytes[22], 0x01)
-        keyP["outdoor_new_wind_device"] = bit.rshift(
-                                              bit.band(messageBytes[22], 0x02),
-                                              1)
-        keyP["water_full_protect"] = bit.rshift(
-                                         bit.band(messageBytes[22], 0x40), 6)
+        keyP["outdoor_new_wind_device"] = bit.rshift(bit.band(messageBytes[22], 0x02), 1)
+        keyP["water_full_protect"] = bit.rshift(bit.band(messageBytes[22], 0x40), 6)
     end
-    if (dataType == 0x12) then
-        if (#binData < 15) then return nil end
-        keyP["water_model_mode_clash"] = bit.rshift(
-                                             bit.band(messageBytes[4], 0x02), 1)
+    if dataType == 0x12 then
+        if #binData < 15 then return nil end
+        keyP["water_model_mode_clash"] = bit.rshift(bit.band(messageBytes[4], 0x02), 1)
         keyP["water_model_clean_time"] = messageBytes[30]
         keyP["tr_out_fault"] = bit.rshift(bit.band(messageBytes[1], 0x02), 1)
         keyP["tr_in_fault"] = bit.rshift(bit.band(messageBytes[1], 0x04), 2)
-        keyP["standby_anti_freezing_fault"] =
-            bit.rshift(bit.band(messageBytes[1], 0x10), 4)
+        keyP["standby_anti_freezing_fault"] = bit.rshift(bit.band(messageBytes[1], 0x10), 4)
         keyP["dc_pump_stall_protection"] = bit.band(messageBytes[2], 0x01)
-        keyP["water_switch_fault"] = bit.rshift(bit.band(messageBytes[2], 0x06),
-                                                1)
+        keyP["water_switch_fault"] = bit.rshift(bit.band(messageBytes[2], 0x06), 1)
         keyP["tw_in_fault"] = bit.rshift(bit.band(messageBytes[2], 0x08), 3)
         keyP["tw_out_fault"] = bit.rshift(bit.band(messageBytes[2], 0x10), 4)
         keyP["tw1_fault"] = bit.rshift(bit.band(messageBytes[2], 0x20), 5)
         keyP["indoor_e"] = bit.rshift(bit.band(messageBytes[2], 0x40), 6)
-        keyP["indoor_e_parameter"] = bit.rshift(bit.band(messageBytes[2], 0x80),
-                                                7)
+        keyP["indoor_e_parameter"] = bit.rshift(bit.band(messageBytes[2], 0x80), 7)
         keyP["tw1b_fault"] = bit.band(messageBytes[3], 0x01)
-        keyP["temp_sensor_drop_fault"] = bit.rshift(
-                                             bit.band(messageBytes[3], 0x20), 5)
-        keyP["water_templow_protection"] = bit.rshift(
-                                               bit.band(messageBytes[3], 0x40),
-                                               6)
-        keyP["wire_controller_indoor_transport"] =
-            bit.band(messageBytes[1], 0x01)
-        keyP["in_outdoor_fault"] =
-            bit.rshift(bit.band(messageBytes[1], 0x08), 3)
+        keyP["temp_sensor_drop_fault"] = bit.rshift(bit.band(messageBytes[3], 0x20), 5)
+        keyP["water_templow_protection"] = bit.rshift(bit.band(messageBytes[3], 0x40), 6)
+        keyP["wire_controller_indoor_transport"] = bit.band(messageBytes[1], 0x01)
+        keyP["in_outdoor_fault"] = bit.rshift(bit.band(messageBytes[1], 0x08), 3)
         keyP["t2w_fault"] = bit.rshift(bit.band(messageBytes[1], 0x80), 7)
-        keyP["standby_anti_freezing_protection"] =
-            bit.rshift(bit.band(messageBytes[3], 0x80), 7)
-        if (#binData > 35) then
-            keyP["has_voice_control"] = bit.band(messageBytes[35], 0x01)
-        end
+        keyP["standby_anti_freezing_protection"] = bit.rshift(bit.band(messageBytes[3], 0x80), 7)
+        if #binData > 35 then keyP["has_voice_control"] = bit.band(messageBytes[35], 0x01) end
     end
-    if (dataType == 0x30) then
-        if (#binData < 15) then return nil end
-        if (bit.band(messageBytes[6], 0x80) == 0x80) then
-            keyP["outdoorTemperature"] = (0 -
-                                             bit.band(
-                                                 bit.bnot(
-                                                     messageBytes[6] * 256 +
-                                                         messageBytes[5]) + 1,
-                                                 0xffff)) / 100
+    if dataType == 0x30 then
+        if #binData < 15 then return nil end
+        if bit.band(messageBytes[6], 0x80) == 0x80 then
+            keyP["outdoorTemperature"] = (0 - bit.band(bit.bnot(messageBytes[6] * 256 + messageBytes[5]) + 1, 0xffff))
+                / 100
         else
-            keyP["outdoorTemperature"] =
-                (messageBytes[5] + messageBytes[6] * 256) / 100
+            keyP["outdoorTemperature"] = (messageBytes[5] + messageBytes[6] * 256) / 100
         end
         keyP["freshAirMachineNumber"] = messageBytes[73]
         keyP["humidityMachineNumber"] = messageBytes[74]
@@ -2343,121 +2230,66 @@ local function binToModel(binData)
         keyP["sensor_t3"] = bit.rshift(bit.band(messageBytes[19], 0x02), 1)
         keyP["sensor_t4"] = bit.rshift(bit.band(messageBytes[19], 0x04), 2)
         keyP["sensor_tp"] = bit.rshift(bit.band(messageBytes[19], 0x08), 3)
-        keyP["sensor_refrigerant_pipe_temp"] =
-            bit.rshift(bit.band(messageBytes[19], 0x10), 4)
-        keyP["out_voltage_project"] = bit.rshift(
-                                          bit.band(messageBytes[19], 0x20), 5)
-        keyP["outdoor_fan_lose_speed"] = bit.rshift(
-                                             bit.band(messageBytes[19], 0x40), 6)
-        keyP["compressor_temp_protect"] = bit.rshift(
-                                              bit.band(messageBytes[19], 0x80),
-                                              7)
+        keyP["sensor_refrigerant_pipe_temp"] = bit.rshift(bit.band(messageBytes[19], 0x10), 4)
+        keyP["out_voltage_project"] = bit.rshift(bit.band(messageBytes[19], 0x20), 5)
+        keyP["outdoor_fan_lose_speed"] = bit.rshift(bit.band(messageBytes[19], 0x40), 6)
+        keyP["compressor_temp_protect"] = bit.rshift(bit.band(messageBytes[19], 0x80), 7)
         keyP["out_main_drive_transport"] = bit.band(messageBytes[20], 0x01)
-        keyP["compressor_current_circuit"] =
-            bit.rshift(bit.band(messageBytes[20], 0x02), 1)
-        keyP["compressor_start"] = bit.rshift(bit.band(messageBytes[20], 0x04),
-                                              2)
-        keyP["phase_lost_protect"] = bit.rshift(
-                                         bit.band(messageBytes[20], 0x08), 3)
-        keyP["compressor_zero_protect"] = bit.rshift(
-                                              bit.band(messageBytes[20], 0x10),
-                                              4)
+        keyP["compressor_current_circuit"] = bit.rshift(bit.band(messageBytes[20], 0x02), 1)
+        keyP["compressor_start"] = bit.rshift(bit.band(messageBytes[20], 0x04), 2)
+        keyP["phase_lost_protect"] = bit.rshift(bit.band(messageBytes[20], 0x08), 3)
+        keyP["compressor_zero_protect"] = bit.rshift(bit.band(messageBytes[20], 0x10), 4)
         keyP["out_341_sync"] = bit.rshift(bit.band(messageBytes[20], 0x20), 5)
-        keyP["compressor_lose_speed_protect"] =
-            bit.rshift(bit.band(messageBytes[20], 0x40), 6)
-        keyP["compressor_position_protect"] =
-            bit.rshift(bit.band(messageBytes[20], 0x80), 7)
-        keyP["compressor_over_current"] = bit.rshift(
-                                              bit.band(messageBytes[21], 0x02),
-                                              1)
+        keyP["compressor_lose_speed_protect"] = bit.rshift(bit.band(messageBytes[20], 0x40), 6)
+        keyP["compressor_position_protect"] = bit.rshift(bit.band(messageBytes[20], 0x80), 7)
+        keyP["compressor_over_current"] = bit.rshift(bit.band(messageBytes[21], 0x02), 1)
         keyP["outdoor_ipm"] = bit.rshift(bit.band(messageBytes[21], 0x04), 2)
-        keyP["out_current_protect"] = bit.rshift(
-                                          bit.band(messageBytes[21], 0x40), 6)
-        keyP["refrigerant_tube_condensation"] =
-            bit.rshift(bit.band(messageBytes[21], 0x80), 7)
+        keyP["out_current_protect"] = bit.rshift(bit.band(messageBytes[21], 0x40), 6)
+        keyP["refrigerant_tube_condensation"] = bit.rshift(bit.band(messageBytes[21], 0x80), 7)
         keyP["exhaust_high_temp_fre_limit"] = bit.band(messageBytes[22], 0x01)
-        keyP["compressor_high_temp_protect"] =
-            bit.rshift(bit.band(messageBytes[22], 0x02), 1)
-        keyP["condenser_high_temp_fre_limit"] =
-            bit.rshift(bit.band(messageBytes[22], 0x04), 2)
+        keyP["compressor_high_temp_protect"] = bit.rshift(bit.band(messageBytes[22], 0x02), 1)
+        keyP["condenser_high_temp_fre_limit"] = bit.rshift(bit.band(messageBytes[22], 0x04), 2)
         keyP["grid_protect"] = bit.rshift(bit.band(messageBytes[22], 0x08), 3)
-        keyP["system_pressure_high_fre_limit"] =
-            bit.rshift(bit.band(messageBytes[22], 0x10), 4)
-        keyP["system_pressure_high_protect"] =
-            bit.rshift(bit.band(messageBytes[22], 0x20), 5)
-        keyP["system_pressure_low_fre_limit"] =
-            bit.rshift(bit.band(messageBytes[22], 0x40), 6)
-        keyP["system_pressure_low_protect"] =
-            bit.rshift(bit.band(messageBytes[22], 0x80), 7)
+        keyP["system_pressure_high_fre_limit"] = bit.rshift(bit.band(messageBytes[22], 0x10), 4)
+        keyP["system_pressure_high_protect"] = bit.rshift(bit.band(messageBytes[22], 0x20), 5)
+        keyP["system_pressure_low_fre_limit"] = bit.rshift(bit.band(messageBytes[22], 0x40), 6)
+        keyP["system_pressure_low_protect"] = bit.rshift(bit.band(messageBytes[22], 0x80), 7)
         keyP["voltage_fre_limit"] = bit.band(messageBytes[23], 0x01)
-        keyP["current_fre_limit"] = bit.rshift(bit.band(messageBytes[23], 0x02),
-                                               1)
-        keyP["pfc_switch_stop"] =
-            bit.rshift(bit.band(messageBytes[23], 0x04), 2)
+        keyP["current_fre_limit"] = bit.rshift(bit.band(messageBytes[23], 0x02), 1)
+        keyP["pfc_switch_stop"] = bit.rshift(bit.band(messageBytes[23], 0x04), 2)
         keyP["pfc_fre_limit"] = bit.rshift(bit.band(messageBytes[23], 0x08), 3)
-        keyP["in_out_ability_mismatch"] = bit.rshift(
-                                              bit.band(messageBytes[23], 0x20),
-                                              5)
-        keyP["sensor_high_pressure"] = bit.rshift(
-                                           bit.band(messageBytes[25], 0x02), 1)
-        keyP["sensor_low_pressure"] = bit.rshift(
-                                          bit.band(messageBytes[25], 0x04), 2)
-        keyP["sensor_inhale_temp"] = bit.rshift(
-                                         bit.band(messageBytes[25], 0x08), 3)
-        keyP["sensor_cold_temp"] = bit.rshift(bit.band(messageBytes[25], 0x10),
-                                              4)
-        keyP["sensor_refrigerant_pipe_temp"] =
-            bit.rshift(bit.band(messageBytes[25], 0x20), 5)
-        keyP["indoor_communication_lost"] =
-            bit.rshift(bit.band(messageBytes[25], 0x40), 6)
-        keyP["new_wind_transport"] = bit.rshift(
-                                         bit.band(messageBytes[25], 0x80), 7)
-        keyP["four_way_valve_crossing_protect"] =
-            bit.band(messageBytes[26], 0x01)
-        keyP["four_way_valve_crossing"] = bit.rshift(
-                                              bit.band(messageBytes[26], 0x02),
-                                              1)
-        keyP["system_pressure_protect"] = bit.rshift(
-                                              bit.band(messageBytes[26], 0x10),
-                                              4)
-        keyP["sensor_spray_enthalpy_enter_temp"] =
-            bit.rshift(bit.band(messageBytes[26], 0x20), 5)
-        keyP["sensor_spray_enthalpy_out_temp"] =
-            bit.rshift(bit.band(messageBytes[26], 0x40), 6)
-        keyP["water_model_prevent_cold_protect"] =
-            bit.rshift(bit.band(messageBytes[26], 0x80), 7)
+        keyP["in_out_ability_mismatch"] = bit.rshift(bit.band(messageBytes[23], 0x20), 5)
+        keyP["sensor_high_pressure"] = bit.rshift(bit.band(messageBytes[25], 0x02), 1)
+        keyP["sensor_low_pressure"] = bit.rshift(bit.band(messageBytes[25], 0x04), 2)
+        keyP["sensor_inhale_temp"] = bit.rshift(bit.band(messageBytes[25], 0x08), 3)
+        keyP["sensor_cold_temp"] = bit.rshift(bit.band(messageBytes[25], 0x10), 4)
+        keyP["sensor_refrigerant_pipe_temp"] = bit.rshift(bit.band(messageBytes[25], 0x20), 5)
+        keyP["indoor_communication_lost"] = bit.rshift(bit.band(messageBytes[25], 0x40), 6)
+        keyP["new_wind_transport"] = bit.rshift(bit.band(messageBytes[25], 0x80), 7)
+        keyP["four_way_valve_crossing_protect"] = bit.band(messageBytes[26], 0x01)
+        keyP["four_way_valve_crossing"] = bit.rshift(bit.band(messageBytes[26], 0x02), 1)
+        keyP["system_pressure_protect"] = bit.rshift(bit.band(messageBytes[26], 0x10), 4)
+        keyP["sensor_spray_enthalpy_enter_temp"] = bit.rshift(bit.band(messageBytes[26], 0x20), 5)
+        keyP["sensor_spray_enthalpy_out_temp"] = bit.rshift(bit.band(messageBytes[26], 0x40), 6)
+        keyP["water_model_prevent_cold_protect"] = bit.rshift(bit.band(messageBytes[26], 0x80), 7)
         keyP["cold_fault"] = bit.rshift(bit.band(messageBytes[24], 0x08), 3)
     end
-    if (dataType == 0x13 or dataType == 0x21) then
-        if (#binData < 15) then return nil end
-        keyP["week0_duplicate_timer_on_1"] =
-            bit.rshift(bit.band(messageBytes[0], 0x20), 5)
-        keyP["week0_duplicate_timer_off_2"] =
-            bit.rshift(bit.band(messageBytes[0], 0x40), 6)
-        keyP["week1_duplicate_timer_on_1"] =
-            bit.rshift(bit.band(messageBytes[1], 0x20), 5)
-        keyP["week1_duplicate_timer_off_2"] =
-            bit.rshift(bit.band(messageBytes[1], 0x40), 6)
-        keyP["week2_duplicate_timer_on_1"] =
-            bit.rshift(bit.band(messageBytes[2], 0x20), 5)
-        keyP["week2_duplicate_timer_off_2"] =
-            bit.rshift(bit.band(messageBytes[2], 0x40), 6)
-        keyP["week3_duplicate_timer_on_1"] =
-            bit.rshift(bit.band(messageBytes[3], 0x20), 5)
-        keyP["week3_duplicate_timer_off_2"] =
-            bit.rshift(bit.band(messageBytes[3], 0x40), 6)
-        keyP["week4_duplicate_timer_on_1"] =
-            bit.rshift(bit.band(messageBytes[4], 0x20), 5)
-        keyP["week4_duplicate_timer_off_2"] =
-            bit.rshift(bit.band(messageBytes[4], 0x40), 6)
-        keyP["week5_duplicate_timer_on_1"] =
-            bit.rshift(bit.band(messageBytes[5], 0x20), 5)
-        keyP["week5_duplicate_timer_off_2"] =
-            bit.rshift(bit.band(messageBytes[5], 0x40), 6)
-        keyP["week6_duplicate_timer_on_1"] =
-            bit.rshift(bit.band(messageBytes[6], 0x20), 5)
-        keyP["week6_duplicate_timer_off_2"] =
-            bit.rshift(bit.band(messageBytes[6], 0x40), 6)
+    if dataType == 0x13 or dataType == 0x21 then
+        if #binData < 15 then return nil end
+        keyP["week0_duplicate_timer_on_1"] = bit.rshift(bit.band(messageBytes[0], 0x20), 5)
+        keyP["week0_duplicate_timer_off_2"] = bit.rshift(bit.band(messageBytes[0], 0x40), 6)
+        keyP["week1_duplicate_timer_on_1"] = bit.rshift(bit.band(messageBytes[1], 0x20), 5)
+        keyP["week1_duplicate_timer_off_2"] = bit.rshift(bit.band(messageBytes[1], 0x40), 6)
+        keyP["week2_duplicate_timer_on_1"] = bit.rshift(bit.band(messageBytes[2], 0x20), 5)
+        keyP["week2_duplicate_timer_off_2"] = bit.rshift(bit.band(messageBytes[2], 0x40), 6)
+        keyP["week3_duplicate_timer_on_1"] = bit.rshift(bit.band(messageBytes[3], 0x20), 5)
+        keyP["week3_duplicate_timer_off_2"] = bit.rshift(bit.band(messageBytes[3], 0x40), 6)
+        keyP["week4_duplicate_timer_on_1"] = bit.rshift(bit.band(messageBytes[4], 0x20), 5)
+        keyP["week4_duplicate_timer_off_2"] = bit.rshift(bit.band(messageBytes[4], 0x40), 6)
+        keyP["week5_duplicate_timer_on_1"] = bit.rshift(bit.band(messageBytes[5], 0x20), 5)
+        keyP["week5_duplicate_timer_off_2"] = bit.rshift(bit.band(messageBytes[5], 0x40), 6)
+        keyP["week6_duplicate_timer_on_1"] = bit.rshift(bit.band(messageBytes[6], 0x20), 5)
+        keyP["week6_duplicate_timer_off_2"] = bit.rshift(bit.band(messageBytes[6], 0x40), 6)
         keyP["week0_timer1"] = bit.band(messageBytes[0], 0x01)
         keyP["week0_timer2"] = bit.rshift(bit.band(messageBytes[0], 0x02), 1)
         keyP["week0_timer3"] = bit.rshift(bit.band(messageBytes[0], 0x04), 2)
@@ -2674,39 +2506,50 @@ local function getAcMsg(bodyData, cType)
     local bodyLength = #bodyData
     local msgLength = bodyLength + 0x0A + 1
     local msgBytes = {}
-    for i = 0, msgLength do msgBytes[i] = 0 end
+    for i = 0, msgLength do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = 0xAA
     msgBytes[1] = bodyLength + 0x0A + 1
     msgBytes[2] = 0xAC
     msgBytes[8] = 0x02
-    if (cType == keyB["BYTE_QUERYL_REQUEST"] or cType ==
-        keyB["BYTE_QUERY_RUN_REQUEST"] or cType ==
-        keyB["BYTE_QUERY_OUT_RUN_REQUEST"] or cType ==
-        keyB["BYTE_QUERY_WATER_RUN_REQUEST"] or cType == 0x13) then
+    if
+        cType == keyB["BYTE_QUERYL_REQUEST"]
+        or cType == keyB["BYTE_QUERY_RUN_REQUEST"]
+        or cType == keyB["BYTE_QUERY_OUT_RUN_REQUEST"]
+        or cType == keyB["BYTE_QUERY_WATER_RUN_REQUEST"]
+        or cType == 0x13
+    then
         msgBytes[9] = 0x03
     else
         msgBytes[9] = 0x02
     end
-    for i = 0, bodyLength do msgBytes[i + 0x0A] = bodyData[i] end
+    for i = 0, bodyLength do
+        msgBytes[i + 0x0A] = bodyData[i]
+    end
     msgBytes[msgLength] = makeSum(msgBytes, 1, msgLength - 1)
     local msgFinal = {}
-    for i = 1, msgLength + 1 do msgFinal[i] = msgBytes[i - 1] end
+    for i = 1, msgLength + 1 do
+        msgFinal[i] = msgBytes[i - 1]
+    end
     return msgFinal
 end
 local function getTotalMsg(bodyData, cType)
     local bodyLength = 0
-    if (bodyData ~= nil) then bodyLength = #bodyData end
+    if bodyData ~= nil then bodyLength = #bodyData end
     local msgLength = bodyLength + keyB["BYTE_PROTOCOL_LENGTH"] + 2
-    if (bodyData == nil) then msgLength = 7 end
+    if bodyData == nil then msgLength = 7 end
     local msgBytes = {}
-    for i = 0, msgLength do msgBytes[i] = 0 end
+    for i = 0, msgLength do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = keyB["BYTE_PROTOCOL_HEAD"]
     msgBytes[1] = msgLength + 1
     msgBytes[2] = 0x00
     msgBytes[3] = 0xFF
     msgBytes[4] = 0xFF
     msgBytes[5] = cType
-    if (bodyData ~= nil) then
+    if bodyData ~= nil then
         for i = 0, bodyLength do
             msgBytes[i + keyB["BYTE_PROTOCOL_LENGTH"]] = bodyData[i]
         end
@@ -2716,7 +2559,7 @@ local function getTotalMsg(bodyData, cType)
     return getAcMsg(msgBytes, cType)
 end
 function jsonToData(jsonCmd)
-    if (#jsonCmd == 0) then return nil end
+    if #jsonCmd == 0 then return nil end
     local infoM = {}
     local json = decode(jsonCmd)
     deviceSubType = json["deviceinfo"]["deviceSubType"]
@@ -2725,36 +2568,39 @@ function jsonToData(jsonCmd)
     local query = json["query"]
     local control = json["control"]
     local status = json["status"]
-    print("hello")
+    print "hello"
     keyP["timer_control"] = 0
     keyP["water_model_flag"] = 0
     keyP["PTCDependT4Value"] = 0
     keyP["humidity_drainage_flag"] = 0
-    if (query) then
+    if query then
         local queryType = nil
-        if (type(query) == "table") then queryType = query["query_type"] end
-        if (queryType == "run_status") then
+        if type(query) == "table" then queryType = query["query_type"] end
+        if queryType == "run_status" then
             infoM = getTotalMsg(nil, keyB["BYTE_QUERY_RUN_REQUEST"])
-        elseif (queryType == "out_run_status") then
+        elseif queryType == "out_run_status" then
             infoM = getTotalMsg(nil, keyB["BYTE_QUERY_OUT_RUN_REQUEST"])
-        elseif (queryType == "water_model_run_status") then
+        elseif queryType == "water_model_run_status" then
             infoM = getTotalMsg(nil, keyB["BYTE_QUERY_WATER_RUN_REQUEST"])
-        elseif (queryType == "timer_query") then
+        elseif queryType == "timer_query" then
             infoM = getTotalMsg(nil, 0x13)
         else
             infoM = getTotalMsg(nil, keyB["BYTE_QUERYL_REQUEST"])
         end
-    elseif (control) then
-        if (status) then JsonToModel(status, "status") end
-        if (control) then JsonToModel(control, "control") end
-        if (keyP["filterTimeReset"] == 0x01 or keyP["purifyFilterTimeReset"] ==
-            0x01 or keyP["freshFilterTimeReset"] == 0x01) then
+    elseif control then
+        if status then JsonToModel(status, "status") end
+        if control then JsonToModel(control, "control") end
+        if
+            keyP["filterTimeReset"] == 0x01
+            or keyP["purifyFilterTimeReset"] == 0x01
+            or keyP["freshFilterTimeReset"] == 0x01
+        then
             local bodyBytes = {}
-            for i = 0, 1 do bodyBytes[i] = 0 end
-            bodyBytes[0] = bit.bor(bit.lshift(keyP["filterTimeReset"], 6),
-                                   bodyBytes[0])
-            bodyBytes[0] = bit.bor(bit.lshift(keyP["purifyFilterTimeReset"], 7),
-                                   bodyBytes[0])
+            for i = 0, 1 do
+                bodyBytes[i] = 0
+            end
+            bodyBytes[0] = bit.bor(bit.lshift(keyP["filterTimeReset"], 6), bodyBytes[0])
+            bodyBytes[0] = bit.bor(bit.lshift(keyP["purifyFilterTimeReset"], 7), bodyBytes[0])
             bodyBytes[1] = bit.bor(keyP["freshFilterTimeReset"], bodyBytes[1])
             infoM = getTotalMsg(bodyBytes, keyB["BYTE_CONTROL_RESET_REQUEST"])
             keyP["filterTimeReset"] = 0
@@ -2765,118 +2611,65 @@ function jsonToData(jsonCmd)
             return ret
         end
         local bodyBytes = {}
-        for i = 0, 40 do bodyBytes[i] = 0 end
-        if (keyP["humidity_drainage_flag"] == 1) then
-            bodyBytes[1] = bit.bor(bit.lshift(keyP["humidity_drainage"], 5),
-                                   bodyBytes[1])
+        for i = 0, 40 do
+            bodyBytes[i] = 0
+        end
+        if keyP["humidity_drainage_flag"] == 1 then
+            bodyBytes[1] = bit.bor(bit.lshift(keyP["humidity_drainage"], 5), bodyBytes[1])
             infoM = getTotalMsg(bodyBytes, 0xAB)
-        elseif (keyP["timer_control"] == 1) then
-            for i = 0, 181 do bodyBytes[i] = 0 end
+        elseif keyP["timer_control"] == 1 then
+            for i = 0, 181 do
+                bodyBytes[i] = 0
+            end
             bodyBytes[0] = bit.bor(keyP["week0_timer1"], bodyBytes[0])
-            bodyBytes[0] = bit.bor(bit.lshift(keyP["week0_timer2"], 1),
-                                   bodyBytes[0])
-            bodyBytes[0] = bit.bor(bit.lshift(keyP["week0_timer3"], 2),
-                                   bodyBytes[0])
-            bodyBytes[0] = bit.bor(bit.lshift(keyP["week0_timer4"], 3),
-                                   bodyBytes[0])
-            bodyBytes[0] = bit.bor(bit.lshift(keyP["week0_timer5"], 4),
-                                   bodyBytes[0])
-            bodyBytes[0] = bit.bor(bit.lshift(
-                                       keyP["week0_duplicate_timer_on_1"], 5),
-                                   bodyBytes[0])
-            bodyBytes[0] = bit.bor(bit.lshift(
-                                       keyP["week0_duplicate_timer_off_2"], 6),
-                                   bodyBytes[0])
+            bodyBytes[0] = bit.bor(bit.lshift(keyP["week0_timer2"], 1), bodyBytes[0])
+            bodyBytes[0] = bit.bor(bit.lshift(keyP["week0_timer3"], 2), bodyBytes[0])
+            bodyBytes[0] = bit.bor(bit.lshift(keyP["week0_timer4"], 3), bodyBytes[0])
+            bodyBytes[0] = bit.bor(bit.lshift(keyP["week0_timer5"], 4), bodyBytes[0])
+            bodyBytes[0] = bit.bor(bit.lshift(keyP["week0_duplicate_timer_on_1"], 5), bodyBytes[0])
+            bodyBytes[0] = bit.bor(bit.lshift(keyP["week0_duplicate_timer_off_2"], 6), bodyBytes[0])
             bodyBytes[1] = bit.bor(keyP["week1_timer1"], bodyBytes[1])
-            bodyBytes[1] = bit.bor(bit.lshift(keyP["week1_timer2"], 1),
-                                   bodyBytes[1])
-            bodyBytes[1] = bit.bor(bit.lshift(keyP["week1_timer3"], 2),
-                                   bodyBytes[1])
-            bodyBytes[1] = bit.bor(bit.lshift(keyP["week1_timer4"], 3),
-                                   bodyBytes[1])
-            bodyBytes[1] = bit.bor(bit.lshift(keyP["week1_timer5"], 4),
-                                   bodyBytes[1])
-            bodyBytes[1] = bit.bor(bit.lshift(
-                                       keyP["week1_duplicate_timer_on_1"], 5),
-                                   bodyBytes[1])
-            bodyBytes[1] = bit.bor(bit.lshift(
-                                       keyP["week1_duplicate_timer_off_2"], 6),
-                                   bodyBytes[1])
+            bodyBytes[1] = bit.bor(bit.lshift(keyP["week1_timer2"], 1), bodyBytes[1])
+            bodyBytes[1] = bit.bor(bit.lshift(keyP["week1_timer3"], 2), bodyBytes[1])
+            bodyBytes[1] = bit.bor(bit.lshift(keyP["week1_timer4"], 3), bodyBytes[1])
+            bodyBytes[1] = bit.bor(bit.lshift(keyP["week1_timer5"], 4), bodyBytes[1])
+            bodyBytes[1] = bit.bor(bit.lshift(keyP["week1_duplicate_timer_on_1"], 5), bodyBytes[1])
+            bodyBytes[1] = bit.bor(bit.lshift(keyP["week1_duplicate_timer_off_2"], 6), bodyBytes[1])
             bodyBytes[2] = bit.bor(keyP["week2_timer1"], bodyBytes[2])
-            bodyBytes[2] = bit.bor(bit.lshift(keyP["week2_timer2"], 1),
-                                   bodyBytes[2])
-            bodyBytes[2] = bit.bor(bit.lshift(keyP["week2_timer3"], 2),
-                                   bodyBytes[2])
-            bodyBytes[2] = bit.bor(bit.lshift(keyP["week2_timer4"], 3),
-                                   bodyBytes[2])
-            bodyBytes[2] = bit.bor(bit.lshift(keyP["week2_timer5"], 4),
-                                   bodyBytes[2])
-            bodyBytes[2] = bit.bor(bit.lshift(
-                                       keyP["week2_duplicate_timer_on_1"], 5),
-                                   bodyBytes[2])
-            bodyBytes[2] = bit.bor(bit.lshift(
-                                       keyP["week2_duplicate_timer_off_2"], 6),
-                                   bodyBytes[2])
+            bodyBytes[2] = bit.bor(bit.lshift(keyP["week2_timer2"], 1), bodyBytes[2])
+            bodyBytes[2] = bit.bor(bit.lshift(keyP["week2_timer3"], 2), bodyBytes[2])
+            bodyBytes[2] = bit.bor(bit.lshift(keyP["week2_timer4"], 3), bodyBytes[2])
+            bodyBytes[2] = bit.bor(bit.lshift(keyP["week2_timer5"], 4), bodyBytes[2])
+            bodyBytes[2] = bit.bor(bit.lshift(keyP["week2_duplicate_timer_on_1"], 5), bodyBytes[2])
+            bodyBytes[2] = bit.bor(bit.lshift(keyP["week2_duplicate_timer_off_2"], 6), bodyBytes[2])
             bodyBytes[3] = bit.bor(keyP["week3_timer1"], bodyBytes[3])
-            bodyBytes[3] = bit.bor(bit.lshift(keyP["week3_timer2"], 1),
-                                   bodyBytes[3])
-            bodyBytes[3] = bit.bor(bit.lshift(keyP["week3_timer3"], 2),
-                                   bodyBytes[3])
-            bodyBytes[3] = bit.bor(bit.lshift(keyP["week3_timer4"], 3),
-                                   bodyBytes[3])
-            bodyBytes[3] = bit.bor(bit.lshift(keyP["week3_timer5"], 4),
-                                   bodyBytes[3])
-            bodyBytes[3] = bit.bor(bit.lshift(
-                                       keyP["week3_duplicate_timer_on_1"], 5),
-                                   bodyBytes[3])
-            bodyBytes[3] = bit.bor(bit.lshift(
-                                       keyP["week3_duplicate_timer_off_2"], 6),
-                                   bodyBytes[3])
+            bodyBytes[3] = bit.bor(bit.lshift(keyP["week3_timer2"], 1), bodyBytes[3])
+            bodyBytes[3] = bit.bor(bit.lshift(keyP["week3_timer3"], 2), bodyBytes[3])
+            bodyBytes[3] = bit.bor(bit.lshift(keyP["week3_timer4"], 3), bodyBytes[3])
+            bodyBytes[3] = bit.bor(bit.lshift(keyP["week3_timer5"], 4), bodyBytes[3])
+            bodyBytes[3] = bit.bor(bit.lshift(keyP["week3_duplicate_timer_on_1"], 5), bodyBytes[3])
+            bodyBytes[3] = bit.bor(bit.lshift(keyP["week3_duplicate_timer_off_2"], 6), bodyBytes[3])
             bodyBytes[4] = bit.bor(keyP["week4_timer1"], bodyBytes[4])
-            bodyBytes[4] = bit.bor(bit.lshift(keyP["week4_timer2"], 1),
-                                   bodyBytes[4])
-            bodyBytes[4] = bit.bor(bit.lshift(keyP["week4_timer3"], 2),
-                                   bodyBytes[4])
-            bodyBytes[4] = bit.bor(bit.lshift(keyP["week4_timer4"], 3),
-                                   bodyBytes[4])
-            bodyBytes[4] = bit.bor(bit.lshift(keyP["week4_timer5"], 4),
-                                   bodyBytes[4])
-            bodyBytes[4] = bit.bor(bit.lshift(
-                                       keyP["week4_duplicate_timer_on_1"], 5),
-                                   bodyBytes[4])
-            bodyBytes[4] = bit.bor(bit.lshift(
-                                       keyP["week4_duplicate_timer_on_1"], 6),
-                                   bodyBytes[4])
+            bodyBytes[4] = bit.bor(bit.lshift(keyP["week4_timer2"], 1), bodyBytes[4])
+            bodyBytes[4] = bit.bor(bit.lshift(keyP["week4_timer3"], 2), bodyBytes[4])
+            bodyBytes[4] = bit.bor(bit.lshift(keyP["week4_timer4"], 3), bodyBytes[4])
+            bodyBytes[4] = bit.bor(bit.lshift(keyP["week4_timer5"], 4), bodyBytes[4])
+            bodyBytes[4] = bit.bor(bit.lshift(keyP["week4_duplicate_timer_on_1"], 5), bodyBytes[4])
+            bodyBytes[4] = bit.bor(bit.lshift(keyP["week4_duplicate_timer_on_1"], 6), bodyBytes[4])
             bodyBytes[5] = bit.bor(keyP["week5_timer1"], bodyBytes[5])
-            bodyBytes[5] = bit.bor(bit.lshift(keyP["week5_timer2"], 1),
-                                   bodyBytes[5])
-            bodyBytes[5] = bit.bor(bit.lshift(keyP["week5_timer3"], 2),
-                                   bodyBytes[5])
-            bodyBytes[5] = bit.bor(bit.lshift(keyP["week5_timer4"], 3),
-                                   bodyBytes[5])
-            bodyBytes[5] = bit.bor(bit.lshift(keyP["week5_timer5"], 4),
-                                   bodyBytes[5])
-            bodyBytes[5] = bit.bor(bit.lshift(
-                                       keyP["week5_duplicate_timer_on_1"], 5),
-                                   bodyBytes[5])
-            bodyBytes[5] = bit.bor(bit.lshift(
-                                       keyP["week5_duplicate_timer_off_2"], 6),
-                                   bodyBytes[5])
+            bodyBytes[5] = bit.bor(bit.lshift(keyP["week5_timer2"], 1), bodyBytes[5])
+            bodyBytes[5] = bit.bor(bit.lshift(keyP["week5_timer3"], 2), bodyBytes[5])
+            bodyBytes[5] = bit.bor(bit.lshift(keyP["week5_timer4"], 3), bodyBytes[5])
+            bodyBytes[5] = bit.bor(bit.lshift(keyP["week5_timer5"], 4), bodyBytes[5])
+            bodyBytes[5] = bit.bor(bit.lshift(keyP["week5_duplicate_timer_on_1"], 5), bodyBytes[5])
+            bodyBytes[5] = bit.bor(bit.lshift(keyP["week5_duplicate_timer_off_2"], 6), bodyBytes[5])
             bodyBytes[6] = bit.bor(keyP["week6_timer1"], bodyBytes[6])
-            bodyBytes[6] = bit.bor(bit.lshift(keyP["week6_timer2"], 1),
-                                   bodyBytes[6])
-            bodyBytes[6] = bit.bor(bit.lshift(keyP["week6_timer3"], 2),
-                                   bodyBytes[6])
-            bodyBytes[6] = bit.bor(bit.lshift(keyP["week6_timer4"], 3),
-                                   bodyBytes[6])
-            bodyBytes[6] = bit.bor(bit.lshift(keyP["week6_timer5"], 4),
-                                   bodyBytes[6])
-            bodyBytes[6] = bit.bor(bit.lshift(
-                                       keyP["week6_duplicate_timer_on_1"], 5),
-                                   bodyBytes[6])
-            bodyBytes[6] = bit.bor(bit.lshift(
-                                       keyP["week6_duplicate_timer_off_2"], 6),
-                                   bodyBytes[6])
+            bodyBytes[6] = bit.bor(bit.lshift(keyP["week6_timer2"], 1), bodyBytes[6])
+            bodyBytes[6] = bit.bor(bit.lshift(keyP["week6_timer3"], 2), bodyBytes[6])
+            bodyBytes[6] = bit.bor(bit.lshift(keyP["week6_timer4"], 3), bodyBytes[6])
+            bodyBytes[6] = bit.bor(bit.lshift(keyP["week6_timer5"], 4), bodyBytes[6])
+            bodyBytes[6] = bit.bor(bit.lshift(keyP["week6_duplicate_timer_on_1"], 5), bodyBytes[6])
+            bodyBytes[6] = bit.bor(bit.lshift(keyP["week6_duplicate_timer_off_2"], 6), bodyBytes[6])
             bodyBytes[7] = keyP["week0_timer1_open_hour"]
             bodyBytes[8] = keyP["week0_timer1_open_min"]
             bodyBytes[9] = keyP["week0_timer1_close_hour"]
@@ -3055,79 +2848,45 @@ function jsonToData(jsonCmd)
             infoM = getTotalMsg(bodyBytes, 0x21)
         else
             bodyBytes[0] = bit.bor(keyP["powerValue"], bodyBytes[0])
-            bodyBytes[0] = bit.bor(bit.lshift(keyP["standby_clean"], 1),
-                                   bodyBytes[0])
-            bodyBytes[0] = bit.bor(bit.lshift(keyP["no_wind_sense"], 3),
-                                   bodyBytes[0])
-            bodyBytes[0] =
-                bit.bor(bit.lshift(keyP["dryValue"], 4), bodyBytes[0])
-            bodyBytes[0] = bit.bor(bit.lshift(keyP["strongWindValue"], 5),
-                                   bodyBytes[0])
-            bodyBytes[0] = bit.bor(bit.lshift(keyP["manulNewWind"], 6),
-                                   bodyBytes[0])
-            bodyBytes[0] = bit.bor(bit.lshift(keyP["autoNewWind"], 7),
-                                   bodyBytes[0])
+            bodyBytes[0] = bit.bor(bit.lshift(keyP["standby_clean"], 1), bodyBytes[0])
+            bodyBytes[0] = bit.bor(bit.lshift(keyP["no_wind_sense"], 3), bodyBytes[0])
+            bodyBytes[0] = bit.bor(bit.lshift(keyP["dryValue"], 4), bodyBytes[0])
+            bodyBytes[0] = bit.bor(bit.lshift(keyP["strongWindValue"], 5), bodyBytes[0])
+            bodyBytes[0] = bit.bor(bit.lshift(keyP["manulNewWind"], 6), bodyBytes[0])
+            bodyBytes[0] = bit.bor(bit.lshift(keyP["autoNewWind"], 7), bodyBytes[0])
             bodyBytes[1] = bit.bor(keyP["swingLeftUDValue"], bodyBytes[1])
-            bodyBytes[1] = bit.bor(bit.lshift(keyP["swingRightUDValue"], 1),
-                                   bodyBytes[1])
-            bodyBytes[1] = bit.bor(bit.lshift(keyP["swingUpLRValue"], 2),
-                                   bodyBytes[1])
-            bodyBytes[1] = bit.bor(bit.lshift(keyP["swingDownLRValue"], 3),
-                                   bodyBytes[1])
-            bodyBytes[1] = bit.bor(bit.lshift(keyP["forceCoolMode"], 4),
-                                   bodyBytes[1])
-            bodyBytes[1] = bit.bor(bit.lshift(keyP["forceAutoMode"], 5),
-                                   bodyBytes[1])
-            bodyBytes[1] =
-                bit.bor(bit.lshift(keyP["PTCValue"], 6), bodyBytes[1])
-            bodyBytes[1] = bit.bor(bit.lshift(keyP["PTCDependT4Value"], 7),
-                                   bodyBytes[1])
+            bodyBytes[1] = bit.bor(bit.lshift(keyP["swingRightUDValue"], 1), bodyBytes[1])
+            bodyBytes[1] = bit.bor(bit.lshift(keyP["swingUpLRValue"], 2), bodyBytes[1])
+            bodyBytes[1] = bit.bor(bit.lshift(keyP["swingDownLRValue"], 3), bodyBytes[1])
+            bodyBytes[1] = bit.bor(bit.lshift(keyP["forceCoolMode"], 4), bodyBytes[1])
+            bodyBytes[1] = bit.bor(bit.lshift(keyP["forceAutoMode"], 5), bodyBytes[1])
+            bodyBytes[1] = bit.bor(bit.lshift(keyP["PTCValue"], 6), bodyBytes[1])
+            bodyBytes[1] = bit.bor(bit.lshift(keyP["PTCDependT4Value"], 7), bodyBytes[1])
             bodyBytes[2] = bit.bor(keyP["cool_hot_sense"], bodyBytes[2])
-            bodyBytes[2] = bit.bor(bit.lshift(keyP["preventCold"], 1),
-                                   bodyBytes[2])
-            bodyBytes[2] = bit.bor(bit.lshift(keyP["wind_straight"], 2),
-                                   bodyBytes[2])
-            bodyBytes[2] = bit.bor(bit.lshift(keyP["wind_avoid"], 3),
-                                   bodyBytes[2])
-            bodyBytes[2] = bit.bor(bit.lshift(keyP["disinfect"], 4),
-                                   bodyBytes[2])
-            bodyBytes[2] = bit.bor(bit.lshift(keyP["elecDustRemove"], 5),
-                                   bodyBytes[2])
-            bodyBytes[2] = bit.bor(bit.lshift(keyP["self_clean"], 6),
-                                   bodyBytes[2])
-            bodyBytes[2] = bit.bor(bit.lshift(keyP["energySaveValue"], 7),
-                                   bodyBytes[2])
+            bodyBytes[2] = bit.bor(bit.lshift(keyP["preventCold"], 1), bodyBytes[2])
+            bodyBytes[2] = bit.bor(bit.lshift(keyP["wind_straight"], 2), bodyBytes[2])
+            bodyBytes[2] = bit.bor(bit.lshift(keyP["wind_avoid"], 3), bodyBytes[2])
+            bodyBytes[2] = bit.bor(bit.lshift(keyP["disinfect"], 4), bodyBytes[2])
+            bodyBytes[2] = bit.bor(bit.lshift(keyP["elecDustRemove"], 5), bodyBytes[2])
+            bodyBytes[2] = bit.bor(bit.lshift(keyP["self_clean"], 6), bodyBytes[2])
+            bodyBytes[2] = bit.bor(bit.lshift(keyP["energySaveValue"], 7), bodyBytes[2])
             bodyBytes[3] = bit.bor(keyP["air_optimization"], bodyBytes[3])
-            bodyBytes[3] = bit.bor(bit.lshift(keyP["nobody_energy_save"], 1),
-                                   bodyBytes[3])
-            bodyBytes[3] = bit.bor(bit.lshift(keyP["autoPurify"], 2),
-                                   bodyBytes[3])
-            bodyBytes[3] = bit.bor(bit.lshift(keyP["manuPurify"], 3),
-                                   bodyBytes[3])
-            bodyBytes[3] = bit.bor(bit.lshift(keyP["no_wind_sense_mode"], 4),
-                                   bodyBytes[3])
-            bodyBytes[3] =
-                bit.bor(bit.lshift(keyP["run_test"], 6), bodyBytes[3])
-            bodyBytes[3] = bit.bor(bit.lshift(keyP["fast_check"], 7),
-                                   bodyBytes[3])
+            bodyBytes[3] = bit.bor(bit.lshift(keyP["nobody_energy_save"], 1), bodyBytes[3])
+            bodyBytes[3] = bit.bor(bit.lshift(keyP["autoPurify"], 2), bodyBytes[3])
+            bodyBytes[3] = bit.bor(bit.lshift(keyP["manuPurify"], 3), bodyBytes[3])
+            bodyBytes[3] = bit.bor(bit.lshift(keyP["no_wind_sense_mode"], 4), bodyBytes[3])
+            bodyBytes[3] = bit.bor(bit.lshift(keyP["run_test"], 6), bodyBytes[3])
+            bodyBytes[3] = bit.bor(bit.lshift(keyP["fast_check"], 7), bodyBytes[3])
             bodyBytes[4] = bit.bor(keyP["autoHumi"], bodyBytes[4])
-            bodyBytes[4] =
-                bit.bor(bit.lshift(keyP["manuHumi"], 1), bodyBytes[4])
-            bodyBytes[4] = bit.bor(bit.lshift(keyP["wind_strength"], 2),
-                                   bodyBytes[4])
-            bodyBytes[4] = bit.bor(bit.lshift(keyP["new_wind_machine"], 3),
-                                   bodyBytes[4])
-            bodyBytes[4] = bit.bor(bit.lshift(keyP["new_wind_machine_link"], 4),
-                                   bodyBytes[4])
-            bodyBytes[4] = bit.bor(bit.lshift(keyP["project_evacuate"], 5),
-                                   bodyBytes[4])
-            bodyBytes[4] = bit.bor(bit.lshift(keyP["follow_body_sense"], 6),
-                                   bodyBytes[4])
-            bodyBytes[4] = bit.bor(bit.lshift(keyP["exhaust_strength"], 7),
-                                   bodyBytes[4])
+            bodyBytes[4] = bit.bor(bit.lshift(keyP["manuHumi"], 1), bodyBytes[4])
+            bodyBytes[4] = bit.bor(bit.lshift(keyP["wind_strength"], 2), bodyBytes[4])
+            bodyBytes[4] = bit.bor(bit.lshift(keyP["new_wind_machine"], 3), bodyBytes[4])
+            bodyBytes[4] = bit.bor(bit.lshift(keyP["new_wind_machine_link"], 4), bodyBytes[4])
+            bodyBytes[4] = bit.bor(bit.lshift(keyP["project_evacuate"], 5), bodyBytes[4])
+            bodyBytes[4] = bit.bor(bit.lshift(keyP["follow_body_sense"], 6), bodyBytes[4])
+            bodyBytes[4] = bit.bor(bit.lshift(keyP["exhaust_strength"], 7), bodyBytes[4])
             bodyBytes[5] = keyP["modeValue"]
-            bodyBytes[6] =
-                (keyP["temperature"] + keyP["small_temperature"]) * 2 + 30
+            bodyBytes[6] = (keyP["temperature"] + keyP["small_temperature"]) * 2 + 30
             bodyBytes[7] = keyP["fanspeedValue"]
             bodyBytes[8] = keyP["dehumidityValue"]
             bodyBytes[9] = keyP["pm25LowValue"]
@@ -3138,22 +2897,14 @@ function jsonToData(jsonCmd)
             bodyBytes[15] = keyP["newWindModeValue"]
             bodyBytes[16] = keyP["newWindSpeedValue"]
             bodyBytes[17] = bit.bor(keyP["water_model_power"], bodyBytes[17])
-            bodyBytes[17] = bit.bor(
-                                bit.lshift(keyP["water_model_power_save"], 1),
-                                bodyBytes[17])
-            if (keyP["water_model_clean"] == 1 and keyP["water_model_power"] ==
-                1 and keyP["water_model_flag"] == 2) then
+            bodyBytes[17] = bit.bor(bit.lshift(keyP["water_model_power_save"], 1), bodyBytes[17])
+            if keyP["water_model_clean"] == 1 and keyP["water_model_power"] == 1 and keyP["water_model_flag"] == 2 then
                 keyP["water_model_clean"] = 0
             end
-            bodyBytes[17] = bit.bor(bit.lshift(keyP["water_model_clean"], 2),
-                                    bodyBytes[17])
-            bodyBytes[17] = bit.bor(bit.lshift(
-                                        keyP["water_model_temperature_auto"], 3),
-                                    bodyBytes[17])
-            bodyBytes[17] = bit.bor(bit.lshift(keyP["water_model_ptc"], 4),
-                                    bodyBytes[17])
-            bodyBytes[17] = bit.bor(bit.lshift(keyP["water_model_go_out"], 7),
-                                    bodyBytes[17])
+            bodyBytes[17] = bit.bor(bit.lshift(keyP["water_model_clean"], 2), bodyBytes[17])
+            bodyBytes[17] = bit.bor(bit.lshift(keyP["water_model_temperature_auto"], 3), bodyBytes[17])
+            bodyBytes[17] = bit.bor(bit.lshift(keyP["water_model_ptc"], 4), bodyBytes[17])
+            bodyBytes[17] = bit.bor(bit.lshift(keyP["water_model_go_out"], 7), bodyBytes[17])
             bodyBytes[18] = keyP["water_mode"]
             bodyBytes[19] = keyP["water_model_temperature_set"] * 2 + 50
             bodyBytes[20] = keyP["buzzerValue"]
@@ -3161,75 +2912,48 @@ function jsonToData(jsonCmd)
             bodyBytes[22] = keyP["air_optimization_humidity"]
             bodyBytes[23] = keyP["air_optimization_wind"]
             bodyBytes[25] = keyP["comfortableSleepValue"]
-            bodyBytes[25] = bit.bor(bit.lshift(keyP["stop_warm"], 3),
-                                    bodyBytes[25])
+            bodyBytes[25] = bit.bor(bit.lshift(keyP["stop_warm"], 3), bodyBytes[25])
             bodyBytes[25] = bit.bor(bit.lshift(keyP["eco"], 6), bodyBytes[25])
-            bodyBytes[25] = bit.bor(bit.lshift(keyP["prevent_super_cool"], 7),
-                                    bodyBytes[25])
+            bodyBytes[25] = bit.bor(bit.lshift(keyP["prevent_super_cool"], 7), bodyBytes[25])
             bodyBytes[25] = bit.bor(keyP["power_on_timer"], bodyBytes[25])
-            bodyBytes[25] = bit.bor(bit.lshift(keyP["power_off_timer"], 1),
-                                    bodyBytes[25])
-            bodyBytes[25] = bit.bor(bit.lshift(keyP["timer_enable"], 2),
-                                    bodyBytes[25])
+            bodyBytes[25] = bit.bor(bit.lshift(keyP["power_off_timer"], 1), bodyBytes[25])
+            bodyBytes[25] = bit.bor(bit.lshift(keyP["timer_enable"], 2), bodyBytes[25])
             bodyBytes[26] = bit.band(keyP["power_on_time_value"], 0xFF)
             bodyBytes[27] = bit.band(keyP["power_off_time_value"], 0xFF)
-            bodyBytes[28] = bit.bor(bit.rshift(keyP["power_on_time_value"], 8),
-                                    bodyBytes[28])
-            bodyBytes[28] = bit.bor(bit.lshift(bit.rshift(
-                                                   keyP["power_off_time_value"],
-                                                   8), 4), bodyBytes[28])
-            bodyBytes[29] = bit.bor(keyP["up_down_wind_direction"],
-                                    bodyBytes[29])
-            bodyBytes[29] = bit.bor(bit.lshift(
-                                        keyP["left_right_wind_direction"], 4),
-                                    bodyBytes[29])
+            bodyBytes[28] = bit.bor(bit.rshift(keyP["power_on_time_value"], 8), bodyBytes[28])
+            bodyBytes[28] = bit.bor(bit.lshift(bit.rshift(keyP["power_off_time_value"], 8), 4), bodyBytes[28])
+            bodyBytes[29] = bit.bor(keyP["up_down_wind_direction"], bodyBytes[29])
+            bodyBytes[29] = bit.bor(bit.lshift(keyP["left_right_wind_direction"], 4), bodyBytes[29])
             bodyBytes[36] = 0x08
-            bodyBytes[36] = bit.bor(
-                                bit.lshift(keyP["fresh_air_remove_odor"], 7),
-                                bodyBytes[36])
+            bodyBytes[36] = bit.bor(bit.lshift(keyP["fresh_air_remove_odor"], 7), bodyBytes[36])
             bodyBytes[37] = bit.bor(keyP["dry_type"], bodyBytes[37])
-            bodyBytes[37] = bit.bor(bit.lshift(keyP["total_time_support"], 2),
-                                    bodyBytes[37])
-            bodyBytes[37] = bit.bor(bit.lshift(
-                                        keyP["airoptimization_or_total_time"], 3),
-                                    bodyBytes[37])
-            bodyBytes[37] = bit.bor(bit.lshift(keyP["total_time_switch"], 4),
-                                    bodyBytes[37])
-            bodyBytes[37] = bit.bor(bit.lshift(keyP["remove_arofene"], 5),
-                                    bodyBytes[37])
-            bodyBytes[37] = bit.bor(bit.lshift(keyP["voice_control"], 6),
-                                    bodyBytes[37])
-            bodyBytes[37] = bit.bor(
-                                bit.lshift(keyP["voice_control_speaking"], 7),
-                                bodyBytes[37])
+            bodyBytes[37] = bit.bor(bit.lshift(keyP["total_time_support"], 2), bodyBytes[37])
+            bodyBytes[37] = bit.bor(bit.lshift(keyP["airoptimization_or_total_time"], 3), bodyBytes[37])
+            bodyBytes[37] = bit.bor(bit.lshift(keyP["total_time_switch"], 4), bodyBytes[37])
+            bodyBytes[37] = bit.bor(bit.lshift(keyP["remove_arofene"], 5), bodyBytes[37])
+            bodyBytes[37] = bit.bor(bit.lshift(keyP["voice_control"], 6), bodyBytes[37])
+            bodyBytes[37] = bit.bor(bit.lshift(keyP["voice_control_speaking"], 7), bodyBytes[37])
             bodyBytes[38] = bit.bor(keyP["fengguan_remove_odor"], bodyBytes[38])
-            bodyBytes[38] = bit.bor(bit.lshift(keyP["timer_announcement"], 2),
-                                    bodyBytes[38])
-            bodyBytes[38] = bit.bor(bit.lshift(keyP["new_home_remove_arofene"],
-                                               3), bodyBytes[38])
-            bodyBytes[38] = bit.bor(bit.lshift(
-                                        keyP["new_home_remove_arofene_exit"], 4),
-                                    bodyBytes[38])
+            bodyBytes[38] = bit.bor(bit.lshift(keyP["timer_announcement"], 2), bodyBytes[38])
+            bodyBytes[38] = bit.bor(bit.lshift(keyP["new_home_remove_arofene"], 3), bodyBytes[38])
+            bodyBytes[38] = bit.bor(bit.lshift(keyP["new_home_remove_arofene_exit"], 4), bodyBytes[38])
             bodyBytes[39] = keyP["shortest_remove_odor_time"]
             bodyBytes[40] = keyP["longest_remove_odor_time"]
-            if (keyP["comfortableSleepValue"] == 0x30 and comfortByte ~= nil) then
-                bodyBytes[30] = bit.bor(checkBoundary(comfortByte[1], 16, 30) -
-                                            16, bit.lshift(
-                                            (checkBoundary(comfortByte[2], 16,
-                                                           30) - 16), 4))
-                bodyBytes[31] = bit.bor(checkBoundary(comfortByte[3], 16, 30) -
-                                            16, bit.lshift(
-                                            (checkBoundary(comfortByte[4], 16,
-                                                           30) - 16), 4))
-                bodyBytes[32] = bit.bor(checkBoundary(comfortByte[5], 16, 30) -
-                                            16,
-                                        bit.lshift((comfortByte[6] - 16), 4))
-                bodyBytes[33] = bit.bor(checkBoundary(comfortByte[7], 16, 30) -
-                                            16,
-                                        bit.lshift((comfortByte[8] - 16), 4))
-                bodyBytes[34] = bit.bor(checkBoundary(comfortByte[9], 16, 30) -
-                                            16,
-                                        bit.lshift((comfortByte[10] - 16), 4))
+            if keyP["comfortableSleepValue"] == 0x30 and comfortByte ~= nil then
+                bodyBytes[30] = bit.bor(
+                    checkBoundary(comfortByte[1], 16, 30) - 16,
+                    bit.lshift((checkBoundary(comfortByte[2], 16, 30) - 16), 4)
+                )
+                bodyBytes[31] = bit.bor(
+                    checkBoundary(comfortByte[3], 16, 30) - 16,
+                    bit.lshift((checkBoundary(comfortByte[4], 16, 30) - 16), 4)
+                )
+                bodyBytes[32] =
+                    bit.bor(checkBoundary(comfortByte[5], 16, 30) - 16, bit.lshift((comfortByte[6] - 16), 4))
+                bodyBytes[33] =
+                    bit.bor(checkBoundary(comfortByte[7], 16, 30) - 16, bit.lshift((comfortByte[8] - 16), 4))
+                bodyBytes[34] =
+                    bit.bor(checkBoundary(comfortByte[9], 16, 30) - 16, bit.lshift((comfortByte[10] - 16), 4))
             end
             infoM = getTotalMsg(bodyBytes, keyB["BYTE_CONTROL_REQUEST"])
         end
@@ -3239,7 +2963,7 @@ function jsonToData(jsonCmd)
     return ret
 end
 function dataToJson(jsonCmd)
-    if (not jsonCmd) then return nil end
+    if not jsonCmd then return nil end
     init_keyP()
     local json = decode(jsonCmd)
     local deviceinfo = json["deviceinfo"]
@@ -3247,7 +2971,7 @@ function dataToJson(jsonCmd)
     local deviceSN = json["deviceinfo"]["deviceSN"]
     if deviceSN ~= nil then deviceSN8 = string.sub(deviceSN, 4, 8) end
     local status = json["status"]
-    if (status) then JsonToModel(status, "status") end
+    if status then JsonToModel(status, "status") end
     local binData = json["msg"]["data"]
     local info = {}
     local acInfo = {}
@@ -3258,9 +2982,13 @@ function dataToJson(jsonCmd)
     acInfo = string2table(binData)
     local infoLenth = 0
     infoLenth = acInfo[2] - 10 - 2
-    for k = 1, infoLenth do info[k] = acInfo[k + 10] end
-    for i = 1, #info do msgBytes[i - 1] = info[i] end
-    dataType = info[6];
+    for k = 1, infoLenth do
+        info[k] = acInfo[k + 10]
+    end
+    for i = 1, #info do
+        msgBytes[i - 1] = info[i]
+    end
+    dataType = info[6]
     msgLength = msgBytes[1]
     bodyLength = msgLength - keyB["BYTE_PROTOCOL_LENGTH"] - 1
     for i = 0, bodyLength do
@@ -3269,255 +2997,246 @@ function dataToJson(jsonCmd)
     binToModel(bodyBytes)
     local streams = {}
     streams[keyT["KEY_VERSION"]] = keyV["VALUE_VERSION"]
-    if (dataType == 0x20 or dataType == 0x11) then
-        if (keyP["powerValue"] == keyB["BYTE_COMMON_ON"]) then
+    if dataType == 0x20 or dataType == 0x11 then
+        if keyP["powerValue"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_POWER"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["powerValue"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["powerValue"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_POWER"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["standby_clean"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["standby_clean"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_STANDBY_CLEAN"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["standby_clean"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["standby_clean"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_STANDBY_CLEAN"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["no_wind_sense"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["no_wind_sense"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_NOWINDSENSE"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["no_wind_sense"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["no_wind_sense"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_NOWINDSENSE"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["dryValue"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["dryValue"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_DRY"]] = keyV["VALUE_FUNCTION_ON"]
         else
             streams[keyT["KEY_DRY"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["strongWindValue"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["strongWindValue"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_STRONG_WIND"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["strongWindValue"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["strongWindValue"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_STRONG_WIND"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["manulNewWind"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["manulNewWind"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_MANUL_NEWWIND"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["manulNewWind"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["manulNewWind"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_MANUL_NEWWIND"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["autoNewWind"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["autoNewWind"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_AUTO_NEWWIND"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["autoNewWind"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["autoNewWind"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_AUTO_NEWWIND"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["swingLeftUDValue"] == keyB["BYTE_COMMON_OFF"]) then
+        if keyP["swingLeftUDValue"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_SWING_UD"]] = keyV["VALUE_FUNCTION_OFF"]
         else
             streams[keyT["KEY_SWING_UD"]] = keyV["VALUE_FUNCTION_ON"]
         end
-        if (keyP["swingUpLRValue"] == keyB["BYTE_COMMON_OFF"]) then
+        if keyP["swingUpLRValue"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_SWING_LR"]] = keyV["VALUE_FUNCTION_OFF"]
         else
             streams[keyT["KEY_SWING_LR"]] = keyV["VALUE_FUNCTION_ON"]
         end
-        if (keyP["forceCoolMode"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["forceCoolMode"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_FORCE_COOL_MODE"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["forceCoolMode"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["forceCoolMode"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_FORCE_COOL_MODE"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["forceAutoMode"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["forceAutoMode"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_FORCE_AUTO_MODE"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["forceAutoMode"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["forceAutoMode"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_FORCE_AUTO_MODE"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["PTCValue"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["PTCValue"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_PTC"]] = keyV["VALUE_FUNCTION_ON"]
         else
             streams[keyT["KEY_PTC"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["cool_hot_sense"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["cool_hot_sense"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_COOL_HOT_SENSE"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["cool_hot_sense"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["cool_hot_sense"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_COOL_HOT_SENSE"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["preventCold"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["preventCold"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_PREVENT_COLD"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["preventCold"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["preventCold"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_PREVENT_COLD"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["wind_straight"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["wind_straight"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_WIND_STRAIGHT"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["wind_straight"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["wind_straight"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_WIND_STRAIGHT"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["wind_avoid"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["wind_avoid"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_WIND_AVOID"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["wind_avoid"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["wind_avoid"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_WIND_AVOID"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["disinfect"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["disinfect"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_DISINFECT"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["disinfect"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["disinfect"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_DISINFECT"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["elecDustRemove"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["elecDustRemove"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_ELEC_DUST_REMOVE"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["elecDustRemove"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["elecDustRemove"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_ELEC_DUST_REMOVE"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["self_clean"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["self_clean"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_SELFCLEAN"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["self_clean"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["self_clean"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_SELFCLEAN"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["energySaveValue"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["energySaveValue"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_ENERGY_SAVE"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["energySaveValue"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["energySaveValue"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_ENERGY_SAVE"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["air_optimization"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["air_optimization"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_AIR_OPTIMIZATION"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["air_optimization"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["air_optimization"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_AIR_OPTIMIZATION"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["nobody_energy_save"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["nobody_energy_save"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_NOBODY_ENERGY_SAVE"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["nobody_energy_save"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["nobody_energy_save"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_NOBODY_ENERGY_SAVE"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["autoPurify"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["autoPurify"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_AUTO_PURIFY"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["autoPurify"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["autoPurify"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_AUTO_PURIFY"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["manuPurify"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["manuPurify"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_MANUL_PURIFY"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["manuPurify"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["manuPurify"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_MANUL_PURIFY"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["no_wind_sense_mode"] ~= nil) then
+        if keyP["no_wind_sense_mode"] ~= nil then
             streams[keyT["KEY_NO_WIND_SENSE_MODE"]] = keyP["no_wind_sense_mode"]
         end
-        if (keyP["run_test"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["run_test"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_RUN_TEST"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["run_test"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["run_test"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_RUN_TEST"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["fast_check"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["fast_check"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_FAST_CHECK"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["fast_check"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["fast_check"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_FAST_CHECK"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["autoHumi"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["autoHumi"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_AUTO_HUMI"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["autoHumi"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["autoHumi"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_AUTO_HUMI"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["manuHumi"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["manuHumi"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_MANUL_HUMI"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["manuHumi"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["manuHumi"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_MANUL_HUMI"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["wind_strength"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["wind_strength"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_WIND_STRENGTH"]] = 0x01
-        elseif (keyP["wind_strength"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["wind_strength"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_WIND_STRENGTH"]] = 0x00
         end
-        if (keyP["new_wind_machine"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["new_wind_machine"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_NEW_WIND_MACHINE"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["new_wind_machine"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["new_wind_machine"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_NEW_WIND_MACHINE"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["new_wind_machine_link"] == keyB["BYTE_COMMON_ON"]) then
-            streams[keyT["KEY_NEW_WIND_MACHINE_LINK"]] =
-                keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["new_wind_machine_link"] == keyB["BYTE_COMMON_OFF"]) then
-            streams[keyT["KEY_NEW_WIND_MACHINE_LINK"]] =
-                keyV["VALUE_FUNCTION_OFF"]
+        if keyP["new_wind_machine_link"] == keyB["BYTE_COMMON_ON"] then
+            streams[keyT["KEY_NEW_WIND_MACHINE_LINK"]] = keyV["VALUE_FUNCTION_ON"]
+        elseif keyP["new_wind_machine_link"] == keyB["BYTE_COMMON_OFF"] then
+            streams[keyT["KEY_NEW_WIND_MACHINE_LINK"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["project_evacuate"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["project_evacuate"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_PROJECT_EVACUATE"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["project_evacuate"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["project_evacuate"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_PROJECT_EVACUATE"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["follow_body_sense"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["follow_body_sense"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_FOLLOW_BODY_SENSE"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["follow_body_sense"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["follow_body_sense"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_FOLLOW_BODY_SENSE"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["exhaust_strength"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["exhaust_strength"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_EXHAUST_STRENGTH"]] = 0x01
-        elseif (keyP["exhaust_strength"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["exhaust_strength"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_EXHAUST_STRENGTH"]] = 0x00
         end
-        if (keyP["modeValue"] == keyB["BYTE_MODE_HEAT"]) then
+        if keyP["modeValue"] == keyB["BYTE_MODE_HEAT"] then
             streams[keyT["KEY_MODE"]] = keyV["VALUE_MODE_HEAT"]
-        elseif (keyP["modeValue"] == keyB["BYTE_MODE_COOL"]) then
+        elseif keyP["modeValue"] == keyB["BYTE_MODE_COOL"] then
             streams[keyT["KEY_MODE"]] = keyV["VALUE_MODE_COOL"]
-        elseif (keyP["modeValue"] == keyB["BYTE_MODE_AUTO"]) then
+        elseif keyP["modeValue"] == keyB["BYTE_MODE_AUTO"] then
             streams[keyT["KEY_MODE"]] = keyV["VALUE_MODE_AUTO"]
-        elseif (keyP["modeValue"] == keyB["BYTE_MODE_DRY"]) then
+        elseif keyP["modeValue"] == keyB["BYTE_MODE_DRY"] then
             streams[keyT["KEY_MODE"]] = keyV["VALUE_MODE_DRY"]
-        elseif (keyP["modeValue"] == keyB["BYTE_MODE_FAN"]) then
+        elseif keyP["modeValue"] == keyB["BYTE_MODE_FAN"] then
             streams[keyT["KEY_MODE"]] = keyV["VALUE_MODE_FAN"]
-        elseif (keyP["modeValue"] == keyB["BYTE_MODE_STANDBY"]) then
+        elseif keyP["modeValue"] == keyB["BYTE_MODE_STANDBY"] then
             streams[keyT["KEY_MODE"]] = keyV["VALUE_MODE_STANDBY"]
-        elseif (keyP["modeValue"] == keyB["BYTE_MODE_DRYCONSTANT"]) then
+        elseif keyP["modeValue"] == keyB["BYTE_MODE_DRYCONSTANT"] then
             streams[keyT["KEY_MODE"]] = keyV["VALUE_MODE_DRYCONSTANT"]
-        elseif (keyP["modeValue"] == keyB["BYTE_MODE_DRYAUTO"]) then
+        elseif keyP["modeValue"] == keyB["BYTE_MODE_DRYAUTO"] then
             streams[keyT["KEY_MODE"]] = keyV["VALUE_MODE_DRYAUTO"]
         end
         streams[keyT["KEY_TEMPERATURE"]] = keyP["temperature"]
         streams["small_temperature"] = keyP["small_temperature"]
         streams[keyT["KEY_FANSPEED"]] = keyP["fanspeedValue"]
         streams[keyT["KEY_DEHUMIDITY"]] = keyP["deHumidityValue"]
-        streams[keyT["KEY_PM25"]] = keyP["pm25HighValue"] * 256 +
-                                        keyP["pm25LowValue"]
-        streams[keyT["KEY_CO2"]] = keyP["co2HighValue"] * 256 +
-                                       keyP["co2LowValue"]
+        streams[keyT["KEY_PM25"]] = keyP["pm25HighValue"] * 256 + keyP["pm25LowValue"]
+        streams[keyT["KEY_CO2"]] = keyP["co2HighValue"] * 256 + keyP["co2LowValue"]
         streams[keyT["KEY_HUMIDITY"]] = keyP["humidityValue"]
         streams[keyT["KEY_NEWWIND_MODE"]] = keyP["newWindModeValue"]
         streams[keyT["KEY_NEWWIND_FANSPEED"]] = keyP["newWindSpeedValue"]
-        if (keyP["comfortableSleepValue"] ~= nil) then
-            if (keyP["comfortableSleepValue"] == 0x00) then
+        if keyP["comfortableSleepValue"] ~= nil then
+            if keyP["comfortableSleepValue"] == 0x00 then
                 streams["comfort_sleep"] = "off"
-            elseif (keyP["comfortableSleepValue"] == 0x30) then
+            elseif keyP["comfortableSleepValue"] == 0x30 then
                 streams["comfort_sleep"] = "on"
             end
         end
-        if (keyP["water_model_power"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["water_model_power"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_WATER_MODEL_POWER"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["water_model_power"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["water_model_power"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_WATER_MODEL_POWER"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["water_model_power_save"] == keyB["BYTE_COMMON_ON"]) then
-            streams[keyT["KEY_WATER_MODEL_POWER_SAVE"]] =
-                keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["water_model_power_save"] == keyB["BYTE_COMMON_OFF"]) then
-            streams[keyT["KEY_WATER_MODEL_POWER_SAVE"]] =
-                keyV["VALUE_FUNCTION_OFF"]
+        if keyP["water_model_power_save"] == keyB["BYTE_COMMON_ON"] then
+            streams[keyT["KEY_WATER_MODEL_POWER_SAVE"]] = keyV["VALUE_FUNCTION_ON"]
+        elseif keyP["water_model_power_save"] == keyB["BYTE_COMMON_OFF"] then
+            streams[keyT["KEY_WATER_MODEL_POWER_SAVE"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["water_model_clean"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["water_model_clean"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_WATER_MODEL_CLEAN"]] = keyV["VALUE_FUNCTION_ON"]
             keyP["water_model_flag"] = keyP["water_model_flag"] + 1
-            print("hello2")
-        elseif (keyP["water_model_clean"] == keyB["BYTE_COMMON_OFF"]) then
+            print "hello2"
+        elseif keyP["water_model_clean"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_WATER_MODEL_CLEAN"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["water_model_temperature_auto"] == keyB["BYTE_COMMON_ON"]) then
-            streams[keyT["KEY_WATER_MODEL_TEMPERATURE_AUTO"]] =
-                keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["water_model_temperature_auto"] == keyB["BYTE_COMMON_OFF"]) then
-            streams[keyT["KEY_WATER_MODEL_TEMPERATURE_AUTO"]] =
-                keyV["VALUE_FUNCTION_OFF"]
+        if keyP["water_model_temperature_auto"] == keyB["BYTE_COMMON_ON"] then
+            streams[keyT["KEY_WATER_MODEL_TEMPERATURE_AUTO"]] = keyV["VALUE_FUNCTION_ON"]
+        elseif keyP["water_model_temperature_auto"] == keyB["BYTE_COMMON_OFF"] then
+            streams[keyT["KEY_WATER_MODEL_TEMPERATURE_AUTO"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["water_model_ptc"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["water_model_ptc"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_WATER_MODEL_PTC"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["water_model_ptc"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["water_model_ptc"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_WATER_MODEL_PTC"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["water_model_go_out"] == keyB["BYTE_COMMON_ON"]) then
+        if keyP["water_model_go_out"] == keyB["BYTE_COMMON_ON"] then
             streams[keyT["KEY_WATER_MODEL_GO_OUT"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["water_model_go_out"] == keyB["BYTE_COMMON_OFF"]) then
+        elseif keyP["water_model_go_out"] == keyB["BYTE_COMMON_OFF"] then
             streams[keyT["KEY_WATER_MODEL_GO_OUT"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        streams[keyT["KEY_WATER_MODEL_TEMPERATURE_SET"]] =
-            keyP["water_model_temperature_set"]
+        streams[keyT["KEY_WATER_MODEL_TEMPERATURE_SET"]] = keyP["water_model_temperature_set"]
         streams[keyT["KEY_HAS_HUIFENG"]] = keyP["has_huifeng"]
         streams[keyT["KEY_HAS_CHUFENG"]] = keyP["has_chufeng"]
         streams[keyT["KEY_HAS_WIND_LR"]] = keyP["has_wind_lr"]
@@ -3525,20 +3244,17 @@ function dataToJson(jsonCmd)
         streams[keyT["KEY_HAS_XINFENG"]] = keyP["has_xinfeng"]
         streams[keyT["KEY_HAS_HUMIDIFER"]] = keyP["has_humidifer"]
         streams[keyT["KEY_HAS_WATER_MODEL"]] = keyP["has_water_model"]
-        streams[keyT["KEY_AIR_OPTIMIZATION_TEMPERATURE"]] =
-            keyP["air_optimization_temperature"]
-        streams[keyT["KEY_AIR_OPTIMIZATION_HUMIDITY"]] =
-            keyP["air_optimization_humidity"]
-        streams[keyT["KEY_AIR_OPTIMIZATION_WIND"]] =
-            keyP["air_optimization_wind"]
-        if (keyP["power_on_timer"] == 0x01) then
+        streams[keyT["KEY_AIR_OPTIMIZATION_TEMPERATURE"]] = keyP["air_optimization_temperature"]
+        streams[keyT["KEY_AIR_OPTIMIZATION_HUMIDITY"]] = keyP["air_optimization_humidity"]
+        streams[keyT["KEY_AIR_OPTIMIZATION_WIND"]] = keyP["air_optimization_wind"]
+        if keyP["power_on_timer"] == 0x01 then
             streams[keyT["KEY_POWER_ON_TIMER"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["power_on_timer"] == 0x00) then
+        elseif keyP["power_on_timer"] == 0x00 then
             streams[keyT["KEY_POWER_ON_TIMER"]] = keyV["VALUE_FUNCTION_OFF"]
         end
-        if (keyP["power_off_timer"] == 0x01) then
+        if keyP["power_off_timer"] == 0x01 then
             streams[keyT["KEY_POWER_OFF_TIMER"]] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["power_off_timer"] == 0x00) then
+        elseif keyP["power_off_timer"] == 0x00 then
             streams[keyT["KEY_POWER_OFF_TIMER"]] = keyV["VALUE_FUNCTION_OFF"]
         end
         streams["timer_enable"] = keyP["timer_enable"]
@@ -3546,9 +3262,9 @@ function dataToJson(jsonCmd)
         streams[keyT["KEY_CLOSE_TIME"]] = keyP["power_off_time_value"]
         streams["left_right_wind_direction"] = keyP["left_right_wind_direction"]
         streams["up_down_wind_direction"] = keyP["up_down_wind_direction"]
-        if (keyP["stop_warm"] == 0x01) then
+        if keyP["stop_warm"] == 0x01 then
             streams["stop_warm"] = keyV["VALUE_FUNCTION_ON"]
-        elseif (keyP["stop_warm"] == 0x00) then
+        elseif keyP["stop_warm"] == 0x00 then
             streams["stop_warm"] = keyV["VALUE_FUNCTION_OFF"]
         end
         streams["water_mode"] = keyP["water_mode"]
@@ -3558,8 +3274,7 @@ function dataToJson(jsonCmd)
         streams["dry_type"] = keyP["dry_type"]
         streams["inner_cycle_mode"] = keyP["inner_cycle_mode"]
         streams["inner_cycle_switch"] = keyP["inner_cycle_switch"]
-        streams["airoptimization_or_total_time"] =
-            keyP["airoptimization_or_total_time"]
+        streams["airoptimization_or_total_time"] = keyP["airoptimization_or_total_time"]
         streams["total_time_switch"] = keyP["total_time_switch"]
         streams["total_time_support"] = keyP["total_time_support"]
         streams["remove_arofene"] = keyP["remove_arofene"]
@@ -3567,12 +3282,11 @@ function dataToJson(jsonCmd)
         streams["voice_control_speaking"] = keyP["voice_control_speaking"]
         streams["fengguan_remove_odor"] = keyP["fengguan_remove_odor"]
         streams["new_home_remove_arofene"] = keyP["new_home_remove_arofene"]
-        streams["new_home_remove_arofene_exit"] =
-            keyP["new_home_remove_arofene_exit"]
+        streams["new_home_remove_arofene_exit"] = keyP["new_home_remove_arofene_exit"]
         streams["shortest_remove_odor_time"] = keyP["shortest_remove_odor_time"]
         streams["longest_remove_odor_time"] = keyP["longest_remove_odor_time"]
     end
-    if (dataType == 0x10) then
+    if dataType == 0x10 then
         streams[keyT["KEY_FANSPEED_REAL"]] = keyP["fanspeedRealValue"]
         streams[keyT["KEY_INDOOR_TEMPERATURE"]] = keyP["indoorTemperature"]
         streams[keyT["KEY_INDOOR_PM24"]] = keyP["indoorPm25"]
@@ -3593,12 +3307,10 @@ function dataToJson(jsonCmd)
         streams[keyT["KEY_TEMPERATURE_LEVEL"]] = keyP["temperatureLevel"]
         streams[keyT["KEY_TOVC_LEVEL"]] = keyP["tvocLevel"]
         streams[keyT["KEY_TOTAL_AIR_LEVEL"]] = keyP["totalAirLevel"]
-        streams[keyT["KEY_RETURN_AIR_PANEL_SELECT"]] =
-            keyP["returnAirPanelSelect"]
+        streams[keyT["KEY_RETURN_AIR_PANEL_SELECT"]] = keyP["returnAirPanelSelect"]
         streams[keyT["KEY_AIR_PANEL_SELECT"]] = keyP["airPanelSelect"]
         streams[keyT["KEY_NO_WIND_SENSE_SELECT"]] = keyP["noWindSenseSelect"]
-        streams[keyT["KEY_WIND_LEFT_RIGHT_SELECT"]] =
-            keyP["windLeftRightSelect"]
+        streams[keyT["KEY_WIND_LEFT_RIGHT_SELECT"]] = keyP["windLeftRightSelect"]
         streams["sn8_string"] = keyP["sn8_string"]
         streams["has_purifier"] = keyP["has_purifier"]
         streams["humidifier_water_tank"] = keyP["humidifier_water_tank"]
@@ -3606,35 +3318,29 @@ function dataToJson(jsonCmd)
         streams["force_drainage"] = keyP["force_drainage"]
         streams["prevent_condensation"] = keyP["prevent_condensation"]
         streams["water_tank_load"] = keyP["water_tank_load"]
-        streams["humidifier_over_flow_protect"] =
-            keyP["humidifier_over_flow_protect"]
+        streams["humidifier_over_flow_protect"] = keyP["humidifier_over_flow_protect"]
         streams["heat_water_tank_protect"] = keyP["heat_water_tank_protect"]
         streams["voltage_protect"] = keyP["voltage_protect"]
         streams["ptc_protect"] = keyP["ptc_protect"]
         streams["electric_leakage_protect"] = keyP["electric_leakage_protect"]
         streams["machine_electric_protect"] = keyP["machine_electric_protect"]
         streams["relay_bonding_fault"] = keyP["relay_bonding_fault"]
-        streams["humidifier_freezing_protect"] =
-            keyP["humidifier_freezing_protect"]
+        streams["humidifier_freezing_protect"] = keyP["humidifier_freezing_protect"]
         streams["error_linking_fault"] = keyP["error_linking_fault"]
         streams["zero_point_fault"] = keyP["zero_point_fault"]
         streams["humidity_sensor_lock"] = keyP["humidity_sensor_lock"]
         streams["drain_valve_leakage"] = keyP["drain_valve_leakage"]
         streams["hydrate_valve_leakage"] = keyP["hydrate_valve_leakage"]
-        streams["linking_humidifier_address"] =
-            keyP["linking_humidifier_address"]
+        streams["linking_humidifier_address"] = keyP["linking_humidifier_address"]
         streams["humidifier_temp_low"] = keyP["humidifier_temp_low"]
         streams["humidifier_temp_high"] = keyP["humidifier_temp_high"]
         streams["humidity_sensor_fault"] = keyP["humidity_sensor_fault"]
-        streams["humidifier_communicate_fault"] =
-            keyP["humidifier_communicate_fault"]
-        streams["humidifier_water_sensor_fault"] =
-            keyP["humidifier_water_sensor_fault"]
+        streams["humidifier_communicate_fault"] = keyP["humidifier_communicate_fault"]
+        streams["humidifier_water_sensor_fault"] = keyP["humidifier_water_sensor_fault"]
         streams["pm_sensor_chosen"] = keyP["pm_sensor_chosen"]
         streams["co2_sensor_chosen"] = keyP["co2_sensor_chosen"]
         streams["tvoc_sensor_chosen"] = keyP["tvoc_sensor_chosen"]
-        streams["pyroelectricity_sensor_chosen"] =
-            keyP["pyroelectricity_sensor_chosen"]
+        streams["pyroelectricity_sensor_chosen"] = keyP["pyroelectricity_sensor_chosen"]
         streams["thermopile_sensor_chosen"] = keyP["thermopile_sensor_chosen"]
         streams["colmo_in_machine"] = keyP["colmo_in_machine"]
         streams["has_eco"] = keyP["has_eco"]
@@ -3648,15 +3354,11 @@ function dataToJson(jsonCmd)
         streams["has_ptc"] = keyP["has_ptc"]
         streams["has_water_model_timer"] = keyP["has_water_model_timer"]
         streams["has_weekly_timer"] = keyP["has_weekly_timer"]
-        streams["has_new_home_remove_arofene"] =
-            keyP["has_new_home_remove_arofene"]
+        streams["has_new_home_remove_arofene"] = keyP["has_new_home_remove_arofene"]
         streams["remove_odor_run_time"] = keyP["remove_odor_run_time"]
-        streams["indoor_return_panel_transport"] =
-            keyP["indoor_return_panel_transport"]
-        streams["indoor_outlet_panel_transport"] =
-            keyP["indoor_outlet_panel_transport"]
-        streams["indoor_pyroelectric_sensor"] =
-            keyP["indoor_pyroelectric_sensor"]
+        streams["indoor_return_panel_transport"] = keyP["indoor_return_panel_transport"]
+        streams["indoor_outlet_panel_transport"] = keyP["indoor_outlet_panel_transport"]
+        streams["indoor_pyroelectric_sensor"] = keyP["indoor_pyroelectric_sensor"]
         streams["tvoc_sensor"] = keyP["tvoc_sensor"]
         streams["sensor_t1"] = keyP["sensor_t1"]
         streams["sensor_t2"] = keyP["sensor_t2"]
@@ -3672,19 +3374,14 @@ function dataToJson(jsonCmd)
         streams["sensor_t2c_indoor"] = keyP["sensor_t2c_indoor"]
         streams["sensor_t2d_indoor"] = keyP["sensor_t2d_indoor"]
         streams["sensor_t2a_indoor"] = keyP["sensor_t2a_indoor"]
-        streams["evaporator_temp_high_protect"] =
-            keyP["evaporator_temp_high_protect"]
+        streams["evaporator_temp_high_protect"] = keyP["evaporator_temp_high_protect"]
         streams["evaporator_temp_fre_limit"] = keyP["evaporator_temp_fre_limit"]
-        streams["new_wind_anti_condensation_protect"] =
-            keyP["new_wind_anti_condensation_protect"]
-        streams["new_wind_out_temp_low_protect"] =
-            keyP["new_wind_out_temp_low_protect"]
-        streams["new_wind_out_temp_high_protect"] =
-            keyP["new_wind_out_temp_high_protect"]
+        streams["new_wind_anti_condensation_protect"] = keyP["new_wind_anti_condensation_protect"]
+        streams["new_wind_out_temp_low_protect"] = keyP["new_wind_out_temp_low_protect"]
+        streams["new_wind_out_temp_high_protect"] = keyP["new_wind_out_temp_high_protect"]
         streams["new_wind_pm_high_protect"] = keyP["new_wind_pm_high_protect"]
         streams["new_wind_out_low_temp"] = keyP["new_wind_out_low_temp"]
-        streams["new_wind_low_anti_condensation_protect"] =
-            keyP["new_wind_low_anti_condensation_protect"]
+        streams["new_wind_low_anti_condensation_protect"] = keyP["new_wind_low_anti_condensation_protect"]
         streams["new_wind_pm_high"] = keyP["new_wind_pm_high"]
         streams["indoor_smart_eye"] = keyP["indoor_smart_eye"]
         streams["new_wind_temp_sensor"] = keyP["new_wind_temp_sensor"]
@@ -3700,18 +3397,15 @@ function dataToJson(jsonCmd)
         streams["anion_status"] = keyP["anion_status"]
         streams["has_inner_cycle"] = keyP["has_inner_cycle"]
         streams["has_remove_odor"] = keyP["has_remove_odor"]
-        streams["wire_controller_indoor_transport_ten"] =
-            keyP["wire_controller_indoor_transport_ten"]
+        streams["wire_controller_indoor_transport_ten"] = keyP["wire_controller_indoor_transport_ten"]
         streams["total_elec"] = keyP["total_elec"]
     end
-    if (dataType == 0x12) then
-        streams[keyT["KEY_WATER_MODEL_CLEAN_TIME"]] =
-            keyP["water_model_clean_time"]
+    if dataType == 0x12 then
+        streams[keyT["KEY_WATER_MODEL_CLEAN_TIME"]] = keyP["water_model_clean_time"]
         streams["water_model_mode_clash"] = keyP["water_model_mode_clash"]
         streams["tr_out_fault"] = keyP["tr_out_fault"]
         streams["tr_in_fault"] = keyP["tr_in_fault"]
-        streams["standby_anti_freezing_protection"] =
-            keyP["standby_anti_freezing_protection"]
+        streams["standby_anti_freezing_protection"] = keyP["standby_anti_freezing_protection"]
         streams["dc_pump_stall_protection"] = keyP["dc_pump_stall_protection"]
         streams["water_switch_fault"] = keyP["water_switch_fault"]
         streams["tw_in_fault"] = keyP["tw_in_fault"]
@@ -3722,59 +3416,43 @@ function dataToJson(jsonCmd)
         streams["tw1b_fault"] = keyP["tw1b_fault"]
         streams["temp_sensor_drop_fault"] = keyP["temp_sensor_drop_fault"]
         streams["water_templow_protection"] = keyP["water_templow_protection"]
-        streams["standby_anti_freezing_fault"] =
-            keyP["standby_anti_freezing_fault"]
+        streams["standby_anti_freezing_fault"] = keyP["standby_anti_freezing_fault"]
         streams["in_outdoor_fault"] = keyP["in_outdoor_fault"]
         streams["t2w_fault"] = keyP["t2w_fault"]
-        streams["wire_controller_indoor_transport"] =
-            keyP["wire_controller_indoor_transport"]
+        streams["wire_controller_indoor_transport"] = keyP["wire_controller_indoor_transport"]
         streams["has_voice_control"] = keyP["has_voice_control"]
     end
-    if (dataType == 0x30) then
+    if dataType == 0x30 then
         streams[keyT["KEY_OUTDOOR_TEMPERATURE"]] = keyP["outdoorTemperature"]
-        streams[keyT["KEY_FRESH_AIR_MACHINE_NUMBER"]] =
-            keyP["freshAirMachineNumber"]
-        streams[keyT["KEY_HUMIDITY_MACHINE_NUMBER"]] =
-            keyP["humidityMachineNumber"]
+        streams[keyT["KEY_FRESH_AIR_MACHINE_NUMBER"]] = keyP["freshAirMachineNumber"]
+        streams[keyT["KEY_HUMIDITY_MACHINE_NUMBER"]] = keyP["humidityMachineNumber"]
         streams["outdoor_e"] = keyP["outdoor_e"]
         streams["sensor_t3"] = keyP["sensor_t3"]
         streams["sensor_t4"] = keyP["sensor_t4"]
         streams["sensor_tp"] = keyP["sensor_tp"]
-        streams["sensor_refrigerant_pipe_temp"] =
-            keyP["sensor_refrigerant_pipe_temp"]
+        streams["sensor_refrigerant_pipe_temp"] = keyP["sensor_refrigerant_pipe_temp"]
         streams["out_voltage_project"] = keyP["out_voltage_project"]
         streams["compressor_temp_protect"] = keyP["compressor_temp_protect"]
         streams["out_main_drive_transport"] = keyP["out_main_drive_transport"]
-        streams["compressor_current_circuit"] =
-            keyP["compressor_current_circuit"]
+        streams["compressor_current_circuit"] = keyP["compressor_current_circuit"]
         streams["compressor_start"] = keyP["compressor_start"]
         streams["phase_lost_protect"] = keyP["phase_lost_protect"]
         streams["compressor_zero_protect"] = keyP["compressor_zero_protect"]
         streams["out_341_sync"] = keyP["out_341_sync"]
-        streams["compressor_lose_speed_protect"] =
-            keyP["compressor_lose_speed_protect"]
-        streams["compressor_position_protect"] =
-            keyP["compressor_position_protect"]
+        streams["compressor_lose_speed_protect"] = keyP["compressor_lose_speed_protect"]
+        streams["compressor_position_protect"] = keyP["compressor_position_protect"]
         streams["compressor_over_current"] = keyP["compressor_over_current"]
         streams["outdoor_ipm"] = keyP["outdoor_ipm"]
         streams["out_current_protect"] = keyP["out_current_protect"]
-        streams["refrigerant_tube_condensation"] =
-            keyP["refrigerant_tube_condensation"]
-        streams["exhaust_high_temp_fre_limit"] =
-            keyP["exhaust_high_temp_fre_limit"]
-        streams["compressor_high_temp_protect"] =
-            keyP["compressor_high_temp_protect"]
-        streams["condenser_high_temp_fre_limit"] =
-            keyP["condenser_high_temp_fre_limit"]
+        streams["refrigerant_tube_condensation"] = keyP["refrigerant_tube_condensation"]
+        streams["exhaust_high_temp_fre_limit"] = keyP["exhaust_high_temp_fre_limit"]
+        streams["compressor_high_temp_protect"] = keyP["compressor_high_temp_protect"]
+        streams["condenser_high_temp_fre_limit"] = keyP["condenser_high_temp_fre_limit"]
         streams["grid_protect"] = keyP["grid_protect"]
-        streams["system_pressure_high_fre_limit"] =
-            keyP["system_pressure_high_fre_limit"]
-        streams["system_pressure_high_protect"] =
-            keyP["system_pressure_high_protect"]
-        streams["system_pressure_low_fre_limit"] =
-            keyP["system_pressure_low_fre_limit"]
-        streams["system_pressure_low_protect"] =
-            keyP["system_pressure_low_protect"]
+        streams["system_pressure_high_fre_limit"] = keyP["system_pressure_high_fre_limit"]
+        streams["system_pressure_high_protect"] = keyP["system_pressure_high_protect"]
+        streams["system_pressure_low_fre_limit"] = keyP["system_pressure_low_fre_limit"]
+        streams["system_pressure_low_protect"] = keyP["system_pressure_low_protect"]
         streams["voltage_fre_limit"] = keyP["voltage_fre_limit"]
         streams["current_fre_limit"] = keyP["current_fre_limit"]
         streams["pfc_switch_stop"] = keyP["pfc_switch_stop"]
@@ -3783,25 +3461,20 @@ function dataToJson(jsonCmd)
         streams["sensor_low_pressure"] = keyP["sensor_low_pressure"]
         streams["sensor_inhale_temp"] = keyP["sensor_inhale_temp"]
         streams["sensor_cold_temp"] = keyP["sensor_cold_temp"]
-        streams["sensor_refrigerant_pipe_temp"] =
-            keyP["sensor_refrigerant_pipe_temp"]
+        streams["sensor_refrigerant_pipe_temp"] = keyP["sensor_refrigerant_pipe_temp"]
         streams["new_wind_transport"] = keyP["new_wind_transport"]
-        streams["four_way_valve_crossing_protect"] =
-            keyP["four_way_valve_crossing_protect"]
+        streams["four_way_valve_crossing_protect"] = keyP["four_way_valve_crossing_protect"]
         streams["four_way_valve_crossing"] = keyP["four_way_valve_crossing"]
         streams["system_pressure_protect"] = keyP["system_pressure_protect"]
-        streams["sensor_spray_enthalpy_enter_temp"] =
-            keyP["sensor_spray_enthalpy_enter_temp"]
-        streams["sensor_spray_enthalpy_out_temp"] =
-            keyP["sensor_spray_enthalpy_out_temp"]
+        streams["sensor_spray_enthalpy_enter_temp"] = keyP["sensor_spray_enthalpy_enter_temp"]
+        streams["sensor_spray_enthalpy_out_temp"] = keyP["sensor_spray_enthalpy_out_temp"]
         streams["indoor_communication_lost"] = keyP["indoor_communication_lost"]
         streams["cold_fault"] = keyP["cold_fault"]
         streams["in_out_ability_mismatch"] = keyP["in_out_ability_mismatch"]
         streams["outdoor_fan_lose_speed"] = keyP["outdoor_fan_lose_speed"]
-        streams["water_model_prevent_cold_protect"] =
-            keyP["water_model_prevent_cold_protect"]
+        streams["water_model_prevent_cold_protect"] = keyP["water_model_prevent_cold_protect"]
     end
-    if (dataType == 0x21 or dataType == 0x13) then
+    if dataType == 0x21 or dataType == 0x13 then
         streams["week0_timer1"] = keyP["week0_timer1"]
         streams["week0_timer2"] = keyP["week0_timer2"]
         streams["week0_timer3"] = keyP["week0_timer3"]
@@ -4012,34 +3685,20 @@ function dataToJson(jsonCmd)
         streams["week6_timer5_open_hour"] = keyP["week6_timer5_open_hour"]
         streams["week6_timer5_open_min"] = keyP["week6_timer5_open_min"]
         streams["week6_timer5_temperature"] = keyP["week6_timer5_temperature"]
-        streams["week0_duplicate_timer_on_1"] =
-            keyP["week0_duplicate_timer_on_1"]
-        streams["week0_duplicate_timer_off_2"] =
-            keyP["week0_duplicate_timer_off_2"]
-        streams["week1_duplicate_timer_on_1"] =
-            keyP["week1_duplicate_timer_on_1"]
-        streams["week1_duplicate_timer_off_2"] =
-            keyP["week1_duplicate_timer_off_2"]
-        streams["week2_duplicate_timer_on_1"] =
-            keyP["week2_duplicate_timer_on_1"]
-        streams["week2_duplicate_timer_off_2"] =
-            keyP["week2_duplicate_timer_off_2"]
-        streams["week3_duplicate_timer_on_1"] =
-            keyP["week3_duplicate_timer_on_1"]
-        streams["week3_duplicate_timer_off_2"] =
-            keyP["week3_duplicate_timer_off_2"]
-        streams["week4_duplicate_timer_on_1"] =
-            keyP["week4_duplicate_timer_on_1"]
-        streams["week4_duplicate_timer_off_2"] =
-            keyP["week4_duplicate_timer_off_2"]
-        streams["week5_duplicate_timer_on_1"] =
-            keyP["week5_duplicate_timer_on_1"]
-        streams["week5_duplicate_timer_off_2"] =
-            keyP["week5_duplicate_timer_off_2"]
-        streams["week6_duplicate_timer_on_1"] =
-            keyP["week6_duplicate_timer_on_1"]
-        streams["week6_duplicate_timer_off_2"] =
-            keyP["week6_duplicate_timer_off_2"]
+        streams["week0_duplicate_timer_on_1"] = keyP["week0_duplicate_timer_on_1"]
+        streams["week0_duplicate_timer_off_2"] = keyP["week0_duplicate_timer_off_2"]
+        streams["week1_duplicate_timer_on_1"] = keyP["week1_duplicate_timer_on_1"]
+        streams["week1_duplicate_timer_off_2"] = keyP["week1_duplicate_timer_off_2"]
+        streams["week2_duplicate_timer_on_1"] = keyP["week2_duplicate_timer_on_1"]
+        streams["week2_duplicate_timer_off_2"] = keyP["week2_duplicate_timer_off_2"]
+        streams["week3_duplicate_timer_on_1"] = keyP["week3_duplicate_timer_on_1"]
+        streams["week3_duplicate_timer_off_2"] = keyP["week3_duplicate_timer_off_2"]
+        streams["week4_duplicate_timer_on_1"] = keyP["week4_duplicate_timer_on_1"]
+        streams["week4_duplicate_timer_off_2"] = keyP["week4_duplicate_timer_off_2"]
+        streams["week5_duplicate_timer_on_1"] = keyP["week5_duplicate_timer_on_1"]
+        streams["week5_duplicate_timer_off_2"] = keyP["week5_duplicate_timer_off_2"]
+        streams["week6_duplicate_timer_on_1"] = keyP["week6_duplicate_timer_on_1"]
+        streams["week6_duplicate_timer_off_2"] = keyP["week6_duplicate_timer_off_2"]
     end
     local retTable = {}
     retTable["status"] = streams

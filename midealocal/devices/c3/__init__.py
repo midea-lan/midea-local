@@ -3,7 +3,7 @@
 import json
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack, override
+from typing import Any, ClassVar, Unpack, cast, override
 
 from midealocal.base_classes.climate import MideaClimateDevice, MideaHVACMode
 from midealocal.const import DeviceType
@@ -26,6 +26,10 @@ from .message import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# Fallback target temperature bounds for a zone whose range is not (yet) reported.
+DEFAULT_ZONE_MIN_TARGET_TEMPERATURE = 5.0
+DEFAULT_ZONE_MAX_TARGET_TEMPERATURE = 60.0
 
 
 class DeviceAttributes(StrEnum):
@@ -229,6 +233,55 @@ class MideaC3Device(MideaClimateDevice):
         """Midea C3 device temperature step."""
         return self._temperature_step
 
+    def _require_zone(self, zone: int | None) -> int:
+        """Validate and return a zone index (C3 has one range per zone)."""
+        if zone is None:
+            raise ValueError("[C3] Parameter `zone` must be set")
+        if zone not in range(len(MideaC3Device._power_attributes)):
+            raise ValueError(
+                "[C3] Parameter `zone` must be between 0 "
+                f"and {len(MideaC3Device._power_attributes) - 1}",
+            )
+        return zone
+
+    def _zone_temperature_bound(
+        self,
+        attr: DeviceAttributes,
+        fallback: float,
+        zone: int | None,
+    ) -> float:
+        """Return ``attr``'s value for ``zone``, or ``fallback`` if unusable.
+
+        The device reports one entry per zone; a list shorter than two
+        entries, or a zone stuck at ``0.0``, means the range was not reported.
+        """
+        index = self._require_zone(zone)
+        values = self._attributes[attr]
+        if not isinstance(values, list) or len(values) < len(
+            MideaC3Device._power_attributes,
+        ):
+            return fallback
+        value = values[index]
+        return float(value) if value != 0.0 else fallback
+
+    @override
+    def min_temperature(self, zone: int | None = None) -> float:
+        """Midea C3 device minimum target temperature for a zone."""
+        return self._zone_temperature_bound(
+            DeviceAttributes.temperature_min,
+            DEFAULT_ZONE_MIN_TARGET_TEMPERATURE,
+            zone,
+        )
+
+    @override
+    def max_temperature(self, zone: int | None = None) -> float:
+        """Midea C3 device maximum target temperature for a zone."""
+        return self._zone_temperature_bound(
+            DeviceAttributes.temperature_max,
+            DEFAULT_ZONE_MAX_TARGET_TEMPERATURE,
+            zone,
+        )
+
     @property
     def silent_modes(self) -> list[str]:
         """Midea C3 device silent modes."""
@@ -429,6 +482,61 @@ class MideaC3Device(MideaClimateDevice):
                 message.zone2_power = hvac_mode != 0
             message.mode = hvac_mode
         self.build_send(message)
+
+    @override
+    def target_temperature(self, zone: int | None = None) -> float | None:
+        """Midea C3 device target temperature."""
+        target_temperature: list[float] | None = self._attributes.get(
+            DeviceAttributes.target_temperature,
+            None,
+        )
+        if (
+            not isinstance(target_temperature, list)
+            or zone is None
+            or zone not in range(len(target_temperature))
+        ):
+            return None
+        return float(target_temperature[zone])
+
+    @override
+    def current_humidity(self) -> float | None:
+        """Midea C3 device current humidity."""
+        return None
+
+    @override
+    def current_temperature(self) -> float | None:
+        """Midea C3 device current temperature."""
+        return cast("float | None", self._attributes[DeviceAttributes.temp_tw_out])
+
+    @override
+    def turn_on(self, zone: int | None = None) -> None:
+        """Midea C3 device turn on."""
+        if zone is None:
+            raise ValueError("[C3] Parameter `zone` must be set")
+        if zone not in range(len(MideaC3Device._power_attributes)):
+            raise ValueError(
+                "[C3] Parameter `zone` must be between 0 "
+                f"and {len(MideaC3Device._power_attributes) - 1}",
+            )
+        self.set_attribute(
+            attr=MideaC3Device._power_attributes[zone],
+            value=True,
+        )
+
+    @override
+    def turn_off(self, zone: int | None = None) -> None:
+        """Midea C3 device turn off."""
+        if zone is None:
+            raise ValueError("[C3] Parameter `zone` must be set")
+        if zone not in range(len(MideaC3Device._power_attributes)):
+            raise ValueError(
+                "[C3] Parameter `zone` must be between 0 "
+                f"and {len(MideaC3Device._power_attributes) - 1}",
+            )
+        self.set_attribute(
+            attr=MideaC3Device._power_attributes[zone],
+            value=False,
+        )
 
     def set_customize(self, customize: str) -> None:
         """Midea C3 device set customize."""

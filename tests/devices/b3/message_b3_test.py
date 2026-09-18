@@ -4,7 +4,9 @@ import pytest
 
 from midealocal.const import ProtocolVersion
 from midealocal.devices.b3.message import (
+    B3MessageBody21,
     B3MessageBody24,
+    B3MessageBody31,
     MessageB3Base,
     MessageQuery,
 )
@@ -84,3 +86,65 @@ class TestB3MessageBody24:
         assert message.bottom_compartment_mode == 0x02
         assert message.bottom_compartment_temperature == 60
         assert message.bottom_compartment_remaining == bottom_remaining
+
+
+class TestB3MessageBody21:
+    """Test B3 message body 21 (the class MessageB3Response dispatches to)."""
+
+    def test_remaining_minutes_and_seconds_both_contribute(self) -> None:
+        """A chained-ternary precedence bug used to drop the seconds byte.
+
+        Whenever the minutes byte was valid, the buggy expression short
+        circuited before ever looking at the seconds byte.
+        """
+        body = bytearray(17)
+        body[1] = 0x01  # top status
+        body[2] = 0x01  # top mode
+        body[3] = 40  # top temperature
+        body[4] = 2  # top remaining minutes
+        body[5] = 15  # top remaining seconds
+        body[6] = 0x02  # bottom status
+        body[7] = 0x01  # bottom mode
+        body[8] = 50  # bottom temperature
+        body[9] = 3  # bottom remaining minutes
+        body[10] = 20  # bottom remaining seconds
+        body[12] = 0x03  # middle status
+        body[13] = 0x01  # middle mode
+        body[14] = 60  # middle temperature
+        body[15] = 1  # middle remaining minutes
+        body[16] = 45  # middle remaining seconds
+        message = B3MessageBody21(body)
+        assert message.top_compartment_remaining == 2 * 60 + 15
+        assert message.bottom_compartment_remaining == 3 * 60 + 20
+        assert message.middle_compartment_remaining == 1 * 60 + 45
+
+
+class TestB3MessageBody31:
+    """Test B3 message body 31 (the class MessageB3Response dispatches to)."""
+
+    def test_remaining_minutes_and_seconds_both_contribute(self) -> None:
+        """A chained-ternary precedence bug used to drop the seconds byte.
+
+        Whenever the minutes byte was valid, the buggy expression short
+        circuited before ever looking at the seconds byte.
+        """
+        body = bytearray(22)
+        body[1] = 0x01  # top status
+        body[2] = 0x01  # top mode
+        body[3] = 40  # top temperature
+        body[4] = 2  # top remaining minutes
+        body[5] = 15  # top remaining seconds
+        body[6] = 0x02  # bottom status
+        body[7] = 0x01  # bottom mode
+        body[8] = 50  # bottom temperature
+        body[9] = 3  # bottom remaining minutes
+        body[10] = 20  # bottom remaining seconds
+        body[17] = 0x03  # middle status
+        body[18] = 0x01  # middle mode
+        body[19] = 60  # middle temperature
+        body[20] = 1  # middle remaining minutes
+        body[21] = 45  # middle remaining seconds
+        message = B3MessageBody31(body)
+        assert message.top_compartment_remaining == 2 * 60 + 15
+        assert message.bottom_compartment_remaining == 3 * 60 + 20
+        assert message.middle_compartment_remaining == 1 * 60 + 45

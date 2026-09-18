@@ -5,7 +5,7 @@ local JSON = require "cjson"
 local function bit_band(a, b)
     local cloud_bl = true
     local ret
-    if (cloud_bl) then
+    if cloud_bl then
         ret = bit.band(a, b)
     else
         ret = bit32.band(a, b)
@@ -14,28 +14,270 @@ local function bit_band(a, b)
 end
 local function makeSum(tmpbuf, start_pos, end_pos)
     local resVal = 0
-    for si = start_pos, end_pos do resVal = resVal + tmpbuf[si] end
+    for si = start_pos, end_pos do
+        resVal = resVal + tmpbuf[si]
+    end
     resVal = bit.bnot(resVal) + 1
     resVal = bit.band(resVal, 0x00ff)
     return resVal
 end
 local crc8_854_table = {
-    0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65, 157,
-    195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220, 35, 125,
-    159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98, 190, 224, 2,
-    92, 223, 129, 99, 61, 124, 34, 192, 158, 29, 67, 161, 255, 70, 24, 250, 164,
-    39, 121, 155, 197, 132, 218, 56, 102, 229, 187, 89, 7, 219, 133, 103, 57,
-    186, 228, 6, 88, 25, 71, 165, 251, 120, 38, 196, 154, 101, 59, 217, 135, 4,
-    90, 184, 230, 167, 249, 27, 69, 198, 152, 122, 36, 248, 166, 68, 26, 153,
-    199, 37, 123, 58, 100, 134, 216, 91, 5, 231, 185, 140, 210, 48, 110, 237,
-    179, 81, 15, 78, 16, 242, 172, 47, 113, 147, 205, 17, 79, 173, 243, 112, 46,
-    204, 146, 211, 141, 111, 49, 178, 236, 14, 80, 175, 241, 19, 77, 206, 144,
-    114, 44, 109, 51, 209, 143, 12, 82, 176, 238, 50, 108, 142, 208, 83, 13,
-    239, 177, 240, 174, 76, 18, 145, 207, 45, 115, 202, 148, 118, 40, 171, 245,
-    23, 73, 8, 86, 180, 234, 105, 55, 213, 139, 87, 9, 235, 181, 54, 104, 138,
-    212, 149, 203, 41, 119, 244, 170, 72, 22, 233, 183, 85, 11, 136, 214, 52,
-    106, 43, 117, 151, 201, 74, 20, 246, 168, 116, 42, 200, 150, 21, 75, 169,
-    247, 182, 232, 10, 84, 215, 137, 107, 53
+    0,
+    94,
+    188,
+    226,
+    97,
+    63,
+    221,
+    131,
+    194,
+    156,
+    126,
+    32,
+    163,
+    253,
+    31,
+    65,
+    157,
+    195,
+    33,
+    127,
+    252,
+    162,
+    64,
+    30,
+    95,
+    1,
+    227,
+    189,
+    62,
+    96,
+    130,
+    220,
+    35,
+    125,
+    159,
+    193,
+    66,
+    28,
+    254,
+    160,
+    225,
+    191,
+    93,
+    3,
+    128,
+    222,
+    60,
+    98,
+    190,
+    224,
+    2,
+    92,
+    223,
+    129,
+    99,
+    61,
+    124,
+    34,
+    192,
+    158,
+    29,
+    67,
+    161,
+    255,
+    70,
+    24,
+    250,
+    164,
+    39,
+    121,
+    155,
+    197,
+    132,
+    218,
+    56,
+    102,
+    229,
+    187,
+    89,
+    7,
+    219,
+    133,
+    103,
+    57,
+    186,
+    228,
+    6,
+    88,
+    25,
+    71,
+    165,
+    251,
+    120,
+    38,
+    196,
+    154,
+    101,
+    59,
+    217,
+    135,
+    4,
+    90,
+    184,
+    230,
+    167,
+    249,
+    27,
+    69,
+    198,
+    152,
+    122,
+    36,
+    248,
+    166,
+    68,
+    26,
+    153,
+    199,
+    37,
+    123,
+    58,
+    100,
+    134,
+    216,
+    91,
+    5,
+    231,
+    185,
+    140,
+    210,
+    48,
+    110,
+    237,
+    179,
+    81,
+    15,
+    78,
+    16,
+    242,
+    172,
+    47,
+    113,
+    147,
+    205,
+    17,
+    79,
+    173,
+    243,
+    112,
+    46,
+    204,
+    146,
+    211,
+    141,
+    111,
+    49,
+    178,
+    236,
+    14,
+    80,
+    175,
+    241,
+    19,
+    77,
+    206,
+    144,
+    114,
+    44,
+    109,
+    51,
+    209,
+    143,
+    12,
+    82,
+    176,
+    238,
+    50,
+    108,
+    142,
+    208,
+    83,
+    13,
+    239,
+    177,
+    240,
+    174,
+    76,
+    18,
+    145,
+    207,
+    45,
+    115,
+    202,
+    148,
+    118,
+    40,
+    171,
+    245,
+    23,
+    73,
+    8,
+    86,
+    180,
+    234,
+    105,
+    55,
+    213,
+    139,
+    87,
+    9,
+    235,
+    181,
+    54,
+    104,
+    138,
+    212,
+    149,
+    203,
+    41,
+    119,
+    244,
+    170,
+    72,
+    22,
+    233,
+    183,
+    85,
+    11,
+    136,
+    214,
+    52,
+    106,
+    43,
+    117,
+    151,
+    201,
+    74,
+    20,
+    246,
+    168,
+    116,
+    42,
+    200,
+    150,
+    21,
+    75,
+    169,
+    247,
+    182,
+    232,
+    10,
+    84,
+    215,
+    137,
+    107,
+    53,
 }
 local function crc8_854(dataBuf, start_pos, end_pos)
     local crc = 0
@@ -69,18 +311,24 @@ local function string2table(hexstr)
 end
 local function string2hexstring(str)
     local ret = ""
-    for i = 1, #str do ret = ret .. string.format("%02x", str:byte(i)) end
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
     return ret
 end
 local function table2hex(cmd)
     local ret = ""
-    for i = 1, #cmd do ret = ret .. string.format("%02x", cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.format("%02x", cmd[i])
+    end
     return ret
 end
 local function table2string(cmd)
     local ret = ""
     local i
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 local function split(szFullString, szSeparator)
@@ -88,27 +336,24 @@ local function split(szFullString, szSeparator)
     local nSplitIndex = 1
     local nSplitArray = {}
     while true do
-        local nFindLastIndex = string.find(szFullString, szSeparator,
-                                           nFindStartIndex)
+        local nFindLastIndex = string.find(szFullString, szSeparator, nFindStartIndex)
         if not nFindLastIndex then
-            nSplitArray[nSplitIndex] = string.sub(szFullString, nFindStartIndex,
-                                                  string.len(szFullString))
+            nSplitArray[nSplitIndex] = string.sub(szFullString, nFindStartIndex, string.len(szFullString))
             break
         end
-        nSplitArray[nSplitIndex] = string.sub(szFullString, nFindStartIndex,
-                                              nFindLastIndex - 1)
+        nSplitArray[nSplitIndex] = string.sub(szFullString, nFindStartIndex, nFindLastIndex - 1)
         nFindStartIndex = nFindLastIndex + string.len(szSeparator)
         nSplitIndex = nSplitIndex + 1
     end
     return nSplitArray
 end
 local function checkBoundary(data, min, max)
-    if (not data) then data = 0 end
+    if not data then data = 0 end
     data = tonumber(data)
-    if ((data >= min) and (data <= max)) then
+    if (data >= min) and (data <= max) then
         return data
     else
-        if (data < min) then
+        if data < min then
             return min
         else
             return max
@@ -253,7 +498,9 @@ local function extractBodyBytes(byteData)
     local msgLength = #byteData
     local msgBytes = {}
     local bodyBytes = {}
-    for i = 1, msgLength do msgBytes[i - 1] = byteData[i] end
+    for i = 1, msgLength do
+        msgBytes[i - 1] = byteData[i]
+    end
     local bodyLength = msgLength - uptable["BYTE_PROTOCOL_LENGTH"] - 1
     for i = 0, bodyLength - 1 do
         bodyBytes[i] = msgBytes[i + uptable["BYTE_PROTOCOL_LENGTH"]]
@@ -265,7 +512,9 @@ local function assembleUart(bodyBytes, type)
     if bodyLength == 0 then return nil end
     local msgLength = (bodyLength + uptable["BYTE_PROTOCOL_LENGTH"] + 1)
     local msgBytes = {}
-    for i = 0, msgLength - 1 do msgBytes[i] = 0 end
+    for i = 0, msgLength - 1 do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = uptable["BYTE_PROTOCOL_HEAD"]
     msgBytes[1] = msgLength - 1
     msgBytes[2] = uptable["BYTE_DEVICE_TYPE"]
@@ -276,7 +525,9 @@ local function assembleUart(bodyBytes, type)
     msgBytes[msgLength - 1] = makeSum(msgBytes, 1, msgLength - 2)
     local msgBytesTemp = {}
     local length = #msgBytes + 1
-    for i = 1, length do msgBytesTemp[i] = msgBytes[i - 1] end
+    for i = 1, length do
+        msgBytesTemp[i] = msgBytes[i - 1]
+    end
     return msgBytesTemp
 end
 local function updateDataByJson(luaTable, bodyBytes)
@@ -287,13 +538,11 @@ local function updateDataByJson(luaTable, bodyBytes)
         elseif luaTable[uptable["KEY_LOCK"]] == uptable["VALUE_OFF"] then
             bodyBytes[1] = 0x04
         end
-    elseif luaTable[uptable["KEY_OPERATOR"]] ~= nil and
-        luaTable[uptable["KEY_OPERATOR"]] ~= "" then
+    elseif luaTable[uptable["KEY_OPERATOR"]] ~= nil and luaTable[uptable["KEY_OPERATOR"]] ~= "" then
         bodyBytes[0] = 0x83
         if luaTable[uptable["KEY_OPERATOR"]] == uptable["VALUE_OPERATOR_START"] then
             bodyBytes[1] = 0x01
-        elseif luaTable[uptable["KEY_OPERATOR"]] ==
-            uptable["VALUE_OPERATOR_PAUSE"] then
+        elseif luaTable[uptable["KEY_OPERATOR"]] == uptable["VALUE_OPERATOR_PAUSE"] then
             bodyBytes[1] = 0x02
         end
     elseif luaTable[uptable["KEY_SOFTWATER"]] ~= nil then
@@ -311,8 +560,7 @@ local function updateDataByJson(luaTable, bodyBytes)
         bodyBytes[8] = 0xff
         bodyBytes[9] = 0xff
         bodyBytes[10] = 0xff
-    elseif luaTable[uptable["KEY_DRYSWITCH"]] ~= nil or
-        luaTable[uptable["KEY_DRY_SET_MIN"]] ~= nil then
+    elseif luaTable[uptable["KEY_DRYSWITCH"]] ~= nil or luaTable[uptable["KEY_DRY_SET_MIN"]] ~= nil then
         bodyBytes[0] = 0x81
         bodyBytes[4] = 0xff
         bodyBytes[5] = 0xff
@@ -362,38 +610,30 @@ local function updateDataByJson(luaTable, bodyBytes)
     elseif luaTable[uptable["KEY_DIY_TIMES"]] ~= nil then
         local diy_times, diy_main_wash, diy_piao_wash = 0x00
         diy_times = luaTable[uptable["KEY_DIY_TIMES"]]
-        if (luaTable[uptable["KEY_DIY_MAIN_WASH"]] ~= nil) then
-            diy_main_wash = luaTable[uptable["KEY_DIY_MAIN_WASH"]]
-        end
-        if (luaTable[uptable["KEY_DIY_PIAO_WASH"]] ~= nil) then
-            diy_piao_wash = luaTable[uptable["KEY_DIY_PIAO_WASH"]]
-        end
+        if luaTable[uptable["KEY_DIY_MAIN_WASH"]] ~= nil then diy_main_wash = luaTable[uptable["KEY_DIY_MAIN_WASH"]] end
+        if luaTable[uptable["KEY_DIY_PIAO_WASH"]] ~= nil then diy_piao_wash = luaTable[uptable["KEY_DIY_PIAO_WASH"]] end
         bodyBytes[0] = 0x82
         bodyBytes[1] = diy_times
         bodyBytes[3] = diy_main_wash
         bodyBytes[5] = diy_piao_wash
     elseif luaTable[uptable["KEY_CMD_CLOUD"]] ~= nil then
         local array = split(luaTable[uptable["KEY_CMD_CLOUD"]], ",")
-        for i = 1, #array do bodyBytes[i - 1] = tonumber(array[i], 16) end
+        for i = 1, #array do
+            bodyBytes[i - 1] = tonumber(array[i], 16)
+        end
     else
         local workStatus = 0x00
-        if luaTable[uptable["KEY_WORK_STATUS"]] ==
-            uptable["VALUE_WORK_STATUS_POWER_ON"] then
+        if luaTable[uptable["KEY_WORK_STATUS"]] == uptable["VALUE_WORK_STATUS_POWER_ON"] then
             workStatus = uptable["BYTE_STATUS_POWER_ON"]
-        elseif luaTable[uptable["KEY_WORK_STATUS"]] ==
-            uptable["VALUE_WORK_STATUS_POWER_OFF"] then
+        elseif luaTable[uptable["KEY_WORK_STATUS"]] == uptable["VALUE_WORK_STATUS_POWER_OFF"] then
             workStatus = uptable["BYTE_STATUS_POWER_OFF"]
-        elseif luaTable[uptable["KEY_WORK_STATUS"]] ==
-            uptable["VALUE_WORK_STATUS_CANCEL"] then
+        elseif luaTable[uptable["KEY_WORK_STATUS"]] == uptable["VALUE_WORK_STATUS_CANCEL"] then
             workStatus = uptable["BYTE_STATUS_CANCEL"]
-        elseif luaTable[uptable["KEY_WORK_STATUS"]] ==
-            uptable["VALUE_WORK_STATUS_WORK"] then
+        elseif luaTable[uptable["KEY_WORK_STATUS"]] == uptable["VALUE_WORK_STATUS_WORK"] then
             workStatus = uptable["BYTE_STATUS_WORK"]
-        elseif luaTable[uptable["KEY_WORK_STATUS"]] ==
-            uptable["VALUE_WORK_STATUS_ORDER"] then
+        elseif luaTable[uptable["KEY_WORK_STATUS"]] == uptable["VALUE_WORK_STATUS_ORDER"] then
             workStatus = uptable["BYTE_STATUS_ORDER"]
-        elseif luaTable[uptable["KEY_WORK_STATUS"]] ==
-            uptable["VALUE_WORK_STATUS_CANCEL_ORDER"] then
+        elseif luaTable[uptable["KEY_WORK_STATUS"]] == uptable["VALUE_WORK_STATUS_CANCEL_ORDER"] then
             workStatus = uptable["BYTE_STATUS_CANCEL_ORDER"]
         end
         local mode = 0x00
@@ -401,11 +641,9 @@ local function updateDataByJson(luaTable, bodyBytes)
             mode = uptable["BYTE_MODE_NEUTRAL_GEAR"]
         elseif luaTable[uptable["KEY_MODE"]] == uptable["VALUE_MODE_AUTO_WASH"] then
             mode = uptable["BYTE_MODE_AUTO_WASH"]
-        elseif luaTable[uptable["KEY_MODE"]] ==
-            uptable["VALUE_MODE_STRONG_WASH"] then
+        elseif luaTable[uptable["KEY_MODE"]] == uptable["VALUE_MODE_STRONG_WASH"] then
             mode = uptable["BYTE_MODE_STRONG_WASH"]
-        elseif luaTable[uptable["KEY_MODE"]] ==
-            uptable["VALUE_MODE_STANDARD_WASH"] then
+        elseif luaTable[uptable["KEY_MODE"]] == uptable["VALUE_MODE_STANDARD_WASH"] then
             mode = uptable["BYTE_MODE_STANDARD_WASH"]
         elseif luaTable[uptable["KEY_MODE"]] == uptable["VALUE_MODE_ECO_WASH"] then
             mode = uptable["BYTE_MODE_ECO_WASH"]
@@ -423,8 +661,7 @@ local function updateDataByJson(luaTable, bodyBytes)
             mode = uptable["BYTE_MODE_SELF_CLEAN"]
         elseif luaTable[uptable["KEY_MODE"]] == uptable["VALUE_MODE_FRUIT_WASH"] then
             mode = uptable["BYTE_MODE_FRUIT_WASH"]
-        elseif luaTable[uptable["KEY_MODE"]] ==
-            uptable["VALUE_MODE_SELF_DEFINE"] then
+        elseif luaTable[uptable["KEY_MODE"]] == uptable["VALUE_MODE_SELF_DEFINE"] then
             mode = uptable["BYTE_MODE_SELF_DEFINE"]
         elseif luaTable[uptable["KEY_MODE"]] == uptable["VALUE_MODE_GERM"] then
             mode = uptable["BYTE_MODE_GERM"]
@@ -432,50 +669,37 @@ local function updateDataByJson(luaTable, bodyBytes)
             mode = uptable["BYTE_MODE_BOWL_WASH"]
         elseif luaTable[uptable["KEY_MODE"]] == uptable["VALUE_MODE_KILL_GERM"] then
             mode = uptable["BYTE_MODE_KILL_GERM"]
-        elseif luaTable[uptable["KEY_MODE"]] ==
-            uptable["VALUE_MODE_SEA_FOOD_WASH"] then
+        elseif luaTable[uptable["KEY_MODE"]] == uptable["VALUE_MODE_SEA_FOOD_WASH"] then
             mode = uptable["BYTE_MODE_SEA_FOOD_WASH"]
-        elseif luaTable[uptable["KEY_MODE"]] ==
-            uptable["VALUE_MODE_HOT_POT_WASH"] then
+        elseif luaTable[uptable["KEY_MODE"]] == uptable["VALUE_MODE_HOT_POT_WASH"] then
             mode = uptable["BYTE_MODE_HOT_POT_WASH"]
-        elseif luaTable[uptable["KEY_MODE"]] ==
-            uptable["VALUE_MODE_QUIET_NIGHT_WASH"] then
+        elseif luaTable[uptable["KEY_MODE"]] == uptable["VALUE_MODE_QUIET_NIGHT_WASH"] then
             mode = uptable["BYTE_MODE_QUIET_NIGHT_WASH"]
         elseif luaTable[uptable["KEY_MODE"]] == uptable["VALUE_MODE_LESS_WASH"] then
             mode = uptable["BYTE_MODE_LESS_WASH"]
         elseif luaTable[uptable["KEY_MODE"]] == uptable["VALUE_MODE_CLOUD_WASH"] then
             mode = uptable["BYTE_MODE_CLOUD_WASH"]
         else
-            if workStatus == uptable["BYTE_STATUS_WORK"] then
-                mode = uptable["BYTE_MODE_ECO_WASH"]
-            end
+            if workStatus == uptable["BYTE_STATUS_WORK"] then mode = uptable["BYTE_MODE_ECO_WASH"] end
         end
         local additional = 0x00
-        if luaTable[uptable["KEY_ADDITIONAL"]] ~= nil then
-            additional = luaTable[uptable["KEY_ADDITIONAL"]]
-        end
+        if luaTable[uptable["KEY_ADDITIONAL"]] ~= nil then additional = luaTable[uptable["KEY_ADDITIONAL"]] end
         bodyBytes[0] = 0x08
         bodyBytes[1] = workStatus
         bodyBytes[2] = mode
         bodyBytes[3] = additional
-        if (workStatus == 0x02) then
+        if workStatus == 0x02 then
             local orderSetTime = 0x00
-            if luaTable[uptable["KEY_ORDER_SET_HOUR"]] ~= nil and
-                luaTable[uptable["KEY_ORDER_SET_MIN"]] ~= nil then
-                orderSetTime = luaTable[uptable["KEY_ORDER_SET_HOUR"]] * 60 +
-                                   luaTable[uptable["KEY_ORDER_SET_MIN"]]
+            if luaTable[uptable["KEY_ORDER_SET_HOUR"]] ~= nil and luaTable[uptable["KEY_ORDER_SET_MIN"]] ~= nil then
+                orderSetTime = luaTable[uptable["KEY_ORDER_SET_HOUR"]] * 60 + luaTable[uptable["KEY_ORDER_SET_MIN"]]
             end
             bodyBytes[7] = math.modf(orderSetTime / 60)
             bodyBytes[8] = math.fmod(orderSetTime, 60)
         end
-        if (mode == 0x0f) then
-            if luaTable[uptable["KEY_WORK_TIME"]] ~= nil then
-                bodyBytes[10] = luaTable[uptable["KEY_WORK_TIME"]]
-            end
+        if mode == 0x0f then
+            if luaTable[uptable["KEY_WORK_TIME"]] ~= nil then bodyBytes[10] = luaTable[uptable["KEY_WORK_TIME"]] end
         end
-        if luaTable[uptable["KEY_WATER_LEVEL"]] ~= nil then
-            bodyBytes[11] = luaTable[uptable["KEY_WATER_LEVEL"]]
-        end
+        if luaTable[uptable["KEY_WATER_LEVEL"]] ~= nil then bodyBytes[11] = luaTable[uptable["KEY_WATER_LEVEL"]] end
         if luaTable[uptable["KEY_WATER_STRONG_LEVEL"]] ~= nil then
             bodyBytes[12] = luaTable[uptable["KEY_WATER_STRONG_LEVEL"]]
         end
@@ -490,17 +714,15 @@ local function updateJsonByData(binData)
     streams["cmd"] = binData
     local dataType = byteData[10]
     streams[uptable["KEY_MSG_TYPE"]] = dataType
-    if (dataType ~= 0x02 and dataType ~= 0x03 and dataType ~= 0x04) then
+    if dataType ~= 0x02 and dataType ~= 0x03 and dataType ~= 0x04 then
         retTable["status"] = streams
         return encodeTableToJson(retTable)
     end
     local workStatus = bodyBytes[1]
     if workStatus == uptable["BYTE_STATUS_POWER_OFF"] then
-        streams[uptable["KEY_WORK_STATUS"]] =
-            uptable["VALUE_WORK_STATUS_POWER_OFF"]
+        streams[uptable["KEY_WORK_STATUS"]] = uptable["VALUE_WORK_STATUS_POWER_OFF"]
     elseif workStatus == uptable["BYTE_STATUS_CANCEL"] then
-        streams[uptable["KEY_WORK_STATUS"]] =
-            uptable["VALUE_WORK_STATUS_CANCEL"]
+        streams[uptable["KEY_WORK_STATUS"]] = uptable["VALUE_WORK_STATUS_CANCEL"]
     elseif workStatus == uptable["BYTE_STATUS_WORK"] then
         streams[uptable["KEY_WORK_STATUS"]] = uptable["VALUE_WORK_STATUS_WORK"]
     elseif workStatus == uptable["BYTE_STATUS_ORDER"] then
@@ -508,8 +730,7 @@ local function updateJsonByData(binData)
     elseif workStatus == 0x04 then
         streams[uptable["KEY_WORK_STATUS"]] = uptable["VALUE_WORK_STATUS_ERROR"]
     elseif workStatus == 0x05 then
-        streams[uptable["KEY_WORK_STATUS"]] =
-            uptable["VALUE_WORK_STATUS_SOFT_GEAR"]
+        streams[uptable["KEY_WORK_STATUS"]] = uptable["VALUE_WORK_STATUS_SOFT_GEAR"]
     else
     end
     local mode = bodyBytes[2]
@@ -545,9 +766,7 @@ local function updateJsonByData(binData)
         streams[uptable["KEY_MODE"]] = uptable["VALUE_MODE_BOWL_WASH"]
     elseif mode == uptable["BYTE_MODE_KILL_GERM"] then
         streams[uptable["KEY_MODE"]] = uptable["VALUE_MODE_KILL_GERM"]
-        if bodyBytes[29] ~= nil then
-            streams[uptable["KEY_WORK_TIME"]] = bodyBytes[29]
-        end
+        if bodyBytes[29] ~= nil then streams[uptable["KEY_WORK_TIME"]] = bodyBytes[29] end
     elseif mode == uptable["BYTE_MODE_SEA_FOOD_WASH"] then
         streams[uptable["KEY_MODE"]] = uptable["VALUE_MODE_SEA_FOOD_WASH"]
     elseif mode == uptable["BYTE_MODE_HOT_POT_WASH"] then
@@ -562,7 +781,7 @@ local function updateJsonByData(binData)
         streams[uptable["KEY_MODE"]] = uptable["VALUE_INVALID"]
     end
     local additional = bodyBytes[3]
-    if (additional ~= 0) then streams["additional"] = additional end
+    if additional ~= 0 then streams["additional"] = additional end
     local lackbright = (bit_band(bodyBytes[5], 0x02) == 0x02)
     if lackbright then
         streams[uptable["KEY_BRIGHT_LACK"]] = 1
@@ -582,7 +801,7 @@ local function updateJsonByData(binData)
         streams[uptable["KEY_DIY_FLAG"]] = 0
     end
     local lock = bit_band(bodyBytes[5], 0x10)
-    if (lock == 0x10) then
+    if lock == 0x10 then
         streams[uptable["KEY_LOCK"]] = uptable["VALUE_ON"]
     else
         streams[uptable["KEY_LOCK"]] = uptable["VALUE_OFF"]
@@ -651,7 +870,7 @@ local function updateJsonByData(binData)
     else
         streams[uptable["KEY_WATERSWITCH"]] = 0
     end
-    if (workStatus == 0x02) then
+    if workStatus == 0x02 then
         local orderSetTime = bodyBytes[19] * 60 + bodyBytes[20]
         local orderLeftTime = bodyBytes[7] * 60 + bodyBytes[8]
         streams[uptable["KEY_ORDER_SET_HOUR"]] = math.modf(orderSetTime / 60)
@@ -663,12 +882,8 @@ local function updateJsonByData(binData)
         streams[uptable["KEY_DIY_MAIN_WASH"]] = bodyBytes[21]
         streams[uptable["KEY_DIY_PIAO_WASH"]] = bodyBytes[23]
     end
-    if bodyBytes[24] ~= nil then
-        streams[uptable["KEY_BRIGHT"]] = bodyBytes[24]
-    end
-    if bodyBytes[28] ~= nil then
-        streams[uptable["KEY_DEVICE_VERSION"]] = bodyBytes[28]
-    end
+    if bodyBytes[24] ~= nil then streams[uptable["KEY_BRIGHT"]] = bodyBytes[24] end
+    if bodyBytes[28] ~= nil then streams[uptable["KEY_DEVICE_VERSION"]] = bodyBytes[28] end
     if bodyBytes[31] ~= nil then
         streams[uptable["KEY_WATER_LEVEL"]] = bodyBytes[30]
         streams[uptable["KEY_WATER_STRONG_LEVEL"]] = bodyBytes[31]
@@ -691,51 +906,46 @@ local function updateJsonByData(binData)
     else
         streams[uptable["KEY_UVSWITCH"]] = 0
     end
-    if bodyBytes[33] ~= nil then
-        streams[uptable["KEY_HUMIDITY"]] = bodyBytes[33]
-    end
-    if bodyBytes[34] ~= nil then
-        streams[uptable["KEY_DRY_SET_MIN"]] = bodyBytes[34]
-    end
-    if bodyBytes[36] ~= nil then
-        streams[uptable["KEY_OTA_VERSION"]] = bodyBytes[36]
-    end
-    if bodyBytes[38] ~= nil then
-        streams[uptable["KEY_APP_FLAG"]] = bodyBytes[38]
-    end
-    if bodyBytes[39] ~= nil then
-        streams[uptable["KEY_CLOUD_PROGRAM_ID"]] = bodyBytes[39]
-    end
+    if bodyBytes[33] ~= nil then streams[uptable["KEY_HUMIDITY"]] = bodyBytes[33] end
+    if bodyBytes[34] ~= nil then streams[uptable["KEY_DRY_SET_MIN"]] = bodyBytes[34] end
+    if bodyBytes[36] ~= nil then streams[uptable["KEY_OTA_VERSION"]] = bodyBytes[36] end
+    if bodyBytes[38] ~= nil then streams[uptable["KEY_APP_FLAG"]] = bodyBytes[38] end
+    if bodyBytes[39] ~= nil then streams[uptable["KEY_CLOUD_PROGRAM_ID"]] = bodyBytes[39] end
     retTable["status"] = streams
     return encodeTableToJson(retTable)
 end
 function jsonToData(jsonCmdStr)
-    if (#jsonCmdStr == 0) then return nil end
+    if #jsonCmdStr == 0 then return nil end
     local json = decodeJsonToTable(jsonCmdStr)
     local query = json["query"]
     local control = json["control"]
     local status = json["status"]
     local msgBytes = {}
-    if (control) then
+    if control then
         local bodyLength = 38
         local bodyBytes = {}
-        for i = 0, bodyLength - 1 do bodyBytes[i] = 0 end
+        for i = 0, bodyLength - 1 do
+            bodyBytes[i] = 0
+        end
         updateDataByJson(control, bodyBytes)
         msgBytes = assembleUart(bodyBytes, uptable["BYTE_CONTROL_REQUEST"])
-    elseif (query) then
+    elseif query then
         local bodyLength = 1
         local bodyBytes = {}
-        for i = 0, bodyLength - 1 do bodyBytes[i] = 0 end
+        for i = 0, bodyLength - 1 do
+            bodyBytes[i] = 0
+        end
         msgBytes = assembleUart(bodyBytes, uptable["BYTE_QUERY_REQUEST"])
     end
     return table2hex(msgBytes)
 end
 function dataToJson(jsonStr)
-    if (not jsonStr) then return nil end
+    if not jsonStr then return nil end
     local json = decodeJsonToTable(jsonStr)
     local deviceinfo = json["deviceinfo"]
     local deviceSubType = deviceinfo["deviceSubType"]
-    if (deviceSubType == 1) then end
+    if deviceSubType == 1 then
+    end
     local binData = json["msg"]["data"]
     local ret = updateJsonByData(binData)
     return ret

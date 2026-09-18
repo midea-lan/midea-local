@@ -72,7 +72,7 @@ class MideaB0Device(MideaDevice):
         0x03: "ferment",
         0x04: "unfreeze",
         0x05: "roast",
-        0x06: "host_steam",
+        0x06: "hot_steam",
         0x07: "fast_steam",
         0x08: "fast_hot",
         0x09: "pure_steam",

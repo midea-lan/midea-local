@@ -10,6 +10,7 @@ from midealocal.message import (
 )
 
 MIN_CA_GENERAL_BODY_LENGTH = 24
+MIN_CA_EXCEPTION_BODY_LENGTH = 8
 CA_GENERAL_BODY_LENGTH1 = 25
 CA_GENERAL_BODY_LENGTH2 = 30
 CA_GENERAL_BODY_LENGTH3 = 31
@@ -240,33 +241,40 @@ class CAExceptionMessageBody(MessageBody):
         self.refrigeration_defrosting_overtime = body[3] & 0x02
         self.freezing_defrosting_overtime = body[3] & 0x04
         self.zeroCrossingCheckError = body[3] & 0x08
-        self.eepromReadWriteError = body[3] & 0x04
-        self.leftFlexzoneSensorError = body[3] & 0x04
-        self.iceRoomSensorError = body[3] & 0x04
-        self.mainDisplayCorrespondError = body[3] & 0x04
-        self.flexzoneDefrostingSensorError = body[3] & 0x04
-        self.flexzoneDefrostingSensor2Error = body[3] & 0x04
-        self.yogurtMachineSensorError = body[3] & 0x04
-        self.iceMachineFrettingSwitchError = body[3] & 0x04
-        self.iceMachinePipeFilterOvertime = body[3] & 0x04
-        self.ambientHumiditySensorError = body[3] & 0x04
-        self.storageHumiditySensorError = body[3] & 0x04
-        self.radarSensor1Error = body[3] & 0x04
-        self.radarSensor2Error = body[3] & 0x04
-        self.radarSensor3Error = body[3] & 0x04
-        self.radarSensor4Error = body[3] & 0x04
-        self.radarSensor5Error = body[3] & 0x04
-        self.functionZoneTemperatureSensorError = body[3] & 0x04
-        self.normalZoneTemperatureSensorError = body[3] & 0x04
-        self.humidityControlSensorError = body[3] & 0x04
-        self.openDoorTooFrequently = body[3] & 0x04
-        self.storageDoorAloneOpenFrequently = body[3] & 0x04
-        self.freezingDoorAloneOpenFrequently = body[3] & 0x04
-        self.barDoorAloneOpenFrequently = body[3] & 0x04
-        self.storageTemperatureOverheating = body[3] & 0x04
-        self.storageTemperatureTooLow = body[3] & 0x04
-        self.storageHeatingWireSensorError = body[3] & 0x04
-        self.storageTemperatureTooLow = body[3] & 0x04
+        self.eepromReadWriteError = (body[3] & 0x10) > 0
+        self.leftFlexzoneSensorError = (body[3] & 0x20) > 0
+        self.iceRoomSensorError = (body[3] & 0x40) > 0
+        self.mainDisplayCorrespondError = (body[3] & 0x80) > 0
+        self.iceMachineTemperatureError = (body[4] & 0x01) > 0
+        self.flexzoneDefrostingSensorError = (body[4] & 0x02) > 0
+        self.flexzoneDefrostingSensor2Error = (body[4] & 0x04) > 0
+        self.yogurtMachineSensorError = (body[4] & 0x08) > 0
+        self.iceMachineFrettingSwitchError = (body[4] & 0x10) > 0
+        self.iceMachinePipeFilterOvertime = (body[4] & 0x20) > 0
+        self.ambientHumiditySensorError = (body[4] & 0x40) > 0
+        self.storageHumiditySensorError = (body[4] & 0x80) > 0
+        self.radarSensor1Error = (body[5] & 0x01) > 0
+        self.radarSensor2Error = (body[5] & 0x02) > 0
+        self.radarSensor3Error = (body[5] & 0x04) > 0
+        self.radarSensor4Error = (body[5] & 0x08) > 0
+        self.radarSensor5Error = (body[5] & 0x10) > 0
+        self.functionZoneTemperatureSensorError = (body[5] & 0x20) > 0
+        self.normalZoneTemperatureSensorError = (body[5] & 0x40) > 0
+        self.humidityControlSensorError = (body[5] & 0x80) > 0
+        self.openDoorTooFrequently = (body[6] & 0x01) > 0
+        self.storageDoorAloneOpenFrequently = (body[6] & 0x02) > 0
+        self.freezingDoorAloneOpenFrequently = (body[6] & 0x04) > 0
+        self.barDoorAloneOpenFrequently = (body[6] & 0x08) > 0
+        self.snWritingError = (body[6] & 0x20) > 0
+        self.storageTemperatureOverheating = (body[6] & 0x40) > 0
+        self.storageTemperatureTooLow = (body[6] & 0x80) > 0
+        self.storageHeatingWireSensorError = (body[7] & 0x01) > 0
+        self.uartReceiverError = (body[7] & 0x02) > 0
+        self.crystalliteMainSensorError = (body[7] & 0x08) > 0
+        self.crystalliteBase1SensorError = (body[7] & 0x10) > 0
+        self.crystalliteBase2SensorError = (body[7] & 0x20) > 0
+        self.crystalliteBase3SensorError = (body[7] & 0x40) > 0
+        self.crystalliteBase4SensorError = (body[7] & 0x80) > 0
 
 
 class CANotify00MessageBody(MessageBody):
@@ -331,11 +339,15 @@ class MessageCAResponse(MessageResponse):
         # uptable["dataType"] 0x06 and messageBytes[0] 0x01
         # uptable["dataType"] 0x03 and messageBytes[0] 0x02
         elif (
-            self.message_type == MessageType.exception
-            and self.body_type == ListTypes.X01
-        ) or (
-            self.message_type == MessageType.query and self.body_type == ListTypes.X02
-        ):
+            (
+                self.message_type == MessageType.exception
+                and self.body_type == ListTypes.X01
+            )
+            or (
+                self.message_type == MessageType.query
+                and self.body_type == ListTypes.X02
+            )
+        ) and len(super().body) >= MIN_CA_EXCEPTION_BODY_LENGTH:
             self.set_body(CAExceptionMessageBody(super().body))
         # uptable["dataType"] 0x04 and messageBytes[0] 0x00
         elif (

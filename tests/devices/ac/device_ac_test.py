@@ -5,6 +5,10 @@ from unittest.mock import patch
 
 import pytest
 
+from midealocal.base_classes.climate import (
+    DEFAULT_MAX_TARGET_TEMPERATURE,
+    DEFAULT_MIN_TARGET_TEMPERATURE,
+)
 from midealocal.const import ProtocolVersion
 from midealocal.devices.ac import DeviceAttributes, MideaACDevice
 from midealocal.devices.ac.message import (
@@ -30,7 +34,7 @@ from midealocal.devices.ac.message import (
     PowerFormats,
 )
 from midealocal.message import ListTypes, MessageBase
-from tests.base_classes_test import DummyFanMode, DummyHVACMode, DummySwingMode
+from tests.base_classes.climate_test import DummyFanMode, DummyHVACMode, DummySwingMode
 
 
 class TestMideaACDevice:
@@ -69,6 +73,22 @@ class TestMideaACDevice:
         assert self.device.fresh_air_fan_speeds is not None
         assert DeviceAttributes.compressor_frequency in self.device.attributes
         assert not self.device.fresh_air_exhaust_fan_speeds
+        assert self.device.current_humidity() is None
+        assert self.device.current_temperature() is None
+        assert self.device.target_temperature() == 24.0
+
+    def test_turn_on_turn_off(self) -> None:
+        """Test turn on and turn off."""
+        with (
+            patch.object(self.device, "build_send") as mock_build_send,
+        ):
+            self.device.turn_on()
+            assert mock_build_send.call_count == 1
+            assert mock_build_send.call_args[0][0].power is True
+            mock_build_send.reset_mock()
+            self.device.turn_off()
+            assert mock_build_send.call_count == 1
+            assert mock_build_send.call_args[0][0].power is False
 
     @staticmethod
     def _make_device(model: str, subtype: int) -> MideaACDevice:
@@ -301,6 +321,65 @@ class TestMideaACDevice:
         self.device.set_customize('{"min_temperature": 17, "max_temperature": 28}')
         assert self.device.attributes[DeviceAttributes.min_temperature] == 17
         assert self.device.attributes[DeviceAttributes.max_temperature] == 28
+
+    def test_target_temperature_bounds(self) -> None:
+        """Test min/max target temperature read the device attributes, with fallback."""
+        assert self.device.min_temperature() == DEFAULT_MIN_TARGET_TEMPERATURE
+        assert self.device.max_temperature() == DEFAULT_MAX_TARGET_TEMPERATURE
+
+        self.device._attributes[DeviceAttributes.min_temperature] = 17
+        self.device._attributes[DeviceAttributes.max_temperature] = 28
+        assert self.device.min_temperature() == 17.0
+        assert self.device.max_temperature() == 28.0
+
+    def test_preset_modes(self) -> None:
+        """Test the flag-style preset read/write for AC."""
+        assert list(self.device.preset_modes) == [
+            "none",
+            "comfort",
+            "eco",
+            "boost",
+            "sleep",
+            "away",
+        ]
+        assert self.device.preset_mode == "none"
+
+        self.device._attributes[DeviceAttributes.eco_mode] = True
+        assert self.device.preset_mode == "eco"
+
+        with patch.object(self.device, "set_attribute") as mock_set:
+            self.device.set_preset_mode("comfort")
+        mock_set.assert_called_once_with(
+            attr=DeviceAttributes.comfort_mode,
+            value=True,
+        )
+
+    def test_set_preset_mode_then_clear_immediately(self) -> None:
+        """An immediate set-then-clear reads back the just-set preset.
+
+        set_attribute() only builds/sends the wire command; it doesn't
+        update self._attributes, so preset_mode must be updated by
+        set_preset_mode() itself, or an immediate clear would see the
+        stale (pre-command) flags and skip sending the disable command.
+        """
+        with patch.object(self.device, "build_send"):
+            self.device.set_preset_mode("eco")
+            assert self.device.preset_mode == "eco"
+            assert self.device.get_attribute(DeviceAttributes.eco_mode) is True
+
+            self.device.set_preset_mode("none")
+            assert self.device.preset_mode == "none"
+            assert self.device.get_attribute(DeviceAttributes.eco_mode) is False
+
+    def test_preset_modes_bb_protocol_drops_comfort_and_away(self) -> None:
+        """BB (sub-protocol) devices can't serialize comfort_mode/frost_protect."""
+        self.device._used_subprotocol = True
+        assert list(self.device.preset_modes) == ["none", "eco", "boost", "sleep"]
+
+        with pytest.raises(ValueError, match="Unsupported preset mode: comfort"):
+            self.device.set_preset_mode("comfort")
+        with pytest.raises(ValueError, match="Unsupported preset mode: away"):
+            self.device.set_preset_mode("away")
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -540,6 +619,23 @@ class TestMideaACDevice:
         ]
         assert self.device.rate_selects == ["1", "20", "40", "60", "80", "100"]
 
+    def test_rate_selects_2_level_gear_map(self) -> None:
+        """Devices whose b5_electricity marks a 2-level gear count expose 50/75/100.
+
+        Without this, a 2-gear-capable device would offer the full 5-gear
+        table, which doesn't match what the device actually accepts.
+        """
+        self.device._capabilities["rate_select_2_level"] = True
+        assert self.device.rate_selects == ["50", "75", "100"]
+
+    def test_set_attribute_rate_select_2_level(self) -> None:
+        """Test set attribute for rate_select on a 2-level-gear device."""
+        self.device._capabilities["rate_select_2_level"] = True
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.rate_select.value, "75")
+            message = mock_build_send.call_args[0][0]
+        assert message.rate_select == 75
+
     def test_capabilities_updates_from_b5_response(self) -> None:
         """Test B5 capability flags accumulate into _capabilities."""
         assert self.device._capabilities == {}
@@ -588,6 +684,27 @@ class TestMideaACDevice:
 
         assert "capabilities" not in status
 
+    def test_removing_unsupported_capability_attribute_is_idempotent(self) -> None:
+        """Repeated removal of unsupported capability attribute must not crash.
+
+        Regression test: the first B5 frame pops the attribute for an
+        unsupported capability (e.g. rate_select); a later frame that changes a
+        *different* capability re-runs the removal loop and must not KeyError on
+        the already-removed attribute.
+        """
+        first = bytearray([0xB5, 0x03])
+        first += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode, no rate_select
+
+        self.device.process_message(self._response(first))
+        assert DeviceAttributes.rate_select not in self.device._attributes
+
+        second = bytearray([0xB5, 0x03])
+        second += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode
+        second += bytearray([0x1E, 0x02, 0x01, 1])  # b5_anion -> caps change
+
+        self.device.process_message(self._response(second))
+        assert DeviceAttributes.rate_select not in self.device._attributes
+
     def test_process_message(self) -> None:
         """Test process message."""
         with patch("midealocal.devices.ac.MessageACResponse") as mock_message_response:
@@ -614,9 +731,9 @@ class TestMideaACDevice:
             mock_message.screen_display = True
             mock_message.screen_display_alternate = True
             mock_message.full_dust = True
-            mock_message.indoor_temperature = None
+            mock_message.indoor_temperature = 25.0
             mock_message.outdoor_temperature = None
-            mock_message.indoor_humidity = None
+            mock_message.indoor_humidity = 60.0
             mock_message.breezeless = True
             mock_message.total_energy_consumption = None
             mock_message.current_energy_consumption = None
@@ -649,9 +766,9 @@ class TestMideaACDevice:
             assert result[DeviceAttributes.screen_display.value]
             assert result[DeviceAttributes.screen_display_alternate.value]
             assert result[DeviceAttributes.full_dust.value]
-            assert result[DeviceAttributes.indoor_temperature.value] is None
+            assert result[DeviceAttributes.indoor_temperature.value] == 25.0
             assert result[DeviceAttributes.outdoor_temperature.value] is None
-            assert result[DeviceAttributes.indoor_humidity.value] is None
+            assert result[DeviceAttributes.indoor_humidity.value] == 60.0
             assert result[DeviceAttributes.breezeless.value]
             assert result[DeviceAttributes.total_energy_consumption.value] is None
             assert result[DeviceAttributes.current_energy_consumption.value] is None
@@ -675,6 +792,9 @@ class TestMideaACDevice:
             result = self.device.process_message(b"")
             assert not result[DeviceAttributes.screen_display.value]
             assert not self.device.attributes[DeviceAttributes.screen_display]
+
+            assert self.device.current_humidity() == 60.0
+            assert self.device.current_temperature() == 25.0
 
     def test_process_message_group_data(self) -> None:
         """Test that group 1/2/7 data is stored in the device attributes."""

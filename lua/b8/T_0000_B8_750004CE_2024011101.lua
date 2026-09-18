@@ -1,12 +1,12 @@
 local bit = require "bit"
-local JSON = require("cjson")
-local bit = require("bit")
+local JSON = require "cjson"
+local bit = require "bit"
 local function dLog(str) end
 local SN8 = "750004CE"
 local VERSION = 1
 local BYTE_PROTOCOL_HEAD = 0xAA
 local BYTE_DEVICE_TYPE = 0xB8
-local CONTROL_TYPE_CODE = {none = 0x00, manual = 0x01, auto = 0x02}
+local CONTROL_TYPE_CODE = { none = 0x00, manual = 0x01, auto = 0x02 }
 local MOVEMENT_CODE = {
     none = 0x00,
     forward = 0x01,
@@ -16,7 +16,7 @@ local MOVEMENT_CODE = {
     forward_left = 0x05,
     forward_right = 0x06,
     back_left = 0x07,
-    back_right = 0x08
+    back_right = 0x08,
 }
 local CLEAN_MODE_CODE = {
     none = 0x00,
@@ -24,35 +24,35 @@ local CLEAN_MODE_CODE = {
     area = 0x09,
     zone_index = 0x0a,
     zone_rect = 0x0b,
-    target_point = 0x0d
+    target_point = 0x0d,
 }
-local FAN_LEVEL_CODE = {soft = 0x04, normal = 0x01, high = 0x02, super = 0x03}
-local WATER_LEVEL_CODE = {low = 0x01, normal = 0x02, high = 0x03}
+local FAN_LEVEL_CODE = { soft = 0x04, normal = 0x01, high = 0x02, super = 0x03 }
+local WATER_LEVEL_CODE = { low = 0x01, normal = 0x02, high = 0x03 }
 local WORK_CONTENT_CODE = {
     charge = 0x01,
     auto = 0x02,
     stop = 0x03,
-    screw = 0x04
+    screw = 0x04,
 }
 local SPEAK_LEVEL_CODE = {
     none = 0x00,
     off = 0x01,
     low = 0x02,
     normal = 0x03,
-    high = 0x04
+    high = 0x04,
 }
-local SIMPLE_FUNCTION_CODE = {child_lock = 0x01}
+local SIMPLE_FUNCTION_CODE = { child_lock = 0x01 }
 local STATION_FUNCTION_CODE = {
     mop_clean = 0x01,
     dust_collect = 0x02,
     mop_clean_and_dust_collect = 0x03,
-    drain = 0x04
+    drain = 0x04,
 }
 local ERROR_TYPE_OF_A0A3 = {
     no = 0x00,
     can_fix = 0x01,
     reboot = 0x02,
-    warning = 0x03
+    warning = 0x03,
 }
 local ERROR_FIX_DESC_OF_A0A3 = {
     no = 0x0,
@@ -101,12 +101,12 @@ local ERROR_FIX_DESC_OF_A0A3 = {
     fix_start_in_forbid_area_2 = 0x5c,
     fix_trapped_in_small_area = 0x5d,
     fix_whole_house_clean_with_wrong_partition = 0x5e,
-    fix_radar_data_blocked = 0xa0
+    fix_radar_data_blocked = 0xa0,
 }
 local ERROR_REBOOT_DESC = {
     no = 0x00,
     reboot_laser_comm_fail = 0x01,
-    reboot_robot_comm_fail = 0x02
+    reboot_robot_comm_fail = 0x02,
 }
 local ERROR_WARN_DESC_OF_A0A3 = {
     no = 0x00,
@@ -155,7 +155,7 @@ local ERROR_WARN_DESC_OF_A0A3 = {
     warn_water_level_sensor_failed = 0x86,
     warn_strong_liquid_lack = 0x87,
     warn_base_station_water_level_failed = 0x88,
-    warn_washer_base_station_communication_failed = 0xcc
+    warn_washer_base_station_communication_failed = 0xcc,
 }
 local function bitAt(bin, ops)
     local tgt = bit.lshift(1, ops)
@@ -167,7 +167,9 @@ local function bitAt(bin, ops)
 end
 local function initMessageArray(len)
     local arr = {}
-    for i = 0, len - 1 do arr[i] = 0 end
+    for i = 0, len - 1 do
+        arr[i] = 0
+    end
     arr[0] = BYTE_PROTOCOL_HEAD
     arr[1] = len
     arr[2] = BYTE_DEVICE_TYPE
@@ -190,7 +192,9 @@ end
 local function addSumAndConvertMsgToHexString(msg, len)
     msg[len] = makeSum(msg, len - 1)
     local bin = ""
-    for i = 0, len do bin = bin .. string.format("%02x", msg[i]) end
+    for i = 0, len do
+        bin = bin .. string.format("%02x", msg[i])
+    end
     return bin
 end
 local function convertWeekdayToByte(weekday)
@@ -198,9 +202,7 @@ local function convertWeekdayToByte(weekday)
     local rst = 0x0
     for i = 1, 7 do
         p, _ = string.find(weekday, tostring(i))
-        if p ~= nil and p > 0 then
-            rst = bit.bxor(rst, bit.lshift(0x01, i - 1))
-        end
+        if p ~= nil and p > 0 then rst = bit.bxor(rst, bit.lshift(0x01, i - 1)) end
     end
     rst = bit.bxor(rst, bit.lshift(0x01, 7))
     dLog("预约日期转换 output: " .. rst)
@@ -372,7 +374,7 @@ local TASK_CONTROL_CODE = {
     stop = 0x07,
     video_cruise_start = 0x08,
     video_cruise_pause = 0x09,
-    quickly_mapping = 0x0A
+    quickly_mapping = 0x0A,
 }
 local function isTaskControlWorkStatus(workStatus)
     for k, _ in pairs(TASK_CONTROL_CODE) do
@@ -717,21 +719,13 @@ local function handleDryMopParam(json)
 end
 local function handleControlJson(json)
     local workModeSetting = json["work_mode_setting"] or "none"
-    if workModeSetting ~= nil and workModeSetting ~= "none" then
-        return handleWorkMode(workModeSetting)
-    end
+    if workModeSetting ~= nil and workModeSetting ~= "none" then return handleWorkMode(workModeSetting) end
     local fanSetting = json["fan_setting"] or "none"
-    if fanSetting ~= nil and fanSetting ~= "none" then
-        return handleFanSetting(json)
-    end
+    if fanSetting ~= nil and fanSetting ~= "none" then return handleFanSetting(json) end
     local waterTankSetting = json["water_tank_setting"] or "none"
-    if waterTankSetting ~= nil and waterTankSetting ~= "none" then
-        return handleWaterTankSetting(json)
-    end
+    if waterTankSetting ~= nil and waterTankSetting ~= "none" then return handleWaterTankSetting(json) end
     local mopCleanSetting = json["mop_clean_setting"] or "none"
-    if mopCleanSetting ~= nil and mopCleanSetting ~= "none" then
-        return handleMopCleanSetting(mopCleanSetting)
-    end
+    if mopCleanSetting ~= nil and mopCleanSetting ~= "none" then return handleMopCleanSetting(mopCleanSetting) end
     local dustCollectionSetting = json["dust_collection_setting"] or "none"
     if dustCollectionSetting ~= nil and dustCollectionSetting ~= "none" then
         return handleDustCollectionSetting(dustCollectionSetting)
@@ -760,8 +754,7 @@ local function handleControlJson(json)
         return handleSubTypeJson(json)
     elseif workStatus == "switch" then
         return handleSwitchJson(json)
-    elseif workStatus == "virtual_wall_param" or workStatus ==
-        "zone_clean_param" then
+    elseif workStatus == "virtual_wall_param" or workStatus == "zone_clean_param" then
         return handleVirtualWallParamJson(json)
     elseif workStatus == "path_clean_param" then
         return handlePathCleanParam(json)
@@ -849,13 +842,13 @@ local WORK_STATUS_CODE = {
     on_base = 0x12,
     video_cruise = 0x13,
     video_cruise_pause = 0x14,
-    map_searching_pause = 0x15
+    map_searching_pause = 0x15,
 }
 local SWEEP_MOP_MODE_CODE = {
     sweep_and_mop = 0x00,
     sweep = 0x01,
     mop = 0x02,
-    sweep_then_mop = 0x03
+    sweep_then_mop = 0x03,
 }
 local SUB_WORK_STATUS_CODE = {
     free = 0x00,
@@ -869,7 +862,7 @@ local SUB_WORK_STATUS_CODE = {
     erp_mode = 0x08,
     auto_clean = 0x09,
     dust_collect = 0x0A,
-    cut_hair = 0x0B
+    cut_hair = 0x0B,
 }
 local SUB_SLEEPING_STATUS_CODE = {
     default_sleeping = 0x30,
@@ -877,7 +870,7 @@ local SUB_SLEEPING_STATUS_CODE = {
     standing_sleeping = 0x32,
     charge_pause_sleeping = 0x33,
     return_station_pause_sleeping = 0x34,
-    cruise_pause_sleeping = 0x35
+    cruise_pause_sleeping = 0x35,
 }
 local SUB_RELOCATE_REASON_CODE = {
     default = 0x50,
@@ -889,7 +882,7 @@ local SUB_RELOCATE_REASON_CODE = {
     coming_out_during_relocate = 0x56,
     map_change = 0x57,
     manual_control = 0x58,
-    position_out_of_map = 0x59
+    position_out_of_map = 0x59,
 }
 local FUNCTION_TYPE_CODE = {
     dust_box_cleaning = 0x01,
@@ -897,7 +890,7 @@ local FUNCTION_TYPE_CODE = {
     relocate_default = 0x03,
     relocate_in_progress = 0x04,
     relocate_success = 0x05,
-    relocate_fail = 0x06
+    relocate_fail = 0x06,
 }
 local ERR_0A_INFRA_RED_LOW_CODE = {
     none = 0x07,
@@ -908,7 +901,7 @@ local ERR_0A_INFRA_RED_LOW_CODE = {
     failure_infra_red_low_left_hanging = 0x02,
     failure_infra_red_low_right_collision = 0x01,
     failure_infra_red_low_left_collision = 0x00,
-    failure_infra_red_low_center_collision = 0x08
+    failure_infra_red_low_center_collision = 0x08,
 }
 local ERR_0A_INFRA_RED_HIGH_CODE = {
     failure_infra_red_high_left_front_obstacle = 0x07,
@@ -918,7 +911,7 @@ local ERR_0A_INFRA_RED_HIGH_CODE = {
     failure_infra_red_high_right_obstacle = 0x03,
     failure_infra_red_high_right_fall = 0x02,
     failure_infra_red_high_front_fall = 0x01,
-    failure_infra_red_high_left_fall = 0x00
+    failure_infra_red_high_left_fall = 0x00,
 }
 local ERR_0A_FAILURE_LOW_CODE = {
     failure_low_no_dust_box = 0x07,
@@ -928,7 +921,7 @@ local ERR_0A_FAILURE_LOW_CODE = {
     failure_low_right_side_brush = 0x03,
     failure_low_left_side_brush = 0x02,
     failure_low_right_wheel_overload = 0x01,
-    failure_low_left_wheel_overload = 0x00
+    failure_low_left_wheel_overload = 0x00,
 }
 local ERR_0A_FAILURE_MID_CODE = {
     failure_mid_front_collision_switch = 0x07,
@@ -938,7 +931,7 @@ local ERR_0A_FAILURE_MID_CODE = {
     failure_mid_right_back_hanging_sensor = 0x03,
     failure_mid_left_back_hanging_sensor = 0x02,
     failure_mid_right_collision_switch = 0x01,
-    failure_mid_left_collision_switch = 0x00
+    failure_mid_left_collision_switch = 0x00,
 }
 local ERR_0A_FAILURE_HIGH_CODE = {
     failure_high_left_front_infra_red = 0x07,
@@ -948,7 +941,7 @@ local ERR_0A_FAILURE_HIGH_CODE = {
     failure_high_right_infra_red = 0x03,
     failure_high_right_drop_sensor = 0x02,
     failure_high_front_drop_sensor = 0x01,
-    failure_high_left_drop_sensor = 0x00
+    failure_high_left_drop_sensor = 0x00,
 }
 local ERR_0A_USER_LOW_CODE = {
     failure_user_low_no_dust_box = 0x07,
@@ -958,7 +951,7 @@ local ERR_0A_USER_LOW_CODE = {
     failure_user_low_no_water = 0x03,
     failure_user_low_charging_switch_off = 0x02,
     failure_user_low_charge_error = 0x01,
-    failure_user_low_network_failed = 0x00
+    failure_user_low_network_failed = 0x00,
 }
 local ERR_0A_USER_MID_CODE = {
     none = 0x07,
@@ -968,7 +961,7 @@ local ERR_0A_USER_MID_CODE = {
     failure_user_mid_laser_sensor_error = 0x03,
     failure_user_mid_low_battery = 0x02,
     failure_user_mid_camera_error = 0x01,
-    failure_user_mid_vacuum_engine_overload = 0x00
+    failure_user_mid_vacuum_engine_overload = 0x00,
 }
 local STATUS_SUMMARY_LOW_CODE = {
     status_summary_uv_switch = 0x00,
@@ -978,7 +971,7 @@ local STATUS_SUMMARY_LOW_CODE = {
     none = 0x04,
     none = 0x05,
     status_summary_command_source = 0x06,
-    status_summary_device_error = 0x07
+    status_summary_device_error = 0x07,
 }
 local ERR_USER_LOW_CODE = {
     user_low_no_dust_box = 0x07,
@@ -988,7 +981,7 @@ local ERR_USER_LOW_CODE = {
     user_low_no_water = 0x03,
     user_low_charging_switch_off = 0x02,
     user_low_f_b_plate_stuck = 0x01,
-    user_low_l_r_wheel_hang = 0x00
+    user_low_l_r_wheel_hang = 0x00,
 }
 local ERR_USER_MID_CODE = {
     none = 0x07,
@@ -998,7 +991,7 @@ local ERR_USER_MID_CODE = {
     user_mid_vacuum_engine_overload = 0x03,
     user_mid_right_wheel_overload = 0x02,
     user_mid_left_wheel_overload = 0x01,
-    user_mid_drop = 0x00
+    user_mid_drop = 0x00,
 }
 local ERR_USER_HIGH_CODE = {
     none = 0x07,
@@ -1008,18 +1001,18 @@ local ERR_USER_HIGH_CODE = {
     none = 0x03,
     user_high_board_communication_error = 0x02,
     user_high_laser_sensor_shelter = 0x01,
-    user_high_laser_sensor_error = 0x00
+    user_high_laser_sensor_error = 0x00,
 }
 local function getCodeStr(dict, value)
-    for k, v in pairs(dict) do if v == value then return k end end
+    for k, v in pairs(dict) do
+        if v == value then return k end
+    end
     return nil
 end
 local function convertWorkdaysFromByte(weekdayByte)
     local rst = ""
     for i = 1, 7 do
-        if bit.band(weekdayByte, bit.lshift(0x01, i - 1)) > 0 then
-            rst = rst .. tostring(i)
-        end
+        if bit.band(weekdayByte, bit.lshift(0x01, i - 1)) > 0 then rst = rst .. tostring(i) end
     end
     return rst
 end
@@ -1176,17 +1169,12 @@ local function decodeReserveBin(bin)
             local taskId = bin[pos + 11]
             local switch = bin[pos + 12]
             if msgLen == pos + 12 then switch = 0 end
-            data[outIdx]["reserve_weekdays"] =
-                convertWorkdaysFromByte(weekdayByte)
-            data[outIdx]["reserve_start_time"] =
-                string.format("%02d%02d%02d", hour, min, sec)
+            data[outIdx]["reserve_weekdays"] = convertWorkdaysFromByte(weekdayByte)
+            data[outIdx]["reserve_start_time"] = string.format("%02d%02d%02d", hour, min, sec)
             data[outIdx]["reserve_task_minutes"] = tostring(taskMin)
-            data[outIdx]["reserve_work_mode"] =
-                getCodeStr(CLEAN_MODE_CODE, cleanMode)
-            data[outIdx]["reserve_fan_level"] =
-                getCodeStr(FAN_LEVEL_CODE, fanLevel)
-            data[outIdx]["reserve_water_level"] =
-                getCodeStr(WATER_LEVEL_CODE, waterLevel)
+            data[outIdx]["reserve_work_mode"] = getCodeStr(CLEAN_MODE_CODE, cleanMode)
+            data[outIdx]["reserve_fan_level"] = getCodeStr(FAN_LEVEL_CODE, fanLevel)
+            data[outIdx]["reserve_water_level"] = getCodeStr(WATER_LEVEL_CODE, waterLevel)
             data[outIdx]["reserve_task_id"] = tostring(taskId)
             data[outIdx]["reserve_switch"] = switch == 0 and "on" or "off"
         end
@@ -1269,7 +1257,7 @@ local function decodeMopCleanSettingBin(bin)
     query["query_type"] = "mop_clean_setting"
     if modeType == 0x00 then
         query["mode_type"] = "common"
-        local cleanLevel = bin[15];
+        local cleanLevel = bin[15]
         if cleanLevel == 0x02 then
             query["clean_level"] = "fast"
         elseif cleanLevel == 0x03 then
@@ -1363,8 +1351,7 @@ local function decodeControlData(bin)
     if msgSubType == 0xAA then
         if workMode == 0x04 then
             return decodeWorkBin(bin)
-        elseif workMode == 0x01 or workMode == 0x07 or workMode == 0x1B or
-            workMode == 0x1C then
+        elseif workMode == 0x01 or workMode == 0x07 or workMode == 0x1B or workMode == 0x1C then
             return decodeChargeStopBin(bin)
         elseif workMode == 0x04 then
             return decodeSwitchBin(bin)
@@ -1467,20 +1454,14 @@ local function decodeQueryWorkStatusBin(bin)
         query["error_desc"] = getCodeStr(ERROR_WARN_DESC_OF_A0A3, errorContent)
     end
     query["station_error_desc"] = "no"
-    if workStatus == 0x12 then
-        query["station_error_desc"] = getCodeStr(ERROR_WARN_DESC_OF_A0A3,
-                                                 waterStationError)
-    end
+    if workStatus == 0x12 then query["station_error_desc"] = getCodeStr(ERROR_WARN_DESC_OF_A0A3, waterStationError) end
     query["work_status"] = getCodeStr(WORK_STATUS_CODE, workStatus)
     if workStatus == 0x12 then
-        query["sub_work_status"] = getCodeStr(SUB_WORK_STATUS_CODE,
-                                              subWorkStatus)
+        query["sub_work_status"] = getCodeStr(SUB_WORK_STATUS_CODE, subWorkStatus)
     elseif workStatus == 0x0A then
-        query["sub_work_status"] = getCodeStr(SUB_SLEEPING_STATUS_CODE,
-                                              subWorkStatus)
+        query["sub_work_status"] = getCodeStr(SUB_SLEEPING_STATUS_CODE, subWorkStatus)
     elseif workStatus == 0x0B then
-        query["sub_work_status"] = getCodeStr(SUB_RELOCATE_REASON_CODE,
-                                              subWorkStatus)
+        query["sub_work_status"] = getCodeStr(SUB_RELOCATE_REASON_CODE, subWorkStatus)
     end
     query["function_type"] = getCodeStr(FUNCTION_TYPE_CODE, functionType)
     query["control_type"] = getCodeStr(CONTROL_TYPE_CODE, controlType)
@@ -1505,8 +1486,7 @@ local function decodeQueryWorkStatusBin(bin)
         query["have_reserve_task"] = "1"
     end
     query["battery_percent"] = tostring(batteryRatio)
-    query["work_time"] = tostring(bit.band(bit.rshift(workContent, 4), 0x0f) *
-                                      255 + workMin)
+    query["work_time"] = tostring(bit.band(bit.rshift(workContent, 4), 0x0f) * 255 + workMin)
     query["dust_count"] = tostring(dustCount)
     query["planner_status"] = tostring(plannerStatus)
     query["sweep_then_mop_mode_progress"] = tostring(sweepThenMopModeProgress)
@@ -1571,8 +1551,7 @@ local function decodeQueryObserverBin(bin)
             data[i + 1]["task_minutes"] = tostring(taskMin)
             data[i + 1]["work_mode"] = getCodeStr(CLEAN_MODE_CODE, cleanMode)
             data[i + 1]["fan_level"] = getCodeStr(FAN_LEVEL_CODE, fanLevel)
-            data[i + 1]["water_level"] =
-                getCodeStr(WATER_LEVEL_CODE, waterLevel)
+            data[i + 1]["water_level"] = getCodeStr(WATER_LEVEL_CODE, waterLevel)
             data[i + 1]["task_id"] = tostring(taskId)
             data[i + 1]["open_status"] = isOpen == 0x00 and "on" or "off"
         end
@@ -1703,19 +1682,15 @@ local function decode0401Report(bin)
     end
     query["station_error_desc"] = "no"
     if workStatus == 0x12 and subWorkStatus == 0x06 then
-        query["station_error_desc"] = getCodeStr(ERROR_WARN_DESC_OF_A0A3,
-                                                 waterSupplyError)
+        query["station_error_desc"] = getCodeStr(ERROR_WARN_DESC_OF_A0A3, waterSupplyError)
     end
     query["work_status"] = getCodeStr(WORK_STATUS_CODE, workStatus)
     if workStatus == 0x12 then
-        query["sub_work_status"] = getCodeStr(SUB_WORK_STATUS_CODE,
-                                              subWorkStatus)
+        query["sub_work_status"] = getCodeStr(SUB_WORK_STATUS_CODE, subWorkStatus)
     elseif workStatus == 0x0A then
-        query["sub_work_status"] = getCodeStr(SUB_SLEEPING_STATUS_CODE,
-                                              subWorkStatus)
+        query["sub_work_status"] = getCodeStr(SUB_SLEEPING_STATUS_CODE, subWorkStatus)
     elseif workStatus == 0x0B then
-        query["sub_work_status"] = getCodeStr(SUB_RELOCATE_REASON_CODE,
-                                              subWorkStatus)
+        query["sub_work_status"] = getCodeStr(SUB_RELOCATE_REASON_CODE, subWorkStatus)
     end
     query["control_type"] = getCodeStr(CONTROL_TYPE_CODE, controlType)
     query["move_direction"] = getCodeStr(MOVEMENT_CODE, movement)
@@ -1803,15 +1778,9 @@ local function decodeA0A3Report(bin)
     local query = {}
     query["error_type"] = getCodeStr(ERROR_TYPE_OF_A0A3, error_type)
     query["error_desc"] = "no"
-    if error_type == 0x01 then
-        query["error_desc"] = getCodeStr(ERROR_FIX_DESC_OF_A0A3, error_desc)
-    end
-    if error_type == 0x02 then
-        query["error_desc"] = getCodeStr(ERROR_REBOOT_DESC, error_desc)
-    end
-    if error_type == 0x03 then
-        query["error_desc"] = getCodeStr(ERROR_WARN_DESC_OF_A0A3, error_desc)
-    end
+    if error_type == 0x01 then query["error_desc"] = getCodeStr(ERROR_FIX_DESC_OF_A0A3, error_desc) end
+    if error_type == 0x02 then query["error_desc"] = getCodeStr(ERROR_REBOOT_DESC, error_desc) end
+    if error_type == 0x03 then query["error_desc"] = getCodeStr(ERROR_WARN_DESC_OF_A0A3, error_desc) end
     return wrapTableToJson("status", query)
 end
 local function decodeErrorReport(bin)
@@ -1828,33 +1797,19 @@ local function decodeErrorReport(bin)
     if msgSubType == 0xA1 then
         for i = 0, 7 do
             local name = getCodeStr(ERR_0A_INFRA_RED_LOW_CODE, i)
-            if name ~= nil and name ~= "none" then
-                query[name] = bitAt(infra_red_low, i) == true and "yes" or "no"
-            end
+            if name ~= nil and name ~= "none" then query[name] = bitAt(infra_red_low, i) == true and "yes" or "no" end
             name = getCodeStr(ERR_0A_INFRA_RED_HIGH_CODE, i)
-            if name ~= nil and name ~= "none" then
-                query[name] = bitAt(infra_red_high, i) == true and "yes" or "no"
-            end
+            if name ~= nil and name ~= "none" then query[name] = bitAt(infra_red_high, i) == true and "yes" or "no" end
             name = getCodeStr(ERR_0A_FAILURE_LOW_CODE, i)
-            if name ~= nil and name ~= "none" then
-                query[name] = bitAt(failure_low, i) == true and "yes" or "no"
-            end
+            if name ~= nil and name ~= "none" then query[name] = bitAt(failure_low, i) == true and "yes" or "no" end
             name = getCodeStr(ERR_0A_FAILURE_MID_CODE, i)
-            if name ~= nil and name ~= "none" then
-                query[name] = bitAt(failure_mid, i) == true and "yes" or "no"
-            end
+            if name ~= nil and name ~= "none" then query[name] = bitAt(failure_mid, i) == true and "yes" or "no" end
             name = getCodeStr(ERR_0A_FAILURE_HIGH_CODE, i)
-            if name ~= nil and name ~= "none" then
-                query[name] = bitAt(failure_high, i) == true and "yes" or "no"
-            end
+            if name ~= nil and name ~= "none" then query[name] = bitAt(failure_high, i) == true and "yes" or "no" end
             name = getCodeStr(ERR_0A_USER_LOW_CODE, i)
-            if name ~= nil and name ~= "none" then
-                query[name] = bitAt(user_info_low, i) == true and "yes" or "no"
-            end
+            if name ~= nil and name ~= "none" then query[name] = bitAt(user_info_low, i) == true and "yes" or "no" end
             name = getCodeStr(ERR_0A_USER_MID_CODE, i)
-            if name ~= nil and name ~= "none" then
-                query[name] = bitAt(user_info_mid, i) == true and "yes" or "no"
-            end
+            if name ~= nil and name ~= "none" then query[name] = bitAt(user_info_mid, i) == true and "yes" or "no" end
         end
         if bitAt(infra_red_low, 0) and bitAt(infra_red_low, 1) then
             query["failure_infra_red_low_right_collision"] = "no"
@@ -1874,14 +1829,14 @@ end
 local function checkBinSum(bin)
     local msgLen = bin[1]
     if msgLen ~= #bin then
-        dLog("msgLen no valid")
+        dLog "msgLen no valid"
         return false
     end
     if bin[0] ~= 0xaa then rst = false end
     if bin[2] ~= 0xb8 then rst = false end
     local realSum = makeSum(bin, #bin - 1)
     if bin[msgLen] ~= realSum then
-        dLog("check sum valid")
+        dLog "check sum valid"
         return false
     end
     return true

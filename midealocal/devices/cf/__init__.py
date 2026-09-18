@@ -5,7 +5,12 @@ import math
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, override
 
-from midealocal.base_classes.climate import MideaClimateDevice, MideaHVACMode
+from midealocal.base_classes.climate import (
+    DEFAULT_MAX_TARGET_TEMPERATURE,
+    DEFAULT_MIN_TARGET_TEMPERATURE,
+    MideaClimateDevice,
+    MideaHVACMode,
+)
 from midealocal.const import DeviceType
 from midealocal.device import MideaDeviceInitKwargs
 from midealocal.exceptions import ValueWrongType
@@ -79,6 +84,22 @@ class MideaCFDevice(MideaClimateDevice):
         return MideaCFDevice._device_hvac_modes
 
     @override
+    def min_temperature(self, zone: int | None = None) -> float:
+        """Midea CF device minimum target temperature."""
+        value = self._attributes[DeviceAttributes.min_temperature]
+        if isinstance(value, (int, float)):
+            return float(value)
+        return DEFAULT_MIN_TARGET_TEMPERATURE
+
+    @override
+    def max_temperature(self, zone: int | None = None) -> float:
+        """Midea CF device maximum target temperature."""
+        value = self._attributes[DeviceAttributes.max_temperature]
+        if isinstance(value, (int, float)):
+            return float(value)
+        return DEFAULT_MAX_TARGET_TEMPERATURE
+
+    @override
     def hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:
         """Midea CF device HVAC mode."""
         power = self._attributes[DeviceAttributes.power]
@@ -121,6 +142,37 @@ class MideaCFDevice(MideaClimateDevice):
             target_temperature=target_temperature,
             hvac_mode=hvac_mode,
         )
+
+    @override
+    def target_temperature(self, zone: int | None = None) -> float | None:
+        """Midea CF device target temperature."""
+        value = self._attributes.get(DeviceAttributes.target_temperature, None)
+        if not isinstance(value, (int, float)):
+            return None
+        return float(value)
+
+    @override
+    def current_temperature(self) -> float | None:
+        """Midea CF device current temperature."""
+        value = self._attributes.get(DeviceAttributes.current_temperature, None)
+        if not isinstance(value, (int, float)):
+            return None
+        return float(value)
+
+    @override
+    def current_humidity(self) -> float | None:
+        """Midea CF device current humidity."""
+        return None
+
+    @override
+    def turn_on(self, zone: int | None = None) -> None:
+        """Midea CF device turn on."""
+        self.set_attribute(attr=DeviceAttributes.power, value=True)
+
+    @override
+    def turn_off(self, zone: int | None = None) -> None:
+        """Midea CF device turn off."""
+        self.set_attribute(attr=DeviceAttributes.power, value=False)
 
     def build_query(self) -> list[MessageQuery]:
         """Midea CF device build query."""

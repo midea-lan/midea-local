@@ -187,7 +187,9 @@ class TestCAExceptionMessageBody:
 
     def test_exception_body(self) -> None:
         """Test exception body parsing."""
-        body = CAExceptionMessageBody(bytearray([0x01, 0x1F, 0xFF, 0x0F]))
+        body = CAExceptionMessageBody(
+            bytearray([0x01, 0x1F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),
+        )
         assert body.refrigerator_door_overtime is True
         assert body.freezer_door_overtime is True
         assert body.bar_door_overtime is True
@@ -205,11 +207,46 @@ class TestCAExceptionMessageBody:
         assert body.refrigeration_defrosting_overtime == 0x02
         assert body.freezing_defrosting_overtime == 0x04
         assert body.zeroCrossingCheckError == 0x08
-        assert body.eepromReadWriteError == 0x04
+        assert body.eepromReadWriteError is True
+        assert body.leftFlexzoneSensorError is True
+        assert body.iceRoomSensorError is True
+        assert body.mainDisplayCorrespondError is True
+        assert body.iceMachineTemperatureError is True
+        assert body.flexzoneDefrostingSensorError is True
+        assert body.flexzoneDefrostingSensor2Error is True
+        assert body.yogurtMachineSensorError is True
+        assert body.iceMachineFrettingSwitchError is True
+        assert body.iceMachinePipeFilterOvertime is True
+        assert body.ambientHumiditySensorError is True
+        assert body.storageHumiditySensorError is True
+        assert body.radarSensor1Error is True
+        assert body.radarSensor2Error is True
+        assert body.radarSensor3Error is True
+        assert body.radarSensor4Error is True
+        assert body.radarSensor5Error is True
+        assert body.functionZoneTemperatureSensorError is True
+        assert body.normalZoneTemperatureSensorError is True
+        assert body.humidityControlSensorError is True
+        assert body.openDoorTooFrequently is True
+        assert body.storageDoorAloneOpenFrequently is True
+        assert body.freezingDoorAloneOpenFrequently is True
+        assert body.barDoorAloneOpenFrequently is True
+        assert body.snWritingError is True
+        assert body.storageTemperatureOverheating is True
+        assert body.storageTemperatureTooLow is True
+        assert body.storageHeatingWireSensorError is True
+        assert body.uartReceiverError is True
+        assert body.crystalliteMainSensorError is True
+        assert body.crystalliteBase1SensorError is True
+        assert body.crystalliteBase2SensorError is True
+        assert body.crystalliteBase3SensorError is True
+        assert body.crystalliteBase4SensorError is True
 
     def test_exception_body_clear(self) -> None:
         """Test exception body with no error bits."""
-        body = CAExceptionMessageBody(bytearray([0x01, 0x00, 0x00, 0x00]))
+        body = CAExceptionMessageBody(
+            bytearray([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+        )
         assert body.refrigerator_door_overtime is False
         assert body.freezer_door_overtime is False
         assert body.bar_door_overtime is False
@@ -295,15 +332,21 @@ class TestMessageCAResponse:
 
     def test_exception_response(self) -> None:
         """Test exception response."""
-        body = bytearray([0x01, 0x0F, 0x00, 0x00])
+        body = bytearray([0x01, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
         msg = MessageCAResponse(_build_message(MessageType.exception, body))
         assert getattr(msg, "refrigerator_door_overtime", None) is True
 
     def test_query_exception_response(self) -> None:
         """Test query response with an exception body."""
-        body = bytearray([0x02, 0x0F, 0x00, 0x00])
+        body = bytearray([0x02, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
         msg = MessageCAResponse(_build_message(MessageType.query, body))
         assert getattr(msg, "freezer_door_overtime", None) is True
+
+    def test_exception_response_too_short(self) -> None:
+        """Test exception response with a too short body."""
+        body = bytearray([0x01, 0x0F, 0x00, 0x00])
+        msg = MessageCAResponse(_build_message(MessageType.exception, body))
+        assert not hasattr(msg, "refrigerator_door_overtime")
 
     def test_notify1_00_response(self) -> None:
         """Test notify1 response with a notify00 body."""

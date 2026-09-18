@@ -3,13 +3,17 @@
 import json
 import logging
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, ClassVar, Unpack, cast, override
 
 from midealocal.base_classes.climate import (
+    DEFAULT_MAX_TARGET_TEMPERATURE,
+    DEFAULT_MIN_TARGET_TEMPERATURE,
     MideaClimateDevice,
     MideaFanMode,
     MideaHVACMode,
+    MideaPreset,
     MideaSwingMode,
 )
 from midealocal.const import DeviceType
@@ -187,6 +191,14 @@ class MideaACDevice(MideaClimateDevice):
         100: "100",
     }
 
+    # Devices whose B5 b5_electricity capability sets RATE_SELECT_2_LEVEL_BIT
+    # only support two gears, not the full five-gear table above.
+    _rate_selects_2_level: ClassVar[dict[int, str]] = {
+        50: "50",
+        75: "75",
+        100: "100",
+    }
+
     # Generic HVAC mode names, ordered to match the protocol's mode index.
     # Fixed and never filtered: hvac_mode()/set_hvac_mode() index into this
     # to convert to/from the wire's mode int, which is unaffected by which
@@ -208,6 +220,19 @@ class MideaACDevice(MideaClimateDevice):
         (ACFanSpeed.MEDIUM, ACFanSpeed.HIGH),
         (ACFanSpeed.LOW, ACFanSpeed.MEDIUM),
         (ACFanSpeed.SILENT, ACFanSpeed.LOW),
+    )
+
+    # BB (sub-protocol) devices: MessageSubProtocolSet doesn't serialize
+    # comfort_mode/frost_protect, so comfort/away are excluded for them below.
+    _all_preset_attributes: ClassVar[dict[MideaPreset, str]] = {
+        MideaPreset.COMFORT: DeviceAttributes.comfort_mode,
+        MideaPreset.ECO: DeviceAttributes.eco_mode,
+        MideaPreset.BOOST: DeviceAttributes.boost_mode,
+        MideaPreset.SLEEP: DeviceAttributes.sleep_mode,
+        MideaPreset.AWAY: DeviceAttributes.frost_protect,
+    }
+    _bb_unsupported_presets: ClassVar[frozenset[MideaPreset]] = frozenset(
+        {MideaPreset.COMFORT, MideaPreset.AWAY},
     )
 
     _swing_modes: ClassVar[dict[ACSwingMode, tuple[bool, bool]]] = {
@@ -325,6 +350,23 @@ class MideaACDevice(MideaClimateDevice):
         # fields to avoid brief UI flicker caused by query ordering.
         self._prefer_new_protocol_temperature: bool = False
         self.set_customize(customize)
+
+    @property
+    @override
+    def _preset_attributes(self) -> Mapping[MideaPreset, str]:
+        """Presets supported by this unit.
+
+        BB (sub-protocol) devices drop comfort/away: MessageSubProtocolSet
+        doesn't serialize comfort_mode/frost_protect, so those commands
+        would have no effect.
+        """
+        if self._used_subprotocol:
+            return {
+                preset: attr
+                for preset, attr in MideaACDevice._all_preset_attributes.items()
+                if preset not in MideaACDevice._bb_unsupported_presets
+            }
+        return MideaACDevice._all_preset_attributes
 
     @property
     @override
@@ -454,6 +496,56 @@ class MideaACDevice(MideaClimateDevice):
         """Midea AC device temperature step."""
         return self._temperature_step
 
+    @override
+    def target_temperature(self, zone: int | None = None) -> float | None:
+        """Midea AC device target temperature."""
+        return cast(
+            "float | None",
+            self._attributes.get(DeviceAttributes.target_temperature, None),
+        )
+
+    @override
+    def current_temperature(self) -> float | None:
+        """Midea AC device current temperature."""
+        return cast(
+            "float | None",
+            self._attributes.get(DeviceAttributes.indoor_temperature, None),
+        )
+
+    @override
+    def current_humidity(self) -> float | None:
+        """Midea AC device current humidity."""
+        return cast(
+            "float | None",
+            self._attributes.get(DeviceAttributes.indoor_humidity, None),
+        )
+
+    @override
+    def turn_on(self, zone: int | None = None) -> None:
+        """Midea AC device turn on."""
+        self.set_attribute(attr=DeviceAttributes.power, value=True)
+
+    @override
+    def turn_off(self, zone: int | None = None) -> None:
+        """Midea AC device turn off."""
+        self.set_attribute(attr=DeviceAttributes.power, value=False)
+
+    @override
+    def min_temperature(self, zone: int | None = None) -> float:
+        """Midea AC device minimum target temperature."""
+        value = self._attributes[DeviceAttributes.min_temperature]
+        if isinstance(value, (int, float)):
+            return float(value)
+        return DEFAULT_MIN_TARGET_TEMPERATURE
+
+    @override
+    def max_temperature(self, zone: int | None = None) -> float:
+        """Midea AC device maximum target temperature."""
+        value = self._attributes[DeviceAttributes.max_temperature]
+        if isinstance(value, (int, float)):
+            return float(value)
+        return DEFAULT_MAX_TARGET_TEMPERATURE
+
     @property
     def fresh_air_fan_speeds(self) -> list[str]:
         """Midea AC device fresh air fan speeds."""
@@ -478,10 +570,25 @@ class MideaACDevice(MideaClimateDevice):
         """Midea AC device wind_ud_angle."""
         return list(MideaACDevice._wind_ud_angles.values())
 
+    def _active_rate_selects(self) -> dict[int, str]:
+        """Midea AC device rate_select gear map for the reported gear count.
+
+        The b5_electricity byte sets ``rate_select_2_level``/
+        ``rate_select_5_level`` as independent bits; a device can advertise
+        both. The 2-gear map only applies when 2-level is advertised and
+        5-level is not -- any 5-level support means the device accepts the
+        full gear table.
+        """
+        if self._capabilities.get(
+            "rate_select_2_level",
+        ) and not self._capabilities.get("rate_select_5_level"):
+            return MideaACDevice._rate_selects_2_level
+        return MideaACDevice._rate_selects
+
     @property
     def rate_selects(self) -> list[str]:
         """Midea AC device rate_select options."""
-        return list(MideaACDevice._rate_selects.values())
+        return list(self._active_rate_selects().values())
 
     def build_query(self) -> list[ACQuery]:
         """Midea AC device build query."""
@@ -600,7 +707,7 @@ class MideaACDevice(MideaClimateDevice):
                     DeviceAttributes.fresh_air_power: _translate_fresh_air_power,
                     DeviceAttributes.wind_lr_angle: MideaACDevice._wind_lr_angles.get,
                     DeviceAttributes.wind_ud_angle: MideaACDevice._wind_ud_angles.get,
-                    DeviceAttributes.rate_select: MideaACDevice._rate_selects.get,
+                    DeviceAttributes.rate_select: self._active_rate_selects().get,
                 },
             ),
         )
@@ -676,7 +783,7 @@ class MideaACDevice(MideaClimateDevice):
         self._capabilities.update(new_capabilities)
         for cap in MideaACDevice._capabilities_attr:
             if not self._capabilities.get(cap, False):
-                self._attributes.pop(MideaACDevice._capabilities_attr[cap])
+                self._attributes.pop(MideaACDevice._capabilities_attr[cap], None)
         return {"capabilities": dict(self._capabilities)}
 
     def _refresh_self_clean_status(self, message: MessageACResponse) -> dict[str, Any]:
@@ -855,9 +962,13 @@ class MideaACDevice(MideaClimateDevice):
                 setattr(message, str(self._fresh_air_version), fresh_air)
         # rate_select
         elif attr == DeviceAttributes.rate_select:
-            message.rate_select = MideaACDevice.get_dict_key_by_value(
-                "_rate_selects",
-                str(value),
+            message.rate_select = next(
+                (
+                    gear
+                    for gear, name in self._active_rate_selects().items()
+                    if name == str(value)
+                ),
+                None,
             )
         # indirect_wind, screen_display_alternate, breezeless
         else:

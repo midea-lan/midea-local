@@ -16,7 +16,7 @@ from midealocal.devices.cc.message import (
     MessageSet,
 )
 from midealocal.message import MessageType
-from tests.base_classes_test import DummyFanMode, DummyHVACMode, DummySwingMode
+from tests.base_classes.climate_test import DummyFanMode, DummyHVACMode, DummySwingMode
 
 
 def _build_message(message_type: MessageType, body: bytearray) -> bytes:
@@ -100,6 +100,53 @@ class TestMideaCCDevice:
         assert self.device.attributes[DeviceAttributes.aux_heating] is False
         assert self.device.raw_fan_modes is not None
         assert len(self.device.raw_fan_modes) == 0
+        assert self.device.target_temperature() == 26.0
+        assert self.device.current_temperature() is None
+        assert self.device.current_humidity() is None
+        self.device._attributes[DeviceAttributes.target_temperature] = None
+        assert self.device.target_temperature() is None
+
+    def test_power_on_power_off(self) -> None:
+        """Test power on and power off."""
+        with (
+            patch.object(self.device, "build_send") as mock_build_send,
+        ):
+            self.device.turn_on()
+            assert mock_build_send.call_count == 1
+            assert mock_build_send.call_args[0][0].power is True
+            mock_build_send.reset_mock()
+            self.device.turn_off()
+            assert mock_build_send.call_count == 1
+            assert mock_build_send.call_args[0][0].power is False
+
+    def test_preset_modes(self) -> None:
+        """Test the flag-style preset read/write for CC."""
+        assert list(self.device.preset_modes) == ["none", "sleep", "eco"]
+        assert self.device.preset_mode == "none"
+
+        self.device._attributes[DeviceAttributes.sleep_mode] = True
+        assert self.device.preset_mode == "sleep"
+
+        with patch.object(self.device, "set_attribute") as mock_set:
+            self.device.set_preset_mode("eco")
+        mock_set.assert_called_once_with(attr=DeviceAttributes.eco_mode, value=True)
+
+    def test_set_preset_mode_then_clear_immediately(self) -> None:
+        """An immediate set-then-clear reads back the just-set preset.
+
+        set_attribute() only builds/sends the wire command; it doesn't
+        update self._attributes, so preset_mode must be updated by
+        set_preset_mode() itself, or an immediate clear would see the
+        stale (pre-command) flags and skip sending the disable command.
+        """
+        with patch.object(self.device, "build_send"):
+            self.device.set_preset_mode("sleep")
+            assert self.device.preset_mode == "sleep"
+            assert self.device.get_attribute(DeviceAttributes.sleep_mode) is True
+
+            self.device.set_preset_mode("none")
+            assert self.device.preset_mode == "none"
+            assert self.device.get_attribute(DeviceAttributes.sleep_mode) is False
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -121,6 +168,8 @@ class TestMideaCCDevice:
         assert self.device.attributes[DeviceAttributes.aux_heating] is False
         assert new_status[DeviceAttributes.fan_speed.value] == "level_5"
         assert self.device.raw_fan_modes == [m.name.lower() for m in CCFanSpeed7Level]
+        assert self.device.current_temperature() == 25.0
+        assert self.device.target_temperature() == 24.5
 
     def test_process_message_legacy_3level_and_aux(self) -> None:
         """3-level flag selects the 3-level table; aux heat status 1 sets aux."""
@@ -592,16 +641,63 @@ class TestMideaCCDeviceFEControl:
             self.device.set_attribute(DeviceAttributes.fan_speed.value, "Bogus")
             mock_send.assert_not_called()
 
-    def test_set_attribute_eco_and_sleep(self) -> None:
-        """FE eco and sleep controls carry the boolean value."""
+    @pytest.mark.parametrize(
+        ("attr", "value", "expected_controls"),
+        [
+            pytest.param(
+                DeviceAttributes.eco_mode,
+                True,
+                [(CCControlId.ECO, 1), (CCControlId.SLEEP, 0)],
+                id="eco-on-clears-sleep",
+            ),
+            pytest.param(
+                DeviceAttributes.eco_mode,
+                False,
+                [(CCControlId.ECO, 0)],
+                id="eco-off",
+            ),
+            pytest.param(
+                DeviceAttributes.sleep_mode,
+                True,
+                [(CCControlId.SLEEP, 1), (CCControlId.ECO, 0)],
+                id="sleep-on-clears-eco",
+            ),
+            pytest.param(
+                DeviceAttributes.sleep_mode,
+                False,
+                [(CCControlId.SLEEP, 0)],
+                id="sleep-off",
+            ),
+        ],
+    )
+    def test_set_attribute_eco_and_sleep(
+        self,
+        attr: DeviceAttributes,
+        value: bool,
+        expected_controls: list[tuple[CCControlId, int]],
+    ) -> None:
+        """FE eco/sleep controls carry the value and clear the other on activation."""
         with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(attr.value, value)
+            assert mock_send.call_args[0][0]._controls == expected_controls
+
+    def test_set_attribute_eco_and_sleep_are_mutually_exclusive(self) -> None:
+        """Activating eco/sleep clears the other flag in the same control frame.
+
+        Legacy C3 serialization does this in make_message_set(); the 0xFE
+        control path must match it so a sleep->eco transition (or the
+        reverse) doesn't leave both flags active on the panel.
+        """
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.sleep_mode.value, True)
             self.device.set_attribute(DeviceAttributes.eco_mode.value, True)
-            self.device.set_attribute(DeviceAttributes.sleep_mode.value, False)
             assert mock_send.call_count == 2
             assert mock_send.call_args_list[0][0][0]._controls == [
-                (CCControlId.ECO, 1),
+                (CCControlId.SLEEP, 1),
+                (CCControlId.ECO, 0),
             ]
             assert mock_send.call_args_list[1][0][0]._controls == [
+                (CCControlId.ECO, 1),
                 (CCControlId.SLEEP, 0),
             ]
 

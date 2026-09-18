@@ -218,33 +218,40 @@ class MessageQueryB1(MessageCDBase):
 class MessageSet(MessageCDBase):
     """CD message set (controlType=0x01).
 
-    RSJRAC07 / extended Lua (T_0000_CD_RSJRAC07) expects a **25-byte** control
-    body (body_type + 24-byte payload). A shorter body faults the unit: target
-    and max temperature become 0 until power-cycled or restored via the app.
+    The body matches Midea's own CD Lua plugins. Their ``jsonToData``
+    ``controlType == 0x01`` branch builds the SET body as:
+
+      * ``lua/cd/T_0000_CD_RSJRAC01_2023070401.lua`` / ``T_0000_CD_14.lua`` and
+        the ``T_0000_CD_RSJ000CB_*`` plugins (new, raw-°C protocol):
+        ``bodyBytes[0..21]`` — a 22-byte body (body_type + 21-byte payload),
+        last field ``bodyBytes[21] = vacationTsValue``.
+      * ``T_0000_CD_3/7/000K86A2_3`` (old ``x2+30`` protocol):
+        ``bodyBytes[0..8]`` — a 9-byte body.
+
+    None of the plugins write a byte past ``bodyBytes[21]``; there is no
+    ``tsMax``/``timer_type``/``dr_switch`` in the SET path (``tsMaxValue`` is
+    read-only, decoded from the status body). Sending the historical 8-byte
+    body to a new-protocol RSJRAC unit faults it (setpoint sticks at 0) until a
+    power-cycle. See https://github.com/midea-lan/midea-local/issues/468
 
     Layout (after MessageRequest prepends body_type at full[0]):
-      full[1]  = 0x01 constant
-      full[2]  = power
-      full[3]  = mode (1 eco, 2 standard, 3 dual/compatibilizing, 4 smart, ...)
-      full[4]  = target temperature (raw °C for new protocol)
-      full[5]  = trValue (hysteresis; Lua range 2-6)
-      full[6]  = openPTC (Lua forces 0 on normal sets)
-      full[7]  = ptcTemp
-      full[8]  = flags (vacation 0x10 / °F 0x80 / mute 0x08)
-      full[9..20] = vacation days + date fields (0 for a plain set)
-      full[21] = vacationTsValue
-      full[22] = timer_type
-      full[23] = **tsMax** (device max temperature; must not be 0)
-      full[24] = dr_switch
-
-    See https://github.com/midea-lan/midea-local/issues/468
+      full[1]      = 0x01 constant
+      full[2]      = power
+      full[3]      = mode (1 energy · 2 standard · 3 compatibilizing · 4 smart)
+      full[4]      = target temperature (raw °C new protocol, x2+30 old)
+      full[5]      = trValue (hysteresis; Lua range 2-6)
+      full[6]      = openPTC (forced 0 on plain sets, see _sanitize_set_fields)
+      full[7]      = ptcTemp
+      full[8]      = flags (vacation 0x10 / °F 0x80 / mute 0x08)
+      full[9..10]  = vacation days (big-endian)
+      full[11..20] = date / vacation-start fields (0 for a plain set)
+      full[21]     = vacationTsValue
     """
 
     DEFAULT_VACATION_DAYS = 100
     TR_VALUE_MIN = 2
     TR_VALUE_MAX = 6
     DEFAULT_TR_VALUE = 5
-    DEFAULT_TS_MAX = 65
 
     def __init__(self, protocol_version: int) -> None:
         """Initialize CD message set."""
@@ -268,9 +275,6 @@ class MessageSet(MessageCDBase):
         self.fahrenheit: bool = False
         # vacation target temperature (full[21] / vacationTsValue)
         self.vacation_temperature: float = 0
-        # device max temperature limit (full[23] / tsMax) — must be non-zero
-        self.ts_max: int = 0
-        self.schedule_mode: int = 0
 
     def read_field(self, field: str) -> int:
         """CD message set read field."""
@@ -283,16 +287,6 @@ class MessageSet(MessageCDBase):
         if tr < self.TR_VALUE_MIN or tr > self.TR_VALUE_MAX:
             return self.DEFAULT_TR_VALUE
         return tr
-
-    def _ts_max_value(self) -> int:
-        """Return tsMax; never 0 (firmware clamps setpoint when tsMax is 0)."""
-        try:
-            value = int(self.ts_max)
-        except (TypeError, ValueError):
-            value = 0
-        if value <= 0:
-            return self.DEFAULT_TS_MAX
-        return value & 0xFF
 
     @property
     def _body(self) -> bytearray:
@@ -324,7 +318,7 @@ class MessageSet(MessageCDBase):
         ):
             vacation_ts = int(self.vacation_temperature) & 0xFF
 
-        # 24-byte payload; MessageRequest prepends body_type → 25-byte body
+        # 21-byte payload; MessageRequest prepends body_type → 22-byte body
         return bytearray(
             [
                 0x01,  # full[1] constant
@@ -332,7 +326,7 @@ class MessageSet(MessageCDBase):
                 mode,  # full[3]
                 int(target_temperature) & 0xFF,  # full[4]
                 self._tr_value() & 0xFF,  # full[5]
-                0x00,  # full[6] openPTC forced 0 (Lua normal set)
+                0x00,  # full[6] openPTC forced 0 (see _sanitize_set_fields)
                 self.read_field("ptcTemp") & 0xFF,  # full[7]
                 byte8 & 0xFF,  # full[8]
                 vacation_high,  # full[9]
@@ -348,9 +342,6 @@ class MessageSet(MessageCDBase):
                 0,  # full[19]
                 0,  # full[20]
                 vacation_ts,  # full[21] vacationTsValue
-                self.schedule_mode & 0xFF,  # full[22] schedule mode
-                self._ts_max_value(),  # full[23] tsMax (must be non-zero)
-                0x00,  # full[24] dr_switch
             ],
         )
 

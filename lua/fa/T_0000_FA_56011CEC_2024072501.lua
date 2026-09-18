@@ -25,9 +25,9 @@ local modeTab = {
     "purify_only",
     "self_selection",
     "ecology",
-    [0] = "invalid"
+    [0] = "invalid",
 }
-local humidifyTab = {"off", "no_change", "1", "2", "3", [0] = "invalid"}
+local humidifyTab = { "off", "no_change", "1", "2", "3", [0] = "invalid" }
 local swingDirectionTab = {
     "lr",
     "ud",
@@ -36,7 +36,7 @@ local swingDirectionTab = {
     "invalid",
     "udlr",
     "custom",
-    [0] = "invalid"
+    [0] = "invalid",
 }
 local voiceTab = {
     "open_gps",
@@ -45,9 +45,9 @@ local voiceTab = {
     "open_buzzer",
     "open_tip",
     [8] = "close_buzzer",
-    [10] = "mute"
+    [10] = "mute",
 }
-local bit = {datagBitLen = {}}
+local bit = { datagBitLen = {} }
 local gBitLen = 32
 local isBitInit = false
 local function bitInit()
@@ -133,7 +133,9 @@ local function _rshift(a, n)
     local r = d2b(0)
     if n < gBitLen and n > 0 then
         for i = 0, n - 1 do
-            for i = 31, 1, -1 do op1[i] = op1[i - 1] end
+            for i = 31, 1, -1 do
+                op1[i] = op1[i - 1]
+            end
             op1[0] = 0
         end
         r = op1
@@ -147,7 +149,9 @@ local function _lshift(a, n)
     local r = d2b(0)
     if n < gBitLen and n > 0 then
         for i = 0, n - 1 do
-            for i = 0, 30 do op1[i] = op1[i + 1] end
+            for i = 0, 30 do
+                op1[i] = op1[i + 1]
+            end
             op1[gBitLen - 1] = 0
         end
         r = op1
@@ -157,62 +161,57 @@ local function _lshift(a, n)
     return b2d(r)
 end
 local function setByte(pBytes, pIndex, pValue)
-    pBytes[pIndex] = _and(pValue, 0xFF);
-    return pBytes;
+    pBytes[pIndex] = _and(pValue, 0xFF)
+    return pBytes
 end
-local function getByte(pBytes, pIndex) return _and(pBytes[pIndex], 0xFF); end
+local function getByte(pBytes, pIndex)
+    return _and(pBytes[pIndex], 0xFF)
+end
 local function _setBit(pByte, pIndex, pValue)
     pByte = _and(pByte, (0xFF - _lshift(0x01, pIndex)))
-    pByte = _or(_lshift(_and(pValue, 0x01), pIndex), pByte);
-    return pByte;
+    pByte = _or(_lshift(_and(pValue, 0x01), pIndex), pByte)
+    return pByte
 end
-local function _getBit(pByte, pIndex) return _and(_rshift(pByte, pIndex), 0x01); end
+local function _getBit(pByte, pIndex)
+    return _and(_rshift(pByte, pIndex), 0x01)
+end
 local function getBit(pBytes, pIndex, pBitIndex)
-    if pBytes[pIndex] then return _getBit(pBytes[pIndex], pBitIndex); end
+    if pBytes[pIndex] then return _getBit(pBytes[pIndex], pBitIndex) end
     return nil
 end
 local function setBit(pBytes, pIndex, pBitIndex, pValue)
-    if pBytes[pIndex] then
-        pBytes[pIndex] = _setBit(pBytes[pIndex], pBitIndex, pValue);
-    end
-    return pBytes;
+    if pBytes[pIndex] then pBytes[pIndex] = _setBit(pBytes[pIndex], pBitIndex, pValue) end
+    return pBytes
 end
 local function _getBits(pByte, pStartIndex, pEndIndex)
-    if pStartIndex > pEndIndex then
-        return _getBits(pByte, pEndIndex, pStartIndex);
-    end
-    local tempVal = 0x00;
+    if pStartIndex > pEndIndex then return _getBits(pByte, pEndIndex, pStartIndex) end
+    local tempVal = 0x00
     for i = pStartIndex, pEndIndex do
-        tempVal = _or(tempVal, _lshift(_getBit(pByte, i), (i - pStartIndex)));
+        tempVal = _or(tempVal, _lshift(_getBit(pByte, i), (i - pStartIndex)))
     end
-    return tempVal;
+    return tempVal
 end
 local function _setBits(pByte, pStartIndex, pEndIndex, pValue)
-    if pStartIndex > pEndIndex then
-        return _setBits(pByte, pEndIndex, pStartIndex, pValue);
-    end
+    if pStartIndex > pEndIndex then return _setBits(pByte, pEndIndex, pStartIndex, pValue) end
     for i = pStartIndex, pEndIndex do
-        pByte = _setBit(pByte, i, _getBit(pValue, i - pStartIndex));
+        pByte = _setBit(pByte, i, _getBit(pValue, i - pStartIndex))
     end
-    return pByte;
+    return pByte
 end
 local function getBits(pBytes, pIndex, pBitStartIndex, pBitEndIndex)
-    if pBytes[pIndex] then
-        return _getBits(pBytes[pIndex], pBitStartIndex, pBitEndIndex);
-    end
+    if pBytes[pIndex] then return _getBits(pBytes[pIndex], pBitStartIndex, pBitEndIndex) end
     return nil
 end
 local function setBits(pBytes, pIndex, pBitStartIndex, pBitEndIndex, pValue)
-    if pBytes[pIndex] then
-        pBytes[pIndex] = _setBits(pBytes[pIndex], pBitStartIndex, pBitEndIndex,
-                                  pValue);
-    end
-    return pBytes;
+    if pBytes[pIndex] then pBytes[pIndex] = _setBits(pBytes[pIndex], pBitStartIndex, pBitEndIndex, pValue) end
+    return pBytes
 end
 local function table2string(cmd)
     local ret = ""
     local i
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 local function string2table(hexstr)
@@ -228,7 +227,9 @@ local function string2table(hexstr)
 end
 local function string2hexstring(str)
     local ret = ""
-    for i = 1, #str do ret = ret .. string.format("%02x", str:byte(i)) end
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
     return ret
 end
 local function encode(cmd)
@@ -245,28 +246,270 @@ local function decode(cmd)
 end
 local function makeSum(tmpbuf, start_pos, end_pos)
     local resVal = 0
-    for si = start_pos, end_pos do resVal = resVal + tmpbuf[si] end
+    for si = start_pos, end_pos do
+        resVal = resVal + tmpbuf[si]
+    end
     resVal = _bit.bnot(resVal) + 1
     resVal = _bit.band(resVal, 0x00FF)
     return resVal
 end
 local crc8_854_table = {
-    0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65, 157,
-    195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220, 35, 125,
-    159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98, 190, 224, 2,
-    92, 223, 129, 99, 61, 124, 34, 192, 158, 29, 67, 161, 255, 70, 24, 250, 164,
-    39, 121, 155, 197, 132, 218, 56, 102, 229, 187, 89, 7, 219, 133, 103, 57,
-    186, 228, 6, 88, 25, 71, 165, 251, 120, 38, 196, 154, 101, 59, 217, 135, 4,
-    90, 184, 230, 167, 249, 27, 69, 198, 152, 122, 36, 248, 166, 68, 26, 153,
-    199, 37, 123, 58, 100, 134, 216, 91, 5, 231, 185, 140, 210, 48, 110, 237,
-    179, 81, 15, 78, 16, 242, 172, 47, 113, 147, 205, 17, 79, 173, 243, 112, 46,
-    204, 146, 211, 141, 111, 49, 178, 236, 14, 80, 175, 241, 19, 77, 206, 144,
-    114, 44, 109, 51, 209, 143, 12, 82, 176, 238, 50, 108, 142, 208, 83, 13,
-    239, 177, 240, 174, 76, 18, 145, 207, 45, 115, 202, 148, 118, 40, 171, 245,
-    23, 73, 8, 86, 180, 234, 105, 55, 213, 139, 87, 9, 235, 181, 54, 104, 138,
-    212, 149, 203, 41, 119, 244, 170, 72, 22, 233, 183, 85, 11, 136, 214, 52,
-    106, 43, 117, 151, 201, 74, 20, 246, 168, 116, 42, 200, 150, 21, 75, 169,
-    247, 182, 232, 10, 84, 215, 137, 107, 53
+    0,
+    94,
+    188,
+    226,
+    97,
+    63,
+    221,
+    131,
+    194,
+    156,
+    126,
+    32,
+    163,
+    253,
+    31,
+    65,
+    157,
+    195,
+    33,
+    127,
+    252,
+    162,
+    64,
+    30,
+    95,
+    1,
+    227,
+    189,
+    62,
+    96,
+    130,
+    220,
+    35,
+    125,
+    159,
+    193,
+    66,
+    28,
+    254,
+    160,
+    225,
+    191,
+    93,
+    3,
+    128,
+    222,
+    60,
+    98,
+    190,
+    224,
+    2,
+    92,
+    223,
+    129,
+    99,
+    61,
+    124,
+    34,
+    192,
+    158,
+    29,
+    67,
+    161,
+    255,
+    70,
+    24,
+    250,
+    164,
+    39,
+    121,
+    155,
+    197,
+    132,
+    218,
+    56,
+    102,
+    229,
+    187,
+    89,
+    7,
+    219,
+    133,
+    103,
+    57,
+    186,
+    228,
+    6,
+    88,
+    25,
+    71,
+    165,
+    251,
+    120,
+    38,
+    196,
+    154,
+    101,
+    59,
+    217,
+    135,
+    4,
+    90,
+    184,
+    230,
+    167,
+    249,
+    27,
+    69,
+    198,
+    152,
+    122,
+    36,
+    248,
+    166,
+    68,
+    26,
+    153,
+    199,
+    37,
+    123,
+    58,
+    100,
+    134,
+    216,
+    91,
+    5,
+    231,
+    185,
+    140,
+    210,
+    48,
+    110,
+    237,
+    179,
+    81,
+    15,
+    78,
+    16,
+    242,
+    172,
+    47,
+    113,
+    147,
+    205,
+    17,
+    79,
+    173,
+    243,
+    112,
+    46,
+    204,
+    146,
+    211,
+    141,
+    111,
+    49,
+    178,
+    236,
+    14,
+    80,
+    175,
+    241,
+    19,
+    77,
+    206,
+    144,
+    114,
+    44,
+    109,
+    51,
+    209,
+    143,
+    12,
+    82,
+    176,
+    238,
+    50,
+    108,
+    142,
+    208,
+    83,
+    13,
+    239,
+    177,
+    240,
+    174,
+    76,
+    18,
+    145,
+    207,
+    45,
+    115,
+    202,
+    148,
+    118,
+    40,
+    171,
+    245,
+    23,
+    73,
+    8,
+    86,
+    180,
+    234,
+    105,
+    55,
+    213,
+    139,
+    87,
+    9,
+    235,
+    181,
+    54,
+    104,
+    138,
+    212,
+    149,
+    203,
+    41,
+    119,
+    244,
+    170,
+    72,
+    22,
+    233,
+    183,
+    85,
+    11,
+    136,
+    214,
+    52,
+    106,
+    43,
+    117,
+    151,
+    201,
+    74,
+    20,
+    246,
+    168,
+    116,
+    42,
+    200,
+    150,
+    21,
+    75,
+    169,
+    247,
+    182,
+    232,
+    10,
+    84,
+    215,
+    137,
+    107,
+    53,
 }
 local function crc8_854(dataBuf, start_pos, end_pos)
     local crc = 0
@@ -276,35 +519,37 @@ local function crc8_854(dataBuf, start_pos, end_pos)
     return crc
 end
 local function string2Int(data)
-    if (not data) then data = tonumber("0") end
+    if not data then data = tonumber "0" end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
+    if data == nil then data = 0 end
     return data
 end
 local function int2String(data)
-    if (not data) then data = tostring(0) end
+    if not data then data = tostring(0) end
     data = tostring(data)
-    if (data == nil) then data = "0" end
+    if data == nil then data = "0" end
     return data
 end
 local function quMo(data)
-    if (not data) then data = tonumber("0") end
+    if not data then data = tonumber "0" end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
+    if data == nil then data = 0 end
     local result = 0
     result = data % 10
     return result
 end
 local function quChu(data)
-    if (not data) then data = tonumber("0") end
+    if not data then data = tonumber "0" end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
+    if data == nil then data = 0 end
     local result = 0
     result = math.modf(data / 10)
     return result
 end
 local function getIndexFromValueTab(table, value, defaultIndex)
-    for k, v in pairs(table) do if value == v then return k end end
+    for k, v in pairs(table) do
+        if value == v then return k end
+    end
     if defaultIndex then return defaultIndex end
     return nil
 end
@@ -316,13 +561,15 @@ end
 local function makeSetBTMacOrder(control)
     local msgBytes = {}
     local msgLength = 12 + control["btCount"] * 6
-    for i = 0, msgLength do msgBytes[i] = 0 end
+    for i = 0, msgLength do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = 0xAA
     msgBytes[1] = msgLength
     msgBytes[2] = 0xFA
-    msgBytes[8] = 2;
-    msgBytes[9] = 2;
-    msgBytes[10] = 0x0c;
+    msgBytes[8] = 2
+    msgBytes[9] = 2
+    msgBytes[10] = 0x0c
     msgBytes[11] = control["btCount"]
     local macs = control["btMacs"]
     local j = 0
@@ -339,7 +586,9 @@ local function makeSetBTMacOrder(control)
     end
     msgBytes[msgLength] = makeSum(msgBytes, 1, msgLength - 1)
     local infoM = {}
-    for i = 1, msgLength + 1 do infoM[i] = msgBytes[i - 1] end
+    for i = 1, msgLength + 1 do
+        infoM[i] = msgBytes[i - 1]
+    end
     local ret = table2string(infoM)
     ret = string2hexstring(ret)
     return ret
@@ -363,10 +612,8 @@ local function processSwing(msgBytes, control)
             end
         elseif lrSwitch == "diy" then
             diyOn = 1
-            lDiyAngle = control.lr_diy_angle_down ~= nil and
-                            control.lr_diy_angle_down or 0
-            rDiyAngle = control.lr_diy_angle_up ~= nil and
-                            control.lr_diy_angle_up or 0
+            lDiyAngle = control.lr_diy_angle_down ~= nil and control.lr_diy_angle_down or 0
+            rDiyAngle = control.lr_diy_angle_up ~= nil and control.lr_diy_angle_up or 0
         end
         setBits(msgBytes, 45, 0, 1, diyOn)
         if diyOn == 2 then
@@ -408,10 +655,8 @@ local function processSwing(msgBytes, control)
             end
         elseif udSwitch == "diy" then
             udType = 1
-            dDiyAngle = control.ud_diy_angle_down ~= nil and
-                            control.ud_diy_angle_down or 0
-            uDiyAngle = control.ud_diy_angle_up ~= nil and
-                            control.ud_diy_angle_up or 0
+            dDiyAngle = control.ud_diy_angle_down ~= nil and control.ud_diy_angle_down or 0
+            uDiyAngle = control.ud_diy_angle_up ~= nil and control.ud_diy_angle_up or 0
         end
         setBits(msgBytes, 45, 2, 3, udType)
         if udType == 2 then
@@ -438,31 +683,29 @@ local function processSwing(msgBytes, control)
 end
 function jsonToData(jsonCmd)
     bitInit()
-    if (#jsonCmd == 0) then return nil end
+    if #jsonCmd == 0 then return nil end
     local json = decode(jsonCmd)
     local query = json["query"]
     local control = json["control"]
     local bodyLength
-    if (query) then
-        if query["type"] ~= nil and query["type"] == "btMac" then
-            return "aa0bfa000000000000030cec"
-        end
+    if query then
+        if query["type"] ~= nil and query["type"] == "btMac" then return "aa0bfa000000000000030cec" end
         bodyLength = 0
-    elseif (control) then
-        if control["setBtMacs"] ~= nil then
-            return makeSetBTMacOrder(control)
-        end
+    elseif control then
+        if control["setBtMacs"] ~= nil then return makeSetBTMacOrder(control) end
         bodyLength = 63
     end
     local msgLength = bodyLength + 0x0A
     local msgBytes = {}
-    for i = 0, msgLength do msgBytes[i] = 0 end
+    for i = 0, msgLength do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = 0xAA
     msgBytes[1] = bodyLength + 0x0A
     msgBytes[2] = 0xFA
-    if (query) then
+    if query then
         msgBytes[9] = 0x03
-    elseif (control) then
+    elseif control then
         msgBytes[9] = 0x02
         msgBytes[35] = 0xff
         msgBytes[36] = 0xff
@@ -472,7 +715,9 @@ function jsonToData(jsonCmd)
         msgBytes[48] = 0xff
         msgBytes[55] = 0xff
         msgBytes[56] = 0xff
-        for k = 61, 72 do msgBytes[k] = 0xff end
+        for k = 61, 72 do
+            msgBytes[k] = 0xff
+        end
         setBit(msgBytes, 14, 7, 1)
         setBit(msgBytes, 18, 7, 1)
         local numTemp = 0
@@ -509,9 +754,7 @@ function jsonToData(jsonCmd)
                 else
                     numTemp = string2Int(value)
                 end
-                if numTemp >= 1 and numTemp <= 100 then
-                    msgBytes[15] = numTemp
-                end
+                if numTemp >= 1 and numTemp <= 100 then msgBytes[15] = numTemp end
             elseif key == "temperature" then
                 if type(value) == "number" then
                     numTemp = value
@@ -529,12 +772,9 @@ function jsonToData(jsonCmd)
                 else
                     numTemp = string2Int(value)
                 end
-                if numTemp >= 1 and numTemp <= 100 then
-                    msgBytes[17] = numTemp
-                end
+                if numTemp >= 1 and numTemp <= 100 then msgBytes[17] = numTemp end
             elseif key == "humidify" then
-                local humidifyValue =
-                    getIndexFromValueTab(humidifyTab, value, 0);
+                local humidifyValue = getIndexFromValueTab(humidifyTab, value, 0)
                 setBits(msgBytes, 19, 4, 7, humidifyValue)
             elseif key == "anophelifuge" then
                 if value == "on" then
@@ -554,9 +794,7 @@ function jsonToData(jsonCmd)
                 else
                     numTemp = string2Int(value)
                 end
-                if numTemp >= 1 and numTemp <= 24 then
-                    setBits(msgBytes, 20, 0, 4, numTemp)
-                end
+                if numTemp >= 1 and numTemp <= 24 then setBits(msgBytes, 20, 0, 4, numTemp) end
             elseif key == "timer_off_minute" then
                 if type(value) == "number" then
                     if value >= 1 and value <= 59 then
@@ -584,9 +822,7 @@ function jsonToData(jsonCmd)
                 else
                     numTemp = string2Int(value)
                 end
-                if numTemp >= 1 and numTemp <= 24 then
-                    setBits(msgBytes, 21, 0, 4, numTemp)
-                end
+                if numTemp >= 1 and numTemp <= 24 then setBits(msgBytes, 21, 0, 4, numTemp) end
             elseif key == "timer_on_minute" then
                 if type(value) == "number" then
                     if value >= 1 and value <= 59 then
@@ -672,36 +908,28 @@ function jsonToData(jsonCmd)
                 else
                     numTemp = string2Int(value)
                 end
-                if numTemp >= 0 and numTemp <= 26 then
-                    msgBytes[40] = numTemp
-                end
+                if numTemp >= 0 and numTemp <= 26 then msgBytes[40] = numTemp end
             elseif key == "back_gear" then
                 if type(value) == "number" then
                     numTemp = value
                 else
                     numTemp = string2Int(value)
                 end
-                if numTemp >= 1 and numTemp <= 26 then
-                    msgBytes[41] = numTemp
-                end
+                if numTemp >= 1 and numTemp <= 26 then msgBytes[41] = numTemp end
             elseif key == "dust_life_time" then
                 if type(value) == "number" then
                     numTemp = value
                 else
                     numTemp = string2Int(value)
                 end
-                if numTemp >= 0 and numTemp <= 255 then
-                    msgBytes[42] = numTemp
-                end
+                if numTemp >= 0 and numTemp <= 255 then msgBytes[42] = numTemp end
             elseif key == "filter_life_time" then
                 if type(value) == "number" then
                     numTemp = value
                 else
                     numTemp = string2Int(value)
                 end
-                if numTemp >= 0 and numTemp <= 255 then
-                    msgBytes[43] = numTemp
-                end
+                if numTemp >= 0 and numTemp <= 255 then msgBytes[43] = numTemp end
             elseif key == "waterions" then
                 if value == "on" then
                     setBits(msgBytes, 44, 0, 1, 1)
@@ -750,7 +978,9 @@ function jsonToData(jsonCmd)
     end
     msgBytes[msgLength] = makeSum(msgBytes, 1, msgLength - 1)
     local infoM = {}
-    for i = 1, msgLength + 1 do infoM[i] = msgBytes[i - 1] end
+    for i = 1, msgLength + 1 do
+        infoM[i] = msgBytes[i - 1]
+    end
     local ret = table2string(infoM)
     ret = string2hexstring(ret)
     return ret
@@ -797,29 +1027,26 @@ local function processSwingToJson(msgBytes, streams)
 end
 function dataToJson(jsonCmd)
     bitInit()
-    if (not jsonCmd) then
-        return encode({["status"] = {["version"] = VALUE_VERSION}})
-    end
+    if not jsonCmd then return encode { ["status"] = { ["version"] = VALUE_VERSION } } end
     local json = decode(jsonCmd)
     local binData = json["msg"]["data"]
     local info = {}
     local msgBytes = {}
     info = string2table(binData)
     local dataType = info[10]
-    if ((dataType ~= 0x02) and (dataType ~= 0x03) and (dataType ~= 0x04)) then
-        return encode({["status"] = {["version"] = VALUE_VERSION}})
+    if (dataType ~= 0x02) and (dataType ~= 0x03) and (dataType ~= 0x04) then
+        return encode { ["status"] = { ["version"] = VALUE_VERSION } }
     end
     local sub_cmd = info[11]
-    for i = 1, #info do msgBytes[i - 1] = info[i] end
+    for i = 1, #info do
+        msgBytes[i - 1] = info[i]
+    end
     local streams = {}
     if sub_cmd == 0 then
-        if #msgBytes == 10 then
-            return encode({["status"] = {["version"] = VALUE_VERSION}})
-        end
+        if #msgBytes == 10 then return encode { ["status"] = { ["version"] = VALUE_VERSION } } end
         streams["protocol_version"] = msgBytes[33]
         streams["error_code"] = msgBytes[11]
-        streams["voice"] = getValueFromValueTab(voiceTab, msgBytes[12],
-                                                "invalid")
+        streams["voice"] = getValueFromValueTab(voiceTab, msgBytes[12], "invalid")
         local lock = getBits(msgBytes, 13, 0, 1)
         if lock == 1 then
             streams["lock"] = "on"
@@ -845,9 +1072,7 @@ function dataToJson(jsonCmd)
             streams["temperature"] = 0x80
         end
         local humidity = msgBytes[17]
-        if humidity >= 1 and humidity <= 100 then
-            streams["humidity"] = humidity
-        end
+        if humidity >= 1 and humidity <= 100 then streams["humidity"] = humidity end
         local humidifyValue = getBits(msgBytes, 19, 4, 7)
         streams["humidify"] = humidifyTab[humidifyValue]
         local anophelifuge = getBits(msgBytes, 19, 2, 3)
@@ -863,32 +1088,20 @@ function dataToJson(jsonCmd)
             streams["anion"] = "off"
         end
         local timer_off_hour = getBits(msgBytes, 20, 0, 4)
-        local timer_off_minute = getBits(msgBytes, 20, 5, 7) * 10 +
-                                     getBits(msgBytes, 24, 4, 7)
-        if timer_off_hour >= 0 and timer_off_hour <= 24 then
-            streams["timer_off_hour"] = timer_off_hour
-        end
-        if timer_off_minute >= 0 and timer_off_minute <= 59 then
-            streams["timer_off_minute"] = timer_off_minute
-        end
+        local timer_off_minute = getBits(msgBytes, 20, 5, 7) * 10 + getBits(msgBytes, 24, 4, 7)
+        if timer_off_hour >= 0 and timer_off_hour <= 24 then streams["timer_off_hour"] = timer_off_hour end
+        if timer_off_minute >= 0 and timer_off_minute <= 59 then streams["timer_off_minute"] = timer_off_minute end
         local timer_on_hour = getBits(msgBytes, 21, 0, 4)
-        local timer_on_minute = getBits(msgBytes, 21, 5, 7) * 10 +
-                                    getBits(msgBytes, 24, 0, 3)
-        if timer_on_hour >= 0 and timer_on_hour <= 24 then
-            streams["timer_on_hour"] = timer_on_hour
-        end
-        if timer_on_minute >= 0 and timer_on_minute <= 59 then
-            streams["timer_on_minute"] = timer_on_minute
-        end
+        local timer_on_minute = getBits(msgBytes, 21, 5, 7) * 10 + getBits(msgBytes, 24, 0, 3)
+        if timer_on_hour >= 0 and timer_on_hour <= 24 then streams["timer_on_hour"] = timer_on_hour end
+        if timer_on_minute >= 0 and timer_on_minute <= 59 then streams["timer_on_minute"] = timer_on_minute end
         local humidify_feedback = msgBytes[22]
-        if humidify_feedback >= 1 and humidify_feedback <= 100 then
-            streams["humidify_feedback"] = humidify_feedback
-        end
+        if humidify_feedback >= 1 and humidify_feedback <= 100 then streams["humidify_feedback"] = humidify_feedback end
         local temperature_feedback = msgBytes[23]
         if temperature_feedback >= 1 and temperature_feedback <= 91 then
             streams["temperature_feedback"] = temperature_feedback - 41
         end
-        if (#msgBytes) > 29 then
+        if #msgBytes > 29 then
             propertyTemp = getBits(msgBytes, 29, 0, 1)
             if propertyTemp == 1 then
                 streams["spin_switch"] = "on"
@@ -916,7 +1129,7 @@ function dataToJson(jsonCmd)
                 streams["display_on_off"] = "on1"
             end
         end
-        if (#msgBytes) > 34 then
+        if #msgBytes > 34 then
             propertyTemp = getBits(msgBytes, 34, 0, 1)
             if propertyTemp == 1 then
                 streams["water_feedback"] = "shortage"
@@ -944,31 +1157,27 @@ function dataToJson(jsonCmd)
                 streams["auto_power_off"] = "off"
             end
         end
-        if (#msgBytes) > 40 then
+        if #msgBytes > 40 then
             local real_gear = msgBytes[40]
-            if real_gear ~= nil and real_gear >= 0 and real_gear <= 26 then
-                streams["real_gear"] = real_gear
-            end
+            if real_gear ~= nil and real_gear >= 0 and real_gear <= 26 then streams["real_gear"] = real_gear end
         end
-        if (#msgBytes) > 41 then
+        if #msgBytes > 41 then
             local back_gear = msgBytes[41]
-            if back_gear ~= nil and back_gear >= 1 and back_gear <= 26 then
-                streams["back_gear"] = back_gear
+            if back_gear ~= nil and back_gear >= 1 and back_gear <= 26 then streams["back_gear"] = back_gear end
+        end
+        if #msgBytes > 42 then
+            local dust_life_time = msgBytes[42]
+            if dust_life_time ~= nil and dust_life_time >= 0 and dust_life_time <= 255 then
+                streams["dust_life_time"] = dust_life_time
             end
         end
-        if (#msgBytes) > 42 then
-            local dust_life_time = msgBytes[42]
-            if dust_life_time ~= nil and dust_life_time >= 0 and dust_life_time <=
-                255 then streams["dust_life_time"] = dust_life_time end
-        end
-        if (#msgBytes) > 43 then
+        if #msgBytes > 43 then
             local filter_life_time = msgBytes[43]
-            if filter_life_time ~= nil and filter_life_time >= 0 and
-                filter_life_time <= 255 then
+            if filter_life_time ~= nil and filter_life_time >= 0 and filter_life_time <= 255 then
                 streams["filter_life_time"] = filter_life_time
             end
         end
-        if (#msgBytes) > 44 then
+        if #msgBytes > 44 then
             local waterions = getBits(msgBytes, 44, 0, 1)
             if waterions == 1 then
                 streams["waterions"] = "on"
@@ -1004,7 +1213,7 @@ function dataToJson(jsonCmd)
                 streams["dust_reset"] = "off"
             end
         end
-        if (#msgBytes) > 45 then
+        if #msgBytes > 45 then
             local charge = getBits(msgBytes, 45, 4, 5)
             if charge == 1 then
                 streams["charge"] = "on"
@@ -1030,24 +1239,17 @@ function dataToJson(jsonCmd)
                 streams["battery_status"] = "invalid"
             end
             local battery_level = getBits(msgBytes, 46, 3, 7)
-            if battery_level < 6 then
-                streams["battery_level"] = battery_level
-            end
+            if battery_level < 6 then streams["battery_level"] = battery_level end
         end
-        if #msgBytes > 47 and msgBytes[47] < 6 then
-            streams["pm25"] = msgBytes[47]
-        end
+        if #msgBytes > 47 and msgBytes[47] < 6 then streams["pm25"] = msgBytes[47] end
         if #msgBytes > 52 then
             if msgBytes[48] > 100 then
                 streams["windSpeedPercent"] = 255
             else
                 streams["windSpeedPercent"] = msgBytes[48]
             end
-            local sensorTemperature = (getBits(msgBytes, 50, 0, 6) * 256 +
-                                          msgBytes[49]) / 10
-            if getBit(msgBytes, 50, 7) == 1 then
-                sensorTemperature = sensorTemperature * -1
-            end
+            local sensorTemperature = (getBits(msgBytes, 50, 0, 6) * 256 + msgBytes[49]) / 10
+            if getBit(msgBytes, 50, 7) == 1 then sensorTemperature = sensorTemperature * -1 end
             streams["sensorTemperature"] = sensorTemperature
             streams["sensorHumidify"] = msgBytes[51]
             streams["sensorBattery"] = msgBytes[52]
@@ -1074,12 +1276,13 @@ function dataToJson(jsonCmd)
         local macs = ""
         local j = 25
         for i = 1, msgBytes[11] do
-            macs = macs .. string.sub(binData, j + 10, j + 11) ..
-                       string.sub(binData, j + 8, j + 9) ..
-                       string.sub(binData, j + 6, j + 7) ..
-                       string.sub(binData, j + 4, j + 5) ..
-                       string.sub(binData, j + 2, j + 3) ..
-                       string.sub(binData, j, j + 1)
+            macs = macs
+                .. string.sub(binData, j + 10, j + 11)
+                .. string.sub(binData, j + 8, j + 9)
+                .. string.sub(binData, j + 6, j + 7)
+                .. string.sub(binData, j + 4, j + 5)
+                .. string.sub(binData, j + 2, j + 3)
+                .. string.sub(binData, j, j + 1)
             macs = macs .. ","
             j = j + 12
         end

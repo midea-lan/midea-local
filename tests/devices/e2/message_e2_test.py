@@ -79,8 +79,8 @@ class TestMessageNewProtocolSet:
             ("variable_heating", False, 0x10, 0x00),
             ("sterilization", True, 0x0D, 0x01),
             ("sterilization", False, 0x0D, 0x00),
-            ("protect", True, 0x05, 0x01),
-            ("protect", False, 0x05, 0x00),
+            ("protection", True, 0x05, 0x01),
+            ("protection", False, 0x05, 0x00),
             ("sleep", True, 0x0E, 0x01),
             ("sleep", False, 0x0E, 0x00),
             ("big_water", True, 0x11, 0x01),
@@ -176,6 +176,9 @@ class TestE2GeneralMessageBody:
         assert body.water_flow is False
         assert body.sterilization is False
         assert body.variable_heating is False
+        assert body.error_code == 0
+        assert body.flow_rate == 0
+        assert not body.bottom_temp
         assert body.current_temperature == 45.0
         assert body.whole_tank_heating is True
         assert body.heating_time_remaining == 90
@@ -194,8 +197,10 @@ class TestE2GeneralMessageBody:
         raw = bytearray(35)
         raw[0] = 0x01
         raw[2] = 0xDF  # every switch bit
+        raw[3] = 42  # error code
         raw[4] = 45  # current temperature
         raw[5] = 3  # heat water level
+        raw[6] = 7  # flow rate
         raw[7] = 0xFF  # eplus..night bits
         raw[8] = 0xF8  # screen_off..now_wash bits
         raw[9] = 1  # end time hours
@@ -204,7 +209,7 @@ class TestE2GeneralMessageBody:
         raw[12] = 0xE0  # sterilize bits
         raw[13] = 2  # discharge status
         raw[14] = 70  # top temperature
-        raw[15] = 0x83  # bottom/top heat, water cyclic
+        raw[15] = 0xC3  # bottom/top heat, bottom_temp, water cyclic
         raw[16] = 1  # water system
         raw[18] = 20  # in temperature
         raw[20] = 0x10  # day water consumption low byte
@@ -224,6 +229,8 @@ class TestE2GeneralMessageBody:
         assert body.water_flow is True
         assert body.sterilization is True
         assert body.variable_heating is True
+        assert body.error_code == 42
+        assert body.flow_rate == 7
         assert body.current_temperature == 45.0
         assert body.heat_water_level == 3
         assert body.eplus is True
@@ -248,6 +255,7 @@ class TestE2GeneralMessageBody:
         assert body.top_temp == 70
         assert body.bottom_heat is True
         assert body.top_heat is True
+        assert body.bottom_temp is True
         assert body.water_cyclic is True
         assert body.water_system == 1
         assert body.in_temperature == 20.0

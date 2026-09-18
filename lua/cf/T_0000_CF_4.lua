@@ -290,12 +290,14 @@ local mytable = {
     ["eco_timer_starthour"] = 0,
     ["eco_timer_startmin"] = 0,
     ["eco_timer_endhour"] = 0,
-    ["eco_timer_endmin"] = 0
+    ["eco_timer_endmin"] = 0,
 }
 
 local function makeSum(tmpbuf, start_pos, end_pos)
     local resVal = 0
-    for si = start_pos, end_pos do resVal = resVal + tmpbuf[si] end
+    for si = start_pos, end_pos do
+        resVal = resVal + tmpbuf[si]
+    end
     resVal = bit.bnot(resVal) + 1
     resVal = bit.band(resVal, 0x00ff)
     return resVal
@@ -304,12 +306,17 @@ end
 local function binToModel(dataType, bodyLength, binData)
     local messageBytes = {}
     messageBytes = binData
-    if (dataType ~= 0x04) then
-        for i = 0, bodyLength - 1 do messageBytes[i] = binData[1 + i] end
+    if dataType ~= 0x04 then
+        for i = 0, bodyLength - 1 do
+            messageBytes[i] = binData[1 + i]
+        end
     end
 
-    if ((msgType == 0x02 and msgSubType == 0x01) or
-        ((msgType == 0x03) and (msgSubType == 0x01)) or (msgType == 0x04)) then
+    if
+        (msgType == 0x02 and msgSubType == 0x01)
+        or ((msgType == 0x03) and (msgSubType == 0x01))
+        or (msgType == 0x04)
+    then
         mytable["power_state"] = bit.band(messageBytes[0], 0x01)
         mytable["pre_heat"] = bit.band(messageBytes[0], 0x02)
         mytable["silence_set_state"] = bit.band(messageBytes[0], 0x04)
@@ -342,19 +349,13 @@ local function binToModel(dataType, bodyLength, binData)
         mytable["preheat_max_set_temp"] = messageBytes[13]
         mytable["preheat_min_set_temp"] = messageBytes[14]
         mytable["cur_errcode"] = messageBytes[15]
-
-    elseif ((msgType == 0x03) and (msgSubType == 0x02)) then
+    elseif (msgType == 0x03) and (msgSubType == 0x02) then
         mytable["daytimer_timer1en"] = bit.band(messageBytes[0], 0x01)
-        mytable["daytimer_timer2en"] = bit.rshift(
-                                           bit.band(messageBytes[0], 0x02), 1)
-        mytable["daytimer_timer3en"] = bit.rshift(
-                                           bit.band(messageBytes[0], 0x04), 2)
-        mytable["daytimer_timer4en"] = bit.rshift(
-                                           bit.band(messageBytes[0], 0x08), 3)
-        mytable["daytimer_timer5en"] = bit.rshift(
-                                           bit.band(messageBytes[0], 0x10), 4)
-        mytable["daytimer_timer6en"] = bit.rshift(
-                                           bit.band(messageBytes[0], 0x20), 5)
+        mytable["daytimer_timer2en"] = bit.rshift(bit.band(messageBytes[0], 0x02), 1)
+        mytable["daytimer_timer3en"] = bit.rshift(bit.band(messageBytes[0], 0x04), 2)
+        mytable["daytimer_timer4en"] = bit.rshift(bit.band(messageBytes[0], 0x08), 3)
+        mytable["daytimer_timer5en"] = bit.rshift(bit.band(messageBytes[0], 0x10), 4)
+        mytable["daytimer_timer6en"] = bit.rshift(bit.band(messageBytes[0], 0x20), 5)
         mytable["daytimer_timer1_mode"] = messageBytes[1]
         mytable["daytimer_timer1_temp"] = messageBytes[2]
         mytable["daytimer_timer1_openhour"] = messageBytes[3]
@@ -391,34 +392,28 @@ local function binToModel(dataType, bodyLength, binData)
         mytable["daytimer_timer6_openmin"] = messageBytes[34]
         mytable["daytimer_timer6_closehour"] = messageBytes[35]
         mytable["daytimer_timer6_closemin"] = messageBytes[36]
-
-    elseif ((msgType == 0x03) and (msgSubType == 0x03)) then
-        if (bit.band(messageBytes[0], 0x01) == 0x01) then
+    elseif (msgType == 0x03) and (msgSubType == 0x03) then
+        if bit.band(messageBytes[0], 0x01) == 0x01 then
             mytable["queryweekday"] = 1
-        elseif (bit.band(messageBytes[0], 0x02) == 0x02) then
+        elseif bit.band(messageBytes[0], 0x02) == 0x02 then
             mytable["queryweekday"] = 2
-        elseif (bit.band(messageBytes[0], 0x04) == 0x04) then
+        elseif bit.band(messageBytes[0], 0x04) == 0x04 then
             mytable["queryweekday"] = 3
-        elseif (bit.band(messageBytes[0], 0x08) == 0x08) then
+        elseif bit.band(messageBytes[0], 0x08) == 0x08 then
             mytable["queryweekday"] = 4
-        elseif (bit.band(messageBytes[0], 0x10) == 0x10) then
+        elseif bit.band(messageBytes[0], 0x10) == 0x10 then
             mytable["queryweekday"] = 5
-        elseif (bit.band(messageBytes[0], 0x20) == 0x20) then
+        elseif bit.band(messageBytes[0], 0x20) == 0x20 then
             mytable["queryweekday"] = 6
-        elseif (bit.band(messageBytes[0], 0x40) == 0x40) then
+        elseif bit.band(messageBytes[0], 0x40) == 0x40 then
             mytable["queryweekday"] = 7
         end
         mytable["weektimer_timer1en"] = bit.band(messageBytes[1], 0x01)
-        mytable["weektimer_timer2en"] = bit.rshift(
-                                            bit.band(messageBytes[1], 0x02), 1)
-        mytable["weektimer_timer3en"] = bit.rshift(
-                                            bit.band(messageBytes[1], 0x04), 2)
-        mytable["weektimer_timer4en"] = bit.rshift(
-                                            bit.band(messageBytes[1], 0x08), 3)
-        mytable["weektimer_timer5en"] = bit.rshift(
-                                            bit.band(messageBytes[1], 0x10), 4)
-        mytable["weektimer_timer6en"] = bit.rshift(
-                                            bit.band(messageBytes[1], 0x20), 5)
+        mytable["weektimer_timer2en"] = bit.rshift(bit.band(messageBytes[1], 0x02), 1)
+        mytable["weektimer_timer3en"] = bit.rshift(bit.band(messageBytes[1], 0x04), 2)
+        mytable["weektimer_timer4en"] = bit.rshift(bit.band(messageBytes[1], 0x08), 3)
+        mytable["weektimer_timer5en"] = bit.rshift(bit.band(messageBytes[1], 0x10), 4)
+        mytable["weektimer_timer6en"] = bit.rshift(bit.band(messageBytes[1], 0x20), 5)
         mytable["weektimer_timer1_mode"] = messageBytes[2]
         mytable["weektimer_timer1_temp"] = messageBytes[3]
         mytable["weektimer_timer1_openhour"] = messageBytes[4]
@@ -455,8 +450,7 @@ local function binToModel(dataType, bodyLength, binData)
         mytable["weektimer_timer6_openmin"] = messageBytes[35]
         mytable["weektimer_timer6_closehour"] = messageBytes[36]
         mytable["weektimer_timer6_closemin"] = messageBytes[37]
-
-    elseif ((msgType == 0x03) and (msgSubType == 0x04)) then
+    elseif (msgType == 0x03) and (msgSubType == 0x04) then
         mytable["holidayaway_state"] = messageBytes[0]
         mytable["holidayaway_startyear"] = messageBytes[1]
         mytable["holidayaway_startmonth"] = messageBytes[2]
@@ -464,16 +458,11 @@ local function binToModel(dataType, bodyLength, binData)
         mytable["holidayaway_endyear"] = messageBytes[4]
         mytable["holidayaway_endmonth"] = messageBytes[5]
         mytable["holidayaway_enddate"] = messageBytes[6]
-
-    elseif ((msgType == 0x03) and (msgSubType == 0x05)) then
+    elseif (msgType == 0x03) and (msgSubType == 0x05) then
         mytable["silence_function_state"] = bit.band(messageBytes[0], 0x01)
-        mytable["silence_timer1_state"] = bit.rshift(
-                                              bit.band(messageBytes[0], 0x02), 1)
-        mytable["silence_timer2_state"] = bit.rshift(
-                                              bit.band(messageBytes[0], 0x04), 2)
-        mytable["silence_function_level"] = bit.rshift(
-                                                bit.band(messageBytes[0], 0x08),
-                                                3)
+        mytable["silence_timer1_state"] = bit.rshift(bit.band(messageBytes[0], 0x02), 1)
+        mytable["silence_timer2_state"] = bit.rshift(bit.band(messageBytes[0], 0x04), 2)
+        mytable["silence_function_level"] = bit.rshift(bit.band(messageBytes[0], 0x08), 3)
         mytable["silence_timer1_starthour"] = messageBytes[1]
         mytable["silence_timer1_startmin"] = messageBytes[2]
         mytable["silence_timer1_endhour"] = messageBytes[3]
@@ -482,8 +471,7 @@ local function binToModel(dataType, bodyLength, binData)
         mytable["silence_timer2_startmin"] = messageBytes[6]
         mytable["silence_timer2_endhour"] = messageBytes[7]
         mytable["silence_timer2_endmin"] = messageBytes[8]
-
-    elseif ((msgType == 0x03) and (msgSubType == 0x06)) then
+    elseif (msgType == 0x03) and (msgSubType == 0x06) then
         mytable["holidayhome_state"] = messageBytes[0]
         mytable["holidayhome_startyear"] = messageBytes[1]
         mytable["holidayhome_startmonth"] = messageBytes[2]
@@ -492,21 +480,11 @@ local function binToModel(dataType, bodyLength, binData)
         mytable["holidayhome_endmonth"] = messageBytes[5]
         mytable["holidayhome_enddate"] = messageBytes[6]
         mytable["holhometimer_timer1en"] = bit.band(messageBytes[7], 0x01)
-        mytable["holhometimer_timer2en"] = bit.rshift(
-                                               bit.band(messageBytes[7], 0x02),
-                                               1)
-        mytable["holhometimer_timer3en"] = bit.rshift(
-                                               bit.band(messageBytes[7], 0x04),
-                                               2)
-        mytable["holhometimer_timer4en"] = bit.rshift(
-                                               bit.band(messageBytes[7], 0x08),
-                                               3)
-        mytable["holhometimer_timer5en"] = bit.rshift(
-                                               bit.band(messageBytes[7], 0x10),
-                                               4)
-        mytable["holhometimer_timer6en"] = bit.rshift(
-                                               bit.band(messageBytes[7], 0x20),
-                                               5)
+        mytable["holhometimer_timer2en"] = bit.rshift(bit.band(messageBytes[7], 0x02), 1)
+        mytable["holhometimer_timer3en"] = bit.rshift(bit.band(messageBytes[7], 0x04), 2)
+        mytable["holhometimer_timer4en"] = bit.rshift(bit.band(messageBytes[7], 0x08), 3)
+        mytable["holhometimer_timer5en"] = bit.rshift(bit.band(messageBytes[7], 0x10), 4)
+        mytable["holhometimer_timer6en"] = bit.rshift(bit.band(messageBytes[7], 0x20), 5)
         mytable["holhometimer_timer1_mode"] = messageBytes[8]
         mytable["holhometimer_timer1_temp"] = messageBytes[9]
         mytable["holhometimer_timer1_openhour"] = messageBytes[10]
@@ -543,11 +521,9 @@ local function binToModel(dataType, bodyLength, binData)
         mytable["holhometimer_timer6_openmin"] = messageBytes[41]
         mytable["holhometimer_timer6_closehour"] = messageBytes[42]
         mytable["holhometimer_timer6_closemin"] = messageBytes[43]
-
-    elseif ((msgType == 0x03) and (msgSubType == 0x07)) then
+    elseif (msgType == 0x03) and (msgSubType == 0x07) then
         mytable["eco_function_state"] = bit.band(messageBytes[0], 0x01)
-        mytable["eco_timer_state"] = bit.rshift(bit.band(messageBytes[0], 0x02),
-                                                1)
+        mytable["eco_timer_state"] = bit.rshift(bit.band(messageBytes[0], 0x02), 1)
         mytable["eco_timer_starthour"] = messageBytes[1]
         mytable["eco_timer_startmin"] = messageBytes[2]
         mytable["eco_timer_endhour"] = messageBytes[3]
@@ -559,7 +535,9 @@ local function getTotalMsg(bodyData, cType)
     local bodyLength = #bodyData
     local msgLength = bodyLength + uptable["BYTE_PROTOCOL_LENGTH"] + 1
     local msgBytes = {}
-    for i = 0, msgLength do msgBytes[i] = 0 end
+    for i = 0, msgLength do
+        msgBytes[i] = 0
+    end
     msgBytes[0] = uptable["BYTE_PROTOCOL_HEAD"]
     msgBytes[1] = bodyLength + uptable["BYTE_PROTOCOL_LENGTH"] + 1
     msgBytes[2] = uptable["BYTE_DEVICE_TYPE"]
@@ -569,7 +547,9 @@ local function getTotalMsg(bodyData, cType)
     end
     msgBytes[msgLength] = makeSum(msgBytes, 1, msgLength - 1)
     local msgFinal = {}
-    for i = 1, msgLength + 1 do msgFinal[i] = msgBytes[i - 1] end
+    for i = 1, msgLength + 1 do
+        msgFinal[i] = msgBytes[i - 1]
+    end
     return msgFinal
 end
 
@@ -598,13 +578,13 @@ local function print_lua_table(lua_table, indent)
 end
 
 local function checkBoundary(data, min, max)
-    if (not data) then data = 0 end
+    if not data then data = 0 end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
-    if ((data >= min) and (data <= max)) then
+    if data == nil then data = 0 end
+    if (data >= min) and (data <= max) then
         return data
     else
-        if (data < min) then
+        if data < min then
             return min
         else
             return max
@@ -613,23 +593,25 @@ local function checkBoundary(data, min, max)
 end
 
 local function string2Int(data)
-    if (not data) then data = tonumber("0") end
+    if not data then data = tonumber "0" end
     data = tonumber(data)
-    if (data == nil) then data = 0 end
+    if data == nil then data = 0 end
     return data
 end
 
 local function int2String(data)
-    if (not data) then data = tostring(0) end
+    if not data then data = tostring(0) end
     data = tostring(data)
-    if (data == nil) then data = "0" end
+    if data == nil then data = "0" end
     return data
 end
 
 local function table2string(cmd)
     local ret = ""
     local i
-    for i = 1, #cmd do ret = ret .. string.char(cmd[i]) end
+    for i = 1, #cmd do
+        ret = ret .. string.char(cmd[i])
+    end
     return ret
 end
 
@@ -647,7 +629,9 @@ end
 
 local function string2hexstring(str)
     local ret = ""
-    for i = 1, #str do ret = ret .. string.format("%02x", str:byte(i)) end
+    for i = 1, #str do
+        ret = ret .. string.format("%02x", str:byte(i))
+    end
     return ret
 end
 
@@ -668,842 +652,716 @@ end
 local function jsonToModel(jsonCmd)
     local streams = jsonCmd
     mytable["controltype"] = 0x01
-    if (streams["control_type"] ~= nil) then
-        mytable["controltype"] = string2Int(streams["control_type"])
-    end
+    if streams["control_type"] ~= nil then mytable["controltype"] = string2Int(streams["control_type"]) end
 
-    if (mytable["controltype"] == 0x01) then
-        if (streams[uptable["KEY_POWER_STATE"]] == uptable["VALUE_ON"]) then
+    if mytable["controltype"] == 0x01 then
+        if streams[uptable["KEY_POWER_STATE"]] == uptable["VALUE_ON"] then
             mytable["power_state"] = 0x01
-        elseif (streams[uptable["KEY_POWER_STATE"]] == uptable["VALUE_OFF"]) then
+        elseif streams[uptable["KEY_POWER_STATE"]] == uptable["VALUE_OFF"] then
             mytable["power_state"] = 0x00
         end
-        if (streams[uptable["KEY_RUN_MODE"]] == uptable["VALUE_MODE_AUTO"]) then
+        if streams[uptable["KEY_RUN_MODE"]] == uptable["VALUE_MODE_AUTO"] then
             mytable["run_mode"] = 1
-        elseif (streams[uptable["KEY_RUN_MODE"]] == uptable["VALUE_MODE_COOL"]) then
+        elseif streams[uptable["KEY_RUN_MODE"]] == uptable["VALUE_MODE_COOL"] then
             mytable["run_mode"] = 2
-        elseif (streams[uptable["KEY_RUN_MODE"]] == uptable["VALUE_MODE_HEAT"]) then
+        elseif streams[uptable["KEY_RUN_MODE"]] == uptable["VALUE_MODE_HEAT"] then
             mytable["run_mode"] = 3
         end
-        if (streams[uptable["KEY_TEMP_SET"]] ~= nil) then
+        if streams[uptable["KEY_TEMP_SET"]] ~= nil then
             mytable["temp_set"] = string2Int(streams[uptable["KEY_TEMP_SET"]])
         end
-        if (streams[uptable["KEY_PRE_HEAT"]] == uptable["VALUE_ON"]) then
+        if streams[uptable["KEY_PRE_HEAT"]] == uptable["VALUE_ON"] then
             mytable["pre_heat"] = 1
-        elseif (streams[uptable["KEY_PRE_HEAT"]] == uptable["VALUE_OFF"]) then
+        elseif streams[uptable["KEY_PRE_HEAT"]] == uptable["VALUE_OFF"] then
             mytable["pre_heat"] = 0
         else
             mytable["pre_heat"] = 0xff
         end
-
-    elseif (mytable["controltype"] == 0x02) then
-        if (streams["daytimer_timer1en"] == uptable["VALUE_ON"]) then
+    elseif mytable["controltype"] == 0x02 then
+        if streams["daytimer_timer1en"] == uptable["VALUE_ON"] then
             mytable["daytimer_timer1en"] = uptable["BYTE_BIT0"]
-        elseif (streams["daytimer_timer1en"] == uptable["VALUE_OFF"]) then
+        elseif streams["daytimer_timer1en"] == uptable["VALUE_OFF"] then
             mytable["daytimer_timer1en"] = 0
         end
-        if (streams["daytimer_timer2en"] == uptable["VALUE_ON"]) then
+        if streams["daytimer_timer2en"] == uptable["VALUE_ON"] then
             mytable["daytimer_timer2en"] = uptable["BYTE_BIT1"]
-        elseif (streams["daytimer_timer2en"] == uptable["VALUE_OFF"]) then
+        elseif streams["daytimer_timer2en"] == uptable["VALUE_OFF"] then
             mytable["daytimer_timer2en"] = 0
         end
-        if (streams["daytimer_timer3en"] == uptable["VALUE_ON"]) then
+        if streams["daytimer_timer3en"] == uptable["VALUE_ON"] then
             mytable["daytimer_timer3en"] = uptable["BYTE_BIT2"]
-        elseif (streams["daytimer_timer3en"] == uptable["VALUE_OFF"]) then
+        elseif streams["daytimer_timer3en"] == uptable["VALUE_OFF"] then
             mytable["daytimer_timer3en"] = 0
         end
-        if (streams["daytimer_timer4en"] == uptable["VALUE_ON"]) then
+        if streams["daytimer_timer4en"] == uptable["VALUE_ON"] then
             mytable["daytimer_timer4en"] = uptable["BYTE_BIT3"]
-        elseif (streams["daytimer_timer4en"] == uptable["VALUE_OFF"]) then
+        elseif streams["daytimer_timer4en"] == uptable["VALUE_OFF"] then
             mytable["daytimer_timer4en"] = 0
         end
-        if (streams["daytimer_timer5en"] == uptable["VALUE_ON"]) then
+        if streams["daytimer_timer5en"] == uptable["VALUE_ON"] then
             mytable["daytimer_timer5en"] = uptable["BYTE_BIT4"]
-        elseif (streams["daytimer_timer5en"] == uptable["VALUE_OFF"]) then
+        elseif streams["daytimer_timer5en"] == uptable["VALUE_OFF"] then
             mytable["daytimer_timer5en"] = 0
         end
-        if (streams["daytimer_timer6en"] == uptable["VALUE_ON"]) then
+        if streams["daytimer_timer6en"] == uptable["VALUE_ON"] then
             mytable["daytimer_timer6en"] = uptable["BYTE_BIT5"]
-        elseif (streams["daytimer_timer6en"] == uptable["VALUE_OFF"]) then
+        elseif streams["daytimer_timer6en"] == uptable["VALUE_OFF"] then
             mytable["daytimer_timer6en"] = 0
         end
-        if (streams["daytimer_timer1_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["daytimer_timer1_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["daytimer_timer1_mode"] = 2
-        elseif (streams["daytimer_timer1_mode"] == uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["daytimer_timer1_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["daytimer_timer1_mode"] = 3
-        elseif (streams["daytimer_timer1_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["daytimer_timer1_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["daytimer_timer1_mode"] = 5
         end
-        if (streams["daytimer_timer1_temp"] ~= nil) then
-            mytable["daytimer_timer1_temp"] = string2Int(
-                                                  streams["daytimer_timer1_temp"])
+        if streams["daytimer_timer1_temp"] ~= nil then
+            mytable["daytimer_timer1_temp"] = string2Int(streams["daytimer_timer1_temp"])
         end
-        if (streams["daytimer_timer1_openhour"] ~= nil) then
-            mytable["daytimer_timer1_openhour"] = string2Int(
-                                                      streams["daytimer_timer1_openhour"])
+        if streams["daytimer_timer1_openhour"] ~= nil then
+            mytable["daytimer_timer1_openhour"] = string2Int(streams["daytimer_timer1_openhour"])
         end
-        if (streams["daytimer_timer1_openmin"] ~= nil) then
-            mytable["daytimer_timer1_openmin"] = string2Int(
-                                                     streams["daytimer_timer1_openmin"])
+        if streams["daytimer_timer1_openmin"] ~= nil then
+            mytable["daytimer_timer1_openmin"] = string2Int(streams["daytimer_timer1_openmin"])
         end
-        if (streams["daytimer_timer1_closehour"] ~= nil) then
-            mytable["daytimer_timer1_closehour"] = string2Int(
-                                                       streams["daytimer_timer1_closehour"])
+        if streams["daytimer_timer1_closehour"] ~= nil then
+            mytable["daytimer_timer1_closehour"] = string2Int(streams["daytimer_timer1_closehour"])
         end
-        if (streams["daytimer_timer1_closemin"] ~= nil) then
-            mytable["daytimer_timer1_closemin"] = string2Int(
-                                                      streams["daytimer_timer1_closemin"])
+        if streams["daytimer_timer1_closemin"] ~= nil then
+            mytable["daytimer_timer1_closemin"] = string2Int(streams["daytimer_timer1_closemin"])
         end
-        if (streams["daytimer_timer2_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["daytimer_timer2_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["daytimer_timer2_mode"] = 2
-        elseif (streams["daytimer_timer2_mode"] == uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["daytimer_timer2_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["daytimer_timer2_mode"] = 3
-        elseif (streams["daytimer_timer2_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["daytimer_timer2_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["daytimer_timer2_mode"] = 5
         end
-        if (streams["daytimer_timer2_temp"] ~= nil) then
-            mytable["daytimer_timer2_temp"] = string2Int(
-                                                  streams["daytimer_timer2_temp"])
+        if streams["daytimer_timer2_temp"] ~= nil then
+            mytable["daytimer_timer2_temp"] = string2Int(streams["daytimer_timer2_temp"])
         end
-        if (streams["daytimer_timer2_openhour"] ~= nil) then
-            mytable["daytimer_timer2_openhour"] = string2Int(
-                                                      streams["daytimer_timer2_openhour"])
+        if streams["daytimer_timer2_openhour"] ~= nil then
+            mytable["daytimer_timer2_openhour"] = string2Int(streams["daytimer_timer2_openhour"])
         end
-        if (streams["daytimer_timer2_openmin"] ~= nil) then
-            mytable["daytimer_timer2_openmin"] = string2Int(
-                                                     streams["daytimer_timer2_openmin"])
+        if streams["daytimer_timer2_openmin"] ~= nil then
+            mytable["daytimer_timer2_openmin"] = string2Int(streams["daytimer_timer2_openmin"])
         end
-        if (streams["daytimer_timer2_closehour"] ~= nil) then
-            mytable["daytimer_timer2_closehour"] = string2Int(
-                                                       streams["daytimer_timer2_closehour"])
+        if streams["daytimer_timer2_closehour"] ~= nil then
+            mytable["daytimer_timer2_closehour"] = string2Int(streams["daytimer_timer2_closehour"])
         end
-        if (streams["daytimer_timer2_closemin"] ~= nil) then
-            mytable["daytimer_timer2_closemin"] = string2Int(
-                                                      streams["daytimer_timer2_closemin"])
+        if streams["daytimer_timer2_closemin"] ~= nil then
+            mytable["daytimer_timer2_closemin"] = string2Int(streams["daytimer_timer2_closemin"])
         end
-        if (streams["daytimer_timer3_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["daytimer_timer3_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["daytimer_timer3_mode"] = 2
-        elseif (streams["daytimer_timer3_mode"] == uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["daytimer_timer3_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["daytimer_timer3_mode"] = 3
-        elseif (streams["daytimer_timer3_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["daytimer_timer3_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["daytimer_timer3_mode"] = 5
         end
-        if (streams["daytimer_timer3_temp"] ~= nil) then
-            mytable["daytimer_timer3_temp"] = string2Int(
-                                                  streams["daytimer_timer3_temp"])
+        if streams["daytimer_timer3_temp"] ~= nil then
+            mytable["daytimer_timer3_temp"] = string2Int(streams["daytimer_timer3_temp"])
         end
-        if (streams["daytimer_timer3_openhour"] ~= nil) then
-            mytable["daytimer_timer3_openhour"] = string2Int(
-                                                      streams["daytimer_timer3_openhour"])
+        if streams["daytimer_timer3_openhour"] ~= nil then
+            mytable["daytimer_timer3_openhour"] = string2Int(streams["daytimer_timer3_openhour"])
         end
-        if (streams["daytimer_timer3_openmin"] ~= nil) then
-            mytable["daytimer_timer3_openmin"] = string2Int(
-                                                     streams["daytimer_timer3_openmin"])
+        if streams["daytimer_timer3_openmin"] ~= nil then
+            mytable["daytimer_timer3_openmin"] = string2Int(streams["daytimer_timer3_openmin"])
         end
-        if (streams["daytimer_timer3_closehour"] ~= nil) then
-            mytable["daytimer_timer3_closehour"] = string2Int(
-                                                       streams["daytimer_timer3_closehour"])
+        if streams["daytimer_timer3_closehour"] ~= nil then
+            mytable["daytimer_timer3_closehour"] = string2Int(streams["daytimer_timer3_closehour"])
         end
-        if (streams["daytimer_timer3_closemin"] ~= nil) then
-            mytable["daytimer_timer3_closemin"] = string2Int(
-                                                      streams["daytimer_timer3_closemin"])
+        if streams["daytimer_timer3_closemin"] ~= nil then
+            mytable["daytimer_timer3_closemin"] = string2Int(streams["daytimer_timer3_closemin"])
         end
-        if (streams["daytimer_timer4_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["daytimer_timer4_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["daytimer_timer4_mode"] = 2
-        elseif (streams["daytimer_timer4_mode"] == uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["daytimer_timer4_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["daytimer_timer4_mode"] = 3
-        elseif (streams["daytimer_timer4_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["daytimer_timer4_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["daytimer_timer4_mode"] = 5
         end
-        if (streams["daytimer_timer4_temp"] ~= nil) then
-            mytable["daytimer_timer4_temp"] = string2Int(
-                                                  streams["daytimer_timer4_temp"])
+        if streams["daytimer_timer4_temp"] ~= nil then
+            mytable["daytimer_timer4_temp"] = string2Int(streams["daytimer_timer4_temp"])
         end
-        if (streams["daytimer_timer4_openhour"] ~= nil) then
-            mytable["daytimer_timer4_openhour"] = string2Int(
-                                                      streams["daytimer_timer4_openhour"])
+        if streams["daytimer_timer4_openhour"] ~= nil then
+            mytable["daytimer_timer4_openhour"] = string2Int(streams["daytimer_timer4_openhour"])
         end
-        if (streams["daytimer_timer4_openmin"] ~= nil) then
-            mytable["daytimer_timer4_openmin"] = string2Int(
-                                                     streams["daytimer_timer4_openmin"])
+        if streams["daytimer_timer4_openmin"] ~= nil then
+            mytable["daytimer_timer4_openmin"] = string2Int(streams["daytimer_timer4_openmin"])
         end
-        if (streams["daytimer_timer4_closehour"] ~= nil) then
-            mytable["daytimer_timer4_closehour"] = string2Int(
-                                                       streams["daytimer_timer4_closehour"])
+        if streams["daytimer_timer4_closehour"] ~= nil then
+            mytable["daytimer_timer4_closehour"] = string2Int(streams["daytimer_timer4_closehour"])
         end
-        if (streams["daytimer_timer4_closemin"] ~= nil) then
-            mytable["daytimer_timer4_closemin"] = string2Int(
-                                                      streams["daytimer_timer4_closemin"])
+        if streams["daytimer_timer4_closemin"] ~= nil then
+            mytable["daytimer_timer4_closemin"] = string2Int(streams["daytimer_timer4_closemin"])
         end
-        if (streams["daytimer_timer5_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["daytimer_timer5_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["daytimer_timer5_mode"] = 2
-        elseif (streams["daytimer_timer5_mode"] == uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["daytimer_timer5_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["daytimer_timer5_mode"] = 3
-        elseif (streams["daytimer_timer5_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["daytimer_timer5_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["daytimer_timer5_mode"] = 5
         end
-        if (streams["daytimer_timer5_temp"] ~= nil) then
-            mytable["daytimer_timer5_temp"] = string2Int(
-                                                  streams["daytimer_timer5_temp"])
+        if streams["daytimer_timer5_temp"] ~= nil then
+            mytable["daytimer_timer5_temp"] = string2Int(streams["daytimer_timer5_temp"])
         end
-        if (streams["daytimer_timer5_openhour"] ~= nil) then
-            mytable["daytimer_timer5_openhour"] = string2Int(
-                                                      streams["daytimer_timer5_openhour"])
+        if streams["daytimer_timer5_openhour"] ~= nil then
+            mytable["daytimer_timer5_openhour"] = string2Int(streams["daytimer_timer5_openhour"])
         end
-        if (streams["daytimer_timer5_openmin"] ~= nil) then
-            mytable["daytimer_timer5_openmin"] = string2Int(
-                                                     streams["daytimer_timer5_openmin"])
+        if streams["daytimer_timer5_openmin"] ~= nil then
+            mytable["daytimer_timer5_openmin"] = string2Int(streams["daytimer_timer5_openmin"])
         end
-        if (streams["daytimer_timer5_closehour"] ~= nil) then
-            mytable["daytimer_timer5_closehour"] = string2Int(
-                                                       streams["daytimer_timer5_closehour"])
+        if streams["daytimer_timer5_closehour"] ~= nil then
+            mytable["daytimer_timer5_closehour"] = string2Int(streams["daytimer_timer5_closehour"])
         end
-        if (streams["daytimer_timer5_closemin"] ~= nil) then
-            mytable["daytimer_timer5_closemin"] = string2Int(
-                                                      streams["daytimer_timer5_closemin"])
+        if streams["daytimer_timer5_closemin"] ~= nil then
+            mytable["daytimer_timer5_closemin"] = string2Int(streams["daytimer_timer5_closemin"])
         end
-        if (streams["daytimer_timer6_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["daytimer_timer6_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["daytimer_timer6_mode"] = 2
-        elseif (streams["daytimer_timer6_mode"] == uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["daytimer_timer6_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["daytimer_timer6_mode"] = 3
-        elseif (streams["daytimer_timer6_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["daytimer_timer6_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["daytimer_timer6_mode"] = 5
         end
-        if (streams["daytimer_timer6_temp"] ~= nil) then
-            mytable["daytimer_timer6_temp"] = string2Int(
-                                                  streams["daytimer_timer6_temp"])
+        if streams["daytimer_timer6_temp"] ~= nil then
+            mytable["daytimer_timer6_temp"] = string2Int(streams["daytimer_timer6_temp"])
         end
-        if (streams["daytimer_timer6_openhour"] ~= nil) then
-            mytable["daytimer_timer6_openhour"] = string2Int(
-                                                      streams["daytimer_timer6_openhour"])
+        if streams["daytimer_timer6_openhour"] ~= nil then
+            mytable["daytimer_timer6_openhour"] = string2Int(streams["daytimer_timer6_openhour"])
         end
-        if (streams["daytimer_timer6_openmin"] ~= nil) then
-            mytable["daytimer_timer6_openmin"] = string2Int(
-                                                     streams["daytimer_timer6_openmin"])
+        if streams["daytimer_timer6_openmin"] ~= nil then
+            mytable["daytimer_timer6_openmin"] = string2Int(streams["daytimer_timer6_openmin"])
         end
-        if (streams["daytimer_timer6_closehour"] ~= nil) then
-            mytable["daytimer_timer6_closehour"] = string2Int(
-                                                       streams["daytimer_timer6_closehour"])
+        if streams["daytimer_timer6_closehour"] ~= nil then
+            mytable["daytimer_timer6_closehour"] = string2Int(streams["daytimer_timer6_closehour"])
         end
-        if (streams["daytimer_timer6_closemin"] ~= nil) then
-            mytable["daytimer_timer6_closemin"] = string2Int(
-                                                      streams["daytimer_timer6_closemin"])
+        if streams["daytimer_timer6_closemin"] ~= nil then
+            mytable["daytimer_timer6_closemin"] = string2Int(streams["daytimer_timer6_closemin"])
         end
-
-    elseif (mytable["controltype"] == 0x03) then
-        if (streams["weektimer_setday"] ~= nil) then
-            mytable["weektimer_setday"] =
-                string2Int(streams["weektimer_setday"])
+    elseif mytable["controltype"] == 0x03 then
+        if streams["weektimer_setday"] ~= nil then
+            mytable["weektimer_setday"] = string2Int(streams["weektimer_setday"])
         end
-        if (streams["weektimer_timer1en"] == uptable["VALUE_ON"]) then
+        if streams["weektimer_timer1en"] == uptable["VALUE_ON"] then
             mytable["weektimer_timer1en"] = uptable["BYTE_BIT0"]
-        elseif (streams["weektimer_timer1en"] == uptable["VALUE_OFF"]) then
+        elseif streams["weektimer_timer1en"] == uptable["VALUE_OFF"] then
             mytable["weektimer_timer1en"] = 0
         end
-        if (streams["weektimer_timer2en"] == uptable["VALUE_ON"]) then
+        if streams["weektimer_timer2en"] == uptable["VALUE_ON"] then
             mytable["weektimer_timer2en"] = uptable["BYTE_BIT1"]
-        elseif (streams["weektimer_timer2en"] == uptable["VALUE_OFF"]) then
+        elseif streams["weektimer_timer2en"] == uptable["VALUE_OFF"] then
             mytable["weektimer_timer2en"] = 0
         end
-        if (streams["weektimer_timer3en"] == uptable["VALUE_ON"]) then
+        if streams["weektimer_timer3en"] == uptable["VALUE_ON"] then
             mytable["weektimer_timer3en"] = uptable["BYTE_BIT2"]
-        elseif (streams["weektimer_timer3en"] == uptable["VALUE_OFF"]) then
+        elseif streams["weektimer_timer3en"] == uptable["VALUE_OFF"] then
             mytable["weektimer_timer3en"] = 0
         end
-        if (streams["weektimer_timer4en"] == uptable["VALUE_ON"]) then
+        if streams["weektimer_timer4en"] == uptable["VALUE_ON"] then
             mytable["weektimer_timer4en"] = uptable["BYTE_BIT3"]
-        elseif (streams["weektimer_timer4en"] == uptable["VALUE_OFF"]) then
+        elseif streams["weektimer_timer4en"] == uptable["VALUE_OFF"] then
             mytable["weektimer_timer4en"] = 0
         end
-        if (streams["weektimer_timer5en"] == uptable["VALUE_ON"]) then
+        if streams["weektimer_timer5en"] == uptable["VALUE_ON"] then
             mytable["weektimer_timer5en"] = uptable["BYTE_BIT4"]
-        elseif (streams["weektimer_timer5en"] == uptable["VALUE_OFF"]) then
+        elseif streams["weektimer_timer5en"] == uptable["VALUE_OFF"] then
             mytable["weektimer_timer5en"] = 0
         end
-        if (streams["weektimer_timer6en"] == uptable["VALUE_ON"]) then
+        if streams["weektimer_timer6en"] == uptable["VALUE_ON"] then
             mytable["weektimer_timer6en"] = uptable["BYTE_BIT5"]
-        elseif (streams["weektimer_timer6en"] == uptable["VALUE_OFF"]) then
+        elseif streams["weektimer_timer6en"] == uptable["VALUE_OFF"] then
             mytable["weektimer_timer6en"] = 0
         end
-        if (streams["weektimer_timer1_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["weektimer_timer1_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["weektimer_timer1_mode"] = 2
-        elseif (streams["weektimer_timer1_mode"] == uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["weektimer_timer1_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["weektimer_timer1_mode"] = 3
-        elseif (streams["weektimer_timer1_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["weektimer_timer1_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["weektimer_timer1_mode"] = 5
         end
-        if (streams["weektimer_timer1_temp"] ~= nil) then
-            mytable["weektimer_timer1_temp"] = string2Int(
-                                                   streams["weektimer_timer1_temp"])
+        if streams["weektimer_timer1_temp"] ~= nil then
+            mytable["weektimer_timer1_temp"] = string2Int(streams["weektimer_timer1_temp"])
         end
-        if (streams["weektimer_timer1_openhour"] ~= nil) then
-            mytable["weektimer_timer1_openhour"] = string2Int(
-                                                       streams["weektimer_timer1_openhour"])
+        if streams["weektimer_timer1_openhour"] ~= nil then
+            mytable["weektimer_timer1_openhour"] = string2Int(streams["weektimer_timer1_openhour"])
         end
-        if (streams["weektimer_timer1_openmin"] ~= nil) then
-            mytable["weektimer_timer1_openmin"] = string2Int(
-                                                      streams["weektimer_timer1_openmin"])
+        if streams["weektimer_timer1_openmin"] ~= nil then
+            mytable["weektimer_timer1_openmin"] = string2Int(streams["weektimer_timer1_openmin"])
         end
-        if (streams["weektimer_timer1_closehour"] ~= nil) then
-            mytable["weektimer_timer1_closehour"] = string2Int(
-                                                        streams["weektimer_timer1_closehour"])
+        if streams["weektimer_timer1_closehour"] ~= nil then
+            mytable["weektimer_timer1_closehour"] = string2Int(streams["weektimer_timer1_closehour"])
         end
-        if (streams["weektimer_timer1_closemin"] ~= nil) then
-            mytable["weektimer_timer1_closemin"] = string2Int(
-                                                       streams["weektimer_timer1_closemin"])
+        if streams["weektimer_timer1_closemin"] ~= nil then
+            mytable["weektimer_timer1_closemin"] = string2Int(streams["weektimer_timer1_closemin"])
         end
-        if (streams["weektimer_timer2_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["weektimer_timer2_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["weektimer_timer2_mode"] = 2
-        elseif (streams["weektimer_timer2_mode"] == uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["weektimer_timer2_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["weektimer_timer2_mode"] = 3
-        elseif (streams["weektimer_timer2_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["weektimer_timer2_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["weektimer_timer2_mode"] = 5
         end
-        if (streams["weektimer_timer2_temp"] ~= nil) then
-            mytable["weektimer_timer2_temp"] = string2Int(
-                                                   streams["weektimer_timer2_temp"])
+        if streams["weektimer_timer2_temp"] ~= nil then
+            mytable["weektimer_timer2_temp"] = string2Int(streams["weektimer_timer2_temp"])
         end
-        if (streams["weektimer_timer2_openhour"] ~= nil) then
-            mytable["weektimer_timer2_openhour"] = string2Int(
-                                                       streams["weektimer_timer2_openhour"])
+        if streams["weektimer_timer2_openhour"] ~= nil then
+            mytable["weektimer_timer2_openhour"] = string2Int(streams["weektimer_timer2_openhour"])
         end
-        if (streams["weektimer_timer2_openmin"] ~= nil) then
-            mytable["weektimer_timer2_openmin"] = string2Int(
-                                                      streams["weektimer_timer2_openmin"])
+        if streams["weektimer_timer2_openmin"] ~= nil then
+            mytable["weektimer_timer2_openmin"] = string2Int(streams["weektimer_timer2_openmin"])
         end
-        if (streams["weektimer_timer2_closehour"] ~= nil) then
-            mytable["weektimer_timer2_closehour"] = string2Int(
-                                                        streams["weektimer_timer2_closehour"])
+        if streams["weektimer_timer2_closehour"] ~= nil then
+            mytable["weektimer_timer2_closehour"] = string2Int(streams["weektimer_timer2_closehour"])
         end
-        if (streams["weektimer_timer2_closemin"] ~= nil) then
-            mytable["weektimer_timer2_closemin"] = string2Int(
-                                                       streams["weektimer_timer2_closemin"])
+        if streams["weektimer_timer2_closemin"] ~= nil then
+            mytable["weektimer_timer2_closemin"] = string2Int(streams["weektimer_timer2_closemin"])
         end
-        if (streams["weektimer_timer3_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["weektimer_timer3_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["weektimer_timer3_mode"] = 2
-        elseif (streams["weektimer_timer3_mode"] == uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["weektimer_timer3_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["weektimer_timer3_mode"] = 3
-        elseif (streams["weektimer_timer3_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["weektimer_timer3_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["weektimer_timer3_mode"] = 5
         end
-        if (streams["weektimer_timer3_temp"] ~= nil) then
-            mytable["weektimer_timer3_temp"] = string2Int(
-                                                   streams["weektimer_timer3_temp"])
+        if streams["weektimer_timer3_temp"] ~= nil then
+            mytable["weektimer_timer3_temp"] = string2Int(streams["weektimer_timer3_temp"])
         end
-        if (streams["weektimer_timer3_openhour"] ~= nil) then
-            mytable["weektimer_timer3_openhour"] = string2Int(
-                                                       streams["weektimer_timer3_openhour"])
+        if streams["weektimer_timer3_openhour"] ~= nil then
+            mytable["weektimer_timer3_openhour"] = string2Int(streams["weektimer_timer3_openhour"])
         end
-        if (streams["weektimer_timer3_openmin"] ~= nil) then
-            mytable["weektimer_timer3_openmin"] = string2Int(
-                                                      streams["weektimer_timer3_openmin"])
+        if streams["weektimer_timer3_openmin"] ~= nil then
+            mytable["weektimer_timer3_openmin"] = string2Int(streams["weektimer_timer3_openmin"])
         end
-        if (streams["weektimer_timer3_closehour"] ~= nil) then
-            mytable["weektimer_timer3_closehour"] = string2Int(
-                                                        streams["weektimer_timer3_closehour"])
+        if streams["weektimer_timer3_closehour"] ~= nil then
+            mytable["weektimer_timer3_closehour"] = string2Int(streams["weektimer_timer3_closehour"])
         end
-        if (streams["weektimer_timer3_closemin"] ~= nil) then
-            mytable["weektimer_timer3_closemin"] = string2Int(
-                                                       streams["weektimer_timer3_closemin"])
+        if streams["weektimer_timer3_closemin"] ~= nil then
+            mytable["weektimer_timer3_closemin"] = string2Int(streams["weektimer_timer3_closemin"])
         end
-        if (streams["weektimer_timer4_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["weektimer_timer4_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["weektimer_timer4_mode"] = 2
-        elseif (streams["weektimer_timer4_mode"] == uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["weektimer_timer4_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["weektimer_timer4_mode"] = 3
-        elseif (streams["weektimer_timer4_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["weektimer_timer4_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["weektimer_timer4_mode"] = 5
         end
-        if (streams["weektimer_timer4_temp"] ~= nil) then
-            mytable["weektimer_timer4_temp"] = string2Int(
-                                                   streams["weektimer_timer4_temp"])
+        if streams["weektimer_timer4_temp"] ~= nil then
+            mytable["weektimer_timer4_temp"] = string2Int(streams["weektimer_timer4_temp"])
         end
-        if (streams["weektimer_timer4_openhour"] ~= nil) then
-            mytable["weektimer_timer4_openhour"] = string2Int(
-                                                       streams["weektimer_timer4_openhour"])
+        if streams["weektimer_timer4_openhour"] ~= nil then
+            mytable["weektimer_timer4_openhour"] = string2Int(streams["weektimer_timer4_openhour"])
         end
-        if (streams["weektimer_timer4_openmin"] ~= nil) then
-            mytable["weektimer_timer4_openmin"] = string2Int(
-                                                      streams["weektimer_timer4_openmin"])
+        if streams["weektimer_timer4_openmin"] ~= nil then
+            mytable["weektimer_timer4_openmin"] = string2Int(streams["weektimer_timer4_openmin"])
         end
-        if (streams["weektimer_timer4_closehour"] ~= nil) then
-            mytable["weektimer_timer4_closehour"] = string2Int(
-                                                        streams["weektimer_timer4_closehour"])
+        if streams["weektimer_timer4_closehour"] ~= nil then
+            mytable["weektimer_timer4_closehour"] = string2Int(streams["weektimer_timer4_closehour"])
         end
-        if (streams["weektimer_timer4_closemin"] ~= nil) then
-            mytable["weektimer_timer4_closemin"] = string2Int(
-                                                       streams["weektimer_timer4_closemin"])
+        if streams["weektimer_timer4_closemin"] ~= nil then
+            mytable["weektimer_timer4_closemin"] = string2Int(streams["weektimer_timer4_closemin"])
         end
-        if (streams["weektimer_timer5_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["weektimer_timer5_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["weektimer_timer5_mode"] = 2
-        elseif (streams["weektimer_timer5_mode"] == uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["weektimer_timer5_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["weektimer_timer5_mode"] = 3
-        elseif (streams["weektimer_timer5_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["weektimer_timer5_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["weektimer_timer5_mode"] = 5
         end
-        if (streams["weektimer_timer5_temp"] ~= nil) then
-            mytable["weektimer_timer5_temp"] = string2Int(
-                                                   streams["weektimer_timer5_temp"])
+        if streams["weektimer_timer5_temp"] ~= nil then
+            mytable["weektimer_timer5_temp"] = string2Int(streams["weektimer_timer5_temp"])
         end
-        if (streams["weektimer_timer5_openhour"] ~= nil) then
-            mytable["weektimer_timer5_openhour"] = string2Int(
-                                                       streams["weektimer_timer5_openhour"])
+        if streams["weektimer_timer5_openhour"] ~= nil then
+            mytable["weektimer_timer5_openhour"] = string2Int(streams["weektimer_timer5_openhour"])
         end
-        if (streams["weektimer_timer5_openmin"] ~= nil) then
-            mytable["weektimer_timer5_openmin"] = string2Int(
-                                                      streams["weektimer_timer5_openmin"])
+        if streams["weektimer_timer5_openmin"] ~= nil then
+            mytable["weektimer_timer5_openmin"] = string2Int(streams["weektimer_timer5_openmin"])
         end
-        if (streams["weektimer_timer5_closehour"] ~= nil) then
-            mytable["weektimer_timer5_closehour"] = string2Int(
-                                                        streams["weektimer_timer5_closehour"])
+        if streams["weektimer_timer5_closehour"] ~= nil then
+            mytable["weektimer_timer5_closehour"] = string2Int(streams["weektimer_timer5_closehour"])
         end
-        if (streams["weektimer_timer5_closemin"] ~= nil) then
-            mytable["weektimer_timer5_closemin"] = string2Int(
-                                                       streams["weektimer_timer5_closemin"])
+        if streams["weektimer_timer5_closemin"] ~= nil then
+            mytable["weektimer_timer5_closemin"] = string2Int(streams["weektimer_timer5_closemin"])
         end
-        if (streams["weektimer_timer6_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["weektimer_timer6_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["weektimer_timer6_mode"] = 2
-        elseif (streams["weektimer_timer6_mode"] == uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["weektimer_timer6_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["weektimer_timer6_mode"] = 3
-        elseif (streams["weektimer_timer6_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["weektimer_timer6_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["weektimer_timer6_mode"] = 5
         end
-        if (streams["weektimer_timer6_temp"] ~= nil) then
-            mytable["weektimer_timer6_temp"] = string2Int(
-                                                   streams["weektimer_timer6_temp"])
+        if streams["weektimer_timer6_temp"] ~= nil then
+            mytable["weektimer_timer6_temp"] = string2Int(streams["weektimer_timer6_temp"])
         end
-        if (streams["weektimer_timer6_openhour"] ~= nil) then
-            mytable["weektimer_timer6_openhour"] = string2Int(
-                                                       streams["weektimer_timer6_openhour"])
+        if streams["weektimer_timer6_openhour"] ~= nil then
+            mytable["weektimer_timer6_openhour"] = string2Int(streams["weektimer_timer6_openhour"])
         end
-        if (streams["weektimer_timer6_openmin"] ~= nil) then
-            mytable["weektimer_timer6_openmin"] = string2Int(
-                                                      streams["weektimer_timer6_openmin"])
+        if streams["weektimer_timer6_openmin"] ~= nil then
+            mytable["weektimer_timer6_openmin"] = string2Int(streams["weektimer_timer6_openmin"])
         end
-        if (streams["weektimer_timer6_closehour"] ~= nil) then
-            mytable["weektimer_timer6_closehour"] = string2Int(
-                                                        streams["weektimer_timer6_closehour"])
+        if streams["weektimer_timer6_closehour"] ~= nil then
+            mytable["weektimer_timer6_closehour"] = string2Int(streams["weektimer_timer6_closehour"])
         end
-        if (streams["weektimer_timer6_closemin"] ~= nil) then
-            mytable["weektimer_timer6_closemin"] = string2Int(
-                                                       streams["weektimer_timer6_closemin"])
+        if streams["weektimer_timer6_closemin"] ~= nil then
+            mytable["weektimer_timer6_closemin"] = string2Int(streams["weektimer_timer6_closemin"])
         end
-
-    elseif (mytable["controltype"] == 0x04) then
-        if (streams["holidayaway_state"] == uptable["VALUE_ON"]) then
+    elseif mytable["controltype"] == 0x04 then
+        if streams["holidayaway_state"] == uptable["VALUE_ON"] then
             mytable["holidayaway_state"] = uptable["BYTE_BIT0"]
-        elseif (streams["holidayaway_state"] == uptable["VALUE_OFF"]) then
+        elseif streams["holidayaway_state"] == uptable["VALUE_OFF"] then
             mytable["holidayaway_state"] = 0
         end
-        if (streams["holidayaway_startyear"] ~= nil) then
-            mytable["holidayaway_startyear"] = string2Int(
-                                                   streams["holidayaway_startyear"])
+        if streams["holidayaway_startyear"] ~= nil then
+            mytable["holidayaway_startyear"] = string2Int(streams["holidayaway_startyear"])
         end
-        if (streams["holidayaway_startmonth"] ~= nil) then
-            mytable["holidayaway_startmonth"] = string2Int(
-                                                    streams["holidayaway_startmonth"])
+        if streams["holidayaway_startmonth"] ~= nil then
+            mytable["holidayaway_startmonth"] = string2Int(streams["holidayaway_startmonth"])
         end
-        if (streams["holidayaway_startdate"] ~= nil) then
-            mytable["holidayaway_startdate"] = string2Int(
-                                                   streams["holidayaway_startdate"])
+        if streams["holidayaway_startdate"] ~= nil then
+            mytable["holidayaway_startdate"] = string2Int(streams["holidayaway_startdate"])
         end
-        if (streams["holidayaway_endyear"] ~= nil) then
-            mytable["holidayaway_endyear"] = string2Int(
-                                                 streams["holidayaway_endyear"])
+        if streams["holidayaway_endyear"] ~= nil then
+            mytable["holidayaway_endyear"] = string2Int(streams["holidayaway_endyear"])
         end
-        if (streams["holidayaway_endmonth"] ~= nil) then
-            mytable["holidayaway_endmonth"] = string2Int(
-                                                  streams["holidayaway_endmonth"])
+        if streams["holidayaway_endmonth"] ~= nil then
+            mytable["holidayaway_endmonth"] = string2Int(streams["holidayaway_endmonth"])
         end
-        if (streams["holidayaway_enddate"] ~= nil) then
-            mytable["holidayaway_enddate"] = string2Int(
-                                                 streams["holidayaway_enddate"])
+        if streams["holidayaway_enddate"] ~= nil then
+            mytable["holidayaway_enddate"] = string2Int(streams["holidayaway_enddate"])
         end
-
-    elseif (mytable["controltype"] == 0x05) then
-        if (streams["silence_function_state"] == uptable["VALUE_ON"]) then
+    elseif mytable["controltype"] == 0x05 then
+        if streams["silence_function_state"] == uptable["VALUE_ON"] then
             mytable["silence_function_state"] = uptable["BYTE_BIT0"]
-        elseif (streams["silence_function_state"] == uptable["VALUE_OFF"]) then
+        elseif streams["silence_function_state"] == uptable["VALUE_OFF"] then
             mytable["silence_function_state"] = 0
         end
-        if (streams["silence_timer1_state"] == uptable["VALUE_ON"]) then
+        if streams["silence_timer1_state"] == uptable["VALUE_ON"] then
             mytable["silence_timer1_state"] = uptable["BYTE_BIT2"]
-        elseif (streams["silence_timer1_state"] == uptable["VALUE_OFF"]) then
+        elseif streams["silence_timer1_state"] == uptable["VALUE_OFF"] then
             mytable["silence_timer1_state"] = 0
         end
-        if (streams["silence_timer2_state"] == uptable["VALUE_ON"]) then
+        if streams["silence_timer2_state"] == uptable["VALUE_ON"] then
             mytable["silence_timer2_state"] = uptable["BYTE_BIT3"]
-        elseif (streams["silence_timer2_state"] == uptable["VALUE_OFF"]) then
+        elseif streams["silence_timer2_state"] == uptable["VALUE_OFF"] then
             mytable["silence_timer2_state"] = 0
         end
-        if (streams["silence_function_level"] == uptable["LEVEL2"]) then
+        if streams["silence_function_level"] == uptable["LEVEL2"] then
             mytable["silence_function_level"] = uptable["BYTE_BIT1"]
-        elseif (streams["silence_function_level"] == uptable["LEVEL1"]) then
+        elseif streams["silence_function_level"] == uptable["LEVEL1"] then
             mytable["silence_function_level"] = 0
         end
-        if (streams["silence_timer1_starthour"] ~= nil) then
-            mytable["silence_timer1_starthour"] = string2Int(
-                                                      streams["silence_timer1_starthour"])
+        if streams["silence_timer1_starthour"] ~= nil then
+            mytable["silence_timer1_starthour"] = string2Int(streams["silence_timer1_starthour"])
         end
-        if (streams["silence_timer1_startmin"] ~= nil) then
-            mytable["silence_timer1_startmin"] = string2Int(
-                                                     streams["silence_timer1_startmin"])
+        if streams["silence_timer1_startmin"] ~= nil then
+            mytable["silence_timer1_startmin"] = string2Int(streams["silence_timer1_startmin"])
         end
-        if (streams["silence_timer1_endhour"] ~= nil) then
-            mytable["silence_timer1_endhour"] = string2Int(
-                                                    streams["silence_timer1_endhour"])
+        if streams["silence_timer1_endhour"] ~= nil then
+            mytable["silence_timer1_endhour"] = string2Int(streams["silence_timer1_endhour"])
         end
-        if (streams["silence_timer1_endmin"] ~= nil) then
-            mytable["silence_timer1_endmin"] = string2Int(
-                                                   streams["silence_timer1_endmin"])
+        if streams["silence_timer1_endmin"] ~= nil then
+            mytable["silence_timer1_endmin"] = string2Int(streams["silence_timer1_endmin"])
         end
-        if (streams["silence_timer2_starthour"] ~= nil) then
-            mytable["silence_timer2_starthour"] = string2Int(
-                                                      streams["silence_timer2_starthour"])
+        if streams["silence_timer2_starthour"] ~= nil then
+            mytable["silence_timer2_starthour"] = string2Int(streams["silence_timer2_starthour"])
         end
-        if (streams["silence_timer2_startmin"] ~= nil) then
-            mytable["silence_timer2_startmin"] = string2Int(
-                                                     streams["silence_timer2_startmin"])
+        if streams["silence_timer2_startmin"] ~= nil then
+            mytable["silence_timer2_startmin"] = string2Int(streams["silence_timer2_startmin"])
         end
-        if (streams["silence_timer2_endhour"] ~= nil) then
-            mytable["silence_timer2_endhour"] = string2Int(
-                                                    streams["silence_timer2_endhour"])
+        if streams["silence_timer2_endhour"] ~= nil then
+            mytable["silence_timer2_endhour"] = string2Int(streams["silence_timer2_endhour"])
         end
-        if (streams["silence_timer2_endmin"] ~= nil) then
-            mytable["silence_timer2_endmin"] = string2Int(
-                                                   streams["silence_timer2_endmin"])
+        if streams["silence_timer2_endmin"] ~= nil then
+            mytable["silence_timer2_endmin"] = string2Int(streams["silence_timer2_endmin"])
         end
-
-    elseif (mytable["controltype"] == 0x06) then
-        if (streams["holidayhome_state"] == uptable["VALUE_ON"]) then
+    elseif mytable["controltype"] == 0x06 then
+        if streams["holidayhome_state"] == uptable["VALUE_ON"] then
             mytable["holidayhome_state"] = uptable["BYTE_BIT0"]
-        elseif (streams["holidayhome_state"] == uptable["VALUE_OFF"]) then
+        elseif streams["holidayhome_state"] == uptable["VALUE_OFF"] then
             mytable["holidayhome_state"] = 0
         end
-        if (streams["holidayhome_startyear"] ~= nil) then
-            mytable["holidayhome_startyear"] = string2Int(
-                                                   streams["holidayhome_startyear"])
+        if streams["holidayhome_startyear"] ~= nil then
+            mytable["holidayhome_startyear"] = string2Int(streams["holidayhome_startyear"])
         end
-        if (streams["holidayhome_startmonth"] ~= nil) then
-            mytable["holidayhome_startmonth"] = string2Int(
-                                                    streams["holidayhome_startmonth"])
+        if streams["holidayhome_startmonth"] ~= nil then
+            mytable["holidayhome_startmonth"] = string2Int(streams["holidayhome_startmonth"])
         end
-        if (streams["holidayhome_startdate"] ~= nil) then
-            mytable["holidayhome_startdate"] = string2Int(
-                                                   streams["holidayhome_startdate"])
+        if streams["holidayhome_startdate"] ~= nil then
+            mytable["holidayhome_startdate"] = string2Int(streams["holidayhome_startdate"])
         end
-        if (streams["holidayhome_endyear"] ~= nil) then
-            mytable["holidayhome_endyear"] = string2Int(
-                                                 streams["holidayhome_endyear"])
+        if streams["holidayhome_endyear"] ~= nil then
+            mytable["holidayhome_endyear"] = string2Int(streams["holidayhome_endyear"])
         end
-        if (streams["holidayhome_endmonth"] ~= nil) then
-            mytable["holidayhome_endmonth"] = string2Int(
-                                                  streams["holidayhome_endmonth"])
+        if streams["holidayhome_endmonth"] ~= nil then
+            mytable["holidayhome_endmonth"] = string2Int(streams["holidayhome_endmonth"])
         end
-        if (streams["holidayhome_enddate"] ~= nil) then
-            mytable["holidayhome_enddate"] = string2Int(
-                                                 streams["holidayhome_enddate"])
+        if streams["holidayhome_enddate"] ~= nil then
+            mytable["holidayhome_enddate"] = string2Int(streams["holidayhome_enddate"])
         end
-        if (streams["holhometimer_timer1en"] == uptable["VALUE_ON"]) then
+        if streams["holhometimer_timer1en"] == uptable["VALUE_ON"] then
             mytable["holhometimer_timer1en"] = uptable["BYTE_BIT0"]
-        elseif (streams["holhometimer_timer1en"] == uptable["VALUE_OFF"]) then
+        elseif streams["holhometimer_timer1en"] == uptable["VALUE_OFF"] then
             mytable["holhometimer_timer1en"] = 0
         end
-        if (streams["holhometimer_timer2en"] == uptable["VALUE_ON"]) then
+        if streams["holhometimer_timer2en"] == uptable["VALUE_ON"] then
             mytable["holhometimer_timer2en"] = uptable["BYTE_BIT1"]
-        elseif (streams["holhometimer_timer2en"] == uptable["VALUE_OFF"]) then
+        elseif streams["holhometimer_timer2en"] == uptable["VALUE_OFF"] then
             mytable["holhometimer_timer2en"] = 0
         end
-        if (streams["holhometimer_timer3en"] == uptable["VALUE_ON"]) then
+        if streams["holhometimer_timer3en"] == uptable["VALUE_ON"] then
             mytable["holhometimer_timer3en"] = uptable["BYTE_BIT2"]
-        elseif (streams["holhometimer_timer3en"] == uptable["VALUE_OFF"]) then
+        elseif streams["holhometimer_timer3en"] == uptable["VALUE_OFF"] then
             mytable["holhometimer_timer3en"] = 0
         end
-        if (streams["holhometimer_timer4en"] == uptable["VALUE_ON"]) then
+        if streams["holhometimer_timer4en"] == uptable["VALUE_ON"] then
             mytable["holhometimer_timer4en"] = uptable["BYTE_BIT3"]
-        elseif (streams["holhometimer_timer4en"] == uptable["VALUE_OFF"]) then
+        elseif streams["holhometimer_timer4en"] == uptable["VALUE_OFF"] then
             mytable["holhometimer_timer4en"] = 0
         end
-        if (streams["holhometimer_timer5en"] == uptable["VALUE_ON"]) then
+        if streams["holhometimer_timer5en"] == uptable["VALUE_ON"] then
             mytable["holhometimer_timer5en"] = uptable["BYTE_BIT4"]
-        elseif (streams["holhometimer_timer5en"] == uptable["VALUE_OFF"]) then
+        elseif streams["holhometimer_timer5en"] == uptable["VALUE_OFF"] then
             mytable["holhometimer_timer5en"] = 0
         end
-        if (streams["holhometimer_timer6en"] == uptable["VALUE_ON"]) then
+        if streams["holhometimer_timer6en"] == uptable["VALUE_ON"] then
             mytable["holhometimer_timer6en"] = uptable["BYTE_BIT5"]
-        elseif (streams["holhometimer_timer6en"] == uptable["VALUE_OFF"]) then
+        elseif streams["holhometimer_timer6en"] == uptable["VALUE_OFF"] then
             mytable["holhometimer_timer6en"] = 0
         end
-        if (streams["holhometimer_timer1_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["holhometimer_timer1_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["holhometimer_timer1_mode"] = 2
-        elseif (streams["holhometimer_timer1_mode"] ==
-            uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["holhometimer_timer1_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["holhometimer_timer1_mode"] = 3
-        elseif (streams["holhometimer_timer1_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["holhometimer_timer1_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["holhometimer_timer1_mode"] = 5
         end
-        if (streams["holhometimer_timer1_temp"] ~= nil) then
-            mytable["holhometimer_timer1_temp"] = string2Int(
-                                                      streams["holhometimer_timer1_temp"])
+        if streams["holhometimer_timer1_temp"] ~= nil then
+            mytable["holhometimer_timer1_temp"] = string2Int(streams["holhometimer_timer1_temp"])
         end
-        if (streams["holhometimer_timer1_openhour"] ~= nil) then
-            mytable["holhometimer_timer1_openhour"] = string2Int(
-                                                          streams["holhometimer_timer1_openhour"])
+        if streams["holhometimer_timer1_openhour"] ~= nil then
+            mytable["holhometimer_timer1_openhour"] = string2Int(streams["holhometimer_timer1_openhour"])
         end
-        if (streams["holhometimer_timer1_openmin"] ~= nil) then
-            mytable["holhometimer_timer1_openmin"] = string2Int(
-                                                         streams["holhometimer_timer1_openmin"])
+        if streams["holhometimer_timer1_openmin"] ~= nil then
+            mytable["holhometimer_timer1_openmin"] = string2Int(streams["holhometimer_timer1_openmin"])
         end
-        if (streams["holhometimer_timer1_closehour"] ~= nil) then
-            mytable["holhometimer_timer1_closehour"] = string2Int(
-                                                           streams["holhometimer_timer1_closehour"])
+        if streams["holhometimer_timer1_closehour"] ~= nil then
+            mytable["holhometimer_timer1_closehour"] = string2Int(streams["holhometimer_timer1_closehour"])
         end
-        if (streams["holhometimer_timer1_closemin"] ~= nil) then
-            mytable["holhometimer_timer1_closemin"] = string2Int(
-                                                          streams["holhometimer_timer1_closemin"])
+        if streams["holhometimer_timer1_closemin"] ~= nil then
+            mytable["holhometimer_timer1_closemin"] = string2Int(streams["holhometimer_timer1_closemin"])
         end
-        if (streams["holhometimer_timer2_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["holhometimer_timer2_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["holhometimer_timer2_mode"] = 2
-        elseif (streams["holhometimer_timer2_mode"] ==
-            uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["holhometimer_timer2_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["holhometimer_timer2_mode"] = 3
-        elseif (streams["holhometimer_timer2_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["holhometimer_timer2_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["holhometimer_timer2_mode"] = 5
         end
-        if (streams["holhometimer_timer2_temp"] ~= nil) then
-            mytable["holhometimer_timer2_temp"] = string2Int(
-                                                      streams["holhometimer_timer2_temp"])
+        if streams["holhometimer_timer2_temp"] ~= nil then
+            mytable["holhometimer_timer2_temp"] = string2Int(streams["holhometimer_timer2_temp"])
         end
-        if (streams["holhometimer_timer2_openhour"] ~= nil) then
-            mytable["holhometimer_timer2_openhour"] = string2Int(
-                                                          streams["holhometimer_timer2_openhour"])
+        if streams["holhometimer_timer2_openhour"] ~= nil then
+            mytable["holhometimer_timer2_openhour"] = string2Int(streams["holhometimer_timer2_openhour"])
         end
-        if (streams["holhometimer_timer2_openmin"] ~= nil) then
-            mytable["holhometimer_timer2_openmin"] = string2Int(
-                                                         streams["holhometimer_timer2_openmin"])
+        if streams["holhometimer_timer2_openmin"] ~= nil then
+            mytable["holhometimer_timer2_openmin"] = string2Int(streams["holhometimer_timer2_openmin"])
         end
-        if (streams["holhometimer_timer2_closehour"] ~= nil) then
-            mytable["holhometimer_timer2_closehour"] = string2Int(
-                                                           streams["holhometimer_timer2_closehour"])
+        if streams["holhometimer_timer2_closehour"] ~= nil then
+            mytable["holhometimer_timer2_closehour"] = string2Int(streams["holhometimer_timer2_closehour"])
         end
-        if (streams["holhometimer_timer2_closemin"] ~= nil) then
-            mytable["holhometimer_timer2_closemin"] = string2Int(
-                                                          streams["holhometimer_timer2_closemin"])
+        if streams["holhometimer_timer2_closemin"] ~= nil then
+            mytable["holhometimer_timer2_closemin"] = string2Int(streams["holhometimer_timer2_closemin"])
         end
-        if (streams["holhometimer_timer3_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["holhometimer_timer3_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["holhometimer_timer3_mode"] = 2
-        elseif (streams["holhometimer_timer3_mode"] ==
-            uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["holhometimer_timer3_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["holhometimer_timer3_mode"] = 3
-        elseif (streams["holhometimer_timer3_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["holhometimer_timer3_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["holhometimer_timer3_mode"] = 5
         end
-        if (streams["holhometimer_timer3_temp"] ~= nil) then
-            mytable["holhometimer_timer3_temp"] = string2Int(
-                                                      streams["holhometimer_timer3_temp"])
+        if streams["holhometimer_timer3_temp"] ~= nil then
+            mytable["holhometimer_timer3_temp"] = string2Int(streams["holhometimer_timer3_temp"])
         end
-        if (streams["holhometimer_timer3_openhour"] ~= nil) then
-            mytable["holhometimer_timer3_openhour"] = string2Int(
-                                                          streams["holhometimer_timer3_openhour"])
+        if streams["holhometimer_timer3_openhour"] ~= nil then
+            mytable["holhometimer_timer3_openhour"] = string2Int(streams["holhometimer_timer3_openhour"])
         end
-        if (streams["holhometimer_timer3_openmin"] ~= nil) then
-            mytable["holhometimer_timer3_openmin"] = string2Int(
-                                                         streams["holhometimer_timer3_openmin"])
+        if streams["holhometimer_timer3_openmin"] ~= nil then
+            mytable["holhometimer_timer3_openmin"] = string2Int(streams["holhometimer_timer3_openmin"])
         end
-        if (streams["holhometimer_timer3_closehour"] ~= nil) then
-            mytable["holhometimer_timer3_closehour"] = string2Int(
-                                                           streams["holhometimer_timer3_closehour"])
+        if streams["holhometimer_timer3_closehour"] ~= nil then
+            mytable["holhometimer_timer3_closehour"] = string2Int(streams["holhometimer_timer3_closehour"])
         end
-        if (streams["holhometimer_timer3_closemin"] ~= nil) then
-            mytable["holhometimer_timer3_closemin"] = string2Int(
-                                                          streams["holhometimer_timer3_closemin"])
+        if streams["holhometimer_timer3_closemin"] ~= nil then
+            mytable["holhometimer_timer3_closemin"] = string2Int(streams["holhometimer_timer3_closemin"])
         end
-        if (streams["holhometimer_timer4_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["holhometimer_timer4_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["holhometimer_timer4_mode"] = 2
-        elseif (streams["holhometimer_timer4_mode"] ==
-            uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["holhometimer_timer4_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["holhometimer_timer4_mode"] = 3
-        elseif (streams["holhometimer_timer4_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["holhometimer_timer4_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["holhometimer_timer4_mode"] = 5
         end
-        if (streams["holhometimer_timer4_temp"] ~= nil) then
-            mytable["holhometimer_timer4_temp"] = string2Int(
-                                                      streams["holhometimer_timer4_temp"])
+        if streams["holhometimer_timer4_temp"] ~= nil then
+            mytable["holhometimer_timer4_temp"] = string2Int(streams["holhometimer_timer4_temp"])
         end
-        if (streams["holhometimer_timer4_openhour"] ~= nil) then
-            mytable["holhometimer_timer4_openhour"] = string2Int(
-                                                          streams["holhometimer_timer4_openhour"])
+        if streams["holhometimer_timer4_openhour"] ~= nil then
+            mytable["holhometimer_timer4_openhour"] = string2Int(streams["holhometimer_timer4_openhour"])
         end
-        if (streams["holhometimer_timer4_openmin"] ~= nil) then
-            mytable["holhometimer_timer4_openmin"] = string2Int(
-                                                         streams["holhometimer_timer4_openmin"])
+        if streams["holhometimer_timer4_openmin"] ~= nil then
+            mytable["holhometimer_timer4_openmin"] = string2Int(streams["holhometimer_timer4_openmin"])
         end
-        if (streams["holhometimer_timer4_closehour"] ~= nil) then
-            mytable["holhometimer_timer4_closehour"] = string2Int(
-                                                           streams["holhometimer_timer4_closehour"])
+        if streams["holhometimer_timer4_closehour"] ~= nil then
+            mytable["holhometimer_timer4_closehour"] = string2Int(streams["holhometimer_timer4_closehour"])
         end
-        if (streams["holhometimer_timer4_closemin"] ~= nil) then
-            mytable["holhometimer_timer4_closemin"] = string2Int(
-                                                          streams["holhometimer_timer4_closemin"])
+        if streams["holhometimer_timer4_closemin"] ~= nil then
+            mytable["holhometimer_timer4_closemin"] = string2Int(streams["holhometimer_timer4_closemin"])
         end
-        if (streams["holhometimer_timer5_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["holhometimer_timer5_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["holhometimer_timer5_mode"] = 2
-        elseif (streams["holhometimer_timer5_mode"] ==
-            uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["holhometimer_timer5_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["holhometimer_timer5_mode"] = 3
-        elseif (streams["holhometimer_timer5_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["holhometimer_timer5_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["holhometimer_timer5_mode"] = 5
         end
-        if (streams["holhometimer_timer5_temp"] ~= nil) then
-            mytable["holhometimer_timer5_temp"] = string2Int(
-                                                      streams["holhometimer_timer5_temp"])
+        if streams["holhometimer_timer5_temp"] ~= nil then
+            mytable["holhometimer_timer5_temp"] = string2Int(streams["holhometimer_timer5_temp"])
         end
-        if (streams["holhometimer_timer5_openhour"] ~= nil) then
-            mytable["holhometimer_timer5_openhour"] = string2Int(
-                                                          streams["holhometimer_timer5_openhour"])
+        if streams["holhometimer_timer5_openhour"] ~= nil then
+            mytable["holhometimer_timer5_openhour"] = string2Int(streams["holhometimer_timer5_openhour"])
         end
-        if (streams["holhometimer_timer5_openmin"] ~= nil) then
-            mytable["holhometimer_timer5_openmin"] = string2Int(
-                                                         streams["holhometimer_timer5_openmin"])
+        if streams["holhometimer_timer5_openmin"] ~= nil then
+            mytable["holhometimer_timer5_openmin"] = string2Int(streams["holhometimer_timer5_openmin"])
         end
-        if (streams["holhometimer_timer5_closehour"] ~= nil) then
-            mytable["holhometimer_timer5_closehour"] = string2Int(
-                                                           streams["holhometimer_timer5_closehour"])
+        if streams["holhometimer_timer5_closehour"] ~= nil then
+            mytable["holhometimer_timer5_closehour"] = string2Int(streams["holhometimer_timer5_closehour"])
         end
-        if (streams["holhometimer_timer5_closemin"] ~= nil) then
-            mytable["holhometimer_timer5_closemin"] = string2Int(
-                                                          streams["holhometimer_timer5_closemin"])
+        if streams["holhometimer_timer5_closemin"] ~= nil then
+            mytable["holhometimer_timer5_closemin"] = string2Int(streams["holhometimer_timer5_closemin"])
         end
-        if (streams["holhometimer_timer6_mode"] == uptable["VALUE_MODE_COOL"]) then
+        if streams["holhometimer_timer6_mode"] == uptable["VALUE_MODE_COOL"] then
             mytable["holhometimer_timer6_mode"] = 2
-        elseif (streams["holhometimer_timer6_mode"] ==
-            uptable["VALUE_MODE_HEAT"]) then
+        elseif streams["holhometimer_timer6_mode"] == uptable["VALUE_MODE_HEAT"] then
             mytable["holhometimer_timer6_mode"] = 3
-        elseif (streams["holhometimer_timer6_mode"] == uptable["VALUE_MODE_DHW"]) then
+        elseif streams["holhometimer_timer6_mode"] == uptable["VALUE_MODE_DHW"] then
             mytable["holhometimer_timer6_mode"] = 5
         end
-        if (streams["holhometimer_timer6_temp"] ~= nil) then
-            mytable["holhometimer_timer6_temp"] = string2Int(
-                                                      streams["holhometimer_timer6_temp"])
+        if streams["holhometimer_timer6_temp"] ~= nil then
+            mytable["holhometimer_timer6_temp"] = string2Int(streams["holhometimer_timer6_temp"])
         end
-        if (streams["holhometimer_timer6_openhour"] ~= nil) then
-            mytable["holhometimer_timer6_openhour"] = string2Int(
-                                                          streams["holhometimer_timer6_openhour"])
+        if streams["holhometimer_timer6_openhour"] ~= nil then
+            mytable["holhometimer_timer6_openhour"] = string2Int(streams["holhometimer_timer6_openhour"])
         end
-        if (streams["holhometimer_timer6_openmin"] ~= nil) then
-            mytable["holhometimer_timer6_openmin"] = string2Int(
-                                                         streams["holhometimer_timer6_openmin"])
+        if streams["holhometimer_timer6_openmin"] ~= nil then
+            mytable["holhometimer_timer6_openmin"] = string2Int(streams["holhometimer_timer6_openmin"])
         end
-        if (streams["holhometimer_timer6_closehour"] ~= nil) then
-            mytable["holhometimer_timer6_closehour"] = string2Int(
-                                                           streams["holhometimer_timer6_closehour"])
+        if streams["holhometimer_timer6_closehour"] ~= nil then
+            mytable["holhometimer_timer6_closehour"] = string2Int(streams["holhometimer_timer6_closehour"])
         end
-        if (streams["holhometimer_timer6_closemin"] ~= nil) then
-            mytable["holhometimer_timer6_closemin"] = string2Int(
-                                                          streams["holhometimer_timer6_closemin"])
+        if streams["holhometimer_timer6_closemin"] ~= nil then
+            mytable["holhometimer_timer6_closemin"] = string2Int(streams["holhometimer_timer6_closemin"])
         end
-
-    elseif (mytable["controltype"] == 0x07) then
-        if (streams["eco_function_state"] == uptable["VALUE_ON"]) then
+    elseif mytable["controltype"] == 0x07 then
+        if streams["eco_function_state"] == uptable["VALUE_ON"] then
             mytable["eco_function_state"] = uptable["BYTE_BIT0"]
-        elseif (streams["eco_function_state"] == uptable["VALUE_OFF"]) then
+        elseif streams["eco_function_state"] == uptable["VALUE_OFF"] then
             mytable["eco_function_state"] = 0
         end
-        if (streams["eco_timer_state"] == uptable["VALUE_ON"]) then
+        if streams["eco_timer_state"] == uptable["VALUE_ON"] then
             mytable["eco_timer_state"] = uptable["BYTE_BIT1"]
-        elseif (streams["eco_timer_state"] == uptable["VALUE_OFF"]) then
+        elseif streams["eco_timer_state"] == uptable["VALUE_OFF"] then
             mytable["eco_timer_state"] = 0
         end
-        if (streams["eco_timer_starthour"] ~= nil) then
-            mytable["eco_timer_starthour"] = string2Int(
-                                                 streams["eco_timer_starthour"])
+        if streams["eco_timer_starthour"] ~= nil then
+            mytable["eco_timer_starthour"] = string2Int(streams["eco_timer_starthour"])
         end
-        if (streams["eco_timer_startmin"] ~= nil) then
-            mytable["eco_timer_startmin"] = string2Int(
-                                                streams["eco_timer_startmin"])
+        if streams["eco_timer_startmin"] ~= nil then
+            mytable["eco_timer_startmin"] = string2Int(streams["eco_timer_startmin"])
         end
-        if (streams["eco_timer_endhour"] ~= nil) then
-            mytable["eco_timer_endhour"] = string2Int(
-                                               streams["eco_timer_endhour"])
+        if streams["eco_timer_endhour"] ~= nil then
+            mytable["eco_timer_endhour"] = string2Int(streams["eco_timer_endhour"])
         end
-        if (streams["eco_timer_endmin"] ~= nil) then
-            mytable["eco_timer_endmin"] =
-                string2Int(streams["eco_timer_endmin"])
+        if streams["eco_timer_endmin"] ~= nil then
+            mytable["eco_timer_endmin"] = string2Int(streams["eco_timer_endmin"])
         end
     end
 end
 
 function jsonToData(jsonCmd)
-    if (#jsonCmd == 0) then return nil end
+    if #jsonCmd == 0 then return nil end
     local infoM = {}
     local bodyBytes = {}
     local json = decode(jsonCmd)
     local deviceSubType = json["deviceinfo"]["deviceSubType"]
-    if (deviceSubType == 1) then end
+    if deviceSubType == 1 then
+    end
     local query = json["query"]
     local control = json["control"]
     local status = json["status"]
-    if (query) then
-        mytable["queryType"] = 0x01;
-        if (query["query_type"] ~= nil) then
-            mytable["queryType"] = string2Int(query["query_type"])
-        end
-        mytable["weekdayquery"] = 0x00;
-        if (query["weekday_query"] ~= nil) then
-            mytable["weekdayquery"] = string2Int(query["weekday_query"])
-        end
-        if (mytable["queryType"] == 0x01) then
+    if query then
+        mytable["queryType"] = 0x01
+        if query["query_type"] ~= nil then mytable["queryType"] = string2Int(query["query_type"]) end
+        mytable["weekdayquery"] = 0x00
+        if query["weekday_query"] ~= nil then mytable["weekdayquery"] = string2Int(query["weekday_query"]) end
+        if mytable["queryType"] == 0x01 then
             bodyBytes[0] = 0x01
-        elseif (mytable["queryType"] == 0x02) then
+        elseif mytable["queryType"] == 0x02 then
             bodyBytes[0] = 0x02
-        elseif (mytable["queryType"] == 0x03) then
+        elseif mytable["queryType"] == 0x03 then
             bodyBytes[0] = 0x03
-            if (mytable["weekdayquery"] == 0x01) then
+            if mytable["weekdayquery"] == 0x01 then
                 bodyBytes[1] = uptable["BYTE_BIT0"]
-            elseif (mytable["weekdayquery"] == 0x02) then
+            elseif mytable["weekdayquery"] == 0x02 then
                 bodyBytes[1] = uptable["BYTE_BIT1"]
-            elseif (mytable["weekdayquery"] == 0x03) then
+            elseif mytable["weekdayquery"] == 0x03 then
                 bodyBytes[1] = uptable["BYTE_BIT2"]
-            elseif (mytable["weekdayquery"] == 0x04) then
+            elseif mytable["weekdayquery"] == 0x04 then
                 bodyBytes[1] = uptable["BYTE_BIT3"]
-            elseif (mytable["weekdayquery"] == 0x05) then
+            elseif mytable["weekdayquery"] == 0x05 then
                 bodyBytes[1] = uptable["BYTE_BIT4"]
-            elseif (mytable["weekdayquery"] == 0x06) then
+            elseif mytable["weekdayquery"] == 0x06 then
                 bodyBytes[1] = uptable["BYTE_BIT5"]
-            elseif (mytable["weekdayquery"] == 0x07) then
+            elseif mytable["weekdayquery"] == 0x07 then
                 bodyBytes[1] = uptable["BYTE_BIT6"]
             end
-        elseif (mytable["queryType"] == 0x04) then
+        elseif mytable["queryType"] == 0x04 then
             bodyBytes[0] = 0x04
-        elseif (mytable["queryType"] == 0x05) then
+        elseif mytable["queryType"] == 0x05 then
             bodyBytes[0] = 0x05
-        elseif (mytable["queryType"] == 0x06) then
+        elseif mytable["queryType"] == 0x06 then
             bodyBytes[0] = 0x06
-        elseif (mytable["queryType"] == 0x07) then
+        elseif mytable["queryType"] == 0x07 then
             bodyBytes[0] = 0x07
         end
         infoM = getTotalMsg(bodyBytes, uptable["BYTE_QUERY_STATUS_REQUEST"])
-    elseif (control) then
-        if (status) then jsonToModel(status) end
-        if (control) then jsonToModel(control) end
-        for i = 0, 4 do bodyBytes[i] = 0 end
+    elseif control then
+        if status then jsonToModel(status) end
+        if control then jsonToModel(control) end
+        for i = 0, 4 do
+            bodyBytes[i] = 0
+        end
 
-        if (mytable["controltype"] == 0x01) then
+        if mytable["controltype"] == 0x01 then
             bodyBytes[0] = 0x01
             bodyBytes[1] = mytable["power_state"]
             bodyBytes[2] = mytable["run_mode"]
             bodyBytes[3] = mytable["temp_set"]
             bodyBytes[4] = mytable["pre_heat"]
-
-        elseif (mytable["controltype"] == 0x02) then
+        elseif mytable["controltype"] == 0x02 then
             bodyBytes[0] = 0x02
-            bodyBytes[1] = bit.bor(bit.bor(
-                                       bit.bor(bit.bor(bit.bor(
-                                                           mytable["daytimer_timer1en"],
-                                                           mytable["daytimer_timer2en"]),
-                                                       mytable["daytimer_timer3en"]),
-                                               mytable["daytimer_timer4en"]),
-                                       mytable["daytimer_timer5en"]),
-                                   mytable["daytimer_timer6en"])
+            bodyBytes[1] = bit.bor(
+                bit.bor(
+                    bit.bor(
+                        bit.bor(
+                            bit.bor(mytable["daytimer_timer1en"], mytable["daytimer_timer2en"]),
+                            mytable["daytimer_timer3en"]
+                        ),
+                        mytable["daytimer_timer4en"]
+                    ),
+                    mytable["daytimer_timer5en"]
+                ),
+                mytable["daytimer_timer6en"]
+            )
             bodyBytes[2] = mytable["daytimer_timer1_mode"]
             bodyBytes[3] = mytable["daytimer_timer1_temp"]
             bodyBytes[4] = mytable["daytimer_timer1_openhour"]
@@ -1540,18 +1398,22 @@ function jsonToData(jsonCmd)
             bodyBytes[35] = mytable["daytimer_timer6_openmin"]
             bodyBytes[36] = mytable["daytimer_timer6_closehour"]
             bodyBytes[37] = mytable["daytimer_timer6_closemin"]
-
-        elseif (mytable["controltype"] == 0x03) then
+        elseif mytable["controltype"] == 0x03 then
             bodyBytes[0] = 0x03
             bodyBytes[1] = bit.lshift(1, mytable["weektimer_setday"])
-            bodyBytes[2] = bit.bor(bit.bor(
-                                       bit.bor(bit.bor(bit.bor(
-                                                           mytable["weektimer_timer1en"],
-                                                           mytable["weektimer_timer2en"]),
-                                                       mytable["weektimer_timer3en"]),
-                                               mytable["weektimer_timer4en"]),
-                                       mytable["weektimer_timer5en"]),
-                                   mytable["weektimer_timer6en"])
+            bodyBytes[2] = bit.bor(
+                bit.bor(
+                    bit.bor(
+                        bit.bor(
+                            bit.bor(mytable["weektimer_timer1en"], mytable["weektimer_timer2en"]),
+                            mytable["weektimer_timer3en"]
+                        ),
+                        mytable["weektimer_timer4en"]
+                    ),
+                    mytable["weektimer_timer5en"]
+                ),
+                mytable["weektimer_timer6en"]
+            )
             bodyBytes[3] = mytable["weektimer_timer1_mode"]
             bodyBytes[4] = mytable["weektimer_timer1_temp"]
             bodyBytes[5] = mytable["weektimer_timer1_openhour"]
@@ -1588,8 +1450,7 @@ function jsonToData(jsonCmd)
             bodyBytes[36] = mytable["weektimer_timer6_openmin"]
             bodyBytes[37] = mytable["weektimer_timer6_closehour"]
             bodyBytes[38] = mytable["weektimer_timer6_closemin"]
-
-        elseif (mytable["controltype"] == 0x04) then
+        elseif mytable["controltype"] == 0x04 then
             bodyBytes[0] = 0x04
             bodyBytes[1] = mytable["holidayaway_state"]
             bodyBytes[2] = mytable["holidayaway_startyear"]
@@ -1598,14 +1459,15 @@ function jsonToData(jsonCmd)
             bodyBytes[5] = mytable["holidayaway_endyear"]
             bodyBytes[6] = mytable["holidayaway_endmonth"]
             bodyBytes[7] = mytable["holidayaway_enddate"]
-
-        elseif (mytable["controltype"] == 0x05) then
+        elseif mytable["controltype"] == 0x05 then
             bodyBytes[0] = 0x05
-            bodyBytes[1] = bit.bor(bit.bor(bit.bor(
-                                               mytable["silence_function_state"],
-                                               mytable["silence_function_level"]),
-                                           mytable["silence_timer1_state"]),
-                                   mytable["silence_timer2_state"])
+            bodyBytes[1] = bit.bor(
+                bit.bor(
+                    bit.bor(mytable["silence_function_state"], mytable["silence_function_level"]),
+                    mytable["silence_timer1_state"]
+                ),
+                mytable["silence_timer2_state"]
+            )
             bodyBytes[2] = mytable["silence_timer1_starthour"]
             bodyBytes[3] = mytable["silence_timer1_startmin"]
             bodyBytes[4] = mytable["silence_timer1_endhour"]
@@ -1614,8 +1476,7 @@ function jsonToData(jsonCmd)
             bodyBytes[7] = mytable["silence_timer2_startmin"]
             bodyBytes[8] = mytable["silence_timer2_endhour"]
             bodyBytes[9] = mytable["silence_timer2_endmin"]
-
-        elseif (mytable["controltype"] == 0x06) then
+        elseif mytable["controltype"] == 0x06 then
             bodyBytes[0] = 0x06
             bodyBytes[1] = mytable["holidayhome_state"]
             bodyBytes[2] = mytable["holidayhome_startyear"]
@@ -1624,14 +1485,19 @@ function jsonToData(jsonCmd)
             bodyBytes[5] = mytable["holidayhome_endyear"]
             bodyBytes[6] = mytable["holidayhome_endmonth"]
             bodyBytes[7] = mytable["holidayhome_enddate"]
-            bodyBytes[8] = bit.bor(bit.bor(
-                                       bit.bor(bit.bor(bit.bor(
-                                                           mytable["holhometimer_timer1en"],
-                                                           mytable["holhometimer_timer2en"]),
-                                                       mytable["holhometimer_timer3en"]),
-                                               mytable["holhometimer_timer4en"]),
-                                       mytable["holhometimer_timer5en"]),
-                                   mytable["holhometimer_timer6en"])
+            bodyBytes[8] = bit.bor(
+                bit.bor(
+                    bit.bor(
+                        bit.bor(
+                            bit.bor(mytable["holhometimer_timer1en"], mytable["holhometimer_timer2en"]),
+                            mytable["holhometimer_timer3en"]
+                        ),
+                        mytable["holhometimer_timer4en"]
+                    ),
+                    mytable["holhometimer_timer5en"]
+                ),
+                mytable["holhometimer_timer6en"]
+            )
             bodyBytes[9] = mytable["holhometimer_timer1_mode"]
             bodyBytes[10] = mytable["holhometimer_timer1_temp"]
             bodyBytes[11] = mytable["holhometimer_timer1_openhour"]
@@ -1668,11 +1534,9 @@ function jsonToData(jsonCmd)
             bodyBytes[42] = mytable["holhometimer_timer6_openmin"]
             bodyBytes[43] = mytable["holhometimer_timer6_closehour"]
             bodyBytes[44] = mytable["holhometimer_timer6_closehour"]
-
-        elseif (mytable["controltype"] == 0x07) then
+        elseif mytable["controltype"] == 0x07 then
             bodyBytes[0] = 0x07
-            bodyBytes[1] = bit.bor(mytable["eco_function_state"],
-                                   mytable["eco_timer_state"])
+            bodyBytes[1] = bit.bor(mytable["eco_function_state"], mytable["eco_timer_state"])
             bodyBytes[2] = mytable["eco_timer_starthour"]
             bodyBytes[3] = mytable["eco_timer_startmin"]
             bodyBytes[4] = mytable["eco_timer_endhour"]
@@ -1686,13 +1550,14 @@ function jsonToData(jsonCmd)
 end
 
 function dataToJson(jsonCmd)
-    if (not jsonCmd) then return nil end
+    if not jsonCmd then return nil end
     local json = decode(jsonCmd)
     local deviceinfo = json["deviceinfo"]
     local deviceSubType = deviceinfo["deviceSubtype"]
-    if (deviceSubType == 1) then end
+    if deviceSubType == 1 then
+    end
     local status = json["status"]
-    if (status) then jsonToModel(status) end
+    if status then jsonToModel(status) end
     local binData = json["msg"]["data"]
     local info = {}
     local msgBytes = {}
@@ -1700,8 +1565,10 @@ function dataToJson(jsonCmd)
     local msgLength = 0
     local bodyLength = 0
     info = string2table(binData)
-    dataType = info[10];
-    for i = 1, #info do msgBytes[i - 1] = info[i] end
+    dataType = info[10]
+    for i = 1, #info do
+        msgBytes[i - 1] = info[i]
+    end
     msgLength = msgBytes[1]
     bodyLength = msgLength - uptable["BYTE_PROTOCOL_LENGTH"] - 1
     msgType = msgBytes[9]
@@ -1713,624 +1580,500 @@ function dataToJson(jsonCmd)
     local streams = {}
     streams["version"] = uptable["VERSION"]
 
-    if ((msgType == 0x02 and msgSubType == 0x01) or
-        ((msgType == 0x03) and (msgSubType == 0x01)) or (msgType == 0x04)) then
-        if (mytable["power_state"] == uptable["BYTE_BIT0"]) then
+    if
+        (msgType == 0x02 and msgSubType == 0x01)
+        or ((msgType == 0x03) and (msgSubType == 0x01))
+        or (msgType == 0x04)
+    then
+        if mytable["power_state"] == uptable["BYTE_BIT0"] then
             streams[uptable["KEY_POWER_STATE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_POWER_STATE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["pre_heat"] == uptable["BYTE_BIT1"]) then
+        if mytable["pre_heat"] == uptable["BYTE_BIT1"] then
             streams[uptable["KEY_PRE_HEAT"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_PRE_HEAT"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["silence_set_state"] == uptable["BYTE_BIT2"]) then
+        if mytable["silence_set_state"] == uptable["BYTE_BIT2"] then
             streams[uptable["KEY_SILENCE_SET_STATE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_SILENCE_SET_STATE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["holiday_set_state"] == uptable["BYTE_BIT3"]) then
+        if mytable["holiday_set_state"] == uptable["BYTE_BIT3"] then
             streams[uptable["KEY_HOLIDAY_SET_STATE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_HOLIDAY_SET_STATE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["holiday_on_state"] == uptable["BYTE_BIT4"]) then
+        if mytable["holiday_on_state"] == uptable["BYTE_BIT4"] then
             streams[uptable["KEY_HOLIDAY_ON_STATE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_HOLIDAY_ON_STATE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["time_set_state"] == uptable["BYTE_BIT4"]) then
+        if mytable["time_set_state"] == uptable["BYTE_BIT4"] then
             streams[uptable["KEY_TIME_SET_STATE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_TIME_SET_STATE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["heat_enable"] == uptable["BYTE_BIT0"]) then
+        if mytable["heat_enable"] == uptable["BYTE_BIT0"] then
             streams[uptable["KEY_HEAT_ENABLE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_HEAT_ENABLE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["cool_enable"] == uptable["BYTE_BIT1"]) then
+        if mytable["cool_enable"] == uptable["BYTE_BIT1"] then
             streams[uptable["KEY_COOL_ENABLE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_COOL_ENABLE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["temp_type"] == uptable["BYTE_BIT2"]) then
+        if mytable["temp_type"] == uptable["BYTE_BIT2"] then
             streams[uptable["KEY_TEMP_TYPE"]] = uptable["VALUE_WATER"]
         else
             streams[uptable["KEY_TEMP_TYPE"]] = uptable["VALUE_AIR"]
         end
-        if (mytable["room_temp_ctrl"] == uptable["BYTE_BIT3"]) then
+        if mytable["room_temp_ctrl"] == uptable["BYTE_BIT3"] then
             streams[uptable["KEY_ROOM_TEMP_CTRL"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_ROOM_TEMP_CTRL"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["room_temp_set"] == uptable["BYTE_BIT4"]) then
+        if mytable["room_temp_set"] == uptable["BYTE_BIT4"] then
             streams[uptable["KEY_ROOM_TEMP_SET"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_ROOM_TEMP_SET"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["comp_state"] == uptable["BYTE_BIT0"]) then
+        if mytable["comp_state"] == uptable["BYTE_BIT0"] then
             streams[uptable["KEY_COMP_STATE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_COMP_STATE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["silence_state"] == uptable["BYTE_BIT1"]) then
+        if mytable["silence_state"] == uptable["BYTE_BIT1"] then
             streams[uptable["KEY_SILENCE_STATE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_SILENCE_STATE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["day_time_state"] == uptable["BYTE_BIT2"]) then
+        if mytable["day_time_state"] == uptable["BYTE_BIT2"] then
             streams[uptable["KEY_DAY_TIME_STATE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_DAY_TIME_STATE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["week_time_state"] == uptable["BYTE_BIT3"]) then
+        if mytable["week_time_state"] == uptable["BYTE_BIT3"] then
             streams[uptable["KEY_WEEK_TIME_STATE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_WEEK_TIME_STATE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["warn_state"] == uptable["BYTE_BIT4"]) then
+        if mytable["warn_state"] == uptable["BYTE_BIT4"] then
             streams[uptable["KEY_WARN_STATE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_WARN_STATE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["defrost_state"] == uptable["BYTE_BIT5"]) then
+        if mytable["defrost_state"] == uptable["BYTE_BIT5"] then
             streams[uptable["KEY_DEFROST_STATE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_DEFROST_STATE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["freeze_state"] == uptable["BYTE_BIT6"]) then
+        if mytable["freeze_state"] == uptable["BYTE_BIT6"] then
             streams[uptable["KEY_FREEZE_STATE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_FREEZE_STATE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["holiday_state"] == uptable["BYTE_BIT7"]) then
+        if mytable["holiday_state"] == uptable["BYTE_BIT7"] then
             streams[uptable["KEY_HOLIDAY_STATE"]] = uptable["VALUE_ON"]
         else
             streams[uptable["KEY_HOLIDAY_STATE"]] = uptable["VALUE_OFF"]
         end
-        if (mytable["run_mode"] == 1) then
+        if mytable["run_mode"] == 1 then
             streams[uptable["KEY_RUN_MODE"]] = uptable["VALUE_MODE_AUTO"]
-        elseif (mytable["run_mode"] == 2) then
+        elseif mytable["run_mode"] == 2 then
             streams[uptable["KEY_RUN_MODE"]] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["run_mode"] == 3) then
+        elseif mytable["run_mode"] == 3 then
             streams[uptable["KEY_RUN_MODE"]] = uptable["VALUE_MODE_HEAT"]
         end
         streams[uptable["KEY_TEMP_SET"]] = int2String(mytable["temp_set"])
         streams[uptable["KEY_CUR_TEMP"]] = int2String(mytable["cur_temp"])
-        streams[uptable["KEY_HEAT_MAX_SET_TEMP"]] = int2String(
-                                                        mytable["heat_max_set_temp"])
-        streams[uptable["KEY_HEAT_MIN_SET_TEMP"]] = int2String(
-                                                        mytable["heat_min_set_temp"])
-        streams[uptable["KEY_COOL_MAX_SET_TEMP"]] = int2String(
-                                                        mytable["cool_max_set_temp"])
-        streams[uptable["KEY_COOL_MIN_SET_TEMP"]] = int2String(
-                                                        mytable["cool_min_set_temp"])
-        streams[uptable["KEY_AUTO_MAX_SET_TEMP"]] = int2String(
-                                                        mytable["auto_max_set_temp"])
-        streams[uptable["KEY_AUTO_MIN_SET_TEMP"]] = int2String(
-                                                        mytable["auto_min_set_temp"])
-        streams[uptable["KEY_PREHEAT_ON_SET_TEMP"]] = int2String(
-                                                          mytable["preheat_on_set_temp"])
-        streams[uptable["KEY_PREHEAT_MAX_SET_TEMP"]] = int2String(
-                                                           mytable["preheat_max_set_temp"])
-        streams[uptable["KEY_PREHEAT_MIN_SET_TEMP"]] = int2String(
-                                                           mytable["preheat_min_set_temp"])
+        streams[uptable["KEY_HEAT_MAX_SET_TEMP"]] = int2String(mytable["heat_max_set_temp"])
+        streams[uptable["KEY_HEAT_MIN_SET_TEMP"]] = int2String(mytable["heat_min_set_temp"])
+        streams[uptable["KEY_COOL_MAX_SET_TEMP"]] = int2String(mytable["cool_max_set_temp"])
+        streams[uptable["KEY_COOL_MIN_SET_TEMP"]] = int2String(mytable["cool_min_set_temp"])
+        streams[uptable["KEY_AUTO_MAX_SET_TEMP"]] = int2String(mytable["auto_max_set_temp"])
+        streams[uptable["KEY_AUTO_MIN_SET_TEMP"]] = int2String(mytable["auto_min_set_temp"])
+        streams[uptable["KEY_PREHEAT_ON_SET_TEMP"]] = int2String(mytable["preheat_on_set_temp"])
+        streams[uptable["KEY_PREHEAT_MAX_SET_TEMP"]] = int2String(mytable["preheat_max_set_temp"])
+        streams[uptable["KEY_PREHEAT_MIN_SET_TEMP"]] = int2String(mytable["preheat_min_set_temp"])
         streams[uptable["KEY_CUR_ERRCODE"]] = int2String(mytable["cur_errcode"])
-
-    elseif ((msgType == 0x03) and (msgSubType == 0x02)) then
-        if (mytable["daytimer_timer1en"] == 0x01) then
+    elseif (msgType == 0x03) and (msgSubType == 0x02) then
+        if mytable["daytimer_timer1en"] == 0x01 then
             streams["daytimer_timer1en"] = uptable["VALUE_ON"]
         else
             streams["daytimer_timer1en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["daytimer_timer2en"] == 0x01) then
+        if mytable["daytimer_timer2en"] == 0x01 then
             streams["daytimer_timer2en"] = uptable["VALUE_ON"]
         else
             streams["daytimer_timer2en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["daytimer_timer3en"] == 0x01) then
+        if mytable["daytimer_timer3en"] == 0x01 then
             streams["daytimer_timer3en"] = uptable["VALUE_ON"]
         else
             streams["daytimer_timer3en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["daytimer_timer4en"] == 0x01) then
+        if mytable["daytimer_timer4en"] == 0x01 then
             streams["daytimer_timer4en"] = uptable["VALUE_ON"]
         else
             streams["daytimer_timer4en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["daytimer_timer5en"] == 0x01) then
+        if mytable["daytimer_timer5en"] == 0x01 then
             streams["daytimer_timer5en"] = uptable["VALUE_ON"]
         else
             streams["daytimer_timer5en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["daytimer_timer6en"] == 0x01) then
+        if mytable["daytimer_timer6en"] == 0x01 then
             streams["daytimer_timer6en"] = uptable["VALUE_ON"]
         else
             streams["daytimer_timer6en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["daytimer_timer1_mode"] == 2) then
+        if mytable["daytimer_timer1_mode"] == 2 then
             streams["daytimer_timer1_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["daytimer_timer1_mode"] == 3) then
+        elseif mytable["daytimer_timer1_mode"] == 3 then
             streams["daytimer_timer1_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["daytimer_timer1_mode"] == 5) then
+        elseif mytable["daytimer_timer1_mode"] == 5 then
             streams["daytimer_timer1_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["daytimer_timer1_temp"] = int2String(
-                                              mytable["daytimer_timer1_temp"])
-        streams["daytimer_timer1_openhour"] = int2String(
-                                                  mytable["daytimer_timer1_openhour"])
-        streams["daytimer_timer1_openmin"] = int2String(
-                                                 mytable["daytimer_timer1_openmin"])
-        streams["daytimer_timer1_closehour"] = int2String(
-                                                   mytable["daytimer_timer1_closehour"])
-        streams["daytimer_timer1_closemin"] = int2String(
-                                                  mytable["daytimer_timer1_closemin"])
-        if (mytable["daytimer_timer2_mode"] == 2) then
+        streams["daytimer_timer1_temp"] = int2String(mytable["daytimer_timer1_temp"])
+        streams["daytimer_timer1_openhour"] = int2String(mytable["daytimer_timer1_openhour"])
+        streams["daytimer_timer1_openmin"] = int2String(mytable["daytimer_timer1_openmin"])
+        streams["daytimer_timer1_closehour"] = int2String(mytable["daytimer_timer1_closehour"])
+        streams["daytimer_timer1_closemin"] = int2String(mytable["daytimer_timer1_closemin"])
+        if mytable["daytimer_timer2_mode"] == 2 then
             streams["daytimer_timer2_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["daytimer_timer2_mode"] == 3) then
+        elseif mytable["daytimer_timer2_mode"] == 3 then
             streams["daytimer_timer2_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["daytimer_timer2_mode"] == 5) then
+        elseif mytable["daytimer_timer2_mode"] == 5 then
             streams["daytimer_timer2_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["daytimer_timer2_temp"] = int2String(
-                                              mytable["daytimer_timer2_temp"])
-        streams["daytimer_timer2_openhour"] = int2String(
-                                                  mytable["daytimer_timer2_openhour"])
-        streams["daytimer_timer2_openmin"] = int2String(
-                                                 mytable["daytimer_timer2_openmin"])
-        streams["daytimer_timer2_closehour"] = int2String(
-                                                   mytable["daytimer_timer2_closehour"])
-        streams["daytimer_timer2_closemin"] = int2String(
-                                                  mytable["daytimer_timer2_closemin"])
-        if (mytable["daytimer_timer3_mode"] == 2) then
+        streams["daytimer_timer2_temp"] = int2String(mytable["daytimer_timer2_temp"])
+        streams["daytimer_timer2_openhour"] = int2String(mytable["daytimer_timer2_openhour"])
+        streams["daytimer_timer2_openmin"] = int2String(mytable["daytimer_timer2_openmin"])
+        streams["daytimer_timer2_closehour"] = int2String(mytable["daytimer_timer2_closehour"])
+        streams["daytimer_timer2_closemin"] = int2String(mytable["daytimer_timer2_closemin"])
+        if mytable["daytimer_timer3_mode"] == 2 then
             streams["daytimer_timer3_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["daytimer_timer3_mode"] == 3) then
+        elseif mytable["daytimer_timer3_mode"] == 3 then
             streams["daytimer_timer3_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["daytimer_timer3_mode"] == 5) then
+        elseif mytable["daytimer_timer3_mode"] == 5 then
             streams["daytimer_timer3_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["daytimer_timer3_temp"] = int2String(
-                                              mytable["daytimer_timer3_temp"])
-        streams["daytimer_timer3_openhour"] = int2String(
-                                                  mytable["daytimer_timer3_openhour"])
-        streams["daytimer_timer3_openmin"] = int2String(
-                                                 mytable["daytimer_timer3_openmin"])
-        streams["daytimer_timer3_closehour"] = int2String(
-                                                   mytable["daytimer_timer3_closehour"])
-        streams["daytimer_timer3_closemin"] = int2String(
-                                                  mytable["daytimer_timer3_closemin"])
-        if (mytable["daytimer_timer4_mode"] == 2) then
+        streams["daytimer_timer3_temp"] = int2String(mytable["daytimer_timer3_temp"])
+        streams["daytimer_timer3_openhour"] = int2String(mytable["daytimer_timer3_openhour"])
+        streams["daytimer_timer3_openmin"] = int2String(mytable["daytimer_timer3_openmin"])
+        streams["daytimer_timer3_closehour"] = int2String(mytable["daytimer_timer3_closehour"])
+        streams["daytimer_timer3_closemin"] = int2String(mytable["daytimer_timer3_closemin"])
+        if mytable["daytimer_timer4_mode"] == 2 then
             streams["daytimer_timer4_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["daytimer_timer4_mode"] == 3) then
+        elseif mytable["daytimer_timer4_mode"] == 3 then
             streams["daytimer_timer4_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["daytimer_timer4_mode"] == 5) then
+        elseif mytable["daytimer_timer4_mode"] == 5 then
             streams["daytimer_timer4_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["daytimer_timer4_temp"] = int2String(
-                                              mytable["daytimer_timer4_temp"])
-        streams["daytimer_timer4_openhour"] = int2String(
-                                                  mytable["daytimer_timer4_openhour"])
-        streams["daytimer_timer4_openmin"] = int2String(
-                                                 mytable["daytimer_timer4_openmin"])
-        streams["daytimer_timer4_closehour"] = int2String(
-                                                   mytable["daytimer_timer4_closehour"])
-        streams["daytimer_timer4_closemin"] = int2String(
-                                                  mytable["daytimer_timer4_closemin"])
-        if (mytable["daytimer_timer5_mode"] == 2) then
+        streams["daytimer_timer4_temp"] = int2String(mytable["daytimer_timer4_temp"])
+        streams["daytimer_timer4_openhour"] = int2String(mytable["daytimer_timer4_openhour"])
+        streams["daytimer_timer4_openmin"] = int2String(mytable["daytimer_timer4_openmin"])
+        streams["daytimer_timer4_closehour"] = int2String(mytable["daytimer_timer4_closehour"])
+        streams["daytimer_timer4_closemin"] = int2String(mytable["daytimer_timer4_closemin"])
+        if mytable["daytimer_timer5_mode"] == 2 then
             streams["daytimer_timer5_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["daytimer_timer5_mode"] == 3) then
+        elseif mytable["daytimer_timer5_mode"] == 3 then
             streams["daytimer_timer5_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["daytimer_timer5_mode"] == 5) then
+        elseif mytable["daytimer_timer5_mode"] == 5 then
             streams["daytimer_timer5_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["daytimer_timer5_temp"] = int2String(
-                                              mytable["daytimer_timer5_temp"])
-        streams["daytimer_timer5_openhour"] = int2String(
-                                                  mytable["daytimer_timer5_openhour"])
-        streams["daytimer_timer5_openmin"] = int2String(
-                                                 mytable["daytimer_timer5_openmin"])
-        streams["daytimer_timer5_closehour"] = int2String(
-                                                   mytable["daytimer_timer5_closehour"])
-        streams["daytimer_timer5_closemin"] = int2String(
-                                                  mytable["daytimer_timer5_closemin"])
-        if (mytable["daytimer_timer6_mode"] == 2) then
+        streams["daytimer_timer5_temp"] = int2String(mytable["daytimer_timer5_temp"])
+        streams["daytimer_timer5_openhour"] = int2String(mytable["daytimer_timer5_openhour"])
+        streams["daytimer_timer5_openmin"] = int2String(mytable["daytimer_timer5_openmin"])
+        streams["daytimer_timer5_closehour"] = int2String(mytable["daytimer_timer5_closehour"])
+        streams["daytimer_timer5_closemin"] = int2String(mytable["daytimer_timer5_closemin"])
+        if mytable["daytimer_timer6_mode"] == 2 then
             streams["daytimer_timer6_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["daytimer_timer6_mode"] == 3) then
+        elseif mytable["daytimer_timer6_mode"] == 3 then
             streams["daytimer_timer6_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["daytimer_timer6_mode"] == 5) then
+        elseif mytable["daytimer_timer6_mode"] == 5 then
             streams["daytimer_timer6_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["daytimer_timer6_temp"] = int2String(
-                                              mytable["daytimer_timer6_temp"])
-        streams["daytimer_timer6_openhour"] = int2String(
-                                                  mytable["daytimer_timer6_openhour"])
-        streams["daytimer_timer6_openmin"] = int2String(
-                                                 mytable["daytimer_timer6_openmin"])
-        streams["daytimer_timer6_closehour"] = int2String(
-                                                   mytable["daytimer_timer6_closehour"])
-        streams["daytimer_timer6_closemin"] = int2String(
-                                                  mytable["daytimer_timer6_closemin"])
-
-    elseif ((msgType == 0x03) and (msgSubType == 0x03)) then
+        streams["daytimer_timer6_temp"] = int2String(mytable["daytimer_timer6_temp"])
+        streams["daytimer_timer6_openhour"] = int2String(mytable["daytimer_timer6_openhour"])
+        streams["daytimer_timer6_openmin"] = int2String(mytable["daytimer_timer6_openmin"])
+        streams["daytimer_timer6_closehour"] = int2String(mytable["daytimer_timer6_closehour"])
+        streams["daytimer_timer6_closemin"] = int2String(mytable["daytimer_timer6_closemin"])
+    elseif (msgType == 0x03) and (msgSubType == 0x03) then
         streams["queryweekday"] = int2String(mytable["queryweekday"])
-        if (mytable["weektimer_timer1en"] == 0x01) then
+        if mytable["weektimer_timer1en"] == 0x01 then
             streams["weektimer_timer1en"] = uptable["VALUE_ON"]
         else
             streams["weektimer_timer1en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["weektimer_timer2en"] == 0x01) then
+        if mytable["weektimer_timer2en"] == 0x01 then
             streams["weektimer_timer2en"] = uptable["VALUE_ON"]
         else
             streams["weektimer_timer2en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["weektimer_timer3en"] == 0x01) then
+        if mytable["weektimer_timer3en"] == 0x01 then
             streams["weektimer_timer3en"] = uptable["VALUE_ON"]
         else
             streams["weektimer_timer3en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["weektimer_timer4en"] == 0x01) then
+        if mytable["weektimer_timer4en"] == 0x01 then
             streams["weektimer_timer4en"] = uptable["VALUE_ON"]
         else
             streams["Weektimer_timer4En"] = uptable["VALUE_OFF"]
         end
-        if (mytable["weektimer_timer5en"] == 0x01) then
+        if mytable["weektimer_timer5en"] == 0x01 then
             streams["weektimer_timer5en"] = uptable["VALUE_ON"]
         else
             streams["weektimer_timer5en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["weektimer_timer6en"] == 0x01) then
+        if mytable["weektimer_timer6en"] == 0x01 then
             streams["weektimer_timer6en"] = uptable["VALUE_ON"]
         else
             streams["weektimer_timer6en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["weektimer_timer1_mode"] == 2) then
+        if mytable["weektimer_timer1_mode"] == 2 then
             streams["weektimer_timer1_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["weektimer_timer1_mode"] == 3) then
+        elseif mytable["weektimer_timer1_mode"] == 3 then
             streams["weektimer_timer1_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["weektimer_timer1_mode"] == 5) then
+        elseif mytable["weektimer_timer1_mode"] == 5 then
             streams["weektimer_timer1_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["weektimer_timer1_temp"] = int2String(
-                                               mytable["weektimer_timer1_temp"])
-        streams["weektimer_timer1_openhour"] = int2String(
-                                                   mytable["weektimer_timer1_openhour"])
-        streams["weektimer_timer1_openmin"] = int2String(
-                                                  mytable["weektimer_timer1_openmin"])
-        streams["weektimer_timer1_closehour"] = int2String(
-                                                    mytable["weektimer_timer1_closehour"])
-        streams["weektimer_timer1_closemin"] = int2String(
-                                                   mytable["weektimer_timer1_closemin"])
-        if (mytable["weektimer_timer2_mode"] == 2) then
+        streams["weektimer_timer1_temp"] = int2String(mytable["weektimer_timer1_temp"])
+        streams["weektimer_timer1_openhour"] = int2String(mytable["weektimer_timer1_openhour"])
+        streams["weektimer_timer1_openmin"] = int2String(mytable["weektimer_timer1_openmin"])
+        streams["weektimer_timer1_closehour"] = int2String(mytable["weektimer_timer1_closehour"])
+        streams["weektimer_timer1_closemin"] = int2String(mytable["weektimer_timer1_closemin"])
+        if mytable["weektimer_timer2_mode"] == 2 then
             streams["weektimer_timer2_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["weektimer_timer2_mode"] == 3) then
+        elseif mytable["weektimer_timer2_mode"] == 3 then
             streams["weektimer_timer2_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["weektimer_timer2_mode"] == 5) then
+        elseif mytable["weektimer_timer2_mode"] == 5 then
             streams["weektimer_timer2_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["weektimer_timer2_temp"] = int2String(
-                                               mytable["weektimer_timer2_temp"])
-        streams["weektimer_timer2_openhour"] = int2String(
-                                                   mytable["weektimer_timer2_openhour"])
-        streams["weektimer_timer2_openmin"] = int2String(
-                                                  mytable["weektimer_timer2_openmin"])
-        streams["weektimer_timer2_closehour"] = int2String(
-                                                    mytable["weektimer_timer2_closehour"])
-        streams["weektimer_timer2_closemin"] = int2String(
-                                                   mytable["weektimer_timer2_closemin"])
-        if (mytable["weektimer_timer3_mode"] == 2) then
+        streams["weektimer_timer2_temp"] = int2String(mytable["weektimer_timer2_temp"])
+        streams["weektimer_timer2_openhour"] = int2String(mytable["weektimer_timer2_openhour"])
+        streams["weektimer_timer2_openmin"] = int2String(mytable["weektimer_timer2_openmin"])
+        streams["weektimer_timer2_closehour"] = int2String(mytable["weektimer_timer2_closehour"])
+        streams["weektimer_timer2_closemin"] = int2String(mytable["weektimer_timer2_closemin"])
+        if mytable["weektimer_timer3_mode"] == 2 then
             streams["weektimer_timer3_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["weektimer_timer3_mode"] == 3) then
+        elseif mytable["weektimer_timer3_mode"] == 3 then
             streams["weektimer_timer3_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["weektimer_timer3_mode"] == 5) then
+        elseif mytable["weektimer_timer3_mode"] == 5 then
             streams["weektimer_timer3_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["weektimer_timer3_temp"] = int2String(
-                                               mytable["weektimer_timer3_temp"])
-        streams["weektimer_timer3_openhour"] = int2String(
-                                                   mytable["weektimer_timer3_openhour"])
-        streams["weektimer_timer3_openmin"] = int2String(
-                                                  mytable["weektimer_timer3_openmin"])
-        streams["weektimer_timer3_closehour"] = int2String(
-                                                    mytable["weektimer_timer3_closehour"])
-        streams["weektimer_timer3_closemin"] = int2String(
-                                                   mytable["weektimer_timer3_closemin"])
-        if (mytable["weektimer_timer4_mode"] == 2) then
+        streams["weektimer_timer3_temp"] = int2String(mytable["weektimer_timer3_temp"])
+        streams["weektimer_timer3_openhour"] = int2String(mytable["weektimer_timer3_openhour"])
+        streams["weektimer_timer3_openmin"] = int2String(mytable["weektimer_timer3_openmin"])
+        streams["weektimer_timer3_closehour"] = int2String(mytable["weektimer_timer3_closehour"])
+        streams["weektimer_timer3_closemin"] = int2String(mytable["weektimer_timer3_closemin"])
+        if mytable["weektimer_timer4_mode"] == 2 then
             streams["weektimer_timer4_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["weektimer_timer4_mode"] == 3) then
+        elseif mytable["weektimer_timer4_mode"] == 3 then
             streams["weektimer_timer4_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["weektimer_timer4_mode"] == 5) then
+        elseif mytable["weektimer_timer4_mode"] == 5 then
             streams["weektimer_timer4_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["weektimer_timer4_temp"] = int2String(
-                                               mytable["weektimer_timer4_temp"])
-        streams["weektimer_timer4_openhour"] = int2String(
-                                                   mytable["weektimer_timer4_openhour"])
-        streams["weektimer_timer4_openmin"] = int2String(
-                                                  mytable["weektimer_timer4_openmin"])
-        streams["weektimer_timer4_closehour"] = int2String(
-                                                    mytable["weektimer_timer4_closehour"])
-        streams["weektimer_timer4_closemin"] = int2String(
-                                                   mytable["weektimer_timer4_closemin"])
-        if (mytable["weektimer_timer5_mode"] == 2) then
+        streams["weektimer_timer4_temp"] = int2String(mytable["weektimer_timer4_temp"])
+        streams["weektimer_timer4_openhour"] = int2String(mytable["weektimer_timer4_openhour"])
+        streams["weektimer_timer4_openmin"] = int2String(mytable["weektimer_timer4_openmin"])
+        streams["weektimer_timer4_closehour"] = int2String(mytable["weektimer_timer4_closehour"])
+        streams["weektimer_timer4_closemin"] = int2String(mytable["weektimer_timer4_closemin"])
+        if mytable["weektimer_timer5_mode"] == 2 then
             streams["weektimer_timer5_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["weektimer_timer5_mode"] == 3) then
+        elseif mytable["weektimer_timer5_mode"] == 3 then
             streams["weektimer_timer5_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["weektimer_timer5_mode"] == 5) then
+        elseif mytable["weektimer_timer5_mode"] == 5 then
             streams["weektimer_timer5_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["weektimer_timer5_temp"] = int2String(
-                                               mytable["weektimer_timer5_temp"])
-        streams["weektimer_timer5_openhour"] = int2String(
-                                                   mytable["weektimer_timer5_openhour"])
-        streams["weektimer_timer5_openmin"] = int2String(
-                                                  mytable["weektimer_timer5_openmin"])
-        streams["weektimer_timer5_closehour"] = int2String(
-                                                    mytable["weektimer_timer5_closehour"])
-        streams["weektimer_timer5_closemin"] = int2String(
-                                                   mytable["weektimer_timer5_closemin"])
-        if (mytable["weektimer_timer6_mode"] == 2) then
+        streams["weektimer_timer5_temp"] = int2String(mytable["weektimer_timer5_temp"])
+        streams["weektimer_timer5_openhour"] = int2String(mytable["weektimer_timer5_openhour"])
+        streams["weektimer_timer5_openmin"] = int2String(mytable["weektimer_timer5_openmin"])
+        streams["weektimer_timer5_closehour"] = int2String(mytable["weektimer_timer5_closehour"])
+        streams["weektimer_timer5_closemin"] = int2String(mytable["weektimer_timer5_closemin"])
+        if mytable["weektimer_timer6_mode"] == 2 then
             streams["weektimer_timer6_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["weektimer_timer6_mode"] == 3) then
+        elseif mytable["weektimer_timer6_mode"] == 3 then
             streams["weektimer_timer6_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["weektimer_timer6_mode"] == 5) then
+        elseif mytable["weektimer_timer6_mode"] == 5 then
             streams["weektimer_timer6_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["weektimer_timer6_temp"] = int2String(
-                                               mytable["weektimer_timer6_temp"])
-        streams["weektimer_timer6_openhour"] = int2String(
-                                                   mytable["weektimer_timer6_openhour"])
-        streams["weektimer_timer6_openmin"] = int2String(
-                                                  mytable["weektimer_timer6_openmin"])
-        streams["weektimer_timer6_closehour"] = int2String(
-                                                    mytable["weektimer_timer6_closehour"])
-        streams["weektimer_timer6_closemin"] = int2String(
-                                                   mytable["weektimer_timer6_closemin"])
-
-    elseif ((msgType == 0x03) and (msgSubType == 0x04)) then
-        if (mytable["holidayaway_state"] == 0x01) then
+        streams["weektimer_timer6_temp"] = int2String(mytable["weektimer_timer6_temp"])
+        streams["weektimer_timer6_openhour"] = int2String(mytable["weektimer_timer6_openhour"])
+        streams["weektimer_timer6_openmin"] = int2String(mytable["weektimer_timer6_openmin"])
+        streams["weektimer_timer6_closehour"] = int2String(mytable["weektimer_timer6_closehour"])
+        streams["weektimer_timer6_closemin"] = int2String(mytable["weektimer_timer6_closemin"])
+    elseif (msgType == 0x03) and (msgSubType == 0x04) then
+        if mytable["holidayaway_state"] == 0x01 then
             streams["holidayaway_state"] = uptable["VALUE_ON"]
         else
             streams["holidayaway_state"] = uptable["VALUE_OFF"]
         end
-        streams["holidayaway_startyear"] = int2String(
-                                               mytable["holidayaway_startyear"])
-        streams["holidayaway_startmonth"] = int2String(
-                                                mytable["holidayaway_startmonth"])
-        streams["holidayaway_startdate"] = int2String(
-                                               mytable["holidayaway_startdate"])
-        streams["holidayaway_endyear"] = int2String(
-                                             mytable["holidayaway_endyear"])
-        streams["holidayaway_endmonth"] = int2String(
-                                              mytable["holidayaway_endmonth"])
-        streams["holidayaway_enddate"] = int2String(
-                                             mytable["holidayaway_enddate"])
-
-    elseif ((msgType == 0x03) and (msgSubType == 0x05)) then
-        if (mytable["silence_function_state"] == 0x01) then
+        streams["holidayaway_startyear"] = int2String(mytable["holidayaway_startyear"])
+        streams["holidayaway_startmonth"] = int2String(mytable["holidayaway_startmonth"])
+        streams["holidayaway_startdate"] = int2String(mytable["holidayaway_startdate"])
+        streams["holidayaway_endyear"] = int2String(mytable["holidayaway_endyear"])
+        streams["holidayaway_endmonth"] = int2String(mytable["holidayaway_endmonth"])
+        streams["holidayaway_enddate"] = int2String(mytable["holidayaway_enddate"])
+    elseif (msgType == 0x03) and (msgSubType == 0x05) then
+        if mytable["silence_function_state"] == 0x01 then
             streams["silence_function_state"] = uptable["VALUE_ON"]
         else
             streams["silence_function_state"] = uptable["VALUE_OFF"]
         end
-        if (mytable["silence_timer1_state"] == 0x01) then
+        if mytable["silence_timer1_state"] == 0x01 then
             streams["silence_timer1_state"] = uptable["VALUE_ON"]
         else
             streams["silence_timer1_state"] = uptable["VALUE_OFF"]
         end
-        if (mytable["silence_timer2_state"] == 0x01) then
+        if mytable["silence_timer2_state"] == 0x01 then
             streams["silence_timer2_state"] = uptable["VALUE_ON"]
         else
             streams["silence_timer2_state"] = uptable["VALUE_OFF"]
         end
-        if (mytable["silence_function_level"] == 0x01) then
+        if mytable["silence_function_level"] == 0x01 then
             streams["silence_function_level"] = uptable["LEVEL2"]
         else
             streams["silence_function_level"] = uptable["LEVEL1"]
         end
-        streams["silence_timer1_starthour"] = int2String(
-                                                  mytable["silence_timer1_starthour"])
-        streams["silence_timer1_startmin"] = int2String(
-                                                 mytable["silence_timer1_startmin"])
-        streams["silence_timer1_endhour"] = int2String(
-                                                mytable["silence_timer1_endhour"])
-        streams["silence_timer1_endmin"] = int2String(
-                                               mytable["silence_timer1_endmin"])
-        streams["silence_timer2_starthour"] = int2String(
-                                                  mytable["silence_timer2_starthour"])
-        streams["silence_timer2_startmin"] = int2String(
-                                                 mytable["silence_timer2_startmin"])
-        streams["silence_timer2_endhour"] = int2String(
-                                                mytable["silence_timer2_endhour"])
-        streams["silence_timer2_endmin"] = int2String(
-                                               mytable["silence_timer2_endmin"])
-
-    elseif ((msgType == 0x03) and (msgSubType == 0x06)) then
-        if (mytable["holidayhome_state"] == 0x01) then
+        streams["silence_timer1_starthour"] = int2String(mytable["silence_timer1_starthour"])
+        streams["silence_timer1_startmin"] = int2String(mytable["silence_timer1_startmin"])
+        streams["silence_timer1_endhour"] = int2String(mytable["silence_timer1_endhour"])
+        streams["silence_timer1_endmin"] = int2String(mytable["silence_timer1_endmin"])
+        streams["silence_timer2_starthour"] = int2String(mytable["silence_timer2_starthour"])
+        streams["silence_timer2_startmin"] = int2String(mytable["silence_timer2_startmin"])
+        streams["silence_timer2_endhour"] = int2String(mytable["silence_timer2_endhour"])
+        streams["silence_timer2_endmin"] = int2String(mytable["silence_timer2_endmin"])
+    elseif (msgType == 0x03) and (msgSubType == 0x06) then
+        if mytable["holidayhome_state"] == 0x01 then
             streams["holidayhome_state"] = uptable["VALUE_ON"]
         else
             streams["holidayhome_state"] = uptable["VALUE_OFF"]
         end
-        streams["holidayhome_startyear"] = int2String(
-                                               mytable["holidayhome_startyear"])
-        streams["holidayhome_startmonth"] = int2String(
-                                                mytable["holidayhome_startmonth"])
-        streams["holidayhome_startdate"] = int2String(
-                                               mytable["holidayhome_startdate"])
-        streams["holidayhome_endyear"] = int2String(
-                                             mytable["holidayhome_endyear"])
-        streams["holidayhome_endmonth"] = int2String(
-                                              mytable["holidayhome_endmonth"])
-        streams["holidayhome_enddate"] = int2String(
-                                             mytable["holidayhome_enddate"])
-        if (mytable["holhometimer_timer1en"] == 0x01) then
+        streams["holidayhome_startyear"] = int2String(mytable["holidayhome_startyear"])
+        streams["holidayhome_startmonth"] = int2String(mytable["holidayhome_startmonth"])
+        streams["holidayhome_startdate"] = int2String(mytable["holidayhome_startdate"])
+        streams["holidayhome_endyear"] = int2String(mytable["holidayhome_endyear"])
+        streams["holidayhome_endmonth"] = int2String(mytable["holidayhome_endmonth"])
+        streams["holidayhome_enddate"] = int2String(mytable["holidayhome_enddate"])
+        if mytable["holhometimer_timer1en"] == 0x01 then
             streams["holhometimer_timer1en"] = uptable["VALUE_ON"]
         else
             streams["holhometimer_timer1en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["holhometimer_timer2en"] == 0x01) then
+        if mytable["holhometimer_timer2en"] == 0x01 then
             streams["holhometimer_timer2en"] = uptable["VALUE_ON"]
         else
             streams["holhometimer_timer2en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["holhometimer_timer3en"] == 0x01) then
+        if mytable["holhometimer_timer3en"] == 0x01 then
             streams["holhometimer_timer3en"] = uptable["VALUE_ON"]
         else
             streams["holhometimer_timer3en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["holhometimer_timer4en"] == 0x01) then
+        if mytable["holhometimer_timer4en"] == 0x01 then
             streams["holhometimer_timer4en"] = uptable["VALUE_ON"]
         else
             streams["holhometimer_timer4en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["holhometimer_timer5en"] == 0x01) then
+        if mytable["holhometimer_timer5en"] == 0x01 then
             streams["holhometimer_timer5en"] = uptable["VALUE_ON"]
         else
             streams["holhometimer_timer5en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["holhometimer_timer6en"] == 0x01) then
+        if mytable["holhometimer_timer6en"] == 0x01 then
             streams["holhometimer_timer6en"] = uptable["VALUE_ON"]
         else
             streams["holhometimer_timer6en"] = uptable["VALUE_OFF"]
         end
-        if (mytable["holhometimer_timer1_mode"] == 2) then
+        if mytable["holhometimer_timer1_mode"] == 2 then
             streams["holhometimer_timer1_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["holhometimer_timer1_mode"] == 3) then
+        elseif mytable["holhometimer_timer1_mode"] == 3 then
             streams["holhometimer_timer1_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["holhometimer_timer1_mode"] == 5) then
+        elseif mytable["holhometimer_timer1_mode"] == 5 then
             streams["holhometimer_timer1_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["holhometimer_timer1_temp"] = int2String(
-                                                  mytable["holhometimer_timer1_temp"])
-        streams["holhometimer_timer1_openhour"] = int2String(
-                                                      mytable["holhometimer_timer1_openhour"])
-        streams["holhometimer_timer1_openmin"] = int2String(
-                                                     mytable["holhometimer_timer1_openmin"])
-        streams["holhometimer_timer1_closehour"] = int2String(
-                                                       mytable["holhometimer_timer1_closehour"])
-        streams["holhometimer_timer1_closemin"] = int2String(
-                                                      mytable["holhometimer_timer1_closemin"])
-        if (mytable["holhometimer_timer2_mode"] == 2) then
+        streams["holhometimer_timer1_temp"] = int2String(mytable["holhometimer_timer1_temp"])
+        streams["holhometimer_timer1_openhour"] = int2String(mytable["holhometimer_timer1_openhour"])
+        streams["holhometimer_timer1_openmin"] = int2String(mytable["holhometimer_timer1_openmin"])
+        streams["holhometimer_timer1_closehour"] = int2String(mytable["holhometimer_timer1_closehour"])
+        streams["holhometimer_timer1_closemin"] = int2String(mytable["holhometimer_timer1_closemin"])
+        if mytable["holhometimer_timer2_mode"] == 2 then
             streams["holhometimer_timer2_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["holhometimer_timer2_mode"] == 3) then
+        elseif mytable["holhometimer_timer2_mode"] == 3 then
             streams["holhometimer_timer2_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["holhometimer_timer2_mode"] == 5) then
+        elseif mytable["holhometimer_timer2_mode"] == 5 then
             streams["holhometimer_timer2_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["holhometimer_timer2_temp"] = int2String(
-                                                  mytable["holhometimer_timer2_temp"])
-        streams["holhometimer_timer2_openhour"] = int2String(
-                                                      mytable["holhometimer_timer2_openhour"])
-        streams["holhometimer_timer2_openmin"] = int2String(
-                                                     mytable["holhometimer_timer2_openmin"])
-        streams["holhometimer_timer2_closehour"] = int2String(
-                                                       mytable["holhometimer_timer2_closehour"])
-        streams["holhometimer_timer2_closemin"] = int2String(
-                                                      mytable["holhometimer_timer2_closemin"])
-        if (mytable["holhometimer_timer3_mode"] == 2) then
+        streams["holhometimer_timer2_temp"] = int2String(mytable["holhometimer_timer2_temp"])
+        streams["holhometimer_timer2_openhour"] = int2String(mytable["holhometimer_timer2_openhour"])
+        streams["holhometimer_timer2_openmin"] = int2String(mytable["holhometimer_timer2_openmin"])
+        streams["holhometimer_timer2_closehour"] = int2String(mytable["holhometimer_timer2_closehour"])
+        streams["holhometimer_timer2_closemin"] = int2String(mytable["holhometimer_timer2_closemin"])
+        if mytable["holhometimer_timer3_mode"] == 2 then
             streams["holhometimer_timer3_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["holhometimer_timer3_mode"] == 3) then
+        elseif mytable["holhometimer_timer3_mode"] == 3 then
             streams["holhometimer_timer3_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["holhometimer_timer3_mode"] == 5) then
+        elseif mytable["holhometimer_timer3_mode"] == 5 then
             streams["holhometimer_timer3_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["holhometimer_timer3_temp"] = int2String(
-                                                  mytable["holhometimer_timer3_temp"])
-        streams["holhometimer_timer3_openhour"] = int2String(
-                                                      mytable["holhometimer_timer3_openhour"])
-        streams["holhometimer_timer3_openmin"] = int2String(
-                                                     mytable["holhometimer_timer3_openmin"])
-        streams["holhometimer_timer3_closehour"] = int2String(
-                                                       mytable["holhometimer_timer3_closehour"])
-        streams["holhometimer_timer3_closemin"] = int2String(
-                                                      mytable["holhometimer_timer3_closemin"])
-        if (mytable["holhometimer_timer4_mode"] == 2) then
+        streams["holhometimer_timer3_temp"] = int2String(mytable["holhometimer_timer3_temp"])
+        streams["holhometimer_timer3_openhour"] = int2String(mytable["holhometimer_timer3_openhour"])
+        streams["holhometimer_timer3_openmin"] = int2String(mytable["holhometimer_timer3_openmin"])
+        streams["holhometimer_timer3_closehour"] = int2String(mytable["holhometimer_timer3_closehour"])
+        streams["holhometimer_timer3_closemin"] = int2String(mytable["holhometimer_timer3_closemin"])
+        if mytable["holhometimer_timer4_mode"] == 2 then
             streams["holhometimer_timer4_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["holhometimer_timer4_mode"] == 3) then
+        elseif mytable["holhometimer_timer4_mode"] == 3 then
             streams["holhometimer_timer4_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["holhometimer_timer4_mode"] == 5) then
+        elseif mytable["holhometimer_timer4_mode"] == 5 then
             streams["holhometimer_timer4_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["holhometimer_timer4_temp"] = int2String(
-                                                  mytable["holhometimer_timer4_temp"])
-        streams["holhometimer_timer4_openhour"] = int2String(
-                                                      mytable["holhometimer_timer4_openhour"])
-        streams["holhometimer_timer4_openmin"] = int2String(
-                                                     mytable["holhometimer_timer4_openmin"])
-        streams["holhometimer_timer4_closehour"] = int2String(
-                                                       mytable["holhometimer_timer4_closehour"])
-        streams["holhometimer_timer4_closemin"] = int2String(
-                                                      mytable["holhometimer_timer4_closemin"])
-        if (mytable["holhometimer_timer5_mode"] == 2) then
+        streams["holhometimer_timer4_temp"] = int2String(mytable["holhometimer_timer4_temp"])
+        streams["holhometimer_timer4_openhour"] = int2String(mytable["holhometimer_timer4_openhour"])
+        streams["holhometimer_timer4_openmin"] = int2String(mytable["holhometimer_timer4_openmin"])
+        streams["holhometimer_timer4_closehour"] = int2String(mytable["holhometimer_timer4_closehour"])
+        streams["holhometimer_timer4_closemin"] = int2String(mytable["holhometimer_timer4_closemin"])
+        if mytable["holhometimer_timer5_mode"] == 2 then
             streams["holhometimer_timer5_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["holhometimer_timer5_mode"] == 3) then
+        elseif mytable["holhometimer_timer5_mode"] == 3 then
             streams["holhometimer_timer5_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["holhometimer_timer5_mode"] == 5) then
+        elseif mytable["holhometimer_timer5_mode"] == 5 then
             streams["holhometimer_timer5_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["holhometimer_timer5_temp"] = int2String(
-                                                  mytable["holhometimer_timer5_temp"])
-        streams["holhometimer_timer5_openhour"] = int2String(
-                                                      mytable["holhometimer_timer5_openhour"])
-        streams["holhometimer_timer5_openmin"] = int2String(
-                                                     mytable["holhometimer_timer5_openmin"])
-        streams["holhometimer_timer5_closehour"] = int2String(
-                                                       mytable["holhometimer_timer5_closehour"])
-        streams["holhometimer_timer5_closemin"] = int2String(
-                                                      mytable["holhometimer_timer5_closemin"])
-        if (mytable["holhometimer_timer6_mode"] == 2) then
+        streams["holhometimer_timer5_temp"] = int2String(mytable["holhometimer_timer5_temp"])
+        streams["holhometimer_timer5_openhour"] = int2String(mytable["holhometimer_timer5_openhour"])
+        streams["holhometimer_timer5_openmin"] = int2String(mytable["holhometimer_timer5_openmin"])
+        streams["holhometimer_timer5_closehour"] = int2String(mytable["holhometimer_timer5_closehour"])
+        streams["holhometimer_timer5_closemin"] = int2String(mytable["holhometimer_timer5_closemin"])
+        if mytable["holhometimer_timer6_mode"] == 2 then
             streams["holhometimer_timer6_mode"] = uptable["VALUE_MODE_COOL"]
-        elseif (mytable["holhometimer_timer6_mode"] == 3) then
+        elseif mytable["holhometimer_timer6_mode"] == 3 then
             streams["holhometimer_timer6_mode"] = uptable["VALUE_MODE_HEAT"]
-        elseif (mytable["holhometimer_timer6_mode"] == 5) then
+        elseif mytable["holhometimer_timer6_mode"] == 5 then
             streams["holhometimer_timer6_mode"] = uptable["VALUE_MODE_DHW"]
         end
-        streams["holhometimer_timer6_temp"] = int2String(
-                                                  mytable["holhometimer_timer6_temp"])
-        streams["holhometimer_timer6_openhour"] = int2String(
-                                                      mytable["holhometimer_timer6_openhour"])
-        streams["holhometimer_timer6_openmin"] = int2String(
-                                                     mytable["holhometimer_timer6_openmin"])
-        streams["holhometimer_timer6_closehour"] = int2String(
-                                                       mytable["holhometimer_timer6_closehour"])
-        streams["holhometimer_timer6_closemin"] = int2String(
-                                                      mytable["holhometimer_timer6_closemin"])
-
-    elseif ((msgType == 0x03) and (msgSubType == 0x07)) then
-        if (mytable["eco_function_state"] == 0x01) then
+        streams["holhometimer_timer6_temp"] = int2String(mytable["holhometimer_timer6_temp"])
+        streams["holhometimer_timer6_openhour"] = int2String(mytable["holhometimer_timer6_openhour"])
+        streams["holhometimer_timer6_openmin"] = int2String(mytable["holhometimer_timer6_openmin"])
+        streams["holhometimer_timer6_closehour"] = int2String(mytable["holhometimer_timer6_closehour"])
+        streams["holhometimer_timer6_closemin"] = int2String(mytable["holhometimer_timer6_closemin"])
+    elseif (msgType == 0x03) and (msgSubType == 0x07) then
+        if mytable["eco_function_state"] == 0x01 then
             streams["eco_function_state"] = uptable["VALUE_ON"]
         else
             streams["eco_function_state"] = uptable["VALUE_OFF"]
         end
-        if (mytable["eco_timer_state"] == 0x01) then
+        if mytable["eco_timer_state"] == 0x01 then
             streams["eco_timer_state"] = uptable["VALUE_ON"]
         else
             streams["eco_timer_state"] = uptable["VALUE_OFF"]
         end
-        streams["eco_timer_starthour"] = int2String(
-                                             mytable["eco_timer_starthour"])
-        streams["eco_timer_startmin"] =
-            int2String(mytable["eco_timer_startmin"])
+        streams["eco_timer_starthour"] = int2String(mytable["eco_timer_starthour"])
+        streams["eco_timer_startmin"] = int2String(mytable["eco_timer_startmin"])
         streams["eco_timer_endhour"] = int2String(mytable["eco_timer_endhour"])
         streams["eco_timer_endmin"] = int2String(mytable["eco_timer_endmin"])
     end
@@ -2341,22 +2084,262 @@ function dataToJson(jsonCmd)
 end
 
 local crc8_854_table = {
-    0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65, 157,
-    195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220, 35, 125,
-    159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98, 190, 224, 2,
-    92, 223, 129, 99, 61, 124, 34, 192, 158, 29, 67, 161, 255, 70, 24, 250, 164,
-    39, 121, 155, 197, 132, 218, 56, 102, 229, 187, 89, 7, 219, 133, 103, 57,
-    186, 228, 6, 88, 25, 71, 165, 251, 120, 38, 196, 154, 101, 59, 217, 135, 4,
-    90, 184, 230, 167, 249, 27, 69, 198, 152, 122, 36, 248, 166, 68, 26, 153,
-    199, 37, 123, 58, 100, 134, 216, 91, 5, 231, 185, 140, 210, 48, 110, 237,
-    179, 81, 15, 78, 16, 242, 172, 47, 113, 147, 205, 17, 79, 173, 243, 112, 46,
-    204, 146, 211, 141, 111, 49, 178, 236, 14, 80, 175, 241, 19, 77, 206, 144,
-    114, 44, 109, 51, 209, 143, 12, 82, 176, 238, 50, 108, 142, 208, 83, 13,
-    239, 177, 240, 174, 76, 18, 145, 207, 45, 115, 202, 148, 118, 40, 171, 245,
-    23, 73, 8, 86, 180, 234, 105, 55, 213, 139, 87, 9, 235, 181, 54, 104, 138,
-    212, 149, 203, 41, 119, 244, 170, 72, 22, 233, 183, 85, 11, 136, 214, 52,
-    106, 43, 117, 151, 201, 74, 20, 246, 168, 116, 42, 200, 150, 21, 75, 169,
-    247, 182, 232, 10, 84, 215, 137, 107, 53
+    0,
+    94,
+    188,
+    226,
+    97,
+    63,
+    221,
+    131,
+    194,
+    156,
+    126,
+    32,
+    163,
+    253,
+    31,
+    65,
+    157,
+    195,
+    33,
+    127,
+    252,
+    162,
+    64,
+    30,
+    95,
+    1,
+    227,
+    189,
+    62,
+    96,
+    130,
+    220,
+    35,
+    125,
+    159,
+    193,
+    66,
+    28,
+    254,
+    160,
+    225,
+    191,
+    93,
+    3,
+    128,
+    222,
+    60,
+    98,
+    190,
+    224,
+    2,
+    92,
+    223,
+    129,
+    99,
+    61,
+    124,
+    34,
+    192,
+    158,
+    29,
+    67,
+    161,
+    255,
+    70,
+    24,
+    250,
+    164,
+    39,
+    121,
+    155,
+    197,
+    132,
+    218,
+    56,
+    102,
+    229,
+    187,
+    89,
+    7,
+    219,
+    133,
+    103,
+    57,
+    186,
+    228,
+    6,
+    88,
+    25,
+    71,
+    165,
+    251,
+    120,
+    38,
+    196,
+    154,
+    101,
+    59,
+    217,
+    135,
+    4,
+    90,
+    184,
+    230,
+    167,
+    249,
+    27,
+    69,
+    198,
+    152,
+    122,
+    36,
+    248,
+    166,
+    68,
+    26,
+    153,
+    199,
+    37,
+    123,
+    58,
+    100,
+    134,
+    216,
+    91,
+    5,
+    231,
+    185,
+    140,
+    210,
+    48,
+    110,
+    237,
+    179,
+    81,
+    15,
+    78,
+    16,
+    242,
+    172,
+    47,
+    113,
+    147,
+    205,
+    17,
+    79,
+    173,
+    243,
+    112,
+    46,
+    204,
+    146,
+    211,
+    141,
+    111,
+    49,
+    178,
+    236,
+    14,
+    80,
+    175,
+    241,
+    19,
+    77,
+    206,
+    144,
+    114,
+    44,
+    109,
+    51,
+    209,
+    143,
+    12,
+    82,
+    176,
+    238,
+    50,
+    108,
+    142,
+    208,
+    83,
+    13,
+    239,
+    177,
+    240,
+    174,
+    76,
+    18,
+    145,
+    207,
+    45,
+    115,
+    202,
+    148,
+    118,
+    40,
+    171,
+    245,
+    23,
+    73,
+    8,
+    86,
+    180,
+    234,
+    105,
+    55,
+    213,
+    139,
+    87,
+    9,
+    235,
+    181,
+    54,
+    104,
+    138,
+    212,
+    149,
+    203,
+    41,
+    119,
+    244,
+    170,
+    72,
+    22,
+    233,
+    183,
+    85,
+    11,
+    136,
+    214,
+    52,
+    106,
+    43,
+    117,
+    151,
+    201,
+    74,
+    20,
+    246,
+    168,
+    116,
+    42,
+    200,
+    150,
+    21,
+    75,
+    169,
+    247,
+    182,
+    232,
+    10,
+    84,
+    215,
+    137,
+    107,
+    53,
 }
 
 local function crc8_854(dataBuf, start_pos, end_pos)

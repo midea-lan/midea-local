@@ -52,6 +52,8 @@ class TestMessageSet:
         msg.mode = 0x03
         msg.heating_level = 5
         msg.target_temperature = 25
+        msg.humidity_mode = 0x40
+        msg.target_humidity = 66
         msg.child_lock = True
         body = msg.body
         assert len(body) == 20
@@ -59,6 +61,8 @@ class TestMessageSet:
         assert body[4] == 0x03
         assert body[5] == 5
         assert body[6] == 66
+        assert body[7] == 66
+        assert body[9] == 0x40
         assert body[18] == 0x01
 
     def test_set_body_power_off_and_out_of_range(self) -> None:
@@ -67,12 +71,37 @@ class TestMessageSet:
         msg.power = False
         msg.heating_level = 20  # above MAX_HEATING_LEVEL
         msg.target_temperature = 60  # above MAX_TARGET_TEMP
+        msg.target_humidity = None
         msg.child_lock = False
         body = msg.body
         assert body[0] == 0x02
         assert body[5] == 0x00
         assert body[6] == 0x00
+        assert body[7] == 0x00
+        assert body[9] == 0x00
         assert body[18] == 0x00
+
+    @pytest.mark.parametrize(
+        ("target_humidity", "expected_value"),
+        [
+            (50, 50),
+            (0, 0),
+            (100, 100),
+            (120, 0),
+            (-1, 0),
+            (None, 0),
+        ],
+    )
+    def test_set_target_humidity(
+        self,
+        target_humidity: int | None,
+        expected_value: int,
+    ) -> None:
+        """Test set body with target humidity."""
+        msg = MessageSet(protocol_version=ProtocolVersion.V1, subtype=1)
+        msg.target_humidity = target_humidity
+        body = msg.body
+        assert body[7] == expected_value
 
     @pytest.mark.parametrize("target_temperature", [0x80, 87])
     def test_set_body_special_target_temperature(

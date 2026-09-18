@@ -1,6 +1,6 @@
 # Run via prek: https://github.com/j178/prek
 # See https://pre-commit.com/hooks.html for more hooks (prek uses the same config format)
-exclude: "CHANGELOG.md|.copier-answers.yml|^lua/"
+exclude: "CHANGELOG.md|.copier-answers.yml"
 default_stages: [pre-commit]
 
 repos:
@@ -14,15 +14,22 @@ repos:
       - id: check-xml
       - id: check-yaml
       - id: detect-private-key
+  - repo: https://github.com/JohnnyMorganz/StyLua
+    rev: v2.5.2
+    hooks:
+      - id: stylua
+        name: check LUA formatting
+        files: '\.lua$'
+        types: [file]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.6
+    rev: v0.16.8
     hooks:
       - id: ruff-check
         args:
           - --fix
       - id: ruff-format
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.18.0
+    rev: v4.18.1
     hooks:
       - id: commitizen
         stages: [commit-msg]
@@ -32,7 +39,7 @@ repos:
       - id: commitlint
         stages: [commit-msg]
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.9.6
+    rev: v3.9.8
     hooks:
       - id: prettier
         args: ["--tab-width", "2"]
@@ -45,6 +52,7 @@ repos:
     rev: v2.4.3
     hooks:
       - id: codespell
+        exclude: '\.lua$'
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v2.3.1
     hooks:
@@ -61,6 +69,7 @@ repos:
         types: [python]
         additional_dependencies:
           - aiofiles
+          - anyio
           - pycryptodome
           - platformdirs
           - typing_extensions

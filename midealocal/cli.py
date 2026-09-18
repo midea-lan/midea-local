@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, NoReturn
 
 import aiohttp
+import anyio
 import platformdirs
 from colorlog import ColoredFormatter
 
@@ -76,6 +77,65 @@ class MideaCLI:
             password=self.namespace.password,
         )
 
+    async def _load_devices_cache(self) -> list[Any]:
+        """Load the device token/key cache (see midea-devices.json)."""
+        cache_file = anyio.Path(get_devices_cache_path())
+        if not await cache_file.exists():
+            return []
+        try:
+            devices = json.loads(await cache_file.read_text(encoding="utf-8")).get(
+                "devices",
+                [],
+            )
+        except (json.JSONDecodeError, AttributeError, OSError):
+            # Malformed or unreadable cache: treat it as empty rather than
+            # aborting discovery over a corrupt convenience file.
+            _LOGGER.warning("Ignoring unreadable device cache %s.", cache_file)
+            return []
+        return devices if isinstance(devices, list) else []
+
+    async def _get_cached_device_keys(self, device_id: int) -> dict[str, str] | None:
+        """Look up a previously cached token/key for this device, if any."""
+        for entry in await self._load_devices_cache():
+            if not isinstance(entry, dict):
+                continue
+            if str(entry.get("device_id")) == str(device_id):
+                token, key = entry.get("token"), entry.get("key")
+                return {"token": token, "key": key} if token and key else None
+        return None
+
+    async def _cache_device_keys(
+        self,
+        device_id: int,
+        keys: dict[str, str],
+    ) -> None:
+        """Persist a token/key pair confirmed to work for this device."""
+        devices = [
+            entry
+            for entry in await self._load_devices_cache()
+            if str(entry.get("device_id")) != str(device_id)
+        ]
+        devices.append(
+            {
+                "device_id": str(device_id),
+                "token": keys["token"],
+                "key": keys["key"],
+            },
+        )
+        cache_file = anyio.Path(get_devices_cache_path())
+        try:
+            # Write to a sibling temp file and rename over the cache so a
+            # failure mid-write never leaves behind truncated/corrupt JSON.
+            tmp_file = cache_file.with_name(cache_file.name + ".tmp")
+            await tmp_file.write_text(
+                json.dumps({"devices": devices}, indent=2),
+                encoding="utf-8",
+            )
+            await tmp_file.chmod(0o600)
+            await tmp_file.replace(cache_file)
+        except OSError:
+            _LOGGER.warning("Could not write the device cache; continuing without it.")
+
     async def _get_keys(self, device_id: int) -> dict[int, dict[str, Any]]:
         cloud = await self._get_cloud()
         default_keys = await cloud.get_default_keys()
@@ -105,6 +165,56 @@ class MideaCLI:
 
         return {**cloud_keys, **default_keys}
 
+    def _try_connect(
+        self,
+        device: dict[str, Any],
+        key: dict[str, str],
+        device_list: list[MideaDevice],
+    ) -> bool:
+        """Try one candidate key against a device; record it on success."""
+        dev = device_selector(
+            name=device["device_id"],
+            device_id=device["device_id"],
+            device_type=device["type"],
+            ip_address=device["ip_address"],
+            port=device["port"],
+            token=key["token"],
+            key=key["key"],
+            device_protocol=device["protocol"],
+            model=device["model"],
+            subtype=0,
+            customize="",
+            mac=device["mac"],
+            serial_number=device["sn"],
+        )
+        _LOGGER.debug("Opening socket for device.")
+        success = False
+        if dev.connect():
+            try:
+                # connect() already authenticates V3 devices, so there
+                # is no need to call authenticate() again here.
+                _LOGGER.debug("Trying to retrieve device attributes.")
+                dev.refresh_status(True)
+                _LOGGER.info("Found device:\n%s", dev.attributes)
+                device_list.append(dev)
+                success = True
+            except AuthException:
+                # never log the key/token themselves: they're credentials.
+                _LOGGER.debug("Unable to connect with the given key.")
+            except SocketException:
+                _LOGGER.exception("Device socket closed.")
+            except NoSupportedProtocol:
+                _LOGGER.exception("Unable to retrieve device attributes.")
+            except OSError:
+                # OSError covers TimeoutError/ConnectionResetError raised
+                # by authenticate()/refresh_status(); catch it so one
+                # unreachable device doesn't abort the whole scan.
+                _LOGGER.exception("Connection error during device query.")
+            finally:
+                if not success:
+                    dev.close_socket()
+        return success
+
     async def discover(self) -> list[MideaDevice]:
         """Discover device information."""
         device_list: list[MideaDevice] = []
@@ -122,53 +232,24 @@ class MideaCLI:
             _LOGGER.info("Found devices: %s", devices)
             return device_list
         for device in devices.values():
-            keys = (
-                {0: {"token": "", "key": ""}}
-                if device["protocol"] != ProtocolVersion.V3
-                else await self._get_keys(device["device_id"])
-            )
+            if device["protocol"] != ProtocolVersion.V3:
+                self._try_connect(device, {"token": "", "key": ""}, device_list)
+                continue
 
-            for key in keys.values():
-                dev = device_selector(
-                    name=device["device_id"],
-                    device_id=device["device_id"],
-                    device_type=device["type"],
-                    ip_address=device["ip_address"],
-                    port=device["port"],
-                    token=key["token"],
-                    key=key["key"],
-                    device_protocol=device["protocol"],
-                    model=device["model"],
-                    subtype=0,
-                    customize="",
-                    mac=device["mac"],
-                    serial_number=device["sn"],
+            cached = await self._get_cached_device_keys(device["device_id"])
+            if cached:
+                _LOGGER.info(
+                    "Found cached token/key, using those instead of asking cloud.",
                 )
-                _LOGGER.debug("Opening socket for device.")
-                if dev.connect():
-                    success = False
-                    try:
-                        # connect() already authenticates V3 devices, so there
-                        # is no need to call authenticate() again here.
-                        _LOGGER.debug("Trying to retrieve device attributes.")
-                        dev.refresh_status(True)
-                        _LOGGER.info("Found device:\n%s", dev.attributes)
-                        device_list.append(dev)
-                        success = True
-                    except AuthException:
-                        _LOGGER.debug("Unable to connect with key: %s", key)
-                    except SocketException:
-                        _LOGGER.exception("Device socket closed.")
-                    except NoSupportedProtocol:
-                        _LOGGER.exception("Unable to retrieve device attributes.")
-                    except OSError:
-                        # OSError covers TimeoutError/ConnectionResetError raised
-                        # by authenticate()/refresh_status(); catch it so one
-                        # unreachable device doesn't abort the whole scan.
-                        _LOGGER.exception("Connection error during device query.")
-                    finally:
-                        if not success:
-                            dev.close_socket()
+                if self._try_connect(device, cached, device_list):
+                    continue
+
+            # no cache, or the cached key no longer works: fetch from the
+            # cloud and try each candidate, caching whichever one connects.
+            for key in (await self._get_keys(device["device_id"])).values():
+                if self._try_connect(device, key, device_list):
+                    await self._cache_device_keys(device["device_id"], key)
+                    break
         return device_list
 
     def message(self) -> None:
@@ -204,6 +285,7 @@ class MideaCLI:
         file = get_config_file_path(not self.namespace.user)
         with file.open(mode="w+", encoding="utf-8") as f:
             f.write(json_data)
+        file.chmod(0o600)
 
     async def _download_device(
         self,
@@ -348,7 +430,7 @@ class MideaCLI:
         try:
             logged_in = await cloud.login()
         except CloudLoginError as err:
-            # A specific, expected login failure -- the code/meaning is the
+            # A specific, expected login failure -- the code/message is the
             # useful output, not a traceback.
             _LOGGER.error("Cloud login failed: %s", err)  # noqa: TRY400
             return
@@ -454,6 +536,17 @@ class MideaCLI:
             ),
         )
 
+        if getattr(self.namespace, "log_file", None):
+            file_handler = logging.FileHandler(
+                self.namespace.log_file,
+                mode="w",
+                encoding="utf-8",
+            )
+            file_handler.setFormatter(
+                logging.Formatter(fmt, datefmt="%Y-%m-%d %H:%M:%S"),
+            )
+            logging.getLogger().addHandler(file_handler)
+
         with contextlib.suppress(KeyboardInterrupt):
             if inspect.iscoroutinefunction(self.namespace.func):
                 asyncio.run(self.namespace.func())
@@ -472,6 +565,11 @@ def get_config_file_path(relative: bool = False) -> Path:
     return platformdirs.user_config_path(appname="midea-local").joinpath(
         "midea-local.json",
     )
+
+
+def get_devices_cache_path() -> Path:
+    """Get the device token/key cache file path."""
+    return Path("midea-devices.json")
 
 
 def main() -> NoReturn:
@@ -513,6 +611,11 @@ def main() -> NoReturn:
         type=str,
         help="Set Cloud name",
         choices=SUPPORTED_CLOUDS.keys(),
+    )
+    common_parser.add_argument(
+        "--log-file",
+        type=str,
+        help="Also write logs to this file (overwritten on each run).",
     )
 
     # Setup discover parser

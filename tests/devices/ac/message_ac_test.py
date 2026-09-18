@@ -33,8 +33,24 @@ from midealocal.devices.ac.message import (
     MessageToggleDisplay,
     NewProtocolTags,
     PowerFormats,
+    parse_indoor_humidity,
 )
 from midealocal.message import ListTypes, MessageBase, MessageType
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        (0, None),
+        (0xFF, None),
+        (1, 1),
+        (55, 55),
+        (100, 100),
+    ],
+)
+def test_parse_indoor_humidity(raw: int, expected: int | None) -> None:
+    """Test the 0x00/0xFF placeholders map to None and real readings pass through."""
+    assert parse_indoor_humidity(raw) == expected
 
 
 class TestMessageACBase:
@@ -272,6 +288,43 @@ class TestMessageNewProtocolQuery:
         expected_body = bytearray(
             [
                 0xB1,
+                0x0A,
+                NewProtocolTags.indirect_wind & 0xFF,
+                NewProtocolTags.indirect_wind >> 8,
+                NewProtocolTags.breezeless & 0xFF,
+                NewProtocolTags.breezeless >> 8,
+                NewProtocolTags.indoor_humidity & 0xFF,
+                NewProtocolTags.indoor_humidity >> 8,
+                NewProtocolTags.screen_display & 0xFF,
+                NewProtocolTags.screen_display >> 8,
+                NewProtocolTags.fresh_air_1 & 0xFF,
+                NewProtocolTags.fresh_air_1 >> 8,
+                NewProtocolTags.fresh_air_2 & 0xFF,
+                NewProtocolTags.fresh_air_2 >> 8,
+                NewProtocolTags.wind_lr_angle & 0xFF,
+                NewProtocolTags.wind_lr_angle >> 8,
+                NewProtocolTags.wind_ud_angle & 0xFF,
+                NewProtocolTags.wind_ud_angle >> 8,
+                NewProtocolTags.out_silent & 0xFF,
+                NewProtocolTags.out_silent >> 8,
+                NewProtocolTags.buzzer_all & 0xFF,
+                NewProtocolTags.buzzer_all >> 8,
+            ],
+        )
+
+        assert msg.body[:-2] == expected_body
+
+    def test_new_protocol_query_body_includes_rate_select_when_supported(
+        self,
+    ) -> None:
+        """Test rate_select is appended once the device has advertised support."""
+        msg = MessageNewProtocolQuery(
+            protocol_version=ProtocolVersion.V1,
+            supports_rate_select=True,
+        )
+        expected_body = bytearray(
+            [
+                0xB1,
                 0x0B,
                 NewProtocolTags.indirect_wind & 0xFF,
                 NewProtocolTags.indirect_wind >> 8,
@@ -293,47 +346,6 @@ class TestMessageNewProtocolQuery:
                 NewProtocolTags.out_silent >> 8,
                 NewProtocolTags.buzzer_all & 0xFF,
                 NewProtocolTags.buzzer_all >> 8,
-                NewProtocolTags.error_code_query & 0xFF,
-                NewProtocolTags.error_code_query >> 8,
-            ],
-        )
-
-        assert msg.body[:-2] == expected_body
-
-    def test_new_protocol_query_body_includes_rate_select_when_supported(
-        self,
-    ) -> None:
-        """Test rate_select is appended once the device has advertised support."""
-        msg = MessageNewProtocolQuery(
-            protocol_version=ProtocolVersion.V1,
-            supports_rate_select=True,
-        )
-        expected_body = bytearray(
-            [
-                0xB1,
-                0x0C,
-                NewProtocolTags.indirect_wind & 0xFF,
-                NewProtocolTags.indirect_wind >> 8,
-                NewProtocolTags.breezeless & 0xFF,
-                NewProtocolTags.breezeless >> 8,
-                NewProtocolTags.indoor_humidity & 0xFF,
-                NewProtocolTags.indoor_humidity >> 8,
-                NewProtocolTags.screen_display & 0xFF,
-                NewProtocolTags.screen_display >> 8,
-                NewProtocolTags.fresh_air_1 & 0xFF,
-                NewProtocolTags.fresh_air_1 >> 8,
-                NewProtocolTags.fresh_air_2 & 0xFF,
-                NewProtocolTags.fresh_air_2 >> 8,
-                NewProtocolTags.wind_lr_angle & 0xFF,
-                NewProtocolTags.wind_lr_angle >> 8,
-                NewProtocolTags.wind_ud_angle & 0xFF,
-                NewProtocolTags.wind_ud_angle >> 8,
-                NewProtocolTags.out_silent & 0xFF,
-                NewProtocolTags.out_silent >> 8,
-                NewProtocolTags.buzzer_all & 0xFF,
-                NewProtocolTags.buzzer_all >> 8,
-                NewProtocolTags.error_code_query & 0xFF,
-                NewProtocolTags.error_code_query >> 8,
                 NewProtocolTags.rate_select & 0xFF,
                 NewProtocolTags.rate_select >> 8,
             ],
@@ -1304,6 +1316,11 @@ class TestMessageACResponse:
         assert response.indoor_humidity == 55
 
         body[4] = 0  # Indoor humidity unavailable
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "indoor_humidity")
+        assert response.indoor_humidity is None
+
+        body[4] = 0xFF  # Indoor humidity sensor absent/faulted
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "indoor_humidity")
         assert response.indoor_humidity is None

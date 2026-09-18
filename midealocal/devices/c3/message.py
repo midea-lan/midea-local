@@ -332,14 +332,14 @@ class C3EnergyBody(MessageBody):
         self.status_ibh = (status_byte & 0x10) > 0
         # total_energy_consumption
         self.total_energy_consumption = (
-            (body[data_offset + 1] << 32)
+            (body[data_offset + 1] << 24)
             + (body[data_offset + 2] << 16)
             + (body[data_offset + 3] << 8)
             + (body[data_offset + 4])
         )
         # total_produced_energy
         self.total_produced_energy = (
-            (body[data_offset + 5] << 32)
+            (body[data_offset + 5] << 24)
             + (body[data_offset + 6] << 16)
             + (body[data_offset + 7] << 8)
             + (body[data_offset + 8])
@@ -460,25 +460,25 @@ class C3UnitParaBody(MessageBody):
         self.room_rel_hum = body[data_offset + 63]
         self.pwm_pump_out = body[data_offset + 63]
         self.total_electricity0 = (
-            (body[data_offset + 66] << 32)
+            (body[data_offset + 66] << 24)
             + (body[data_offset + 67] << 16)
             + (body[data_offset + 68] << 8)
             + (body[data_offset + 69])
         )
         self.total_thermal0 = (
-            (body[data_offset + 70] << 32)
+            (body[data_offset + 70] << 24)
             + (body[data_offset + 71] << 16)
             + (body[data_offset + 72] << 8)
             + (body[data_offset + 73])
         )
         self.heat_elec_total_consum0 = (
-            (body[data_offset + 74] << 32)
+            (body[data_offset + 74] << 24)
             + (body[data_offset + 75] << 16)
             + (body[data_offset + 76] << 8)
             + (body[data_offset + 77])
         )
         self.heat_elec_total_capacity0 = (
-            (body[data_offset + 78] << 32)
+            (body[data_offset + 78] << 24)
             + (body[data_offset + 79] << 16)
             + (body[data_offset + 80] << 8)
             + (body[data_offset + 81])

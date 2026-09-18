@@ -46,8 +46,10 @@ class TestMideaB1Device:
         """Test initial attributes."""
         assert self.device.attributes[DeviceAttributes.door] is False
         assert self.device.attributes[DeviceAttributes.status] is None
+        assert self.device.attributes[DeviceAttributes.mode] is None
         assert self.device.attributes[DeviceAttributes.time_remaining] is None
         assert self.device.attributes[DeviceAttributes.current_temperature] is None
+        assert self.device.attributes[DeviceAttributes.target_temperature] is None
         assert self.device.attributes[DeviceAttributes.tank_ejected] is False
         assert self.device.attributes[DeviceAttributes.water_change_reminder] is False
         assert self.device.attributes[DeviceAttributes.water_shortage] is False
@@ -79,7 +81,7 @@ class TestMideaB1Device:
         result = self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.door] is True
         assert self.device.attributes[DeviceAttributes.status] == "working"
-        assert self.device.attributes[DeviceAttributes.time_remaining] == 3723
+        assert self.device.attributes[DeviceAttributes.time_remaining] == 62
         assert self.device.attributes[DeviceAttributes.current_temperature] == 50
         assert self.device.attributes[DeviceAttributes.tank_ejected] is True
         assert self.device.attributes[DeviceAttributes.water_change_reminder] is True
@@ -182,11 +184,34 @@ class TestMideaB1Device:
         result = self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.door] is False
         assert self.device.attributes[DeviceAttributes.status] == "idle"
+        assert self.device.attributes[DeviceAttributes.mode] == 0
         assert self.device.attributes[DeviceAttributes.time_remaining] == 0
         assert self.device.attributes[DeviceAttributes.current_temperature] == 32
+        assert self.device.attributes[DeviceAttributes.target_temperature] == 0
         assert self.device.attributes[DeviceAttributes.tank_ejected] is False
         assert self.device.attributes[DeviceAttributes.water_shortage] is False
         assert self.device.attributes[DeviceAttributes.water_change_reminder] is False
+        assert result[DeviceAttributes.status.value] == "idle"
+
+    def test_x01_response_mode_and_target_temperature(self) -> None:
+        """Test X01 response decodes the oven programme number and setpoint.
+
+        Bytes 7 (programme/mode) and 14 (target_temperature) of the X01
+        body were previously ignored entirely. Uses a synthetic body with
+        distinct non-zero values so this cannot pass by coincidentally
+        reusing another field's offset.
+        """
+        header = bytearray(
+            [0xAA, 0x00, DeviceType.B1] + [0x00] * 5 + [ProtocolVersion.V1],
+        ) + bytearray([MessageType.query])
+        body = bytearray(33)
+        body[0] = 0x01  # X01 body type marker
+        body[7] = 83  # mode / programme number
+        body[14] = 180  # target_temperature
+        body[31] = 0x02  # status -> idle
+        result = self.device.process_message(bytes(header + body + bytearray(1)))
+        assert self.device.attributes[DeviceAttributes.mode] == 83
+        assert self.device.attributes[DeviceAttributes.target_temperature] == 180
         assert result[DeviceAttributes.status.value] == "idle"
 
 

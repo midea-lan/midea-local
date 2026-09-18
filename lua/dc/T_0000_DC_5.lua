@@ -13,12 +13,12 @@ local queryTable = {
     [9] = 0x00,
     [10] = 0x03,
     [11] = 0x03,
-    [12] = 0x3C
+    [12] = 0x3C,
 }
 
 local controlMapping = {
-    ["power"] = {["on"] = 0x01, ["off"] = 0x00},
-    ["control_status"] = {["start"] = 0x01, ["pause"] = 0x00},
+    ["power"] = { ["on"] = 0x01, ["off"] = 0x00 },
+    ["control_status"] = { ["start"] = 0x01, ["pause"] = 0x00 },
     ["program"] = {
         ["cotton"] = 0x00,
         ["fiber"] = 0x01,
@@ -69,12 +69,12 @@ local controlMapping = {
         ["fresh_remove_smell"] = 0x2e,
         ["bucket_self_clean"] = 0x2f,
         ["silk"] = 0x30,
-        ["sterilize"] = 0x31
-    }
+        ["sterilize"] = 0x31,
+    },
 }
 
 local reportMapping = {
-    [12] = {["name"] = "power", ["value"] = {[0] = "off", [1] = "on"}},
+    [12] = { ["name"] = "power", ["value"] = { [0] = "off", [1] = "on" } },
     [13] = {
         ["name"] = "running_status",
         ["value"] = {
@@ -86,8 +86,8 @@ local reportMapping = {
             [6] = "delay_choosing",
             [7] = "fault",
             [8] = "delay",
-            [9] = "delay_pause"
-        }
+            [9] = "delay_pause",
+        },
     },
     [15] = {
         ["name"] = "program",
@@ -141,67 +141,67 @@ local reportMapping = {
             [46] = "fresh_remove_smell",
             [47] = "bucket_self_clean",
             [48] = "silk",
-            [49] = "sterilize"
-        }
+            [49] = "sterilize",
+        },
     },
-    [16] = {["name"] = "dry_time", ["length"] = 2},
-    [20] = {["name"] = "intensity"},
-    [21] = {["name"] = "dryness_level"},
-    [22] = {["name"] = "dry_temp"},
+    [16] = { ["name"] = "dry_time", ["length"] = 2 },
+    [20] = { ["name"] = "intensity" },
+    [21] = { ["name"] = "dryness_level" },
+    [22] = { ["name"] = "dry_temp" },
     [23] = {
-        [0x03] = {["name"] = "appointment", ["rshift"] = 0},
-        [0x0c] = {["name"] = "prevent_wrinkle_switch", ["rshift"] = 2},
-        [0x30] = {["name"] = "baby_lock", ["rshift"] = 4},
-        [0xc0] = {["name"] = "light", ["rshift"] = 6}
+        [0x03] = { ["name"] = "appointment", ["rshift"] = 0 },
+        [0x0c] = { ["name"] = "prevent_wrinkle_switch", ["rshift"] = 2 },
+        [0x30] = { ["name"] = "baby_lock", ["rshift"] = 4 },
+        [0xc0] = { ["name"] = "light", ["rshift"] = 6 },
     },
     [24] = {
-        [0x03] = {["name"] = "remind_sound", ["rshift"] = 0},
-        [0x0c] = {["name"] = "sterilize", ["rshift"] = 2},
-        [0x30] = {["name"] = "steam_switch", ["rshift"] = 4},
-        [0xc0] = {["name"] = "damp_dry_signal", ["rshift"] = 6}
+        [0x03] = { ["name"] = "remind_sound", ["rshift"] = 0 },
+        [0x0c] = { ["name"] = "sterilize", ["rshift"] = 2 },
+        [0x30] = { ["name"] = "steam_switch", ["rshift"] = 4 },
+        [0xc0] = { ["name"] = "damp_dry_signal", ["rshift"] = 6 },
     },
-    [25] = {["name"] = "appointment_time", ["length"] = 2},
-    [27] = {["name"] = "progress"},
-    [28] = {["name"] = "remain_time", ["length"] = 2},
+    [25] = { ["name"] = "appointment_time", ["length"] = 2 },
+    [27] = { ["name"] = "progress" },
+    [28] = { ["name"] = "remain_time", ["length"] = 2 },
     [30] = {
-        [0x03] = {["name"] = "eco_dry_switch", ["rshift"] = 0},
-        [0x0c] = {["name"] = "bucket_clean_switch", ["rshift"] = 2}
+        [0x03] = { ["name"] = "eco_dry_switch", ["rshift"] = 0 },
+        [0x0c] = { ["name"] = "bucket_clean_switch", ["rshift"] = 2 },
     },
-    [32] = {["name"] = "project_no", ["length"] = 2},
-    [35] = {["name"] = "error_code"},
-    [36] = {["name"] = "door_warn"},
+    [32] = { ["name"] = "project_no", ["length"] = 2 },
+    [35] = { ["name"] = "error_code" },
+    [36] = { ["name"] = "door_warn" },
     [37] = {
-        [0xf0] = {["name"] = "steam", ["rshift"] = 4},
-        [0x0f] = {["name"] = "prevent_wrinkle", ["rshift"] = 0}
+        [0xf0] = { ["name"] = "steam", ["rshift"] = 4 },
+        [0x0f] = { ["name"] = "prevent_wrinkle", ["rshift"] = 0 },
     },
-    [38] = {["name"] = "ai_switch"},
-    [39] = {["name"] = "material"},
-    [40] = {["name"] = "water_box"}
+    [38] = { ["name"] = "ai_switch" },
+    [39] = { ["name"] = "material" },
+    [40] = { ["name"] = "water_box" },
 }
 
 local commandSpec = {
-    power = {offset = 88, bits = 8},
-    control_status = {offset = 96, bits = 8},
-    program = {offset = 112, bits = 8},
-    dry_time = {offset = 120, bits = 16},
-    intensity = {offset = 152, bits = 8},
-    dryness_level = {offset = 160, bits = 8},
-    dry_temp = {offset = 168, bits = 8},
-    light = {offset = 176, bits = 2},
-    baby_lock = {offset = 178, bits = 2},
-    prevent_wrinkle_switch = {offset = 180, bits = 2},
-    appointment = {offset = 182, bits = 2},
-    damp_dry_signal = {offset = 184, bits = 2},
-    steam_switch = {offset = 186, bits = 2},
-    sterilize = {offset = 188, bits = 2},
-    remind_sound = {offset = 190, bits = 2},
-    appointment_time = {offset = 192, bits = 16},
-    ai_switch = {offset = 234, bits = 2},
-    bucket_clean_switch = {offset = 236, bits = 2},
-    eco_dry_switch = {offset = 238, bits = 2},
-    steam = {offset = 240, bits = 4},
-    prevent_wrinkle = {offset = 244, bits = 4},
-    material = {offset = 248, bits = 8}
+    power = { offset = 88, bits = 8 },
+    control_status = { offset = 96, bits = 8 },
+    program = { offset = 112, bits = 8 },
+    dry_time = { offset = 120, bits = 16 },
+    intensity = { offset = 152, bits = 8 },
+    dryness_level = { offset = 160, bits = 8 },
+    dry_temp = { offset = 168, bits = 8 },
+    light = { offset = 176, bits = 2 },
+    baby_lock = { offset = 178, bits = 2 },
+    prevent_wrinkle_switch = { offset = 180, bits = 2 },
+    appointment = { offset = 182, bits = 2 },
+    damp_dry_signal = { offset = 184, bits = 2 },
+    steam_switch = { offset = 186, bits = 2 },
+    sterilize = { offset = 188, bits = 2 },
+    remind_sound = { offset = 190, bits = 2 },
+    appointment_time = { offset = 192, bits = 16 },
+    ai_switch = { offset = 234, bits = 2 },
+    bucket_clean_switch = { offset = 236, bits = 2 },
+    eco_dry_switch = { offset = 238, bits = 2 },
+    steam = { offset = 240, bits = 4 },
+    prevent_wrinkle = { offset = 244, bits = 4 },
+    material = { offset = 248, bits = 8 },
 }
 
 local function decodeJsonToTable(cmd)
@@ -217,9 +217,11 @@ local function encodeTableToJson(luaTable)
 end
 
 local function checkSum(controlTable)
-    local checksum = 0;
-    for i = 2, #controlTable - 1 do checksum = checksum + controlTable[i]; end
-    return bit.band((bit.bnot(checksum) + 1), 0x00FF);
+    local checksum = 0
+    for i = 2, #controlTable - 1 do
+        checksum = checksum + controlTable[i]
+    end
+    return bit.band((bit.bnot(checksum) + 1), 0x00FF)
 end
 
 local function string2table(hexstr)
@@ -235,13 +237,13 @@ local function string2table(hexstr)
 end
 
 function jsonToData(jsonCmdStr)
-    if (#jsonCmdStr == 0) then return nil end
+    if #jsonCmdStr == 0 then return nil end
     local msgBytes = {}
     local json = decodeJsonToTable(jsonCmdStr)
     local query = json["query"]
     local control = json["control"]
     local tmpTable = {}
-    if (control) then
+    if control then
         local controlTable = {
             [1] = 0xAA,
             [2] = 0x20,
@@ -275,81 +277,78 @@ function jsonToData(jsonCmdStr)
             [30] = 0xFF,
             [31] = 0xFF,
             [32] = 0xFF,
-            [33] = 0x00
+            [33] = 0x00,
         }
         local bits2Config = {
-            [0] = {[0] = 0x3F, [1] = 0x7F, [3] = 0xFF},
-            [2] = {[0] = 0xCF, [1] = 0xDF, [3] = 0xFF},
-            [4] = {[0] = 0xF3, [1] = 0xF7, [3] = 0xFF},
-            [6] = {[0] = 0xFC, [1] = 0xFD, [3] = 0xFF}
+            [0] = { [0] = 0x3F, [1] = 0x7F, [3] = 0xFF },
+            [2] = { [0] = 0xCF, [1] = 0xDF, [3] = 0xFF },
+            [4] = { [0] = 0xF3, [1] = 0xF7, [3] = 0xFF },
+            [6] = { [0] = 0xFC, [1] = 0xFD, [3] = 0xFF },
         }
-        local bits4Config = {[0] = 0x0F, [4] = 0xF0}
+        local bits4Config = { [0] = 0x0F, [4] = 0xF0 }
         for k in pairs(control) do
-            if (commandSpec[k].bits == 8) then
+            if commandSpec[k].bits == 8 then
                 local tableOffset = commandSpec[k].offset / 8 + 1
-                if (controlMapping[k]) then
+                if controlMapping[k] then
                     controlTable[tableOffset] = controlMapping[k][control[k]]
                 else
                     controlTable[tableOffset] = control[k]
                 end
-            elseif (commandSpec[k].bits == 16) then
+            elseif commandSpec[k].bits == 16 then
                 local tableOffset = commandSpec[k].offset / 8 + 1
                 controlTable[tableOffset] = bit.band(control[k], 0xFF)
-                controlTable[tableOffset + 1] = bit.rshift(
-                                                    bit.band(control[k], 0xFF00),
-                                                    8)
-            elseif (commandSpec[k].bits == 2) then
+                controlTable[tableOffset + 1] = bit.rshift(bit.band(control[k], 0xFF00), 8)
+            elseif commandSpec[k].bits == 2 then
                 local tableOffset = math.floor(commandSpec[k].offset / 8) + 1
                 controlTable[tableOffset] =
-                    bit.band(controlTable[tableOffset],
-                             bits2Config[commandSpec[k].offset % 8][control[k]])
-            elseif (commandSpec[k].bits == 4) then
+                    bit.band(controlTable[tableOffset], bits2Config[commandSpec[k].offset % 8][control[k]])
+            elseif commandSpec[k].bits == 4 then
                 local tableOffset = math.floor(commandSpec[k].offset / 8) + 1
-                controlTable[tableOffset] =
-                    bit.band(controlTable[tableOffset],
-                             bit.bor(bits4Config[commandSpec[k].offset % 8],
-                                     bit.lshift(control[k],
-                                                4 - commandSpec[k].offset % 8)))
+                controlTable[tableOffset] = bit.band(
+                    controlTable[tableOffset],
+                    bit.bor(
+                        bits4Config[commandSpec[k].offset % 8],
+                        bit.lshift(control[k], 4 - commandSpec[k].offset % 8)
+                    )
+                )
             end
         end
-        controlTable[#controlTable] = checkSum(controlTable);
+        controlTable[#controlTable] = checkSum(controlTable)
         tmpTable = controlTable
-    elseif (query) then
+    elseif query then
         tmpTable = queryTable
     end
-    local hex = '';
+    local hex = ""
     for key = 1, #tmpTable, 1 do
-        hex = hex .. string.format("%02x", tmpTable[key]);
+        hex = hex .. string.format("%02x", tmpTable[key])
     end
     return hex
 end
 
 function dataToJson(jsonStr)
-    if (not jsonStr) then return nil end
+    if not jsonStr then return nil end
     local json = decodeJsonToTable(jsonStr)
     local binData = string.lower(json["msg"]["data"])
     local reportType = string.sub(binData, 19, 22)
     local byteData = string2table(binData)
     local dataTable = {}
-    if (reportType == '0404' or reportType == '0303' or reportType == '0202') then
+    if reportType == "0404" or reportType == "0303" or reportType == "0202" then
         for k, v in pairs(byteData) do
-            if (reportMapping[k] and reportMapping[k]["value"]) then
-                dataTable[reportMapping[k]["name"]] =
-                    reportMapping[k]["value"][v]
-            elseif (reportMapping[k] and reportMapping[k]["length"] == 2) then
-                dataTable[reportMapping[k]["name"]] =
-                    tonumber(string.format("%d",
-                                           "0x" ..
-                                               string.format("%02x",
-                                                             byteData[k + 1]) ..
-                                               string.format("%02x", byteData[k])))
-            elseif (reportMapping[k] and reportMapping[k]["name"]) then
+            if reportMapping[k] and reportMapping[k]["value"] then
+                dataTable[reportMapping[k]["name"]] = reportMapping[k]["value"][v]
+            elseif reportMapping[k] and reportMapping[k]["length"] == 2 then
+                dataTable[reportMapping[k]["name"]] = tonumber(
+                    string.format(
+                        "%d",
+                        "0x" .. string.format("%02x", byteData[k + 1]) .. string.format("%02x", byteData[k])
+                    )
+                )
+            elseif reportMapping[k] and reportMapping[k]["name"] then
                 dataTable[reportMapping[k]["name"]] = v
-            elseif (reportMapping[k]) then
+            elseif reportMapping[k] then
                 local bitsTable = reportMapping[k]
                 for key in pairs(bitsTable) do
-                    dataTable[bitsTable[key]["name"]] =
-                        bit.rshift(bit.band(v, key), bitsTable[key]["rshift"])
+                    dataTable[bitsTable[key]["name"]] = bit.rshift(bit.band(v, key), bitsTable[key]["rshift"])
                 end
             end
         end

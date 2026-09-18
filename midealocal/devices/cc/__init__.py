@@ -1,7 +1,7 @@
 """Midea local CC device."""
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, override
 
@@ -9,6 +9,7 @@ from midealocal.base_classes.climate import (
     MideaClimateDevice,
     MideaFanMode,
     MideaHVACMode,
+    MideaPreset,
     MideaSwingMode,
 )
 from midealocal.const import DeviceType
@@ -121,6 +122,15 @@ class MideaCCDevice(MideaClimateDevice):
 
     @property
     @override
+    def _preset_attributes(self) -> Mapping[MideaPreset, str]:
+        """Midea CC device presets."""
+        return {
+            MideaPreset.SLEEP: DeviceAttributes.sleep_mode,
+            MideaPreset.ECO: DeviceAttributes.eco_mode,
+        }
+
+    @property
+    @override
     def hvac_modes(self) -> set[MideaHVACMode]:
         """Midea CC device HVAC modes."""
         return MideaCCDevice._device_hvac_modes
@@ -222,6 +232,37 @@ class MideaCCDevice(MideaClimateDevice):
             attr=DeviceAttributes.swing,
             value=swing_mode == DeviceSwingMode.ON,
         )
+
+    @override
+    def current_temperature(self) -> float | None:
+        """Midea CC device current temperature."""
+        value = self._attributes.get(DeviceAttributes.indoor_temperature, None)
+        if not isinstance(value, (int, float)):
+            return None
+        return float(value)
+
+    @override
+    def current_humidity(self) -> float | None:
+        """Midea CC device current humidity."""
+        return None
+
+    @override
+    def target_temperature(self, zone: int | None = None) -> float | None:
+        """Midea CC device target temperature."""
+        value = self._attributes.get(DeviceAttributes.target_temperature, None)
+        if not isinstance(value, (int, float)):
+            return None
+        return float(value)
+
+    @override
+    def turn_on(self, zone: int | None = None) -> None:
+        """Midea CC device turn on."""
+        self.set_attribute(attr=DeviceAttributes.power, value=True)
+
+    @override
+    def turn_off(self, zone: int | None = None) -> None:
+        """Midea CC device turn off."""
+        self.set_attribute(attr=DeviceAttributes.power, value=False)
 
     @property
     @override
@@ -364,9 +405,15 @@ class MideaCCDevice(MideaClimateDevice):
             if (speed := self._fan_speed_code(str(value))) is not None:
                 self._send_fe_control([(CCControlId.FAN_SPEED, speed)])
         elif attr == DeviceAttributes.eco_mode:
-            self._send_fe_control([(CCControlId.ECO, 1 if value else 0)])
+            controls = [(CCControlId.ECO, 1 if value else 0)]
+            if value:
+                controls.append((CCControlId.SLEEP, 0))
+            self._send_fe_control(controls)
         elif attr == DeviceAttributes.sleep_mode:
-            self._send_fe_control([(CCControlId.SLEEP, 1 if value else 0)])
+            controls = [(CCControlId.SLEEP, 1 if value else 0)]
+            if value:
+                controls.append((CCControlId.ECO, 0))
+            self._send_fe_control(controls)
         elif attr == DeviceAttributes.swing:
             self._send_fe_control([(CCControlId.SWING, 0x06 if value else 0x00)])
         # other attributes are not supported by the 0xFE control protocol

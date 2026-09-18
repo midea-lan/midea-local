@@ -92,7 +92,7 @@ class MessageMainLightBody(MessageBody):
         self.brightness = self.read_byte(body, 1)
         self.color_temperature = self.read_byte(body, 2)
         self.effect = self.read_byte(body, 3) - 1
-        if self.effect > MAX_EFFECT:
+        if self.effect > MAX_EFFECT or self.effect < 0:
             self.effect = 1
         self.power = self.read_byte(body, 8) > 0
 

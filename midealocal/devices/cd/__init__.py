@@ -13,6 +13,7 @@ from midealocal.device import (
     MideaDeviceInitKwargs,
     sentinel_translator,
 )
+from midealocal.message import MessageType
 
 from .message import (
     DailyTimerSchedule,
@@ -412,6 +413,23 @@ class MideaCDDevice(MideaDevice):
 
         return _translate
 
+    def _make_power_translator(self, message: object) -> Callable[[bool], Any]:
+        """Distrust the power bit from a SET echo.
+
+        CD01MessageBody (controlType=0x01 SET response echo) parses power
+        straight from the echoed body regardless of whether it reflects
+        real device state. A stale/incorrect echoed value would otherwise
+        be stored and then replayed into the next temperature/mode SET
+        frame, silently switching the unit off. Genuine status/notify/query
+        frames still update power normally.
+        """
+        is_set_echo = getattr(message, "message_type", None) == MessageType.set
+
+        def _translate(value: bool) -> Any:  # noqa: ANN401
+            return SKIP_ATTRIBUTE if is_set_echo else value
+
+        return _translate
+
     def _mode_key(self, value: str) -> int | None:
         """Return the protocol key from the capability-selected mode map."""
         return next(
@@ -537,6 +555,8 @@ class MideaCDDevice(MideaDevice):
                 # corrupting the displayed mode; the next status notification
                 # will correct it.
                 DeviceAttributes.mode: self._make_mode_translator(message),
+                # Distrust a SET echo's power bit; see _make_power_translator.
+                DeviceAttributes.power: self._make_power_translator(message),
                 **{
                     attr: self._make_temperature_translator(attr)
                     for attr in temperature_attrs
@@ -765,38 +785,20 @@ class MideaCDDevice(MideaDevice):
             )
             return
 
-        # Power, mode, temperature, max_temperature, and vacation use controlType=0x01.
+        # Power, mode, temperature and vacation use controlType=0x01.
+        # max_temperature (tsMax) and schedule_mode are read-only: no Midea CD
+        # Lua plugin writes them in any SET body.
         if attr in [
             DeviceAttributes.mode,
             DeviceAttributes.power,
             DeviceAttributes.target_temperature,
             DeviceAttributes.vacation_mode,
             DeviceAttributes.vacation_days,
-            DeviceAttributes.max_temperature,
-            DeviceAttributes.schedule_mode,
         ]:
-            if (
-                attr
-                in {
-                    DeviceAttributes.max_temperature,
-                    DeviceAttributes.schedule_mode,
-                }
-                and not self._is_extended_water_heater()
-            ):
-                _LOGGER.warning(
-                    "[%s] %s write requires reported CD support",
-                    self.device_id,
-                    attr,
-                )
-                return
             message = MessageSet(self._message_protocol_version)
             message.fields = dict(self._fields) if self._fields else {}
             # align temperature encoding with lua protocol selection
             message.use_old_protocol = self._lua_protocol == LuaProtocol.old
-            schedule_mode = self._attributes.get(DeviceAttributes.schedule_mode)
-            message.schedule_mode = (
-                int(schedule_mode) if isinstance(schedule_mode, int | float) else 0
-            )
 
             # Get safe current values
             current_power = self._attributes.get(DeviceAttributes.power, False)
@@ -813,8 +815,7 @@ class MideaCDDevice(MideaDevice):
                 self._attributes.get(DeviceAttributes.fahrenheit, False),
             )
 
-            # full[21] vacationTsValue — not max temperature.
-            # full[23] tsMax — must be the device max (issue #468); 0 clamps SP.
+            # full[21] vacationTsValue — only sent for vacation controls.
             if attr in (
                 DeviceAttributes.target_temperature,
                 DeviceAttributes.mode,
@@ -829,13 +830,6 @@ class MideaCDDevice(MideaDevice):
                     if isinstance(vac_temp, int | float) and vac_temp > 0
                     else 0.0
                 )
-            mx = self._attributes.get(DeviceAttributes.max_temperature)
-            try:
-                message.ts_max = (
-                    int(mx) if isinstance(mx, int | float) and mx > 0 else 0
-                )
-            except (TypeError, ValueError):
-                message.ts_max = 0
 
             # Ensure temperature is valid (not None/0)
             if isinstance(current_temp, int | float) and current_temp > 0:
@@ -921,24 +915,6 @@ class MideaCDDevice(MideaDevice):
                 message.vacation_flag = True
                 message.vacation_days = days
 
-            elif attr == DeviceAttributes.max_temperature:
-                # max_temperature is the configurable tsMax setting; the
-                # immutable device bounds are reported by the two limit attrs.
-                lower = self._attributes.get(
-                    DeviceAttributes.max_temperature_lower_limit,
-                )
-                upper = self._attributes.get(
-                    DeviceAttributes.max_temperature_upper_limit,
-                )
-                minimum = int(lower) if isinstance(lower, int | float) else 35
-                maximum = int(upper) if isinstance(upper, int | float) else 70
-                message.ts_max = max(minimum, min(maximum, int(float(value))))
-                if message.target_temperature > message.ts_max:
-                    message.target_temperature = float(message.ts_max)
-
-            elif attr == DeviceAttributes.schedule_mode:
-                message.schedule_mode = max(0, min(2, int(value)))
-
             # persist only safe fields; SET echoes often return openPTC=1 / bad Tr
             self._fields = self._sanitize_set_fields(message.fields)
             # Avoid replaying SET-echo junk into the next control frame
@@ -947,22 +923,19 @@ class MideaCDDevice(MideaDevice):
 
     @staticmethod
     def _sanitize_set_fields(fields: dict[Any, Any]) -> dict[Any, Any]:
-        """Strip SET-echo junk so it is not replayed into the next frame.
+        """Keep only a valid Tr value from a SET echo.
 
-        Drops openPTC/ptcTemp/byte8 (openPTC is forced 0 by MessageSet) and
-        removes an out-of-range trValue so only a valid Tr survives.
+        SET echoes may report openPTC=1 or an out-of-range trValue; neither
+        should be replayed into the next control frame.
         """
-        clean = dict(fields)
-        for key in ("openPTC", "ptcTemp", "byte8"):
-            clean.pop(key, None)
-        tr = clean.get("trValue")
+        tr = fields.get("trValue")
         try:
             tr_i = int(tr) if tr is not None else 0
         except (TypeError, ValueError):
             tr_i = 0
-        if tr_i < MessageSet.TR_VALUE_MIN or tr_i > MessageSet.TR_VALUE_MAX:
-            clean.pop("trValue", None)
-        return {k: v for k, v in clean.items() if k == "trValue"}
+        if MessageSet.TR_VALUE_MIN <= tr_i <= MessageSet.TR_VALUE_MAX:
+            return {"trValue": tr_i}
+        return {}
 
     def set_customize(self, customize: str) -> None:
         """Midea CD device set customize."""

@@ -4,11 +4,18 @@ from unittest.mock import patch
 
 import pytest
 
+from midealocal.base_classes.climate import MideaPreset
 from midealocal.const import ProtocolVersion
-from midealocal.devices.fb import DeviceAttributes, MideaFBDevice
+from midealocal.devices.fb import (
+    FB_MAX_TARGET_TEMPERATURE,
+    FB_MIN_TARGET_TEMPERATURE,
+    DeviceAttributes,
+    DeviceHumidityMode,
+    MideaFBDevice,
+)
 from midealocal.devices.fb.message import MessageQuery, MessageSet
 from midealocal.message import MessageType
-from tests.base_classes_test import DummyHVACMode
+from tests.base_classes.climate_test import DummyHVACMode
 
 
 class TestMideaFBDevice:
@@ -36,6 +43,7 @@ class TestMideaFBDevice:
         """Test initial attributes."""
         assert self.device.attributes[DeviceAttributes.power] is False
         assert self.device.attributes[DeviceAttributes.mode] is None
+        assert self.device.attributes[DeviceAttributes.humidity_mode] is None
         assert self.device.attributes[DeviceAttributes.heating_level] == 0
         assert self.device.attributes[DeviceAttributes.target_temperature] is None
         assert self.device.attributes[DeviceAttributes.current_temperature] is None
@@ -51,6 +59,56 @@ class TestMideaFBDevice:
             "fast_heating",
             "standby",
         ]
+        assert self.device.current_temperature() is None
+        assert self.device.current_humidity() is None
+        assert self.device.target_temperature() is None
+
+    @pytest.mark.parametrize(
+        ("mode", "expected_value"),
+        [
+            (DeviceHumidityMode.CLOSE, 0x10),
+            (DeviceHumidityMode.CONST, 0x20),
+            (DeviceHumidityMode.ONE, 0x30),
+            (DeviceHumidityMode.TWO, 0x40),
+            (DeviceHumidityMode.THREE, 0x50),
+        ],
+    )
+    def test_set_humidity_mode(
+        self,
+        mode: DeviceHumidityMode,
+        expected_value: int,
+    ) -> None:
+        """Test set humidity mode."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(
+                DeviceAttributes.humidity_mode.value,
+                mode,
+            )
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert isinstance(message, MessageSet)
+            assert message.humidity_mode == expected_value
+
+    def test_set_humidity_mode_invalid(self) -> None:
+        """Test set humidity mode with an invalid mode is rejected."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            with pytest.raises(ValueError, match="Unsupported humidity mode"):
+                self.device.set_attribute(
+                    DeviceAttributes.humidity_mode.value,
+                    "invalid",
+                )
+            mock_build_send.assert_not_called()
+
+    def test_power_on_power_off(self) -> None:
+        """Test power on and power off."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.turn_on()
+            assert mock_build_send.call_count == 1
+            assert mock_build_send.call_args[0][0].power is True
+            mock_build_send.reset_mock()
+            self.device.turn_off()
+            assert mock_build_send.call_count == 1
+            assert mock_build_send.call_args[0][0].power is False
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -73,6 +131,7 @@ class TestMideaFBDevice:
         body[5] = 3  # heating_level
         body[6] = 66  # target_temperature = 25
         body[7] = 50  # target_humidity
+        body[9] = 0x40  # humidity_mode
         body[12] = 45  # current_humidity
         body[13] = 45  # current_temperature = 25
         body[18] = 0x01  # child_lock
@@ -86,7 +145,20 @@ class TestMideaFBDevice:
         assert self.device.attributes[DeviceAttributes.target_temperature] == 25
         assert self.device.attributes[DeviceAttributes.current_temperature] == 25
         assert self.device.attributes[DeviceAttributes.child_lock] is True
+        assert self.device.attributes[DeviceAttributes.humidity_mode] == "two"
         assert new_status[DeviceAttributes.mode.value] == "eco"
+        assert self.device.current_temperature() == 25.0
+        assert self.device.target_temperature() == 25.0
+        assert self.device.current_humidity() == 45.0
+
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.power, False)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert isinstance(message, MessageSet)
+            assert message.power is False
+            assert message.mode == 2
+            assert message.humidity_mode == 0x40
 
     def test_process_message_unknown_mode_and_short_body(self) -> None:
         """Test process message with an unknown mode and a short body."""
@@ -96,6 +168,7 @@ class TestMideaFBDevice:
         body = bytearray(18)
         body[0] = 0x00  # power off
         body[4] = 0x09  # unknown mode
+        body[12] = 0  # current_humidity = 0
         body[13] = 40  # current_temperature = 20
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
@@ -104,6 +177,8 @@ class TestMideaFBDevice:
         assert self.device.attributes[DeviceAttributes.current_temperature] == 20
         # short body has no child_lock byte, attribute keeps its default
         assert self.device.attributes[DeviceAttributes.child_lock] is False
+        assert self.device.attributes[DeviceAttributes.current_humidity] is None
+        assert self.device.current_humidity() is None
 
     def test_process_message_unhandled_type(self) -> None:
         """Test process message with an unhandled message type updates nothing."""
@@ -126,13 +201,40 @@ class TestMideaFBDevice:
             assert message.mode == 0x02
 
     def test_set_attribute_mode_invalid(self) -> None:
-        """Test set attribute mode with an invalid mode name leaves mode unset."""
+        """Test set attribute mode with an invalid mode name is rejected.
+
+        Previously an unrecognized mode still reached build_send with
+        mode left at None, which MessageSet.body then encodes as a real
+        mode=0 byte on the wire instead of the write being rejected.
+        """
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.mode.value, "invalid")
-            mock_build_send.assert_called_once()
-            message = mock_build_send.call_args[0][0]
-            assert isinstance(message, MessageSet)
-            assert message.mode is None
+            with pytest.raises(ValueError, match="Unsupported mode"):
+                self.device.set_attribute(DeviceAttributes.mode.value, "invalid")
+            mock_build_send.assert_not_called()
+
+    def test_preset_modes(self) -> None:
+        """Test preset modes expose the device's named heating modes."""
+        assert self.device.preset_modes == self.device.modes
+
+        self.device._attributes[DeviceAttributes.mode] = MideaPreset.ECO
+        active_preset = self.device.preset_mode
+        assert active_preset == "eco"
+
+        self.device._attributes[DeviceAttributes.mode] = 5
+        invalid_preset = self.device.preset_mode
+        assert invalid_preset is None
+
+        with patch.object(self.device, "set_attribute") as mock_set:
+            self.device.set_preset_mode("comfort")
+        mock_set.assert_called_once_with(attr=DeviceAttributes.mode, value="comfort")
+
+        with pytest.raises(ValueError, match="Unsupported preset mode: bogus"):
+            self.device.set_preset_mode("bogus")
+
+    def test_target_temperature_bounds(self) -> None:
+        """Test FB exposes its fixed target temperature range."""
+        assert self.device.min_temperature() == FB_MIN_TARGET_TEMPERATURE
+        assert self.device.max_temperature() == FB_MAX_TARGET_TEMPERATURE
 
     @pytest.mark.parametrize(
         ("attr", "value"),

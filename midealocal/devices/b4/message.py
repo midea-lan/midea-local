@@ -54,19 +54,19 @@ class B4MessageBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         """Initialize B4 message body."""
         super().__init__(body)
-        self.time_remaining = (
-            (0 if body[22] == MAX_BYTE_VALUE else body[22]) * 3600
-            + (0 if body[23] == MAX_BYTE_VALUE else body[23]) * 60
-            + (0 if body[24] == MAX_BYTE_VALUE else body[24])
+        self.time_remaining = (0 if body[22] == MAX_BYTE_VALUE else body[22]) * 60 + (
+            0 if body[23] == MAX_BYTE_VALUE else body[23]
         )
         self.current_temperature = (body[25] << 8) + body[26]
         if self.current_temperature == 0:
             self.current_temperature = (body[27] << 8) + body[28]
         self.status = body[31]
+        # door and the water flags share the same flag byte, matching the
+        # B1 X01 body (physically confirmed) and the BF body.
         self.door = (body[32] & 0x02) > 0
-        self.tank_ejected = (body[16] & 0x04) > 0
-        self.water_shortage = (body[16] & 0x08) > 0
-        self.water_change_reminder = (body[16] & 0x10) > 0
+        self.tank_ejected = (body[32] & 0x04) > 0
+        self.water_shortage = (body[32] & 0x08) > 0
+        self.water_change_reminder = (body[32] & 0x10) > 0
 
 
 class MessageB4Response(MessageResponse):
