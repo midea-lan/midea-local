@@ -15,6 +15,74 @@ TEMP_NEG_VALUE = 127
 # Outdoor fan speed is transmitted as RPM / 10.
 FAN_SPEED_FACTOR = 10
 
+# Error code lookup (source: Midea Modbus documentation V4.7,
+# 0052003044313 V.E, "Error code table 1", page 11).
+# Format: raw_value -> (display_code, human_description).
+# All entries below were cross-checked against that source; the four
+# codes previously marked "unknown" (Hd, HE, L2, L9) plus L8 are now
+# filled in, and three codes (E1, H9, HA) whose text had been
+# shifted from neighbouring rows during transcription are corrected.
+C3_ERROR_CODE_TABLE: dict[int, tuple[str, str]] = {
+    1: ("E0", "Water flow fault (E8 displayed 3 times)"),
+    2: (
+        "E1",
+        (
+            "Phase loss, or neutral and live wire connected reversely "
+            "(three-phase units only)"
+        ),
+    ),
+    3: ("E2", "Communication fault between controller and hydraulic module"),
+    4: ("E3", "Final outlet water temp. sensor (T1) fault"),
+    5: ("E4", "Water tank temp. sensor (T5) fault"),
+    6: ("E5", "Condenser outlet refrigerant temp. sensor (T3) fault"),
+    7: ("E6", "Ambient temp. sensor (T4) fault"),
+    8: ("E7", "Buffer tank up temp. sensor (Tbt1) fault"),
+    9: ("E8", "Water flow failure"),
+    10: ("E9", "Suction temp. sensor (Th) fault"),
+    11: ("EA", "Discharge temp. sensor (Tp) fault"),
+    12: ("Eb", "Solar temp. sensor (Tsolar) fault"),
+    13: ("Ec", "Buffer tank low temp. sensor (Tbt2) fault"),
+    14: ("Ed", "Inlet water temp. sensor (Tw_in) malfunction"),
+    15: ("EE", "Hydraulic module EEPROM failure"),
+    20: ("P0", "Low pressure switch protection"),
+    21: ("P1", "High pressure switch protection"),
+    23: ("P3", "Compressor overcurrent protection"),
+    24: ("P4", "High discharge temperature protection"),
+    25: ("P5", "|Tw_out - Tw_in| value too big protection"),
+    26: ("P6", "Inverter module protection"),
+    31: ("Pb", "Anti-freeze mode"),
+    33: ("Pd", "High refrigerant outlet temp. protection of condenser"),
+    38: ("PP", "Tw_out - Tw_in unusual protection"),
+    39: ("H0", "Communication fault: hydraulic PCB B <-> main control PCB B"),
+    40: ("H1", "Communication fault: inverter PCB A <-> main control PCB B"),
+    41: ("H2", "Refrigerant liquid temp. sensor (T2) fault"),
+    42: ("H3", "Refrigerant gas temp. sensor (T2B) fault"),
+    43: ("H4", "Three times P6 (L0/L1) protection"),
+    44: ("H5", "Room temp. sensor (Ta) fault"),
+    45: ("H6", "DC fan motor fault"),
+    46: ("H7", "Voltage protection"),
+    47: ("H8", "Pressure sensor fault"),
+    48: ("H9", "Outlet water temp. sensor for Zone 2 (Tw2) fault"),
+    49: ("HA", "Outlet water temp. sensor (Tw_out) fault"),
+    50: ("Hb", "3 times PP protection and Tw_out < 7C"),
+    52: ("Hd", "Communication fault between hydraulic modules (parallel)"),
+    53: ("HE", "Communication error: main board <-> thermostat transfer board"),
+    54: ("HF", "Inverter module board EEPROM fault"),
+    55: ("HH", "H6 displayed 10 times in 2 hours"),
+    57: ("HP", "Low pressure protection (Pe<0.6) occurred 3 times in 1 hour"),
+    65: ("C7", "Transducer module temperature too high protection"),
+    112: ("bH", "PED PCB fault"),
+    116: ("F1", "Low DC generatrix voltage protection"),
+    134: ("L0", "Module protection"),
+    135: ("L1", "DC generatrix low voltage protection"),
+    136: ("L2", "DC generatrix high voltage protection"),
+    138: ("L4", "MCE fault"),
+    139: ("L5", "Zero speed protection"),
+    141: ("L7", "Phase sequence fault"),
+    142: ("L8", "Speed difference > 15Hz between front and back clock"),
+    143: ("L9", "Speed difference > 15Hz between real and setting speed"),
+}
+
 
 class C3SilentLevel(IntEnum):
     """C3 Silent Level."""
@@ -308,6 +376,14 @@ class C3BasicBody(MessageBody):
         self.dhw_temp_min = float(body[data_offset + 20])
         self.tank_actual_temperature = float(body[data_offset + 21])
         self.error_code = body[data_offset + 22]
+        if self.error_code == 0:
+            self.error_code_description = "No error"
+        else:
+            _code_info = C3_ERROR_CODE_TABLE.get(self.error_code)
+            if _code_info:
+                self.error_code_description = f"{_code_info[0]}: {_code_info[1]}"
+            else:
+                self.error_code_description = f"Unknown code (raw={self.error_code})"
         self.tbh_control = body[data_offset + 23] & 0x80 > 0
         self.SysEnergyAnaEN = body[data_offset + 23] & 0x20 > 0
         self.HMIEnergyAnaSetEN = body[data_offset + 23] & 0x40 > 0
@@ -593,6 +669,15 @@ class C3UnitParaUpBody(MessageBody):
 
 class MessageC3Response(MessageResponse):
     """C3 message response."""
+
+    # Populated dynamically by MessageResponse.set_attr(), which copies
+    # every attribute of the parsed body onto the response via setattr().
+    # mypy cannot see attributes added that way; declaring them here as
+    # class-level annotations has no effect on runtime behaviour (set_attr()
+    # remains the only place that assigns them) and only gives mypy the
+    # static type it needs for the accesses in message_c3_test.py.
+    error_code: int
+    error_code_description: str
 
     def __init__(self, message: bytes) -> None:
         """Initialize C3 message response."""

@@ -899,3 +899,140 @@ class TestC3UnitParaOutdoorTelemetryOffsets:
         response = self._build_response(values)
         assert hasattr(response, attribute)
         assert getattr(response, attribute) == expected
+
+
+class TestC3ErrorCodeDescription:
+    """Test C3 error_code_description derived from C3_ERROR_CODE_TABLE."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_header(self) -> None:
+        """Do setup header."""
+        self.header = bytearray(
+            [
+                0xAA,
+                0x00,
+                0xC3,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x00,  # message type
+            ],
+        )
+
+    def _build_body(self, error_code: int) -> bytearray:
+        """Build a minimal X01 body with the given error_code byte."""
+        return bytearray(
+            [
+                ListTypes.X01,
+                0x0,  # BYTE 1
+                0x0,  # BYTE 2
+                0x0,  # BYTE 3
+                0x0,  # BYTE 4: Mode
+                0x0,  # BYTE 5: Mode Auto
+                0,  # BYTE 6: Zone1 Target Temp
+                0,  # BYTE 7: Zone2 Target Temp
+                0,  # BYTE 8: DHW Target Temp
+                0,  # BYTE 9: Room Target Temp * 2
+                0,  # BYTE 10
+                0,  # BYTE 11
+                0,  # BYTE 12
+                0,  # BYTE 13
+                0,  # BYTE 14
+                0,  # BYTE 15
+                0,  # BYTE 16
+                0,  # BYTE 17
+                0,  # BYTE 18
+                0,  # BYTE 19
+                0,  # BYTE 20
+                0,  # BYTE 21
+                0,  # BYTE 22: tank_actual_temperature
+                error_code,  # BYTE 23: error_code
+                0x0,  # BYTE 24; tbh_control
+                0x0,  # CRC
+            ],
+        )
+
+    def test_error_code_zero_is_no_error(self) -> None:
+        """error_code 0 maps to the 'No error' description."""
+        self.header[-1] = MessageType.query
+        response = MessageC3Response(bytes(self.header + self._build_body(0)))
+
+        assert response.error_code == 0
+        assert response.error_code_description == "No error"
+
+    def test_error_code_known_value_maps_to_table_entry(self) -> None:
+        """A known error_code maps to its display code and description."""
+        self.header[-1] = MessageType.query
+        response = MessageC3Response(bytes(self.header + self._build_body(9)))
+
+        assert response.error_code == 9
+        assert response.error_code_description == ("E8: Water flow failure")
+
+    def test_error_code_unknown_value_falls_back_to_raw(self) -> None:
+        """An error_code with no table entry reports the raw value."""
+        self.header[-1] = MessageType.query
+        response = MessageC3Response(bytes(self.header + self._build_body(200)))
+
+        assert response.error_code == 200
+        assert response.error_code_description == "Unknown code (raw=200)"
+
+    @pytest.mark.parametrize(
+        ("error_code", "expected_description"),
+        [
+            (
+                2,
+                (
+                    "E1: Phase loss, or neutral and live wire connected reversely "
+                    "(three-phase units only)"
+                ),
+            ),
+            (48, "H9: Outlet water temp. sensor for Zone 2 (Tw2) fault"),
+            (49, "HA: Outlet water temp. sensor (Tw_out) fault"),
+            (
+                52,
+                "Hd: Communication fault between hydraulic modules (parallel)",
+            ),
+            (
+                53,
+                "HE: Communication error: main board <-> thermostat transfer board",
+            ),
+            (136, "L2: DC generatrix high voltage protection"),
+            (141, "L7: Phase sequence fault"),
+            (142, "L8: Speed difference > 15Hz between front and back clock"),
+            (143, "L9: Speed difference > 15Hz between real and setting speed"),
+        ],
+        ids=[
+            "raw_2_E1",
+            "raw_48_H9",
+            "raw_49_HA",
+            "raw_52_Hd",
+            "raw_53_HE",
+            "raw_136_L2",
+            "raw_141_L7",
+            "raw_142_L8",
+            "raw_143_L9",
+        ],
+    )
+    def test_error_code_corrected_entries_match_source_pdf(
+        self,
+        error_code: int,
+        expected_description: str,
+    ) -> None:
+        """Regression test for entries fixed against Modbus V4.7 table 1.
+
+        These nine raw codes previously either carried text shifted from a
+        neighbouring row (2, 48, 49) or a placeholder "Unknown / description
+        unclear in source document" (52, 53, 136, 142, 143), or an unsourced
+        addition (141). Values are taken from Midea Modbus documentation
+        V4.7 (0052003044313 V.E), "Error code table 1", page 11.
+        """
+        self.header[-1] = MessageType.query
+        response = MessageC3Response(
+            bytes(self.header + self._build_body(error_code)),
+        )
+
+        assert response.error_code == error_code
+        assert response.error_code_description == expected_description

@@ -91,6 +91,7 @@ class DeviceAttributes(StrEnum):
     eco_mode = "eco_mode"
     tbh = "tbh"
     error_code = "error_code"
+    error_code_description = "error_code_description"
 
 
 class MideaC3Device(MideaDevice):
@@ -174,6 +175,7 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.fg_capacity_need: None,
                 DeviceAttributes.instant_power0: None,
                 DeviceAttributes.error_code: 0,
+                DeviceAttributes.error_code_description: "No error",
             },
         )
         self._default_temperature_step: float = 0.5
