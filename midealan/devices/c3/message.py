@@ -12,6 +12,58 @@ from midealan.message import (
 )
 
 TEMP_NEG_VALUE = 127
+
+
+# Serial-number blocks appended to the X10 telemetry frame. The lua splits
+# the tail into three fixed 32-byte ASCII blocks (1-indexed):
+#   iduSNCode = _bodyBytes[96..127]
+#   oduSNCode = _bodyBytes[128..159]
+#   hmiSNCode = _bodyBytes[160..191]
+# Only the HMI block is decoded; on the captured 171H120F the IDU and ODU
+# blocks are dash-filled. Unused positions are padded with "-", and a block
+# shorter than its full width is NUL-terminated.
+SN_BLOCK_LENGTH = 32
+HMI_SN_BLOCK_OFFSET = 159
+
+
+def _parse_sn_block(
+    body: bytearray,
+    data_offset: int,
+    block_offset: int,
+) -> str | None:
+    """Decode one fixed-width, dash-padded ASCII serial-number block.
+
+    Returns None when the frame stops before the block, when the block holds
+    only padding, or when its content is not printable ASCII.
+    """
+    start = data_offset + block_offset
+    end = start + SN_BLOCK_LENGTH
+    if len(body) < end:
+        return None
+    block = bytes(body[start:end])
+    terminator = block.find(0)
+    if terminator == -1:
+        # No NUL in the block: only a fully populated 32-byte value is
+        # valid. A dash-padded block with no terminator is a partial or
+        # corrupt record, not a short serial that happens to fill the slot.
+        if block.strip(b"-") != block:
+            return None
+    else:
+        # Bytes after the terminator must be pure dash padding. Anything
+        # else (garbage, a second value) makes the record untrustworthy.
+        if block[terminator + 1 :].strip(b"-"):
+            return None
+        block = block[:terminator]
+    candidate = block.strip(b"-").strip()
+    if not candidate:
+        return None
+    try:
+        decoded = candidate.decode("ascii")
+    except UnicodeDecodeError:
+        return None
+    return decoded if decoded.isprintable() else None
+
+
 # Outdoor fan speed is transmitted as RPM / 10.
 FAN_SPEED_FACTOR = 10
 
@@ -588,6 +640,37 @@ class C3UnitParaBody(MessageBody):
             + (self.read_byte(body, data_offset + 88) << 8)
             + self.read_byte(body, data_offset + 89)
         )
+        # ------------------------------------------------------------------
+        # IDU / ODU software versions (Modbus reg 130 / reg 1042 mapped
+        # into X10 telemetry frame). Verified against wired HMI:
+        #   raw byte offset 93 = IDU sw version (HMI shows "V<n>")
+        #   raw byte offset 94 = ODU sw version (HMI shows "V<n>")
+        # Guard: leave version bytes unset when the frame is short. This
+        # reads body[...] directly rather than going through read_byte()
+        # like the rest of the method on purpose -- read_byte() defaults to
+        # 0, which would surface as "V0" and be indistinguishable from a
+        # unit actually reporting version 0. None says "not reported".
+        self.idu_software_version: int | None = None
+        self.odu_software_version: int | None = None
+        if len(body) > data_offset + 94:
+            self.idu_software_version = body[data_offset + 93]
+            self.odu_software_version = body[data_offset + 94]
+        self.idu_software_version_str = (
+            f"V{self.idu_software_version}"
+            if self.idu_software_version is not None
+            else None
+        )
+        self.odu_software_version_str = (
+            f"V{self.odu_software_version}"
+            if self.odu_software_version is not None
+            else None
+        )
+        # HMI serial number, read at its fixed block offset.
+        self.hmi_sn_code: str | None = _parse_sn_block(
+            body,
+            data_offset,
+            HMI_SN_BLOCK_OFFSET,
+        )
 
 
 class C3UnitParaUpBody(MessageBody):
@@ -678,6 +761,14 @@ class MessageC3Response(MessageResponse):
     # static type it needs for the accesses in message_c3_test.py.
     error_code: int
     error_code_description: str
+    idu_software_version: int | None
+    odu_software_version: int | None
+    idu_software_version_str: str | None
+    odu_software_version_str: str | None
+    fg_capacity_need: int
+    current_unit_capacity: int
+    total_energy_consumption: int
+    total_produced_energy: int
 
     def __init__(self, message: bytes) -> None:
         """Initialize C3 message response."""

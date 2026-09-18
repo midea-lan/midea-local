@@ -19,6 +19,7 @@ from midealan.devices.c3.message import (
     MessageSetDisinfect,
     MessageSetECO,
     MessageSetSilent,
+    _parse_sn_block,
 )
 from midealan.message import ListTypes, MessageType
 
@@ -899,6 +900,281 @@ class TestC3UnitParaOutdoorTelemetryOffsets:
         response = self._build_response(values)
         assert hasattr(response, attribute)
         assert getattr(response, attribute) == expected
+
+
+# Real HMI serial captured from a Hyundai HYHC-V30W/D2RN8 (Midea
+# MHC-V30W/D2RN8, device type 0xC3, protocol 3, Wi-Fi module 171H120F). The
+# lua splits the frame tail into three fixed 32-byte blocks: iduSNCode at
+# _bodyBytes[96..127], oduSNCode at [128..159] and hmiSNCode at [160..191].
+# On this unit the first two are dash-filled and the value below fills the
+# HMI block exactly. The offsets are pinned here on purpose: a change to
+# SN_BLOCK_LENGTH or HMI_SN_BLOCK_OFFSET must break these tests.
+CAPTURED_HMI_SN = b"0000C3310171H120F24114100123MNJ2"
+SN_BLOCK_LEN = 32
+HMI_SN_OFFSET = 159
+
+
+def _sn_block(serial: bytes = CAPTURED_HMI_SN) -> bytes:
+    """Build one fixed-width serial-number block.
+
+    A serial shorter than the block is NUL-terminated and dash-padded, which
+    is how the unit fills a partially used slot.
+    """
+    if len(serial) >= SN_BLOCK_LEN:
+        return serial[:SN_BLOCK_LEN]
+    return serial + b"\x00" + b"-" * (SN_BLOCK_LEN - len(serial) - 1)
+
+
+def _body_with_sn(
+    block: bytes,
+    *,
+    data_offset: int = 1,
+    size: int = 200,
+) -> bytearray:
+    """Place a serial-number block at its fixed offset in a message body."""
+    body = bytearray(size)
+    start = data_offset + HMI_SN_OFFSET
+    body[start : start + len(block)] = block
+    return body
+
+
+class TestParseSnBlock:
+    """Unit tests for the fixed-offset serial-number block decoder."""
+
+    def test_captured_serial_is_decoded(self) -> None:
+        """Test the real captured HMI serial is returned verbatim."""
+        body = _body_with_sn(_sn_block())
+        assert _parse_sn_block(body, 1, HMI_SN_OFFSET) == CAPTURED_HMI_SN.decode()
+
+    def test_block_is_read_relative_to_data_offset(self) -> None:
+        """Test a decoy at another offset is not picked up."""
+        body = _body_with_sn(_sn_block(), data_offset=33, size=240)
+        decoy = _sn_block(b"DECOY")
+        body[1 + HMI_SN_OFFSET : 1 + HMI_SN_OFFSET + SN_BLOCK_LEN] = decoy
+        assert _parse_sn_block(body, 33, HMI_SN_OFFSET) == CAPTURED_HMI_SN.decode()
+        assert _parse_sn_block(body, 1, HMI_SN_OFFSET) == "DECOY"
+
+    def test_padding_only_block_is_rejected(self) -> None:
+        """A block holding nothing but a terminator and padding decodes to None."""
+        block = b"\x00" + b"-" * (SN_BLOCK_LEN - 1)
+        body = _body_with_sn(block)
+        assert _parse_sn_block(body, 1, HMI_SN_OFFSET) is None
+
+    def test_non_ascii_block_is_rejected(self) -> None:
+        """Bytes outside ASCII make the record untrustworthy, not a mojibake serial."""
+        block = b"\xff\xfe\x00" + b"-" * (SN_BLOCK_LEN - 3)
+        body = _body_with_sn(block)
+        assert _parse_sn_block(body, 1, HMI_SN_OFFSET) is None
+
+    def test_non_printable_ascii_block_is_rejected(self) -> None:
+        """Valid ASCII is still rejected when it carries a control character."""
+        block = b"AB\x01CD\x00" + b"-" * (SN_BLOCK_LEN - 6)
+        body = _body_with_sn(block)
+        assert _parse_sn_block(body, 1, HMI_SN_OFFSET) is None
+
+    def test_nul_terminated_short_serial_is_decoded(self) -> None:
+        """Test a serial shorter than the block stops at the terminator."""
+        body = _body_with_sn(_sn_block(b"SHORT1"))
+        assert _parse_sn_block(body, 1, HMI_SN_OFFSET) == "SHORT1"
+
+    def test_all_dash_block_returns_none(self) -> None:
+        """Test an unpopulated, dash-filled slot yields no identifier."""
+        body = _body_with_sn(b"-" * SN_BLOCK_LEN)
+        assert _parse_sn_block(body, 1, HMI_SN_OFFSET) is None
+
+    def test_leading_nul_block_returns_none(self) -> None:
+        """Test a block terminated at its first byte yields no identifier."""
+        body = _body_with_sn(b"\x00" * SN_BLOCK_LEN)
+        assert _parse_sn_block(body, 1, HMI_SN_OFFSET) is None
+
+    def test_short_body_returns_none(self) -> None:
+        """Test a frame ending inside the block is rejected, not truncated.
+
+        The previous scanner returned whatever printable bytes it had when it
+        ran off the end of the buffer; a partial block must yield None.
+        """
+        body = _body_with_sn(_sn_block())[:180]
+        assert _parse_sn_block(body, 1, HMI_SN_OFFSET) is None
+
+    def test_dash_padded_block_without_terminator_returns_none(self) -> None:
+        """Test a padded block with no NUL terminator is rejected.
+
+        A short value followed by dash padding but never NUL-terminated is
+        not a valid record -- the terminator is what marks the value as
+        complete. Flagged by CodeRabbit on 89809e1.
+        """
+        block = b"SHORT1" + b"-" * (SN_BLOCK_LEN - 6)
+        body = _body_with_sn(block)
+        assert _parse_sn_block(body, 1, HMI_SN_OFFSET) is None
+
+    def test_bytes_after_terminator_returns_none(self) -> None:
+        """Test non-padding bytes after the NUL terminator are rejected.
+
+        Only dash padding may follow the terminator. A stray byte there
+        means the block cannot be trusted, even though the bytes before the
+        terminator look like a plausible serial. Flagged by CodeRabbit on
+        89809e1.
+        """
+        block = b"SHORT1\x00\x07" + b"-" * (SN_BLOCK_LEN - 8)
+        body = _body_with_sn(block)
+        assert _parse_sn_block(body, 1, HMI_SN_OFFSET) is None
+
+    def test_full_length_serial_without_terminator_is_decoded(self) -> None:
+        """Test a serial that exactly fills the block needs no terminator.
+
+        A 32-byte value with no dash padding and no NUL is not a partial
+        record -- it simply has nothing left to pad. It must still decode.
+        """
+        block = CAPTURED_HMI_SN
+        assert len(block) == SN_BLOCK_LEN
+        body = _body_with_sn(block)
+        assert _parse_sn_block(body, 1, HMI_SN_OFFSET) == CAPTURED_HMI_SN.decode()
+
+    def test_non_ascii_block_returns_none(self) -> None:
+        """Test non-ASCII bytes are rejected instead of raising."""
+        body = _body_with_sn(b"\xff\xfe\xfd" + b"-" * (SN_BLOCK_LEN - 3))
+        assert _parse_sn_block(body, 1, HMI_SN_OFFSET) is None
+
+    def test_unprintable_block_returns_none(self) -> None:
+        """Test a control character in the block is rejected."""
+        body = _body_with_sn(b"AB\x07CD" + b"-" * (SN_BLOCK_LEN - 5))
+        assert _parse_sn_block(body, 1, HMI_SN_OFFSET) is None
+
+
+class TestC3UnitParaIdentification:
+    """Firmware versions and the HMI serial number in the X10 body.
+
+    The IDU / ODU software version bytes map to Modbus registers 130 and 1042
+    and were cross-checked against the wired HMI, which displays them as
+    "V<n>". Frames that stop before those offsets must keep parsing.
+    """
+
+    HEADER = bytearray(
+        [0xAA, 0x00, 0xC3, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, MessageType.query],
+    )
+
+    @staticmethod
+    def _build_response(
+        values: dict[int, int] | None = None,
+        *,
+        with_sn: bool = True,
+        size: int = 200,
+    ) -> MessageC3Response:
+        """Build an X10 query response, optionally carrying the SN block."""
+        body = bytearray(size)
+        body[0] = ListTypes.X10
+        for index, value in (values or {}).items():
+            body[index] = value
+        if with_sn:
+            block = _sn_block()
+            start = 1 + HMI_SN_OFFSET
+            body[start : start + len(block)] = block
+        header = TestC3UnitParaIdentification.HEADER
+        return MessageC3Response(bytes(header + body))
+
+    def test_software_versions_are_read_from_their_offsets(self) -> None:
+        """Test IDU and ODU versions come from body offsets 93 and 94.
+
+        The offsets are relative to data_offset, which is 1 for an X10
+        response, so the values below are written at body indices 94 and 95.
+        """
+        response = self._build_response({93: 0, 94: 12, 95: 30, 96: 0})
+        assert hasattr(response, "idu_software_version")
+        assert hasattr(response, "odu_software_version")
+        assert response.idu_software_version == 12
+        assert response.odu_software_version == 30
+
+    def test_software_versions_are_formatted_for_display(self) -> None:
+        """Test the string form matches the "V<n>" shown on the HMI."""
+        response = self._build_response({94: 12, 95: 30})
+        assert hasattr(response, "idu_software_version_str")
+        assert hasattr(response, "odu_software_version_str")
+        assert response.idu_software_version_str == "V12"
+        assert response.odu_software_version_str == "V30"
+
+    def test_short_body_leaves_versions_unset(self) -> None:
+        """Test a frame stopping before the version bytes still parses."""
+        body = bytearray(88)  # body type + 86 data bytes + CRC
+        body[0] = ListTypes.X10
+        response = MessageC3Response(bytes(self.HEADER + body))
+        assert hasattr(response, "idu_software_version")
+        assert response.idu_software_version is None
+        assert response.odu_software_version is None
+        assert response.idu_software_version_str is None
+        assert response.odu_software_version_str is None
+
+    def test_hmi_sn_code_is_exposed(self) -> None:
+        """Test the SN block is surfaced as the HMI serial number."""
+        response = self._build_response()
+        assert hasattr(response, "hmi_sn_code")
+        assert response.hmi_sn_code == CAPTURED_HMI_SN.decode()
+
+    def test_hmi_sn_code_is_none_without_block(self) -> None:
+        """Test a frame with an unpopulated block reports no serial."""
+        response = self._build_response(with_sn=False)
+        assert hasattr(response, "hmi_sn_code")
+        assert response.hmi_sn_code is None
+
+    def test_identification_does_not_disturb_existing_fields(self) -> None:
+        """Test the added parsing leaves earlier X10 offsets untouched."""
+        response = self._build_response({5: 9, 58: 2, 59: 44})
+        assert response.fg_capacity_need == 9
+        assert response.current_unit_capacity == 556
+
+
+class TestC3EnergyBodyHasNoSnBlock:
+    """The notify1 0x04 energy body must not report a serial number.
+
+    Real X04 frames are 175 bytes and stop before the serial-number blocks,
+    so decoding them there only ever produced None. The parsing was removed;
+    these tests keep it from coming back.
+    """
+
+    HEADER = bytearray(
+        [0xAA, 0x00, 0xC3, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, MessageType.notify1],
+    )
+
+    @staticmethod
+    def _build_response(*, with_sn: bool = False) -> MessageC3Response:
+        """Build a notify1 0x04 response, optionally carrying an SN block."""
+        body = bytearray(200)
+        body[0] = ListTypes.X04
+        if with_sn:
+            block = _sn_block()
+            start = 1 + HMI_SN_OFFSET
+            body[start : start + len(block)] = block
+        return MessageC3Response(bytes(TestC3EnergyBodyHasNoSnBlock.HEADER + body))
+
+    def test_energy_body_does_not_expose_a_serial(self) -> None:
+        """Test the notify body exposes no serial attribute."""
+        response = self._build_response()
+        assert response.body_type == ListTypes.X04
+        assert not hasattr(response, "hmi_sn_code")
+
+    def test_serial_bytes_in_the_frame_are_still_ignored(self) -> None:
+        """Test an oversized notify frame is not mined for a serial."""
+        response = self._build_response(with_sn=True)
+        assert not hasattr(response, "hmi_sn_code")
+
+    def test_energy_counters_still_parse(self) -> None:
+        """Test the added parsing does not disturb the energy counters."""
+        header = bytearray(TestC3EnergyBodyHasNoSnBlock.HEADER)
+        body = bytearray(200)
+        body[0] = ListTypes.X04
+        for index, value in {
+            2: 0x01,
+            3: 0x02,
+            4: 0x03,
+            5: 0x04,
+            6: 0x0A,
+            7: 0x0B,
+            8: 0x0C,
+            9: 0x0D,
+        }.items():
+            body[index] = value
+        response = MessageC3Response(bytes(header + body))
+        assert response.total_energy_consumption == 0x01020304
+        assert response.total_produced_energy == 0x0A0B0C0D
 
 
 class TestC3ErrorCodeDescription:
