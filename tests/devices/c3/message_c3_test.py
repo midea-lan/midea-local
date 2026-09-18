@@ -776,6 +776,32 @@ class TestC3UnitParaNotify:
         assert response.temp_tf == 55
         assert response.total_electricity0 == 12192
 
+    def test_comp_total_run_time_from_captured_frame(self) -> None:
+        """Test the compressor hour counter decodes from the real capture."""
+        response = MessageC3Response(bytes(self.HEADER + self.BODY + bytes([0x00])))
+
+        assert hasattr(response, "comp_total_run_time")
+        assert response.comp_total_run_time == 2964
+
+    def test_comp_total_run_time_is_16_bit_big_endian(self) -> None:
+        """Test the counter is lua _bodyBytes[57..58], not a single byte."""
+        body = bytearray(self.BODY)
+        body[57] = 0x12
+        body[58] = 0x34
+        response = MessageC3Response(bytes(self.HEADER + bytes(body) + bytes([0x00])))
+
+        assert response.comp_total_run_time == 0x1234
+
+    def test_comp_total_run_time_does_not_shift_unit_mode_run(self) -> None:
+        """Test the added counter leaves the neighbouring mode byte alone."""
+        body = bytearray(self.BODY)
+        body[57] = 0xFF
+        body[58] = 0xFF
+        response = MessageC3Response(bytes(self.HEADER + bytes(body) + bytes([0x00])))
+
+        assert response.comp_total_run_time == 0xFFFF
+        assert response.unit_mode_run == C3DeviceMode.COOL
+
     def test_query_x05_is_still_the_silence_body(self) -> None:
         """Test a query 0x05 still parses as silence, not as unit parameters."""
         header = bytearray(self.HEADER)

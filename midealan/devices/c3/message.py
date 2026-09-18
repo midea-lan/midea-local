@@ -748,6 +748,14 @@ class C3UnitParaUpBody(MessageBody):
             + (body[data_offset + 55])
         )
         self.unit_mode_run = body[data_offset + 59]
+        # Compressor total run time in hours (u16 BE at lua bytes 57-58,
+        # i.e. body[data_offset + 56 .. + 57]). The capture fixture used
+        # in the tests decodes to 2964 h. Cross-checked on a second unit,
+        # a Galmet Prima 06 GT, where the notify decoded 2365 h against
+        # 2365 h read from the wired HMI at the same time. The X10 query
+        # response does not carry this counter, so this notify is the
+        # only source for it.
+        self.comp_total_run_time = body[data_offset + 56] * 256 + body[data_offset + 57]
 
 
 class MessageC3Response(MessageResponse):
@@ -759,6 +767,8 @@ class MessageC3Response(MessageResponse):
     # class-level annotations has no effect on runtime behaviour (set_attr()
     # remains the only place that assigns them) and only gives mypy the
     # static type it needs for the accesses in message_c3_test.py.
+    comp_total_run_time: int
+    unit_mode_run: int
     error_code: int
     error_code_description: str
     idu_software_version: int | None
