@@ -75,6 +75,56 @@ class TestMideaE2Device:
         assert device.attributes[DeviceAttributes.bottom_temp]
 
     @pytest.mark.parametrize(
+        ("customize", "subtype", "raw_value", "expected_temperature"),
+        [
+            pytest.param("", 1, 80, 40.0, id="half-degree-wire-halves-on-read"),
+            pytest.param(
+                '{"precision_halves": true}',
+                1,
+                40,
+                40.0,
+                id="precision-halves-keeps-raw-value",
+            ),
+            pytest.param(
+                "",
+                255,
+                45,
+                45.0,
+                id="literal-subtype-keeps-raw-value",
+            ),
+        ],
+    )
+    def test_process_message_target_temperature_round_trips(
+        self,
+        customize: str,
+        subtype: int,
+        raw_value: int,
+        expected_temperature: float,
+    ) -> None:
+        """target_temperature must halve on read exactly as it doubles on write.
+
+        Previously the wire value was doubled on write but never halved back
+        on read, so a written setpoint could never round-trip.
+        """
+
+        class FakeMessage:
+            target_temperature = raw_value
+
+        device = self._device(customize, subtype=subtype)
+
+        with patch(
+            "midealocal.devices.e2.MessageE2Response",
+            return_value=FakeMessage(),
+        ):
+            status = device.process_message(b"")
+
+        assert status[DeviceAttributes.target_temperature.value] == expected_temperature
+        assert (
+            device.attributes[DeviceAttributes.target_temperature]
+            == expected_temperature
+        )
+
+    @pytest.mark.parametrize(
         "customize",
         [
             '{"heating_power_multiplier": "nan"}',
@@ -174,7 +224,33 @@ class TestMideaE2Device:
         assert message.protection is True
         assert message.whole_tank_heating is True
         assert message.variable_heating is True
-        assert message.target_temperature == 40.0
+        assert message.target_temperature == 80.0
+
+    def test_set_attribute_old_protocol_reencodes_cached_temperature(self) -> None:
+        """An unrelated old-protocol attribute change must re-encode target_temperature.
+
+        Previously ``make_message_set()`` copied the cached, already-halved
+        target_temperature straight onto the wire, so setting e.g.
+        ``protection`` sent half of the actual target temperature.
+        """
+
+        class FakeMessage:
+            target_temperature = 80
+
+        device = self._device()
+        with patch(
+            "midealocal.devices.e2.MessageE2Response",
+            return_value=FakeMessage(),
+        ):
+            device.process_message(b"")
+        assert device.attributes[DeviceAttributes.target_temperature] == 40.0
+
+        with patch.object(device, "build_send") as mock_build_send:
+            device.set_attribute(DeviceAttributes.protection.value, True)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+        assert isinstance(message, MessageSet)
+        assert message.target_temperature == 80
 
     @pytest.mark.parametrize(
         "attr",
@@ -232,6 +308,23 @@ class TestMideaE2Device:
         assert isinstance(message, MessageNewProtocolSet)
         assert message.target_temperature == 45
         assert message._body == bytearray([0x07, 45])
+
+    def test_set_attribute_old_protocol_ignores_unsupported_attribute(
+        self,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """MessageSet cannot carry sterilization; the old protocol must warn, not no-op.
+
+        Previously ``setattr(message, "sterilization", value)`` silently
+        created an unused instance attribute on ``MessageSet`` and the
+        command still went out with no observable effect.
+        """
+        device = self._device()
+        with patch.object(device, "build_send") as mock_build_send:
+            device.set_attribute(DeviceAttributes.sterilization.value, True)
+            mock_build_send.assert_not_called()
+        assert "sterilization" in caplog.text
+        assert "old protocol" in caplog.text
 
     def test_set_attribute_new_protocol(self) -> None:
         """Test new protocol attributes use the new protocol set message."""
