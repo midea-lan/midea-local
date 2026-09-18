@@ -224,7 +224,33 @@ class TestMideaE2Device:
         assert message.protection is True
         assert message.whole_tank_heating is True
         assert message.variable_heating is True
-        assert message.target_temperature == 40.0
+        assert message.target_temperature == 80.0
+
+    def test_set_attribute_old_protocol_reencodes_cached_temperature(self) -> None:
+        """An unrelated old-protocol attribute change must re-encode target_temperature.
+
+        Previously ``make_message_set()`` copied the cached, already-halved
+        target_temperature straight onto the wire, so setting e.g.
+        ``protection`` sent half of the actual target temperature.
+        """
+
+        class FakeMessage:
+            target_temperature = 80
+
+        device = self._device()
+        with patch(
+            "midealocal.devices.e2.MessageE2Response",
+            return_value=FakeMessage(),
+        ):
+            device.process_message(b"")
+        assert device.attributes[DeviceAttributes.target_temperature] == 40.0
+
+        with patch.object(device, "build_send") as mock_build_send:
+            device.set_attribute(DeviceAttributes.protection.value, True)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+        assert isinstance(message, MessageSet)
+        assert message.target_temperature == 80
 
     @pytest.mark.parametrize(
         "attr",

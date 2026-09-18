@@ -197,7 +197,7 @@ class MideaE2Device(MideaDevice):
     def _halve_target_temperature(self, value: float | None) -> float | None:
         """Undo the write-side doubling for devices on the half-degree wire format.
 
-        Mirrors the ``* 2`` in ``set_attribute()`` so target_temperature can
+        Mirrors ``_encode_target_temperature`` so target_temperature can
         round-trip: devices that double on write (``not precision_halves``,
         outside ``_LITERAL_TEMPERATURE_SUBTYPES``) must halve on read too.
         """
@@ -207,6 +207,21 @@ class MideaE2Device(MideaDevice):
             and self.subtype not in _LITERAL_TEMPERATURE_SUBTYPES
         ):
             return value / 2
+        return value
+
+    def _encode_target_temperature(self, value: float) -> float:
+        """Apply the write-side doubling for devices on the half-degree wire format.
+
+        Mirrors ``_halve_target_temperature`` and must be applied any time
+        ``target_temperature`` is placed on the wire, including when
+        ``make_message_set()`` copies the cached value while setting an
+        unrelated old-protocol attribute.
+        """
+        if (
+            not self._precision_halves
+            and self.subtype not in _LITERAL_TEMPERATURE_SUBTYPES
+        ):
+            return value * 2
         return value
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
@@ -230,9 +245,9 @@ class MideaE2Device(MideaDevice):
         message.whole_tank_heating = self._attributes[
             DeviceAttributes.whole_tank_heating
         ]
-        message.target_temperature = self._attributes[
-            DeviceAttributes.target_temperature
-        ]
+        message.target_temperature = self._encode_target_temperature(
+            self._attributes[DeviceAttributes.target_temperature],
+        )
         message.variable_heating = self._attributes[DeviceAttributes.variable_heating]
         return message
 
@@ -245,12 +260,8 @@ class MideaE2Device(MideaDevice):
             DeviceAttributes.current_temperature,
         ]:
             old_protocol = self._normalize_old_protocol(self._old_protocol)
-            if (
-                attr == DeviceAttributes.target_temperature
-                and not self._precision_halves
-                and self.subtype not in _LITERAL_TEMPERATURE_SUBTYPES
-            ):
-                value = value * 2
+            if attr == DeviceAttributes.target_temperature:
+                value = self._encode_target_temperature(float(value))
             if attr == DeviceAttributes.power:
                 message = MessagePower(self._message_protocol_version)
                 message.power = bool(value)
