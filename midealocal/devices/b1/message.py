@@ -12,6 +12,8 @@ from midealocal.message import (
 X01_STATUS_OFFSET = 31
 X01_FLAGS_OFFSET = 32
 X01_MIN_BODY_LENGTH = X01_FLAGS_OFFSET + 1
+X01_MODE_OFFSET = 7
+X01_TARGET_TEMPERATURE_OFFSET = 14
 X01_TIME_REMAINING_HOURS_OFFSET = 22
 X01_TIME_REMAINING_MINUTES_OFFSET = 23
 X01_TEMPERATURE_HIGH_OFFSET = 25
@@ -109,7 +111,11 @@ class B1Message01Body(MessageBody):
     is confirmed correct: a physical test that opened the oven door for
     real showed ``door=True`` (open) with no inversion needed - everything
     else (status, time_remaining, temperature, tank/water flags) produced
-    sane values matching the device's known idle state.
+    sane values matching the device's known idle state. ``mode`` (byte 7)
+    and ``target_temperature`` (byte 14) were confirmed the same way: driving
+    the appliance by hand with a pause after every action showed both change
+    together on a programme switch and independently on a setpoint-only
+    change.
     """
 
     def __init__(self, body: bytearray) -> None:
@@ -118,6 +124,8 @@ class B1Message01Body(MessageBody):
         if len(body) >= X01_MIN_BODY_LENGTH:
             self.door = (body[X01_FLAGS_OFFSET] & 0x02) > 0
             self.status = body[X01_STATUS_OFFSET]
+            self.mode = body[X01_MODE_OFFSET]
+            self.target_temperature = body[X01_TARGET_TEMPERATURE_OFFSET]
             self.time_remaining = (
                 0
                 if body[X01_TIME_REMAINING_HOURS_OFFSET] == MAX_BYTE_VALUE
