@@ -194,6 +194,21 @@ class MideaE2Device(MideaDevice):
         """Midea E2 device build query."""
         return [MessageQuery(self._message_protocol_version)]
 
+    def _halve_target_temperature(self, value: float | None) -> float | None:
+        """Undo the write-side doubling for devices on the half-degree wire format.
+
+        Mirrors the ``* 2`` in ``set_attribute()`` so target_temperature can
+        round-trip: devices that double on write (``not precision_halves``,
+        outside ``_LITERAL_TEMPERATURE_SUBTYPES``) must halve on read too.
+        """
+        if (
+            value is not None
+            and not self._precision_halves
+            and self.subtype not in _LITERAL_TEMPERATURE_SUBTYPES
+        ):
+            return value / 2
+        return value
+
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea E2 device process message."""
         message = MessageE2Response(msg)
@@ -204,6 +219,7 @@ class MideaE2Device(MideaDevice):
                 DeviceAttributes.heating_power: multiplier_translator(
                     self._heating_power_multiplier,
                 ),
+                DeviceAttributes.target_temperature: self._halve_target_temperature,
             },
         )
 
@@ -240,6 +256,14 @@ class MideaE2Device(MideaDevice):
                 message.power = bool(value)
             elif old_protocol == OldProtocol.true:
                 message = self.make_message_set()
+                if not hasattr(message, str(attr)):
+                    _LOGGER.warning(
+                        "[%s] Attribute %s cannot be set while using the old"
+                        " protocol; ignoring",
+                        self.device_id,
+                        attr,
+                    )
+                    return
                 setattr(message, str(attr), value)
             else:
                 message = MessageNewProtocolSet(self._message_protocol_version)
