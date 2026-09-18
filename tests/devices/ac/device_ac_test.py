@@ -619,6 +619,23 @@ class TestMideaACDevice:
         ]
         assert self.device.rate_selects == ["1", "20", "40", "60", "80", "100"]
 
+    def test_rate_selects_2_level_gear_map(self) -> None:
+        """Devices whose b5_electricity marks a 2-level gear count expose 50/75/100.
+
+        Without this, a 2-gear-capable device would offer the full 5-gear
+        table, which doesn't match what the device actually accepts.
+        """
+        self.device._capabilities["rate_select_2_level"] = True
+        assert self.device.rate_selects == ["50", "75", "100"]
+
+    def test_set_attribute_rate_select_2_level(self) -> None:
+        """Test set attribute for rate_select on a 2-level-gear device."""
+        self.device._capabilities["rate_select_2_level"] = True
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.rate_select.value, "75")
+            message = mock_build_send.call_args[0][0]
+        assert message.rate_select == 75
+
     def test_capabilities_updates_from_b5_response(self) -> None:
         """Test B5 capability flags accumulate into _capabilities."""
         assert self.device._capabilities == {}

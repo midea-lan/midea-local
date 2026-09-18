@@ -191,6 +191,14 @@ class MideaACDevice(MideaClimateDevice):
         100: "100",
     }
 
+    # Devices whose B5 b5_electricity capability sets RATE_SELECT_2_LEVEL_BIT
+    # only support two gears, not the full five-gear table above.
+    _rate_selects_2_level: ClassVar[dict[int, str]] = {
+        50: "50",
+        75: "75",
+        100: "100",
+    }
+
     # Generic HVAC mode names, ordered to match the protocol's mode index.
     # Fixed and never filtered: hvac_mode()/set_hvac_mode() index into this
     # to convert to/from the wire's mode int, which is unaffected by which
@@ -562,10 +570,25 @@ class MideaACDevice(MideaClimateDevice):
         """Midea AC device wind_ud_angle."""
         return list(MideaACDevice._wind_ud_angles.values())
 
+    def _active_rate_selects(self) -> dict[int, str]:
+        """Midea AC device rate_select gear map for the reported gear count.
+
+        The b5_electricity byte sets ``rate_select_2_level``/
+        ``rate_select_5_level`` as independent bits; a device can advertise
+        both. The 2-gear map only applies when 2-level is advertised and
+        5-level is not -- any 5-level support means the device accepts the
+        full gear table.
+        """
+        if self._capabilities.get(
+            "rate_select_2_level",
+        ) and not self._capabilities.get("rate_select_5_level"):
+            return MideaACDevice._rate_selects_2_level
+        return MideaACDevice._rate_selects
+
     @property
     def rate_selects(self) -> list[str]:
         """Midea AC device rate_select options."""
-        return list(MideaACDevice._rate_selects.values())
+        return list(self._active_rate_selects().values())
 
     def build_query(self) -> list[ACQuery]:
         """Midea AC device build query."""
@@ -684,7 +707,7 @@ class MideaACDevice(MideaClimateDevice):
                     DeviceAttributes.fresh_air_power: _translate_fresh_air_power,
                     DeviceAttributes.wind_lr_angle: MideaACDevice._wind_lr_angles.get,
                     DeviceAttributes.wind_ud_angle: MideaACDevice._wind_ud_angles.get,
-                    DeviceAttributes.rate_select: MideaACDevice._rate_selects.get,
+                    DeviceAttributes.rate_select: self._active_rate_selects().get,
                 },
             ),
         )
@@ -939,9 +962,13 @@ class MideaACDevice(MideaClimateDevice):
                 setattr(message, str(self._fresh_air_version), fresh_air)
         # rate_select
         elif attr == DeviceAttributes.rate_select:
-            message.rate_select = MideaACDevice.get_dict_key_by_value(
-                "_rate_selects",
-                str(value),
+            message.rate_select = next(
+                (
+                    gear
+                    for gear, name in self._active_rate_selects().items()
+                    if name == str(value)
+                ),
+                None,
             )
         # indirect_wind, screen_display_alternate, breezeless
         else:

@@ -574,6 +574,9 @@ class MessageToggleDisplay(MessageACBase):
 class MessageNewProtocolQuery(MessageACBase):
     """AC message new protocol query."""
 
+    # error_code_query is deliberately not queried by default: on some B1
+    # devices, including it makes both this query and CapabilitiesQuery get
+    # recorded as unsupported protocol, breaking status refresh entirely.
     _query_params: tuple[int, ...] = (
         NewProtocolTags.indirect_wind,
         NewProtocolTags.breezeless,
@@ -585,7 +588,6 @@ class MessageNewProtocolQuery(MessageACBase):
         NewProtocolTags.wind_ud_angle,
         NewProtocolTags.out_silent,
         NewProtocolTags.buzzer_all,
-        NewProtocolTags.error_code_query,
     )
 
     def __init__(
