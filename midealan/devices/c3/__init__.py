@@ -91,6 +91,29 @@ class DeviceAttributes(StrEnum):
     eco_mode = "eco_mode"
     tbh = "tbh"
     error_code = "error_code"
+    ibh1_on = "ibh1_on"
+    ibh2_on = "ibh2_on"
+    load_output_tbh = "load_output_tbh"
+    pump_i_running = "pump_i_running"
+    sv1_open = "sv1_open"
+    sv2_open = "sv2_open"
+    pump_o_running = "pump_o_running"
+    pump_d_running = "pump_d_running"
+    pump_c_running = "pump_c_running"
+    sv3_open = "sv3_open"
+    crankcase_heater_on = "crankcase_heater_on"
+    pump_s_running = "pump_s_running"
+    alarm_on = "alarm_on"
+    run_valve_on = "run_valve_on"
+    aux_heat_on = "aux_heat_on"
+    defrost_valve_on = "defrost_valve_on"
+    fact_req_solar_on = "fact_req_solar_on"
+    fact_req_ther_cool_on = "fact_req_ther_cool_on"
+    cool_run = "cool_run"
+    heat_run = "heat_run"
+    dhw_run = "dhw_run"
+    fact_req_ther_heat_on = "fact_req_ther_heat_on"
+    edge_version_type = "edge_version_type"
     comp_total_run_time = "comp_total_run_time"
     hmi_sn_code = "hmi_sn_code"
     idu_software_version_str = "idu_software_version_str"
@@ -179,6 +202,29 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.fg_capacity_need: None,
                 DeviceAttributes.instant_power0: None,
                 DeviceAttributes.error_code: 0,
+                DeviceAttributes.ibh1_on: None,
+                DeviceAttributes.ibh2_on: None,
+                DeviceAttributes.load_output_tbh: None,
+                DeviceAttributes.pump_i_running: None,
+                DeviceAttributes.sv1_open: None,
+                DeviceAttributes.sv2_open: None,
+                DeviceAttributes.pump_o_running: None,
+                DeviceAttributes.pump_d_running: None,
+                DeviceAttributes.pump_c_running: None,
+                DeviceAttributes.sv3_open: None,
+                DeviceAttributes.crankcase_heater_on: None,
+                DeviceAttributes.pump_s_running: None,
+                DeviceAttributes.alarm_on: None,
+                DeviceAttributes.run_valve_on: None,
+                DeviceAttributes.aux_heat_on: None,
+                DeviceAttributes.defrost_valve_on: None,
+                DeviceAttributes.fact_req_solar_on: None,
+                DeviceAttributes.fact_req_ther_cool_on: None,
+                DeviceAttributes.cool_run: None,
+                DeviceAttributes.heat_run: None,
+                DeviceAttributes.dhw_run: None,
+                DeviceAttributes.fact_req_ther_heat_on: None,
+                DeviceAttributes.edge_version_type: None,
                 DeviceAttributes.comp_total_run_time: None,
                 DeviceAttributes.hmi_sn_code: None,
                 DeviceAttributes.idu_software_version_str: None,

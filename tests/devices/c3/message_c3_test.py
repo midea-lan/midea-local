@@ -1,5 +1,7 @@
 """Test c3 message."""
 
+from typing import ClassVar
+
 import pytest
 
 from midealan.const import ProtocolVersion
@@ -874,6 +876,114 @@ class TestC3UnitParaLuaOffsets:
         assert response.total_renew_power0 == 0
 
 
+class TestC3UnitParaLoadOutput:
+    """The LOAD_OUTPUT bitmap in the X10 body.
+
+    Authoritative source: Midea Modbus doc V4.7, register 129 (Load output).
+    The low byte sits at body[data_offset + 32] and carries BIT0..BIT7; BIT8
+    (mixed water loop pump, zone 2) is the low bit of the adjacent byte at
+    body[data_offset + 31]. Cross-checked against the wired HMI during a
+    pump test.
+    """
+
+    HEADER = bytearray(
+        [0xAA, 0x00, 0xC3, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, MessageType.query],
+    )
+
+    @staticmethod
+    def _build_response(values: dict[int, int]) -> MessageC3Response:
+        """Build an X10 query response with the given body bytes set."""
+        body = bytearray(96)
+        body[0] = ListTypes.X10
+        for index, value in values.items():
+            body[index] = value
+        return MessageC3Response(bytes(TestC3UnitParaLoadOutput.HEADER + body))
+
+    @pytest.mark.parametrize(
+        ("attribute", "mask"),
+        [
+            ("ibh1_on", 0x01),
+            ("ibh2_on", 0x02),
+            ("load_output_tbh", 0x04),
+            ("pump_i_running", 0x08),
+            ("sv1_open", 0x10),
+            ("sv2_open", 0x20),
+            ("pump_o_running", 0x40),
+            ("pump_d_running", 0x80),
+        ],
+    )
+    def test_each_low_byte_bit_maps_to_its_flag(
+        self,
+        attribute: str,
+        mask: int,
+    ) -> None:
+        """Test every documented low-byte bit drives exactly one flag."""
+        response = self._build_response({33: mask})
+
+        assert hasattr(response, attribute)
+        assert getattr(response, attribute) is True
+        others = [
+            "ibh1_on",
+            "ibh2_on",
+            "load_output_tbh",
+            "pump_i_running",
+            "sv1_open",
+            "sv2_open",
+            "pump_o_running",
+            "pump_d_running",
+        ]
+        for other in others:
+            if other != attribute:
+                assert getattr(response, other) is False
+
+    def test_all_flags_clear_when_byte_is_zero(self) -> None:
+        """Test an idle unit reports every load output off."""
+        response = self._build_response({33: 0x00})
+
+        assert response.ibh1_on is False
+        assert response.pump_i_running is False
+        assert response.sv1_open is False
+        assert response.pump_d_running is False
+        assert response.pump_c_running is False
+
+    def test_combined_flags_from_pump_test(self) -> None:
+        """Test the pump-test combination decodes as observed on the HMI."""
+        response = self._build_response({33: 0x18})
+
+        assert response.pump_i_running is True
+        assert response.sv1_open is True
+        assert response.ibh1_on is False
+        assert response.sv2_open is False
+
+    def test_pump_c_comes_from_the_adjacent_byte(self) -> None:
+        """Test BIT8 is read from the byte before the low byte."""
+        response = self._build_response({32: 0x01, 33: 0x00})
+
+        assert response.pump_c_running is True
+        assert response.pump_i_running is False
+
+    def test_low_byte_does_not_leak_into_pump_c(self) -> None:
+        """Test a fully set low byte leaves BIT8 clear."""
+        response = self._build_response({33: 0xFF})
+
+        assert response.pump_d_running is True
+        assert response.pump_c_running is False
+
+    def test_reserved_high_bits_are_not_exposed(self) -> None:
+        """Test bits 9-15 do not affect any decoded flag."""
+        response = self._build_response({32: 0xFE, 33: 0x00})
+
+        assert response.pump_c_running is False
+        assert response.ibh1_on is False
+
+    def test_bitmap_does_not_disturb_neighbouring_fields(self) -> None:
+        """Test the added reads leave the surrounding X10 offsets alone."""
+        response = self._build_response({31: 96, 32: 0x01, 33: 0xFF, 34: 21})
+
+        assert response.temp_t1 == 21
+        assert response.pump_d_running is True
+
+
 class TestC3UnitParaOutdoorTelemetryOffsets:
     """Pin the X10 body offsets for the outdoor-unit telemetry fields.
 
@@ -926,6 +1036,151 @@ class TestC3UnitParaOutdoorTelemetryOffsets:
         response = self._build_response(values)
         assert hasattr(response, attribute)
         assert getattr(response, attribute) == expected
+
+
+class TestC3LoadOutputHighByte:
+    """Register 129 high byte and the adjacent lua run-state byte.
+
+    The X10 body carries register 129 (Load output) across two bytes. The
+    low byte at ``body[data_offset + 32]`` is covered by
+    ``TestC3UnitParaLoadOutput``; this covers the high byte at
+    ``body[data_offset + 31]`` (Modbus doc V4.7 BIT8-BIT15) and the
+    run-state byte at ``body[data_offset + 30]``.
+
+    The run-state byte is not in the Modbus map. Its bit names come from
+    the 171H120F lua, which fills bits 1-7 and leaves bit 0 unnamed.
+
+    The frame below is a real X10 response from a Galmet Prima 06 GT
+    captured while the compressor was running at 17 Hz during a DHW
+    cycle. Byte 31 reads 32 (run valve) and byte 30 reads 96 (DHW run
+    plus the heating request), which is what the wired HMI showed.
+    """
+
+    HEADER = bytearray(
+        [0xAA, 0x00, 0xC3, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, MessageType.query],
+    )
+
+    BODY = bytes.fromhex(
+        "1011032302030015151f2f2f7f000000000100eb01e0060100000000040876"
+        "60201c2e191d1e30197f7f14074e08341b022401251bffff00570000ec0000"
+        "00000000340000392e00002ab0000016f100002ab000cd0000000017770000"
+        "000e402d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d"
+        "2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d"
+        "2d2d2d2d2d3030303043333331303137314831323046323431313431303031"
+        "32334d4e4a320000000000000000",
+    )
+
+    HIGH_BYTE_BITS: ClassVar[list[tuple[int, str]]] = [
+        (0x01, "pump_c_running"),
+        (0x02, "sv3_open"),
+        (0x04, "crankcase_heater_on"),
+        (0x08, "pump_s_running"),
+        (0x10, "alarm_on"),
+        (0x20, "run_valve_on"),
+        (0x40, "aux_heat_on"),
+        (0x80, "defrost_valve_on"),
+    ]
+
+    RUN_STATE_BITS: ClassVar[list[tuple[int, str]]] = [
+        (0x02, "fact_req_solar_on"),
+        (0x04, "fact_req_ther_cool_on"),
+        (0x08, "cool_run"),
+        (0x10, "heat_run"),
+        (0x20, "dhw_run"),
+        (0x40, "fact_req_ther_heat_on"),
+        (0x80, "edge_version_type"),
+    ]
+
+    # BODY indices. The X10 response has data_offset = 1, so the register
+    # 129 high byte at body[data_offset + 31] is BODY[32] and the lua
+    # run-state byte at body[data_offset + 30] is BODY[31].
+    HIGH_BYTE_INDEX = 32
+    RUN_STATE_INDEX = 31
+
+    def _response(self, index: int, value: int) -> MessageC3Response:
+        """Build a response with one body byte overridden."""
+        body = bytearray(self.BODY)
+        body[index] = value
+        return MessageC3Response(bytes(self.HEADER + bytes(body) + bytes([0x00])))
+
+    @pytest.mark.parametrize(("mask", "attribute"), HIGH_BYTE_BITS)
+    def test_high_byte_bit_drives_one_flag(self, mask: int, attribute: str) -> None:
+        """Test each register 129 high bit sets its flag and no other."""
+        response = self._response(self.HIGH_BYTE_INDEX, mask)
+
+        assert getattr(response, attribute) is True
+
+        for other_mask, other_attribute in self.HIGH_BYTE_BITS:
+            if other_mask != mask:
+                assert getattr(response, other_attribute) is False
+
+    @pytest.mark.parametrize(("mask", "attribute"), RUN_STATE_BITS)
+    def test_run_state_bit_drives_one_flag(self, mask: int, attribute: str) -> None:
+        """Test each lua run-state bit sets its flag and no other."""
+        response = self._response(self.RUN_STATE_INDEX, mask)
+
+        assert getattr(response, attribute) is True
+
+        for other_mask, other_attribute in self.RUN_STATE_BITS:
+            if other_mask != mask:
+                assert getattr(response, other_attribute) is False
+
+    def test_all_high_byte_flags_clear_when_byte_is_zero(self) -> None:
+        """Test a zero high byte leaves every register 129 flag off."""
+        response = self._response(self.HIGH_BYTE_INDEX, 0x00)
+
+        for _, attribute in self.HIGH_BYTE_BITS:
+            assert getattr(response, attribute) is False
+
+    def test_all_run_state_flags_clear_when_byte_is_zero(self) -> None:
+        """Test a zero run-state byte leaves every lua flag off."""
+        response = self._response(self.RUN_STATE_INDEX, 0x00)
+
+        for _, attribute in self.RUN_STATE_BITS:
+            assert getattr(response, attribute) is False
+
+    def test_run_state_bit0_is_not_decoded(self) -> None:
+        """Test the unnamed lua bit 0 drives none of the run-state flags."""
+        response = self._response(self.RUN_STATE_INDEX, 0x01)
+
+        for _, attribute in self.RUN_STATE_BITS:
+            assert getattr(response, attribute) is False
+
+    def test_captured_compressor_run(self) -> None:
+        """Test the captured frame decodes the state the HMI showed.
+
+        The high byte is 32 and the run-state byte is 96 on this frame:
+        the run valve is open with the compressor at 17 Hz, and the unit
+        is in DHW with the heating request set. Across the 229 captured
+        frames the high byte bit 5 was set in all 66 frames with a running
+        compressor and in none of the 163 with it stopped.
+        """
+        response = MessageC3Response(
+            bytes(self.HEADER + self.BODY + bytes([0x00])),
+        )
+
+        assert response.run_valve_on is True
+        assert response.dhw_run is True
+        assert response.fact_req_ther_heat_on is True
+
+        assert response.sv3_open is False
+        assert response.alarm_on is False
+        assert response.aux_heat_on is False
+        assert response.defrost_valve_on is False
+        assert response.cool_run is False
+        assert response.heat_run is False
+
+    def test_neighbouring_fields_still_decode(self) -> None:
+        """Test the bytes either side of the pair are untouched."""
+        response = MessageC3Response(
+            bytes(self.HEADER + self.BODY + bytes([0x00])),
+        )
+
+        assert response.load_output_tbh is True
+        assert response.pump_i_running is True
+        assert response.sv1_open is True
+        assert response.ibh1_on is False
+        assert response.temp_t1 == 46
 
 
 # Real HMI serial captured from a Hyundai HYHC-V30W/D2RN8 (Midea

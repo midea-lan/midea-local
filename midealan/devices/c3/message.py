@@ -567,6 +567,49 @@ class C3UnitParaBody(MessageBody):
         self.odu_model = body[data_offset + 21]
         # self.unit_online_num  body[data_offset + 22]
         # self.current_code  body[data_offset + 23]
+        # LOAD_OUTPUT bitmap. Authoritative source: Midea Modbus doc
+        # V4.7, register 129 (Load output, 16-bit). Cross-checked
+        # against the wired HMI during a pump test.
+        #   BIT0 = electric heater IBH1     BIT4 = SV1
+        #   BIT1 = electric heater IBH2     BIT5 = SV2
+        #   BIT2 = electric heater TBH      BIT6 = external pump Pump_o
+        #   BIT3 = internal pump Pump_i     BIT7 = DHW pump Pump_d
+        # BIT8 (mixed water loop pump Pump_c, zone 2) lives in the
+        # adjacent byte; BIT9-BIT15 are reserved per the Modbus doc.
+        load_output = body[data_offset + 32]
+        load_output_hi = body[data_offset + 31]
+        self.ibh1_on = bool(load_output & 0x01)
+        self.ibh2_on = bool(load_output & 0x02)
+        self.load_output_tbh = bool(load_output & 0x04)
+        self.pump_i_running = bool(load_output & 0x08)
+        self.sv1_open = bool(load_output & 0x10)
+        self.sv2_open = bool(load_output & 0x20)
+        self.pump_o_running = bool(load_output & 0x40)
+        self.pump_d_running = bool(load_output & 0x80)
+        self.pump_c_running = bool(load_output_hi & 0x01)
+        # Remaining bits of register 129 (Modbus doc V4.7 BIT9-BIT15).
+        # BIT13 and BIT15 are documented as reserved, but the 171H120F lua
+        # reads them as fgRunValveOn and fgDefValveOn and they are live on
+        # real units, so both are decoded. BIT10 is "Crankcase heater" in
+        # the doc and fgHeat4ValveOn in the lua; the doc name is used.
+        self.sv3_open = bool(load_output_hi & 0x02)
+        self.crankcase_heater_on = bool(load_output_hi & 0x04)
+        self.pump_s_running = bool(load_output_hi & 0x08)
+        self.alarm_on = bool(load_output_hi & 0x10)
+        self.run_valve_on = bool(load_output_hi & 0x20)
+        self.aux_heat_on = bool(load_output_hi & 0x40)
+        self.defrost_valve_on = bool(load_output_hi & 0x80)
+        # Run-state byte. Not part of the Modbus register map; the bit
+        # names come from the 171H120F lua, which fills bits 1-7. Bit 0 is
+        # unnamed there and is left undecoded.
+        run_state = body[data_offset + 30]
+        self.fact_req_solar_on = bool(run_state & 0x02)
+        self.fact_req_ther_cool_on = bool(run_state & 0x04)
+        self.cool_run = bool(run_state & 0x08)
+        self.heat_run = bool(run_state & 0x10)
+        self.dhw_run = bool(run_state & 0x20)
+        self.fact_req_ther_heat_on = bool(run_state & 0x40)
+        self.edge_version_type = bool(run_state & 0x80)
         self.temp_t1 = body[data_offset + 33]
         self.temp_tw2 = body[data_offset + 34]
         self.temp_t2 = body[data_offset + 35]
@@ -767,6 +810,30 @@ class MessageC3Response(MessageResponse):
     # class-level annotations has no effect on runtime behaviour (set_attr()
     # remains the only place that assigns them) and only gives mypy the
     # static type it needs for the accesses in message_c3_test.py.
+    temp_t1: int
+    ibh1_on: bool
+    ibh2_on: bool
+    load_output_tbh: bool
+    pump_i_running: bool
+    sv1_open: bool
+    sv2_open: bool
+    pump_o_running: bool
+    pump_d_running: bool
+    pump_c_running: bool
+    sv3_open: bool
+    crankcase_heater_on: bool
+    pump_s_running: bool
+    alarm_on: bool
+    run_valve_on: bool
+    aux_heat_on: bool
+    defrost_valve_on: bool
+    fact_req_solar_on: bool
+    fact_req_ther_cool_on: bool
+    cool_run: bool
+    heat_run: bool
+    dhw_run: bool
+    fact_req_ther_heat_on: bool
+    edge_version_type: bool
     comp_total_run_time: int
     unit_mode_run: int
     error_code: int
