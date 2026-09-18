@@ -74,6 +74,8 @@ class MessageSet(MessageFBBase):
         self.mode: int | None = None
         self.heating_level: int | None = None
         self.target_temperature: int | None = None
+        self.target_humidity: int | None = None
+        self.humidity_mode: int | None = None
         self.child_lock: bool | None = None
 
     @property
@@ -93,6 +95,18 @@ class MessageSet(MessageFBBase):
                 & 0xFF
             )
         )
+        target_humidity = (
+            0
+            if self.target_humidity is None
+            else (
+                int(
+                    (self.target_humidity)
+                    if 1 <= self.target_humidity <= MAX_HUMIDITY
+                    else 0,
+                )
+            )
+        )
+        humidity_mode = 0 if self.humidity_mode is None else self.humidity_mode
         target_temperature = (
             0
             if self.target_temperature is None
@@ -117,9 +131,9 @@ class MessageSet(MessageFBBase):
                 mode,
                 heating_level,
                 target_temperature,
+                target_humidity,
                 0x00,
-                0x00,
-                0x00,
+                humidity_mode,
                 0x00,
                 0x00,
                 0x00,
@@ -153,6 +167,8 @@ class FBGeneralMessageBody(MessageBody):
         self.target_temperature = body[6] - 41
         if 1 <= body[7] <= MAX_HUMIDITY:
             self.target_humidity = body[7]
+        self.humidity_mode = body[9] & 0xF0
+        if 1 <= body[12] <= MAX_HUMIDITY:
             self.current_humidity = body[12]
         self.current_temperature = body[13] - 20
         if len(body) > CHILD_LOCK_BYTE:
