@@ -103,7 +103,7 @@ class TestMidea13Device:
         assert DeviceAttributes.rgb_color.value not in new_status
 
     def test_process_message_control_success(self) -> None:
-        """Test process message with a successful set response refreshes."""
+        """Test process message with a successful set response requests a refresh."""
         header = bytearray(
             [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.set],
         )
@@ -111,13 +111,12 @@ class TestMidea13Device:
         body[0] = 0x81  # set response body type
         body[1] = 1  # success
         crc = bytearray([0x00])
-        with patch.object(self.device, "refresh_status") as mock_refresh:
-            new_status = self.device.process_message(bytes(header + body + crc))
-            mock_refresh.assert_called_once()
+        new_status = self.device.process_message(bytes(header + body + crc))
+        assert self.device._refresh_requested is True
         assert new_status == {"control_success": True}
 
     def test_process_message_control_failure(self) -> None:
-        """Test process message with a failed set response does not refresh."""
+        """A failed set response must not request a refresh."""
         header = bytearray(
             [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.set],
         )
@@ -125,9 +124,8 @@ class TestMidea13Device:
         body[0] = 0x81  # set response body type
         body[1] = 0  # failure
         crc = bytearray([0x00])
-        with patch.object(self.device, "refresh_status") as mock_refresh:
-            new_status = self.device.process_message(bytes(header + body + crc))
-            mock_refresh.assert_not_called()
+        new_status = self.device.process_message(bytes(header + body + crc))
+        assert self.device._refresh_requested is False
         assert new_status == {"control_success": False}
 
     def test_process_message_unhandled(self) -> None:

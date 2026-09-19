@@ -1,5 +1,6 @@
 """Midea local discover."""
 
+import asyncio
 import logging
 import re
 import socket
@@ -189,12 +190,13 @@ def _extract_mac(reply: bytes | bytearray, ssid_len: int, sn: str) -> str | None
     return mac
 
 
-def _parse_discover_response(
+async def _parse_discover_response(
+    loop: asyncio.AbstractEventLoop,
     sock: socket.socket,
     found_devices: dict[int, dict[str, Any]],
 ) -> tuple[int, dict[str, Any] | None]:
     security = LocalSecurity()
-    data, addr = sock.recvfrom(512)
+    data, addr = await asyncio.wait_for(loop.sock_recvfrom(sock, 512), timeout=5)
     ip = addr[0]
     _LOGGER.debug("Received response from %s: %s", addr, data.hex())
     if len(data) >= DISCOVERY_MIN_RESPONSE_LENGTH and (
@@ -250,7 +252,7 @@ def _parse_discover_response(
             m["apc_sn"],
             str(hex(int(m["apc_type"])))[2:],
         )
-        response = get_device_info(ip, int(port))
+        response = await get_device_info(ip, int(port))
         device_id = get_id_from_response(response)
         if len(sn) == SERIAL_TYPE1_LENGTH:
             model = sn[9:17]
@@ -273,7 +275,7 @@ def _parse_discover_response(
     }
 
 
-def discover(
+async def discover(
     discover_type: list | None = None,
     ip_address: list | None = None,
 ) -> dict[int, dict[str, Any]]:
@@ -285,18 +287,23 @@ def discover(
     addrs = enum_all_broadcast() if ip_address is None else [ip_address]
 
     _LOGGER.debug("All addresses for broadcast: %s", addrs)
+    loop = asyncio.get_running_loop()
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        sock.settimeout(5)
+        sock.setblocking(False)
         for addr in addrs:
             try:
-                sock.sendto(BROADCAST_MSG, (addr, 6445))
-                sock.sendto(BROADCAST_MSG, (addr, 20086))
+                await loop.sock_sendto(sock, BROADCAST_MSG, (addr, 6445))
+                await loop.sock_sendto(sock, BROADCAST_MSG, (addr, 20086))
             except OSError as e:
                 _LOGGER.warning("Can't access network %s: %s", addrs, repr(e))
         while True:
             try:
-                device_id, device = _parse_discover_response(sock, found_devices)
+                device_id, device = await _parse_discover_response(
+                    loop,
+                    sock,
+                    found_devices,
+                )
                 if device is None:
                     continue
                 if len(discover_type) == 0 or device.get("type") in discover_type:
@@ -336,22 +343,32 @@ def bytes2port(value_bytes: bytes | bytearray | None) -> int:
     return i
 
 
-def get_device_info(device_ip: str, device_port: int) -> bytearray:
+async def get_device_info(device_ip: str, device_port: int) -> bytearray:
     """Get device info."""
     response = bytearray(0)
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.settimeout(8)
-            device_address = (device_ip, device_port)
-            sock.connect(device_address)
+        # Two separate wait_for calls, not one around the whole function:
+        # the original sock.settimeout(8) bounded each blocking operation
+        # at 8s, not the total call.
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(device_ip, device_port),
+            timeout=8,
+        )
+        try:
             _LOGGER.debug(
                 "Sending to %s:%s %s",
                 device_ip,
                 device_port,
                 DEVICE_INFO_MSG.hex(),
             )
-            sock.sendall(DEVICE_INFO_MSG)
-            response = bytearray(sock.recv(512))
+            writer.write(DEVICE_INFO_MSG)
+            await writer.drain()
+            response = bytearray(
+                await asyncio.wait_for(reader.read(512), timeout=8),
+            )
+        finally:
+            writer.close()
+            await writer.wait_closed()
     except TimeoutError:
         _LOGGER.warning(
             "Connect the device %s:%s timed out for 8s."

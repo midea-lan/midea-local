@@ -1,8 +1,8 @@
 """Midea local device."""
 
+import asyncio
+import contextlib
 import logging
-import socket
-import threading
 import time
 from collections.abc import Callable, Mapping, Sequence
 from enum import IntEnum, StrEnum
@@ -30,7 +30,7 @@ MIN_AUTH_RESPONSE = 20
 MIN_MSG_LENGTH = 56
 MESSAGE_TYPE_INDEX = 9  # offset of the message-type byte in the 10-byte header
 MIN_V2_FACTUAL_MSG_LENGTH = 6
-RESPONSE_TIMEOUT = 12  # main loop socket recv timeout, 12 * 10s = 120s
+RESPONSE_TIMEOUT = 12  # read-loop recv timeout, 12 * 10s = 120s
 SOCKET_TIMEOUT = 10  # socket connection default timeout
 # fix https://github.com/wuwentao/midea_ac_lan/issues/658#issuecomment-4555804288
 QUERY_TIMEOUT = (
@@ -188,7 +188,7 @@ class MideaDeviceInitKwargs(TypedDict):
     serial_number: NotRequired[str | None]
 
 
-class MideaDevice(threading.Thread):
+class MideaDevice:
     """Midea device."""
 
     def __init__(
@@ -199,9 +199,9 @@ class MideaDevice(threading.Thread):
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Midea device initialization."""
-        threading.Thread.__init__(self)
         self._attributes = attributes or {}
-        self._socket: socket.socket | None = None
+        self._reader: asyncio.StreamReader | None = None
+        self._writer: asyncio.StreamWriter | None = None
         self._ip_address = kwargs["ip_address"]
         self._port = kwargs["port"]
         self._security = LocalSecurity()
@@ -225,6 +225,13 @@ class MideaDevice(threading.Thread):
         self._default_refresh_interval = 30
         self._previous_refresh = 0.0
         self._previous_heartbeat = 0.0
+        self._task: asyncio.Task | None = None
+        self._reader_task: asyncio.Task | None = None
+        # This protocol has no per-message correlation id, so at most one
+        # query/response exchange can ever be outstanding at a time.
+        self._query_lock = asyncio.Lock()
+        self._response_waiter: asyncio.Future[MessageResult] | None = None
+        self._refresh_requested = False
         self.name = self._device_name
         self.set_mac(kwargs.get("mac"))
         # Discovery may report a fixed-width serial padded with NUL bytes or an
@@ -332,26 +339,28 @@ class MideaDevice(threading.Thread):
                 break
         return result, msg
 
-    def connect(self, check_protocol: bool = False) -> bool:
+    async def connect(self, check_protocol: bool = False) -> bool:
         """Connect to device."""
         connected = False
         try:
-            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._socket.settimeout(SOCKET_TIMEOUT)
             _LOGGER.debug(
                 "[%s] Connecting to %s:%s",
                 self._device_id,
                 self._ip_address,
                 self._port,
             )
-            self._socket.connect((self._ip_address, self._port))
+            self._reader, self._writer = await asyncio.wait_for(
+                asyncio.open_connection(self._ip_address, self._port),
+                timeout=SOCKET_TIMEOUT,
+            )
             _LOGGER.debug("[%s] Connected", self._device_id)
+            self._reader_task = asyncio.create_task(self._read_loop())
             if self._device_protocol_version == ProtocolVersion.V3:
-                self.authenticate()
+                await self.authenticate()
             # 1. midea_ac_lan add device verify token with connect and auth
             # 2. init connection, check_protocol
             if check_protocol:
-                self.refresh_status(check_protocol=check_protocol)
+                await self.refresh_status(check_protocol=check_protocol)
             connected = True
         except TimeoutError:
             _LOGGER.debug("[%s] Connection timed out", self._device_id)
@@ -373,16 +382,16 @@ class MideaDevice(threading.Thread):
             # Any failure path leaves connected False; release the socket once
             # here instead of repeating close_socket() in every handler.
             if not connected:
-                self.close_socket()
+                await self.close_socket()
         # enable/disable device in init connection
         if check_protocol:
             self.set_available(connected)
         return connected
 
-    def authenticate(self) -> None:
+    async def authenticate(self) -> None:
         """Authenticate to device. V3 only."""
         request = self._security.encode_8370(self._token, MSGTYPE_HANDSHAKE_REQUEST)
-        if not self._socket:
+        if not self._writer or not self._reader:
             _LOGGER.debug(
                 "[%s] authenticate failure, device socket is none",
                 self._device_id,
@@ -390,8 +399,11 @@ class MideaDevice(threading.Thread):
             # raise exception to connect loop
             raise SocketException
         _LOGGER.debug("[%s] Authentication handshaking", self._device_id)
-        self._socket.send(request)
-        response = self._socket.recv(512)
+        self._writer.write(request)
+        response = await asyncio.wait_for(
+            self._reader.read(512),
+            timeout=SOCKET_TIMEOUT,
+        )
         _LOGGER.debug(
             "[%s] Received auth response with %d bytes: %s",
             self._device_id,
@@ -410,50 +422,32 @@ class MideaDevice(threading.Thread):
         self._security.tcp_key(response, self._key)
         _LOGGER.debug("[%s] Authentication success", self._device_id)
 
-    def send_message(self, data: bytes, query: bool = False) -> None:
+    def send_message(self, data: bytes) -> None:
         """Send message."""
         if self._device_protocol_version == ProtocolVersion.V3:
-            self.send_message_v3(data, msg_type=MSGTYPE_ENCRYPTED_REQUEST, query=query)
+            self.send_message_v3(data, msg_type=MSGTYPE_ENCRYPTED_REQUEST)
         else:
-            self.send_message_v2(data, query=query)
+            self.send_message_v2(data)
 
-    def send_message_v2(self, data: bytes, query: bool = False) -> None:
+    def send_message_v2(self, data: bytes) -> None:
         """Send message V2."""
-        if not self._socket:
+        if not self._writer:
             _LOGGER.debug(
                 "[%s] send_message_v2 failure, device socket is none, data: %s",
                 self._device_id,
                 data.hex(),
             )
-            # raise exception to main loop
+            # raise exception to caller
             raise SocketException
         try:
-            # query msg, set timeout to QUERY_TIMEOUT
-            if query:
-                self._socket.settimeout(QUERY_TIMEOUT)
-            self._socket.send(data)
-        except TimeoutError:
-            _LOGGER.debug(
-                "[%s] send_message_v2 timed out",
-                self._device_id,
-            )
-            # raise exception to main loop
-            raise
-        except ConnectionResetError as e:
-            _LOGGER.debug(
-                "[%s] send_message_v2 ConnectionResetError: %s",
-                self._device_id,
-                e,
-            )
-            # raise exception to main loop
-            raise
+            self._writer.write(data)
         except OSError as e:
             _LOGGER.debug(
                 "[%s] send_message_v2 OSError: %s",
                 self._device_id,
                 e,
             )
-            # raise exception to main loop
+            # raise exception to caller
             raise
         except Exception as e:
             _LOGGER.exception(
@@ -461,46 +455,41 @@ class MideaDevice(threading.Thread):
                 self._device_id,
                 exc_info=e,
             )
-            # raise exception to main loop
+            # raise exception to caller
             raise
 
     def send_message_v3(
         self,
         data: bytes,
         msg_type: int = MSGTYPE_ENCRYPTED_REQUEST,
-        query: bool = False,
     ) -> None:
         """Send message V3."""
         data = self._security.encode_8370(data, msg_type)
-        self.send_message_v2(data, query=query)
+        self.send_message_v2(data)
 
-    def build_send(self, cmd: MessageRequest, query: bool = False) -> None:
+    def build_send(self, cmd: MessageRequest) -> None:
         """Serialize and send."""
         data = cmd.serialize()
-        _LOGGER.debug("[%s] Sending: %s, query is %s", self._device_id, cmd, query)
+        _LOGGER.debug("[%s] Sending: %s", self._device_id, cmd)
         msg = PacketBuilder(self._device_id, data).finalize()
-        self.send_message(msg, query=query)
+        self.send_message(msg)
 
-    def _wait_for_query_response(self) -> None:
-        """Wait for one query response, raising on timeout or bad data."""
-        while True:
-            if not self._socket:
-                _LOGGER.debug("[%s] device socket is none", self._device_id)
-                # raise exception to connect/main loop
-                raise SocketException
-            msg = self._socket.recv(512)
-            if len(msg) == 0:
-                raise ConnectionResetError("Connection closed by peer.")
-            result = self.parse_message(msg)
-            # Prevent infinite loop
-            if result == MessageResult.SUCCESS:
-                # recovery SOCKET_TIMEOUT after recv msg
-                self._socket.settimeout(SOCKET_TIMEOUT)
-                return
-            if result != MessageResult.PADDING:
-                raise ResponseException
+    async def _wait_for_query_response(self) -> None:
+        """Wait for one query response, raising on timeout or bad data.
 
-    def _refresh_query(
+        The response itself is delivered by ``_read_loop`` (the sole reader
+        of the connection) resolving ``self._response_waiter``; this method
+        never touches the reader directly.
+        """
+        if self._reader_task is None or self._reader_task.done():
+            raise SocketException
+        self._response_waiter = asyncio.get_running_loop().create_future()
+        try:
+            await asyncio.wait_for(self._response_waiter, timeout=QUERY_TIMEOUT)
+        finally:
+            self._response_waiter = None
+
+    async def _refresh_query(
         self,
         cmd: MessageRequest,
         check_protocol: bool,
@@ -520,18 +509,17 @@ class MideaDevice(threading.Thread):
                 cmd,
             )
             return 1 if cmd in real_cmds else 0
-        # set socket QUERY_TIMEOUT for query msg
-        # build_send exception should be catch by connect/run
-        self.build_send(cmd, query=True)
+        # build_send exception should be caught by connect/_run
+        self.build_send(cmd)
         if not check_protocol:
             return 0
-        # only catch TimoutError for check_protocol
-        # unexpected exception in recv/settimeout, catch by main loop
+        # only catch TimeoutError for check_protocol
+        # unexpected exception in read loop is caught there
         try:
             attempt = 0
             while True:
                 try:
-                    self._wait_for_query_response()
+                    await self._wait_for_query_response()
                     break
                 except TimeoutError:
                     attempt += 1
@@ -540,7 +528,7 @@ class MideaDevice(threading.Thread):
                     # retry once before blacklisting: a single timeout
                     # during the probe can be a slow device, not proof
                     # the protocol is unsupported
-                    self.build_send(cmd, query=True)
+                    self.build_send(cmd)
         except TimeoutError:
             self._unsupported_protocol.append(cmd.__class__.__name__)
             _LOGGER.debug(
@@ -561,48 +549,50 @@ class MideaDevice(threading.Thread):
             return 1 if cmd in real_cmds else 0
         return 0
 
-    def refresh_status(self, check_protocol: bool = False) -> None:
+    async def refresh_status(self, check_protocol: bool = False) -> None:
         """Refresh device status."""
-        if self._appliance_query:
-            # Sent (and, when checking, awaited) before build_query() below,
-            # so the real queries it returns pick up the message protocol
-            # version this reply resolves instead of one baked into them
-            # before the reply arrived, which devices that validate it would
-            # silently reject.
-            self._refresh_query(
-                MessageQueryAppliance(self.device_type),
-                check_protocol,
-                (),
-            )
-        real_cmds: list = self.build_query()
-        error_count = 0
-        _LOGGER.debug(
-            "[%s] refresh_status with cmds: %s, check_protocol %s, \
-            device %s, type %s, model %s, subtype %s, device_protocol: %s, \
-            message_protocol %s, unsupported_protocol: %s",
-            self._device_id,
-            real_cmds,
-            check_protocol,
-            self._device_name,
-            self._device_type,
-            self._model,
-            self._subtype,
-            self._device_protocol_version,
-            self._message_protocol_version,
-            self._unsupported_protocol,
-        )
-        for cmd in real_cmds:
-            error_count += self._refresh_query(cmd, check_protocol, real_cmds)
-            # A successful appliance query is not device status: it must not mask
-            # every real status query failing. Guard against a subclass whose
-            # build_query() returns [], where "all failed" would be vacuous.
-            if real_cmds and error_count == len(real_cmds):
-                _LOGGER.debug(
-                    "[%s] all the query cmds failed %s, please report bug",
-                    self._device_id,
-                    real_cmds,
+        async with self._query_lock:
+            if self._appliance_query:
+                # Sent (and, when checking, awaited) before build_query() below,
+                # so the real queries it returns pick up the message protocol
+                # version this reply resolves instead of one baked into them
+                # before the reply arrived, which devices that validate it would
+                # silently reject.
+                await self._refresh_query(
+                    MessageQueryAppliance(self.device_type),
+                    check_protocol,
+                    (),
                 )
-                raise NoSupportedProtocol
+            real_cmds: list = self.build_query()
+            error_count = 0
+            _LOGGER.debug(
+                "[%s] refresh_status with cmds: %s, check_protocol %s, \
+                device %s, type %s, model %s, subtype %s, device_protocol: %s, \
+                message_protocol %s, unsupported_protocol: %s",
+                self._device_id,
+                real_cmds,
+                check_protocol,
+                self._device_name,
+                self._device_type,
+                self._model,
+                self._subtype,
+                self._device_protocol_version,
+                self._message_protocol_version,
+                self._unsupported_protocol,
+            )
+            for cmd in real_cmds:
+                error_count += await self._refresh_query(cmd, check_protocol, real_cmds)
+                # A successful appliance query is not device status: it must not
+                # mask every real status query failing. Guard against a subclass
+                # whose build_query() returns [], where "all failed" would be
+                # vacuous.
+                if real_cmds and error_count == len(real_cmds):
+                    _LOGGER.debug(
+                        "[%s] all the query cmds failed %s, please report bug",
+                        self._device_id,
+                        real_cmds,
+                    )
+                    raise NoSupportedProtocol
 
     def pre_process_message(self, msg: bytearray) -> bool:
         """Pre process message."""
@@ -756,6 +746,18 @@ class MideaDevice(threading.Thread):
         msg = PacketBuilder(self._device_id, bytearray([0x00])).finalize(msg_type=0)
         self.send_message(msg)
 
+    def request_refresh(self) -> None:
+        """Ask the read loop to refresh status once the current message is handled.
+
+        For a subclass whose process_message() learns, from the message
+        itself, that status may already be stale (e.g. a command was just
+        acknowledged) -- process_message() must stay synchronous, so it
+        cannot await refresh_status() itself. This defers the actual
+        (async) refresh to the read loop, which already owns the
+        connection and runs immediately after the message that requested it.
+        """
+        self._refresh_requested = True
+
     def register_update(self, update: Callable[[dict[str, Any]], None]) -> None:
         """Register update."""
         self._updates.append(update)
@@ -826,29 +828,28 @@ class MideaDevice(threading.Thread):
         """Enable device."""
         self.set_available(available)
 
-    def open(self) -> None:
-        """Open thread."""
+    async def open(self) -> None:
+        """Start the supervisor task."""
         if not self._is_run:
             self._is_run = True
-            threading.Thread.start(self)
+            self._task = asyncio.create_task(self._run())
 
-    def close(self) -> None:
-        """Close thread."""
+    async def close(self) -> None:
+        """Stop the supervisor task and close the connection."""
         if self._is_run:
             self._is_run = False
-            self.close_socket()
+            task, self._task = self._task, None
+            if task is not None:
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+            await self.close_socket()
 
     def _should_run(self) -> bool:
-        """Return whether the service loop should keep running.
-
-        ``_is_run`` is flipped to False from another thread by ``close()``.
-        Reading it through this method (instead of the bare attribute) keeps
-        the loop-exit checks reachable to static analysis, which would
-        otherwise narrow the attribute to True inside the loop.
-        """
+        """Return whether the service loop should keep running."""
         return self._is_run
 
-    def close_socket(self) -> None:
+    async def close_socket(self) -> None:
         """Close socket."""
         self._unsupported_protocol = []
         # Re-arm the appliance query too. It is cleared in pre_process_message
@@ -856,31 +857,33 @@ class MideaDevice(threading.Thread):
         # detection and re-probe with build_query() alone.
         self._appliance_query = True
         self._buffer = b""
-        if self._socket:
+        if self._response_waiter is not None and not self._response_waiter.done():
+            # Unblock anyone awaiting a response now, rather than leaving them
+            # to hang until their own timeout fires.
+            self._response_waiter.set_exception(SocketException)
+        reader_task, self._reader_task = self._reader_task, None
+        if reader_task is not None:
+            # Not awaited: it already raised (and logged) whatever tore the
+            # connection down, or is merely blocked on a read that closing
+            # the writer below will unblock; either way, awaiting it here
+            # would risk swallowing this coroutine's own cancellation instead.
+            reader_task.cancel()
+        writer, self._writer = self._writer, None
+        self._reader = None
+        if writer is not None:
+            writer.close()
             try:
-                self._socket.shutdown(socket.SHUT_RDWR)
-            except OSError as e:
-                # shutdown() raises ENOTCONN if the peer already went away;
-                # that's fine, we still close() below.
-                _LOGGER.debug(
-                    "[%s] Error while shutting down socket: %s",
-                    self._device_id,
-                    e,
-                )
-            try:
-                self._socket.close()
+                await writer.wait_closed()
                 _LOGGER.debug("[%s] Socket closed", self._device_id)
             except OSError as e:
                 _LOGGER.debug("[%s] Error while closing socket: %s", self._device_id, e)
-            finally:
-                self._socket = None
 
-    def set_ip_address(self, ip_address: str) -> None:
+    async def set_ip_address(self, ip_address: str) -> None:
         """Set IP address."""
         if self._ip_address != ip_address:
             _LOGGER.debug("[%s] Update IP address to %s", self._device_id, ip_address)
             self._ip_address = ip_address
-            self.close_socket()
+            await self.close_socket()
 
     def set_mac(self, mac: str | None) -> None:
         """Set MAC."""
@@ -890,27 +893,27 @@ class MideaDevice(threading.Thread):
         """Set refresh interval."""
         self._refresh_interval = refresh_interval
 
-    def _check_refresh(self, now: float) -> None:
+    async def _check_refresh(self, now: float) -> None:
         if 0 < self._refresh_interval <= now - self._previous_refresh:
-            self.refresh_status()
+            await self.refresh_status()
             self._previous_refresh = now
 
-    def _check_heartbeat(self, now: float) -> None:
+    async def _check_heartbeat(self, now: float) -> None:
         if now - self._previous_heartbeat >= self._heartbeat_interval:
             self.send_heartbeat()
             self._previous_heartbeat = now
 
-    def _connect_loop(self) -> None:
+    async def _connect_loop(self) -> None:
         """Connect loop until device online."""
         # connect loop until online
         connection_retries = 0
-        while self._socket is None and self._is_run:
+        while self._writer is None and self._is_run:
             _LOGGER.debug("[%s] Socket is None, try to connect", self._device_id)
             # Re-check _should_run(): close() may have requested shutdown after
             # the while guard was evaluated, so skip opening a socket / network
             # I/O once teardown is in progress.
-            if self._should_run() and self.connect(check_protocol=True) is False:
-                self.close_socket()
+            if self._should_run() and await self.connect(check_protocol=True) is False:
+                await self.close_socket()
                 connection_retries += 1
                 # Sleep time with exponential backoff, maximum 600 seconds
                 sleep_time = min(5 * (2 ** (connection_retries - 1)), 600)
@@ -919,77 +922,147 @@ class MideaDevice(threading.Thread):
                     self._device_id,
                     sleep_time,
                 )
-                # sleep and reconnect loop until device online
-                for _ in range(sleep_time):
-                    if not self._should_run():
-                        break
-                    time.sleep(1)
+                # Cancellation (from close()) interrupts this immediately.
+                await asyncio.sleep(sleep_time)
 
-    def run(self) -> None:
-        """Run loop brief description.
+    async def _read_loop(self) -> None:
+        """Sole reader of self._reader for this connection's lifetime.
 
-        1. first/init connection, self._socket is None
+        Resolves self._response_waiter for anyone awaiting a specific query
+        response; otherwise dispatches parsed status via parse_message()'s
+        own call to update_all(). Raises to signal the supervisor to
+        reconnect when the connection is stale or broken.
+        """
+        if self._reader is None:
+            raise SocketException
+        reader = self._reader
+        timeout_counter = 0
+        while True:
+            try:
+                data = await asyncio.wait_for(
+                    reader.read(512),
+                    timeout=SOCKET_TIMEOUT,
+                )
+            except TimeoutError:
+                timeout_counter += 1
+                if timeout_counter >= RESPONSE_TIMEOUT:
+                    timeout_exc = SocketException()
+                    self._fail_waiter(timeout_exc)
+                    raise timeout_exc from None
+                continue
+            except Exception as read_exc:
+                self._fail_waiter(read_exc)
+                raise
+            if len(data) == 0:
+                reset_exc = ConnectionResetError("Connection closed by peer.")
+                self._fail_waiter(reset_exc)
+                raise reset_exc
+            timeout_counter = 0
+            try:
+                result = self.parse_message(data)
+            except Exception as parse_exc:
+                self._fail_waiter(parse_exc)
+                raise
+            if self._refresh_requested:
+                self._refresh_requested = False
+                # Scheduled, not awaited: refresh_status() takes
+                # self._query_lock, which another coroutine may already
+                # hold while it awaits a response that only this same read
+                # loop, continuing on to the next iteration, can ever
+                # deliver. Awaiting it here would deadlock that caller.
+                asyncio.create_task(self._run_requested_refresh())  # noqa: RUF006
+            if result == MessageResult.PADDING:
+                continue
+            self._resolve_waiter_or_raise(result)
+
+    async def _run_requested_refresh(self) -> None:
+        """Run a request_refresh()-triggered refresh_status(), logging failures.
+
+        Detached from _read_loop (see its caller); nothing else observes
+        this task, so a failure must be logged here instead of propagating.
+        """
+        try:
+            await self.refresh_status()
+        except Exception:
+            _LOGGER.exception(
+                "[%s] Requested refresh failed",
+                self._device_id,
+            )
+
+    def _resolve_waiter_or_raise(self, result: MessageResult) -> None:
+        """Resolve/reject a pending query waiter, or raise for an unsolicited error.
+
+        Called by _read_loop for every non-PADDING parsed result. A waiter,
+        if present, always takes the response (success or not) instead of
+        tearing down the connection -- that failure is scoped to the one
+        query awaiting it. Only an ERROR frame nobody is waiting for is
+        treated as fatal for the connection.
+        """
+        if self._response_waiter is not None and not self._response_waiter.done():
+            if result == MessageResult.SUCCESS:
+                self._response_waiter.set_result(result)
+            else:
+                self._response_waiter.set_exception(ResponseException())
+        elif result == MessageResult.ERROR:
+            raise ResponseException
+
+    def _fail_waiter(self, exc: BaseException) -> None:
+        if self._response_waiter is not None and not self._response_waiter.done():
+            self._response_waiter.set_exception(exc)
+
+    async def _run(self) -> None:
+        """Supervise the connection: connect/reconnect, refresh, heartbeat.
+
+        1. first/init connection
             1.1 connect() device loop, pass, enable device
             1.2 auth for v3 device, MUST pass for v3 device
             1.3 init refresh_status, send query and check supported protocol
-                1.3.1 set socket timeout to QUERY_TIMEOUT before send query
-                1.3.2 get response and add timeout query cmd to not supported
-                1.3.1 parse recv response/status for supported protocol
+                1.3.1 get response and add timeout query cmd to not supported
+                1.3.2 parse recv response/status for supported protocol
         2. after socket/device connected, check for heartbeat/refresh_status
         3. job1: check refresh_interval
             3.1 socket/device connection should exist
             3.2 send only supported query and refresh status in main loop recv
-            3.3 set socket timeout before socket recv
         4. job2: check heartbeat interval
             4.1 socket/device connection should exist
             4.2 send heartbeat packet to keep alive
 
         scenario/bug fix:
-        1. while True loop should sleep 0.1 second to prevent cpu usage issue
-        2. device running and power off become offline, status update
-        3. device disconnected and power on, become online, status update
-        4. set command call build_send, main loop recv socket msg and refresh
-
+        1. device running and power off become offline, status update
+        2. device disconnected and power on, become online, status update
+        3. set command call build_send, read loop recv socket msg and refresh
         """
         # service loop
         while self._is_run:
             # connect loop until device online
-            self._connect_loop()
+            await self._connect_loop()
             if not self._should_run():
                 break
-            # socket recv msg timeout counter
-            timeout_counter = 0
             start = time.time()
             self._previous_refresh = self._previous_heartbeat = start
-            # refresh/recv msg loop after connected
+            reader_task = self._reader_task
+            if reader_task is None:
+                await self.close_socket()
+                continue
+            # refresh/heartbeat/watch-reader loop after connected
             while True:
                 should_reconnect = False
                 error_msg: str | None = None
                 try:
-                    if not self._socket:
-                        _LOGGER.debug("[%s] Socket is none", self._device_id)
-                        raise SocketException  # noqa: TRY301
                     now = time.time()
-                    # refresh_status only send supported query msg
-                    self._check_refresh(now)
-                    self._check_heartbeat(now)
-                    # set SOCKET_TIMEOUT before recv socket msg
-                    self._socket.settimeout(SOCKET_TIMEOUT)
-                    # refresh status after set/query
-                    msg = self._socket.recv(512)
-                    if len(msg) == 0:
-                        raise ConnectionResetError("Connection closed by peer")  # noqa: TRY301
-                    # parse msg and update latest status
-                    result = self.parse_message(msg)
-                    if result == MessageResult.SUCCESS:
-                        timeout_counter = 0
-                    if result == MessageResult.ERROR:
-                        error_msg = "Message 'ERROR' received"
-                        should_reconnect = True
-                except TimeoutError:
-                    timeout_counter += 1
-                    if timeout_counter >= RESPONSE_TIMEOUT:
-                        error_msg = "Heartbeat timed out"
+                    await self._check_refresh(now)
+                    await self._check_heartbeat(now)
+                    # Poll at the same cadence the old recv() timeout used, so
+                    # refresh/heartbeat get checked every SOCKET_TIMEOUT
+                    # regardless of how the two intervals are configured.
+                    done, _pending = await asyncio.wait(
+                        {reader_task},
+                        timeout=SOCKET_TIMEOUT,
+                    )
+                    if reader_task in done:
+                        # _read_loop only ever exits by raising; result()
+                        # re-raises that exception here.
+                        reader_task.result()
                         should_reconnect = True
                 except SocketException:  # refresh_status
                     error_msg = "Socket Exception"
@@ -997,11 +1070,14 @@ class MideaDevice(threading.Thread):
                 except NoSupportedProtocol:
                     error_msg = "No Supported protocol"
                     should_reconnect = True
-                except ConnectionResetError:  # refresh_status -> build_send exception
+                except ConnectionResetError:
                     error_msg = "Connection reset by peer"
                     should_reconnect = True
-                except OSError:  # refresh_status
+                except OSError:
                     error_msg = "OS error"
+                    should_reconnect = True
+                except ResponseException:
+                    error_msg = "Message 'ERROR' received"
                     should_reconnect = True
                 except Exception as e:
                     _LOGGER.exception(
@@ -1013,7 +1089,7 @@ class MideaDevice(threading.Thread):
                 if error_msg:
                     _LOGGER.debug("[%s] %s", self._device_id, error_msg)
                 if should_reconnect:
-                    self.close_socket()
+                    await self.close_socket()
                     break
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
