@@ -455,10 +455,30 @@ class MessageB8V2Body(MessageBody):
         super().__init__(
             body,
             [
-                IntEnumParser("work_status", _WORK_STATUS, B8V2WorkStatus),
-                IntEnumParser("control_type", _CONTROL_TYPE, B8ControlType),
-                IntEnumParser("move_direction", _MOVE_DIRECTION, B8V2Moviment),
-                IntEnumParser("clean_mode", _CLEAN_MODE, B8V2CleanMode),
+                IntEnumParser(
+                    "work_status",
+                    _WORK_STATUS,
+                    B8V2WorkStatus,
+                    default_value=B8V2WorkStatus.NONE,
+                ),
+                IntEnumParser(
+                    "control_type",
+                    _CONTROL_TYPE,
+                    B8ControlType,
+                    default_value=B8ControlType.NONE,
+                ),
+                IntEnumParser(
+                    "move_direction",
+                    _MOVE_DIRECTION,
+                    B8V2Moviment,
+                    default_value=B8V2Moviment.NONE,
+                ),
+                IntEnumParser(
+                    "clean_mode",
+                    _CLEAN_MODE,
+                    B8V2CleanMode,
+                    default_value=B8V2CleanMode.NONE,
+                ),
                 IntEnumParser(
                     "fan_level",
                     _FAN_LEVEL,
@@ -476,7 +496,12 @@ class MessageB8V2Body(MessageBody):
                 BoolParser("have_reserve_task", _HAVE_RESERVE_TASK),
                 IntParser("battery_percent", _BATTERY_PERCENT, max_value=100),
                 IntParser("work_time", _WORK_TIME),
-                IntEnumParser("error_type", _ERROR_TYPE, B8ErrorType),
+                IntEnumParser(
+                    "error_type",
+                    _ERROR_TYPE,
+                    B8ErrorType,
+                    default_value=B8ErrorType.NO,
+                ),
                 IntEnumParser(
                     "mop",
                     _MOP,
@@ -484,7 +509,12 @@ class MessageB8V2Body(MessageBody):
                     default_value=B8MopState.LACK_WATER,
                 ),
                 BoolParser("carpet_switch", _CARPET_SWITCH),
-                IntEnumParser("sweep_mop_mode", _SWEEP_MOP_MODE, B8V2SweepMopMode),
+                IntEnumParser(
+                    "sweep_mop_mode",
+                    _SWEEP_MOP_MODE,
+                    B8V2SweepMopMode,
+                    default_value=B8V2SweepMopMode.SWEEP_AND_MOP,
+                ),
                 BoolParser("uv_switch", _STATUS_SUMMARY, bit=0),
                 BoolParser("wifi_switch", _STATUS_SUMMARY, bit=1),
                 BoolParser("voice_switch", _STATUS_SUMMARY, bit=2),
@@ -493,12 +523,13 @@ class MessageB8V2Body(MessageBody):
             ],
         )
         # error_desc/sub_work_status pick their enum from a field parsed above
-        # (error_type/work_status), so they cannot be plain BodyParser entries.
+        # (error_type/work_status), so they cannot be plain BodyParser entries;
+        # the raw byte is still pulled through IntParser rather than read_byte.
         self.error_desc: B8V2ErrorDescription = self._parse_error_desc(
-            self.read_byte(body, _ERROR_DESC),
+            IntParser("error_desc", _ERROR_DESC).get_value(body),
         )
         self.sub_work_status = self._parse_sub_work_status(
-            self.read_byte(body, _SUB_WORK_STATUS),
+            IntParser("sub_work_status", _SUB_WORK_STATUS).get_value(body),
         )
 
     def _parse_error_desc(self, raw: int) -> B8V2ErrorDescription:
