@@ -1221,6 +1221,17 @@ class TestMideaDevice:
         writer.close.assert_called()
 
     @pytest.mark.asyncio
+    async def test_close_without_task_still_closes_socket(self) -> None:
+        """Test close() tears down the socket even without a supervisor task."""
+        self.device._is_run = True
+        self.device._task = None
+        _reader, writer = make_stream_pair()
+        self.device._writer = writer
+        await self.device.close()
+        assert self.device._is_run is False
+        writer.close.assert_called()
+
+    @pytest.mark.asyncio
     async def test_close_socket_close_oserror(self) -> None:
         """Test close_socket swallows OSError raised by writer.wait_closed()."""
         _reader, writer = make_stream_pair()
@@ -1355,6 +1366,22 @@ class TestMideaDevice:
         assert self.device._writer is None
 
     @pytest.mark.asyncio
+    async def test_connect_loop_exits_once_connected(self) -> None:
+        """Test _connect_loop stops retrying as soon as connect() succeeds."""
+        self.device._is_run = True
+        self.device._writer = None
+
+        async def fake_connect(*, check_protocol: bool = False) -> bool:
+            del check_protocol
+            self.device._writer = MagicMock()
+            return True
+
+        with patch.object(self.device, "connect", side_effect=fake_connect):
+            await self.device._connect_loop()
+
+        assert self.device._writer is not None
+
+    @pytest.mark.asyncio
     async def test_run_breaks_when_stopped_during_connect_loop(self) -> None:
         """Test _run exits immediately if closed while _connect_loop runs."""
         self.device._is_run = True
@@ -1385,6 +1412,55 @@ class TestMideaDevice:
             await self.device._run()
 
         assert calls["n"] == 2
+        close_mock.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_run_polls_without_reconnecting_while_reader_task_is_healthy(
+        self,
+    ) -> None:
+        """Test _run's steady-state pass: a still-running reader task is left alone.
+
+        Only once the reader task actually finishes should _run treat it as
+        a reason to reconnect; a poll where it's simply still running must
+        not trigger close_socket()/reconnect.
+        """
+        calls = {"n": 0}
+        reader_may_finish = asyncio.Event()
+
+        async def fake_connect_loop() -> None:
+            calls["n"] += 1
+            self.device._writer = MagicMock()
+            if calls["n"] == 1:
+
+                async def _reader_body() -> None:
+                    await reader_may_finish.wait()
+                    raise SocketException
+
+                self.device._reader_task = asyncio.create_task(_reader_body())
+            else:
+                self.device._is_run = False
+
+        check_refresh_calls = {"n": 0}
+
+        async def fake_check_refresh(_now: float) -> None:
+            check_refresh_calls["n"] += 1
+            # Let the reader task stay healthy through one full poll pass
+            # before finally finishing on the next one.
+            if check_refresh_calls["n"] >= 2:
+                reader_may_finish.set()
+
+        with (
+            patch.object(self.device, "_connect_loop", side_effect=fake_connect_loop),
+            patch.object(self.device, "_check_refresh", side_effect=fake_check_refresh),
+            patch.object(self.device, "_check_heartbeat", new=AsyncMock()),
+            patch.object(self.device, "close_socket", new=AsyncMock()) as close_mock,
+            patch("midealocal.device.SOCKET_TIMEOUT", 0.01),
+        ):
+            self.device._is_run = True
+            await self.device._run()
+
+        assert calls["n"] == 2
+        assert check_refresh_calls["n"] >= 2
         close_mock.assert_called_once()
 
     @pytest.mark.asyncio
