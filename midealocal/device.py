@@ -354,9 +354,13 @@ class MideaDevice:
                 timeout=SOCKET_TIMEOUT,
             )
             _LOGGER.debug("[%s] Connected", self._device_id)
-            self._reader_task = asyncio.create_task(self._read_loop())
             if self._device_protocol_version == ProtocolVersion.V3:
                 await self.authenticate()
+            # Start the sole reader only now: authenticate() does its own
+            # raw read() on self._reader for the handshake response, and
+            # asyncio.StreamReader raises RuntimeError if a second coroutine
+            # (here, _read_loop) awaits read() while one is already pending.
+            self._reader_task = asyncio.create_task(self._read_loop())
             # 1. midea_ac_lan add device verify token with connect and auth
             # 2. init connection, check_protocol
             if check_protocol:

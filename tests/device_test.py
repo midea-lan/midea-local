@@ -468,6 +468,48 @@ class TestMideaDevice:
                 await task
 
     @pytest.mark.asyncio
+    async def test_connect_v3_does_not_race_authenticate_against_read_loop(
+        self,
+    ) -> None:
+        """Regression test: the reader task must not start until after the V3 handshake.
+
+        asyncio.StreamReader raises RuntimeError if two coroutines await
+        read() on it concurrently. authenticate() does its own raw read()
+        for the handshake response, so _read_loop() (the sole reader once
+        the connection is up) must not start until that read is done --
+        this uses a real StreamReader, since mocks don't reproduce that
+        guard.
+        """
+        reader = asyncio.StreamReader()
+        writer = MagicMock(spec=asyncio.StreamWriter)
+        writer.wait_closed = AsyncMock()
+
+        async def _feed_handshake_response() -> None:
+            # Give the event loop a beat before the response "arrives", so
+            # a reader task started too early has every chance to race
+            # authenticate()'s own pending read() on self._reader.
+            await asyncio.sleep(0)
+            reader.feed_data(bytes(_AUTH_HANDSHAKE_RESPONSE))
+
+        feeder = asyncio.create_task(_feed_handshake_response())
+        with patch(
+            "midealocal.device.asyncio.open_connection",
+            new=AsyncMock(return_value=(reader, writer)),
+        ):
+            assert await self.device.connect() is True
+        await feeder
+
+        task, self.device._reader_task = self.device._reader_task, None
+        assert task is not None
+        # A task that already crashed (e.g. RuntimeError from a concurrent
+        # read()) finished before cancel() below has any effect on it, so
+        # it comes back non-cancelled -- that's the failure this catches.
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+        assert task.cancelled()
+
+    @pytest.mark.asyncio
     async def test_connect_generic_exception(self) -> None:
         """Test connect with generic exception."""
         self.device._buffer = b"stale"
