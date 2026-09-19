@@ -13,9 +13,9 @@ from secrets import token_hex
 from typing import Any, cast
 
 import aiofiles
-from aiohttp import ClientConnectionError, ClientSession, ClientTimeout
+from aiohttp import ClientConnectionError, ClientError, ClientSession, ClientTimeout
 
-from midealan.exceptions import ElementMissing
+from midealan.exceptions import CloudAuthError, CloudError, ElementMissing
 
 from .security import (
     CloudSecurity,
@@ -25,6 +25,17 @@ from .security import (
 )
 
 SN8_MIN_SERIAL_LENGTH = 17
+
+# E3 gas water heaters report water and gas consumption only in the cloud: the
+# official app requests the dayReportV2 usage report through the per-cloud
+# proxy alias below, authenticated with the user access token (the LAN
+# token/key are rejected).
+DAY_REPORT_ALIAS = "/cfhrs/e3/v1/api"
+DAY_REPORT_MESSAGE = "dayReportV2"
+DAY_REPORT_TIMEOUT = ClientTimeout(20)
+# Codes the gateway answers when the access token is missing, rejected or not a
+# user token; callers log in again instead of retrying the same token.
+AUTH_ERROR_CODES = frozenset({40001, 40002, 44001})
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -153,6 +164,15 @@ def _redact_data(data: str) -> str:
         )
 
     return data
+
+
+def _day_report_error(code: object, message: object) -> CloudError:
+    """Return the error matching a dayReportV2 error payload."""
+    error_code = code if isinstance(code, int) else -1
+    text = f"{error_code}: {message}"
+    if error_code in AUTH_ERROR_CODES:
+        return CloudAuthError(text)
+    return CloudError(text)
 
 
 class MideaCloud:
@@ -316,6 +336,72 @@ class MideaCloud:
         ):
             return cast("dict", response[device_id])
         return None
+
+    def set_access_token(self, access_token: str) -> None:
+        """Use an externally obtained access token instead of logging in."""
+        self._access_token = access_token
+
+    async def get_day_report(self, appliance_id: int) -> dict[str, Any] | None:
+        """Get the dayReportV2 usage report of an appliance.
+
+        The report is served by the per-cloud proxy under
+        :data:`DAY_REPORT_ALIAS` and requires a user access token: the LAN
+        ``token``/``key`` are rejected with 40002.
+
+        Returns
+        -------
+        dict[str, Any] | None
+            The raw report result, or None when the cloud holds no report for
+            the appliance.
+
+        Raises
+        ------
+        CloudAuthError
+            If no access token is available or the cloud rejected it.
+        CloudError
+            If the cloud does not provide usage reports, could not be reached,
+            or answered with an error.
+
+        """
+        if not self._access_token:
+            msg = "No Midea cloud access token"
+            raise CloudAuthError(msg)
+        if "alias=" not in self._api_url:
+            msg = f"Cloud {self._api_url} does not provide usage reports"
+            raise CloudError(msg)
+        url = f"{self._api_url}{DAY_REPORT_ALIAS}"
+        headers = {
+            "content-type": "application/json; charset=utf-8",
+            "accessToken": self._access_token,
+        }
+        payload = {
+            "msg": DAY_REPORT_MESSAGE,
+            "params": {"applianceId": str(appliance_id)},
+        }
+        try:
+            async with self._api_lock:
+                response = await self._session.request(
+                    "POST",
+                    url,
+                    headers=headers,
+                    json=payload,
+                    timeout=DAY_REPORT_TIMEOUT,
+                    allow_redirects=False,
+                )
+                data: Any = await response.json(content_type=None)
+        except (ClientError, TimeoutError, ValueError) as err:
+            msg = f"Midea cloud usage report request failed: {err}"
+            raise CloudError(msg) from err
+        if not isinstance(data, dict):
+            msg = f"Unexpected Midea cloud usage report response: {type(data).__name__}"
+            raise CloudError(msg)
+        error_code = data.get("code")
+        if error_code is not None:
+            raise _day_report_error(error_code, data.get("msg", ""))
+        if str(data.get("retCode")) != "0":
+            raise _day_report_error(0, data.get("desc", data.get("retCode")))
+        result = data.get("result")
+        return result if isinstance(result, dict) else None
 
     @staticmethod
     def _get_lua_download_metadata(

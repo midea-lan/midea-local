@@ -11,6 +11,14 @@ class CannotAuthenticate(MideaLanError):
     """Exception raised when credentials are incorrect."""
 
 
+class CloudError(MideaLanError):
+    """Exception raised when a Midea cloud request fails."""
+
+
+class CloudAuthError(CloudError):
+    """Exception raised when Midea cloud credentials are missing or rejected."""
+
+
 class CannotConnect(MideaLanError):
     """Exception raised when connection fails."""
 
