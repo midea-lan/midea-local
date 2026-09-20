@@ -443,19 +443,21 @@ class MideaDevice(threading.Thread):
         status stage has been appended yet, and whether this call appended
         anything (the unchecked pass loops on it until every stage is queued).
         """
-        # The init/capability probes depend on the message protocol version the
-        # appliance reply reports. Offer them only once a parsed reply has
-        # cleared _appliance_query; if the appliance query timed out, raised, or
-        # is still pending, _message_protocol_version is unresolved (0), so skip
-        # straight to build_query() rather than probe with a stale version and
-        # risk blacklisting a capability query for the whole connection.
+        # Prefer the message protocol version reported by the appliance reply.
+        # Some devices do not answer MessageQueryAppliance but still answer init
+        # and status queries with the default protocol version 0, so a recorded
+        # appliance-query timeout must not block capability probes forever.
+        appliance_query_resolved = (
+            not self._appliance_query
+            or "MessageQueryAppliance" in self._unsupported_protocol
+        )
         new_init = (
             [
                 cmd
                 for cmd in self.build_init_query()
                 if cmd.__class__.__name__ not in queued
             ]
-            if not self._appliance_query
+            if appliance_query_resolved
             else []
         )
         if new_init:
@@ -735,9 +737,10 @@ class MideaDevice(threading.Thread):
         """Build one-time queries to run once at connect time.
 
         refresh_status() sends these after the appliance query and before the
-        recurring build_query() status queries, and -- crucially -- builds them
-        only once the appliance reply has set the message protocol version, so
-        they can depend on it. Their own replies are then processed before the
+        recurring build_query() status queries. A successful appliance reply can
+        set the message protocol version before these probes are built; if the
+        appliance query is unsupported, probes still run with the default
+        protocol version 0. Their own replies are then processed before the
         status queries are built, so a status query can react to the result
         (e.g. the AC B5 capability probes decoded here). A device only needs to
         send these once (their reply never changes); the subclass clears its own
