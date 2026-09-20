@@ -7,7 +7,10 @@ import pytest
 from midealan.const import ProtocolVersion
 from midealan.crc8 import calculate
 from midealan.devices.ac.message import (
-    A1_MIN_BODY_LENGTH,
+    A0_A1_C0_MIN_BODY_LENGTH,
+    CONFORT_MODE_MIN_LENGTH2,
+    FROST_PROTECT_MIN_LENGTH,
+    SMART_DRY_MIN_LENGTH,
     CapabilitiesQuery,
     CapabilityBody,
     CapabilityTag,
@@ -965,7 +968,7 @@ class TestMessageACResponse:
 
     def test_message_notify2_a0(self) -> None:
         """Test Message parse notify2 A0."""
-        body = bytearray(18)
+        body = bytearray(19)
         body[0] = 0xA0  # Body type
         body[1] = 0b01011111  # Power on, target temperature with 0.5 increment
         body[2] = 0b11100000  # Mode
@@ -999,9 +1002,18 @@ class TestMessageACResponse:
         assert hasattr(response, "full_dust")
         assert hasattr(response, "comfort_mode")
 
+    def test_message_notify2_a0_short_body(self) -> None:
+        """Skip Message parse notify2 A0 when the body is too short."""
+        body = bytearray(A0_A1_C0_MIN_BODY_LENGTH)
+        body[0] = 0xA0  # Body type
+
+        response = MessageACResponse(self.header + body)
+
+        assert not hasattr(response, "power")
+
     def test_message_notify2_a0_fresh_filter(self) -> None:
         """Test Message parse notify2 A0 with fresh filter bytes."""
-        body = bytearray(30)  # stripped body length 29 >= FRESH_AIR_C0_MIN_LENGTH
+        body = bytearray(31)  # stripped body length 30 >= FRESH_AIR_C0_MIN_LENGTH
         body[0] = 0xA0  # Body type
         body[13] = 0x40  # Fresh filter timeout bit
         body[15] = 0x20  # Fresh filter time use low byte
@@ -1063,18 +1075,18 @@ class TestMessageACResponse:
         assert not hasattr(response, "current_work_time")
 
     def test_message_notify1_a1_body_length_boundary(self) -> None:
-        """Test Message parse notify1 A1 boundary at A1_MIN_BODY_LENGTH."""
+        """Test Message parse notify1 A1 boundary at A0_A1_C0_MIN_BODY_LENGTH."""
         self.header[9] = 0x04
 
         # One byte short of the minimum: skipped, and must not raise.
         # +1 accounts for the trailing checksum byte stripped by MessageResponse.
-        body = bytearray(A1_MIN_BODY_LENGTH - 1 + 1)
+        body = bytearray(A0_A1_C0_MIN_BODY_LENGTH - 1 + 1)
         body[0] = 0xA1
         response = MessageACResponse(self.header + body)
         assert not hasattr(response, "indoor_temperature")
 
         # Exactly the minimum: parsed.
-        body = bytearray(A1_MIN_BODY_LENGTH + 1)
+        body = bytearray(A0_A1_C0_MIN_BODY_LENGTH + 1)
         body[0] = 0xA1
         body[13] = 100  # Indoor temperature byte
         body[14] = 60  # Outdoor temperature byte
@@ -1682,10 +1694,50 @@ class TestMessageACResponse:
         assert hasattr(response, "outdoor_temperature")
         assert response.outdoor_temperature is None
 
+    def test_message_query_c0_short_body(self) -> None:
+        """Skip Message parse query C0 when the body is too short."""
+        self.header[9] = 0x03
+        body = bytearray(A0_A1_C0_MIN_BODY_LENGTH)
+        body[0] = 0xC0  # Body type
+
+        response = MessageACResponse(self.header + body)
+
+        assert not hasattr(response, "power")
+
+    @pytest.mark.parametrize(
+        ("minimum", "index", "value", "attribute"),
+        [
+            (FROST_PROTECT_MIN_LENGTH, 21, 0x80, "frost_protect"),
+            (SMART_DRY_MIN_LENGTH, 19, 0x01, "smart_dry"),
+            (CONFORT_MODE_MIN_LENGTH2, 22, 0x01, "comfort_mode"),
+        ],
+    )
+    def test_message_query_c0_tail_field_boundaries(
+        self,
+        minimum: int,
+        index: int,
+        value: int,
+        attribute: str,
+    ) -> None:
+        """Test C0 optional fields at their parser-visible length boundaries."""
+        self.header[9] = 0x03
+
+        for visible_length, expected in (
+            (minimum - 1, False),
+            (minimum, True),
+        ):
+            body = bytearray(visible_length + 1)
+            body[0] = 0xC0  # Body type
+            body[index] = value
+
+            response = MessageACResponse(self.header + body)
+
+            assert getattr(response, attribute, False) is expected
+
     def test_message_query_c0_fresh_filter(self) -> None:
         """Test Message parse query C0 with fresh filter bytes."""
         self.header[9] = 0x03
-        body = bytearray(30)  # stripped body length 29 >= FRESH_AIR_C0_MIN_LENGTH
+        body = bytearray(31)  # stripped body length 30 >= FRESH_AIR_C0_MIN_LENGTH
         body[0] = 0xC0  # Body type
         body[13] = 0x40  # Fresh filter timeout bit
         body[24] = 0x10  # Fresh filter time total low byte

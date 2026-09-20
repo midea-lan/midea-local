@@ -28,8 +28,6 @@ _LOGGER = logging.getLogger(__name__)
 # "silent"/"low"/"medium"/"high"/"auto"/"custom" with bool values.
 CapabilityValue = bool | int | list[str] | dict[str, dict[str, float] | bool]
 
-A1_MIN_BODY_LENGTH = 18
-
 BB_AC_MODES = [0, 3, 1, 2, 4, 5]
 BB_MIN_BODY_LENGTH = 21
 BB_FRESH_AIR_SWITCH_INDEX = 45
@@ -44,14 +42,15 @@ BB_INDOOR_TEMPERATURE_HIGH_INDEX = 8
 BB_INDOOR_HUMIDITY_INDEX = 30
 BB_SN8_FLAG_INDEX = 80
 BB_OUTDOOR_TEMPERATURE_HIGH_INDEX = 6
-CONFORT_MODE_MIN_LENGTH = 16
-CONFORT_MODE_MIN_LENGTH2 = 23
-SMART_DRY_MIN_LENGTH = 20
-SWING_LR_MIN_LENGTH = 21
-FRESH_AIR_C0_MIN_LENGTH = 29
+
+A0_A1_C0_MIN_BODY_LENGTH = 18
+CONFORT_MODE_MIN_LENGTH2 = 25
+SMART_DRY_MIN_LENGTH = 22
+SWING_LR_MIN_LENGTH = 22
+FRESH_AIR_C0_MIN_LENGTH = 30
 ECO_MODE_MIN_SUBPROTOCOL_LENGTH = 27
 FRESH_AIR_LENGTH = 2
-FROST_PROTECT_MIN_LENGTH = 22
+FROST_PROTECT_MIN_LENGTH = 24
 INDIRECT_WIND_VALUE = 0x02
 MAX_MSG_SERIAL_NUM = 254
 OUT_SILENT_VALUE = 0x03
@@ -1130,9 +1129,7 @@ class XA0Body(MessageBody):
         self.prevent_cold = (body[10] & 0x08) >> 3  # preventCold
         self.full_dust = ((body[13] & 0x20) >> 5) > 0  # dust_full_time
         # comfortPowerSave
-        self.comfort_mode = (
-            (body[14] & 0x1) > 0 if len(body) > CONFORT_MODE_MIN_LENGTH else False
-        )
+        self.comfort_mode = (body[14] & 0x1) > 0
         # smartDryValue
         self.smart_dry = (body[13] & 0x7F) > 0
         # swingLRUnderSwitch
@@ -1838,23 +1835,28 @@ class MessageACResponse(MessageResponse):
         super().__init__(message)
         # dataType 0x05 and messageBytes[0] 0xA0
         if self.message_type == MessageType.notify2 and self.body_type == ListTypes.A0:
-            self.set_body(XA0Body(super().body))
+            if len(super().body) < A0_A1_C0_MIN_BODY_LENGTH:
+                _LOGGER.debug(
+                    "Skipping A0 body too short to parse (%d < %d bytes): %s",
+                    len(super().body),
+                    A0_A1_C0_MIN_BODY_LENGTH,
+                    super().body.hex(),
+                )
+            else:
+                self.set_body(XA0Body(super().body))
         # dataType 0x04 and messageBytes[0] 0xA1
-        elif (
-            self.message_type == MessageType.notify1
-            and self.body_type == ListTypes.A1
-            and len(super().body) >= A1_MIN_BODY_LENGTH
-        ):
-            self.set_body(XA1Body(super().body))
         elif (
             self.message_type == MessageType.notify1 and self.body_type == ListTypes.A1
         ):
-            _LOGGER.debug(
-                "Skipping notify1 A1 body too short to parse (%d < %d bytes): %s",
-                len(super().body),
-                A1_MIN_BODY_LENGTH,
-                super().body.hex(),
-            )
+            if len(super().body) < A0_A1_C0_MIN_BODY_LENGTH:
+                _LOGGER.debug(
+                    "Skipping notify1 A1 body too short to parse (%d < %d bytes): %s",
+                    len(super().body),
+                    A0_A1_C0_MIN_BODY_LENGTH,
+                    super().body.hex(),
+                )
+            else:
+                self.set_body(XA1Body(super().body))
         # parse CapabilitiesQuery/CapabilitiesAdditionalQuery response
         # dataType 0x03 and messageBytes[0] 0xB5
         elif self.message_type == MessageType.query and self.body_type == ListTypes.B5:
@@ -1876,7 +1878,15 @@ class MessageACResponse(MessageResponse):
             self.message_type in [MessageType.query, MessageType.set]
             and self.body_type == ListTypes.C0
         ):
-            self.set_body(StateBody(super().body))
+            if len(super().body) < A0_A1_C0_MIN_BODY_LENGTH:
+                _LOGGER.debug(
+                    "Skipping C0 body too short to parse (%d < %d bytes): %s",
+                    len(super().body),
+                    A0_A1_C0_MIN_BODY_LENGTH,
+                    super().body.hex(),
+                )
+            else:
+                self.set_body(StateBody(super().body))
         # messageBytes[0] 0xC1
         elif self.message_type == MessageType.query and self.body_type == ListTypes.C1:
             self.set_body(GroupBody(super().body, power_analysis_method))
