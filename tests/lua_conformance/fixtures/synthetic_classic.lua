@@ -35,9 +35,7 @@ function updateGlobalPropertyValueByByte(messageBytes)
     temperatureValue = bit.band(messageBytes[2], 0x0F)
     errorCode = messageBytes[5]
     indoorTemperatureValue = (messageBytes[11] - 50) / 2
-    if bit.band(messageBytes[3], 0x80) == 0x80 then
-        ecoValue = 0x80
-    end
+    if bit.band(messageBytes[3], 0x80) == 0x80 then ecoValue = 0x80 end
 end
 
 function jsonToData(jsonCmd)
@@ -45,10 +43,10 @@ function jsonToData(jsonCmd)
     local json = decode(jsonCmd)
     local query = json["query"]
     local control = json["control"]
-    if (query) then
+    if query then
         bodyBytes[0] = 0x41
         msgBytes = assembleUart(bodyBytes, BYTE_QUERY_REQUEST)
-    elseif (control) then
+    elseif control then
         bodyBytes[0] = 0xC3
         bodyBytes[1] = powerValue
         bodyBytes[2] = bit.bor(modeValue, temperatureValue)

@@ -15,12 +15,7 @@ from tests.lua_conformance import build_mapping, compare_pair, generate_all, ite
 from tests.lua_conformance.compare import Verdict
 from tests.lua_conformance.mapping import LUA_ROOT, MatchStatus
 from tests.lua_conformance.report import render_mapping, render_report
-
-#: Device types with hand-written golden vectors in a ``conformance_*_test.py``.
-#: For these, every Lua file must agree with ``midealocal`` on field offsets,
-#: command body-types and framing (name-only enum differences are allowed and
-#: covered explicitly in the per-device test).
-VERIFIED_DEVICES = ("e1",)
+from tests.lua_conformance.verified import VERIFIED_DEVICES, structural_offenders
 
 
 @pytest.fixture(scope="module")
@@ -50,15 +45,7 @@ def test_verified_device_has_no_structural_regression(device: str) -> None:
     """
     for lua_path in sorted((LUA_ROOT / device).glob("*.lua")):
         result = compare_pair(device, lua_path)
-        offenders = [
-            f
-            for f in result.findings
-            if f.verdict is Verdict.MISSING
-            or (
-                f.verdict is Verdict.DIFFERENT
-                and f.area in {"decode_field", "command", "framing"}
-            )
-        ]
+        offenders = structural_offenders(result.findings)
         assert not offenders, f"{lua_path.name}:\n" + "\n".join(
             str(f) for f in offenders
         )
