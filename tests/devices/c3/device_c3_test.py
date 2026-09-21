@@ -95,6 +95,50 @@ class TestMideaC3Device:
         assert self.device.attributes[DeviceAttributes.total_produced_energy] is None
         assert self.device.attributes[DeviceAttributes.outdoor_temperature] is None
         assert self.device.attributes[DeviceAttributes.error_code] == 0
+        assert self.device.attributes[DeviceAttributes.remote_onoff] is None
+        assert self.device.attributes[DeviceAttributes.heat] is None
+        assert self.device.attributes[DeviceAttributes.cool] is None
+        assert self.device.attributes[DeviceAttributes.dhw] is None
+        assert self.device.attributes[DeviceAttributes.double_zone] is None
+        assert self.device.attributes[DeviceAttributes.room_thermal_support] is None
+        assert self.device.attributes[DeviceAttributes.room_thermal_state] is None
+        assert self.device.attributes[DeviceAttributes.time_set] is None
+        assert self.device.attributes[DeviceAttributes.holiday_on] is None
+        assert self.device.attributes[DeviceAttributes.tbh_control] is None
+        assert self.device.attributes[DeviceAttributes.sys_energy_ana_en] is None
+        assert self.device.attributes[DeviceAttributes.hmi_energy_ana_set_en] is None
+        assert self.device.attributes[DeviceAttributes.status_cool] is None
+        assert self.device.attributes[DeviceAttributes.zone1_temp_set] is None
+        assert self.device.attributes[DeviceAttributes.zone2_temp_set] is None
+        assert self.device.attributes[DeviceAttributes.t5s] is None
+        assert self.device.attributes[DeviceAttributes.tas] is None
+        assert self.device.attributes[DeviceAttributes.eco_function_state] is None
+        assert self.device.attributes[DeviceAttributes.eco_timer_state] is None
+        assert self.device.attributes[DeviceAttributes.disinfect_run] is None
+        assert self.device.attributes[DeviceAttributes.disinfect_set_weekday] is None
+        assert self.device.attributes[DeviceAttributes.disinfect_start_hour] is None
+        assert self.device.attributes[DeviceAttributes.disinfect_start_minutes] is None
+        assert self.device.attributes[DeviceAttributes.temp_t4] is None
+        assert self.device.attributes[DeviceAttributes.temp_t5] is None
+        assert self.device.attributes[DeviceAttributes.temp_ta] is None
+        assert self.device.attributes[DeviceAttributes.temp_tw2] is None
+        assert self.device.attributes[DeviceAttributes.temp_tb_t1] is None
+        assert self.device.attributes[DeviceAttributes.temp_tb_t2] is None
+        assert self.device.attributes[DeviceAttributes.temp_tsolar] is None
+        assert self.device.attributes[DeviceAttributes.hydbox_subtype] is None
+        assert self.device.attributes[DeviceAttributes.hydrobox_capacity] is None
+        assert self.device.attributes[DeviceAttributes.machine_type] is None
+        assert self.device.attributes[DeviceAttributes.odu_model] is None
+        assert self.device.attributes[DeviceAttributes.dc_current] is None
+        assert self.device.attributes[DeviceAttributes.idu_t1s1] is None
+        assert self.device.attributes[DeviceAttributes.idu_t1s2] is None
+        assert self.device.attributes[DeviceAttributes.water_flower] is None
+        assert self.device.attributes[DeviceAttributes.water_pressure] is None
+        assert self.device.attributes[DeviceAttributes.room_rel_hum] is None
+        assert self.device.attributes[DeviceAttributes.current_unit_capacity] is None
+        assert self.device.attributes[DeviceAttributes.instant_renew_power0] is None
+        assert self.device.attributes[DeviceAttributes.dc_bus_voltage] is None
+        assert self.device.attributes[DeviceAttributes.compressor_on] is None
         assert self.device.temperature_step == 1
         assert len(self.device.silent_modes) == 3
 

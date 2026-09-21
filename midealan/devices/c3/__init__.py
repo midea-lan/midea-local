@@ -120,6 +120,54 @@ class DeviceAttributes(StrEnum):
     odu_software_version_str = "odu_software_version_str"
     error_code_description = "error_code_description"
 
+    # --- additive attributes already parsed by message.py, now exposed ---
+    remote_onoff = "remote_onoff"
+    heat = "heat"
+    cool = "cool"
+    dhw = "dhw"
+    double_zone = "double_zone"
+    room_thermal_support = "room_thermal_support"
+    room_thermal_state = "room_thermal_state"
+    time_set = "time_set"
+    holiday_on = "holiday_on"
+    tbh_control = "tbh_control"
+    sys_energy_ana_en = "sys_energy_ana_en"
+    hmi_energy_ana_set_en = "hmi_energy_ana_set_en"
+    status_cool = "status_cool"
+    zone1_temp_set = "zone1_temp_set"
+    zone2_temp_set = "zone2_temp_set"
+    t5s = "t5s"
+    tas = "tas"
+    eco_function_state = "eco_function_state"
+    eco_timer_state = "eco_timer_state"
+    disinfect_run = "disinfect_run"
+    disinfect_set_weekday = "disinfect_set_weekday"
+    disinfect_start_hour = "disinfect_start_hour"
+    disinfect_start_minutes = "disinfect_start_minutes"
+    temp_t4 = "temp_t4"
+    temp_t5 = "temp_t5"
+    temp_ta = "temp_ta"
+    temp_tw2 = "temp_tw2"
+    temp_tb_t1 = "temp_tb_t1"
+    temp_tb_t2 = "temp_tb_t2"
+    temp_tsolar = "temp_tsolar"
+    hydbox_subtype = "hydbox_subtype"
+    hydrobox_capacity = "hydrobox_capacity"
+    machine_type = "machine_type"
+    odu_model = "odu_model"
+    dc_current = "dc_current"
+    idu_t1s1 = "idu_t1s1"
+    idu_t1s2 = "idu_t1s2"
+    water_flower = "water_flower"
+    water_pressure = "water_pressure"
+    room_rel_hum = "room_rel_hum"
+    current_unit_capacity = "current_unit_capacity"
+    instant_renew_power0 = "instant_renew_power0"
+
+    # --- additive attributes backed by new parsing logic ---
+    dc_bus_voltage = "dc_bus_voltage"
+    compressor_on = "compressor_on"
+
 
 class MideaC3Device(MideaDevice):
     """Midea C3 device."""
@@ -230,6 +278,50 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.idu_software_version_str: None,
                 DeviceAttributes.odu_software_version_str: None,
                 DeviceAttributes.error_code_description: "No error",
+                DeviceAttributes.remote_onoff: None,
+                DeviceAttributes.heat: None,
+                DeviceAttributes.cool: None,
+                DeviceAttributes.dhw: None,
+                DeviceAttributes.double_zone: None,
+                DeviceAttributes.room_thermal_support: None,
+                DeviceAttributes.room_thermal_state: None,
+                DeviceAttributes.time_set: None,
+                DeviceAttributes.holiday_on: None,
+                DeviceAttributes.tbh_control: None,
+                DeviceAttributes.sys_energy_ana_en: None,
+                DeviceAttributes.hmi_energy_ana_set_en: None,
+                DeviceAttributes.status_cool: None,
+                DeviceAttributes.zone1_temp_set: None,
+                DeviceAttributes.zone2_temp_set: None,
+                DeviceAttributes.t5s: None,
+                DeviceAttributes.tas: None,
+                DeviceAttributes.eco_function_state: None,
+                DeviceAttributes.eco_timer_state: None,
+                DeviceAttributes.disinfect_run: None,
+                DeviceAttributes.disinfect_set_weekday: None,
+                DeviceAttributes.disinfect_start_hour: None,
+                DeviceAttributes.disinfect_start_minutes: None,
+                DeviceAttributes.temp_t4: None,
+                DeviceAttributes.temp_t5: None,
+                DeviceAttributes.temp_ta: None,
+                DeviceAttributes.temp_tw2: None,
+                DeviceAttributes.temp_tb_t1: None,
+                DeviceAttributes.temp_tb_t2: None,
+                DeviceAttributes.temp_tsolar: None,
+                DeviceAttributes.hydbox_subtype: None,
+                DeviceAttributes.hydrobox_capacity: None,
+                DeviceAttributes.machine_type: None,
+                DeviceAttributes.odu_model: None,
+                DeviceAttributes.dc_current: None,
+                DeviceAttributes.idu_t1s1: None,
+                DeviceAttributes.idu_t1s2: None,
+                DeviceAttributes.water_flower: None,
+                DeviceAttributes.water_pressure: None,
+                DeviceAttributes.room_rel_hum: None,
+                DeviceAttributes.current_unit_capacity: None,
+                DeviceAttributes.instant_renew_power0: None,
+                DeviceAttributes.dc_bus_voltage: None,
+                DeviceAttributes.compressor_on: None,
             },
         )
         self._default_temperature_step: float = 0.5

@@ -13,6 +13,24 @@ from midealan.message import (
 
 TEMP_NEG_VALUE = 127
 
+# Sentinels for probes/curves the unit does not have installed. Confirmed
+# against a Galmet Prima 06 GT: a wired-HMI reading sheet transcribed at the
+# same timestamps as a LAN capture shows "-" (not installed) for every one of
+# these fields exactly when the LAN byte reads the sentinel value below, so
+# the byte means "not present", not a literal 127 degC or an active curve.
+TEMP_PROBE_DISCONNECTED = 0x7F
+CURVE_SETPOINT_INACTIVE = 0xFF
+
+
+def _temp_or_none(raw: int) -> int | None:
+    """Map the disconnected-probe sentinel (0x7F) to None."""
+    return None if raw == TEMP_PROBE_DISCONNECTED else raw
+
+
+def _setpoint_or_none(raw: int) -> int | None:
+    """Map the curve-inactive sentinel (0xFF) to None."""
+    return None if raw == CURVE_SETPOINT_INACTIVE else raw
+
 
 # Serial-number blocks appended to the X10 telemetry frame. The lua splits
 # the tail into three fixed 32-byte ASCII blocks (1-indexed):
@@ -437,8 +455,8 @@ class C3BasicBody(MessageBody):
             else:
                 self.error_code_description = f"Unknown code (raw={self.error_code})"
         self.tbh_control = body[data_offset + 23] & 0x80 > 0
-        self.SysEnergyAnaEN = body[data_offset + 23] & 0x20 > 0
-        self.HMIEnergyAnaSetEN = body[data_offset + 23] & 0x40 > 0
+        self.sys_energy_ana_en = body[data_offset + 23] & 0x20 > 0
+        self.hmi_energy_ana_set_en = body[data_offset + 23] & 0x40 > 0
 
 
 class C3EnergyBody(MessageBody):
@@ -541,6 +559,7 @@ class C3UnitParaBody(MessageBody):
         """Initialize C3 UnitPara message body."""
         super().__init__(body)
         self.comp_run_freq = body[data_offset]
+        self.compressor_on = self.comp_run_freq > 0
         self.unit_mode_run = body[data_offset + 1]
         # Outdoor fan speed, transmitted as RPM / 10 in a single byte.
         # It lives at data_offset + 2, directly after unit_mode_run; the
@@ -555,7 +574,7 @@ class C3UnitParaBody(MessageBody):
         self.temp_tp = body[data_offset + 8]
         self.temp_tw_in = body[data_offset + 9]
         self.temp_tw_out = body[data_offset + 10]
-        self.temp_tsolar = body[data_offset + 11]
+        self.temp_tsolar = _temp_or_none(body[data_offset + 11])
         self.hydbox_subtype = body[data_offset + 12]
         self.fg_usb_info_connect = body[data_offset + 13]
         # self.usb_index_max  body[data_offset + 14]
@@ -611,13 +630,13 @@ class C3UnitParaBody(MessageBody):
         self.fact_req_ther_heat_on = bool(run_state & 0x40)
         self.edge_version_type = bool(run_state & 0x80)
         self.temp_t1 = body[data_offset + 33]
-        self.temp_tw2 = body[data_offset + 34]
+        self.temp_tw2 = _temp_or_none(body[data_offset + 34])
         self.temp_t2 = body[data_offset + 35]
         self.temp_t2b = body[data_offset + 36]
         self.temp_t5 = body[data_offset + 37]
-        self.temp_ta = body[data_offset + 38]
-        self.temp_tb_t1 = body[data_offset + 39]
-        self.temp_tb_t2 = body[data_offset + 40]
+        self.temp_ta = _temp_or_none(body[data_offset + 38])
+        self.temp_tb_t1 = _temp_or_none(body[data_offset + 39])
+        self.temp_tb_t2 = _temp_or_none(body[data_offset + 40])
         self.hydrobox_capacity = body[data_offset + 41]
         self.pressure_high = body[data_offset + 42] * 256 + body[data_offset + 43]
         self.pressure_low = body[data_offset + 44] * 256 + body[data_offset + 45]
@@ -625,9 +644,13 @@ class C3UnitParaBody(MessageBody):
         self.machine_type = body[data_offset + 47]
         self.odu_target_fre = body[data_offset + 48]
         self.dc_current = body[data_offset + 49]
+        # Inverter DC bus voltage, single byte scaled x10 (V). Offset +50
+        # sits between dc_current (+49) and temp_tf (+51) and was previously
+        # unused. Correlated against wired HMI: raw 33 -> 330 V, raw 37 -> 370 V.
+        self.dc_bus_voltage = body[data_offset + 50] * 10
         self.temp_tf = body[data_offset + 51]
-        self.idu_t1s1 = body[data_offset + 52]
-        self.idu_t1s2 = body[data_offset + 53]
+        self.idu_t1s1 = _setpoint_or_none(body[data_offset + 52])
+        self.idu_t1s2 = _setpoint_or_none(body[data_offset + 53])
         self.water_flower = body[data_offset + 54] * 256 + body[data_offset + 55]
         self.odu_plan_vol_lmt = body[data_offset + 56]
         # lua _bodyBytes[58] * 256 + _bodyBytes[59]; the low byte was dropped.
@@ -737,6 +760,7 @@ class C3UnitParaUpBody(MessageBody):
         """Initialize C3 UnitPara notify message body."""
         super().__init__(body)
         self.comp_run_freq = body[data_offset]
+        self.compressor_on = self.comp_run_freq > 0
         self.fan_speed = body[data_offset + 1] * FAN_SPEED_FACTOR
         self.temp_t3 = body[data_offset + 2]
         self.temp_t4 = body[data_offset + 3]
@@ -746,18 +770,18 @@ class C3UnitParaUpBody(MessageBody):
         self.odu_comp_current = body[data_offset + 7]
         self.odu_voltage = body[data_offset + 8] * 256 + body[data_offset + 9]
         self.temp_t1 = body[data_offset + 10]
-        self.temp_tw2 = body[data_offset + 11]
+        self.temp_tw2 = _temp_or_none(body[data_offset + 11])
         self.temp_t2 = body[data_offset + 12]
         self.temp_t2b = body[data_offset + 13]
         self.temp_t5 = body[data_offset + 14]
-        self.temp_ta = body[data_offset + 15]
+        self.temp_ta = _temp_or_none(body[data_offset + 15])
         self.pressure_high = body[data_offset + 16] * 256 + body[data_offset + 17]
         self.pressure_low = body[data_offset + 18] * 256 + body[data_offset + 19]
         self.temp_th = body[data_offset + 20]
         self.odu_target_fre = body[data_offset + 21]
         self.temp_tf = body[data_offset + 22]
-        self.idu_t1s1 = body[data_offset + 23]
-        self.idu_t1s2 = body[data_offset + 24]
+        self.idu_t1s1 = _setpoint_or_none(body[data_offset + 23])
+        self.idu_t1s2 = _setpoint_or_none(body[data_offset + 24])
         self.water_flower = body[data_offset + 25] * 256 + body[data_offset + 26]
         self.current_unit_capacity = (
             body[data_offset + 27] * 256 + body[data_offset + 28]

@@ -184,9 +184,13 @@ class TestMessageC3Response:
                 0x01
                 | 0x04
                 | 0x08
-                | 0x20,  # BYTE 1: zone_power1 + dhw_power + zone1_curve + tbh
-                0x30,  # BYTE 2: temp_type [True, True]
-                0x2 | 0x8,  # BYTE 3: silent on, eco on
+                | 0x20
+                | 0x80,  # BYTE 1: zone1_power+dhw_power+zone1_curve+tbh+remote_onoff
+                0x30
+                | 0x01
+                | 0x04
+                | 0x40,  # BYTE 2: temp_type + heat + dhw + room_thermal_support
+                0x2 | 0x8 | 0x1 | 0x4,  # BYTE 3: silent+eco+time_set+holiday
                 0x3,  # BYTE 4: Mode HEAT
                 0x2,  # BYTE 5: Mode Auto COOL
                 21,  # BYTE 6: Zone1 Target Temp
@@ -207,7 +211,7 @@ class TestMessageC3Response:
                 34,  # BYTE 21: dhw_temp_min
                 44,  # BYTE 22: tank_actual_temperature
                 0x0,  # BYTE 23; error_code
-                0x0,  # BYTE 24; tbh_control
+                0x80 | 0x20 | 0x40,  # BYTE 24: tbh_control+sys/hmi_energy_ana_en
                 0x0,  # CRC
             ],
         )
@@ -272,6 +276,30 @@ class TestMessageC3Response:
             assert response.tank_actual_temperature == 44
             assert hasattr(response, "error_code")
             assert response.error_code == 0x0
+            assert hasattr(response, "remote_onoff")
+            assert response.remote_onoff is True
+            assert hasattr(response, "heat")
+            assert response.heat is True
+            assert hasattr(response, "cool")
+            assert response.cool is False
+            assert hasattr(response, "dhw")
+            assert response.dhw is True
+            assert hasattr(response, "double_zone")
+            assert response.double_zone is False
+            assert hasattr(response, "room_thermal_support")
+            assert response.room_thermal_support is True
+            assert hasattr(response, "room_thermal_state")
+            assert response.room_thermal_state is False
+            assert hasattr(response, "time_set")
+            assert response.time_set is True
+            assert hasattr(response, "holiday_on")
+            assert response.holiday_on is True
+            assert hasattr(response, "tbh_control")
+            assert response.tbh_control is True
+            assert hasattr(response, "sys_energy_ana_en")
+            assert response.sys_energy_ana_en is True
+            assert hasattr(response, "hmi_energy_ana_set_en")
+            assert response.hmi_energy_ana_set_en is True
 
     def test_message_unit_para_response(self) -> None:
         """Test message unit-parameter response."""
@@ -364,7 +392,7 @@ class TestMessageC3Response:
         body = bytearray(
             [
                 ListTypes.X04,
-                0x01 | 0x04,  # BYTE 1: status_dhw + status_heating
+                0x01 | 0x02 | 0x04,  # BYTE 1: status_dhw+status_heating+status_cool
                 0x32,  # BYTE 2: total_energy_consumption
                 0x1A,  # BYTE 3: total_energy_consumption
                 0xB3,  # BYTE 4: total_energy_consumption
@@ -391,6 +419,8 @@ class TestMessageC3Response:
         assert response.status_ibh is False
         assert hasattr(response, "status_heating")
         assert response.status_heating is True
+        assert hasattr(response, "status_cool")
+        assert response.status_cool is True
         assert hasattr(response, "total_energy_consumption")
         assert response.total_energy_consumption == 840610754
         assert hasattr(response, "total_produced_energy")
@@ -514,13 +544,37 @@ class TestMessageC3Response:
         body[8] = 30  # temp_t4
         body[10] = 40  # temp_tw_in
         body[11] = 35  # temp_tw_out
+        body[12] = 60  # temp_tsolar
+        body[13] = 7  # hydbox_subtype
         body[18] = 1  # odu_voltage high byte
         body[19] = 44  # odu_voltage low byte
         body[22] = 5  # odu_model
+        body[35] = 65  # temp_tw2
+        body[38] = 66  # temp_t5
+        body[39] = 67  # temp_ta
+        body[40] = 68  # temp_tb_t1
+        body[41] = 69  # temp_tb_t2
+        body[42] = 200  # hydrobox_capacity
         body[43] = 2  # pressure_high high byte
+        body[45] = 3  # pressure_low high byte
+        body[46] = 232  # pressure_low low byte
+        body[48] = 8  # machine_type
+        body[50] = 6  # dc_current
+        body[51] = 37  # dc_bus_voltage raw byte (x10 -> 370 V)
+        body[53] = 45  # idu_t1s1
+        body[54] = 46  # idu_t1s2
+        body[55] = 1  # water_flower high byte
+        body[56] = 44  # water_flower low byte
+        body[58] = 9  # current_unit_capacity high byte
+        body[59] = 250  # current_unit_capacity low byte
+        body[62] = 2  # water_pressure high byte
+        body[63] = 44  # water_pressure low byte
+        body[64] = 55  # room_rel_hum
         body[70] = 10  # total_electricity0 low byte
         body[83] = 1  # instant_power0 high byte
         body[84] = 244  # instant_power0 low byte
+        body[85] = 0  # instant_renew_power0 high byte
+        body[86] = 180  # instant_renew_power0 low byte
         response = MessageC3Response(bytes(self.header + body))
         assert response.body_type == ListTypes.X10
         assert hasattr(response, "comp_run_freq")
@@ -547,6 +601,46 @@ class TestMessageC3Response:
         assert response.total_electricity0 == 10
         assert hasattr(response, "instant_power0")
         assert response.instant_power0 == 500
+        assert hasattr(response, "compressor_on")
+        assert response.compressor_on is True
+        assert hasattr(response, "dc_bus_voltage")
+        assert response.dc_bus_voltage == 370
+        assert hasattr(response, "temp_tsolar")
+        assert response.temp_tsolar == 60
+        assert hasattr(response, "hydbox_subtype")
+        assert response.hydbox_subtype == 7
+        assert hasattr(response, "temp_tw2")
+        assert response.temp_tw2 == 65
+        assert hasattr(response, "temp_t5")
+        assert response.temp_t5 == 66
+        assert hasattr(response, "temp_ta")
+        assert response.temp_ta == 67
+        assert hasattr(response, "temp_tb_t1")
+        assert response.temp_tb_t1 == 68
+        assert hasattr(response, "temp_tb_t2")
+        assert response.temp_tb_t2 == 69
+        assert hasattr(response, "hydrobox_capacity")
+        assert response.hydrobox_capacity == 200
+        assert hasattr(response, "pressure_low")
+        assert response.pressure_low == 1000
+        assert hasattr(response, "machine_type")
+        assert response.machine_type == 8
+        assert hasattr(response, "dc_current")
+        assert response.dc_current == 6
+        assert hasattr(response, "idu_t1s1")
+        assert response.idu_t1s1 == 45
+        assert hasattr(response, "idu_t1s2")
+        assert response.idu_t1s2 == 46
+        assert hasattr(response, "water_flower")
+        assert response.water_flower == 300
+        assert hasattr(response, "current_unit_capacity")
+        assert response.current_unit_capacity == 2554
+        assert hasattr(response, "water_pressure")
+        assert response.water_pressure == 556
+        assert hasattr(response, "room_rel_hum")
+        assert response.room_rel_hum == 55
+        assert hasattr(response, "instant_renew_power0")
+        assert response.instant_renew_power0 == 180
 
 
 class TestC3UnitParaFanSpeed:
@@ -759,6 +853,8 @@ class TestC3UnitParaNotify:
         assert hasattr(response, "odu_target_fre")
         assert hasattr(response, "temp_tf")
         assert hasattr(response, "total_electricity0")
+        assert hasattr(response, "compressor_on")
+        assert response.compressor_on is True
         assert response.comp_run_freq == 33
         assert response.fan_speed == 630
         assert response.unit_mode_run == C3DeviceMode.COOL
@@ -815,6 +911,134 @@ class TestC3UnitParaNotify:
         assert hasattr(response, "silent_mode")
         assert response.silent_mode is True
         assert not hasattr(response, "comp_run_freq")
+
+
+class TestC3CompressorOnDerivation:
+    """Test compressor_on derivation.
+
+    `compressor_on` is derived from `comp_run_freq > 0` in both C3 bodies
+    that carry compressor frequency: the X10 query response and the
+    MSG_TYPE_UP_UNITPARA notify.
+    """
+
+    QUERY_HEADER = bytearray(
+        [0xAA, 0x00, 0xC3, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, MessageType.query],
+    )
+    NOTIFY_HEADER = bytearray(
+        [0xAA, 0x00, 0xC3, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, MessageType.notify1],
+    )
+
+    def test_compressor_on_false_when_freq_is_zero(self) -> None:
+        """Test compressor_on is False while comp_run_freq is zero."""
+        body = bytearray(88)
+        body[0] = ListTypes.X10
+        response = MessageC3Response(bytes(self.QUERY_HEADER + body))
+        assert hasattr(response, "compressor_on")
+        assert response.compressor_on is False
+
+    def test_compressor_on_true_when_freq_is_nonzero(self) -> None:
+        """Test compressor_on is True as soon as comp_run_freq is nonzero."""
+        body = bytearray(88)
+        body[0] = ListTypes.X10
+        body[1] = 1  # comp_run_freq
+        response = MessageC3Response(bytes(self.QUERY_HEADER + body))
+        assert hasattr(response, "compressor_on")
+        assert response.compressor_on is True
+
+    def test_compressor_on_from_notify_body(self) -> None:
+        """Test compressor_on is also derived in the notify (X05) body."""
+        body = bytearray(96)
+        body[0] = ListTypes.X05
+        response = MessageC3Response(bytes(self.NOTIFY_HEADER + body))
+        assert hasattr(response, "compressor_on")
+        assert response.compressor_on is False
+
+        body[1] = 12  # comp_run_freq
+        response = MessageC3Response(bytes(self.NOTIFY_HEADER + body))
+        assert hasattr(response, "compressor_on")
+        assert response.compressor_on is True
+
+
+class TestC3ProbeSentinels:
+    """Test uninstalled-probe sentinel handling.
+
+    Uninstalled probes/curves report a fixed sentinel byte instead of a
+    real reading. Confirmed on a Galmet Prima 06 GT: a wired-HMI reading
+    sheet transcribed at the same timestamps as a LAN capture shows "-"
+    (not installed) for every one of these fields, exactly when the LAN
+    byte reads the sentinel below -- so the sentinel means "not present",
+    not a literal 127 degC reading or an active curve setpoint.
+    """
+
+    QUERY_HEADER = bytearray(
+        [0xAA, 0x00, 0xC3, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, MessageType.query],
+    )
+    NOTIFY_HEADER = bytearray(
+        [0xAA, 0x00, 0xC3, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, MessageType.notify1],
+    )
+
+    def test_query_temp_probe_sentinels_map_to_none(self) -> None:
+        """Test 0x7F temp probes are None in the X10 query body."""
+        body = bytearray(88)
+        body[0] = ListTypes.X10
+        body[12] = 0x7F  # temp_tsolar
+        body[35] = 0x7F  # temp_tw2
+        body[39] = 0x7F  # temp_ta
+        body[40] = 0x7F  # temp_tb_t1
+        body[41] = 0x7F  # temp_tb_t2
+        response = MessageC3Response(bytes(self.QUERY_HEADER + body))
+        assert hasattr(response, "temp_tsolar")
+        assert response.temp_tsolar is None
+        assert hasattr(response, "temp_tw2")
+        assert response.temp_tw2 is None
+        assert hasattr(response, "temp_ta")
+        assert response.temp_ta is None
+        assert hasattr(response, "temp_tb_t1")
+        assert response.temp_tb_t1 is None
+        assert hasattr(response, "temp_tb_t2")
+        assert response.temp_tb_t2 is None
+
+    def test_query_curve_setpoint_sentinels_map_to_none(self) -> None:
+        """Test 0xFF curve setpoints are None in the X10 query body."""
+        body = bytearray(88)
+        body[0] = ListTypes.X10
+        body[53] = 0xFF  # idu_t1s1
+        body[54] = 0xFF  # idu_t1s2
+        response = MessageC3Response(bytes(self.QUERY_HEADER + body))
+        assert hasattr(response, "idu_t1s1")
+        assert response.idu_t1s1 is None
+        assert hasattr(response, "idu_t1s2")
+        assert response.idu_t1s2 is None
+
+    def test_notify_probe_sentinels_map_to_none(self) -> None:
+        """Test the same sentinels are honoured in the notify (X05) body."""
+        body = bytearray(96)
+        body[0] = ListTypes.X05
+        body[12] = 0x7F  # temp_tw2
+        body[16] = 0x7F  # temp_ta
+        body[24] = 0xFF  # idu_t1s1
+        body[25] = 0xFF  # idu_t1s2
+        response = MessageC3Response(bytes(self.NOTIFY_HEADER + body))
+        assert hasattr(response, "temp_tw2")
+        assert response.temp_tw2 is None
+        assert hasattr(response, "temp_ta")
+        assert response.temp_ta is None
+        assert hasattr(response, "idu_t1s1")
+        assert response.idu_t1s1 is None
+        assert hasattr(response, "idu_t1s2")
+        assert response.idu_t1s2 is None
+
+    def test_sentinel_neighbour_byte_is_not_affected(self) -> None:
+        """Test a non-sentinel value at the same offsets passes through."""
+        body = bytearray(88)
+        body[0] = ListTypes.X10
+        body[12] = 60  # temp_tsolar, a real-looking reading
+        body[53] = 45  # idu_t1s1, a real-looking setpoint
+        response = MessageC3Response(bytes(self.QUERY_HEADER + body))
+        assert hasattr(response, "temp_tsolar")
+        assert response.temp_tsolar == 60
+        assert hasattr(response, "idu_t1s1")
+        assert response.idu_t1s1 == 45
 
 
 class TestC3UnitParaLuaOffsets:
