@@ -1,6 +1,7 @@
 """Test AC Device."""
 
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import patch
 
 import pytest
@@ -16,6 +17,7 @@ from midealan.devices.ac.message import (
     GroupTwoQuery,
     GroupZeroQuery,
     HumidityQuery,
+    MessageACResponse,
     PowerFormats,
     PowerQuery,
     PropertiesQuery,
@@ -28,6 +30,12 @@ from midealan.devices.ac.message import (
     ToggleDisplay,
 )
 from midealan.message import ListTypes, MessageBase
+
+# C0 body from the public capture in
+# https://github.com/wuwentao/midea_ac_lan/issues/998
+MODEL_220F4047_C0_BODY = bytes.fromhex(
+    "c00150667f7f0000000c002e200b0003000000000000000058020000f0ff533d",
+)
 
 
 class TestMideaACDevice:
@@ -556,6 +564,72 @@ class TestMideaACDevice:
                 True,
             )
             build_send.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("decimal", "expected_temperature"),
+        [(0x03, 23.3), (0x08, 23.8)],
+    )
+    def test_220f4047_c0_temperature_uses_model_specific_encoding(
+        self,
+        decimal: int,
+        expected_temperature: float,
+    ) -> None:
+        """Decode the C0 temperatures reported by model 220F4047 subtype 8."""
+        device = self._make_device("220F4047", 8)
+        body = bytearray(MODEL_220F4047_C0_BODY)
+        body[15] = decimal
+
+        status = device.process_message(self._response(body))
+
+        assert status[DeviceAttributes.indoor_temperature.value] == expected_temperature
+        assert status[DeviceAttributes.outdoor_temperature.value] is None
+
+    @pytest.mark.parametrize(
+        ("model", "subtype"),
+        [("220F4047", 1), ("other", 8)],
+    )
+    def test_220f4047_c0_temperature_encoding_is_exactly_gated(
+        self,
+        model: str,
+        subtype: int,
+    ) -> None:
+        """Keep the standard C0 decoder for every other model/subtype pair."""
+        device = self._make_device(model, subtype)
+
+        status = device.process_message(
+            self._response(bytearray(MODEL_220F4047_C0_BODY)),
+        )
+
+        assert status[DeviceAttributes.indoor_temperature.value] == -2.3
+        assert status[DeviceAttributes.outdoor_temperature.value] == -9.0
+
+    def test_c0_temperature_fix_keeps_non_placeholder_outdoor_temperature(
+        self,
+    ) -> None:
+        """Keep the parsed outdoor temperature when it is not a placeholder."""
+        device = self._make_device("220F4047", 8)
+        body = bytearray(MODEL_220F4047_C0_BODY)
+        body[12] = 0x50
+
+        status = device.process_message(self._response(body))
+
+        assert status[DeviceAttributes.indoor_temperature.value] == 23.3
+        assert status[DeviceAttributes.outdoor_temperature.value] == 15.0
+
+    def test_c0_temperature_fix_ignores_short_body(self) -> None:
+        """Ignore malformed C0 bodies before reading temperature indexes."""
+        device = self._make_device("220F4047", 8)
+        message = SimpleNamespace(
+            body_type=ListTypes.C0,
+            body=bytearray(12),
+            indoor_temperature="unchanged",
+            outdoor_temperature="unchanged",
+        )
+
+        device._fix_c0_temperature(cast("MessageACResponse", message))
+
+        assert message.indoor_temperature == "unchanged"
+        assert message.outdoor_temperature == "unchanged"
 
     def test_actual_frequency_only_model_gating(self) -> None:
         """Test the naturally detected BB model exposes only actual frequency."""

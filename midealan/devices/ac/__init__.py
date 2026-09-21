@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, cast
 
-from midealan.const import DeviceType
+from midealan.const import MAX_BYTE_VALUE, DeviceType
 from midealan.device import MideaDevice, MideaDeviceInitKwargs
 from midealan.message import ListTypes
 
@@ -139,6 +139,18 @@ BB_FRESH_AIR_DEFAULT_SPEED = 60
 # The BB exhaust preset map has no "medium" (60) entry; use the first
 # advertised non-silent exhaust mode when a power-on command has no prior speed.
 BB_FRESH_AIR_EXHAUST_DEFAULT_SPEED = 80
+C0_TEMPERATURE_FIX_KEYS = frozenset(
+    {
+        ("220F4047", 8),  # midea_ac_lan#998
+    },
+)
+C0_OUTDOOR_TEMPERATURE_PLACEHOLDERS = frozenset({0x20})
+C0_INDOOR_TEMPERATURE_INDEX = 11
+C0_OUTDOOR_TEMPERATURE_INDEX = 12
+C0_TEMPERATURE_DECIMAL_INDEX = 15
+C0_TEMPERATURE_DECIMAL_MIN_BODY_LENGTH = 20
+C0_TEMPERATURE_DIVISOR = 2
+C0_TEMPERATURE_DECIMAL_FACTOR = 0.1
 
 
 @dataclass(frozen=True)
@@ -484,13 +496,43 @@ class MideaACDevice(MideaDevice):
         self._support_capability = False
         self._support_capability_addition = False
 
+    def _fix_c0_temperature(self, message: MessageACResponse) -> None:
+        """Correct C0 temperature encoding for verified model/subtype pairs."""
+        if (
+            self._model_key not in C0_TEMPERATURE_FIX_KEYS
+            or message.body_type != ListTypes.C0
+        ):
+            return
+        body = message.body
+        if len(body) <= C0_OUTDOOR_TEMPERATURE_INDEX:
+            return
+        decimal = (
+            body[C0_TEMPERATURE_DECIMAL_INDEX]
+            if len(body) > C0_TEMPERATURE_DECIMAL_MIN_BODY_LENGTH
+            else 0
+        )
+        indoor_temperature = body[C0_INDOOR_TEMPERATURE_INDEX]
+        setattr(
+            message,
+            DeviceAttributes.indoor_temperature,
+            (
+                None
+                if indoor_temperature == MAX_BYTE_VALUE
+                else indoor_temperature / C0_TEMPERATURE_DIVISOR
+                + (decimal & 0x0F) * C0_TEMPERATURE_DECIMAL_FACTOR
+            ),
+        )
+        if body[C0_OUTDOOR_TEMPERATURE_INDEX] in C0_OUTDOOR_TEMPERATURE_PLACEHOLDERS:
+            setattr(message, DeviceAttributes.outdoor_temperature, None)
+
     def process_message(self, msg: bytes) -> dict[str, Any]:  # noqa: C901
         """Midea AC device process message."""
         message = MessageACResponse(
             bytearray(msg),
-            self._power_analysis_method,
-            self._uses_new_protocol_temperature,
+            power_analysis_method=self._power_analysis_method,
+            new_protocol_temperature=self._uses_new_protocol_temperature,
         )
+        self._fix_c0_temperature(message)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         has_fresh_air = False
