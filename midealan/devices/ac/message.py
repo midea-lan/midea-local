@@ -481,136 +481,226 @@ class ToggleDisplay(MessageACBase):
         )
 
 
-class PropertiesQuery(MessageACBase):
-    """AC message new protocol query.
+# Module-level shared constants for B1 query splitting.
+#
+# The single CapabilityTag enum above holds every known new-protocol tag. The
+# three frozensets below classify those tags into the datasets that drive B1
+# querying. Because Python IntEnum cannot inherit members, the categories are
+# expressed as frozensets over the one master enum rather than as separate
+# enums.
 
-    A single B1 query carries a list of new-protocol tags. The device answers
-    with an empty parameter list when a request carries a tag it does not
-    support, which suppresses every other tag in the same request. The base
-    list therefore holds only tags every new-protocol device is known to
-    answer, while status feature tags that some devices reject (self_clean,
-    rate_select, ...) are appended automatically from the merged capabilities
-    map (B5 capabilities overlaid with the user's customize overrides): any
-    capability key that names a CapabilityTag member and is truthy is added.
+# COMMON_TAGS: tags valid as both a B5 capability and a B1 property. Shared base
+# included by both PROPERTIES_TAGS and (by exclusion) CAPABILITY_ONLY_TAGS.
+COMMON_TAGS: frozenset[int] = frozenset(
+    {
+        CapabilityTag.wind_ud_angle,  # 0x0009
+        CapabilityTag.wind_lr_angle,  # 0x000A
+        CapabilityTag.breezeless,  # 0x0018
+        CapabilityTag.self_clean,  # 0x0039
+        CapabilityTag.indirect_wind,  # 0x0042
+        CapabilityTag.gentle_wind_sense,  # 0x0043
+        CapabilityTag.rate_select,  # 0x0048
+        CapabilityTag.fresh_air_2,  # 0x004B
+        CapabilityTag.wind_around,  # 0x0059
+        CapabilityTag.jet_cool,  # 0x0067
+        CapabilityTag.out_silent,  # 0x00CD
+        CapabilityTag.ieco,  # 0x00E3
+        CapabilityTag.anion,  # 0x021E
+        CapabilityTag.sound,  # 0x022C
+    },
+)
+
+# PROPERTIES_TAGS: the B1 allowlist. Only these tags are ever placed in a B1
+# query. COMMON_TAGS plus the property-only tags below, all parsed from B1
+# bodies and proven on real devices.
+PROPERTIES_TAGS: frozenset[int] = COMMON_TAGS | frozenset(
+    {
+        CapabilityTag.indoor_humidity,  # 0x0015
+        CapabilityTag.prompt_tone,  # 0x001A
+        CapabilityTag.screen_display,  # 0x0017
+        CapabilityTag.error_code,  # 0x003F
+        CapabilityTag.fresh_air_1,  # 0x0233
+    },
+)
+
+# CAPABILITY_ONLY_TAGS: tags that only ever appear in B5 capability
+# advertisements, never as valid B1 query tags. Devices reply with an empty
+# list when queried with one, suppressing all other tags in the same request.
+# COMMON_TAGS are intentionally excluded (they are also valid B1 properties).
+CAPABILITY_ONLY_TAGS: frozenset[int] = frozenset(
+    {
+        CapabilityTag.nobody_energy_save,  # 0x0030
+        CapabilityTag.wind_straight,  # 0x0032
+        CapabilityTag.wind_avoid,  # 0x0033
+        CapabilityTag.prevent_super_cool,  # 0x0049
+        CapabilityTag.parent_control,  # 0x0051
+        CapabilityTag.prevent_straight_wind_lr,  # 0x0058
+        CapabilityTag.degerming,  # 0x005A
+        CapabilityTag.temperature,  # 0x0225
+        CapabilityTag.twins_machine,  # 0x0232
+        CapabilityTag.body_check,  # 0x0234
+        CapabilityTag.wind_speed,  # 0x0210
+        CapabilityTag.eco,  # 0x0212
+        CapabilityTag.b5_8_heat,  # 0x0213
+        CapabilityTag.mode,  # 0x0214
+        CapabilityTag.wind_swing,  # 0x0215
+        CapabilityTag.electricity,  # 0x0216
+        CapabilityTag.filter_remind,  # 0x0217
+        CapabilityTag.ptc,  # 0x0219
+        CapabilityTag.strong_wind,  # 0x021A
+        CapabilityTag.humidity,  # 0x021F
+        CapabilityTag.filter_check,  # 0x0221
+        CapabilityTag.fahrenheit,  # 0x0222
+        CapabilityTag.screen_display_capability,  # 0x0224
+    },
+)
+
+# Default properties queried by PropertiesDefaultQuery (8 properties).
+# These are known to be supported by all new-protocol devices and are all
+# members of PROPERTIES_TAGS.
+_B1_DEFAULT_PROPERTIES: tuple[int, ...] = (
+    int(CapabilityTag.indirect_wind),
+    int(CapabilityTag.breezeless),
+    int(CapabilityTag.indoor_humidity),
+    int(CapabilityTag.screen_display),
+    int(CapabilityTag.fresh_air_1),
+    int(CapabilityTag.fresh_air_2),
+    int(CapabilityTag.wind_lr_angle),
+    int(CapabilityTag.wind_ud_angle),
+)
+
+# Maximum properties per B1 query batch.
+_B1_MAX_PROPERTIES_PER_BATCH = 11
+
+# Number of dynamic capability-property batches (PropertiesCapsQuery + ...1).
+# Two batches leave headroom above the current PROPERTIES_TAGS pool for future
+# property tags.
+_B1_MAX_CAPABILITY_BATCHES = 2
+
+
+def format_property_tags(tags: "list[int] | tuple[int, ...]") -> str:
+    """Render B1 property tags as a readable "name(0xHHHH)" list for logs.
+
+    Unknown tag values (not in CapabilityTag) fall back to just their hex.
+    """
+    names: list[str] = []
+    for tag in tags:
+        try:
+            names.append(f"{CapabilityTag(tag).name}(0x{tag:04X})")
+        except ValueError:
+            names.append(f"0x{tag:04X}")
+    return ", ".join(names)
+
+
+class PropertiesDefaultQuery(MessageACBase):
+    """AC new-protocol query for default properties only.
+
+    Queries the 8 fixed default properties that all new-protocol devices
+    support. This query is always sent and never includes capability-based
+    properties, ensuring it cannot fail due to unsupported tags.
     """
 
-    # Tags that only ever appear in B5 capability advertisements, never as valid
-    # B1 query tags in any Lua protocol. B5 parsing echoes several of these as
-    # capability keys named after the tag; they must never be appended to a B1
-    # query or the device replies with an empty list and suppresses every other
-    # tag in the same request. See docs/protocol/ac_newprotocol_tags.md.
-    _CAPABILITY_ONLY_TAGS: frozenset[int] = frozenset(
-        {
-            CapabilityTag.wind_speed,  # 0x0210
-            CapabilityTag.eco,  # 0x0212
-            CapabilityTag.b5_8_heat,  # 0x0213
-            CapabilityTag.mode,  # 0x0214
-            CapabilityTag.wind_swing,  # 0x0215
-            CapabilityTag.electricity,  # 0x0216
-            CapabilityTag.filter_remind,  # 0x0217
-            CapabilityTag.ptc,  # 0x0219
-            CapabilityTag.strong_wind,  # 0x021A
-            CapabilityTag.humidity,  # 0x021F
-            CapabilityTag.filter_check,  # 0x0221
-            CapabilityTag.fahrenheit,  # 0x0222
-            CapabilityTag.screen_display_capability,  # 0x0224
-        },
-    )
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize default properties query."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.query,
+            body_type=ListTypes.B1,
+        )
+        self.properties: tuple[int, ...] = _B1_DEFAULT_PROPERTIES
 
-    _default_properties: tuple[int, ...] = (
-        CapabilityTag.indirect_wind,
-        CapabilityTag.breezeless,
-        CapabilityTag.indoor_humidity,
-        CapabilityTag.screen_display,
-        CapabilityTag.fresh_air_1,
-        CapabilityTag.fresh_air_2,
-        CapabilityTag.wind_lr_angle,
-        CapabilityTag.wind_ud_angle,
-    )
+    @property
+    def _body(self) -> bytearray:
+        params = self.properties
+        _body = bytearray([len(params)])
+        for param in params:
+            _body.extend([param & 0xFF, param >> 8])
+        return _body
 
-    _capability_properties: tuple[int, ...] = (
-        CapabilityTag.self_clean,
-        CapabilityTag.rate_select,
-        CapabilityTag.out_silent,
-        CapabilityTag.ieco,
-        CapabilityTag.sound,
-        CapabilityTag.error_code,
-    )
+
+class _PropertiesCapsQueryBase(MessageACBase):
+    """Base class for capability-based properties queries.
+
+    Subclasses (PropertiesCapsQuery, PropertiesCapsQuery1) query capability-based
+    properties in separate batches to prevent an unsupported property from
+    suppressing default properties.
+    """
 
     def __init__(
         self,
         protocol_version: int,
         *,
-        capabilities: dict[str, CapabilityValue] | None = None,
+        properties_subset: list[int],
     ) -> None:
-        """Initialize AC message new protocol query.
+        """Initialize capability properties query.
 
-        `capabilities` is the device's merged capability map (B5-parsed values
-        overlaid with the user's customize overrides). Every capability key that
-        names a CapabilityTag member and is truthy is appended to the query,
-        so a device that never advertised a feature (or that a user disabled via
-        customize) is not asked for it.
+        Args:
+            protocol_version: Protocol version.
+            properties_subset: List of capability property tags (as integers)
+                to include in this query batch.
+
         """
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
             body_type=ListTypes.B1,
         )
-        self._capabilities = capabilities or {}
-        # `_body` is read several times per send (encode -> frame -> CRC), so
-        # the build log is emitted only on the first read to avoid duplicates.
-        self._build_logged = False
+        self.properties: tuple[int, ...] = tuple(sorted(properties_subset))
 
     @property
     def _body(self) -> bytearray:
-        params = list(self._default_properties)
-        default_tags = frozenset(self._default_properties)
-        properties_tags = frozenset(self._capability_properties)
-
-        # Auto-append tags from the merged capabilities map. A capability key is
-        # queried only when it names a CapabilityTag member and its value is
-        # truthy, so a device that never advertised a feature (or that a user
-        # disabled via customize) is not asked for it. Tags are sorted by value
-        # so the produced body is deterministic.
-        properties_query: list[CapabilityTag] = []
-        additional_tags: list[CapabilityTag] = []
-        for key, value in self._capabilities.items():
-            if not value:
-                continue  # Skip falsy values (0, False, None).
-            try:
-                tag = CapabilityTag[key]
-            except KeyError:
-                continue  # Key does not name a CapabilityTag member.
-            if tag in default_tags:
-                continue
-            if tag in self._CAPABILITY_ONLY_TAGS:
-                continue  # B5-advertisement-only; never valid as a B1 query tag.
-            if tag in properties_tags:
-                properties_query.append(tag)
-            else:
-                additional_tags.append(tag)
-        # Sort each list, then extend params with both in sorted order
-        properties_query.sort()
-        additional_tags.sort()
-        # Merge both lists and sort together to maintain overall tag value order
-        appended_tags = properties_query + additional_tags
-        appended_tags.sort()
-        params.extend(appended_tags)
-        if not self._build_logged:
-            self._build_logged = True
-            _LOGGER.debug(
-                "PropertiesQuery build: default_properties=%s "
-                "capability_properties=%s additional_tags=%s capabilities=%s",
-                [CapabilityTag(tag).name for tag in default_tags],
-                [tag.name for tag in properties_query],
-                [tag.name for tag in additional_tags],
-                self._capabilities,
-            )
-
+        params = self.properties
         _body = bytearray([len(params)])
         for param in params:
             _body.extend([param & 0xFF, param >> 8])
         return _body
+
+    @staticmethod
+    def collect_capability_properties(
+        capabilities: dict[str, CapabilityValue],
+    ) -> list[int]:
+        """Collect capability properties from capabilities dict.
+
+        Returns a sorted list of capability property tag integers that should
+        be queried based on the device's advertised capabilities.
+
+        Uses an allowlist model: a tag is collected only if it is a member of
+        PROPERTIES_TAGS (the B1-queryable allowlist) and is not already in
+        _B1_DEFAULT_PROPERTIES (queried by PropertiesDefaultQuery). Any tag not
+        in PROPERTIES_TAGS (capability-only or unknown) is never queried in B1.
+
+        Args:
+            capabilities: Device capabilities dict from B5 + customize.
+
+        Returns:
+            Sorted list of capability property tags to query.
+
+        """
+        properties: list[int] = []
+        default_tags = frozenset(_B1_DEFAULT_PROPERTIES)
+
+        for key, value in capabilities.items():
+            if not value:
+                continue  # Skip falsy values
+            try:
+                tag = int(CapabilityTag[key])
+            except KeyError:
+                continue  # Not a valid tag name
+            if tag not in PROPERTIES_TAGS:
+                continue  # Not a B1-queryable property (capability-only)
+            if tag in default_tags:
+                continue  # Already in default query
+            properties.append(tag)
+
+        return sorted(properties)
+
+
+class PropertiesCapsQuery(_PropertiesCapsQueryBase):
+    """First dynamic capability properties query batch."""
+
+
+class PropertiesCapsQuery1(_PropertiesCapsQueryBase):
+    """Second dynamic capability properties query batch."""
 
 
 class MessageSubProtocol(MessageACBase):

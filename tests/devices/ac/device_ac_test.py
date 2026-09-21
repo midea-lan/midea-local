@@ -1,5 +1,6 @@
 """Test AC Device."""
 
+import logging
 from types import SimpleNamespace
 from typing import cast
 from unittest.mock import patch
@@ -12,6 +13,7 @@ from midealan.devices.ac.message import (
     CapabilitiesAdditionalQuery,
     CapabilitiesQuery,
     CapabilityTag,
+    CapabilityValue,
     GroupOneQuery,
     GroupSevenQuery,
     GroupTwoQuery,
@@ -20,7 +22,9 @@ from midealan.devices.ac.message import (
     MessageACResponse,
     PowerFormats,
     PowerQuery,
-    PropertiesQuery,
+    PropertiesCapsQuery,
+    PropertiesCapsQuery1,
+    PropertiesDefaultQuery,
     StateQuery,
     SubProtocolFreshAirSet,
     SubProtocolQuery,
@@ -353,18 +357,22 @@ class TestMideaACDevice:
 
         self.device._used_subprotocol = False
         queries = self.device.build_query()
-        # The new-protocol query and self-clean query are now a single merged
-        # PropertiesQuery. Capability queries are no longer part of the
-        # recurring status cycle; they are returned by build_init_query().
-        assert len(queries) == 8
+        # The new-protocol query is now split into PropertiesDefaultQuery +
+        # optional PropertiesCapsQuery/PropertiesCapsQuery1 batches. Capability
+        # queries are no longer part of the recurring status cycle; they are
+        # returned by build_init_query().
+        assert len(queries) >= 8  # At least 8, more if capability queries added
         assert isinstance(queries[0], StateQuery)
-        assert isinstance(queries[1], PropertiesQuery)
-        assert isinstance(queries[2], PowerQuery)
-        assert isinstance(queries[3], HumidityQuery)
-        assert isinstance(queries[4], GroupZeroQuery)
-        assert isinstance(queries[5], GroupOneQuery)
-        assert isinstance(queries[6], GroupTwoQuery)
-        assert isinstance(queries[7], GroupSevenQuery)
+        assert isinstance(queries[1], PropertiesDefaultQuery)
+        # queries[2..N] may be PropertiesCapsQuery/...1 if capabilities exist
+        # Find the index of PowerQuery to verify remaining queries
+        power_idx = next(i for i, q in enumerate(queries) if isinstance(q, PowerQuery))
+        assert isinstance(queries[power_idx], PowerQuery)
+        assert isinstance(queries[power_idx + 1], HumidityQuery)
+        assert isinstance(queries[power_idx + 2], GroupZeroQuery)
+        assert isinstance(queries[power_idx + 3], GroupOneQuery)
+        assert isinstance(queries[power_idx + 4], GroupTwoQuery)
+        assert isinstance(queries[power_idx + 5], GroupSevenQuery)
         assert not any(
             isinstance(q, CapabilitiesQuery | CapabilitiesAdditionalQuery)
             for q in queries
@@ -404,20 +412,41 @@ class TestMideaACDevice:
 
         Before any B5 capabilities response is seen, `_capabilities` is empty, so
         the query built for the device must not ask for rate_select or self_clean.
+        With the new split query structure, these would only appear in
+        PropertiesCapsQuery batches, not in PropertiesDefaultQuery.
         """
         self.device._used_subprotocol = False
         assert self.device.capabilities == {}
         queries = self.device.build_query()
-        new_protocol_query = next(q for q in queries if isinstance(q, PropertiesQuery))
-        assert CapabilityTag.rate_select not in new_protocol_query._body
-        assert CapabilityTag.self_clean not in new_protocol_query._body
+        # Should only have PropertiesDefaultQuery, no PropertiesCapsQuery batches
+        caps_queries = [
+            q
+            for q in queries
+            if isinstance(
+                q,
+                (PropertiesCapsQuery, PropertiesCapsQuery1),
+            )
+        ]
+        # With empty capabilities, no capability queries should be generated
+        assert len(caps_queries) == 0
 
         self.device._capabilities["rate_select"] = True
         self.device._capabilities["self_clean"] = True
         queries = self.device.build_query()
-        new_protocol_query = next(q for q in queries if isinstance(q, PropertiesQuery))
-        assert CapabilityTag.rate_select in new_protocol_query._body
-        assert CapabilityTag.self_clean in new_protocol_query._body
+        # Now should have at least one capability query
+        caps_queries = [
+            q
+            for q in queries
+            if isinstance(
+                q,
+                (PropertiesCapsQuery, PropertiesCapsQuery1),
+            )
+        ]
+        assert len(caps_queries) >= 1
+        # Check that rate_select and self_clean appear in at least one caps query
+        all_caps_bodies = b"".join(q._body for q in caps_queries)
+        assert CapabilityTag.rate_select in all_caps_bodies
+        assert CapabilityTag.self_clean in all_caps_bodies
 
     def test_customize_capabilities_override_query_and_property(self) -> None:
         """Test a customize capabilities entry forces an optional tag on.
@@ -429,8 +458,18 @@ class TestMideaACDevice:
         self.device.set_customize('{"capabilities": {"self_clean": true}}')
         assert self.device.capabilities["self_clean"] is True
         queries = self.device.build_query()
-        new_protocol_query = next(q for q in queries if isinstance(q, PropertiesQuery))
-        assert CapabilityTag.self_clean in new_protocol_query._body
+        # Should have at least one capability query with self_clean
+        caps_queries = [
+            q
+            for q in queries
+            if isinstance(
+                q,
+                (PropertiesCapsQuery, PropertiesCapsQuery1),
+            )
+        ]
+        assert len(caps_queries) >= 1
+        all_caps_bodies = b"".join(q._body for q in caps_queries)
+        assert CapabilityTag.self_clean in all_caps_bodies
 
     def test_customize_capabilities_disable_overrides_reported_value(self) -> None:
         """Test a customize false value overrides a B5-reported capability."""
@@ -439,8 +478,18 @@ class TestMideaACDevice:
         self.device.set_customize('{"capabilities": {"rate_select": false}}')
         assert self.device.capabilities["rate_select"] is False
         queries = self.device.build_query()
-        new_protocol_query = next(q for q in queries if isinstance(q, PropertiesQuery))
-        assert CapabilityTag.rate_select not in new_protocol_query._body
+        # Should not have rate_select in any capability query
+        caps_queries = [
+            q
+            for q in queries
+            if isinstance(
+                q,
+                (PropertiesCapsQuery, PropertiesCapsQuery1),
+            )
+        ]
+        if caps_queries:
+            all_caps_bodies = b"".join(q._body for q in caps_queries)
+            assert CapabilityTag.rate_select not in all_caps_bodies
 
     def test_customize_capabilities_reset_when_absent(self) -> None:
         """Test customize capabilities clear when a later customize omits them."""
@@ -1888,3 +1937,129 @@ class TestHASupportProperties:
         # falls through to default basic set
         expected = ["none", "comfort", "eco", "boost", "sleep"]
         assert self.device.supported_preset_modes == expected
+
+    def test_build_query_single_capability_batch(self) -> None:
+        """Test build_query builds one PropertiesCapsQuery for the real pool.
+
+        The allowlist limits the dynamic pool to at most 11 tags today, so a
+        realistic device fills only the first batch (PropertiesCapsQuery).
+        """
+        self.device._used_subprotocol = False
+        capabilities = cast(
+            "dict[str, CapabilityValue]",
+            {
+                "self_clean": True,
+                "rate_select": True,
+                "out_silent": True,
+                "ieco": True,
+                "sound": True,
+                "anion": True,
+                "gentle_wind_sense": True,
+                "temperature": True,  # capability-only, excluded from B1
+                "indirect_wind": True,  # default property, excluded
+                "fresh_air_1": True,  # default property, excluded
+            },
+        )
+        self.device._capabilities = capabilities
+        queries = self.device.build_query()
+
+        batch1 = [q for q in queries if isinstance(q, PropertiesCapsQuery)]
+        batch2 = [q for q in queries if isinstance(q, PropertiesCapsQuery1)]
+        assert len(batch1) == 1
+        # Real pool never exceeds one batch, so batch 2 is not built.
+        assert len(batch2) == 0
+        # Decode the queried tags from the body: [count, lo, hi, lo, hi, ...].
+        body = batch1[0]._body
+        queried = {body[i] | (body[i + 1] << 8) for i in range(1, len(body), 2)}
+        # Capability-only tag must never leak into the B1 query.
+        assert int(CapabilityTag.temperature) not in queried
+        assert int(CapabilityTag.self_clean) in queried
+
+    def test_build_query_debug_log_lists_property_names(
+        self,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Test build_query debug logs list the actual property names per query."""
+        self.device._used_subprotocol = False
+        self.device._capabilities = cast(
+            "dict[str, CapabilityValue]",
+            {"self_clean": True, "sound": True},
+        )
+        with caplog.at_level(logging.DEBUG):
+            self.device.build_query()
+
+        debug_messages = [
+            record.message
+            for record in caplog.records
+            if record.levelno == logging.DEBUG
+        ]
+        joined = "\n".join(debug_messages)
+        # Default query logs count and each default property by name.
+        assert "PropertiesDefaultQuery: 8 properties" in joined
+        assert "indirect_wind(0x0042)" in joined
+        # Capability batch logs count and its collected properties by name.
+        assert "PropertiesCapsQuery: 2 properties" in joined
+        assert "self_clean(0x0039)" in joined
+        assert "sound(0x022C)" in joined
+
+    def test_build_query_with_two_capability_batches(self) -> None:
+        """Test build_query splits an oversized pool into two batches.
+
+        The dynamic pool cannot exceed one batch with the current allowlist, so
+        the collector is patched to simulate future growth past the batch-1
+        limit.
+        """
+        self.device._used_subprotocol = False
+        self.device._capabilities = cast(
+            "dict[str, CapabilityValue]",
+            {"self_clean": True},
+        )
+        # 20 synthetic property tags -> batch 1 (11) + batch 2 (9).
+        pool = list(range(0x0300, 0x0300 + 20))
+        with patch(
+            "midealan.devices.ac._PropertiesCapsQueryBase"
+            ".collect_capability_properties",
+            return_value=pool,
+        ):
+            queries = self.device.build_query()
+
+        batch1 = [q for q in queries if isinstance(q, PropertiesCapsQuery)]
+        batch2 = [q for q in queries if isinstance(q, PropertiesCapsQuery1)]
+        assert len(batch1) == 1
+        assert len(batch2) == 1
+        assert batch1[0]._body[0] == 11  # first 11 properties
+        assert batch2[0]._body[0] == 9  # remaining 9 properties
+
+    def test_build_query_warns_on_excessive_properties(
+        self,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Test build_query warns when the pool exceeds total batch capacity."""
+        self.device._used_subprotocol = False
+        self.device._capabilities = cast(
+            "dict[str, CapabilityValue]",
+            {"self_clean": True},
+        )
+        # 30 synthetic tags exceed the 22-tag (2 x 11) capacity.
+        pool = list(range(0x0300, 0x0300 + 30))
+        with (
+            patch(
+                "midealan.devices.ac._PropertiesCapsQueryBase"
+                ".collect_capability_properties",
+                return_value=pool,
+            ),
+            caplog.at_level(logging.WARNING),
+        ):
+            queries = self.device.build_query()
+
+        # Only two batches are built; excess tags are dropped.
+        batch1 = [q for q in queries if isinstance(q, PropertiesCapsQuery)]
+        batch2 = [q for q in queries if isinstance(q, PropertiesCapsQuery1)]
+        assert len(batch1) == 1
+        assert len(batch2) == 1
+        warning_messages = [
+            record.message
+            for record in caplog.records
+            if record.levelno == logging.WARNING
+        ]
+        assert any("exceed" in msg.lower() for msg in warning_messages)
