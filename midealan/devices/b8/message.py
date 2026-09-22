@@ -118,6 +118,14 @@ class B8WaterLevel(IntEnum):
     HIGH = 0x3
 
 
+B8_CLEAN_MODES = tuple(item.name.lower() for item in B8CleanMode)
+B8_FAN_LEVELS = tuple(item.name.lower() for item in B8FanLevel)
+B8_WATER_LEVELS = tuple(item.name.lower() for item in B8WaterLevel)
+B8_SPEAK_LEVELS = tuple(item.name.lower() for item in B8SpeakLevel)
+B8_MOVE_DIRECTIONS = tuple(item.name.lower() for item in B8Moviment)
+B8_WORK_STATUS_CONTROLS = tuple(item.name.lower() for item in B8WorkMode)
+
+
 class B8MopState(IntEnum):
     """Midea B8 mop state."""
 

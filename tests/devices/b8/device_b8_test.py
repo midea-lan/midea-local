@@ -124,6 +124,35 @@ class TestMideaB8Device:
         assert self.device.attributes[DeviceAttributes.laser_sensor_shelter] is False
         assert self.device.attributes[DeviceAttributes.laser_sensor_error] is False
 
+    def test_options(self) -> None:
+        """Test exposed option lists."""
+        assert self.device.clean_modes == [
+            "none",
+            "random",
+            "arc",
+            "edge",
+            "emphases",
+            "screw",
+            "bed",
+            "wide_screw",
+            "auto",
+            "area",
+            "zone_index",
+            "zone_rect",
+            "path",
+        ]
+        assert self.device.fan_levels == ["off", "soft", "normal", "high", "low"]
+        assert self.device.water_levels == ["off", "low", "normal", "high"]
+        assert self.device.speak_levels == ["none", "off", "low", "normal", "high"]
+        assert self.device.move_directions == [
+            "none",
+            "forward",
+            "back",
+            "left",
+            "right",
+        ]
+        assert self.device.work_status_controls == ["charge", "work", "stop", "pause"]
+
     def test_set_attribute(self) -> None:
         """Test set attribute."""
         with patch.object(self.device, "build_send") as mock_build_send:
