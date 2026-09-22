@@ -6,6 +6,7 @@ from typing import Any, Unpack
 
 from midealan.const import DeviceType
 from midealan.device import MideaDevice, MideaDeviceInitKwargs
+from midealan.message import ListTypes
 
 from .message import (
     B8CleanMode,
@@ -16,7 +17,9 @@ from .message import (
     B8FunctionType,
     B8MopState,
     B8Moviment,
+    B8SpeakLevel,
     B8Speed,
+    B8StatusType,
     B8WaterLevel,
     B8WorkMode,
     B8WorkStatus,
@@ -24,6 +27,8 @@ from .message import (
     MessageQuery,
     MessageSet,
     MessageSetCommand,
+    MessageSetMovement,
+    MessageSetVoiceVolume,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -40,7 +45,18 @@ class DeviceAttributes(StrEnum):
     fan_level = "fan_level"
     area = "area"
     water_level = "water_level"
+    speak_level = "speak_level"
+    zone_id = "zone_id"
     voice_volume = "voice_volume"
+    disturb_switch = "disturb_switch"
+    disturb_start_time = "disturb_start_time"
+    disturb_end_time = "disturb_end_time"
+    side_brush_rest_time = "side_brush_rest_time"
+    side_brush_life_time = "side_brush_life_time"
+    filter_net_rest_time = "filter_net_rest_time"
+    filter_net_life_time = "filter_net_life_time"
+    roll_brush_rest_time = "roll_brush_rest_time"
+    roll_brush_life_time = "roll_brush_life_time"
     mop = "mop"
     carpet_switch = "carpet_switch"
     speed = "speed"
@@ -81,7 +97,18 @@ class MideaB8Device(MideaDevice):
                 DeviceAttributes.fan_level: B8FanLevel.OFF.name.lower(),
                 DeviceAttributes.area: 0,
                 DeviceAttributes.water_level: B8WaterLevel.OFF.name.lower(),
+                DeviceAttributes.speak_level: B8SpeakLevel.NONE.name.lower(),
+                DeviceAttributes.zone_id: 0,
                 DeviceAttributes.voice_volume: 0,
+                DeviceAttributes.disturb_switch: False,
+                DeviceAttributes.disturb_start_time: "00:00",
+                DeviceAttributes.disturb_end_time: "00:00",
+                DeviceAttributes.side_brush_rest_time: 0,
+                DeviceAttributes.side_brush_life_time: 0,
+                DeviceAttributes.filter_net_rest_time: 0,
+                DeviceAttributes.filter_net_life_time: 0,
+                DeviceAttributes.roll_brush_rest_time: 0,
+                DeviceAttributes.roll_brush_life_time: 0,
                 DeviceAttributes.mop: B8MopState.OFF.name.lower(),
                 DeviceAttributes.carpet_switch: False,
                 DeviceAttributes.speed: B8Speed.HIGH.name.lower(),
@@ -103,7 +130,18 @@ class MideaB8Device(MideaDevice):
 
     def build_query(self) -> list[MessageQuery]:
         """Midea B8 device build query."""
-        return [MessageQuery(self._message_protocol_version)]
+        return [
+            MessageQuery(self._message_protocol_version),
+            MessageQuery(
+                self._message_protocol_version,
+                status_type=B8StatusType.X05,
+            ),
+            MessageQuery(
+                self._message_protocol_version,
+                body_type=ListTypes.X35,
+                status_type=B8StatusType.X01,
+            ),
+        ]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea B8 device process message."""
@@ -128,7 +166,10 @@ class MideaB8Device(MideaDevice):
         msg.water_level = B8WaterLevel[
             self.attributes[DeviceAttributes.water_level].upper()
         ]
-        msg.voice_volume = self.attributes[DeviceAttributes.voice_volume]
+        msg.speak_level = B8SpeakLevel[
+            self.attributes[DeviceAttributes.speak_level].upper()
+        ]
+        msg.zone_id = self.attributes[DeviceAttributes.zone_id]
         return msg
 
     def set_work_mode(self, work_mode: B8WorkMode) -> None:
@@ -145,16 +186,30 @@ class MideaB8Device(MideaDevice):
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea B8 device set attribute."""
+        msg: MessageSet | MessageSetMovement | MessageSetVoiceVolume | None = None
         try:
-            msg = self._gen_set_msg_default_values()
             if attr == DeviceAttributes.clean_mode:
+                msg = self._gen_set_msg_default_values()
                 msg.clean_mode = B8CleanMode[str(value).upper()]
             elif attr == DeviceAttributes.fan_level:
+                msg = self._gen_set_msg_default_values()
                 msg.fan_level = B8FanLevel[str(value).upper()]
             elif attr == DeviceAttributes.water_level:
+                msg = self._gen_set_msg_default_values()
                 msg.water_level = B8WaterLevel[str(value).upper()]
+            elif attr == DeviceAttributes.speak_level:
+                msg = self._gen_set_msg_default_values()
+                msg.speak_level = B8SpeakLevel[str(value).upper()]
+            elif attr == DeviceAttributes.zone_id:
+                msg = self._gen_set_msg_default_values()
+                msg.zone_id = int(value)
+            elif attr == DeviceAttributes.move_direction:
+                msg = MessageSetMovement(
+                    self._message_protocol_version,
+                    B8Moviment[str(value).upper()],
+                )
             elif attr == DeviceAttributes.voice_volume:
-                msg.voice_volume = int(value)
+                msg = MessageSetVoiceVolume(self._message_protocol_version, int(value))
 
             if msg is not None:
                 self.build_send(msg)

@@ -14,6 +14,7 @@ from midealan.devices.b8 import (
     B8FunctionType,
     B8MopState,
     B8Moviment,
+    B8SpeakLevel,
     B8Speed,
     B8WaterLevel,
     B8WorkMode,
@@ -24,9 +25,10 @@ from midealan.devices.b8 import (
 from midealan.devices.b8.message import (
     B8ErrorRebootDescription,
     B8ErrorWarningDescription,
+    B8StatusType,
     MessageQuery,
 )
-from midealan.message import MessageType
+from midealan.message import ListTypes, MessageType
 
 
 class TestMideaB8Device:
@@ -81,7 +83,21 @@ class TestMideaB8Device:
             self.device.attributes[DeviceAttributes.water_level]
             == B8WaterLevel.OFF.name.lower()
         )
+        assert (
+            self.device.attributes[DeviceAttributes.speak_level]
+            == B8SpeakLevel.NONE.name.lower()
+        )
+        assert self.device.attributes[DeviceAttributes.zone_id] == 0
         assert self.device.attributes[DeviceAttributes.voice_volume] == 0
+        assert self.device.attributes[DeviceAttributes.disturb_switch] is False
+        assert self.device.attributes[DeviceAttributes.disturb_start_time] == "00:00"
+        assert self.device.attributes[DeviceAttributes.disturb_end_time] == "00:00"
+        assert self.device.attributes[DeviceAttributes.side_brush_rest_time] == 0
+        assert self.device.attributes[DeviceAttributes.side_brush_life_time] == 0
+        assert self.device.attributes[DeviceAttributes.filter_net_rest_time] == 0
+        assert self.device.attributes[DeviceAttributes.filter_net_life_time] == 0
+        assert self.device.attributes[DeviceAttributes.roll_brush_rest_time] == 0
+        assert self.device.attributes[DeviceAttributes.roll_brush_life_time] == 0
         assert (
             self.device.attributes[DeviceAttributes.mop] == B8MopState.OFF.name.lower()
         )
@@ -110,39 +126,60 @@ class TestMideaB8Device:
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
-        with patch.object(self.device, "send_message_v2") as mock_build_send:
+        with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(DeviceAttributes.clean_mode.value, "area")
             mock_build_send.assert_called_once()
+            assert mock_build_send.call_args.args[0].clean_mode == B8CleanMode.AREA
             mock_build_send.reset_mock()
 
             self.device.set_attribute(DeviceAttributes.fan_level.value, "normal")
             mock_build_send.assert_called_once()
+            assert mock_build_send.call_args.args[0].fan_level == B8FanLevel.NORMAL
             mock_build_send.reset_mock()
 
             self.device.set_attribute(DeviceAttributes.water_level.value, "normal")
             mock_build_send.assert_called_once()
+            assert mock_build_send.call_args.args[0].water_level == B8WaterLevel.NORMAL
+            mock_build_send.reset_mock()
+
+            self.device.set_attribute(DeviceAttributes.speak_level.value, "low")
+            mock_build_send.assert_called_once()
+            assert mock_build_send.call_args.args[0].speak_level == B8SpeakLevel.LOW
+            mock_build_send.reset_mock()
+
+            self.device.set_attribute(DeviceAttributes.zone_id.value, 3)
+            mock_build_send.assert_called_once()
+            assert mock_build_send.call_args.args[0].zone_id == 3
+            mock_build_send.reset_mock()
+
+            self.device.set_attribute(DeviceAttributes.move_direction.value, "left")
+            mock_build_send.assert_called_once()
+            assert mock_build_send.call_args.args[0].body == bytearray(
+                [
+                    ListTypes.X22,
+                    B8WorkMode.WORK,
+                    0x00,
+                    0x01,
+                    B8Moviment.LEFT,
+                ]
+                + [0x00] * 12,
+            )
             mock_build_send.reset_mock()
 
             self.device.set_attribute(DeviceAttributes.voice_volume.value, 10)
             mock_build_send.assert_called_once()
+            assert mock_build_send.call_args.args[0].body == bytearray(
+                [ListTypes.X22, 0x0A, 10],
+            )
             mock_build_send.reset_mock()
 
             self.device.set_attribute(DeviceAttributes.water_level.value, "invalid")
             mock_build_send.assert_not_called()
 
-    def test_set_attribute_unknown_sends_default_message(self) -> None:
-        """Test an unknown attribute still sends current defaults."""
-        with patch.object(self.device, "send_message_v2") as mock_build_send:
+    def test_set_attribute_unknown_does_not_send(self) -> None:
+        """Test an unknown attribute does not send a default command."""
+        with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute("unknown", True)
-            mock_build_send.assert_called_once()
-
-    def test_set_attribute_skips_none_default_message(self) -> None:
-        """Test set attribute does not send when default message generation fails."""
-        with (
-            patch.object(self.device, "_gen_set_msg_default_values", return_value=None),
-            patch.object(self.device, "send_message_v2") as mock_build_send,
-        ):
-            self.device.set_attribute("unknown", 10)
             mock_build_send.assert_not_called()
 
     def test_set_work_mode_charge_then_work(self) -> None:
@@ -156,9 +193,12 @@ class TestMideaB8Device:
 
     def test_set_work_mode(self) -> None:
         """Test set work mode."""
-        with patch.object(self.device, "send_message_v2") as mock_build_send:
+        with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_work_mode(B8WorkMode.CHARGE)
             mock_build_send.assert_called_once()
+            assert mock_build_send.call_args.args[0].body == bytearray(
+                [ListTypes.X22, B8WorkMode.CHARGE, 0x00],
+            )
             mock_build_send.reset_mock()
 
             self.device.set_work_mode(B8WorkMode.WORK)
@@ -167,8 +207,11 @@ class TestMideaB8Device:
     def test_build_query(self) -> None:
         """Test build query."""
         queries = self.device.build_query()
-        assert len(queries) == 1
-        assert isinstance(queries[0], MessageQuery)
+        assert len(queries) == 3
+        assert all(isinstance(query, MessageQuery) for query in queries)
+        assert queries[0].body == bytearray([ListTypes.X32, B8StatusType.X01])
+        assert queries[1].body == bytearray([ListTypes.X32, B8StatusType.X05])
+        assert queries[2].body == bytearray([ListTypes.X35, B8StatusType.X01])
 
     def test_query_response(self) -> None:
         """Test query response."""
@@ -257,7 +300,6 @@ class TestMideaB8Device:
                 B8ErrorWarningDescription.WARN_FULL_DUST,
                 B8MopState.LACK_WATER,
                 0x00,
-                0x06,
                 B8Speed.LOW,
                 0x0,  # CRC
             ],
@@ -288,9 +330,9 @@ class TestMideaB8Device:
         assert self.device.attributes[DeviceAttributes.mop] == "lack_water"
         assert self.device.attributes[DeviceAttributes.carpet_switch] is False
         assert self.device.attributes[DeviceAttributes.laser_sensor_error] is False
-        assert self.device.attributes[DeviceAttributes.laser_sensor_shelter] is True
+        assert self.device.attributes[DeviceAttributes.laser_sensor_shelter] is False
         assert (
-            self.device.attributes[DeviceAttributes.board_communication_error] is True
+            self.device.attributes[DeviceAttributes.board_communication_error] is False
         )
         assert self.device.attributes[DeviceAttributes.speed] == "low"
 
@@ -419,6 +461,84 @@ class TestMideaB8Device:
             self.device.attributes[DeviceAttributes.board_communication_error] is False
         )
         assert self.device.attributes[DeviceAttributes.speed] == "low"
+
+    def test_query_response_unknown_error_desc(self) -> None:
+        """Test unknown error descriptions do not fail message processing."""
+        header = bytearray(
+            [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.query],
+        )
+        body = bytearray(
+            [
+                0x32,
+                0x1,
+                B8WorkStatus.ERROR,
+                B8FunctionType.NONE,
+                B8ControlType.NONE,
+                B8Moviment.NONE,
+                B8CleanMode.NONE,
+                B8FanLevel.OFF,
+                0,
+                B8WaterLevel.OFF,
+                0,
+                0,
+                0,
+                0,
+                0,
+                B8ErrorType.WARNING,
+                0x80,
+                B8MopState.OFF,
+                0x0,
+                0x0,
+                B8Speed.LOW,
+                0x0,  # CRC
+            ],
+        )
+        self.device.process_message(bytes(header + body))
+        assert self.device.attributes[DeviceAttributes.error_type] == "warning"
+        assert self.device.attributes[DeviceAttributes.error_desc] == "no"
+
+    def test_query_disturb_response(self) -> None:
+        """Test disturb query response."""
+        header = bytearray(
+            [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.query],
+        )
+        body = bytearray([0x32, 0x05, 0x01, 22, 30, 7, 45, 0x0])
+        self.device.process_message(bytes(header + body))
+        assert self.device.attributes[DeviceAttributes.disturb_switch] is True
+        assert self.device.attributes[DeviceAttributes.disturb_start_time] == "22:30"
+        assert self.device.attributes[DeviceAttributes.disturb_end_time] == "07:45"
+
+    def test_query_parts_response(self) -> None:
+        """Test parts life query response."""
+        header = bytearray(
+            [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.query],
+        )
+        body = bytearray(
+            [
+                0x35,
+                0x01,
+                0x34,
+                0x12,
+                0x78,
+                0x56,
+                0xBC,
+                0x9A,
+                0xF0,
+                0xDE,
+                0x11,
+                0x22,
+                0x33,
+                0x44,
+                0x0,  # CRC
+            ],
+        )
+        self.device.process_message(bytes(header + body))
+        assert self.device.attributes[DeviceAttributes.side_brush_rest_time] == 0x1234
+        assert self.device.attributes[DeviceAttributes.side_brush_life_time] == 0x5678
+        assert self.device.attributes[DeviceAttributes.filter_net_rest_time] == 0x9ABC
+        assert self.device.attributes[DeviceAttributes.filter_net_life_time] == 0xDEF0
+        assert self.device.attributes[DeviceAttributes.roll_brush_rest_time] == 0x2211
+        assert self.device.attributes[DeviceAttributes.roll_brush_life_time] == 0x4433
 
     def test_query_response_invalid_values(self) -> None:
         """Test query response."""

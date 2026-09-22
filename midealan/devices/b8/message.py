@@ -61,6 +61,16 @@ class B8ControlType(IntEnum):
     AUTO = 0x2
 
 
+class B8SpeakLevel(IntEnum):
+    """Midea B8 speak level."""
+
+    NONE = 0x0
+    OFF = 0x1
+    LOW = 0x2
+    NORMAL = 0x3
+    HIGH = 0x4
+
+
 class B8Moviment(IntEnum):
     """Midea B8 movement."""
 
@@ -177,6 +187,7 @@ class B8StatusType(IntEnum):
     """B8 Status Type."""
 
     X01 = 0x01
+    X05 = 0x05
 
 
 class MessageB8Base(MessageRequest):
@@ -204,17 +215,23 @@ class MessageB8Base(MessageRequest):
 class MessageQuery(MessageB8Base):
     """B8 message query."""
 
-    def __init__(self, protocol_version: int) -> None:
+    def __init__(
+        self,
+        protocol_version: int,
+        body_type: ListTypes = ListTypes.X32,
+        status_type: B8StatusType = B8StatusType.X01,
+    ) -> None:
         """Initialize B8 message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
-            body_type=ListTypes.X32,
+            body_type=body_type,
         )
+        self.status_type = status_type
 
     @property
     def _body(self) -> bytearray:
-        return bytearray([0x01])
+        return bytearray([self.status_type])
 
 
 class MessageSet(MessageB8Base):
@@ -230,7 +247,7 @@ class MessageSet(MessageB8Base):
         self.clean_mode = B8CleanMode.AUTO
         self.fan_level = B8FanLevel.NORMAL
         self.water_level = B8WaterLevel.LOW
-        self.voice_volume = 0
+        self.speak_level = B8SpeakLevel.NONE
         self.zone_id = 0
 
     @property
@@ -238,14 +255,17 @@ class MessageSet(MessageB8Base):
         return bytearray(
             [
                 0x02,
-                0x02,
+                0x00,
+                B8ControlType.AUTO,
+                B8Moviment.NONE,
                 self.clean_mode,
                 self.fan_level,
+                0x00,
                 self.water_level,
-                self.voice_volume,
+                self.speak_level,
                 self.zone_id,
             ]
-            + [0x00] * 7,
+            + [0x00] * 6,
         )
 
 
@@ -271,15 +291,60 @@ class MessageSetCommand(MessageB8Base):
             [
                 self.work_mode,
                 0x00,
-                0x00,
             ],
         )
+
+
+class MessageSetMovement(MessageB8Base):
+    """B8 message set movement."""
+
+    def __init__(
+        self,
+        protocol_version: int,
+        move_direction: B8Moviment,
+    ) -> None:
+        """Initialize B8 message set movement."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.set,
+            body_type=ListTypes.X22,
+        )
+        self.move_direction = move_direction
+
+    @property
+    def _body(self) -> bytearray:
+        return bytearray(
+            [
+                B8WorkMode.WORK,
+                0x00,
+                B8ControlType.MANUAL,
+                self.move_direction,
+            ]
+            + [0x00] * 12,
+        )
+
+
+class MessageSetVoiceVolume(MessageB8Base):
+    """B8 message set voice volume."""
+
+    def __init__(self, protocol_version: int, voice_volume: int) -> None:
+        """Initialize B8 message set voice volume."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.set,
+            body_type=ListTypes.X22,
+        )
+        self.voice_volume = min(max(voice_volume, 0), 100)
+
+    @property
+    def _body(self) -> bytearray:
+        return bytearray([0x0A, self.voice_volume])
 
 
 class MessageB8GenericBody(MessageBody):
     """B8 message generic body."""
 
-    def __init__(self, body: bytearray, offset: int) -> None:
+    def __init__(self, body: bytearray, offset: int, parse_high_error: bool) -> None:
         """Initialize B8 message generic body."""
         super().__init__(body)
         try:
@@ -335,13 +400,17 @@ class MessageB8GenericBody(MessageBody):
 
         self.carpet_switch = self.read_byte(body, 17 + offset) != 0
 
-        error_byte = self.read_byte(body, 18 + offset)
-        self.laser_sensor_error = (error_byte & 0x01) > 0
-        self.laser_sensor_shelter = (error_byte & 0x02) > 0
-        self.board_communication_error = (error_byte & 0x04) > 0
+        if parse_high_error:
+            error_byte = self.read_byte(body, 18 + offset)
+            self.laser_sensor_error = (error_byte & 0x01) > 0
+            self.laser_sensor_shelter = (error_byte & 0x02) > 0
+            self.board_communication_error = (error_byte & 0x04) > 0
+            speed_byte = self.read_byte(body, 19 + offset)
+        else:
+            speed_byte = self.read_byte(body, 18 + offset)
 
         try:
-            self.speed = B8Speed(self.read_byte(body, 19 + offset))
+            self.speed = B8Speed(speed_byte)
         except ValueError:
             self.speed = B8Speed.HIGH
 
@@ -350,18 +419,16 @@ class MessageB8GenericBody(MessageBody):
             | B8ErrorRebootDescription
             | B8ErrorWarningDescription
         ) = B8ErrorCanFixDescription.NO
-        if self.error_type == B8ErrorType.CAN_FIX:
-            self.error_desc = B8ErrorCanFixDescription(
-                self.read_byte(body, 15 + offset),
-            )
-        elif self.error_type == B8ErrorType.REBOOT:
-            self.error_desc = B8ErrorRebootDescription(
-                self.read_byte(body, 15 + offset),
-            )
-        elif self.error_type == B8ErrorType.WARNING:
-            self.error_desc = B8ErrorWarningDescription(
-                self.read_byte(body, 15 + offset),
-            )
+        error_desc_value = self.read_byte(body, 15 + offset)
+        try:
+            if self.error_type == B8ErrorType.CAN_FIX:
+                self.error_desc = B8ErrorCanFixDescription(error_desc_value)
+            elif self.error_type == B8ErrorType.REBOOT:
+                self.error_desc = B8ErrorRebootDescription(error_desc_value)
+            elif self.error_type == B8ErrorType.WARNING:
+                self.error_desc = B8ErrorWarningDescription(error_desc_value)
+        except ValueError:
+            self.error_desc = B8ErrorCanFixDescription.NO
 
 
 class MessageB8WorkStatusBody(MessageB8GenericBody):
@@ -369,7 +436,7 @@ class MessageB8WorkStatusBody(MessageB8GenericBody):
 
     def __init__(self, body: bytearray) -> None:
         """Initialize B8 message work status body."""
-        super().__init__(body, 1)
+        super().__init__(body, 1, True)
 
 
 class MessageB8NotifyBody(MessageB8GenericBody):
@@ -377,7 +444,54 @@ class MessageB8NotifyBody(MessageB8GenericBody):
 
     def __init__(self, body: bytearray) -> None:
         """Initialize B8 message notify body."""
-        super().__init__(body, 0)
+        super().__init__(body, 0, False)
+
+
+class MessageB8DisturbBody(MessageBody):
+    """B8 message disturb body."""
+
+    def __init__(self, body: bytearray) -> None:
+        """Initialize B8 message disturb body."""
+        super().__init__(body)
+        self.disturb_switch = self.read_byte(body, 2) != 0
+        self.disturb_start_time = (
+            f"{self.read_byte(body, 3):02d}:{self.read_byte(body, 4):02d}"
+        )
+        self.disturb_end_time = (
+            f"{self.read_byte(body, 5):02d}:{self.read_byte(body, 6):02d}"
+        )
+
+
+class MessageB8PartsBody(MessageBody):
+    """B8 message parts body."""
+
+    def __init__(self, body: bytearray) -> None:
+        """Initialize B8 message parts body."""
+        super().__init__(body)
+        self.side_brush_rest_time = self.read_byte(body, 3) << 8 | self.read_byte(
+            body,
+            2,
+        )
+        self.side_brush_life_time = self.read_byte(body, 5) << 8 | self.read_byte(
+            body,
+            4,
+        )
+        self.filter_net_rest_time = self.read_byte(body, 7) << 8 | self.read_byte(
+            body,
+            6,
+        )
+        self.filter_net_life_time = self.read_byte(body, 9) << 8 | self.read_byte(
+            body,
+            8,
+        )
+        self.roll_brush_rest_time = self.read_byte(body, 11) << 8 | self.read_byte(
+            body,
+            10,
+        )
+        self.roll_brush_life_time = self.read_byte(body, 13) << 8 | self.read_byte(
+            body,
+            12,
+        )
 
 
 class MessageB8Response(MessageResponse):
@@ -405,6 +519,18 @@ class MessageB8Response(MessageResponse):
             and status_type == B8StatusType.X01
         ):
             return MessageB8WorkStatusBody(body)
+        if (
+            message_type == MessageType.query
+            and body_type == ListTypes.X32
+            and status_type == B8StatusType.X05
+        ):
+            return MessageB8DisturbBody(body)
+        if (
+            message_type == MessageType.query
+            and body_type == ListTypes.X35
+            and status_type == B8StatusType.X01
+        ):
+            return MessageB8PartsBody(body)
         if message_type == MessageType.notify1 and body_type == ListTypes.X42:
             return MessageB8NotifyBody(body)
         return None
