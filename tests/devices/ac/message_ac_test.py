@@ -1008,6 +1008,26 @@ class TestMessageSet:
         expected_body[22] = 0x01
         assert msg.body[:-2] == expected_body
 
+    @pytest.mark.parametrize(
+        ("target_temperature", "expected_field"),
+        [
+            (16.0, 0x04),
+            (16.5, 0x04),
+            (17.0, 0x00),
+            (17.5, 0x00),
+        ],
+    )
+    def test_low_temperature_extension(
+        self,
+        target_temperature: float,
+        expected_field: int,
+    ) -> None:
+        """Encode the legacy extension used for targets below 17 C."""
+        msg = StateSet(protocol_version=ProtocolVersion.V1)
+        msg.target_temperature = target_temperature
+
+        assert msg.body[18] == expected_field
+
 
 class TestMessageACResponse:
     """Test Message AC Response."""
@@ -1917,6 +1937,53 @@ class TestMessageACResponse:
         assert hasattr(response, "fresh_filter_time_use")
         assert response.fresh_filter_time_use == 0x02 * 256 + 0x20
         assert hasattr(response, "fresh_filter_timeout")
+        assert response.fresh_filter_timeout == 1
+
+    @pytest.mark.parametrize(
+        ("standard_target", "extension", "expected_target"),
+        [
+            (17.0, 0x04, 16.0),
+            (17.5, 0x04, 16.5),
+            (17.0, 0x05, 17.0),
+            (17.5, 0x05, 17.5),
+            (18.0, 0x04, 18.0),
+        ],
+    )
+    def test_message_query_c0_low_temperature(
+        self,
+        standard_target: float,
+        extension: int,
+        expected_target: float,
+    ) -> None:
+        """Parse the guarded low-temperature extension in C0 replies."""
+        self.header[9] = 0x03
+        body = bytearray(24)
+        body[0] = 0xC0
+        body[2] = int(standard_target - 16)
+        if standard_target % 1:
+            body[2] |= 0x10
+        body[13] = extension
+
+        response = MessageACResponse(self.header + body)
+
+        assert hasattr(response, "target_temperature")
+        assert response.target_temperature == expected_target
+
+    def test_message_query_c0_low_temperature_preserves_status_bits(self) -> None:
+        """Keep dust and filter flags while parsing the low target extension."""
+        self.header[9] = 0x03
+        body = bytearray(31)
+        body[0] = 0xC0
+        body[2] = 0x01  # Standard target temperature 17 C.
+        body[13] = 0x64  # Low target 16 C, full dust, and filter timeout.
+
+        response = MessageACResponse(self.header + body)
+
+        assert hasattr(response, "target_temperature")
+        assert hasattr(response, "full_dust")
+        assert hasattr(response, "fresh_filter_timeout")
+        assert response.target_temperature == 16.0
+        assert response.full_dust is True
         assert response.fresh_filter_timeout == 1
 
     def test_message_query_c1_0x45(self) -> None:
