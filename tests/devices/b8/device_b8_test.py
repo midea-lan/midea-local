@@ -173,6 +173,11 @@ class TestMideaB8Device:
             )
             mock_build_send.reset_mock()
 
+            self.device.set_attribute(DeviceAttributes.zone_id.value, "invalid")
+            mock_build_send.assert_not_called()
+            self.device.set_attribute(DeviceAttributes.voice_volume.value, "invalid")
+            mock_build_send.assert_not_called()
+
             self.device.set_attribute(DeviceAttributes.water_level.value, "invalid")
             mock_build_send.assert_not_called()
 

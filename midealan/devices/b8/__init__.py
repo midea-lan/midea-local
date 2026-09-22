@@ -220,7 +220,7 @@ class MideaB8Device(MideaDevice):
 
             if msg is not None:
                 self.build_send(msg)
-        except KeyError:
+        except (KeyError, TypeError, ValueError, OverflowError):
             _LOGGER.exception("Wrong value for attribute %s: %s", attr, value)
 
 
