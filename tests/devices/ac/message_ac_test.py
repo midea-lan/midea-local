@@ -385,6 +385,23 @@ class TestNewProtocolQuery:
 
         assert msg.body[:-2] == expected_body
 
+    def test_new_protocol_query_body_blocks_degerming_poisoner(self) -> None:
+        """Test degerming is never collected for a B1 query (poisoner tag).
+
+        A B1 query carrying 0x5A makes the device answer with an empty
+        parameter list, which suppresses every other tag in the request; the
+        tag therefore stays out of PROPERTIES_TAGS and can never enter a B1
+        query. The degerming state is read from the 0x7e payload instead.
+        """
+        assert int(CapabilityTag.degerming) not in PROPERTIES_TAGS
+        assert int(CapabilityTag.degerming) in CAPABILITY_ONLY_TAGS
+
+        collected = _PropertiesCapsQueryBase.collect_capability_properties(
+            cast("dict[str, CapabilityValue]", {"degerming": True, "self_clean": True}),
+        )
+        assert int(CapabilityTag.degerming) not in collected
+        assert int(CapabilityTag.self_clean) in collected
+
     def test_new_protocol_caps_query_empty_subset(self) -> None:
         """Test PropertiesCapsQuery with empty subset produces empty query."""
         msg = PropertiesCapsQuery(
@@ -1048,6 +1065,108 @@ class TestMessageACResponse:
         assert hasattr(response, "natural_wind")
         assert hasattr(response, "full_dust")
         assert hasattr(response, "comfort_mode")
+
+    def test_b1_degerming_state_on(self) -> None:
+        """Test degerming state is read from the 0x7e payload (captured on)."""
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa6bac00000000000803"
+                "b10a42000001011800000100150000013f1700000100330211004b000004002815000a"
+                "00000100090000014b39000001007e00002aa01ba5647f7f0033000c00000065005802"
+                "0700f2000000e000000040000000003c0028283f051400720500d839",
+            ),
+        )
+        assert response.degerming_active is True
+
+    def test_b1_degerming_state_off(self) -> None:
+        """Test degerming state is read from the 0x7e payload (captured off)."""
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa6bac00000000000803"
+                "b10a4200000101180000010015000001431700000100330211004b000004002813000a"
+                "00000164090000010039000001007e00002aa01a41667f7f0000000c00000065005802"
+                "9000f0000000e000000040000000003c00282843011400700000e329",
+            ),
+        )
+        assert response.degerming_active is False
+
+    def test_b5_degerming_state_reported(self) -> None:
+        """Test a B5 notify body reports live degerming state (captured off).
+
+        Unlike self_clean, whose B5 tag is only a capability flag, the 0x7e
+        payload in a B5 body carries the live degerming state.
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa3cac00000000000805"
+                "b5017e002b001a41667f7f0000000c000000650058029000f0000000e0000000400000"
+                "00003c002828490114006c0900014dd5",
+            ),
+        )
+        assert response.degerming_active is False
+
+    def test_b5_degerming_state_on(self) -> None:
+        """Test a B5 notify body reports live degerming state (captured on)."""
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa3cac00000000000805b5017e002b001ba5647f7f0000000c000000650058029700f2000000e0"
+                "00000040000000003c00282835051400720500019c",
+            ),
+        )
+        assert response.degerming_active is True
+
+    def test_b5_degerming_state_on_extended_payload(self) -> None:
+        """Test degerming on from a B5 notify of the extended payload variant.
+
+        Model 22019061 (COLMO KFR-50GW/CA3) pushes the live state bit in the
+        notify body as well.
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa3cac00000000000805b5017e0038a11fa5647f7f0033000c00070000000f000000f2000000e0"
+                "00000040000000003c00282835850e00720000000000200008000000000005000145",
+            ),
+        )
+        assert response.degerming_active is True
+
+    def test_b5_degerming_state_off_extended_payload(self) -> None:
+        """Test degerming off from a B5 notify of the extended payload variant."""
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa3cac00000000000805b5017e0038a51fa5647f7f0000000c00070000000f009000f0000000e0"
+                "00000040000000003c00282836850e00720300000000200008000000000005000198",
+            ),
+        )
+        assert response.degerming_active is False
+
+    def test_b1_degerming_state_on_extended_payload(self) -> None:
+        """Test degerming on from the extended 0x7e payload variant.
+
+        Model 22019061 (COLMO KFR-50GW/CA3) reports a 55-byte 0x7e payload;
+        the same byte 19 bit 0x02 holds the state (captured with the feature
+        on).
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa78ac00000000000803b10a4200000101180000010015000001351700000164330211004b00"
+                "0004002816000a00000100090000010039000001007e000037a01fa5647f7f0033000c000000"
+                "00000f000000f2000000e000000040000000003c00282835850e007200000000002000080000"
+                "00000000007592",
+            ),
+        )
+        assert response.degerming_active is True
+
+    def test_b1_degerming_state_off_extended_payload(self) -> None:
+        """Test degerming off from the extended 0x7e payload variant."""
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa78ac00000000000803b10a4200000101180000010015000001331700000100330211004b00"
+                "0004002816000a00000164090000010039000001007e000037a01ea1647f7f0000000c000700"
+                "00000f009000f0000000e000000040000000003c00282833810e007009000000002000080000"
+                "0000000000e5c6",
+            ),
+        )
+        assert response.degerming_active is False
 
     def test_message_notify2_a0_short_body(self) -> None:
         """Skip Message parse notify2 A0 when the body is too short."""
@@ -2683,7 +2802,31 @@ class TestMessageACResponse:
 
 
 class TestNewProtocolSetNewFeatures:
-    """Test PropertiesSet for sound and self_clean."""
+    """Test PropertiesSet for sound, self_clean and degerming."""
+
+    def test_degerming_packed_with_prompt_tone(self) -> None:
+        """Test degerming packs the 0x5a tag right after prompt_tone.
+
+        The expected bytes match a set frame captured from a live device
+        (model 22019053), echoed frame body b0 02 1a 00 01 01 5a 00 01 00.
+        """
+        msg = PropertiesSet(protocol_version=ProtocolVersion.V1)
+        msg.prompt_tone = b"\x01"
+        msg.degerming = False
+        assert msg.body[:-2] == bytearray.fromhex("b0021a0001015a000100")
+
+    def test_degerming_on_packs_one(self) -> None:
+        """Test degerming on packs 0x01 as the value byte."""
+        msg = PropertiesSet(protocol_version=ProtocolVersion.V1)
+        msg.prompt_tone = b"\x01"
+        msg.degerming = True
+        assert msg.body[:-2] == bytearray.fromhex("b0021a0001015a000101")
+
+    def test_degerming_absent_when_unset(self) -> None:
+        """Test degerming is not packed when left as None."""
+        msg = PropertiesSet(protocol_version=ProtocolVersion.V1)
+        msg.prompt_tone = b"\x01"
+        assert msg.body[:-2] == bytearray.fromhex("b0011a000101")
 
     @pytest.mark.parametrize(
         ("value", "expected_byte"),

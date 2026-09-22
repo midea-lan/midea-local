@@ -122,6 +122,7 @@ class DeviceAttributes(StrEnum):
     anion = "anion"
     sound = "sound"
     self_clean = "self_clean"
+    degerming = "degerming"
     ieco = "ieco"
     pmv = "pmv"
     error_code = "error_code"
@@ -320,6 +321,7 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.anion: False,
                 DeviceAttributes.sound: True,
                 DeviceAttributes.self_clean: False,
+                DeviceAttributes.degerming: False,
                 DeviceAttributes.ieco: False,
                 DeviceAttributes.pmv: None,
                 DeviceAttributes.error_code: 0,
@@ -721,6 +723,9 @@ class MideaACDevice(MideaDevice):
             if update_self_clean:
                 self._attributes[DeviceAttributes.self_clean] = active
                 new_status[DeviceAttributes.self_clean.value] = active
+        if hasattr(message, "degerming_active"):
+            self._attributes[DeviceAttributes.degerming] = message.degerming_active
+            new_status[DeviceAttributes.degerming.value] = message.degerming_active
         # Merge capabilities first so a B5 frame's temperature limits are in the
         # merged map before the setpoint limits are resolved from it.
         new_status.update(self._update_capabilities(message))
@@ -1319,6 +1324,7 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.sound,
                 DeviceAttributes.self_clean,
                 DeviceAttributes.ieco,
+                DeviceAttributes.degerming,
             ]:
                 message = self.make_newprotocol_message_set(attr=attr, value=value)
                 if attr == DeviceAttributes.self_clean:

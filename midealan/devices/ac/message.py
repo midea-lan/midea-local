@@ -107,6 +107,12 @@ NEW_PROTOCOL_MAX_VALID_TEMPERATURE = 40
 NEW_PROTOCOL_LEGACY_SETPOINT_BYTE = 3
 NEW_PROTOCOL_INDOOR_TEMPERATURE_BYTE = 40
 NEW_PROTOCOL_INDOOR_TEMPERATURE_DECIMAL_BYTE = 41
+# Live degerming (sterilize) state rides the 0x7e new-protocol payload on
+# verified hardware: byte 19, bit 0x02. Reported in both B0/B1 bodies and B5
+# notify bodies, unlike self_clean whose B5 occurrence is only a capability
+# flag. Verified on model 22019053 / protocol v3 with device-side toggles.
+NEW_PROTOCOL_DEGERMING_BYTE = 19
+NEW_PROTOCOL_DEGERMING_MASK = 0x02
 
 # Capability value semantics (reverse-engineered; see _parse_capabilities).
 # The raw byte of each capability is not a 0/1 flag; each has its own value set.
@@ -1041,6 +1047,7 @@ class PropertiesSet(MessageACBase):
         self.out_silent: bool | None = None
         self.sound: bool | None = None
         self.self_clean: bool | None = None
+        self.degerming: bool | None = None
         self.ieco: bool | None = None
         self.ieco_number: int = 1
 
@@ -1155,6 +1162,14 @@ class PropertiesSet(MessageACBase):
                 NewProtocolMessageBody.pack(
                     param=CapabilityTag.self_clean,
                     value=bytearray([0x01 if self.self_clean else 0x00]),
+                ),
+            )
+        if self.degerming is not None:
+            pack_count += 1
+            payload.extend(
+                NewProtocolMessageBody.pack(
+                    param=CapabilityTag.degerming,
+                    value=bytearray([0x01 if self.degerming else 0x00]),
                 ),
             )
         if self.rate_select is not None:
@@ -1324,6 +1339,18 @@ class PropertiesBody(NewProtocolMessageBody):
             # A B5 body carries this tag as a capability flag (always 1 when the
             # model supports self-clean), so only B0/B1 bodies report live state.
             self.self_clean_active: bool = params[CapabilityTag.self_clean][0] > 0
+        if (
+            NEW_PROTOCOL_TEMPERATURE_TAG in params
+            and len(params[NEW_PROTOCOL_TEMPERATURE_TAG]) > NEW_PROTOCOL_DEGERMING_BYTE
+        ):
+            # Live degerming (sterilize) state. Unlike self_clean, a B5 notify
+            # body carries the live value as well (verified with state toggles),
+            # so no body-type filter is applied here. The notify payload's raw
+            # head differs from B0/B1, but this slice keeps index 19 valid.
+            self.degerming_active: bool = (
+                params[NEW_PROTOCOL_TEMPERATURE_TAG][NEW_PROTOCOL_DEGERMING_BYTE]
+                & NEW_PROTOCOL_DEGERMING_MASK
+            ) > 0
         if (
             CapabilityTag.ieco in params
             and self.body_type != ListTypes.B5
@@ -1914,6 +1941,9 @@ class SubProtocolBody(MessageBody):
 
 class MessageACResponse(MessageResponse):
     """AC message response."""
+
+    # Populated dynamically by MessageResponse.set_attr().
+    degerming_active: bool
 
     def __init__(
         self,
