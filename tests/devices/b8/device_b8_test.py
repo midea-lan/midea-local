@@ -204,6 +204,26 @@ class TestMideaB8Device:
             self.device.set_work_mode(B8WorkMode.WORK)
             mock_build_send.assert_called_once()
 
+    def test_set_work_status_attribute(self) -> None:
+        """Test work status attribute routes through set work mode."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.work_status.value, "charge")
+            mock_build_send.assert_called_once()
+            assert mock_build_send.call_args.args[0].body == bytearray(
+                [ListTypes.X22, B8WorkMode.CHARGE, 0x00],
+            )
+            mock_build_send.reset_mock()
+
+            self.device.set_attribute(DeviceAttributes.work_status.value, "pause")
+            mock_build_send.assert_called_once()
+            assert mock_build_send.call_args.args[0].body == bytearray(
+                [ListTypes.X22, B8WorkMode.PAUSE, 0x00],
+            )
+            mock_build_send.reset_mock()
+
+            self.device.set_attribute(DeviceAttributes.work_status.value, "invalid")
+            mock_build_send.assert_not_called()
+
     def test_build_query(self) -> None:
         """Test build query."""
         queries = self.device.build_query()

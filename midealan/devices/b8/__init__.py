@@ -186,6 +186,13 @@ class MideaB8Device(MideaDevice):
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea B8 device set attribute."""
+        if attr == DeviceAttributes.work_status:
+            try:
+                self.set_work_mode(B8WorkMode[str(value).upper()])
+            except KeyError:
+                _LOGGER.exception("Wrong value for attribute %s: %s", attr, value)
+            return
+
         msg: MessageSet | MessageSetMovement | MessageSetVoiceVolume | None = None
         try:
             if attr == DeviceAttributes.clean_mode:
