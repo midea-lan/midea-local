@@ -4,13 +4,7 @@ import pytest
 
 from midealan.const import ProtocolVersion
 from midealan.devices.b8.message import (
-    B8CleanMode,
-    B8FanLevel,
-    B8Moviment,
-    B8SpeakLevel,
     B8StatusType,
-    B8WaterLevel,
-    B8WorkMode,
     MessageB8Base,
     MessageQuery,
     MessageSet,
@@ -59,23 +53,23 @@ class TestMessageSet:
     def test_work_mode_body(self) -> None:
         """Test work mode command body matches the legacy Lua protocol layout."""
         msg = MessageSet(protocol_version=ProtocolVersion.V1)
-        msg.clean_mode = B8CleanMode.AREA
-        msg.fan_level = B8FanLevel.HIGH
-        msg.water_level = B8WaterLevel.NORMAL
-        msg.speak_level = B8SpeakLevel.LOW
+        msg.clean_mode = 0x09
+        msg.fan_level = 0x03
+        msg.water_level = 0x02
+        msg.speak_level = 0x02
         msg.zone_id = 3
         assert msg.body == bytearray(
             [
                 ListTypes.X22,
-                B8WorkMode.WORK,
+                0x02,
                 0x00,
                 0x02,
-                B8Moviment.NONE,
-                B8CleanMode.AREA,
-                B8FanLevel.HIGH,
                 0x00,
-                B8WaterLevel.NORMAL,
-                B8SpeakLevel.LOW,
+                0x09,
+                0x03,
+                0x00,
+                0x02,
+                0x02,
                 3,
             ]
             + [0x00] * 6,
@@ -88,8 +82,8 @@ class TestMessageSetCommand:
 
     def test_charge_body(self) -> None:
         """Test charge command body length."""
-        msg = MessageSetCommand(ProtocolVersion.V1, B8WorkMode.CHARGE)
-        assert msg.body == bytearray([ListTypes.X22, B8WorkMode.CHARGE, 0x00])
+        msg = MessageSetCommand(ProtocolVersion.V1, 0x01)
+        assert msg.body == bytearray([ListTypes.X22, 0x01, 0x00])
         assert msg.header[1] == 13
 
 
@@ -98,14 +92,14 @@ class TestMessageSetMovement:
 
     def test_movement_body(self) -> None:
         """Test movement command body."""
-        msg = MessageSetMovement(ProtocolVersion.V1, B8Moviment.LEFT)
+        msg = MessageSetMovement(ProtocolVersion.V1, 0x03)
         assert msg.body == bytearray(
             [
                 ListTypes.X22,
-                B8WorkMode.WORK,
+                0x02,
                 0x00,
                 0x01,
-                B8Moviment.LEFT,
+                0x03,
             ]
             + [0x00] * 12,
         )

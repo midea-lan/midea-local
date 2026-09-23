@@ -6,25 +6,10 @@ import pytest
 
 from midealan.const import ProtocolVersion
 from midealan.devices.b8 import (
-    B8CleanMode,
-    B8ControlType,
-    B8ErrorCanFixDescription,
-    B8ErrorType,
-    B8FanLevel,
-    B8FunctionType,
-    B8MopState,
-    B8Moviment,
-    B8SpeakLevel,
-    B8Speed,
-    B8WaterLevel,
-    B8WorkMode,
-    B8WorkStatus,
     DeviceAttributes,
     MideaB8Device,
 )
 from midealan.devices.b8.message import (
-    B8ErrorRebootDescription,
-    B8ErrorWarningDescription,
     B8StatusType,
     MessageQuery,
 )
@@ -54,39 +39,15 @@ class TestMideaB8Device:
 
     def test_initial_attributes(self) -> None:
         """Test initial attributes."""
-        assert (
-            self.device.attributes[DeviceAttributes.work_status]
-            == B8WorkStatus.NONE.name.lower()
-        )
-        assert (
-            self.device.attributes[DeviceAttributes.function_type]
-            == B8FunctionType.NONE.name.lower()
-        )
-        assert (
-            self.device.attributes[DeviceAttributes.control_type]
-            == B8ControlType.NONE.name.lower()
-        )
-        assert (
-            self.device.attributes[DeviceAttributes.move_direction]
-            == B8Moviment.NONE.name.lower()
-        )
-        assert (
-            self.device.attributes[DeviceAttributes.clean_mode]
-            == B8CleanMode.NONE.name.lower()
-        )
-        assert (
-            self.device.attributes[DeviceAttributes.fan_level]
-            == B8FanLevel.OFF.name.lower()
-        )
+        assert self.device.attributes[DeviceAttributes.work_status] == "none"
+        assert self.device.attributes[DeviceAttributes.function_type] == "none"
+        assert self.device.attributes[DeviceAttributes.control_type] == "none"
+        assert self.device.attributes[DeviceAttributes.move_direction] == "none"
+        assert self.device.attributes[DeviceAttributes.clean_mode] == "none"
+        assert self.device.attributes[DeviceAttributes.fan_level] == "off"
         assert self.device.attributes[DeviceAttributes.area] == 0
-        assert (
-            self.device.attributes[DeviceAttributes.water_level]
-            == B8WaterLevel.OFF.name.lower()
-        )
-        assert (
-            self.device.attributes[DeviceAttributes.speak_level]
-            == B8SpeakLevel.NONE.name.lower()
-        )
+        assert self.device.attributes[DeviceAttributes.water_level] == "off"
+        assert self.device.attributes[DeviceAttributes.speak_level] == "none"
         assert self.device.attributes[DeviceAttributes.zone_id] == 0
         assert self.device.attributes[DeviceAttributes.voice_volume] == 0
         assert self.device.attributes[DeviceAttributes.disturb_switch] is False
@@ -98,13 +59,9 @@ class TestMideaB8Device:
         assert self.device.attributes[DeviceAttributes.filter_net_life_time] == 0
         assert self.device.attributes[DeviceAttributes.roll_brush_rest_time] == 0
         assert self.device.attributes[DeviceAttributes.roll_brush_life_time] == 0
-        assert (
-            self.device.attributes[DeviceAttributes.mop] == B8MopState.OFF.name.lower()
-        )
+        assert self.device.attributes[DeviceAttributes.mop] == "off"
         assert self.device.attributes[DeviceAttributes.carpet_switch] is False
-        assert (
-            self.device.attributes[DeviceAttributes.speed] == B8Speed.HIGH.name.lower()
-        )
+        assert self.device.attributes[DeviceAttributes.speed] == "high"
         assert self.device.attributes[DeviceAttributes.have_reserve_task] is False
         assert self.device.attributes[DeviceAttributes.battery_percent] == 0
         assert self.device.attributes[DeviceAttributes.work_time] == 0
@@ -112,10 +69,7 @@ class TestMideaB8Device:
         assert self.device.attributes[DeviceAttributes.wifi_switch] is False
         assert self.device.attributes[DeviceAttributes.voice_switch] is False
         assert self.device.attributes[DeviceAttributes.command_source] is False
-        assert (
-            self.device.attributes[DeviceAttributes.error_type]
-            == B8ErrorType.NO.name.lower()
-        )
+        assert self.device.attributes[DeviceAttributes.error_type] == "no"
         assert self.device.attributes[DeviceAttributes.error_desc] == "no"
         assert self.device.attributes[DeviceAttributes.device_error] is False
         assert (
@@ -158,22 +112,22 @@ class TestMideaB8Device:
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(DeviceAttributes.clean_mode.value, "area")
             mock_build_send.assert_called_once()
-            assert mock_build_send.call_args.args[0].clean_mode == B8CleanMode.AREA
+            assert mock_build_send.call_args.args[0].clean_mode == 0x09
             mock_build_send.reset_mock()
 
             self.device.set_attribute(DeviceAttributes.fan_level.value, "normal")
             mock_build_send.assert_called_once()
-            assert mock_build_send.call_args.args[0].fan_level == B8FanLevel.NORMAL
+            assert mock_build_send.call_args.args[0].fan_level == 0x02
             mock_build_send.reset_mock()
 
             self.device.set_attribute(DeviceAttributes.water_level.value, "normal")
             mock_build_send.assert_called_once()
-            assert mock_build_send.call_args.args[0].water_level == B8WaterLevel.NORMAL
+            assert mock_build_send.call_args.args[0].water_level == 0x02
             mock_build_send.reset_mock()
 
             self.device.set_attribute(DeviceAttributes.speak_level.value, "low")
             mock_build_send.assert_called_once()
-            assert mock_build_send.call_args.args[0].speak_level == B8SpeakLevel.LOW
+            assert mock_build_send.call_args.args[0].speak_level == 0x02
             mock_build_send.reset_mock()
 
             self.device.set_attribute(DeviceAttributes.zone_id.value, 3)
@@ -186,10 +140,10 @@ class TestMideaB8Device:
             assert mock_build_send.call_args.args[0].body == bytearray(
                 [
                     ListTypes.X22,
-                    B8WorkMode.WORK,
+                    0x02,
                     0x00,
                     0x01,
-                    B8Moviment.LEFT,
+                    0x03,
                 ]
                 + [0x00] * 12,
             )
@@ -209,6 +163,8 @@ class TestMideaB8Device:
 
             self.device.set_attribute(DeviceAttributes.water_level.value, "invalid")
             mock_build_send.assert_not_called()
+            self.device.set_attribute(DeviceAttributes.move_direction.value, "invalid")
+            mock_build_send.assert_not_called()
 
     def test_set_attribute_unknown_does_not_send(self) -> None:
         """Test an unknown attribute does not send a default command."""
@@ -219,20 +175,20 @@ class TestMideaB8Device:
     def test_set_work_mode_charge_then_work(self) -> None:
         """Test work mode uses protocol defaults before the first status."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_work_mode(B8WorkMode.WORK)
+            self.device.set_work_mode(0x02)
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args.args[0].body == bytearray(
                 [
                     ListTypes.X22,
-                    B8WorkMode.WORK,
+                    0x02,
                     0x00,
-                    B8ControlType.AUTO,
-                    B8Moviment.NONE,
-                    B8CleanMode.AUTO,
-                    B8FanLevel.NORMAL,
+                    0x02,
                     0x00,
-                    B8WaterLevel.LOW,
-                    B8SpeakLevel.NONE,
+                    0x08,
+                    0x02,
+                    0x00,
+                    0x01,
+                    0x00,
                     0x00,
                 ]
                 + [0x00] * 6,
@@ -247,25 +203,25 @@ class TestMideaB8Device:
         self.device._attributes[DeviceAttributes.speak_level] = "low"
         self.device._attributes[DeviceAttributes.zone_id] = 3
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_work_mode(B8WorkMode.WORK)
+            self.device.set_work_mode(0x02)
             mock_build_send.assert_called_once()
-            assert mock_build_send.call_args.args[0].clean_mode == B8CleanMode.AREA
-            assert mock_build_send.call_args.args[0].fan_level == B8FanLevel.HIGH
-            assert mock_build_send.call_args.args[0].water_level == B8WaterLevel.NORMAL
-            assert mock_build_send.call_args.args[0].speak_level == B8SpeakLevel.LOW
+            assert mock_build_send.call_args.args[0].clean_mode == 0x09
+            assert mock_build_send.call_args.args[0].fan_level == 0x03
+            assert mock_build_send.call_args.args[0].water_level == 0x02
+            assert mock_build_send.call_args.args[0].speak_level == 0x02
             assert mock_build_send.call_args.args[0].zone_id == 3
 
     def test_set_work_mode(self) -> None:
         """Test set work mode."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_work_mode(B8WorkMode.CHARGE)
+            self.device.set_work_mode(0x01)
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args.args[0].body == bytearray(
-                [ListTypes.X22, B8WorkMode.CHARGE, 0x00],
+                [ListTypes.X22, 0x01, 0x00],
             )
             mock_build_send.reset_mock()
 
-            self.device.set_work_mode(B8WorkMode.WORK)
+            self.device.set_work_mode(0x02)
             mock_build_send.assert_called_once()
 
     def test_set_work_status_attribute(self) -> None:
@@ -274,14 +230,14 @@ class TestMideaB8Device:
             self.device.set_attribute(DeviceAttributes.work_status.value, "charge")
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args.args[0].body == bytearray(
-                [ListTypes.X22, B8WorkMode.CHARGE, 0x00],
+                [ListTypes.X22, 0x01, 0x00],
             )
             mock_build_send.reset_mock()
 
             self.device.set_attribute(DeviceAttributes.work_status.value, "pause")
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args.args[0].body == bytearray(
-                [ListTypes.X22, B8WorkMode.PAUSE, 0x00],
+                [ListTypes.X22, 0x1B, 0x00],
             )
             mock_build_send.reset_mock()
 
@@ -306,25 +262,25 @@ class TestMideaB8Device:
             [
                 0x32,
                 0x1,
-                B8WorkStatus.CHARGING_WITH_WIRE,
-                B8FunctionType.NONE,
-                B8ControlType.AUTO,
-                B8Moviment.NONE,
-                B8CleanMode.AUTO,
-                B8FanLevel.NORMAL,
+                0x07,
+                0x00,
+                0x02,
+                0x00,
+                0x08,
+                0x02,
                 0,
-                B8WaterLevel.NORMAL,
+                0x02,
                 40,
                 0,
                 80,
                 20,
                 0xC7,
-                B8ErrorType.CAN_FIX,
-                B8ErrorCanFixDescription.FIX_DUST,
-                B8MopState.ON,
+                0x01,
+                0x01,
+                0x01,
                 0x01,
                 0x07,
-                B8Speed.HIGH,
+                0x00,
                 0x0,  # CRC
             ],
         )
@@ -367,24 +323,24 @@ class TestMideaB8Device:
         body = bytearray(
             [
                 0x42,
-                B8WorkStatus.WORK,
-                B8FunctionType.DUST_BOX_CLEANING,
-                B8ControlType.MANUAL,
-                B8Moviment.LEFT,
-                B8CleanMode.PATH,
-                B8FanLevel.HIGH,
+                0x02,
+                0x01,
+                0x01,
+                0x03,
+                0x0C,
+                0x03,
                 1,
-                B8WaterLevel.LOW,
+                0x01,
                 90,
                 1,
                 40,
                 15,
                 0x86,
-                B8ErrorType.WARNING,
-                B8ErrorWarningDescription.WARN_FULL_DUST,
-                B8MopState.LACK_WATER,
+                0x03,
+                0x03,
+                0x02,
                 0x00,
-                B8Speed.LOW,
+                0x01,
                 0x0,  # CRC
             ],
         )
@@ -429,25 +385,25 @@ class TestMideaB8Device:
             [
                 0x32,
                 0x1,
-                B8WorkStatus.UPDATING,
-                B8FunctionType.WATER_TANK_CLEANING,
-                B8ControlType.NONE,
-                B8Moviment.NONE,
-                B8CleanMode.NONE,
-                B8FanLevel.OFF,
+                0x09,
+                0x02,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
                 0,
-                B8WaterLevel.OFF,
-                0,
-                0,
+                0x00,
                 0,
                 0,
                 0,
-                B8ErrorType.REBOOT,
-                B8ErrorRebootDescription.REBOOT_LASER_COMM_FAIL,
-                B8MopState.OFF,
+                0,
+                0,
+                0x02,
+                0x01,
+                0x00,
                 0x0,
                 0x0,
-                B8Speed.LOW,
+                0x01,
                 0x0,  # CRC
             ],
         )
@@ -495,25 +451,25 @@ class TestMideaB8Device:
             [
                 0x32,
                 0x1,
-                B8WorkStatus.NONE,
-                B8FunctionType.NONE,
-                B8ControlType.NONE,
-                B8Moviment.NONE,
-                B8CleanMode.NONE,
-                B8FanLevel.OFF,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
                 0,
-                B8WaterLevel.OFF,
-                0,
-                0,
+                0x00,
                 0,
                 0,
                 0,
-                B8ErrorType.NO,
-                B8ErrorRebootDescription.REBOOT_LASER_COMM_FAIL,
-                B8MopState.OFF,
+                0,
+                0,
+                0x00,
+                0x01,
+                0x00,
                 0x0,
                 0x0,
-                B8Speed.LOW,
+                0x01,
                 0x0,  # CRC
             ],
         )
@@ -555,25 +511,25 @@ class TestMideaB8Device:
             [
                 0x32,
                 0x1,
-                B8WorkStatus.ERROR,
-                B8FunctionType.NONE,
-                B8ControlType.NONE,
-                B8Moviment.NONE,
-                B8CleanMode.NONE,
-                B8FanLevel.OFF,
+                0x0B,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
                 0,
-                B8WaterLevel.OFF,
-                0,
-                0,
+                0x00,
                 0,
                 0,
                 0,
-                B8ErrorType.WARNING,
+                0,
+                0,
+                0x03,
                 0x80,
-                B8MopState.OFF,
+                0x00,
                 0x0,
                 0x0,
-                B8Speed.LOW,
+                0x01,
                 0x0,  # CRC
             ],
         )
