@@ -1,5 +1,17 @@
 # Changelog
 
+## [12.2.0](https://github.com/midea-lan/midea-local/compare/v12.1.0...v12.2.0) (2026-09-23)
+
+
+### Features
+
+* **b8:** support the second-generation ("750004CE") protocol ([#758](https://github.com/midea-lan/midea-local/issues/758)) ([c8d90ab](https://github.com/midea-lan/midea-local/commit/c8d90abfc0172d34bf5a95ca73da545716101a3a))
+
+
+### Bug Fixes
+
+* **e2:** warn on unsupported attrs, halve read temperature ([#808](https://github.com/midea-lan/midea-local/issues/808)) ([5b20010](https://github.com/midea-lan/midea-local/commit/5b20010a76e75b5baf4448c1c8955acf6d173bfa))
+
 ## [12.1.0](https://github.com/midea-lan/midea-local/compare/v12.0.0...v12.1.0) (2026-09-18)
 
 
