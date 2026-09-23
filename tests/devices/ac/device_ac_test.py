@@ -2014,8 +2014,8 @@ class TestHASupportProperties:
             "dict[str, CapabilityValue]",
             {"self_clean": True},
         )
-        # 20 synthetic property tags -> batch 1 (11) + batch 2 (9).
-        pool = list(range(0x0300, 0x0300 + 20))
+        # 15 synthetic property tags -> batch 1 (9) + batch 2 (6).
+        pool = list(range(0x0300, 0x0300 + 15))
         with patch(
             "midealan.devices.ac._PropertiesCapsQueryBase"
             ".collect_capability_properties",
@@ -2027,8 +2027,8 @@ class TestHASupportProperties:
         batch2 = [q for q in queries if isinstance(q, PropertiesCapsQuery1)]
         assert len(batch1) == 1
         assert len(batch2) == 1
-        assert batch1[0]._body[0] == 11  # first 11 properties
-        assert batch2[0]._body[0] == 9  # remaining 9 properties
+        assert batch1[0]._body[0] == 9  # first 9 properties
+        assert batch2[0]._body[0] == 6  # remaining 6 properties
 
     def test_build_query_warns_on_excessive_properties(
         self,
@@ -2040,7 +2040,7 @@ class TestHASupportProperties:
             "dict[str, CapabilityValue]",
             {"self_clean": True},
         )
-        # 30 synthetic tags exceed the 22-tag (2 x 11) capacity.
+        # 30 synthetic tags exceed the 18-tag (2 x 9) capacity.
         pool = list(range(0x0300, 0x0300 + 30))
         with (
             patch(

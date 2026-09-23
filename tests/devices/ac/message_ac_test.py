@@ -431,8 +431,14 @@ class TestNewProtocolQuery:
 
     def test_max_properties_constants(self) -> None:
         """Test max properties constants are correctly defined."""
-        assert _B1_MAX_PROPERTIES_PER_BATCH == 11
+        assert _B1_MAX_PROPERTIES_PER_BATCH == 9
         assert _B1_MAX_CAPABILITY_BATCHES == 2
+
+    def test_batch_capacity_covers_collectable_pool(self) -> None:
+        """Test batch capacity covers the collectable capability pool."""
+        collectable = PROPERTIES_TAGS - set(_B1_DEFAULT_PROPERTIES)
+        capacity = _B1_MAX_PROPERTIES_PER_BATCH * _B1_MAX_CAPABILITY_BATCHES
+        assert capacity >= len(collectable)
 
 
 class TestTagDatasets:

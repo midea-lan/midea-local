@@ -583,12 +583,16 @@ _B1_DEFAULT_PROPERTIES: tuple[int, ...] = (
     int(CapabilityTag.wind_ud_angle),
 )
 
-# Maximum properties per B1 query batch.
-_B1_MAX_PROPERTIES_PER_BATCH = 11
+# Maximum properties per B1 query batch. Verified device boundary on COLMO CA3
+# (22019053/22019061, raw B1 frames): <= 9 property IDs per query answer
+# normally, >= 10 are suppressed as a whole (only the 0x7e block survives),
+# independent of which tags are present. 9 also stays within the 11-property
+# bound reported for other families in #1031.
+_B1_MAX_PROPERTIES_PER_BATCH = 9
 
 # Number of dynamic capability-property batches (PropertiesCapsQuery + ...1).
-# Two batches leave headroom above the current PROPERTIES_TAGS pool for future
-# property tags.
+# Two batches cover the current collectable capability pool (PROPERTIES_TAGS
+# minus the default properties) with headroom for future property tags.
 _B1_MAX_CAPABILITY_BATCHES = 2
 
 
