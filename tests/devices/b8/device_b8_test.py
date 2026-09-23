@@ -217,13 +217,43 @@ class TestMideaB8Device:
             mock_build_send.assert_not_called()
 
     def test_set_work_mode_charge_then_work(self) -> None:
-        """Test set work mode routes WORK through set_attribute."""
-        with patch.object(self.device, "set_attribute") as mock_set_attribute:
+        """Test work mode uses protocol defaults before the first status."""
+        with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_work_mode(B8WorkMode.WORK)
-            mock_set_attribute.assert_called_once_with(
-                DeviceAttributes.clean_mode,
-                self.device.attributes[DeviceAttributes.clean_mode],
+            mock_build_send.assert_called_once()
+            assert mock_build_send.call_args.args[0].body == bytearray(
+                [
+                    ListTypes.X22,
+                    B8WorkMode.WORK,
+                    0x00,
+                    B8ControlType.AUTO,
+                    B8Moviment.NONE,
+                    B8CleanMode.AUTO,
+                    B8FanLevel.NORMAL,
+                    0x00,
+                    B8WaterLevel.LOW,
+                    B8SpeakLevel.NONE,
+                    0x00,
+                ]
+                + [0x00] * 6,
             )
+
+    def test_set_work_mode_after_status_preserves_controls(self) -> None:
+        """Test work mode reuses controls after a status has been reported."""
+        self.device._has_reported_status = True
+        self.device._attributes[DeviceAttributes.clean_mode] = "area"
+        self.device._attributes[DeviceAttributes.fan_level] = "high"
+        self.device._attributes[DeviceAttributes.water_level] = "normal"
+        self.device._attributes[DeviceAttributes.speak_level] = "low"
+        self.device._attributes[DeviceAttributes.zone_id] = 3
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_work_mode(B8WorkMode.WORK)
+            mock_build_send.assert_called_once()
+            assert mock_build_send.call_args.args[0].clean_mode == B8CleanMode.AREA
+            assert mock_build_send.call_args.args[0].fan_level == B8FanLevel.HIGH
+            assert mock_build_send.call_args.args[0].water_level == B8WaterLevel.NORMAL
+            assert mock_build_send.call_args.args[0].speak_level == B8SpeakLevel.LOW
+            assert mock_build_send.call_args.args[0].zone_id == 3
 
     def test_set_work_mode(self) -> None:
         """Test set work mode."""

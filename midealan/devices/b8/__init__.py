@@ -91,6 +91,7 @@ class MideaB8Device(MideaDevice):
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea B8 device."""
+        self._has_reported_status = False
         super().__init__(
             device_type=DeviceType.B8,
             **kwargs,
@@ -183,6 +184,8 @@ class MideaB8Device(MideaDevice):
         """Midea B8 device process message."""
         message = MessageB8Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
+        if hasattr(message, str(DeviceAttributes.work_status)):
+            self._has_reported_status = True
         new_status = {}
         for status in self._attributes:
             if hasattr(message, str(status)):
@@ -195,6 +198,8 @@ class MideaB8Device(MideaDevice):
 
     def _gen_set_msg_default_values(self) -> MessageSet:
         msg = MessageSet(self._message_protocol_version)
+        if not self._has_reported_status:
+            return msg
         msg.clean_mode = B8CleanMode[
             self.attributes[DeviceAttributes.clean_mode].upper()
         ]
@@ -211,6 +216,9 @@ class MideaB8Device(MideaDevice):
     def set_work_mode(self, work_mode: B8WorkMode) -> None:
         """Midea B8 device set work mode."""
         if work_mode == B8WorkMode.WORK:
+            if not self._has_reported_status:
+                self.build_send(self._gen_set_msg_default_values())
+                return
             self.set_attribute(
                 DeviceAttributes.clean_mode,
                 self.attributes[DeviceAttributes.clean_mode],
