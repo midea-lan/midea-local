@@ -81,12 +81,12 @@ class TestMideaX40Device:
 
     def test_directions(self) -> None:
         """Test the available directions."""
-        assert self.device.directions == ["60", "70", "80", "90", "100", "Oscillate"]
+        assert self.device.directions == ["60", "70", "80", "90", "100", "oscillate"]
 
     @pytest.mark.parametrize(
         ("direction", "expected"),
         [
-            ("Oscillate", 0xFD),
+            ("oscillate", 0xFD),
             ("invalid", 0xFD),
             ("60", 60),
             ("90", 90),
