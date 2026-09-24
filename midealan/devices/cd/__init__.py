@@ -134,23 +134,23 @@ class MideaCDDevice(MideaDevice):
     """Midea CD device."""
 
     _modes: ClassVar[dict[int, str]] = {
-        0x00: "None",
-        0x01: "Energy-save",
-        0x02: "Standard",
-        0x03: "Dual",
-        0x04: "Smart",
-        0x05: "Vacation",
+        0x00: "none",
+        0x01: "energy-save",
+        0x02: "standard",
+        0x03: "dual",
+        0x04: "smart",
+        0x05: "vacation",
     }
     _vacation_mode_key: ClassVar[int] = 0x05
     _extended_modes: ClassVar[dict[int, str]] = {
-        0x00: "None",
-        0x01: "Economy",
-        0x02: "Hybrid",
-        0x03: "E-Heater",
-        0x04: "Smart",
-        0x05: "Heat-pump",
-        0x09: "Boost",
-        0x0A: "Silent",
+        0x00: "none",
+        0x01: "economy",
+        0x02: "hybrid",
+        0x03: "e-heater",
+        0x04: "smart",
+        0x05: "heat-pump",
+        0x09: "boost",
+        0x0A: "silent",
     }
 
     def __init__(
@@ -325,17 +325,17 @@ class MideaCDDevice(MideaDevice):
                 if key != self._vacation_mode_key
             ]
         modes = self._mode_map()
-        selectable = ["Economy", "Hybrid"]
+        selectable = ["economy", "hybrid"]
         if self._attributes.get(DeviceAttributes.support_electric_mode) is not False:
-            selectable.append("E-Heater")
+            selectable.append("e-heater")
         if self._attributes.get(DeviceAttributes.support_smart_mode) is not False:
-            selectable.append("Smart")
+            selectable.append("smart")
         if self._attributes.get(DeviceAttributes.support_heat_pump_mode):
-            selectable.append("Heat-pump")
+            selectable.append("heat-pump")
         if self._attributes.get(DeviceAttributes.support_boost_mode):
-            selectable.append("Boost")
+            selectable.append("boost")
         if self._attributes.get(DeviceAttributes.support_silent_mode):
-            selectable.append("Silent")
+            selectable.append("silent")
         return [mode for mode in selectable if mode in modes.values()]
 
     def _is_extended_water_heater(self, message: object | None = None) -> bool:
@@ -434,7 +434,7 @@ class MideaCDDevice(MideaDevice):
                     # Extended mode 0x05 normally means Heat-pump, but the
                     # dedicated vacation flag gives it Vacation semantics.
                     mode_str = (
-                        "Vacation"
+                        "vacation"
                         if self._is_extended_water_heater(message)
                         and getattr(message, "vacation_mode", False)
                         else self._mode_map(message).get(raw_value)
@@ -828,12 +828,12 @@ class MideaCDDevice(MideaDevice):
                     message.target_temperature = 40.0
 
             # Handle mode - safely get current mode, default to 0x00 if None.
-            # Note: when vacation is active the stored mode is "Vacation" (0x05)
+            # Note: when vacation is active the stored mode is "vacation" (0x05)
             # which is NOT a valid modeValue for the device.  We handle that
             # explicitly in the vacation branches below.
-            if current_mode is None or current_mode == "None":
+            if current_mode is None or current_mode == "none":
                 message.mode = 0x00
-            elif current_mode == "Vacation":
+            elif current_mode == "vacation":
                 # Do not send 0x05 as modeValue; the device does not support it.
                 # Fall back to 0x00 (no explicit operating mode).
                 message.mode = 0x00
@@ -844,7 +844,7 @@ class MideaCDDevice(MideaDevice):
             # Update based on attribute being set
             if attr == DeviceAttributes.mode:
                 # get mode key from mode value
-                if value == "Vacation":
+                if value == "vacation":
                     _LOGGER.warning(
                         "[%s] Vacation mode cannot be selected directly; "
                         "use vacation_days/vacation_mode instead",
