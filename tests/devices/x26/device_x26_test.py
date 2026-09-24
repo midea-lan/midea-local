@@ -75,13 +75,13 @@ class TestMidea26Device:
     def test_preset_modes(self) -> None:
         """Test preset modes property."""
         assert self.device.preset_modes == [
-            "Off",
-            "Heat(high)",
-            "Heat(low)",
-            "Bath",
-            "Blow",
-            "Ventilation",
-            "Dry",
+            "off",
+            "heat(high)",
+            "heat(low)",
+            "bath",
+            "blow",
+            "ventilation",
+            "dry",
         ]
 
     def test_directions(self) -> None:
@@ -94,13 +94,13 @@ class TestMidea26Device:
             "100",
             "110",
             "120",
-            "Oscillate",
+            "oscillate",
         ]
 
     @pytest.mark.parametrize(
         ("direction", "expected"),
         [
-            ("Oscillate", 0xFD),
+            ("oscillate", 0xFD),
             ("60", 60),
             ("90", 90),
             ("120", 120),
@@ -135,13 +135,13 @@ class TestMidea26Device:
     @pytest.mark.parametrize(
         ("values", "expected_mode", "expected_direction"),
         [
-            ({9: 1, 10: 55, 12: 90}, "Heat(high)", "90"),
-            ({9: 1, 10: 30, 12: 60}, "Heat(low)", "60"),
-            ({13: 1, 17: 0xFD}, "Bath", "Oscillate"),
-            ({26: 1, 28: 120}, "Blow", "120"),
-            ({18: 1, 20: 100}, "Ventilation", "100"),
-            ({21: 1, 25: 55}, "Dry", "Oscillate"),
-            ({}, "Off", "Oscillate"),
+            ({9: 1, 10: 55, 12: 90}, "heat(high)", "90"),
+            ({9: 1, 10: 30, 12: 60}, "heat(low)", "60"),
+            ({13: 1, 17: 0xFD}, "bath", "oscillate"),
+            ({26: 1, 28: 120}, "blow", "120"),
+            ({18: 1, 20: 100}, "ventilation", "100"),
+            ({21: 1, 25: 55}, "dry", "oscillate"),
+            ({}, "off", "oscillate"),
         ],
     )
     def test_process_message_modes(
@@ -210,8 +210,8 @@ class TestMidea26Device:
 
     def test_set_attribute_main_light(self) -> None:
         """Test set attribute main light resets lights and sets the value."""
-        self.device._attributes[DeviceAttributes.mode] = "Off"
-        self.device._attributes[DeviceAttributes.direction] = "Oscillate"
+        self.device._attributes[DeviceAttributes.mode] = "off"
+        self.device._attributes[DeviceAttributes.direction] = "oscillate"
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(DeviceAttributes.main_light.value, True)
             mock_build_send.assert_called_once()
@@ -224,8 +224,8 @@ class TestMidea26Device:
 
     def test_set_attribute_night_light(self) -> None:
         """Test set attribute night light sends the value."""
-        self.device._attributes[DeviceAttributes.mode] = "Off"
-        self.device._attributes[DeviceAttributes.direction] = "Oscillate"
+        self.device._attributes[DeviceAttributes.mode] = "off"
+        self.device._attributes[DeviceAttributes.direction] = "oscillate"
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(DeviceAttributes.night_light.value, True)
             mock_build_send.assert_called_once()
@@ -236,10 +236,10 @@ class TestMidea26Device:
 
     def test_set_attribute_mode(self) -> None:
         """Test set attribute mode converts the name to its index."""
-        self.device._attributes[DeviceAttributes.mode] = "Off"
-        self.device._attributes[DeviceAttributes.direction] = "Oscillate"
+        self.device._attributes[DeviceAttributes.mode] = "off"
+        self.device._attributes[DeviceAttributes.direction] = "oscillate"
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.mode.value, "Bath")
+            self.device.set_attribute(DeviceAttributes.mode.value, "bath")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageSet)
@@ -248,8 +248,8 @@ class TestMidea26Device:
 
     def test_set_attribute_direction(self) -> None:
         """Test set attribute direction converts the name to degrees."""
-        self.device._attributes[DeviceAttributes.mode] = "Off"
-        self.device._attributes[DeviceAttributes.direction] = "Oscillate"
+        self.device._attributes[DeviceAttributes.mode] = "off"
+        self.device._attributes[DeviceAttributes.direction] = "oscillate"
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(DeviceAttributes.direction.value, "90")
             mock_build_send.assert_called_once()
@@ -259,8 +259,8 @@ class TestMidea26Device:
 
     def test_set_attribute_keeps_existing_light_state(self) -> None:
         """Test settable attributes without special handling reuse current state."""
-        self.device._attributes[DeviceAttributes.mode] = "Off"
-        self.device._attributes[DeviceAttributes.direction] = "Oscillate"
+        self.device._attributes[DeviceAttributes.mode] = "off"
+        self.device._attributes[DeviceAttributes.direction] = "oscillate"
         self.device._attributes[DeviceAttributes.main_light] = False
         self.device._attributes[DeviceAttributes.night_light] = True
         with patch.object(self.device, "build_send") as mock_build_send:
@@ -276,8 +276,8 @@ class TestMidea26Device:
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         """Test unmatched settable attributes log and send current defaults."""
-        self.device._attributes[DeviceAttributes.mode] = "Off"
-        self.device._attributes[DeviceAttributes.direction] = "Oscillate"
+        self.device._attributes[DeviceAttributes.mode] = "off"
+        self.device._attributes[DeviceAttributes.direction] = "oscillate"
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(_UnmatchedSettableAttribute(), "90")
             mock_build_send.assert_called_once()
