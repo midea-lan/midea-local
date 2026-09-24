@@ -66,13 +66,13 @@ class TestMideaB4Device:
         body[32] = 0x02  # door
         result = self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.door] is True
-        assert self.device.attributes[DeviceAttributes.status] == "Finished"
+        assert self.device.attributes[DeviceAttributes.status] == "finished"
         assert self.device.attributes[DeviceAttributes.time_remaining] == 3661
         assert self.device.attributes[DeviceAttributes.current_temperature] == 300
         assert self.device.attributes[DeviceAttributes.tank_ejected] is True
         assert self.device.attributes[DeviceAttributes.water_change_reminder] is True
         assert self.device.attributes[DeviceAttributes.water_shortage] is True
-        assert result[DeviceAttributes.status.value] == "Finished"
+        assert result[DeviceAttributes.status.value] == "finished"
 
     def test_notify_response_fallback_temperature(self) -> None:
         """Test notify1 response with fallback temperature and unknown status."""
