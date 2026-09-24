@@ -127,7 +127,7 @@ class TestMideaB3Device:
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
         assert (
-            self.device.attributes[DeviceAttributes.top_compartment_status] == "Working"
+            self.device.attributes[DeviceAttributes.top_compartment_status] == "working"
         )
         assert self.device.attributes[DeviceAttributes.top_compartment_mode] == 1
         assert (
@@ -143,7 +143,7 @@ class TestMideaB3Device:
         assert self.device.attributes[DeviceAttributes.top_compartment_cooling] is True
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_status]
-            == "Standby"
+            == "standby"
         )
         assert self.device.attributes[DeviceAttributes.bottom_compartment_mode] == 2
         assert (
@@ -164,7 +164,7 @@ class TestMideaB3Device:
         )
         assert (
             self.device.attributes[DeviceAttributes.middle_compartment_status]
-            == "Delay"
+            == "delay"
         )
         assert self.device.attributes[DeviceAttributes.middle_compartment_mode] == 3
         assert (
@@ -209,11 +209,11 @@ class TestMideaB3Device:
         body[21] = 0xFF  # middle remaining -> 0
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
-        assert self.device.attributes[DeviceAttributes.top_compartment_status] == "Off"
+        assert self.device.attributes[DeviceAttributes.top_compartment_status] == "off"
         assert self.device.attributes[DeviceAttributes.top_compartment_remaining] == 120
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_status]
-            == "Finished"
+            == "finished"
         )
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_remaining] == 5
@@ -260,14 +260,14 @@ class TestMideaB3Device:
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
         assert (
-            self.device.attributes[DeviceAttributes.top_compartment_status] == "Working"
+            self.device.attributes[DeviceAttributes.top_compartment_status] == "working"
         )
         assert (
             self.device.attributes[DeviceAttributes.top_compartment_remaining] == 63.0
         )
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_status]
-            == "Standby"
+            == "standby"
         )
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_remaining]
@@ -275,7 +275,7 @@ class TestMideaB3Device:
         )
         assert (
             self.device.attributes[DeviceAttributes.middle_compartment_status]
-            == "Delay"
+            == "delay"
         )
         assert (
             self.device.attributes[DeviceAttributes.middle_compartment_remaining] == 0.0
@@ -326,11 +326,11 @@ class TestMideaB3Device:
         self.device.process_message(bytes(header + body + crc))
         assert (
             self.device.attributes[DeviceAttributes.top_compartment_status]
-            == "Finished"
+            == "finished"
         )
         assert self.device.attributes[DeviceAttributes.top_compartment_remaining] == 0
         assert (
-            self.device.attributes[DeviceAttributes.bottom_compartment_status] == "Off"
+            self.device.attributes[DeviceAttributes.bottom_compartment_status] == "off"
         )
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_remaining] == 0
@@ -372,21 +372,21 @@ class TestMideaB3Device:
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
         assert (
-            self.device.attributes[DeviceAttributes.top_compartment_status] == "Standby"
+            self.device.attributes[DeviceAttributes.top_compartment_status] == "standby"
         )
         assert (
             self.device.attributes[DeviceAttributes.top_compartment_remaining] == 3600
         )
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_status]
-            == "Working"
+            == "working"
         )
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_remaining]
             == 7200
         )
         assert (
-            self.device.attributes[DeviceAttributes.middle_compartment_status] == "Off"
+            self.device.attributes[DeviceAttributes.middle_compartment_status] == "off"
         )
         assert (
             self.device.attributes[DeviceAttributes.middle_compartment_remaining]
@@ -412,18 +412,18 @@ class TestMideaB3Device:
         body[16] = 0xFF  # middle remaining -> 0
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
-        assert self.device.attributes[DeviceAttributes.top_compartment_status] == "Off"
+        assert self.device.attributes[DeviceAttributes.top_compartment_status] == "off"
         assert self.device.attributes[DeviceAttributes.top_compartment_remaining] == 3
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_status]
-            == "Finished"
+            == "finished"
         )
         assert (
             self.device.attributes[DeviceAttributes.bottom_compartment_remaining] == 60
         )
         assert (
             self.device.attributes[DeviceAttributes.middle_compartment_status]
-            == "Delay"
+            == "delay"
         )
         assert (
             self.device.attributes[DeviceAttributes.middle_compartment_remaining] == 0

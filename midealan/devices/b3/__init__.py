@@ -43,11 +43,11 @@ class MideaB3Device(MideaDevice):
     """Midea local B3 device."""
 
     _status: ClassVar[dict[int, str]] = {
-        0x00: "Off",
-        0x01: "Standby",
-        0x02: "Working",
-        0x03: "Delay",
-        0x04: "Finished",
+        0x00: "off",
+        0x01: "standby",
+        0x02: "working",
+        0x03: "delay",
+        0x04: "finished",
     }
 
     def __init__(
