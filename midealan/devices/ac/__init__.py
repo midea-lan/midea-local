@@ -123,6 +123,9 @@ class DeviceAttributes(StrEnum):
     sound = "sound"
     self_clean = "self_clean"
     degerming = "degerming"
+    light_sensitive = "light_sensitive"
+    power_on_timer = "power_on_timer"
+    power_off_timer = "power_off_timer"
     ieco = "ieco"
     pmv = "pmv"
     error_code = "error_code"
@@ -322,6 +325,9 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.sound: True,
                 DeviceAttributes.self_clean: False,
                 DeviceAttributes.degerming: False,
+                DeviceAttributes.light_sensitive: None,
+                DeviceAttributes.power_on_timer: None,
+                DeviceAttributes.power_off_timer: None,
                 DeviceAttributes.ieco: False,
                 DeviceAttributes.pmv: None,
                 DeviceAttributes.error_code: 0,
@@ -726,6 +732,19 @@ class MideaACDevice(MideaDevice):
         if hasattr(message, "degerming_active"):
             self._attributes[DeviceAttributes.degerming] = message.degerming_active
             new_status[DeviceAttributes.degerming.value] = message.degerming_active
+        if hasattr(message, "light_sensitive_active"):
+            self._attributes[DeviceAttributes.light_sensitive] = (
+                message.light_sensitive_active
+            )
+            new_status[DeviceAttributes.light_sensitive.value] = (
+                message.light_sensitive_active
+            )
+        if hasattr(message, "power_on_timer"):
+            self._attributes[DeviceAttributes.power_on_timer] = message.power_on_timer
+            new_status[DeviceAttributes.power_on_timer.value] = message.power_on_timer
+        if hasattr(message, "power_off_timer"):
+            self._attributes[DeviceAttributes.power_off_timer] = message.power_off_timer
+            new_status[DeviceAttributes.power_off_timer.value] = message.power_off_timer
         # Merge capabilities first so a B5 frame's temperature limits are in the
         # merged map before the setpoint limits are resolved from it.
         new_status.update(self._update_capabilities(message))
@@ -1285,6 +1304,8 @@ class MideaACDevice(MideaDevice):
             DeviceAttributes.target_indoor_fan_speed,
             DeviceAttributes.water_pump_running,
             DeviceAttributes.compressor_power,
+            DeviceAttributes.power_on_timer,
+            DeviceAttributes.power_off_timer,
         ]:
             if attr == DeviceAttributes.prompt_tone:
                 self._attributes[DeviceAttributes.prompt_tone] = value
@@ -1325,6 +1346,7 @@ class MideaACDevice(MideaDevice):
                 DeviceAttributes.self_clean,
                 DeviceAttributes.ieco,
                 DeviceAttributes.degerming,
+                DeviceAttributes.light_sensitive,
             ]:
                 message = self.make_newprotocol_message_set(attr=attr, value=value)
                 if attr == DeviceAttributes.self_clean:

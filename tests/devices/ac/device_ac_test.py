@@ -1152,6 +1152,16 @@ class TestMideaACDevice:
                 self.device.set_attribute(attr.value, 1)
             mock_build_send.assert_not_called()
 
+    def test_set_attribute_timers_are_read_only(self) -> None:
+        """Test that timer attributes never send a set message."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            for attr in [
+                DeviceAttributes.power_on_timer,
+                DeviceAttributes.power_off_timer,
+            ]:
+                self.device.set_attribute(attr.value, 1)
+            mock_build_send.assert_not_called()
+
     def test_set_target_temperature(self) -> None:
         """Test set target temperature."""
         with patch.object(self.device, "build_send") as mock_build_send:

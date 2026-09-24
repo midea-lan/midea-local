@@ -36,6 +36,7 @@ from midealan.devices.ac.message import (
     MessageSubProtocolSet,
     PowerFormats,
     PowerQuery,
+    PropertiesBody,
     PropertiesCapsQuery,
     PropertiesCapsQuery1,
     PropertiesDefaultQuery,
@@ -385,21 +386,40 @@ class TestNewProtocolQuery:
 
         assert msg.body[:-2] == expected_body
 
-    def test_new_protocol_query_body_blocks_degerming_poisoner(self) -> None:
-        """Test degerming is never collected for a B1 query (poisoner tag).
+    def test_new_protocol_query_body_includes_degerming(self) -> None:
+        """Test degerming is collected for a B1 query when declared.
 
-        A B1 query carrying 0x5A makes the device answer with an empty
-        parameter list, which suppresses every other tag in the request; the
-        tag therefore stays out of PROPERTIES_TAGS and can never enter a B1
-        query. The degerming state is read from the 0x7e payload instead.
+        The tag answers when queried (verified with raw single-tag frames on
+        real units), so it lives in PROPERTIES_TAGS and enters a B1 query
+        whenever the capability map advertises it. The 0x7e payload reports
+        the same state as a second source.
         """
-        assert int(CapabilityTag.degerming) not in PROPERTIES_TAGS
-        assert int(CapabilityTag.degerming) in CAPABILITY_ONLY_TAGS
+        assert int(CapabilityTag.degerming) in PROPERTIES_TAGS
+        assert int(CapabilityTag.degerming) not in CAPABILITY_ONLY_TAGS
 
         collected = _PropertiesCapsQueryBase.collect_capability_properties(
             cast("dict[str, CapabilityValue]", {"degerming": True, "self_clean": True}),
         )
-        assert int(CapabilityTag.degerming) not in collected
+        assert int(CapabilityTag.degerming) in collected
+        assert int(CapabilityTag.self_clean) in collected
+
+    def test_new_protocol_query_body_includes_light_sensitive(self) -> None:
+        """Test light_sensitive is collected for a B1 query when declared.
+
+        Same as degerming: the tag answers when queried, so it enters B1
+        queries whenever the capability map advertises it; the 0x7e payload
+        byte remains the everyday source.
+        """
+        assert int(CapabilityTag.light_sensitive) in PROPERTIES_TAGS
+        assert int(CapabilityTag.light_sensitive) not in CAPABILITY_ONLY_TAGS
+
+        collected = _PropertiesCapsQueryBase.collect_capability_properties(
+            cast(
+                "dict[str, CapabilityValue]",
+                {"light_sensitive": True, "self_clean": True},
+            ),
+        )
+        assert int(CapabilityTag.light_sensitive) in collected
         assert int(CapabilityTag.self_clean) in collected
 
     def test_new_protocol_caps_query_empty_subset(self) -> None:
@@ -447,8 +467,8 @@ class TestTagDatasets:
     def test_dataset_sizes(self) -> None:
         """Test each dataset has the expected number of tags."""
         assert len(COMMON_TAGS) == 14
-        assert len(PROPERTIES_TAGS) == 19
-        assert len(CAPABILITY_ONLY_TAGS) == 23
+        assert len(PROPERTIES_TAGS) == 21
+        assert len(CAPABILITY_ONLY_TAGS) == 22
 
     def test_common_tags_included_in_properties(self) -> None:
         """Test COMMON_TAGS is a subset of PROPERTIES_TAGS."""
@@ -1194,6 +1214,242 @@ class TestMessageACResponse:
         )
         assert response.degerming_active is False
 
+    def test_b5_light_sensitive_on(self) -> None:
+        """Test light sensitivity on from a B5 notify (captured on).
+
+        The 0x7e payload carries the state in byte 22, bits 7-6
+        (0xe0 = on); captured on model 22019061.
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa49ac00000000000805b5017e0038241f42667f7f0000000c00000000400f009000f0000000e000000040000000003c"
+                "00282836850e0068060000000020000800000000000500015766",
+            ),
+        )
+        assert response.light_sensitive_active is True
+
+    def test_b5_light_sensitive_off(self) -> None:
+        """Test light sensitivity off from a B5 notify (captured off).
+
+        The same byte reads 0x20 when the feature is off.
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa49ac00000000000805b5017e00381a1f42667f7f0000000c00000000400f009000f00000002000000040000000003c"
+                "00282835850e0068060000000020000800000000000500017117",
+            ),
+        )
+        assert response.light_sensitive_active is False
+
+    def test_b1_baseline_light_on_timers_idle(self) -> None:
+        """Test a baseline B1 frame reports light on and both timers idle.
+
+        Captured before any countdown was set: both timer slots read
+        0x7f and the light sensitivity byte reads 0xe0.
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa78ac00000000000803b10a42000001021800000100150000012d1700000164330211004b000004002811000a000001"
+                "64090000010039000001007e000037a01f42667f7f0000000c00000000400f009000f0000000e000000040000000003c"
+                "0028282d850e006800000000002000080000000000000094f3",
+            ),
+        )
+        assert response.light_sensitive_active is True
+        assert response.power_on_timer == 0
+        assert response.power_off_timer == 0
+
+    def test_b5_self_clean_on(self) -> None:
+        """Test active self-clean from a B5 notify (captured while running).
+
+        The 0x7e payload reports the live state in byte 8 bit 2; a B5 body
+        carries the property tag as a capability flag only, so this value can
+        only come from the payload byte. Captured on model 22019053 right
+        after the app started a cycle.
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa3cac00000000000805b5017e002b001a41667f7f0000040c000000650058029000f0000000e000000040000000003c0028"
+                "28430114006e09000169b9",
+            ),
+        )
+        assert response.self_clean_active is True
+
+    def test_b5_self_clean_off(self) -> None:
+        """Test inactive self-clean from a B5 notify (captured after cancel).
+
+        The same bit reads 0 once the app cancels the cycle.
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa3cac00000000000805b5017e002b001a41667f7f0000000c000000650058029000f0000000e000000040000000003c0028"
+                "283b0114007001000171c3",
+            ),
+        )
+        assert response.self_clean_active is False
+
+    def test_b1_self_clean_on(self) -> None:
+        """Test active self-clean from a B1 reply (captured while running).
+
+        B1 replies carry both the payload byte and the property tag; they
+        agree.
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa6bac00000000000803b10a4200000101180000010015000001431700000100330211004b000004002813000a0000016409"
+                "0000010039000001017e00002aa01a41667f7f0000040c000000650058029000f0000000e000000040000000003c00282843"
+                "0114006e09006799",
+            ),
+        )
+        assert response.self_clean_active is True
+
+    def test_b1_baseline_self_clean_off(self) -> None:
+        """Test inactive self-clean from a B1 reply (captured before start)."""
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa6bac00000000000803b10a4200000101180000010015000001431700000100330211004b000004002813000a0000016409"
+                "0000010039000001007e00002aa01a41667f7f0000000c000000650058029000f0000000e000000040000000003c00282843"
+                "0114006e0900ef16",
+            ),
+        )
+        assert response.self_clean_active is False
+
+    def test_b1_degerming_tag_off(self) -> None:
+        """Test the queried degerming tag parses from a B1 reply (captured off).
+
+        Frame captured while replying to a query that included 0x5A; the tag
+        reads 0x00 and the 0x7e payload agrees.
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa6bac00000000000803b10a4200000101180000010015000001311700000100330211004b000004002815000a0000016409"
+                "000001005a000001007e00002aa01a41667f7f0000000c000000650058029000f0000000e000000040000000003c00282831"
+                "0114007006009473",
+            ),
+        )
+        assert response.degerming_active is False
+
+    def test_b1_degerming_tag_on(self) -> None:
+        """Test the queried degerming tag reports on.
+
+        Synthetic frame derived from the captured reply above: the tag value
+        byte is patched to 0x01 (the control-frame value for on), the matching
+        0x7e payload bit is set (0xf0 -> 0xf2), and the frame checksum is
+        recomputed.
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa6bac00000000000803b10a4200000101180000010015000001311700000100330211004b000004002815000a0000016409"
+                "000001005a000001017e00002aa01a41667f7f0000000c000000650058029000f2000000e000000040000000003c00282831"
+                "0114007006009470",
+            ),
+        )
+        assert response.degerming_active is True
+
+    def test_b1_light_sensitive_tag_on(self) -> None:
+        """Test the queried light sensitivity tag parses from a B1 reply.
+
+        Captured while replying to a query that included 0x208; the level byte
+        reads 0x03 (on).
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa6bac00000000000803b10a4200000101180000010015000001311700000100330211004b000004002815000a0000016409"
+                "0000010008020001037e00002aa01a41667f7f0000000c000000650058029000f0000000e000000040000000003c00282831"
+                "011400700600e371",
+            ),
+        )
+        assert response.light_sensitive_active is True
+
+    def test_b5_power_off_timer_armed(self) -> None:
+        """Test the power-off timer parses a B5 notify (captured).
+
+        The vendor app set a 5 h countdown. The captured frame is one minute
+        into the countdown, so the Lua protocol decoder reports 299 minutes;
+        the power-on slot stays idle.
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa49ac00000000000805b5017e0038fc1f42667f930100000c00000000400f009000f0000000e000000040000000003c"
+                "00282832850e006805000000002000080000000000060001b123",
+            ),
+        )
+        assert response.power_off_timer == 299
+        assert response.power_on_timer == 0
+
+    def test_b1_power_off_timer_two_hours(self) -> None:
+        """Test the power-off timer parses a B1 frame (captured).
+
+        The app then changed the countdown to 2 h. The captured frame is one
+        minute into the countdown, so the Lua protocol decoder reports 119
+        minutes.
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa78ac00000000000803b10a4200000102180000010015000001321700000164330211004b000004002810000a000001"
+                "64090000010039000001007e000037a01f42667f870100000c00000000400f009000f0000000e000000040000000003c"
+                "00282832850e00680500000000200008000000000000004e22",
+            ),
+        )
+        assert response.power_off_timer == 119
+
+    def test_b5_power_off_timer_cancelled(self) -> None:
+        """Test the power-off timer reads idle after a cancel (captured).
+
+        Cancelling the countdown returns the slot to 0x7f.
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa49ac00000000000805b5017e0038051f42667f7f0000000c00000000400f009000f0000000e000000040000000003c"
+                "00282832850e0068040000000020000800000000000600010bd6",
+            ),
+        )
+        assert response.power_off_timer == 0
+
+    def test_b5_power_on_timer_armed(self) -> None:
+        """Test the power-on timer parses 5.5 h from a B5 notify (captured).
+
+        The app set a 5.5 h countdown on an idle unit
+        (0x95 = 0x7f + 330 / 15, model 22019053).
+        """
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa3cac00000000000805b5017e002b001a4166957f0000000c000000650058029000f0000000e000000040000000003c"
+                "0028284c01140070030001a665",
+            ),
+        )
+        assert response.power_on_timer == 330
+        assert response.power_off_timer == 0
+
+    def test_b1_power_on_timer_armed(self) -> None:
+        """Test the power-on timer parses 5.5 h from a B1 frame (captured)."""
+        response = MessageACResponse(
+            bytearray.fromhex(
+                "aa6bac00000000000803b10a42000001011800000100150000014c1700000164330211004b000004002812000a000001"
+                "64090000010039000001007e00002aa01a4166957f0000000c000000650058029000f0000000e000000040000000003c"
+                "0028284c011400700300e19d",
+            ),
+        )
+        assert response.power_on_timer == 330
+
+    @pytest.mark.parametrize(
+        ("value", "minute_correction", "expected"),
+        [
+            (0x95, 0, 330),
+            (0x95, 1, 329),
+            (0x7F, 0, 0),
+        ],
+    )
+    def test_countdown_timer_minute_correction(
+        self,
+        value: int,
+        minute_correction: int,
+        expected: int,
+    ) -> None:
+        """Test the Lua-compatible timer byte and minute correction formula."""
+        assert (
+            PropertiesBody._parse_countdown_timer(value, minute_correction) == expected
+        )
+
     def test_message_notify2_a0_short_body(self) -> None:
         """Skip Message parse notify2 A0 when the body is too short."""
         body = bytearray(A0_A1_C0_MIN_BODY_LENGTH)
@@ -1716,6 +1972,41 @@ class TestMessageACResponse:
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "self_clean_active")
         assert response.self_clean_active is expected
+
+    @pytest.mark.parametrize(
+        ("tag", "raw_value", "attribute", "expected"),
+        [
+            (CapabilityTag.light_sensitive, 0x03, "light_sensitive_active", True),
+            (CapabilityTag.light_sensitive, 0x00, "light_sensitive_active", False),
+            (CapabilityTag.degerming, 0x01, "degerming_active", True),
+            (CapabilityTag.degerming, 0x00, "degerming_active", False),
+        ],
+    )
+    def test_message_query_b1_tag_only_states(
+        self,
+        tag: CapabilityTag,
+        raw_value: int,
+        attribute: str,
+        expected: bool,
+    ) -> None:
+        """Test queried tags parse without a 0x7e payload."""
+        # B1 body: body_type(1) + count(1) + tag(2) + 0x00 + length(1) + value(1)
+        self.header[9] = 0x03
+        body = bytearray(
+            [
+                0xB1,  # Body type
+                0x01,  # Params count
+                tag & 0xFF,
+                tag >> 8,
+                0x00,
+                0x01,  # Value length
+                raw_value,
+                0x00,  # trailing checksum byte (stripped by MessageResponse)
+            ],
+        )
+
+        response = MessageACResponse(self.header + body)
+        assert getattr(response, attribute) is expected
 
     def test_message_notify2_b5_self_clean_is_capability_only(self) -> None:
         """Test that tag 0x0039 in a B5 body is not read as live state."""
@@ -2897,6 +3188,30 @@ class TestNewProtocolSetNewFeatures:
 
     def test_degerming_absent_when_unset(self) -> None:
         """Test degerming is not packed when left as None."""
+        msg = PropertiesSet(protocol_version=ProtocolVersion.V1)
+        msg.prompt_tone = b"\x01"
+        assert msg.body[:-2] == bytearray.fromhex("b0011a000101")
+
+    def test_light_sensitive_packed_with_prompt_tone(self) -> None:
+        """Test light_sensitive packs the 0x208 tag right after prompt_tone.
+
+        The expected bytes match LAN set frames verified on a live device
+        (0x03 = on, as used by the vendor app).
+        """
+        msg = PropertiesSet(protocol_version=ProtocolVersion.V1)
+        msg.prompt_tone = b"\x01"
+        msg.light_sensitive = True
+        assert msg.body[:-2] == bytearray.fromhex("b0021a00010108020103")
+
+    def test_light_sensitive_off_packs_zero(self) -> None:
+        """Test light_sensitive off packs 0x00 as the value byte."""
+        msg = PropertiesSet(protocol_version=ProtocolVersion.V1)
+        msg.prompt_tone = b"\x01"
+        msg.light_sensitive = False
+        assert msg.body[:-2] == bytearray.fromhex("b0021a00010108020100")
+
+    def test_light_sensitive_absent_when_unset(self) -> None:
+        """Test light_sensitive is not packed when left as None."""
         msg = PropertiesSet(protocol_version=ProtocolVersion.V1)
         msg.prompt_tone = b"\x01"
         assert msg.body[:-2] == bytearray.fromhex("b0011a000101")
