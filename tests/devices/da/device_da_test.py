@@ -39,7 +39,7 @@ class TestMideaDADevice:
         assert self.device.attributes[DeviceAttributes.error_code] is None
         assert self.device.attributes[DeviceAttributes.washing_data] == bytearray([])
         assert self.device.attributes[DeviceAttributes.program] is None
-        assert self.device.attributes[DeviceAttributes.progress] == "Unknown"
+        assert self.device.attributes[DeviceAttributes.progress] == "unknown"
         assert self.device.attributes[DeviceAttributes.time_remaining] is None
         assert self.device.attributes[DeviceAttributes.wash_time] is None
         assert self.device.attributes[DeviceAttributes.soak_time] is None
@@ -77,17 +77,17 @@ class TestMideaDADevice:
             assert new_status[DeviceAttributes.power.value]
             assert new_status[DeviceAttributes.start.value]
             assert new_status[DeviceAttributes.error_code.value] == 10
-            assert new_status[DeviceAttributes.program.value] == "Memory"
-            assert new_status[DeviceAttributes.progress.value] == "Rinse"
+            assert new_status[DeviceAttributes.program.value] == "memory"
+            assert new_status[DeviceAttributes.progress.value] == "rinse"
             assert new_status[DeviceAttributes.time_remaining.value] == 75
             assert new_status[DeviceAttributes.wash_time.value] == 30
             assert new_status[DeviceAttributes.soak_time.value] == 10
             assert new_status[DeviceAttributes.dehydration_time.value] == 2
-            assert new_status[DeviceAttributes.dehydration_speed.value] == "High"
+            assert new_status[DeviceAttributes.dehydration_speed.value] == "high"
             assert new_status[DeviceAttributes.rinse_count.value] == 3
             assert new_status[DeviceAttributes.rinse_level.value] == 4
             assert new_status[DeviceAttributes.wash_level.value] == 1
-            assert new_status[DeviceAttributes.wash_strength.value] == "Medium"
+            assert new_status[DeviceAttributes.wash_strength.value] == "medium"
             assert new_status[DeviceAttributes.softener.value] == "5"
             assert new_status[DeviceAttributes.detergent.value] == "4"
 

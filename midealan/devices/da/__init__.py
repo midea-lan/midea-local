@@ -56,7 +56,7 @@ class MideaDADevice(MideaDevice):
                 DeviceAttributes.error_code: None,
                 DeviceAttributes.washing_data: bytearray([]),
                 DeviceAttributes.program: None,
-                DeviceAttributes.progress: "Unknown",
+                DeviceAttributes.progress: "unknown",
                 DeviceAttributes.time_remaining: None,
                 DeviceAttributes.wash_time: None,
                 DeviceAttributes.soak_time: None,
@@ -80,46 +80,46 @@ class MideaDADevice(MideaDevice):
         message = MessageDAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
-        progress = ["Idle", "Spin", "Rinse", "Wash", "Weight", "Unknown", "Dry", "Soak"]
+        progress = ["idle", "spin", "rinse", "wash", "weight", "unknown", "dry", "soak"]
         program = [
-            "Standard",
-            "Fast",
-            "Blanket",
-            "Wool",
+            "standard",
+            "fast",
+            "blanket",
+            "wool",
             "embathe",
-            "Memory",
-            "Child",
-            "Down Jacket",
-            "Stir",
-            "Mute",
-            "Bucket Self Clean",
-            "Air Dry",
+            "memory",
+            "child",
+            "down jacket",
+            "stir",
+            "mute",
+            "bucket self clean",
+            "air dry",
         ]
-        speed = ["-", "Low", "Medium", "High"]
-        strength = ["-", "Week", "Medium", "Strong"]
+        speed = ["-", "low", "medium", "high"]
+        strength = ["-", "week", "medium", "strong"]
         detergent = [
-            "No",
-            "Less",
-            "Medium",
-            "More",
+            "no",
+            "less",
+            "medium",
+            "more",
             "4",
             "5",
             "6",
             "7",
             "8",
-            "Insufficient",
+            "insufficient",
         ]
         softener = [
-            "No",
-            "Intelligent",
-            "Programed",  # codespell:ignore
+            "no",
+            "intelligent",
+            "programed",  # codespell:ignore
             "3",
             "4",
             "5",
             "6",
             "7",
             "8",
-            "Insufficient",
+            "insufficient",
         ]
         for status in self._attributes:
             if hasattr(message, str(status)):
