@@ -1,6 +1,6 @@
 # Run via prek: https://github.com/j178/prek
 # See https://pre-commit.com/hooks.html for more hooks (prek uses the same config format)
-exclude: "CHANGELOG.md|.copier-answers.yml"
+exclude: "CHANGELOG.md|.copier-answers.yml|^tests/lua_conformance/GENERATED_.*[.]md$"
 default_stages: [pre-commit]
 
 repos:
@@ -84,3 +84,15 @@ repos:
             "--rcfile=pylintrc",
             "--ignore-paths=tests",
           ]
+  - repo: local
+    hooks:
+      - id: lua-conformance
+        name: check LUA protocol conformance
+        description: >-
+          A new/changed lua/<type>/*.lua file is checked against
+          midealocal/devices/<type>; a changed midealocal/devices/<type> file
+          is checked against every lua/<type>/*.lua file. See
+          tests/lua_conformance/README.md.
+        entry: python -m tests.lua_conformance.precommit_check
+        language: system
+        files: '^(lua/[^/]+/.*\.lua|midealocal/devices/[^/]+/.*\.py)$'
