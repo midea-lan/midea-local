@@ -18,6 +18,7 @@ from midealan.devices.ed.message import (
     MessageQuery09,
     MessageQueryFF,
 )
+from midealan.exceptions import ValueWrongType
 from midealan.message import ListTypes
 
 TEST_AUTH_VALUE = "AA"
@@ -125,6 +126,27 @@ class TestMideaEDDevice:
             result = self.device.process_message(b"")
 
         assert result[DeviceAttributes.power.value] is True
+
+    def test_process_message_water_purifier_frame(self) -> None:
+        """Test a captured water purifier frame updates its attributes."""
+        raw = bytes.fromhex(
+            "aa69ed00000000000004ff01030040088201030110000240010000001050563b0000001150"
+            "00c31e00001340730005002030000200236000000000001538a02c01f401e803000000003a"
+            "40000000003b105252100316503c180000003c5041400000000712230f120014",
+        )
+        new_status = self.device.process_message(raw)
+        assert new_status[DeviceAttributes.water_kind.value] == 0
+        assert new_status[DeviceAttributes.heat_start.value] == 2
+        assert new_status[DeviceAttributes.ice_gall_status.value] == 0
+        assert new_status[DeviceAttributes.hot_pot_temperature.value] == 82
+        assert new_status[DeviceAttributes.maxlife1.value] == 60
+        assert new_status[DeviceAttributes.maxlife2.value] == 24
+        assert new_status[DeviceAttributes.antifreeze.value] is True
+        assert new_status[DeviceAttributes.filter.value] is False
+        assert new_status[DeviceAttributes.wash.value] is False
+        assert new_status[DeviceAttributes.standby_status.value] is True
+        assert new_status[DeviceAttributes.sleep_status.value] is True
+        assert self.device.attributes[DeviceAttributes.hot_pot_temperature] == 82
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -944,6 +966,37 @@ class TestMideaEDDeviceSoftWater:
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(DeviceAttributes.water_hardness, 150)
             mock_build_send.assert_called_once()
+
+    def test_set_attribute_filter_wash(self) -> None:
+        """Test filter wash uses the official Lua encoding."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.wash, True)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.body == bytearray(
+                [0x15, 0x01, 0x01, 0x00, 0x03, 0x01, 0x3C, 0x00],
+            )
+
+    def test_set_attribute_antifreeze(self) -> None:
+        """Test antifreeze switch uses the official Lua encoding."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.antifreeze, False)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.body == bytearray(
+                [0x15, 0x01, 0x01, 0x03, 0x05, 0x00, 0x00, 0x00],
+            )
+
+    @pytest.mark.parametrize("value", ["False", "True", 5])
+    def test_set_attribute_wash_antifreeze_require_bool(self, value: str | int) -> None:
+        """Test a non-bool wash or antifreeze value raises and does not send."""
+        for attr in (DeviceAttributes.wash, DeviceAttributes.antifreeze):
+            with (
+                patch.object(self.device, "build_send") as mock_build_send,
+                pytest.raises(ValueWrongType, match="Expected bool"),
+            ):
+                self.device.set_attribute(attr, value)
+            mock_build_send.assert_not_called()
 
     def test_set_attribute_timing_regeneration_hour_couples_min(self) -> None:
         """Test setting hour also sends current min value (coupled write)."""

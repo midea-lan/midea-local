@@ -6,10 +6,12 @@ from typing import Any, Unpack
 
 from midealan.const import DeviceType
 from midealan.device import MideaDevice, MideaDeviceInitKwargs
+from midealan.exceptions import ValueWrongType
 from midealan.message import ListTypes
 
 from .message import (
     TEA_BAR_SUBTYPE,
+    WATER_PURIFIER_WASH_SECONDS,
     MessageEDResponse,
     MessageNewSet,
     MessageOldSet,
@@ -48,6 +50,13 @@ class DeviceAttributes(StrEnum):
     life1 = "life1"
     life2 = "life2"
     life3 = "life3"
+    life4 = "life4"
+    life5 = "life5"
+    maxlife1 = "maxlife1"
+    maxlife2 = "maxlife2"
+    maxlife3 = "maxlife3"
+    maxlife4 = "maxlife4"
+    maxlife5 = "maxlife5"
     child_lock = "child_lock"
     current_temperature = "current_temperature"
     target_temperature = "target_temperature"
@@ -90,6 +99,19 @@ class DeviceAttributes(StrEnum):
     rsj_stand_by = "rsj_stand_by"
     regeneration = "regeneration"
     error = "error"
+    # Water purifier attributes for FF body
+    filter = "filter"
+    wash = "wash"
+    standby_status = "standby_status"
+    out_water = "out_water"
+    out_hot_water = "out_hot_water"
+    backflow = "backflow"
+    sleep_status = "sleep_status"
+    water_kind = "water_kind"
+    heat_start = "heat_start"
+    ice_gall_status = "ice_gall_status"
+    hot_pot_temperature = "hot_pot_temperature"
+    antifreeze = "antifreeze"
 
 
 class MideaEDDevice(MideaDevice):
@@ -116,6 +138,13 @@ class MideaEDDevice(MideaDevice):
                 DeviceAttributes.life1: None,
                 DeviceAttributes.life2: None,
                 DeviceAttributes.life3: None,
+                DeviceAttributes.life4: None,
+                DeviceAttributes.life5: None,
+                DeviceAttributes.maxlife1: None,
+                DeviceAttributes.maxlife2: None,
+                DeviceAttributes.maxlife3: None,
+                DeviceAttributes.maxlife4: None,
+                DeviceAttributes.maxlife5: None,
                 DeviceAttributes.child_lock: False,
                 # Soft water machine (water softener) attributes
                 DeviceAttributes.velocity: None,
@@ -141,6 +170,19 @@ class MideaEDDevice(MideaDevice):
                 DeviceAttributes.rsj_stand_by: False,
                 DeviceAttributes.regeneration: False,
                 DeviceAttributes.error: None,
+                # Water purifier attributes for FF body
+                DeviceAttributes.filter: False,
+                DeviceAttributes.wash: False,
+                DeviceAttributes.standby_status: False,
+                DeviceAttributes.out_water: False,
+                DeviceAttributes.out_hot_water: False,
+                DeviceAttributes.backflow: False,
+                DeviceAttributes.sleep_status: False,
+                DeviceAttributes.water_kind: None,
+                DeviceAttributes.heat_start: None,
+                DeviceAttributes.ice_gall_status: None,
+                DeviceAttributes.hot_pot_temperature: None,
+                DeviceAttributes.antifreeze: False,
             },
         )
         if self._is_tea_bar():
@@ -403,11 +445,18 @@ class MideaEDDevice(MideaDevice):
         """Midea ED device set attribute."""
         if self._set_tea_bar_attribute(attr, value):
             return
+        if attr in [
+            DeviceAttributes.wash,
+            DeviceAttributes.antifreeze,
+        ] and not isinstance(value, bool):
+            raise ValueWrongType("[ed] Expected bool")
         message: MessageNewSet | MessageOldSet | None = None
         if self._use_new_set():
             if attr in [
                 DeviceAttributes.power,
                 DeviceAttributes.child_lock,
+                DeviceAttributes.wash,
+                DeviceAttributes.antifreeze,
                 DeviceAttributes.soften,
                 DeviceAttributes.cl_sterilization,
                 DeviceAttributes.leak_water_protection,
@@ -426,6 +475,15 @@ class MideaEDDevice(MideaDevice):
         if message is not None:
             self._attributes[attr] = value
             setattr(message, str(attr), value)
+            if (
+                attr == DeviceAttributes.wash
+                and value
+                and isinstance(
+                    message,
+                    MessageNewSet,
+                )
+            ):
+                message.wash_seconds = WATER_PURIFIER_WASH_SECONDS
             if attr == DeviceAttributes.leak_water_protection_value:
                 current_protection = self._attributes.get(
                     DeviceAttributes.leak_water_protection,

@@ -31,6 +31,28 @@ TEA_BAR_STATUS_STANDBY_FLAG = 0x80
 TEA_BAR_STATUS_DISPENSING_MASK = 0x50
 TEA_BAR_ERROR_OFFSET = 52
 
+# Water purifier FF body constants.
+# Record lengths cover the two-byte record header plus the payload.
+FF_SINGLE_BYTE_RECORD_LENGTH = 3
+FF_THREE_BYTE_RECORD_LENGTH = 5
+FF_FOUR_BYTE_RECORD_LENGTH = 6
+FF_WATER_KIND_RECORD_LENGTH = 5
+FF_LIFE_RECORD_LENGTH = 7
+# Status flags of the 0x000 record.
+FF_LOCK_FLAG = 0x01
+FF_FILTER_FLAG = 0x01
+FF_WASH_FLAG = 0x04
+FF_STANDBY_STATUS_FLAG = 0x08
+FF_OUT_WATER_FLAG = 0x02
+FF_OUT_HOT_WATER_FLAG = 0x40
+FF_POWER_FLAG = 0x01
+FF_SLEEP_FLAG = 0x02
+FF_BACKFLOW_FLAG = 0x20
+# Status flags of the 0x03C record.
+FF_ANTIFREEZE_FLAG = 0x01
+# Filter wash duration in seconds, as sent by the official app.
+WATER_PURIFIER_WASH_SECONDS = 60
+
 
 class Attributes(IntEnum):
     """Attributes."""
@@ -63,6 +85,16 @@ class Attributes(IntEnum):
     REGENERATION_SWITCH = 0x047
     ERROR = 0x048
 
+    # Water purifier attributes for FF body.
+    ERROR_CODE = 0x001
+    MAX_LIFE = 0x016
+    # The 0x020 record carries water_kind/heat_start/ice_gall_status for the
+    # water purifier family; VELOCITY above is the soft water machine label for
+    # the same record id.
+    WATER_KIND = 0x020
+    HOT_POT_TEMPERATURE = 0x03B
+    ANTIFREEZE = 0x03C
+
 
 class NewSetTags(IntEnum):
     """New set tags."""
@@ -87,6 +119,9 @@ class NewSetTags(IntEnum):
     tea_bar_keep_warm = 0x0408
     tea_bar_sleep = 0x0104  # Intentional alias: same wire tag as salt_setting.
     tea_bar_cooling = 0x0500
+    # Water purifier controls from the official ED Lua encoder.
+    wash = 0x0300  # setbytes(0x00, 0x03, 0x01/0x00, seconds...)
+    antifreeze = 0x0503  # setbytes(0x03, 0x05, 0x01/0x00)
 
 
 class EDNewSetParamPack:
@@ -337,6 +372,10 @@ class MessageNewSet(MessageEDBase):
         self.keep_warm_time: int | None = None
         self.sleep: bool | None = None
         self.cooling: bool | None = None
+        # Water purifier controls from the official ED Lua encoder.
+        self.wash: bool | None = None
+        self.wash_seconds: int | None = None
+        self.antifreeze: bool | None = None
 
     @property
     def _body(self) -> bytearray:
@@ -497,8 +536,38 @@ class MessageNewSet(MessageEDBase):
                     value=0x01 if self.cooling else 0x00,
                 ),
             )
+        pack_count = self._append_water_purifier_params(payload, pack_count)
         payload[1] = pack_count
         return payload
+
+    def _append_water_purifier_params(
+        self,
+        payload: bytearray,
+        pack_count: int,
+    ) -> int:
+        """Append water purifier control parameters."""
+        if self.wash is not None:
+            pack_count += 1
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.wash,
+                    value=0x01 if self.wash else 0x00,
+                    addition=(
+                        self.wash_seconds
+                        if self.wash and self.wash_seconds is not None
+                        else 0x00
+                    ),
+                ),
+            )
+        if self.antifreeze is not None:
+            pack_count += 1
+            payload.extend(
+                EDNewSetParamPack.pack(
+                    param=NewSetTags.antifreeze,
+                    value=0x01 if self.antifreeze else 0x00,
+                ),
+            )
+        return pack_count
 
 
 class MessageOldSet(MessageEDBase):
@@ -712,16 +781,30 @@ class EDMessageBodyFF(MessageBody):
         """Initialize ED message body FF."""
         super().__init__(body)
         data_offset = 2
-        while True:
+        while data_offset + 2 < len(body):
             length = (body[data_offset + 2] >> 4) + 2
             attr = ((body[data_offset + 2] % 16) << 8) + body[data_offset + 1]
+            if data_offset + length >= len(body):
+                break
             if attr == Attributes.CHILD_LOCK:
                 # Stop before reading fields from a truncated CHILD_LOCK record.
-                if data_offset + length + 6 > len(body):
+                if length < FF_FOUR_BYTE_RECORD_LENGTH:
                     break
-                self.child_lock = (body[data_offset + 5] & 0x01) > 0
-                self.power = (body[data_offset + 6] & 0x01) > 0
-            elif attr == Attributes.WATER_CONSUMPTION:
+                self.filter = (body[data_offset + 3] & FF_FILTER_FLAG) > 0
+                self.wash = (body[data_offset + 3] & FF_WASH_FLAG) > 0
+                self.standby_status = (
+                    body[data_offset + 3] & FF_STANDBY_STATUS_FLAG
+                ) > 0
+                self.out_water = (body[data_offset + 5] & FF_OUT_WATER_FLAG) > 0
+                self.out_hot_water = (body[data_offset + 5] & FF_OUT_HOT_WATER_FLAG) > 0
+                self.child_lock = (body[data_offset + 5] & FF_LOCK_FLAG) > 0
+                self.power = (body[data_offset + 6] & FF_POWER_FLAG) > 0
+                self.sleep_status = (body[data_offset + 6] & FF_SLEEP_FLAG) > 0
+                self.backflow = (body[data_offset + 6] & FF_BACKFLOW_FLAG) > 0
+            elif (
+                attr == Attributes.WATER_CONSUMPTION
+                and length >= FF_FOUR_BYTE_RECORD_LENGTH
+            ):
                 self.water_consumption = (
                     float(
                         body[data_offset + 3]
@@ -731,17 +814,47 @@ class EDMessageBodyFF(MessageBody):
                     )
                     / 1000
                 )
-            elif attr == Attributes.TDS:
+            elif attr == Attributes.TDS and length >= FF_FOUR_BYTE_RECORD_LENGTH:
                 self.in_tds = body[data_offset + 3] + (body[data_offset + 4] << 8)
                 self.out_tds = body[data_offset + 5] + (body[data_offset + 6] << 8)
-            elif attr == Attributes.LIFE:
+            elif attr == Attributes.LIFE and length >= FF_THREE_BYTE_RECORD_LENGTH:
                 self.life1 = body[data_offset + 3]
                 self.life2 = body[data_offset + 4]
                 self.life3 = body[data_offset + 5]
-            # Stop when the next record would run past the body.
-            if data_offset + length + 6 > len(body):
-                break
+                if length >= FF_LIFE_RECORD_LENGTH and data_offset + 7 < len(body):
+                    self.life4 = body[data_offset + 6]
+                    self.life5 = body[data_offset + 7]
+            else:
+                self._parse_water_purifier_record(attr, data_offset, length, body)
             data_offset += length
+
+    def _parse_water_purifier_record(
+        self,
+        attr: int,
+        data_offset: int,
+        length: int,
+        body: bytearray,
+    ) -> None:
+        """Parse a water purifier (FF body) status record."""
+        if attr == Attributes.ERROR_CODE and length >= FF_SINGLE_BYTE_RECORD_LENGTH:
+            self.error = body[data_offset + 3]
+        elif attr == Attributes.MAX_LIFE and length >= FF_LIFE_RECORD_LENGTH:
+            self.maxlife1 = body[data_offset + 3]
+            self.maxlife2 = body[data_offset + 4]
+            self.maxlife3 = body[data_offset + 5]
+            self.maxlife4 = body[data_offset + 6]
+            self.maxlife5 = body[data_offset + 7]
+        elif attr == Attributes.WATER_KIND and length >= FF_WATER_KIND_RECORD_LENGTH:
+            self.water_kind = body[data_offset + 3]
+            self.heat_start = body[data_offset + 4]
+            self.ice_gall_status = body[data_offset + 5]
+        elif (
+            attr == Attributes.HOT_POT_TEMPERATURE
+            and length >= FF_SINGLE_BYTE_RECORD_LENGTH
+        ):
+            self.hot_pot_temperature = body[data_offset + 3]
+        elif attr == Attributes.ANTIFREEZE and length >= FF_SINGLE_BYTE_RECORD_LENGTH:
+            self.antifreeze = (body[data_offset + 3] & FF_ANTIFREEZE_FLAG) > 0
 
 
 class MessageEDResponse(MessageResponse):

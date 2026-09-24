@@ -25,7 +25,7 @@ from midealan.devices.ed.message import (
     MessageQuery09,
     MessageQueryFF,
 )
-from midealan.message import ListTypes, MessageType
+from midealan.message import ListTypes, MessageBase, MessageType
 
 
 class TestMessageEDBase:
@@ -339,6 +339,43 @@ class TestMessageNewSet:
         # pack(param=0x0200, value=0x01) -> [0x00, 0x02, 0x01, 0x00, 0x00]
         assert body[2] == 0x01  # pack_count
         assert body[3:8] == bytearray([0x00, 0x02, 0x01, 0x00, 0x00])
+
+    def test_message_newset_water_purifier_wash(self) -> None:
+        """Test MessageNewSet filter wash uses the official Lua encoding."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.wash = True
+        # Lua sends a zero duration when wash_seconds is omitted.
+        assert new_set.body == bytearray(
+            [0x15, 0x01, 0x01, 0x00, 0x03, 0x01, 0x00, 0x00],
+        )
+        new_set.wash_seconds = 60
+        # setbytes(0x00, 0x03, 0x01, 0x3C, 0x00) -> 60 seconds of wash.
+        assert new_set.body == bytearray(
+            [0x15, 0x01, 0x01, 0x00, 0x03, 0x01, 0x3C, 0x00],
+        )
+        new_set.wash_seconds = 321
+        assert new_set.body == bytearray(
+            [0x15, 0x01, 0x01, 0x00, 0x03, 0x01, 0x41, 0x01],
+        )
+        new_set.wash = False
+        # The Lua encoder sends setbytes(0x00, 0x03, 0x00, 0x00, 0x00) to stop the wash.
+        assert new_set.body == bytearray(
+            [0x15, 0x01, 0x01, 0x00, 0x03, 0x00, 0x00, 0x00],
+        )
+
+    def test_message_newset_water_purifier_antifreeze(self) -> None:
+        """Test MessageNewSet antifreeze uses the official Lua encoding."""
+        new_set = MessageNewSet(protocol_version=ProtocolVersion.V1)
+        new_set.antifreeze = True
+        # Antifreeze on: setbytes(0x03, 0x05, 0x01, 0x00, 0x00).
+        assert new_set.body == bytearray(
+            [0x15, 0x01, 0x01, 0x03, 0x05, 0x01, 0x00, 0x00],
+        )
+        new_set.antifreeze = False
+        # Antifreeze off: setbytes(0x03, 0x05, 0x00, 0x00, 0x00).
+        assert new_set.body == bytearray(
+            [0x15, 0x01, 0x01, 0x03, 0x05, 0x00, 0x00, 0x00],
+        )
 
 
 class TestMessageOldSet:
@@ -927,6 +964,33 @@ class TestEDMessageBodyFF:
         assert not hasattr(message, "child_lock")
         assert not hasattr(message, "power")
 
+    def test_ed_message_ff_complete_final_record_is_parsed(self) -> None:
+        """Test the final complete FF record is not skipped."""
+        message = EDMessageBodyFF(
+            body=bytearray([0xFF, 0x01, 0x03, 0x3B, 0x10, 82]),
+        )
+        assert message.hot_pot_temperature == 82
+
+    def test_ed_message_ff_missing_record_header_is_ignored(self) -> None:
+        """Test a body ending before a record header is ignored."""
+        message = EDMessageBodyFF(body=bytearray([0xFF, 0x01]))
+        assert message.body_type == 255
+
+    def test_ed_message_ff_short_fixed_records_are_skipped(self) -> None:
+        """Test fixed-width FF records are length-checked before reading."""
+        message = EDMessageBodyFF(
+            body=bytearray([0xFF, 0x01, 0x03, 0x10, 0x20, 0x01, 0x02]),
+        )
+        assert not hasattr(message, "life1")
+        assert not hasattr(message, "life2")
+        assert not hasattr(message, "life3")
+
+        # The record declares one more byte than the body contains.
+        message = EDMessageBodyFF(
+            body=bytearray([0xFF, 0x01, 0x03, 0x3B, 0x40, 82, 0x00]),
+        )
+        assert not hasattr(message, "hot_pot_temperature")
+
     def test_ed_message_ff_life_only_breaks(self) -> None:
         """Test EDMessageBodyFF stops after a life-only body."""
         body = bytearray([0xFF, 0x01, 0x07, 0x10, 0x40, 0x01, 0x02, 0x03, 0x00])
@@ -940,6 +1004,151 @@ class TestEDMessageBodyFF:
         body = bytearray([0xFF, 0x01, 0x07, 0x99, 0x40, 0x00, 0x00, 0x00, 0x00])
         message = EDMessageBodyFF(body=body)
         assert message.body_type == 255
+
+
+class TestEDMessageBodyFFWaterPurifier:
+    """Test water purifier FF records captured from a 632009EN device."""
+
+    @staticmethod
+    def _body(raw: str) -> bytearray:
+        """Return the FF body of a captured frame."""
+        message = bytearray.fromhex(raw)
+        return message[MessageBase.HEADER_LENGTH : -1]
+
+    def test_captured_idle_frame(self) -> None:
+        """Parse a captured idle frame: standby, asleep, antifreeze on."""
+        message = EDMessageBodyFF(
+            body=self._body(
+                "aa69ed00000000000004ff01030040088201030110000240010000001050563b0000001150"
+                "00c31e00001340730005002030000200236000000000001538a02c01f401e803000000003a"
+                "40000000003b105252100316503c180000003c5041400000000712230f120014",
+            ),
+        )
+        assert message.error == 0
+        assert message.life1 == 86
+        assert message.life2 == 59
+        assert message.life3 == 0
+        assert message.life4 == 0
+        assert message.life5 == 0
+        assert message.maxlife1 == 60
+        assert message.maxlife2 == 24
+        assert message.maxlife3 == 0
+        assert message.maxlife4 == 0
+        assert message.maxlife5 == 0
+        assert message.water_kind == 0
+        assert message.heat_start == 2
+        assert message.ice_gall_status == 0
+        assert message.hot_pot_temperature == 82
+        assert message.antifreeze
+        assert not message.filter
+        assert not message.wash
+        assert message.standby_status
+        assert not message.out_water
+        assert not message.out_hot_water
+        assert not message.backflow
+        assert message.sleep_status
+        assert message.child_lock
+        assert message.power
+
+    def test_captured_heating_frame(self) -> None:
+        """Parse a captured heating frame (heat_start 1)."""
+        message = EDMessageBodyFF(
+            body=self._body(
+                "aa69ed00000000000003ff01030040088201030110000240010000001050563b0000001150"
+                "18bf1e00001340700008002030000100236000000000000038a02c01f401e803000000003a"
+                "40000000003b105352100316503c180000003c5041400000000712240f120015",
+            ),
+        )
+        assert message.error == 0
+        assert message.heat_start == 1
+        assert message.hot_pot_temperature == 83
+        assert not message.wash
+        assert not message.out_water
+
+    def test_captured_cold_water_frame(self) -> None:
+        """Parse a captured cold-water dispensing frame."""
+        message = EDMessageBodyFF(
+            body=self._body(
+                "aa69ed00000000000004ff01030040018203010110000240010000001050563b0000001150"
+                "18bf1e000013407a0005002030030200236000000000001538a02c01f401e803000000003a"
+                "40000000003b105352100316503c180000003c5041400000000712260f1200f9",
+            ),
+        )
+        assert message.water_kind == 3
+        assert message.filter
+        assert not message.standby_status
+        assert not message.sleep_status
+        assert message.out_water
+        assert not message.out_hot_water
+
+    def test_captured_warm_water_frame(self) -> None:
+        """Parse a captured warm-water dispensing frame."""
+        message = EDMessageBodyFF(
+            body=self._body(
+                "aa69ed00000000000004ff01030040018243010110000240010000001050563b0000001150"
+                "00c31e00001340770004002030020200236000000000001538a02c01f401e803000000003a"
+                "40000000003b105252100316503c180000003c5041400000000712230f1226b0",
+            ),
+        )
+        assert message.water_kind == 2
+        assert message.filter
+        assert message.out_water
+        assert message.out_hot_water
+
+    def test_captured_boiling_water_frame(self) -> None:
+        """Parse a captured boiling-water dispensing frame."""
+        message = EDMessageBodyFF(
+            body=self._body(
+                "aa69ed00000000000004ff01030040088243010110000240010000001050563b0000001150"
+                "00c31e00001340740004002030000200236000000000001638a02c01f401e803000000003a"
+                "40000000003b105852100316503c180000003c5041400000000712220f1200ce",
+            ),
+        )
+        assert message.water_kind == 0
+        assert message.out_water
+        assert message.out_hot_water
+        assert message.standby_status
+        assert not message.filter
+
+    def test_captured_filter_wash_frame(self) -> None:
+        """Parse a captured filter-wash frame."""
+        message = EDMessageBodyFF(
+            body=self._body(
+                "aa69ed00000000000004ff01030040048201210110000240010000001050563b0000001150"
+                "18bf1e00001340700005002030000200236000000000001538a02c01f401e803000000003a"
+                "40000000003b105552100316503c180000003c50414000000007122a0f1200df",
+            ),
+        )
+        assert message.wash
+        assert message.backflow
+        assert not message.filter
+        assert not message.standby_status
+        assert not message.sleep_status
+
+    def test_captured_antifreeze_off_frame(self) -> None:
+        """Parse a captured frame with antifreeze switched off."""
+        message = EDMessageBodyFF(
+            body=self._body(
+                "aa69ed00000000000004ff01030040088201030110000240010000001050563b0000001150"
+                "18bf1e00001340700008002030000100236000000000000038a02c01f401e803000000003a"
+                "40000000003b105852100316503c180000003c5040400000000712240f120010",
+            ),
+        )
+        assert not message.antifreeze
+        assert message.heat_start == 1
+        assert message.hot_pot_temperature == 88
+
+    def test_short_water_purifier_records_are_skipped(self) -> None:
+        """Skip water purifier records whose payload misses their fields."""
+        # The 0x020 record declares a single payload byte instead of three.
+        message = EDMessageBodyFF(
+            body=bytearray([0xFF, 0x01, 0x03, 0x20, 0x10, 0x00, 0x02, 0x00, 0x00]),
+        )
+        assert not hasattr(message, "water_kind")
+
+        # The 0x03B record runs past the end of the body.
+        message = EDMessageBodyFF(body=bytearray([0xFF, 0x01, 0x03, 0x3B, 0x10]))
+        assert not hasattr(message, "hot_pot_temperature")
 
 
 class TestMessageEDResponse:
