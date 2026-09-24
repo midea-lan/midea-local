@@ -3,7 +3,7 @@
 import logging
 import warnings
 from collections.abc import Callable
-from enum import IntEnum
+from enum import IntEnum, IntFlag
 from typing import Any, SupportsIndex, cast
 
 from typing_extensions import deprecated
@@ -627,14 +627,30 @@ class BoolParser(BodyParser[bool]):
         false_value: int = 0,
         default_value: bool = True,
         byte_mask: int | None = None,
+        *,
+        decode: Callable[[int], bool] | None = None,
+        length_in_bytes: int = 1,
+        first_upper: bool = True,
+        default_raw_value: int = 0,
     ) -> None:
         """Init bool body parser."""
-        super().__init__(name, byte, bit, byte_mask=byte_mask)
+        super().__init__(
+            name,
+            byte,
+            bit,
+            length_in_bytes=length_in_bytes,
+            first_upper=first_upper,
+            default_raw_value=default_raw_value,
+            byte_mask=byte_mask,
+        )
         self._true_value = true_value
         self._default_value = default_value
         self._false_value = false_value
+        self._decode = decode
 
     def _parse(self, raw_value: int) -> bool:
+        if self._decode is not None:
+            return self._decode(raw_value)
         if raw_value not in [self._true_value, self._false_value]:
             return self._default_value
         return raw_value == self._true_value
@@ -648,6 +664,7 @@ class IntEnumParser[E: IntEnum](BodyParser[E]):
         name: str,
         byte: int,
         enum_class: type[E],
+        bit: int | None = None,
         length_in_bytes: int = 1,
         first_upper: bool = False,
         default_value: E | None = None,
@@ -657,6 +674,7 @@ class IntEnumParser[E: IntEnum](BodyParser[E]):
         super().__init__(
             name,
             byte,
+            bit,
             length_in_bytes=length_in_bytes,
             first_upper=first_upper,
             byte_mask=byte_mask,
@@ -673,6 +691,37 @@ class IntEnumParser[E: IntEnum](BodyParser[E]):
                 if self._default_value is not None
                 else self._enum_class(0)
             )
+
+
+class IntFlagParser[F: IntFlag](BodyParser[F]):
+    """IntFlag message body parser."""
+
+    def __init__(
+        self,
+        name: str,
+        byte: int,
+        *,
+        decode: Callable[[int], F],
+        bit: int | None = None,
+        length_in_bytes: int = 1,
+        first_upper: bool = True,
+        default_raw_value: int = 0,
+        byte_mask: int | None = None,
+    ) -> None:
+        """Init IntFlag body parser."""
+        super().__init__(
+            name,
+            byte,
+            bit,
+            length_in_bytes=length_in_bytes,
+            first_upper=first_upper,
+            default_raw_value=default_raw_value,
+            byte_mask=byte_mask,
+        )
+        self._decode = decode
+
+    def _parse(self, raw_value: int) -> F:
+        return self._decode(raw_value)
 
 
 class IntParser(BodyParser[int]):
