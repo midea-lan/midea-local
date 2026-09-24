@@ -11,7 +11,6 @@ from midealan.devices.c3 import (
 )
 from midealan.devices.c3.message import (
     C3DeviceMode,
-    C3SilentLevel,
     MessageQueryBasic,
     MessageQueryDisinfect,
     MessageQueryECO,
@@ -55,10 +54,7 @@ class TestMideaC3Device:
         assert self.device.attributes[DeviceAttributes.zone1_water_temp_mode] is False
         assert self.device.attributes[DeviceAttributes.zone2_water_temp_mode] is False
         assert self.device.attributes[DeviceAttributes.silent_mode] is False
-        assert (
-            self.device.attributes[DeviceAttributes.silent_level]
-            == C3SilentLevel.OFF.name
-        )
+        assert self.device.attributes[DeviceAttributes.silent_level] == "off"
         assert self.device.attributes[DeviceAttributes.eco_mode] is False
         assert self.device.attributes[DeviceAttributes.tbh] is False
         assert self.device.attributes[DeviceAttributes.mode] == 1
@@ -162,7 +158,7 @@ class TestMideaC3Device:
 
             self.device.set_attribute(
                 DeviceAttributes.silent_level.value,
-                C3SilentLevel.SILENT.name,
+                "silent",
             )
 
     def test_build_query(self) -> None:

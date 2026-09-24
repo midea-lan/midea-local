@@ -463,28 +463,28 @@ class TestMessageC3Response:
         assert hasattr(response, "silent_mode")
         assert response.silent_mode is False
         assert hasattr(response, "silent_level")
-        assert response.silent_level == C3SilentLevel.OFF.name
+        assert response.silent_level == "off"
 
         body[1] = 0x1
         response = MessageC3Response(bytes(self.header + body))
         assert hasattr(response, "silent_mode")
         assert response.silent_mode is True
         assert hasattr(response, "silent_level")
-        assert response.silent_level == C3SilentLevel.SILENT.name
+        assert response.silent_level == "silent"
 
         body[1] = 0x8
         response = MessageC3Response(bytes(self.header + body))
         assert hasattr(response, "silent_mode")
         assert response.silent_mode is False
         assert hasattr(response, "silent_level")
-        assert response.silent_level == C3SilentLevel.OFF.name
+        assert response.silent_level == "off"
 
         body[1] = 0x9
         response = MessageC3Response(bytes(self.header + body))
         assert hasattr(response, "silent_mode")
         assert response.silent_mode is True
         assert hasattr(response, "silent_level")
-        assert response.silent_level == C3SilentLevel.SUPER_SILENT.name
+        assert response.silent_level == "super_silent"
 
     def test_message_eco_response(self) -> None:
         """Test message ECO response."""

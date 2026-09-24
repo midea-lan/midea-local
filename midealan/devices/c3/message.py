@@ -513,7 +513,7 @@ class C3SilenceBody(MessageBody):
             (body[data_offset] & 0x1) + ((body[data_offset] & 0x8) >> 2)
             if self.silent_mode
             else C3SilentLevel.OFF.value,
-        ).name
+        ).name.lower()
         # Message protocol information:
         # silence_function_state: Byte 1, BIT 0
         # silence_timer1_state: Byte 1, BIT 1
