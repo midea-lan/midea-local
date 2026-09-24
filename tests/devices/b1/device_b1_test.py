@@ -89,13 +89,13 @@ class TestMideaB1Device:
         body[19] = 0x32  # current_temperature
         result = self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.door] is True
-        assert self.device.attributes[DeviceAttributes.status] == "Working"
+        assert self.device.attributes[DeviceAttributes.status] == "working"
         assert self.device.attributes[DeviceAttributes.time_remaining] == 3723
         assert self.device.attributes[DeviceAttributes.current_temperature] == 50
         assert self.device.attributes[DeviceAttributes.tank_ejected] is True
         assert self.device.attributes[DeviceAttributes.water_change_reminder] is True
         assert self.device.attributes[DeviceAttributes.water_shortage] is True
-        assert result[DeviceAttributes.status.value] == "Working"
+        assert result[DeviceAttributes.status.value] == "working"
 
     def test_notify_response_invalid_status(self) -> None:
         """Test notify1 response with unknown status and invalid times."""
@@ -169,13 +169,13 @@ class TestMideaB1Device:
         body[31] = 0x02  # status -> Idle
         result = self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.door] is False
-        assert self.device.attributes[DeviceAttributes.status] == "Idle"
+        assert self.device.attributes[DeviceAttributes.status] == "idle"
         assert self.device.attributes[DeviceAttributes.time_remaining] == 0
         assert self.device.attributes[DeviceAttributes.current_temperature] == 20
         assert self.device.attributes[DeviceAttributes.tank_ejected] is False
         assert self.device.attributes[DeviceAttributes.water_shortage] is False
         assert self.device.attributes[DeviceAttributes.water_change_reminder] is False
-        assert result[DeviceAttributes.status.value] == "Idle"
+        assert result[DeviceAttributes.status.value] == "idle"
 
     def test_x01_response_real_device_sample(self) -> None:
         """Test X01 response decoding against a real subtype-zero oven capture.
@@ -192,13 +192,13 @@ class TestMideaB1Device:
         body = bytearray.fromhex(self.X01_RESPONSE_711001CJ_HEX)
         result = self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.door] is False
-        assert self.device.attributes[DeviceAttributes.status] == "Idle"
+        assert self.device.attributes[DeviceAttributes.status] == "idle"
         assert self.device.attributes[DeviceAttributes.time_remaining] == 0
         assert self.device.attributes[DeviceAttributes.current_temperature] == 32
         assert self.device.attributes[DeviceAttributes.tank_ejected] is False
         assert self.device.attributes[DeviceAttributes.water_shortage] is False
         assert self.device.attributes[DeviceAttributes.water_change_reminder] is False
-        assert result[DeviceAttributes.status.value] == "Idle"
+        assert result[DeviceAttributes.status.value] == "idle"
         assert self.device.attributes[DeviceAttributes.mode] is None
         assert self.device.attributes[DeviceAttributes.target_temperature] is None
 
@@ -218,7 +218,7 @@ class TestMideaB1Device:
         result = self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.mode] == 0x53
         assert self.device.attributes[DeviceAttributes.target_temperature] == 180
-        assert self.device.attributes[DeviceAttributes.status] == "Working"
+        assert self.device.attributes[DeviceAttributes.status] == "working"
         assert self.device.attributes[DeviceAttributes.time_remaining] == 30 * 60
         assert self.device.attributes[DeviceAttributes.current_temperature] == 33
         assert result[DeviceAttributes.mode.value] == 0x53
