@@ -36,8 +36,8 @@ class TestMideaDCDevice:
         """Test initial attributes."""
         assert self.device.attributes[DeviceAttributes.power] is False
         assert self.device.attributes[DeviceAttributes.start] is False
-        assert self.device.attributes[DeviceAttributes.status] == "Unknown"
-        assert self.device.attributes[DeviceAttributes.program] == "None"
+        assert self.device.attributes[DeviceAttributes.status] == "unknown"
+        assert self.device.attributes[DeviceAttributes.program] == "none"
         assert self.device.attributes[DeviceAttributes.intensity] is None
         assert self.device.attributes[DeviceAttributes.dryness_level] is None
         assert self.device.attributes[DeviceAttributes.dry_temperature] is None
@@ -47,7 +47,7 @@ class TestMideaDCDevice:
         assert self.device.attributes[DeviceAttributes.material] is None
         assert self.device.attributes[DeviceAttributes.water_box] is None
         assert self.device.attributes[DeviceAttributes.washing_data] == bytearray([])
-        assert self.device.attributes[DeviceAttributes.progress] == "Unknown"
+        assert self.device.attributes[DeviceAttributes.progress] == "unknown"
         assert self.device.attributes[DeviceAttributes.time_remaining] is None
 
     def test_build_query(self) -> None:
@@ -108,7 +108,7 @@ class TestMideaDCDevice:
         body[16] = 0x02  # progress bit 1
         crc = bytearray([0x00])
         self.device.process_message(bytes(header + body + crc))
-        assert self.device.attributes[DeviceAttributes.progress] == "Prog1"
+        assert self.device.attributes[DeviceAttributes.progress] == "prog1"
 
     def test_notify1_response_unmapped_values(self) -> None:
         """Test notify1 response with unmapped status and program values."""

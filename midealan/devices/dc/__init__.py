@@ -115,8 +115,8 @@ class MideaDCDevice(MideaDevice):
             attributes={
                 DeviceAttributes.power: False,
                 DeviceAttributes.start: False,
-                DeviceAttributes.status: "Unknown",
-                DeviceAttributes.program: "None",
+                DeviceAttributes.status: "unknown",
+                DeviceAttributes.program: "none",
                 DeviceAttributes.intensity: None,
                 DeviceAttributes.dryness_level: None,
                 DeviceAttributes.dry_temperature: None,
@@ -126,7 +126,7 @@ class MideaDCDevice(MideaDevice):
                 DeviceAttributes.material: None,
                 DeviceAttributes.water_box: None,
                 DeviceAttributes.washing_data: bytearray([]),
-                DeviceAttributes.progress: "Unknown",
+                DeviceAttributes.progress: "unknown",
                 DeviceAttributes.time_remaining: None,
             },
         )
@@ -141,14 +141,14 @@ class MideaDCDevice(MideaDevice):
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         new_status = {}
         progress = [
-            "Prog0",
-            "Prog1",
-            "Prog2",
-            "Prog3",
-            "Prog4",
-            "Prog5",
-            "Prog6",
-            "Prog7",
+            "prog0",
+            "prog1",
+            "prog2",
+            "prog3",
+            "prog4",
+            "prog5",
+            "prog6",
+            "prog7",
         ]
         for status in self._attributes:
             if hasattr(message, str(status)):
