@@ -37,7 +37,7 @@ class TestMideaECDevice:
         assert self.device.attributes[DeviceAttributes.keep_warm_time] is None
         assert self.device.attributes[DeviceAttributes.top_temperature] is None
         assert self.device.attributes[DeviceAttributes.bottom_temperature] is None
-        assert self.device.attributes[DeviceAttributes.progress] == "Unknown"
+        assert self.device.attributes[DeviceAttributes.progress] == "unknown"
         assert self.device.attributes[DeviceAttributes.with_pressure] is None
 
     def test_build_query(self) -> None:
@@ -87,9 +87,9 @@ class TestMideaECDevice:
         assert self.device.attributes[DeviceAttributes.keep_warm_time] == 45
         assert self.device.attributes[DeviceAttributes.top_temperature] == 50
         assert self.device.attributes[DeviceAttributes.bottom_temperature] == 60
-        assert self.device.attributes[DeviceAttributes.progress] == "Keep-warm"
+        assert self.device.attributes[DeviceAttributes.progress] == "keep-warm"
         assert self.device.attributes[DeviceAttributes.with_pressure] is True
-        assert result[DeviceAttributes.progress.value] == "Keep-warm"
+        assert result[DeviceAttributes.progress.value] == "keep-warm"
 
     def test_general_response_unknown_mode_and_progress(self) -> None:
         """Test general response with cloud mode and unknown progress."""
@@ -103,8 +103,8 @@ class TestMideaECDevice:
         body[8] = 0x20  # progress out of list -> Unknown
         self.device.process_message(bytes(header + body + bytearray(1)))
         assert self.device.attributes[DeviceAttributes.cooking] is False
-        assert self.device.attributes[DeviceAttributes.mode] == "Cloud"
-        assert self.device.attributes[DeviceAttributes.progress] == "Unknown"
+        assert self.device.attributes[DeviceAttributes.mode] == "cloud"
+        assert self.device.attributes[DeviceAttributes.progress] == "unknown"
         assert self.device.attributes[DeviceAttributes.with_pressure] is False
 
     def test_notify_response_new_body(self) -> None:
@@ -128,7 +128,7 @@ class TestMideaECDevice:
         assert self.device.attributes[DeviceAttributes.keep_warm_time] == 70
         assert self.device.attributes[DeviceAttributes.top_temperature] == 95
         assert self.device.attributes[DeviceAttributes.bottom_temperature] == 98
-        assert self.device.attributes[DeviceAttributes.progress] == "Cooking"
+        assert self.device.attributes[DeviceAttributes.progress] == "cooking"
         assert self.device.attributes[DeviceAttributes.with_pressure] is True
         assert result[DeviceAttributes.cooking.value] is True
 

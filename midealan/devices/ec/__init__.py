@@ -131,17 +131,17 @@ class MideaECDevice(MideaDevice):
         + ["keep_warm", "diy"]
     )
     _progress: ClassVar[list[str]] = [
-        "Idle",
-        "Cooking",
-        "Delay",
-        "Keep-warm",
-        "Lid-open",
-        "Relieving",
-        "Keep-pressure",
-        "Relieving",
-        "Cooking",
-        "Relieving",
-        "Lid-open",
+        "idle",
+        "cooking",
+        "delay",
+        "keep-warm",
+        "lid-open",
+        "relieving",
+        "keep-pressure",
+        "relieving",
+        "cooking",
+        "relieving",
+        "lid-open",
     ]
 
     def __init__(
@@ -161,7 +161,7 @@ class MideaECDevice(MideaDevice):
                 DeviceAttributes.top_temperature: None,
                 DeviceAttributes.bottom_temperature: None,
                 DeviceAttributes.keep_warm_time: None,
-                DeviceAttributes.progress: "Unknown",
+                DeviceAttributes.progress: "unknown",
                 DeviceAttributes.with_pressure: None,
             },
         )
@@ -184,12 +184,12 @@ class MideaECDevice(MideaDevice):
                             getattr(message, str(status))
                         ]
                     else:
-                        self._attributes[status] = "Unknown"
+                        self._attributes[status] = "unknown"
                 elif status == DeviceAttributes.mode:
                     if value < len(MideaECDevice._mode_list):
                         self._attributes[status] = MideaECDevice._mode_list[value]
                     else:
-                        self._attributes[status] = "Cloud"
+                        self._attributes[status] = "cloud"
                 else:
                     self._attributes[status] = value
                 new_status[str(status)] = self._attributes[status]
