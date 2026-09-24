@@ -383,11 +383,11 @@ class B0Message31Body(MessageBody):
             preheat = MessageBit.get_bit(body, 16, 5)
             preheat_end = MessageBit.get_bit(body, 16, 6)
             if preheat_end:
-                self.pre_heat = "End"
+                self.pre_heat = "end"
             elif preheat:
-                self.pre_heat = "Working"
+                self.pre_heat = "working"
             else:
-                self.pre_heat = "Off"
+                self.pre_heat = "off"
             self.error_code = MessageBit.get_bit(body, 16, 7)
 
 

@@ -258,7 +258,7 @@ class TestB0MessageBodies:
         raw[13] = 0xFF  # invalid temperature under
         raw[15] = 10  # weight
         body = B0Message31Body(raw)
-        assert body.pre_heat == "Off"
+        assert body.pre_heat == "off"
         assert not hasattr(body, "current_temperature")
         assert body.weight == 100
         assert body.people_number == 10
@@ -289,7 +289,7 @@ class TestB0MessageBodies:
         raw[0] = 0x31
         raw[16] = 0x20  # preheat bit
         body = B0Message31Body(raw)
-        assert body.pre_heat == "Working"
+        assert body.pre_heat == "working"
         assert body.error_code == 0
 
     def test_31_body_preheat_end(self) -> None:
@@ -298,7 +298,7 @@ class TestB0MessageBodies:
         raw[0] = 0x31
         raw[16] = 0xC0  # preheat end and error bits
         body = B0Message31Body(raw)
-        assert body.pre_heat == "End"
+        assert body.pre_heat == "end"
         assert body.error_code == 1
 
     def test_31_body_short(self) -> None:
