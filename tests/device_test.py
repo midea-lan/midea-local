@@ -546,9 +546,22 @@ class TestMideaDevice:
         self.device._device_protocol_version = ProtocolVersion.V2
         self.device.send_message(bytes([0x0] * 20))
 
-    def test_send_message_v2_socket_none(self) -> None:
-        """Test send_message_v2 raises SocketException when writer is None."""
-        self.device._writer = None
+    @pytest.mark.parametrize(
+        "closing_writer",
+        [
+            pytest.param(False, id="writer_none"),
+            pytest.param(True, id="writer_closing"),
+        ],
+    )
+    def test_send_message_v2_no_usable_writer(self, closing_writer: bool) -> None:
+        """Test send_message_v2 raises SocketException without a usable writer.
+
+        A closing StreamWriter drops writes silently, so it must be rejected
+        up front just like a missing one.
+        """
+        _reader, writer = make_stream_pair()
+        writer.is_closing.return_value = True
+        self.device._writer = writer if closing_writer else None
         with pytest.raises(SocketException):
             self.device.send_message_v2(bytes([0x0] * 20))
 
@@ -827,6 +840,33 @@ class TestMideaDevice:
             await asyncio.wait_for(refresh_started.wait(), timeout=1)
             refresh_may_finish.set()
             await asyncio.sleep(0)  # let the detached task finish cleanly
+
+    @pytest.mark.asyncio
+    async def test_read_loop_coalesces_requested_refresh(self) -> None:
+        """A refresh request while one is still pending must not stack a second."""
+        reader, _writer = make_stream_pair([b"\x00", b"\x00", b""])
+        self.device._reader = reader
+        refresh_may_finish = asyncio.Event()
+
+        def _fake_parse(_data: bytes) -> MessageResult:
+            self.device.request_refresh()
+            return MessageResult.SUCCESS
+
+        with (
+            patch.object(self.device, "parse_message", side_effect=_fake_parse),
+            patch.object(
+                self.device,
+                "refresh_status",
+                new=AsyncMock(side_effect=refresh_may_finish.wait),
+            ) as refresh_mock,
+        ):
+            with pytest.raises(ConnectionResetError):
+                await asyncio.wait_for(self.device._read_loop(), timeout=1)
+            refresh_task = self.device._refresh_task
+            assert refresh_task is not None
+            refresh_may_finish.set()
+            await refresh_task
+            refresh_mock.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_run_requested_refresh_logs_failure(self) -> None:
@@ -1252,6 +1292,43 @@ class TestMideaDevice:
             await self.device._task
 
     @pytest.mark.asyncio
+    async def test_open_logs_unexpected_supervisor_exit(
+        self,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """A supervisor that dies on its own must be logged, not vanish silently."""
+        with patch.object(
+            self.device,
+            "_run",
+            new=AsyncMock(side_effect=RuntimeError("boom")),
+        ):
+            await self.device.open()
+            assert self.device._task is not None
+            with contextlib.suppress(RuntimeError):
+                await self.device._task
+            await asyncio.sleep(0)  # let the done callback run
+        assert "Supervisor task stopped unexpectedly" in caplog.text
+        assert self.device._is_run is False
+        assert self.device.available is False
+
+    @pytest.mark.asyncio
+    async def test_close_does_not_log_supervisor_exit(
+        self,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """close() cancelling the supervisor is expected and must not be logged."""
+        with patch.object(
+            self.device,
+            "_run",
+            new=AsyncMock(side_effect=asyncio.Event().wait),
+        ):
+            await self.device.open()
+            await asyncio.sleep(0)
+            await self.device.close()
+            await asyncio.sleep(0)
+        assert "Supervisor task stopped unexpectedly" not in caplog.text
+
+    @pytest.mark.asyncio
     async def test_close(self) -> None:
         """Test close."""
         self.device._is_run = True
@@ -1314,6 +1391,56 @@ class TestMideaDevice:
         with contextlib.suppress(BaseException):
             await task
         assert task.cancelled()
+
+    @pytest.mark.asyncio
+    async def test_close_socket_cancels_refresh_task(self) -> None:
+        """close_socket must not let a requested refresh outlive the connection."""
+        task = asyncio.create_task(asyncio.sleep(100))
+        self.device._refresh_task = task
+        await self.device.close_socket()
+        with contextlib.suppress(BaseException):
+            await task
+        assert task.cancelled()
+        assert self.device._refresh_task is None
+
+    @pytest.mark.asyncio
+    async def test_close_socket_from_refresh_task_does_not_cancel_itself(
+        self,
+    ) -> None:
+        """close_socket called from the refresh task itself must run to completion."""
+        _reader, writer = make_stream_pair()
+        self.device._writer = writer
+
+        async def _refresh() -> None:
+            await self.device.close_socket()
+
+        task = asyncio.create_task(_refresh())
+        self.device._refresh_task = task
+        await task
+        assert not task.cancelled()
+        writer.wait_closed.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_close_socket_retrieves_finished_reader_task_exception(
+        self,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """A reader task that already failed must have its exception retrieved.
+
+        Otherwise asyncio logs "Task exception was never retrieved" when the
+        task is garbage-collected, e.g. on every failed connect() retry.
+        """
+
+        async def _raise() -> None:
+            raise ConnectionResetError("boom")
+
+        task = asyncio.create_task(_raise())
+        await asyncio.wait({task})
+        self.device._reader_task = task
+        with caplog.at_level("DEBUG", logger="midealocal.device"):
+            await self.device.close_socket()
+        assert "Reader task ended: ConnectionResetError('boom')" in caplog.text
+        assert not task.cancelled()
 
     @pytest.mark.asyncio
     async def test_set_ip(self) -> None:
@@ -1546,6 +1673,48 @@ class TestMideaDevice:
 
         assert calls["n"] == 2
         close_mock.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_run_reconnects_after_set_ip_address(self) -> None:
+        """set_ip_address() cancelling the reader must reconnect, not kill _run.
+
+        close_socket() cancels the reader task from outside the supervisor;
+        result() on it would raise CancelledError, a BaseException that no
+        handler in _run catches, leaving the device offline for good.
+        """
+        connect_calls = {"n": 0}
+        polling = asyncio.Event()
+
+        async def fake_connect_loop() -> None:
+            connect_calls["n"] += 1
+            _reader, writer = make_stream_pair()
+            self.device._writer = writer
+            self.device._reader_task = asyncio.create_task(asyncio.sleep(100))
+            if connect_calls["n"] >= 2:
+                self.device._is_run = False
+
+        async def fake_check_heartbeat(_now: float) -> None:
+            polling.set()
+
+        with (
+            patch.object(self.device, "_connect_loop", side_effect=fake_connect_loop),
+            patch.object(self.device, "_check_refresh", new=AsyncMock()),
+            patch.object(
+                self.device,
+                "_check_heartbeat",
+                side_effect=fake_check_heartbeat,
+            ),
+        ):
+            self.device._is_run = True
+            run_task = asyncio.create_task(self.device._run())
+            await asyncio.wait_for(polling.wait(), timeout=1)
+            await self.device.set_ip_address("10.0.0.1")
+            await asyncio.wait_for(run_task, timeout=1)
+
+        assert not run_task.cancelled()
+        assert connect_calls["n"] == 2
+        assert self.device._ip_address == "10.0.0.1"
+        await self.device.close_socket()
 
     @pytest.mark.asyncio
     async def test_run_reconnects_when_check_refresh_finds_no_supported_protocol(

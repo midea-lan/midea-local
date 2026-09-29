@@ -21,6 +21,7 @@ def make_stream_pair(
     writer = MagicMock(spec=asyncio.StreamWriter)
     writer.wait_closed = AsyncMock()
     writer.drain = AsyncMock()
+    writer.is_closing.return_value = False
     return reader, writer
 
 

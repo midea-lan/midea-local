@@ -227,6 +227,7 @@ class MideaDevice:
         self._previous_heartbeat = 0.0
         self._task: asyncio.Task | None = None
         self._reader_task: asyncio.Task | None = None
+        self._refresh_task: asyncio.Task | None = None
         # This protocol has no per-message correlation id, so at most one
         # query/response exchange can ever be outstanding at a time.
         self._query_lock = asyncio.Lock()
@@ -435,9 +436,10 @@ class MideaDevice:
 
     def send_message_v2(self, data: bytes) -> None:
         """Send message V2."""
-        if not self._writer:
+        # A closing StreamWriter drops writes silently instead of raising.
+        if not self._writer or self._writer.is_closing():
             _LOGGER.debug(
-                "[%s] send_message_v2 failure, device socket is none, data: %s",
+                "[%s] send_message_v2 failure, device socket is closed, data: %s",
                 self._device_id,
                 data.hex(),
             )
@@ -837,6 +839,19 @@ class MideaDevice:
         if not self._is_run:
             self._is_run = True
             self._task = asyncio.create_task(self._run())
+            self._task.add_done_callback(self._on_supervisor_done)
+
+    def _on_supervisor_done(self, task: asyncio.Task) -> None:
+        """Surface a supervisor exit that close() did not ask for."""
+        if task.cancelled() or not self._is_run:
+            return
+        _LOGGER.error(
+            "[%s] Supervisor task stopped unexpectedly",
+            self._device_id,
+            exc_info=task.exception(),
+        )
+        self._is_run = False
+        self.set_available(False)
 
     async def close(self) -> None:
         """Stop the supervisor task and close the connection."""
@@ -865,13 +880,22 @@ class MideaDevice:
             # Unblock anyone awaiting a response now, rather than leaving them
             # to hang until their own timeout fires.
             self._response_waiter.set_exception(SocketException)
+        refresh_task, self._refresh_task = self._refresh_task, None
+        if refresh_task is not None and refresh_task is not asyncio.current_task():
+            refresh_task.cancel()
         reader_task, self._reader_task = self._reader_task, None
-        if reader_task is not None:
-            # Not awaited: it already raised (and logged) whatever tore the
-            # connection down, or is merely blocked on a read that closing
-            # the writer below will unblock; either way, awaiting it here
-            # would risk swallowing this coroutine's own cancellation instead.
+        if reader_task is not None and not reader_task.done():
+            # Not awaited: it is merely blocked on a read that closing the
+            # writer below will unblock; awaiting it here would risk
+            # swallowing this coroutine's own cancellation instead.
             reader_task.cancel()
+        elif reader_task is not None and not reader_task.cancelled():
+            # Retrieve the exception, avoiding asyncio's GC-time warning.
+            _LOGGER.debug(
+                "[%s] Reader task ended: %r",
+                self._device_id,
+                reader_task.exception(),
+            )
         writer, self._writer = self._writer, None
         self._reader = None
         if writer is not None:
@@ -974,7 +998,11 @@ class MideaDevice:
                 # hold while it awaits a response that only this same read
                 # loop, continuing on to the next iteration, can ever
                 # deliver. Awaiting it here would deadlock that caller.
-                asyncio.create_task(self._run_requested_refresh())  # noqa: RUF006
+                # A still-pending refresh already covers this request.
+                if self._refresh_task is None or self._refresh_task.done():
+                    self._refresh_task = asyncio.create_task(
+                        self._run_requested_refresh(),
+                    )
             if result == MessageResult.PADDING:
                 continue
             self._resolve_waiter_or_raise(result)
@@ -1064,10 +1092,16 @@ class MideaDevice:
                         timeout=SOCKET_TIMEOUT,
                     )
                     if reader_task in done:
-                        # _read_loop only ever exits by raising; result()
-                        # re-raises that exception here.
-                        reader_task.result()
                         should_reconnect = True
+                        # Cancelled by close_socket() from outside, e.g.
+                        # set_ip_address(); result() would raise
+                        # CancelledError and kill this supervisor.
+                        if reader_task.cancelled():
+                            error_msg = "Reader task cancelled"
+                        else:
+                            # _read_loop only ever exits by raising; result()
+                            # re-raises that exception here.
+                            reader_task.result()
                 except SocketException:  # refresh_status
                     error_msg = "Socket Exception"
                     should_reconnect = True
