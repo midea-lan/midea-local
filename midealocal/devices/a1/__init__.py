@@ -43,6 +43,13 @@ class MideaA1Device(MideaDevice):
         4: "clothes_dry",
         5: "shoes_dry",
     }
+    _model_modes: ClassVar[dict[tuple[str, int], dict[int, str]]] = {
+        ("00000Q1C", 41377): {
+            4: "clothes_dry",
+            10: "silent",
+            11: "auto",
+        },
+    }
     _default_speeds: ClassVar[dict[int, str]] = {
         1: "lowest",
         40: "low",
@@ -83,7 +90,10 @@ class MideaA1Device(MideaDevice):
         )
         self._capabilities: dict[str, bool] = {}
         self._speeds = self._default_speeds
-        self._modes = self._default_modes
+        self._modes = self._model_modes.get(
+            (self.model, self.subtype),
+            self._default_modes,
+        )
         self.set_customize(customize)
 
     @property
