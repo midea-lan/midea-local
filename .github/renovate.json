@@ -4,7 +4,18 @@
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
   "branchConcurrentLimit": 0,
+  "rangeStrategy": "update-lockfile",
   "labels": ["renovate"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [".pre-commit-config.yaml"],
+      "matchStrings": [
+        "-\\s(?<depName>[A-Za-z0-9._-]+)==(?<currentValue>[^\\s]+)"
+      ],
+      "datasourceTemplate": "pypi"
+    }
+  ],
   "packageRules": [
     {
       "matchPackageNames": ["*"],
@@ -31,6 +42,7 @@
     }
   ],
   "lockFileMaintenance": {
-    "enabled": false
+    "enabled": true,
+    "automerge": true
   }
 }
