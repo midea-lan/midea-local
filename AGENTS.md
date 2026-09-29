@@ -25,7 +25,7 @@ use that environment.
   `uv run pylint --rcfile=pylintrc midealocal`.
 
 `ruff` uses `lint.select = ["ALL"]` with curated ignores in `ruff.toml`; `mypy` runs in
-strict mode (`mypy.ini`). Fix all reported issues before committing — CI runs the full
+strict mode (`[tool.mypy]` in `pyproject.toml`). Fix all reported issues before committing — CI runs the full
 prek suite across the OS/Python matrix and blocks merge on failure.
 
 ## Architecture
