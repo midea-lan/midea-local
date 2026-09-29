@@ -13,6 +13,7 @@ X01_STATUS_OFFSET = 31
 X01_FLAGS_OFFSET = 32
 X01_MIN_BODY_LENGTH = X01_FLAGS_OFFSET + 1
 X01_MODE_OFFSET = 7
+X01_PROGRAM_VARIANT_OFFSET = 8
 X01_TARGET_TEMPERATURE_OFFSET = 14
 X01_TIME_REMAINING_HOURS_OFFSET = 22
 X01_TIME_REMAINING_MINUTES_OFFSET = 23
@@ -125,6 +126,7 @@ class B1Message01Body(MessageBody):
             self.door = (body[X01_FLAGS_OFFSET] & 0x02) > 0
             self.status = body[X01_STATUS_OFFSET]
             self.mode = body[X01_MODE_OFFSET]
+            self.program_variant = body[X01_PROGRAM_VARIANT_OFFSET]
             self.target_temperature = body[X01_TARGET_TEMPERATURE_OFFSET]
             self.time_remaining = (
                 0

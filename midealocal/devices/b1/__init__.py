@@ -18,6 +18,7 @@ class DeviceAttributes(StrEnum):
     door = "door"
     status = "status"
     mode = "mode"
+    program = "program"
     time_remaining = "time_remaining"
     current_temperature = "current_temperature"
     target_temperature = "target_temperature"
@@ -38,6 +39,23 @@ class MideaB1Device(MideaDevice):
         0x06: "paused",
     }
 
+    _programs_711001f5: ClassVar[dict[tuple[int, int], str]] = {
+        (83, 1): "conventional",
+        (84, 1): "convection",
+        (95, 0): "conventional_fan",
+        (102, 0): "radiant_heat",
+        (99, 0): "double_grill_fan",
+        (103, 0): "double_grill",
+        (87, 0): "pizza",
+        (82, 1): "bottom_heat",
+        (162, 0): "eco",
+        (94, 0): "keep_warm",
+        (164, 0): "defrost",
+        (88, 0): "fermentation",
+        (83, 9): "aqua_clean",
+        (95, 1): "air_baking",
+    }
+
     def __init__(
         self,
         *,
@@ -52,6 +70,7 @@ class MideaB1Device(MideaDevice):
                 DeviceAttributes.door: False,
                 DeviceAttributes.status: None,
                 DeviceAttributes.mode: None,
+                DeviceAttributes.program: None,
                 DeviceAttributes.time_remaining: None,
                 DeviceAttributes.current_temperature: None,
                 DeviceAttributes.target_temperature: None,
@@ -78,10 +97,23 @@ class MideaB1Device(MideaDevice):
         """Midea B1 device process message."""
         message = MessageB1Response(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        return self.update_attributes_from_message(
+        updates = self.update_attributes_from_message(
             message,
             {DeviceAttributes.status: MideaB1Device._status.get},
         )
+
+        mode = getattr(message, "mode", None)
+        variant = getattr(message, "program_variant", None)
+        if isinstance(mode, int) and isinstance(variant, int):
+            program = (
+                self._programs_711001f5.get((mode, variant))
+                if self.model == "711001F5" and self._subtype == 0
+                else None
+            )
+            self._attributes[DeviceAttributes.program] = program
+            updates[DeviceAttributes.program.value] = program
+
+        return updates
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea B1 device set attribute."""
