@@ -46,6 +46,57 @@ class TestMideaA1Device:
             "shoes_dry",
         ]
 
+    def test_model_specific_modes(self) -> None:
+        """Test modes for model 00000Q1C subtype 41377."""
+        device = MideaA1Device(
+            name="Test Device",
+            device_id=1,
+            ip_address="192.168.1.100",
+            port=6444,
+            token="AA",
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="00000Q1C",
+            subtype=41377,
+            customize="",
+        )
+
+        assert device.modes == [
+            "clothes_dry",
+            "silent",
+            "auto",
+        ]
+
+        with patch("midealocal.devices.a1.MessageA1Response") as mock_message_response:
+            mock_message = mock_message_response.return_value
+            mock_message.protocol_version = ProtocolVersion.V3
+            mock_message.power = True
+            mock_message.prompt_tone = False
+            mock_message.fan_speed = 80
+            mock_message.target_humidity = 50
+            mock_message.pump = False
+            mock_message.pump_enable = False
+            mock_message.tank = 0
+            mock_message.water_level_set = "50"
+
+            mock_message.mode = 10
+            new_status = device.process_message(b"")
+            assert new_status[DeviceAttributes.mode.value] == "silent"
+
+            mock_message.mode = 11
+            new_status = device.process_message(b"")
+            assert new_status[DeviceAttributes.mode.value] == "auto"
+
+        with patch.object(device, "build_send") as mock_build_send:
+            device.set_attribute(DeviceAttributes.mode, "silent")
+            assert mock_build_send.call_args[0][0].mode == 10
+
+            device.set_attribute(DeviceAttributes.mode, "auto")
+            assert mock_build_send.call_args[0][0].mode == 11
+
+            device.set_attribute(DeviceAttributes.mode, "clothes_dry")
+            assert mock_build_send.call_args[0][0].mode == 4
+
     def test_fan_speeds(self) -> None:
         """Test fan speeds."""
         assert self.device.fan_speeds == [
