@@ -211,6 +211,7 @@ class DeviceAttributes(StrEnum):
     outdoor_fan_speed = "outdoor_fan_speed"
     # group 7: real time compressor power
     compressor_power = "compressor_power"
+    reset_filter = "reset_filter"
 
 
 class ACFanSpeed(MideaFanMode):
@@ -883,6 +884,7 @@ class MessageGeneralSet(MessageACBase):
         self.frost_protect = False
         self.comfort_mode = False
         self.anion = False
+        self.reset_filter = False
 
     @property
     def _body(self) -> bytearray:
@@ -915,12 +917,14 @@ class MessageGeneralSet(MessageACBase):
         temp_fahrenheit = 0x04 if self.temp_fahrenheit else 0
         sleep_mode = 0x01 if self.sleep_mode else 0
         boost_mode_1 = 0x02 if self.boost_mode else 0
+        common_filter_reset = 0x80 if self.reset_filter else 0
         # Byte 17 natural_wind
         natural_wind = 0x40 if self.natural_wind else 0
         # Byte 21 frost_protect
         frost_protect = 0x80 if self.frost_protect else 0
         # Byte 22 comfort_mode
         comfort_mode = 0x01 if self.comfort_mode else 0
+        fresh_filter_reset = 0x08 if self.reset_filter else 0
 
         return bytearray(
             [
@@ -933,7 +937,7 @@ class MessageGeneralSet(MessageACBase):
                 swing_mode,
                 boost_mode | power_saving,
                 smart_eye | dry | aux_heating | eco_mode | anion,
-                temp_fahrenheit | sleep_mode | boost_mode_1,
+                temp_fahrenheit | sleep_mode | boost_mode_1 | common_filter_reset,
                 0x00,
                 0x00,
                 0x00,
@@ -945,7 +949,7 @@ class MessageGeneralSet(MessageACBase):
                 0x00,
                 0x00,
                 frost_protect,
-                comfort_mode,
+                comfort_mode | fresh_filter_reset,
             ],
         )
 

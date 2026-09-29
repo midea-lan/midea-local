@@ -316,6 +316,7 @@ class MideaACDevice(MideaClimateDevice):
                 DeviceAttributes.water_pump_running: None,
                 DeviceAttributes.outdoor_fan_speed: None,
                 DeviceAttributes.compressor_power: None,
+                DeviceAttributes.reset_filter: False,
             },
         )
         self._model_key = (str(self.model), int(self.subtype))

@@ -691,6 +691,7 @@ class TestMessageGeneralSet:
         msg.natural_wind = True
         msg.frost_protect = True
         msg.comfort_mode = True
+        msg.reset_filter = True
         expected_body[1] = 0x01
         expected_body[2] = (
             (0x02 << 5) & 0xE0 | (24 & 0xF) | (0x10 if 24 % 2 != 0 else 0)
@@ -699,10 +700,10 @@ class TestMessageGeneralSet:
         expected_body[7] = 0x30 | 0x0C | 0x03
         expected_body[8] = 0x20 | 0x08
         expected_body[9] = 0x01 | 0x04 | 0x08 | 0x80
-        expected_body[10] = 0x04 | 0x01 | 0x02
+        expected_body[10] = 0x04 | 0x01 | 0x02 | 0x80
         expected_body[17] = 0x40
         expected_body[21] = 0x80
-        expected_body[22] = 0x01
+        expected_body[22] = 0x01 | 0x08
         assert msg.body[:-2] == expected_body
 
 

@@ -206,6 +206,13 @@ class TestMideaACDevice:
             self.device.set_attribute(DeviceAttributes.out_silent.value, False)
             mock_build_send.assert_called()
 
+    def test_set_attribute_reset_filter(self) -> None:
+        """Test set attribute to reset filter timer."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.reset_filter, True)
+            message = mock_build_send.call_args[0][0]
+            assert message.reset_filter
+
     def test_set_attribute_angles_and_rate_select(self) -> None:
         """Test set attribute for wind angles and rate select."""
         with patch.object(self.device, "build_send") as mock_build_send:
