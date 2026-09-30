@@ -60,7 +60,7 @@ repos:
           - pycryptodome
           - platformdirs
   - repo: https://github.com/PyCQA/pylint
-    rev: v4.0.9
+    rev: v4.1.1
     hooks:
       - id: pylint
         name: pylint
