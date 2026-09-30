@@ -209,7 +209,8 @@ class B1Message31Body(MessageBody):
             ):
                 if 0 < body[offset] < MAX_BYTE_VALUE:
                     self.current_temperature = body[offset]
-            self.target_temperature = body[X31_TARGET_TEMPERATURE_LOW_OFFSET]
+            if body[X31_TARGET_TEMPERATURE_LOW_OFFSET] != MAX_BYTE_VALUE:
+                self.target_temperature = body[X31_TARGET_TEMPERATURE_LOW_OFFSET]
             self.tank_ejected = (body[16] & 0x04) > 0
             self.water_shortage = (body[16] & 0x08) > 0
             self.water_change_reminder = (body[16] & 0x10) > 0

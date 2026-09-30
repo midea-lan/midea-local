@@ -261,3 +261,36 @@ def test_x01_not_named_by_x31_tables(model: str, subtype: int) -> None:
     updates = device.process_message(x01_response(0x52, 1))
 
     assert updates["program"] is None
+
+
+@pytest.mark.parametrize("previous_temperature", [None, 94])
+def test_x31_unavailable_target_temperature(
+    previous_temperature: int | None,
+) -> None:
+    """Skip an unavailable target temperature and preserve any prior value."""
+    device = make_device("0TVN50R6", 0)
+    if previous_temperature is not None:
+        device.process_message(x31_response(0x41))
+    response = bytearray(x31_response(0x41))
+    response[10 + 19] = 0xFF
+
+    updates = device.process_message(bytes(response))
+
+    assert "target_temperature" not in updates
+    assert (
+        device.attributes[DeviceAttributes.target_temperature] == previous_temperature
+    )
+    assert updates["program"] == "hot_wind_bake"
+
+
+def test_x31_subtype5_target_temperature_low_byte_ff() -> None:
+    """Preserve a valid subtype 5 temperature whose low byte is FF."""
+    device = make_device("subtype5_model", 5)
+    response = bytearray(x31_response(0x41))
+    response[10 + 18] = 0x00
+    response[10 + 19] = 0xFF
+
+    updates = device.process_message(bytes(response))
+
+    assert updates["target_temperature"] == 255
+    assert device.attributes[DeviceAttributes.target_temperature] == 255
