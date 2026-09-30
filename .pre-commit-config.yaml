@@ -1,11 +1,9 @@
-# Run via prek: https://github.com/j178/prek
-# See https://pre-commit.com/hooks.html for more hooks (prek uses the same config format)
+# See https://prek.j178.dev for more information
 exclude: "CHANGELOG.md|.copier-answers.yml"
 default_stages: [pre-commit]
 
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+  - repo: builtin
     hooks:
       - id: no-commit-to-branch
         args: ["--branch", "main"]
