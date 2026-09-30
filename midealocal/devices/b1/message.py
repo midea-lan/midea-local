@@ -9,6 +9,15 @@ from midealocal.message import (
     MessageType,
 )
 
+X31_SUBTYPE = 5
+X31_MODE_OFFSET = 9
+X31_TEMPERATURE_HIGH_OFFSET = 10
+X31_TEMPERATURE_LOW_OFFSET = 11
+X31_TEMPERATURE_UNDERSIDE_OFFSET = 13
+X31_TARGET_TEMPERATURE_HIGH_OFFSET = 18
+X31_TARGET_TEMPERATURE_LOW_OFFSET = 19
+X31_MIN_BODY_LENGTH = X31_TARGET_TEMPERATURE_LOW_OFFSET + 1
+
 X01_STATUS_OFFSET = 31
 X01_FLAGS_OFFSET = 32
 X01_MIN_BODY_LENGTH = X01_FLAGS_OFFSET + 1
@@ -86,6 +95,28 @@ class MessageQueryX01(MessageB1Base):
         return bytearray([])
 
 
+class MessageQueryX31(MessageB1Base):
+    """B1 status query for the Lua-defined X31 protocols."""
+
+    def __init__(
+        self,
+        protocol_version: int,
+        *,
+        padded: bool = False,
+    ) -> None:
+        """Initialize an X31 query with the model's required body length."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.query,
+            body_type=ListTypes.X31,
+        )
+        self._padded = padded
+
+    @property
+    def _body(self) -> bytearray:
+        return bytearray([0x00]) if self._padded else bytearray()
+
+
 class B1MessageBody(MessageBody):
     """B1 message body."""
 
@@ -149,15 +180,65 @@ class B1Message01Body(MessageBody):
             self.water_change_reminder = (body[X01_FLAGS_OFFSET] & 0x10) > 0
 
 
+class B1Message31Body(MessageBody):
+    """Decode X31 layouts documented in the existing B1 Lua files."""
+
+    def __init__(self, body: bytearray, *, subtype5: bool = False) -> None:
+        """Decode the model-specific temperature layout and common mode."""
+        super().__init__(body)
+        if len(body) < X31_MIN_BODY_LENGTH:
+            return
+        self.status = body[1]
+        self.mode = body[X31_MODE_OFFSET]
+        self.door = (body[16] & 0x02) > 0
+        self.time_remaining = (0 if body[6] == MAX_BYTE_VALUE else body[6]) * 60 + (
+            0 if body[7] == MAX_BYTE_VALUE else body[7]
+        )
+        if subtype5:
+            self.current_temperature: int | None = (
+                body[X31_TEMPERATURE_HIGH_OFFSET] << 8
+            ) + body[X31_TEMPERATURE_LOW_OFFSET]
+            self.target_temperature = (
+                body[X31_TARGET_TEMPERATURE_HIGH_OFFSET] << 8
+            ) + body[X31_TARGET_TEMPERATURE_LOW_OFFSET]
+        else:
+            self.current_temperature = None
+            for offset in (
+                X31_TEMPERATURE_LOW_OFFSET,
+                X31_TEMPERATURE_UNDERSIDE_OFFSET,
+            ):
+                if 0 < body[offset] < MAX_BYTE_VALUE:
+                    self.current_temperature = body[offset]
+            self.target_temperature = body[X31_TARGET_TEMPERATURE_LOW_OFFSET]
+            self.tank_ejected = (body[16] & 0x04) > 0
+            self.water_shortage = (body[16] & 0x08) > 0
+            self.water_change_reminder = (body[16] & 0x10) > 0
+
+
 class MessageB1Response(MessageResponse):
     """B1 message response."""
 
-    def __init__(self, message: bytes) -> None:
+    def __init__(
+        self,
+        message: bytes,
+        *,
+        model: str = "",
+        subtype: int = 0,
+    ) -> None:
         """Initialize B1 message response."""
         super().__init__(bytearray(message))
         if self.message_type in [MessageType.notify1, MessageType.query]:
             if self.body_type == ListTypes.X01:
                 self.set_body(B1Message01Body(super().body))
+            elif self.body_type == ListTypes.X31 and (
+                model == "0TVN50R6" or subtype == X31_SUBTYPE
+            ):
+                self.set_body(
+                    B1Message31Body(
+                        super().body,
+                        subtype5=subtype == X31_SUBTYPE and model != "0TVN50R6",
+                    ),
+                )
             else:
                 self.set_body(B1MessageBody(super().body))
         self.set_attr()
