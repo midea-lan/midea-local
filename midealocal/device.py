@@ -1,7 +1,7 @@
 """Midea local device."""
 
 import logging
-import select
+import selectors
 import socket
 import threading
 import time
@@ -241,6 +241,7 @@ class MideaDevice(threading.Thread):
         self._active_operation: Future[Any] | None = None
         self._wakeup_reader: socket.socket | None = None
         self._wakeup_writer: socket.socket | None = None
+        self._selector: selectors.BaseSelector | None = None
         self._closed = False
         self._readiness: Literal["full", "control"] = "full"
         self._discovery_pending = False
@@ -474,6 +475,7 @@ class MideaDevice(threading.Thread):
         return self._discovery_complete
 
     def _complete_discovery(self) -> None:
+        """Notify consumers when the initial response window has ended."""
         if not self._discovery_complete and not self._closed:
             self._discovery_complete = True
             self._discovery_pending = False
@@ -481,6 +483,7 @@ class MideaDevice(threading.Thread):
             self.update_all({"discovery_complete": True})
 
     def _check_discovery(self, now: float) -> None:
+        """Start optional queries after queued commands and expire their window."""
         if not self._discovery_pending:
             return
         if self._discovery_deadline is not None:
@@ -1019,6 +1022,8 @@ class MideaDevice(threading.Thread):
                 self._wakeup_writer.setblocking(False)
                 self._is_run = True
                 try:
+                    self._selector = selectors.DefaultSelector()
+                    self._selector.register(self._wakeup_reader, selectors.EVENT_READ)
                     threading.Thread.start(self)
                 except Exception:
                     self.close()
@@ -1030,6 +1035,14 @@ class MideaDevice(threading.Thread):
             self._closed = True
             self._is_run = False
         self.close_socket()
+        if not self.is_alive():
+            self._close_receiver()
+
+    def _close_receiver(self) -> None:
+        """Release readiness resources after the receive thread has exited."""
+        if self._selector is not None:
+            self._selector.close()
+            self._selector = None
         for channel in (self._wakeup_writer, self._wakeup_reader):
             if channel is not None:
                 channel.close()
@@ -1042,6 +1055,10 @@ class MideaDevice(threading.Thread):
         application's thread instead. Callbacks must not retry SET messages.
         Legacy send methods stay synchronous; do not interleave them with
         queued operations on another thread.
+
+        Callables must be trusted and bounded. Cancellation only prevents work
+        that has not started. A shutdown error on an active Future does not
+        guarantee that its callable has stopped or that its SET did not execute.
         """
         future: Future[T] = Future()
         if threading.current_thread() is self:
@@ -1069,6 +1086,7 @@ class MideaDevice(threading.Thread):
         return future
 
     def _wake_receiver(self) -> None:
+        """Interrupt the readiness wait without blocking a submitting thread."""
         if self._wakeup_writer is not None:
             # A full channel is already readable; close() settles Futures if
             # the channel was closed concurrently.
@@ -1080,6 +1098,7 @@ class MideaDevice(threading.Thread):
         future: Future[T],
         operation: Callable[[], T],
     ) -> None:
+        """Settle one operation without replaying commands after transport failure."""
         with self._operation_lock:
             if future.cancelled():
                 future.set_running_or_notify_cancel()
@@ -1112,6 +1131,7 @@ class MideaDevice(threading.Thread):
                 self._active_operation = None
 
     def _fail_operations(self) -> None:
+        """Fail pending and active Futures when their socket session is closed."""
         with self._operation_lock:
             futures = [future for future, _ in self._operations]
             self._operations.clear()
@@ -1129,14 +1149,12 @@ class MideaDevice(threading.Thread):
         sock = self._socket
         if sock is None:
             raise SocketException
-        if self._wakeup_reader is not None:
-            readable, _, _ = select.select(
-                [sock, self._wakeup_reader],
-                [],
-                [],
-                max(0, timeout),
-            )
-            if self._wakeup_reader in readable:
+        selector = self._selector
+        if selector is not None:
+            if sock.fileno() not in selector.get_map():
+                selector.register(sock, selectors.EVENT_READ)
+            readable = [key.fileobj for key, _ in selector.select(max(0, timeout))]
+            if self._wakeup_reader is not None and self._wakeup_reader in readable:
                 self._wakeup_reader.recv(1)
                 with self._operation_lock:
                     pending = self._operations.popleft() if self._operations else None
@@ -1160,6 +1178,10 @@ class MideaDevice(threading.Thread):
 
     def close_socket(self) -> None:
         """Close socket."""
+        sock, self._socket = self._socket, None
+        # Closing/unregistering a descriptor does not interrupt epoll_wait on
+        # Linux. Keep the wakeup pair alive until the receiver consumes this.
+        self._wake_receiver()
         self._fail_operations()
         self._discovery_pending = False
         self._discovery_deadline = None
@@ -1170,9 +1192,12 @@ class MideaDevice(threading.Thread):
         # detection and re-probe with build_query() alone.
         self._appliance_query = True
         self._buffer = b""
-        if self._socket:
+        if sock:
+            if self._selector is not None:
+                with suppress(KeyError, ValueError, OSError):
+                    self._selector.unregister(sock)
             try:
-                self._socket.shutdown(socket.SHUT_RDWR)
+                sock.shutdown(socket.SHUT_RDWR)
             except OSError as e:
                 # shutdown() raises ENOTCONN if the peer already went away;
                 # that's fine, we still close() below.
@@ -1182,12 +1207,10 @@ class MideaDevice(threading.Thread):
                     e,
                 )
             try:
-                self._socket.close()
+                sock.close()
                 _LOGGER.debug("[%s] Socket closed", self._device_id)
             except OSError as e:
                 _LOGGER.debug("[%s] Error while closing socket: %s", self._device_id, e)
-            finally:
-                self._socket = None
 
     def set_ip_address(self, ip_address: str) -> None:
         """Set IP address."""
@@ -1259,6 +1282,13 @@ class MideaDevice(threading.Thread):
                     time.sleep(1)
 
     def run(self) -> None:
+        """Own readiness resources until the receive loop has stopped."""
+        try:
+            self._run_loop()
+        finally:
+            self._close_receiver()
+
+    def _run_loop(self) -> None:
         """Run loop brief description.
 
         1. first/init connection, self._socket is None

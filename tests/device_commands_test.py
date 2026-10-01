@@ -1,6 +1,7 @@
 """Command operations share the device thread's sole socket reader."""
 
 import socket
+import sys
 import threading
 from collections.abc import Iterator
 from concurrent.futures import wait
@@ -11,6 +12,31 @@ import pytest
 from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import QUERY_TIMEOUT, MideaDevice
 from midealocal.exceptions import SocketException
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX descriptor allocation")
+def test_receive_supports_high_file_descriptors(device: MideaDevice) -> None:
+    """A busy host must not send the receiver into a reconnect loop."""
+    fcntl = pytest.importorskip("fcntl")
+    resource = pytest.importorskip("resource")
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    if hard != resource.RLIM_INFINITY and hard < 2048:
+        pytest.skip("Insufficient hard descriptor limit")
+    resource.setrlimit(resource.RLIMIT_NOFILE, (max(soft, 2048), hard))
+    try:
+        client, peer = socket.socketpair()
+        with client, peer:
+            device._socket = socket.socket(
+                fileno=fcntl.fcntl(client.fileno(), fcntl.F_DUPFD, 1100),
+            )
+            with patch("threading.Thread.start"):
+                device.open()
+            peer.sendall(b"status")
+            assert device._receive_message(1) == b"status"
+            device.close()
+    finally:
+        device.close()
+        resource.setrlimit(resource.RLIMIT_NOFILE, (soft, hard))
 
 
 @pytest.fixture
@@ -128,8 +154,39 @@ def test_failed_worker_start_closes_wakeup_channels(device: MideaDevice) -> None
     assert device._wakeup_reader.fileno() == -1
     assert device._wakeup_writer is not None
     assert device._wakeup_writer.fileno() == -1
+    assert device._selector is None
     with pytest.raises(SocketException):
         device.submit_operation(lambda: "must not run").result()
+
+
+def test_selector_receives_after_socket_replacement(device: MideaDevice) -> None:
+    """Reconnect unregisters the old socket and reads from the replacement."""
+    first, first_peer = socket.socketpair()
+    second, second_peer = socket.socketpair()
+    with first_peer, second_peer:
+        device._socket = first
+        with patch("threading.Thread.start"):
+            device.open()
+        first_peer.sendall(b"first")
+        assert device._receive_message(1) == b"first"
+        device.close_socket()
+        device._socket = second
+        second_peer.sendall(b"second")
+        assert device._receive_message(1) is None  # Connection-change wakeup.
+        assert device._receive_message(1) == b"second"
+        device.close()
+        assert device._selector is None
+
+
+def test_close_keeps_its_socket_reference_during_concurrent_teardown(
+    device: MideaDevice,
+) -> None:
+    """A second closer clearing the device field cannot prevent descriptor cleanup."""
+    sock = MagicMock()
+    sock.shutdown.side_effect = lambda _how: setattr(device, "_socket", None)
+    device._socket = sock
+    device.close_socket()
+    sock.close.assert_called_once_with()
 
 
 def test_control_readiness_defers_full_discovery(device: MideaDevice) -> None:
