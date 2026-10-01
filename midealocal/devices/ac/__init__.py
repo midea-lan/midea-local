@@ -81,7 +81,6 @@ ACQuery = (
 
 # AC mode constants
 DRY_MODE = 3
-CONTROL_CONFIRM_ATTEMPTS = 3
 CONTROL_CONFIRM_INTERVAL = 0.25
 CONTROL_MIN_TEMPERATURE = 16
 CONTROL_MAX_TEMPERATURE = 31.5
@@ -1379,21 +1378,22 @@ class MideaACDevice(MideaClimateDevice):
         if not confirm:
             return {}
         deadline = time.monotonic() + QUERY_TIMEOUT
-        for attempt in range(CONTROL_CONFIRM_ATTEMPTS):
-            if attempt:
-                time.sleep(CONTROL_CONFIRM_INTERVAL)
+        while True:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
             try:
                 self._read_control_state(remaining)
             except TimeoutError:
-                continue
+                break
             if all(
                 self._control_value_matches(attribute, value)
                 for attribute, value in changes.items()
             ):
                 return {attribute: self._attributes[attribute] for attribute in changes}
+            time.sleep(
+                min(CONTROL_CONFIRM_INTERVAL, max(0, deadline - time.monotonic())),
+            )
         raise TimeoutError("AC command sent but requested state was not confirmed")
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:

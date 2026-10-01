@@ -1,5 +1,6 @@
 """Confirmed AC operations use one command and fresh query replies."""
 
+from itertools import count
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -117,6 +118,7 @@ def test_confirmation_timeout_does_not_resend_set_or_blacklist(
         ) as send,
         patch("midealocal.devices.ac.time.sleep"),
         pytest.raises(TimeoutError),
+        patch("midealocal.devices.ac.time.monotonic", side_effect=count(0, 0.25)),
     ):
         device.set_attributes({"target_temperature": 27}).result()
     assert (
@@ -124,6 +126,32 @@ def test_confirmation_timeout_does_not_resend_set_or_blacklist(
         == 1
     )
     assert not device._unsupported_protocol
+
+
+def test_confirmation_allows_state_to_settle_within_deadline(
+    device: MideaACDevice,
+) -> None:
+    """Several quick stale replies must not exhaust the time allowed to apply a SET."""
+    temperatures = iter([26, 26, 26, 26, 26, 24])
+
+    def receive(_data: bytes) -> MessageResult:
+        device._attributes["target_temperature"] = next(temperatures)
+        device._control_status_version += 1
+        return MessageResult.SUCCESS
+
+    with (
+        patch.object(device, "parse_message", side_effect=receive),
+        patch.object(device, "build_send") as send,
+        patch("midealocal.devices.ac.time.sleep"),
+        patch("midealocal.devices.ac.time.monotonic", side_effect=count(0, 0.05)),
+    ):
+        assert device.set_attributes({"target_temperature": 24}).result() == {
+            "target_temperature": 24,
+        }
+    assert (
+        sum(isinstance(call.args[0], MessageGeneralSet) for call in send.call_args_list)
+        == 1
+    )
 
 
 @pytest.mark.parametrize(
