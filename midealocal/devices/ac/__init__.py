@@ -1398,6 +1398,10 @@ class MideaACDevice(MideaClimateDevice):
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea AC device set attribute."""
+        if attr == DeviceAttributes.prompt_tone:
+            self._attributes[DeviceAttributes.prompt_tone] = value
+            self.update_all({DeviceAttributes.prompt_tone.value: value})
+            return
         if self._is_run and threading.current_thread() is not self:
             self.submit_operation(lambda: self.set_attribute(attr, value)).result()
             return
@@ -1434,10 +1438,7 @@ class MideaACDevice(MideaClimateDevice):
             DeviceAttributes.outdoor_fan_speed,
             DeviceAttributes.compressor_power,
         ]:
-            if attr == DeviceAttributes.prompt_tone:
-                self._attributes[DeviceAttributes.prompt_tone] = value
-                self.update_all({DeviceAttributes.prompt_tone.value: value})
-            elif attr == DeviceAttributes.screen_display:
+            if attr == DeviceAttributes.screen_display:
                 # The AC firmware only exposes a toggle command for the
                 # display, so make the switch idempotent: toggle only when the
                 # requested state differs from the last reported state.

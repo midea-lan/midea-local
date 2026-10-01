@@ -207,3 +207,22 @@ def test_special_model_keeps_full_probe(device: MideaACDevice) -> None:
     with patch.object(device, "refresh_status") as refresh:
         assert not device._refresh_control_status()
     refresh.assert_called_once_with(True)
+
+
+@pytest.mark.parametrize("connected", [False, True])
+def test_prompt_tone_is_local_while_running(
+    device: MideaACDevice,
+    connected: bool,
+) -> None:
+    """Offline or busy receivers must not prevent a local preference update."""
+    device._is_run = True
+    if not connected:
+        device._socket = None
+    with (
+        patch.object(device, "submit_operation") as submit,
+        patch.object(device, "update_all") as update,
+    ):
+        device.set_attribute("prompt_tone", False)
+    submit.assert_not_called()
+    update.assert_called_once_with({"prompt_tone": False})
+    assert device.attributes["prompt_tone"] is False
