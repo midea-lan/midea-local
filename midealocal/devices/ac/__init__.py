@@ -17,8 +17,12 @@ from midealocal.base_classes.climate import (
     MideaSwingMode,
 )
 from midealocal.const import DeviceType
-from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs
-from midealocal.message import ListTypes
+from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs, NoSupportedProtocol
+from midealocal.message import (
+    ListTypes,
+    MessageQueryAppliance,
+    MessageType,
+)
 
 from .message import (
     ACFanSpeed,
@@ -67,6 +71,18 @@ ACQuery = (
 
 # AC mode constants
 DRY_MODE = 3
+
+# These controls use the general set packet, whose state is supplied by C0.
+GENERAL_CONTROL_ATTRIBUTES = frozenset(
+    {
+        DeviceAttributes.power,
+        DeviceAttributes.mode,
+        DeviceAttributes.target_temperature,
+        DeviceAttributes.fan_speed,
+        DeviceAttributes.swing_vertical,
+        DeviceAttributes.swing_horizontal,
+    },
+)
 
 
 class DeviceHVACMode(MideaHVACMode):
@@ -331,6 +347,7 @@ class MideaACDevice(MideaClimateDevice):
         self._default_temperature_step: float = 0.5
         self._temperature_step: float = 0.5
         self._used_subprotocol: bool = self._model_capabilities.uses_bb_protocol
+        self._control_status_version = 0
         self._bb_sn8_flag: bool = False
         self._bb_timer: bool = False
         # per-mode setpoint limits from the B5 capability, keyed by mode value
@@ -590,6 +607,36 @@ class MideaACDevice(MideaClimateDevice):
         """Midea AC device rate_select options."""
         return list(self._active_rate_selects().values())
 
+    @override
+    def refresh_status_for_set(self, attribute: str) -> None:
+        """Read basic control state without probing telemetry and capabilities."""
+        if (
+            attribute not in GENERAL_CONTROL_ATTRIBUTES
+            or self._used_subprotocol
+            or self._uses_new_protocol_temperature
+        ):
+            super().refresh_status_for_set(attribute)
+            return
+        if self._appliance_query:
+            self._refresh_query(MessageQueryAppliance(self.device_type), True, ())
+        version = self._control_status_version
+        query = MessageQuery(self._message_protocol_version)
+        failed = self._refresh_query(
+            query,
+            True,
+            [query],
+            response_received=lambda: (
+                self._control_status_version > version or self._used_subprotocol
+            ),
+        )
+        if failed:
+            # Never send a full set packet built from defaults, or report an
+            # optimistic attribute value as a successful device readback.
+            raise NoSupportedProtocol
+        if bool(self._used_subprotocol):
+            # A newly discovered BB device needs its own complete status groups.
+            super().refresh_status_for_set(attribute)
+
     def build_query(self) -> list[ACQuery]:
         """Midea AC device build query."""
         if self._used_subprotocol:
@@ -738,6 +785,8 @@ class MideaACDevice(MideaClimateDevice):
         new_status.update(self._refresh_self_clean_status(message))
         new_status.update(self._refresh_temperature_limits(message))
         new_status.update(self._update_capabilities(message))
+        if message.message_type == MessageType.query and body_type == ListTypes.C0:
+            self._control_status_version += 1
         return new_status
 
     @staticmethod

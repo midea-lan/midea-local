@@ -1041,6 +1041,32 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "0000",
         )
 
+    async def test_setattr_uses_control_refresh_before_and_after_write(self) -> None:
+        """CLI control must not go through full discovery status probes."""
+        self.namespace.command = "setattr"
+        dev = MagicMock()
+        info = {
+            "device_id": 1,
+            "type": 172,
+            "ip_address": self.namespace.host,
+            "port": 6444,
+            "protocol": ProtocolVersion.V2,
+            "model": "test",
+            "mac": None,
+            "sn": None,
+        }
+        with (
+            patch("midealocal.cli.discover", return_value={1: info}),
+            patch("midealocal.cli.device_selector", return_value=dev),
+            patch("midealocal.cli.asyncio.sleep", new=AsyncMock()),
+        ):
+            await self.cli.set_attribute()
+        assert dev.refresh_status_for_set.call_count == 2
+        dev.refresh_status_for_set.assert_called_with("power")
+        dev.refresh_status.assert_not_called()
+        dev.set_attribute.assert_called_once_with("power", False)
+        dev.close_socket.assert_called_once()
+
     async def test_set_attribute(self) -> None:
         """Test set attribute."""
         mock_device_instance = MagicMock()

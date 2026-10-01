@@ -705,6 +705,24 @@ class TestMideaDevice:
             with pytest.raises(NoSupportedProtocol):
                 self.device.refresh_status(True)  # Unsupported protocol
 
+    def test_query_response_predicate_has_a_bounded_deadline(self) -> None:
+        """Unrelated successful packets cannot extend a control query forever."""
+        sock = MagicMock()
+        sock.recv.return_value = b"unrelated"
+        self.device._socket = sock
+        with (
+            patch("midealocal.device.time.monotonic", side_effect=[0, 1, 6]),
+            patch.object(
+                self.device,
+                "parse_message",
+                return_value=MessageResult.SUCCESS,
+            ),
+            pytest.raises(TimeoutError),
+        ):
+            self.device._wait_for_query_response(lambda: False)
+        sock.recv.assert_called_once()
+        sock.settimeout.assert_called_once_with(QUERY_TIMEOUT - 1)
+
     def test_refresh_status_recovers_after_single_timeout(self) -> None:
         """A single timeout during the probe must not blacklist the protocol."""
         socket_mock = MagicMock()

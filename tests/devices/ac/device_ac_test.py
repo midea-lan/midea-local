@@ -1,7 +1,7 @@
 """Test AC Device."""
 
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -10,6 +10,7 @@ from midealocal.base_classes.climate import (
     DEFAULT_MIN_TARGET_TEMPERATURE,
 )
 from midealocal.const import ProtocolVersion
+from midealocal.device import MessageResult, NoSupportedProtocol
 from midealocal.devices.ac import DeviceAttributes, MideaACDevice
 from midealocal.devices.ac.message import (
     MessageCapabilitiesAdditionalQuery,
@@ -33,7 +34,7 @@ from midealocal.devices.ac.message import (
     NewProtocolTags,
     PowerFormats,
 )
-from midealocal.message import ListTypes, MessageBase
+from midealocal.message import ListTypes, MessageBase, MessageType
 from tests.base_classes.climate_test import DummyFanMode, DummyHVACMode, DummySwingMode
 
 
@@ -76,6 +77,85 @@ class TestMideaACDevice:
         assert self.device.current_humidity() is None
         assert self.device.current_temperature() is None
         assert self.device.target_temperature() == 24.0
+
+    def test_control_refresh_skips_telemetry_and_waits_for_basic_status(self) -> None:
+        """Ignore unrelated replies and read real state before building a set."""
+        self.device._appliance_query = False
+        sock = MagicMock()
+        sock.recv.side_effect = [b"unrelated", b"status"]
+        self.device._socket = sock
+        body = bytearray(23)
+        body[0] = 0xC0
+        body[1] = 1
+        body[2] = (5 << 5) | 10  # fan mode, 26 C
+        body[3] = 60
+
+        def parse(data: bytes) -> MessageResult:
+            if data == b"status":
+                self.device.process_message(self._response(body))
+            return MessageResult.SUCCESS
+
+        with (
+            patch.object(self.device, "parse_message", side_effect=parse),
+            patch.object(self.device, "build_send") as send,
+        ):
+            self.device.refresh_status_for_set("mode")
+            assert send.call_count == 1
+            query = send.call_args.args[0]
+            assert isinstance(query, MessageQuery)
+            assert sock.recv.call_count == 2
+            self.device.set_attribute("mode", 2)
+            command = send.call_args.args[0]
+            assert command.mode == 2
+            assert command.target_temperature == 26
+            assert command.fan_speed == 60
+
+    def test_control_refresh_does_not_accept_optimistic_state(self) -> None:
+        """A mode stored locally cannot substitute for a device response."""
+        self.device._appliance_query = False
+        self.device._attributes[DeviceAttributes.mode] = 2
+        self.device._socket = MagicMock()
+        self.device._socket.recv.side_effect = TimeoutError
+        with (
+            patch.object(self.device, "build_send"),
+            pytest.raises(NoSupportedProtocol),
+        ):
+            self.device.refresh_status_for_set("mode")
+
+    def test_control_refresh_detects_bb_protocol(self) -> None:
+        """A BB reply redirects a previously unknown model to its full queries."""
+        self.device._appliance_query = False
+        self.device._socket = MagicMock()
+        self.device._socket.recv.return_value = b"bb"
+
+        def parse(_data: bytes) -> MessageResult:
+            self.device._used_subprotocol = True
+            return MessageResult.SUCCESS
+
+        with (
+            patch.object(self.device, "parse_message", side_effect=parse),
+            patch.object(self.device, "build_send"),
+            patch.object(self.device, "refresh_status") as refresh,
+        ):
+            self.device.refresh_status_for_set("mode")
+        refresh.assert_called_once_with(True)
+
+    @pytest.mark.parametrize(
+        ("attribute", "bb", "new_temperature"),
+        [("self_clean", False, False), ("mode", True, False), ("mode", False, True)],
+    )
+    def test_control_refresh_preserves_special_protocol_queries(
+        self,
+        attribute: str,
+        bb: bool,
+        new_temperature: bool,
+    ) -> None:
+        """Special functions and models retain the complete query path."""
+        self.device._used_subprotocol = bb
+        self.device._uses_new_protocol_temperature = new_temperature
+        with patch.object(self.device, "refresh_status") as refresh:
+            self.device.refresh_status_for_set(attribute)
+        refresh.assert_called_once_with(True)
 
     def test_turn_on_turn_off(self) -> None:
         """Test turn on and turn off."""
@@ -899,6 +979,7 @@ class TestMideaACDevice:
         """After 0x7e temperatures are seen, stale C0 temperatures are ignored."""
         new_protocol_msg = SimpleNamespace(
             body_type=ListTypes.B5,
+            message_type=MessageType.query,
             has_new_protocol_temperature=True,
             power=True,
             target_temperature=27.0,
@@ -907,6 +988,7 @@ class TestMideaACDevice:
         )
         stale_c0_msg = SimpleNamespace(
             body_type=ListTypes.C0,
+            message_type=MessageType.query,
             power=True,
             target_temperature=16.0,
             indoor_temperature=4.2,

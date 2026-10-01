@@ -496,7 +496,10 @@ class MideaDevice(threading.Thread):
         msg = PacketBuilder(self._device_id, data).finalize()
         self.send_message(msg, query=query)
 
-    def _wait_for_query_response(self) -> None:
+    def _wait_for_query_response(
+        self,
+        response_received: Callable[[], bool] | None = None,
+    ) -> None:
         """Wait for one query response, raising on timeout or bad data."""
         deadline = time.monotonic() + QUERY_TIMEOUT
         while True:
@@ -514,6 +517,8 @@ class MideaDevice(threading.Thread):
             result = self.parse_message(msg)
             # Prevent infinite loop
             if result == MessageResult.SUCCESS:
+                if response_received is not None and not response_received():
+                    continue
                 # recovery SOCKET_TIMEOUT after recv msg
                 self._socket.settimeout(SOCKET_TIMEOUT)
                 return
@@ -525,6 +530,8 @@ class MideaDevice(threading.Thread):
         cmd: MessageRequest,
         check_protocol: bool,
         real_cmds: Sequence[MessageRequest],
+        *,
+        response_received: Callable[[], bool] | None = None,
     ) -> int:
         """Send one refresh_status query, returning 1 if it counts as a failure.
 
@@ -551,7 +558,10 @@ class MideaDevice(threading.Thread):
             attempt = 0
             while True:
                 try:
-                    self._wait_for_query_response()
+                    if response_received is None:
+                        self._wait_for_query_response()
+                    else:
+                        self._wait_for_query_response(response_received)
                     break
                 except TimeoutError:
                     attempt += 1
@@ -580,6 +590,11 @@ class MideaDevice(threading.Thread):
             )
             return 1 if cmd in real_cmds else 0
         return 0
+
+    def refresh_status_for_set(self, attribute: str) -> None:
+        """Read the state needed to set an attribute, using all queries by default."""
+        _LOGGER.debug("[%s] Reading state for attribute %s", self.device_id, attribute)
+        self.refresh_status(True)
 
     def refresh_status(self, check_protocol: bool = False) -> None:
         """Refresh device status."""
