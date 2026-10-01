@@ -212,6 +212,20 @@ class TestParseDiscoverResponse:
 class TestDiscover:
     """discover test case."""
 
+    def test_targeted_discovery_returns_without_waiting_for_timeout(self) -> None:
+        """A unicast response completes discovery without another socket read."""
+        sock = MagicMock()
+        sock.recvfrom.side_effect = [
+            (_build_v2_packet(), (DEVICE_IP, 6445)),
+            TimeoutError,
+        ]
+        mock_socket = MagicMock()
+        mock_socket.__enter__.return_value = sock
+        with patch("midealocal.discover.socket.socket", return_value=mock_socket):
+            result = discover(ip_address=DEVICE_IP)
+        assert list(result) == [DEVICE_ID]
+        sock.recvfrom.assert_called_once()
+
     def test_discover_found_devices(self) -> None:
         """Test discovery finding one supported device then timing out."""
         sock = MagicMock()
@@ -244,7 +258,7 @@ class TestDiscover:
         mock_socket = MagicMock()
         mock_socket.__enter__.return_value = sock
         with patch("midealocal.discover.socket.socket", return_value=mock_socket):
-            result = discover(discover_type=[0xFF], ip_address=["192.168.1.255"])
+            result = discover(discover_type=[0xFF], ip_address="192.168.1.255")
         assert result == {}
 
     def test_discover_send_and_socket_errors(self) -> None:
@@ -255,7 +269,7 @@ class TestDiscover:
         mock_socket = MagicMock()
         mock_socket.__enter__.return_value = sock
         with patch("midealocal.discover.socket.socket", return_value=mock_socket):
-            result = discover(ip_address=["192.168.1.255"])
+            result = discover(ip_address="192.168.1.255")
         assert result == {}
 
 
