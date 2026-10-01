@@ -63,6 +63,35 @@ ac.set_target_temperature(23.0, None)
 ac.set_swing(False, False)
 ```
 
+### 复用已知设备与探测快照
+
+`create_device(descriptor, credentials, profile=None)` 使用已知信息构建设备，不执行
+网络发现。调用方负责保存 `device.descriptor.to_dict()`，并用
+`DeviceDescriptor.from_dict()` 恢复；凭据单独传入 `DeviceCredentials(token=..., key=...)`。
+旧 `device_selector()` 和 `connect()` 的默认行为保持兼容。
+
+- `connect(False)` 仅连接和认证；`connect(True)` 保留完整探测；
+  `connect(True, readiness="control")` 在普通 AC 收到最新基础状态后即可返回，调用
+  `open()` 后通过后台收包补充可选信息。其他设备、BB 和特殊温度协议 AC 保留完整探测。
+- `discovery_complete` 表示初次探测响应窗口结束，不表示全部能力都有回复。请在
+  `open()` 前用 `register_update()` 订阅，并持续处理晚到的回复、补建实体。
+  窗口结束时会推送 `{"discovery_complete": True}`。
+- `export_discovery_profile()` 返回可用 `.to_dict()` 序列化的 `DiscoveryProfile`，
+  未确认协议时返回 `None`。存储由调用方实现；恢复使用 `DiscoveryProfile.from_dict()`，
+  格式错误抛出 `ValueError`。快照校验设备身份、格式版本和默认七天有效期；重复导出不会
+  续期。不保存凭据、实时状态或“超时即不支持”的结论。缓存连接失败后，应丢弃旧快照，
+  用不带 profile 的新设备对象重试一次。
+- 普通 AC 的 `set_attributes({"mode": 2, "target_temperature": 24})` 返回 Future：
+  先读最新状态，用一个 SET 合并改动，再以新的 C0 回复确认。只重试查询，不重发 SET；
+  确认失败会通过 Future 报错，但不能据此断言物理命令没有执行。`confirm=False` 跳过
+  回读并返回空字典；温度需按半度编码。确认回复的总等待预算为五秒。
+- 运行中操作由 `submit_operation()` 排到唯一收包线程，并立即唤醒该线程；尚未
+  `open()` 时同步执行。设备回调内不能提交；应用事件循环不能直接等待 `.result()`，
+  应使用 executor，或为运行中设备使用 `asyncio.wrap_future()`。不要把底层 socket
+  调用与队列操作跨线程混用；运行中 AC 的旧 setter 也会进入队列。
+
+英文 README 提供完整构建及控制示例。快照应在设备关闭前导出，并在后续能力更新时保存。
+
 ### 命令行工具
 
 ```python3
