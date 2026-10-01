@@ -26,7 +26,9 @@ from .security import (
     LocalSecurity,
 )
 
-MIN_AUTH_RESPONSE = 20
+AUTH_HEADER_LENGTH = 8
+AUTH_LENGTH_OFFSET = 2
+AUTH_LENGTH_SIZE = 2
 MIN_MSG_LENGTH = 56
 MESSAGE_TYPE_INDEX = 9  # offset of the message-type byte in the 10-byte header
 MIN_V2_FACTUAL_MSG_LENGTH = 6
@@ -391,26 +393,37 @@ class MideaDevice(threading.Thread):
             )
             # raise exception to connect loop
             raise SocketException
-        _LOGGER.debug("[%s] Authentication handshaking", self._device_id)
+        deadline = time.monotonic() + SOCKET_TIMEOUT
         self._socket.send(request)
-        response = self._socket.recv(512)
+        response = b""
+        response_size = AUTH_HEADER_LENGTH
+        while len(response) < response_size:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError
+            self._socket.settimeout(remaining)
+            chunk = self._socket.recv(response_size - len(response))
+            if not chunk:
+                raise AuthException
+            response += chunk
+            if response == b"ERROR":
+                raise AuthException
+            if len(response) >= AUTH_HEADER_LENGTH:
+                response_size = AUTH_HEADER_LENGTH + int.from_bytes(
+                    response[
+                        AUTH_LENGTH_OFFSET : AUTH_LENGTH_OFFSET + AUTH_LENGTH_SIZE
+                    ],
+                    "big",
+                )
         _LOGGER.debug(
             "[%s] Received auth response with %d bytes: %s",
             self._device_id,
             len(response),
             response.hex(),
         )
-        if len(response) < MIN_AUTH_RESPONSE:
-            _LOGGER.debug(
-                "[%s] Received auth response len %d error, bytes: %s",
-                self._device_id,
-                len(response),
-                response.hex(),
-            )
-            raise AuthException
-        response = response[8:72]
-        self._security.tcp_key(response, self._key)
-        _LOGGER.debug("[%s] Authentication success", self._device_id)
+        messages, self._buffer = self._security.decode_8370(response)
+        self._security.tcp_key(messages[0], self._key)
+        self._socket.settimeout(SOCKET_TIMEOUT)
 
     def send_message(self, data: bytes, query: bool = False) -> None:
         """Send message."""

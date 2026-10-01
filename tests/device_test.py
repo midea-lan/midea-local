@@ -1,6 +1,7 @@
 """Midea Local device test."""
 
 from collections.abc import Callable
+from hashlib import sha256
 from types import SimpleNamespace
 from typing import Any, ClassVar, SupportsIndex, overload
 from unittest.mock import MagicMock, patch
@@ -26,6 +27,7 @@ from midealocal.device import (
 )
 from midealocal.exceptions import SocketException
 from midealocal.message import MessageType
+from midealocal.security import MSGTYPE_HANDSHAKE_RESPONSE
 
 
 class _DictDevice(MideaDevice):
@@ -304,6 +306,45 @@ class TestMideaDevice:
         assert self.device.mac == "1234567890ab"
         assert self.device.serial_number == "test_serial"
 
+    @pytest.mark.parametrize("split", [1, 16, 40, 71])
+    def test_authenticate_accepts_fragmented_frame(self, split: int) -> None:
+        """TCP read boundaries must not affect valid handshake authentication."""
+        plain = bytes(32)
+        payload = self.device._security.aes_cbc_encrypt(plain, self.device._key)
+        payload += sha256(plain).digest()
+        response = self.device._security.encode_8370(
+            payload,
+            MSGTYPE_HANDSHAKE_RESPONSE,
+        )
+        sock = MagicMock()
+        pending = [bytearray(response[:split]), bytearray(response[split:] + b"next")]
+
+        def recv(size: int) -> bytes:
+            chunk = pending[0][:size]
+            del pending[0][:size]
+            if not pending[0]:
+                pending.pop(0)
+            return bytes(chunk)
+
+        sock.recv.side_effect = recv
+        self.device._socket = sock
+        self.device.authenticate()
+        assert sock.recv.call_count >= 2
+        # Leave subsequent data in the socket for the normal receive path.
+        assert pending == [bytearray(b"next")]
+
+    def test_authenticate_fragment_deadline(self) -> None:
+        """Repeated partial handshake reads cannot restart the timeout."""
+        sock = MagicMock()
+        sock.recv.return_value = b"\x83"
+        self.device._socket = sock
+        with (
+            patch("midealocal.device.time.monotonic", side_effect=[0, 0, 11]),
+            pytest.raises(TimeoutError),
+        ):
+            self.device.authenticate()
+        sock.recv.assert_called_once()
+
     def test_get_attribute(self) -> None:
         """Test get_attribute reads from the internal attributes dict."""
         self.device._attributes["power"] = True
@@ -459,7 +500,8 @@ class TestMideaDevice:
             side_effect=[
                 bytearray(),
                 bytearray(
-                    [0x00] * (8 + 32)
+                    [0x83, 0x70, 0x00, 0x40, 0x20, 0x01, 0x00, 0x00]
+                    + [0x00] * 32
                     + [
                         0xCE,
                         0x8C,
@@ -515,7 +557,8 @@ class TestMideaDevice:
             "recv",
             side_effect=[
                 bytearray(
-                    [0x00] * (8 + 32)
+                    [0x83, 0x70, 0x00, 0x40, 0x20, 0x01, 0x00, 0x00]
+                    + [0x00] * 32
                     + [
                         0xCE,
                         0x8C,
