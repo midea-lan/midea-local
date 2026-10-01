@@ -1,6 +1,6 @@
 """Midea Local device test."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from hashlib import sha256
 from types import SimpleNamespace
 from typing import Any, ClassVar, SupportsIndex, overload
@@ -863,6 +863,29 @@ class TestMideaDevice:
 
         build_send.assert_called_once_with(real_cmd, query=True)
         wait_mock.assert_not_called()
+
+    def test_refresh_status_advances_sequence_after_response(self) -> None:
+        """Query generators can select later commands using the first reply."""
+        self.device._appliance_query = False
+        first, second = MagicMock(), MagicMock()
+        replied = False
+
+        def sequence() -> Iterator:
+            yield first
+            assert replied
+            yield second
+
+        def receive() -> None:
+            nonlocal replied
+            replied = True
+
+        with (
+            patch.object(self.device, "_build_query_sequence", side_effect=sequence),
+            patch.object(self.device, "build_send") as send,
+            patch.object(self.device, "_wait_for_query_response", side_effect=receive),
+        ):
+            self.device.refresh_status(True)
+        assert [call.args[0] for call in send.call_args_list] == [first, second]
 
     def test_parse_message(self) -> None:
         """Test parse message."""

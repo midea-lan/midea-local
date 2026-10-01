@@ -486,6 +486,29 @@ class TestMideaACDevice:
         assert isinstance(queries[10], MessageCapabilitiesQuery)
         assert isinstance(queries[11], MessageCapabilitiesAdditionalQuery)
 
+    def test_refresh_switches_to_bb_before_sending_other_legacy_queries(self) -> None:
+        """A BB discovery response changes the remaining initialization queries."""
+        self.device._appliance_query = False
+        body = bytearray(21)
+        body[:6] = bytes([0xBB, 0, 0, 0, 0, 0x10])
+
+        with (
+            patch.object(self.device, "build_send") as send,
+            patch.object(
+                self.device,
+                "_wait_for_query_response",
+                side_effect=lambda: self.device.process_message(self._response(body)),
+            ),
+        ):
+            self.device.refresh_status(True)
+
+        assert [type(call.args[0]) for call in send.call_args_list] == [
+            MessageQuery,
+            MessageSubProtocolQuery10,
+            MessageSubProtocolQuery11,
+            MessageSubProtocolQuery30,
+        ]
+
     def test_build_query_omits_rate_select_until_capability_confirmed(self) -> None:
         """Test rate_select stays out of the B1 query until b5_electricity confirms it.
 

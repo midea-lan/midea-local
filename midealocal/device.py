@@ -4,7 +4,7 @@ import logging
 import socket
 import threading
 import time
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from enum import IntEnum, StrEnum
 from typing import Any, ClassVar, NotRequired, TypedDict, Unpack
 
@@ -609,14 +609,13 @@ class MideaDevice(threading.Thread):
                 check_protocol,
                 (),
             )
-        real_cmds: list = self.build_query()
         error_count = 0
+        query_count = 0
         _LOGGER.debug(
-            "[%s] refresh_status with cmds: %s, check_protocol %s, \
+            "[%s] refresh_status check_protocol %s, \
             device %s, type %s, model %s, subtype %s, device_protocol: %s, \
             message_protocol %s, unsupported_protocol: %s",
             self._device_id,
-            real_cmds,
             check_protocol,
             self._device_name,
             self._device_type,
@@ -626,18 +625,17 @@ class MideaDevice(threading.Thread):
             self._message_protocol_version,
             self._unsupported_protocol,
         )
-        for cmd in real_cmds:
-            error_count += self._refresh_query(cmd, check_protocol, real_cmds)
-            # A successful appliance query is not device status: it must not mask
-            # every real status query failing. Guard against a subclass whose
-            # build_query() returns [], where "all failed" would be vacuous.
-            if real_cmds and error_count == len(real_cmds):
-                _LOGGER.debug(
-                    "[%s] all the query cmds failed %s, please report bug",
-                    self._device_id,
-                    real_cmds,
-                )
-                raise NoSupportedProtocol
+        for cmd in self._build_query_sequence():
+            query_count += 1
+            error_count += self._refresh_query(cmd, check_protocol, (cmd,))
+        # Appliance identification does not count as a successful status read.
+        if query_count and error_count == query_count:
+            _LOGGER.debug("[%s] all query commands failed", self._device_id)
+            raise NoSupportedProtocol
+
+    def _build_query_sequence(self) -> Iterator[MessageRequest]:
+        """Yield queries, allowing subclasses to adapt after each response."""
+        yield from self.build_query()
 
     def pre_process_message(self, msg: bytearray) -> bool:
         """Pre process message."""

@@ -3,7 +3,7 @@
 import json
 import logging
 import time
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from typing import Any, ClassVar, Unpack, cast, override
 
@@ -21,6 +21,7 @@ from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs, NoSupported
 from midealocal.message import (
     ListTypes,
     MessageQueryAppliance,
+    MessageRequest,
     MessageType,
 )
 
@@ -636,6 +637,19 @@ class MideaACDevice(MideaClimateDevice):
         if bool(self._used_subprotocol):
             # A newly discovered BB device needs its own complete status groups.
             super().refresh_status_for_set(attribute)
+
+    @override
+    def _build_query_sequence(self) -> Iterator[MessageRequest]:
+        """Switch to BB queries immediately when the basic reply identifies BB."""
+        queries = self.build_query()
+        if self._used_subprotocol:
+            yield from queries
+            return
+        yield queries[0]
+        if bool(self._used_subprotocol):
+            yield from self.build_query()
+        else:
+            yield from queries[1:]
 
     def build_query(self) -> list[ACQuery]:
         """Midea AC device build query."""
