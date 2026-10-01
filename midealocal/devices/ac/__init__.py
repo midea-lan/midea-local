@@ -2,8 +2,11 @@
 
 import json
 import logging
+import math
+import threading
 import time
 from collections.abc import Iterator, Mapping
+from concurrent.futures import Future
 from dataclasses import dataclass, replace
 from typing import Any, ClassVar, Literal, Unpack, cast, override
 
@@ -17,7 +20,12 @@ from midealocal.base_classes.climate import (
     MideaSwingMode,
 )
 from midealocal.const import DeviceType
-from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs, NoSupportedProtocol
+from midealocal.device import (
+    QUERY_TIMEOUT,
+    SKIP_ATTRIBUTE,
+    MideaDeviceInitKwargs,
+    NoSupportedProtocol,
+)
 from midealocal.device_info import DiscoveryProfile
 from midealocal.message import (
     ListTypes,
@@ -73,6 +81,10 @@ ACQuery = (
 
 # AC mode constants
 DRY_MODE = 3
+CONTROL_CONFIRM_ATTEMPTS = 3
+CONTROL_CONFIRM_INTERVAL = 0.25
+CONTROL_MIN_TEMPERATURE = 16
+CONTROL_MAX_TEMPERATURE = 31.5
 
 # These controls use the general set packet, whose state is supplied by C0.
 GENERAL_CONTROL_ATTRIBUTES = frozenset(
@@ -1255,8 +1267,140 @@ class MideaACDevice(MideaClimateDevice):
             message = self.make_message_set()
         return message
 
+    def set_attributes(
+        self,
+        changes: Mapping[str, bool | float | str],
+        *,
+        confirm: bool = True,
+    ) -> Future[dict[str, Any]]:
+        """Serialize a combined basic command and optionally confirm fresh state.
+
+        The Future reports validation, transport, and confirmation failures. A
+        SET is sent exactly once. Confirmation retries only status queries;
+        with confirm=False the result is empty, not an optimistic state report.
+        BB and model-specific temperature protocols retain their legacy setters.
+        """
+        requested = dict(changes)
+        return self.submit_operation(
+            lambda: self._set_attributes(requested, confirm=confirm),
+        )
+
+    def _validate_control_changes(
+        self,
+        changes: Mapping[str, bool | float | str],
+    ) -> None:
+        if not self.supports_confirmed_controls:
+            raise NotImplementedError("Confirmed controls require ordinary AC C0 state")
+        for attribute, value in changes.items():
+            valid = attribute in GENERAL_CONTROL_ATTRIBUTES
+            if attribute in {
+                DeviceAttributes.power,
+                DeviceAttributes.swing_vertical,
+                DeviceAttributes.swing_horizontal,
+            }:
+                valid = isinstance(value, bool)
+            elif attribute in {
+                DeviceAttributes.mode,
+                DeviceAttributes.fan_speed,
+                DeviceAttributes.target_temperature,
+            }:
+                valid = (
+                    isinstance(value, int | float)
+                    and not isinstance(value, bool)
+                    and math.isfinite(value)
+                )
+                if valid:
+                    numeric = float(value)
+                    if attribute == DeviceAttributes.mode:
+                        valid = (
+                            numeric.is_integer()
+                            and DeviceHVACMode.OFF <= numeric <= DeviceHVACMode.FAN_ONLY
+                        )
+                    elif attribute == DeviceAttributes.fan_speed:
+                        valid = numeric.is_integer() and 0 <= numeric <= ACFanSpeed.AUTO
+                    else:
+                        valid = (
+                            CONTROL_MIN_TEMPERATURE
+                            <= numeric
+                            <= CONTROL_MAX_TEMPERATURE
+                            and (numeric * 2).is_integer()
+                        )
+            if not valid:
+                raise ValueError(f"Invalid basic control value for {attribute}")
+
+    def _read_control_state(self, timeout: float = QUERY_TIMEOUT) -> None:
+        version = self._control_status_version
+        self.build_send(MessageQuery(self._message_protocol_version), query=True)
+        self._wait_for_query_response(
+            lambda: self._control_status_version > version,
+            timeout=timeout,
+        )
+
+    def _control_value_matches(
+        self,
+        attribute: str,
+        expected: bool | float | str,
+    ) -> bool:
+        if attribute == DeviceAttributes.fan_speed and expected in ACFanSpeed:
+            # Devices may report AUTO as 103 after a command of 102. Use the
+            # existing fan-mode buckets for named speeds, exact values otherwise.
+            return self.fan_mode == expected
+        return self._attributes.get(attribute) == expected
+
+    def _set_attributes(
+        self,
+        changes: dict[str, bool | float | str],
+        *,
+        confirm: bool,
+    ) -> dict[str, Any]:
+        self._validate_control_changes(changes)
+        if not changes:
+            return {}
+        # Do not build an entire state packet from an earlier optimistic SET.
+        self._read_control_state()
+        self._validate_control_changes(changes)
+        message = self.make_message_set()
+        if DeviceAttributes.mode in changes:
+            message.dry = False
+            changes.setdefault(
+                DeviceAttributes.power,
+                changes[DeviceAttributes.mode] != DeviceHVACMode.OFF,
+            )
+            if self._attributes[DeviceAttributes.mode] == DRY_MODE:
+                message.fan_speed = ACFanSpeed.AUTO
+        for attribute, value in changes.items():
+            encoded_value = (
+                int(value)
+                if attribute in {DeviceAttributes.mode, DeviceAttributes.fan_speed}
+                else value
+            )
+            setattr(message, attribute, encoded_value)
+        self.build_send(message)
+        if not confirm:
+            return {}
+        deadline = time.monotonic() + QUERY_TIMEOUT
+        for attempt in range(CONTROL_CONFIRM_ATTEMPTS):
+            if attempt:
+                time.sleep(CONTROL_CONFIRM_INTERVAL)
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            try:
+                self._read_control_state(remaining)
+            except TimeoutError:
+                continue
+            if all(
+                self._control_value_matches(attribute, value)
+                for attribute, value in changes.items()
+            ):
+                return {attribute: self._attributes[attribute] for attribute in changes}
+        raise TimeoutError("AC command sent but requested state was not confirmed")
+
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea AC device set attribute."""
+        if self._is_run and threading.current_thread() is not self:
+            self.submit_operation(lambda: self.set_attribute(attr, value)).result()
+            return
         # if nat a sensor
         message: (
             MessageToggleDisplay
@@ -1390,6 +1534,15 @@ class MideaACDevice(MideaClimateDevice):
         zone: int | None = None,
     ) -> None:
         """Midea AC device set target temperature."""
+        if self._is_run and threading.current_thread() is not self:
+            self.submit_operation(
+                lambda: self.set_target_temperature(
+                    target_temperature,
+                    hvac_mode,
+                    zone,
+                ),
+            ).result()
+            return
         message: MessageSubProtocolSet | MessageGeneralSet = (
             self._make_message_uniq_set()
         )
@@ -1401,6 +1554,11 @@ class MideaACDevice(MideaClimateDevice):
 
     def _set_swing(self, swing_vertical: bool, swing_horizontal: bool) -> None:
         """Midea AC device set swing."""
+        if self._is_run and threading.current_thread() is not self:
+            self.submit_operation(
+                lambda: self._set_swing(swing_vertical, swing_horizontal),
+            ).result()
+            return
         message: MessageSubProtocolSet | MessageGeneralSet = (
             self._make_message_uniq_set()
         )
