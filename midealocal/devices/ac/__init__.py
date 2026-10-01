@@ -5,7 +5,7 @@ import logging
 import time
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
-from typing import Any, ClassVar, Unpack, cast, override
+from typing import Any, ClassVar, Literal, Unpack, cast, override
 
 from midealocal.base_classes.climate import (
     DEFAULT_MAX_TARGET_TEMPERATURE,
@@ -641,11 +641,32 @@ class MideaACDevice(MideaClimateDevice):
             super().refresh_status_for_set(attribute)
 
     @override
-    def connect(self, check_protocol: bool = False) -> bool:
+    def connect(
+        self,
+        check_protocol: bool = False,
+        *,
+        readiness: Literal["full", "control"] = "full",
+    ) -> bool:
         """Refresh capability pages after opening a new device connection."""
         self._capability_pages_received.clear()
         self._pending_capability_pages.clear()
-        return super().connect(check_protocol)
+        if readiness == "full":
+            return super().connect(check_protocol)
+        return super().connect(check_protocol, readiness=readiness)
+
+    @property
+    def supports_confirmed_controls(self) -> bool:
+        """Whether C0 supplies the state needed by the combined control API."""
+        return not (self._used_subprotocol or self._uses_new_protocol_temperature)
+
+    @override
+    def _refresh_control_status(self) -> bool:
+        """Become safe to control before collecting optional telemetry."""
+        if not self.supports_confirmed_controls:
+            self.refresh_status(True)
+            return False
+        self.refresh_status_for_set(DeviceAttributes.power)
+        return self.supports_confirmed_controls
 
     @override
     def refresh_status(self, check_protocol: bool = False) -> None:
