@@ -355,6 +355,8 @@ class MideaACDevice(MideaClimateDevice):
         self._temperature_limits: dict[int, tuple[float, float]] | None = None
         # decoded B5 capability flags (accumulated across B5 frames)
         self._capabilities: dict[str, bool] = {}
+        self._capability_pages_received: set[type[MessageCapabilitiesQuery]] = set()
+        self._pending_capability_pages: dict[type[MessageCapabilitiesQuery], int] = {}
         # manual setpoint limits from customize (highest priority)
         self._customize_min_temperature: float | None = None
         self._customize_max_temperature: float | None = None
@@ -639,6 +641,33 @@ class MideaACDevice(MideaClimateDevice):
             super().refresh_status_for_set(attribute)
 
     @override
+    def connect(self, check_protocol: bool = False) -> bool:
+        """Refresh capability pages after opening a new device connection."""
+        self._capability_pages_received.clear()
+        self._pending_capability_pages.clear()
+        return super().connect(check_protocol)
+
+    @override
+    def refresh_status(self, check_protocol: bool = False) -> None:
+        """Allow an explicit protocol probe to refresh capability information."""
+        if check_protocol:
+            self._capability_pages_received.clear()
+            self._pending_capability_pages.clear()
+        super().refresh_status(check_protocol)
+
+    @override
+    def build_send(self, cmd: MessageRequest, query: bool = False) -> None:
+        """Track capability request IDs separately for the two response pages."""
+        if isinstance(cmd, MessageCapabilitiesQuery):
+            self._pending_capability_pages[type(cmd)] = cmd.message_id
+        try:
+            super().build_send(cmd, query=query)
+        except Exception:
+            if isinstance(cmd, MessageCapabilitiesQuery):
+                self._pending_capability_pages.pop(type(cmd), None)
+            raise
+
+    @override
     def _build_query_sequence(self) -> Iterator[MessageRequest]:
         """Switch to BB queries immediately when the basic reply identifies BB."""
         queries = self.build_query()
@@ -683,7 +712,9 @@ class MideaACDevice(MideaClimateDevice):
             MessageCapabilitiesQuery(self._message_protocol_version),
             MessageCapabilitiesAdditionalQuery(self._message_protocol_version),
         ]
-        return queries
+        return [
+            cmd for cmd in queries if type(cmd) not in self._capability_pages_received
+        ]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea AC device process message."""
@@ -835,6 +866,12 @@ class MideaACDevice(MideaClimateDevice):
         changed) still reaches update_all(); callers that derive state from
         `capabilities` would otherwise never be notified of the change.
         """
+        capability_message_id = getattr(message, "capability_message_id", None)
+        if capability_message_id is not None:
+            for page, message_id in tuple(self._pending_capability_pages.items()):
+                if capability_message_id == message_id:
+                    self._capability_pages_received.add(page)
+                    del self._pending_capability_pages[page]
         if not hasattr(message, "capabilities"):
             return {}
         new_capabilities = message.capabilities

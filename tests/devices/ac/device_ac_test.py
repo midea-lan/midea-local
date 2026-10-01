@@ -10,6 +10,7 @@ from midealocal.base_classes.climate import (
     DEFAULT_MIN_TARGET_TEMPERATURE,
 )
 from midealocal.const import ProtocolVersion
+from midealocal.crc8 import calculate
 from midealocal.device import MessageResult, NoSupportedProtocol
 from midealocal.devices.ac import DeviceAttributes, MideaACDevice
 from midealocal.devices.ac.message import (
@@ -508,6 +509,125 @@ class TestMideaACDevice:
             MessageSubProtocolQuery11,
             MessageSubProtocolQuery30,
         ]
+
+    @pytest.mark.parametrize("additional", [False, True])
+    @pytest.mark.parametrize("next_frame_flag", [False, True])
+    def test_capabilities_cache_only_the_matching_reply_page(
+        self,
+        additional: bool,
+        next_frame_flag: bool,
+    ) -> None:
+        """An identified B5 reply suppresses only its own page in later polling."""
+        query_type = (
+            MessageCapabilitiesAdditionalQuery
+            if additional
+            else MessageCapabilitiesQuery
+        )
+        query = query_type(1)
+        with patch("midealocal.device.MideaDevice.build_send"):
+            self.device.build_send(query, query=True)
+        body = bytearray([0xB5, 1, 0x14, 0x02, 1, 7])
+        if next_frame_flag:
+            body.append(0)
+        body.append(query.message_id)
+        body.append(calculate(body))
+        self.device.process_message(self._response(body))
+
+        capability_types = [
+            type(cmd)
+            for cmd in self.device.build_query()
+            if isinstance(cmd, MessageCapabilitiesQuery)
+        ]
+        assert query_type not in capability_types
+        assert len(capability_types) == 1
+
+    def test_polling_stops_b5_only_after_both_distinct_replies(self) -> None:
+        """Duplicate first-page responses cannot confirm the second pending page."""
+        self.device._appliance_query = False
+        queries = [MessageCapabilitiesQuery(1), MessageCapabilitiesAdditionalQuery(1)]
+        with patch("midealocal.device.MideaDevice.build_send"):
+            for query in queries:
+                self.device.build_send(query, query=True)
+        for index in (0, 0, 1):
+            body = bytearray([0xB5, 0, 0, queries[index].message_id])
+            body.append(calculate(body))
+            self.device.process_message(self._response(body))
+            with (
+                patch("midealocal.device.MideaDevice.build_send") as send,
+                patch.object(self.device, "_wait_for_query_response") as wait,
+            ):
+                self.device.refresh_status()
+            capability_queries = [
+                call.args[0]
+                for call in send.call_args_list
+                if isinstance(call.args[0], MessageCapabilitiesQuery)
+            ]
+            if index == 0:
+                assert len(capability_queries) == 1
+                assert isinstance(
+                    capability_queries[0],
+                    MessageCapabilitiesAdditionalQuery,
+                )
+                # Polling sent a fresh second-page ID; reply to that latest request.
+                queries[1] = capability_queries[0]
+            else:
+                assert len(send.call_args_list) == 10
+                assert not capability_queries
+            wait.assert_not_called()
+
+    @pytest.mark.parametrize("invalid", ["id", "crc", "truncated", "missing_id"])
+    def test_unidentified_capability_reply_keeps_both_pages(self, invalid: str) -> None:
+        """Uncorrelated or incomplete replies cannot suppress future queries."""
+        query = MessageCapabilitiesQuery(1)
+        with patch("midealocal.device.MideaDevice.build_send"):
+            self.device.build_send(query, query=True)
+        body = bytearray([0xB5, 1, 0x14, 0x02, 1, 7, 0, query._message_id])
+        if invalid == "id":
+            body[-1] = (body[-1] + 1) % 256
+        elif invalid == "truncated":
+            body[1] = 2
+        elif invalid == "missing_id":
+            body = body[:-2]
+        body.append(calculate(body))
+        if invalid == "crc":
+            body[-1] ^= 1
+        self.device.process_message(self._response(body))
+
+        assert (
+            sum(
+                isinstance(cmd, MessageCapabilitiesQuery)
+                for cmd in self.device.build_query()
+            )
+            == 2
+        )
+
+    def test_capability_pages_are_requeried_after_reconnect_or_explicit_probe(
+        self,
+    ) -> None:
+        """A connection or explicit probe refreshes cached capability pages."""
+        for trigger in ("connect", "refresh_status"):
+            for query in (
+                MessageCapabilitiesQuery(1),
+                MessageCapabilitiesAdditionalQuery(1),
+            ):
+                with patch("midealocal.device.MideaDevice.build_send"):
+                    self.device.build_send(query, query=True)
+                body = bytearray([0xB5, 0, 0, query._message_id])
+                body.append(calculate(body))
+                self.device.process_message(self._response(body))
+            assert not any(
+                isinstance(cmd, MessageCapabilitiesQuery)
+                for cmd in self.device.build_query()
+            )
+            with patch(f"midealocal.device.MideaDevice.{trigger}"):
+                getattr(self.device, trigger)(True)
+            assert (
+                sum(
+                    isinstance(cmd, MessageCapabilitiesQuery)
+                    for cmd in self.device.build_query()
+                )
+                == 2
+            )
 
     def test_build_query_omits_rate_select_until_capability_confirmed(self) -> None:
         """Test rate_select stays out of the B1 query until b5_electricity confirms it.
