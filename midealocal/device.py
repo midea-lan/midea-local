@@ -32,7 +32,7 @@ AUTH_LENGTH_SIZE = 2
 MIN_MSG_LENGTH = 56
 MESSAGE_TYPE_INDEX = 9  # offset of the message-type byte in the 10-byte header
 MIN_V2_FACTUAL_MSG_LENGTH = 6
-RESPONSE_TIMEOUT = 12  # main loop socket recv timeout, 12 * 10s = 120s
+RESPONSE_TIMEOUT = 12  # maximum silence in SOCKET_TIMEOUT units (120 seconds)
 SOCKET_TIMEOUT = 10  # socket connection default timeout
 # fix https://github.com/wuwentao/midea_ac_lan/issues/658#issuecomment-4555804288
 QUERY_TIMEOUT = (
@@ -443,9 +443,8 @@ class MideaDevice(threading.Thread):
             # raise exception to main loop
             raise SocketException
         try:
-            # query msg, set timeout to QUERY_TIMEOUT
-            if query:
-                self._socket.settimeout(QUERY_TIMEOUT)
+            # Receive scheduling may have left the shared socket nonblocking.
+            self._socket.settimeout(QUERY_TIMEOUT if query else SOCKET_TIMEOUT)
             self._socket.send(data)
         except TimeoutError:
             _LOGGER.debug(
@@ -926,12 +925,26 @@ class MideaDevice(threading.Thread):
     def _check_refresh(self, now: float) -> None:
         if 0 < self._refresh_interval <= now - self._previous_refresh:
             self.refresh_status()
-            self._previous_refresh = now
+            # Schedule from completion so a slow send cannot starve socket reads.
+            self._previous_refresh = time.monotonic()
 
     def _check_heartbeat(self, now: float) -> None:
         if now - self._previous_heartbeat >= self._heartbeat_interval:
             self.send_heartbeat()
-            self._previous_heartbeat = now
+            self._previous_heartbeat = time.monotonic()
+
+    def _next_receive_timeout(self, last_response: float) -> float:
+        """Wake for the next refresh, heartbeat, or silence deadline."""
+        deadline = min(
+            self._previous_heartbeat + self._heartbeat_interval,
+            last_response + RESPONSE_TIMEOUT * SOCKET_TIMEOUT,
+        )
+        if self._refresh_interval > 0:
+            deadline = min(
+                deadline,
+                self._previous_refresh + self._refresh_interval,
+            )
+        return min(SOCKET_TIMEOUT, deadline - time.monotonic())
 
     def _connect_loop(self) -> None:
         """Connect loop until device online."""
@@ -990,9 +1003,8 @@ class MideaDevice(threading.Thread):
             self._connect_loop()
             if not self._should_run():
                 break
-            # socket recv msg timeout counter
-            timeout_counter = 0
-            start = time.time()
+            start = time.monotonic()
+            last_response = start
             self._previous_refresh = self._previous_heartbeat = start
             # refresh/recv msg loop after connected
             while True:
@@ -1002,12 +1014,14 @@ class MideaDevice(threading.Thread):
                     if not self._socket:
                         _LOGGER.debug("[%s] Socket is none", self._device_id)
                         raise SocketException  # noqa: TRY301
-                    now = time.time()
+                    now = time.monotonic()
                     # refresh_status only send supported query msg
                     self._check_refresh(now)
-                    self._check_heartbeat(now)
-                    # set SOCKET_TIMEOUT before recv socket msg
-                    self._socket.settimeout(SOCKET_TIMEOUT)
+                    self._check_heartbeat(time.monotonic())
+                    remaining = self._next_receive_timeout(last_response)
+                    # A slow send may leave another timer overdue. Poll once
+                    # before dispatching it so queued replies still get read.
+                    self._socket.settimeout(max(0, remaining))
                     # refresh status after set/query
                     msg = self._socket.recv(512)
                     if len(msg) == 0:
@@ -1015,13 +1029,15 @@ class MideaDevice(threading.Thread):
                     # parse msg and update latest status
                     result = self.parse_message(msg)
                     if result == MessageResult.SUCCESS:
-                        timeout_counter = 0
+                        last_response = time.monotonic()
                     if result == MessageResult.ERROR:
                         error_msg = "Message 'ERROR' received"
                         should_reconnect = True
-                except TimeoutError:
-                    timeout_counter += 1
-                    if timeout_counter >= RESPONSE_TIMEOUT:
+                except (TimeoutError, BlockingIOError):
+                    if (
+                        time.monotonic() - last_response
+                        >= RESPONSE_TIMEOUT * SOCKET_TIMEOUT
+                    ):
                         error_msg = "Heartbeat timed out"
                         should_reconnect = True
                 except SocketException:  # refresh_status
