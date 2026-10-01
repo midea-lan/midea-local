@@ -111,18 +111,29 @@ finally:
   with a new device and no profile, and discard the old stored hint.
 - Ordinary AC `set_attributes()` combines power, mode, temperature, fan speed, and
   swing changes into one SET. It first reads fresh state and then confirms the
-  requested values with fresh C0 replies, retrying queries only. Named fan speeds
+  requested values with CRC-valid C0 replies echoing the current query ID, retrying
+  queries only. Both packet construction and confirmation use the matching reply's
+  captured state, so a later unrelated frame cannot replace it. Named fan speeds
   use the existing mode buckets to tolerate firmware reporting AUTO as 103 for a
   command of 102; returned values are the actual readings. Failure raises via
   the Future; it does not prove the physical SET failed. `confirm=False` skips
   readback and returns `{}`. Temperature values must be encodable in half-degree
   steps. Confirmation has a five-second response budget after sending the command.
+  `supports_confirmed_controls` becomes true only after this connection has
+  demonstrated matching C0 query IDs. Firmware without these replies can keep
+  using the legacy setters; the new API fails before SET if it cannot correlate
+  the prerequisite state read. An OFF mode request is a power-off operation that
+  preserves the device's remembered mode.
 - `submit_operation()` serializes operations on the device's receiver thread and
   wakes it promptly. Before `open()`, it executes synchronously. Never submit from
   a device update callback or block the application's event loop on `.result()`;
   use an executor or `asyncio.wrap_future()` for a running device. Low-level socket
   calls must not run concurrently with queued operations. AC legacy setters also
   use the queue while the device is running.
+  Submitted callables must be trusted and bounded. Cancellation prevents queued
+  work from starting; failure of an active Future during shutdown does not prove
+  its callable stopped or its physical command failed. Applications own the
+  provenance and write protection of their stored profiles.
 
 ### command line tool
 

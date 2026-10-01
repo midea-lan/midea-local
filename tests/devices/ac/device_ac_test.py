@@ -1132,6 +1132,7 @@ class TestMideaACDevice:
         stale_c0_msg = SimpleNamespace(
             body_type=ListTypes.C0,
             message_type=MessageType.query,
+            control_message_id=None,
             power=True,
             target_temperature=16.0,
             indoor_temperature=4.2,

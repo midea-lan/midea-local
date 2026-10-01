@@ -24,6 +24,7 @@ B5_PROPERTY_COUNT_INDEX = 1
 B5_PROPERTIES_OFFSET = 2
 B5_PROPERTY_HEADER_LENGTH = 3
 B5_RESPONSE_TRAILER_LENGTHS = (2, 3)  # Optional next-frame flag, message ID, CRC.
+C0_CORRELATED_MIN_LENGTH = 25  # 23 status bytes, request ID, CRC.
 
 BB_AC_MODES = [0, 3, 1, 2, 4, 5]
 BB_MIN_BODY_LENGTH = 21
@@ -362,6 +363,11 @@ class MessageACBase(MessageRequest):
         self._message_id = MessageACBase._message_serial
 
     @property
+    def message_id(self) -> int:
+        """Return the request identity echoed by compatible replies."""
+        return self._message_id
+
+    @property
     def _body(self) -> bytearray:
         raise NotImplementedError
 
@@ -444,11 +450,6 @@ class MessageCapabilitiesQuery(MessageACBase):
             body_type=ListTypes.B5,
         )
         self._additional_capabilities = additional_capabilities
-
-    @property
-    def message_id(self) -> int:
-        """Return the request identity echoed by compatible capability replies."""
-        return self._message_id
 
     @property
     def _body(self) -> bytearray:
@@ -1785,6 +1786,14 @@ class MessageACResponse(MessageResponse):
     ) -> None:
         """Initialize AC message response."""
         super().__init__(message)
+        self.control_message_id: int | None = None
+        if (
+            self.message_type == MessageType.query
+            and self.body_type == ListTypes.C0
+            and len(super().body) >= C0_CORRELATED_MIN_LENGTH
+            and calculate(super().body) == 0
+        ):
+            self.control_message_id = super().body[-2]
         # dataType 0x05 and messageBytes[0] 0xA0
         if self.message_type == MessageType.notify2 and self.body_type == ListTypes.A0:
             self.set_body(XA0MessageBody(super().body))
