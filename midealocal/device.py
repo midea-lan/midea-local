@@ -11,6 +11,7 @@ from typing import Any, ClassVar, NotRequired, TypedDict, Unpack
 from typing_extensions import deprecated
 
 from .const import DeviceType, ProtocolVersion
+from .device_info import DeviceDescriptor, DiscoveryProfile
 from .exceptions import SocketException
 from .message import (
     MessageApplianceResponse,
@@ -222,6 +223,7 @@ class MideaDevice(threading.Thread):
         self._is_run: bool = False
         self._available = False
         self._appliance_query = True
+        self._discovery_profile_created_at: float | None = None
         self._refresh_interval = 30
         self._heartbeat_interval = SOCKET_TIMEOUT
         self._default_refresh_interval = 30
@@ -317,6 +319,45 @@ class MideaDevice(threading.Thread):
     def serial_number(self) -> str | None:
         """Device serial number."""
         return self._serial_number
+
+    @property
+    def descriptor(self) -> DeviceDescriptor:
+        """Return the device identity and current endpoint without credentials."""
+        return DeviceDescriptor(
+            name=self._device_name,
+            device_id=self._device_id,
+            device_type=self._device_type,
+            ip_address=self._ip_address,
+            port=self._port,
+            device_protocol=self._device_protocol_version,
+            model=self._model,
+            subtype=self._subtype,
+            mac=self._mac,
+            serial_number=self._serial_number,
+        )
+
+    def export_discovery_profile(self) -> DiscoveryProfile | None:
+        """Export a confirmed protocol hint without extending its original lifetime."""
+        if self._appliance_query or self._discovery_profile_created_at is None:
+            return None
+        return DiscoveryProfile(
+            descriptor=self.descriptor,
+            message_protocol_version=self._message_protocol_version,
+            created_at=self._discovery_profile_created_at,
+        )
+
+    def restore_discovery_profile(self, profile: DiscoveryProfile) -> bool:
+        """Restore valid protocol hints before connecting, without live state."""
+        if (
+            self._is_run
+            or self._socket is not None
+            or not profile.is_valid_for(self.descriptor)
+        ):
+            return False
+        self._message_protocol_version = profile.message_protocol_version
+        self._appliance_query = False
+        self._discovery_profile_created_at = profile.created_at
+        return True
 
     @staticmethod
     def fetch_v2_message(msg: bytes) -> tuple[list, bytes]:
@@ -695,6 +736,7 @@ class MideaDevice(threading.Thread):
             self._appliance_query = False
             _LOGGER.debug("[%s] Appliance query Received: %s", self._device_id, message)
             self._message_protocol_version = message.protocol_version
+            self._discovery_profile_created_at = time.time()
             _LOGGER.debug(
                 "[%s] device model %s subtype %s, device protocol %s, msg protocol %s",
                 self._device_id,
