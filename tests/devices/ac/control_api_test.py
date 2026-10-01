@@ -226,3 +226,21 @@ def test_prompt_tone_is_local_while_running(
     submit.assert_not_called()
     update.assert_called_once_with({"prompt_tone": False})
     assert device.attributes["prompt_tone"] is False
+
+
+def test_mode_off_preserves_mode_and_confirms_power(device: MideaACDevice) -> None:
+    """An off device retains its cooling mode in its reported state."""
+    device._attributes.update({"power": False, "mode": 2})
+    with (
+        patch.object(
+            device,
+            "_read_control_state",
+            return_value=dict(device._attributes),
+        ),
+        patch.object(device, "build_send") as send,
+        patch("midealocal.devices.ac.time.monotonic", side_effect=count(0, 1)),
+        patch("midealocal.devices.ac.time.sleep"),
+    ):
+        assert device.set_attributes({"mode": 0}).result() == {"power": False}
+    assert send.call_args.args[0].mode == 2
+    assert send.call_args.args[0].power is False

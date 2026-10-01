@@ -1359,6 +1359,9 @@ class MideaACDevice(MideaClimateDevice):
         self._read_control_state()
         self._validate_control_changes(changes)
         message = self.make_message_set()
+        if changes.get(DeviceAttributes.mode) == DeviceHVACMode.OFF:
+            del changes[DeviceAttributes.mode]
+            changes[DeviceAttributes.power] = False
         if DeviceAttributes.mode in changes:
             message.dry = False
             changes.setdefault(
