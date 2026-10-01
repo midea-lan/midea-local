@@ -342,14 +342,20 @@ class MideaDevice(threading.Thread):
         try:
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._socket.settimeout(SOCKET_TIMEOUT)
-            _LOGGER.debug(
-                "[%s] Connecting to %s:%s",
+            _LOGGER.info(
+                "[%s] Connecting to %s:%s (waiting for TCP, timeout %ss)",
                 self._device_id,
                 self._ip_address,
                 self._port,
+                SOCKET_TIMEOUT,
             )
+            started = time.monotonic()
             self._socket.connect((self._ip_address, self._port))
-            _LOGGER.debug("[%s] Connected", self._device_id)
+            _LOGGER.info(
+                "[%s] TCP connected in %.2fs",
+                self._device_id,
+                time.monotonic() - started,
+            )
             if self._device_protocol_version == ProtocolVersion.V3:
                 self.authenticate()
             # 1. midea_ac_lan add device verify token with connect and auth
@@ -393,7 +399,13 @@ class MideaDevice(threading.Thread):
             )
             # raise exception to connect loop
             raise SocketException
-        deadline = time.monotonic() + SOCKET_TIMEOUT
+        _LOGGER.info(
+            "[%s] Authenticating (waiting for device reply, timeout %ss)",
+            self._device_id,
+            SOCKET_TIMEOUT,
+        )
+        started = time.monotonic()
+        deadline = started + SOCKET_TIMEOUT
         self._socket.send(request)
         response = b""
         response_size = AUTH_HEADER_LENGTH
@@ -424,6 +436,11 @@ class MideaDevice(threading.Thread):
         messages, self._buffer = self._security.decode_8370(response)
         self._security.tcp_key(messages[0], self._key)
         self._socket.settimeout(SOCKET_TIMEOUT)
+        _LOGGER.info(
+            "[%s] Authentication completed in %.2fs",
+            self._device_id,
+            time.monotonic() - started,
+        )
 
     def send_message(self, data: bytes, query: bool = False) -> None:
         """Send message."""
@@ -551,6 +568,14 @@ class MideaDevice(threading.Thread):
         self.build_send(cmd, query=True)
         if not check_protocol:
             return 0
+        started = time.monotonic()
+        _LOGGER.info(
+            "[%s] Waiting for %s reply (timeout %ss, up to %s attempts)",
+            self._device_id,
+            type(cmd).__name__,
+            QUERY_TIMEOUT,
+            QUERY_PROBE_RETRIES,
+        )
         # only catch TimoutError for check_protocol
         # unexpected exception in recv/settimeout, catch by main loop
         try:
@@ -564,6 +589,15 @@ class MideaDevice(threading.Thread):
                     break
                 except TimeoutError:
                     attempt += 1
+                    _LOGGER.info(
+                        "[%s] %s timed out (attempt %s/%s, %.2fs elapsed)%s",
+                        self._device_id,
+                        type(cmd).__name__,
+                        attempt,
+                        QUERY_PROBE_RETRIES,
+                        time.monotonic() - started,
+                        "; retrying" if attempt < QUERY_PROBE_RETRIES else "; skipping",
+                    )
                     if attempt >= QUERY_PROBE_RETRIES:
                         raise
                     # retry once before blacklisting: a single timeout
@@ -581,13 +615,20 @@ class MideaDevice(threading.Thread):
             return 1 if cmd in real_cmds else 0
         except ResponseException:
             # parse msg error
-            _LOGGER.debug(
-                "[%s] refresh_status ResponseException %s, cmd %s",
+            _LOGGER.info(
+                "[%s] Query failed after %.2fs: %s, cmd %s",
                 self._device_id,
+                time.monotonic() - started,
                 cmd.__class__.__name__,
                 cmd,
             )
             return 1 if cmd in real_cmds else 0
+        _LOGGER.info(
+            "[%s] %s reply received in %.2fs",
+            self._device_id,
+            type(cmd).__name__,
+            time.monotonic() - started,
+        )
         return 0
 
     def refresh_status_for_set(self, attribute: str) -> None:
