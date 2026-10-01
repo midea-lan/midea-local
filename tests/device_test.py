@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 from types import SimpleNamespace
-from typing import Any, ClassVar
+from typing import Any, ClassVar, SupportsIndex, overload
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -177,10 +177,34 @@ def test_fetch_v2_message() -> None:
     """Test fetch v2 message."""
     assert MideaDevice.fetch_v2_message(bytes([])) == ([], bytes([]))
     assert MideaDevice.fetch_v2_message(bytes([0x1])) == ([], bytes([0x1]))
-    assert MideaDevice.fetch_v2_message(bytes([0x1] * 5 + [0x0] + [0x1] * 7)) == (
-        [bytes([0x1])],
-        bytes([0x1] * 4 + [0x0] + [0x1] * 7),
+    frame = b"\x5a\x5a\x01\x00\x38\x00" + bytes(50)
+    assert MideaDevice.fetch_v2_message(frame + frame + frame[:10]) == (
+        [frame, frame],
+        frame[:10],
     )
+
+
+@pytest.mark.parametrize("length", [0, 1, 5, 55])
+def test_fetch_v2_message_rejects_short_declared_length(length: int) -> None:
+    """A declared length shorter than a V2 frame must fail parsing."""
+
+    class GuardedBytes(bytes):
+        """Fail instead of hanging if the parser tries to consume zero bytes."""
+
+        @overload
+        def __getitem__(self, key: SupportsIndex) -> int: ...
+
+        @overload
+        def __getitem__(self, key: slice) -> bytes: ...
+
+        def __getitem__(self, key: SupportsIndex | slice) -> int | bytes:
+            if isinstance(key, slice) and key.start == 0 and key.stop is None:
+                raise AssertionError("Parser did not consume input")
+            return super().__getitem__(key)
+
+    frame = GuardedBytes(b"\x5a\x5a\x01\x00" + bytes([length, 0]))
+    with pytest.raises(ValueError, match="length"):
+        MideaDevice.fetch_v2_message(frame)
 
 
 def test_pre_process_message_short_message() -> None:

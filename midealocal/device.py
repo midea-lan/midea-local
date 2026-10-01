@@ -325,6 +325,8 @@ class MideaDevice(threading.Thread):
             if factual_msg_len < MIN_V2_FACTUAL_MSG_LENGTH:
                 break
             alleged_msg_len = msg[4] + (msg[5] << 8)
+            if alleged_msg_len < MIN_MSG_LENGTH:
+                raise ValueError("Invalid V2 frame length")
             if factual_msg_len >= alleged_msg_len:
                 result.append(msg[:alleged_msg_len])
                 msg = msg[alleged_msg_len:]
