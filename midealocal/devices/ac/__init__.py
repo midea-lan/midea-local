@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from collections.abc import Iterator, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, ClassVar, Literal, Unpack, cast, override
 
 from midealocal.base_classes.climate import (
@@ -18,6 +18,7 @@ from midealocal.base_classes.climate import (
 )
 from midealocal.const import DeviceType
 from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs, NoSupportedProtocol
+from midealocal.device_info import DiscoveryProfile
 from midealocal.message import (
     ListTypes,
     MessageQueryAppliance,
@@ -357,6 +358,9 @@ class MideaACDevice(MideaClimateDevice):
         self._capabilities: dict[str, bool] = {}
         self._capability_pages_received: set[type[MessageCapabilitiesQuery]] = set()
         self._pending_capability_pages: dict[type[MessageCapabilitiesQuery], int] = {}
+        self._confirmed_capabilities: dict[str, bool] = {}
+        self._confirmed_temperature_limits: dict[int, tuple[float, float]] | None = None
+        self._restored_capability_pages = False
         # manual setpoint limits from customize (highest priority)
         self._customize_min_temperature: float | None = None
         self._customize_max_temperature: float | None = None
@@ -648,7 +652,11 @@ class MideaACDevice(MideaClimateDevice):
         readiness: Literal["full", "control"] = "full",
     ) -> bool:
         """Refresh capability pages after opening a new device connection."""
-        self._capability_pages_received.clear()
+        if not self._restored_capability_pages:
+            self._capability_pages_received.clear()
+            self._confirmed_capabilities.clear()
+            self._confirmed_temperature_limits = None
+        self._restored_capability_pages = False
         self._pending_capability_pages.clear()
         if readiness == "full":
             return super().connect(check_protocol)
@@ -669,11 +677,63 @@ class MideaACDevice(MideaClimateDevice):
         return self.supports_confirmed_controls
 
     @override
+    def export_discovery_profile(self) -> DiscoveryProfile | None:
+        """Export confirmed metadata without storing live control state."""
+        profile = super().export_discovery_profile()
+        if profile is None:
+            return None
+        pages = (MessageCapabilitiesQuery, MessageCapabilitiesAdditionalQuery)
+        return replace(
+            profile,
+            capability_pages=tuple(
+                index
+                for index, page in enumerate(pages)
+                if page in self._capability_pages_received
+            ),
+            capabilities=dict(self._confirmed_capabilities),
+            uses_subprotocol=self._used_subprotocol,
+            temperature_limits=self._confirmed_temperature_limits,
+        )
+
+    @override
+    def restore_discovery_profile(self, profile: DiscoveryProfile) -> bool:
+        """Restore discovery hints; a fresh state read is still required."""
+        if not super().restore_discovery_profile(profile):
+            return False
+        pages = (MessageCapabilitiesQuery, MessageCapabilitiesAdditionalQuery)
+        self._capability_pages_received = {
+            pages[index] for index in profile.capability_pages
+        }
+        self._restored_capability_pages = True
+        self._used_subprotocol = (
+            profile.uses_subprotocol or self._model_capabilities.uses_bb_protocol
+        )
+        self._capabilities.clear()
+        self._confirmed_capabilities.clear()
+        self._temperature_limits = None
+        self._confirmed_temperature_limits = None
+        for attribute in self._capabilities_attr.values():
+            self._attributes.setdefault(attribute, None)
+        if profile.capability_pages:
+            self._capabilities = dict(profile.capabilities)
+            self._confirmed_capabilities = dict(profile.capabilities)
+            for cap, attribute in self._capabilities_attr.items():
+                if cap in self._capabilities and not self._capabilities[cap]:
+                    self._attributes.pop(attribute, None)
+            limits = profile.temperature_limits
+            self._temperature_limits = None if limits is None else dict(limits)
+            self._confirmed_temperature_limits = self._temperature_limits
+        self._refresh_temperature_limits()
+        return True
+
+    @override
     def refresh_status(self, check_protocol: bool = False) -> None:
         """Allow an explicit protocol probe to refresh capability information."""
         if check_protocol:
             self._capability_pages_received.clear()
             self._pending_capability_pages.clear()
+            self._confirmed_capabilities.clear()
+            self._confirmed_temperature_limits = None
         super().refresh_status(check_protocol)
 
     @override
@@ -893,6 +953,13 @@ class MideaACDevice(MideaClimateDevice):
                 if capability_message_id == message_id:
                     self._capability_pages_received.add(page)
                     del self._pending_capability_pages[page]
+                    self._confirmed_capabilities.update(
+                        getattr(message, "capabilities", {}),
+                    )
+                    if hasattr(message, "temperature_limits"):
+                        self._confirmed_temperature_limits = dict(
+                            message.temperature_limits,
+                        )
         if not hasattr(message, "capabilities"):
             return {}
         new_capabilities = message.capabilities
