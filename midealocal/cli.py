@@ -50,8 +50,15 @@ class MideaCLI:
     session: aiohttp.ClientSession
     namespace: Namespace
 
+    def __init__(self) -> None:
+        """Keep cloud authentication within this CLI invocation."""
+        self._cloud: MideaCloud | None = None
+        self._cloud_logged_in: bool | None = None
+
     async def _get_cloud(self) -> MideaCloud:
         """Get cloud instance."""
+        if self._cloud is not None:
+            return self._cloud
         if not hasattr(self, "session"):
             self.session = aiohttp.ClientSession()
 
@@ -63,19 +70,20 @@ class MideaCLI:
             default_cloud = get_preset_account_cloud()
             default_cloud_name = get_default_cloud()
             _LOGGER.info("Using preset account.")
-            return get_midea_cloud(
+            self._cloud = get_midea_cloud(
                 cloud_name=default_cloud_name,
                 session=self.session,
                 account=default_cloud["username"],
                 password=default_cloud["password"],
             )
-
-        return get_midea_cloud(
-            cloud_name=self.namespace.cloud_name,
-            session=self.session,
-            account=self.namespace.username,
-            password=self.namespace.password,
-        )
+        else:
+            self._cloud = get_midea_cloud(
+                cloud_name=self.namespace.cloud_name,
+                session=self.session,
+                account=self.namespace.username,
+                password=self.namespace.password,
+            )
+        return self._cloud
 
     async def _load_devices_cache(self) -> list[Any]:
         """Load the device token/key cache (see midea-devices.json)."""
@@ -139,15 +147,16 @@ class MideaCLI:
     async def _get_keys(self, device_id: int) -> dict[int, dict[str, Any]]:
         cloud = await self._get_cloud()
         default_keys = await cloud.get_default_keys()
-        try:
-            logged_in = await cloud.login()
-        except CloudLoginError as err:
-            _LOGGER.warning(
-                "Cloud login failed (%s). Using only default keys.",
-                err,
-            )
-            return default_keys
-        if not logged_in:
+        if self._cloud_logged_in is None:
+            try:
+                self._cloud_logged_in = bool(await cloud.login())
+            except CloudLoginError as err:
+                self._cloud_logged_in = False
+                _LOGGER.warning(
+                    "Cloud login failed (%s). Using only default keys.",
+                    err,
+                )
+        if not self._cloud_logged_in:
             _LOGGER.warning(
                 "Failed to authenticate to the cloud. Using only default keys.",
             )
