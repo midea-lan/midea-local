@@ -498,11 +498,16 @@ class MideaDevice(threading.Thread):
 
     def _wait_for_query_response(self) -> None:
         """Wait for one query response, raising on timeout or bad data."""
+        deadline = time.monotonic() + QUERY_TIMEOUT
         while True:
             if not self._socket:
                 _LOGGER.debug("[%s] device socket is none", self._device_id)
                 # raise exception to connect/main loop
                 raise SocketException
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError
+            self._socket.settimeout(remaining)
             msg = self._socket.recv(512)
             if len(msg) == 0:
                 raise ConnectionResetError("Connection closed by peer.")

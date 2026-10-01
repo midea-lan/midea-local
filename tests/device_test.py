@@ -345,6 +345,19 @@ class TestMideaDevice:
             self.device.authenticate()
         sock.recv.assert_called_once()
 
+    def test_query_fragment_deadline(self) -> None:
+        """Ordinary queries have the same deadline as queries with a predicate."""
+        self.device._device_protocol_version = ProtocolVersion.V2
+        sock = MagicMock()
+        sock.recv.side_effect = [b"\x5a\x5a\x01\x00\x38\x00", TimeoutError()]
+        self.device._socket = sock
+        with (
+            patch("midealocal.device.time.monotonic", side_effect=[0, 0, 6]),
+            pytest.raises(TimeoutError),
+        ):
+            self.device._wait_for_query_response()
+        sock.recv.assert_called_once()
+
     def test_get_attribute(self) -> None:
         """Test get_attribute reads from the internal attributes dict."""
         self.device._attributes["power"] = True
