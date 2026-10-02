@@ -44,7 +44,9 @@ fast, and works the same on Linux, macOS, Windows, and WSL2 — no Docker requir
 - **Git**
 - **Node.js (optional):** only needed for the `commitlint` commit-message hook
 - **Editor:** any. For VS Code, the workspace is preconfigured (`.vscode/`) to use `.venv`;
-  the recommended extensions are `charliermarsh.ruff` and `ms-python.python`.
+  the recommended extensions are `charliermarsh.ruff` and `ms-python.python`. The setup
+  script copies `.vscode/settings.default.jsonc` to the git-ignored `.vscode/settings.json`,
+  which you can customize (e.g. set `python.testing.pytestEnabled` to `true` for the Test Explorer).
 
 ---
 

@@ -43,7 +43,9 @@ Python 版本（支持 3.12–3.14），速度快，并且在 Linux、macOS、Wi
 - **Git**
 - **Node.js（可选）：** 仅用于 `commitlint` 提交信息钩子
 - **编辑器：** 任意。使用 VS Code 时，工作区已预配置（`.vscode/`）指向 `.venv`；
-  推荐扩展为 `charliermarsh.ruff` 和 `ms-python.python`。
+  推荐扩展为 `charliermarsh.ruff` 和 `ms-python.python`。安装脚本会将
+  `.vscode/settings.default.jsonc` 复制为被 git 忽略的 `.vscode/settings.json`，
+  你可以按需修改（例如将 `python.testing.pytestEnabled` 设为 `true` 以使用测试资源管理器）。
 
 ---
 
