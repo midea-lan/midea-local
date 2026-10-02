@@ -11,6 +11,12 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Add default VS Code settings if not existing.
+if [ ! -f .vscode/settings.json ]; then
+  echo "Copying .vscode/settings.default.jsonc to .vscode/settings.json..."
+  cp .vscode/settings.default.jsonc .vscode/settings.json
+fi
+
 if ! command -v uv >/dev/null 2>&1; then
   if command -v pipx >/dev/null 2>&1; then
     echo "Installing uv via pipx..."
