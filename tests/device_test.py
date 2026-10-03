@@ -1,8 +1,9 @@
 """Midea Local device test."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from hashlib import sha256
 from types import SimpleNamespace
-from typing import Any, ClassVar
+from typing import Any, ClassVar, SupportsIndex, overload
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -14,6 +15,7 @@ from midealocal.device import (
     QUERY_TIMEOUT,
     RESPONSE_TIMEOUT,
     SKIP_ATTRIBUTE,
+    SOCKET_TIMEOUT,
     AuthException,
     MessageResult,
     MideaDevice,
@@ -26,6 +28,7 @@ from midealocal.device import (
 )
 from midealocal.exceptions import SocketException
 from midealocal.message import MessageType
+from midealocal.security import MSGTYPE_HANDSHAKE_RESPONSE
 
 
 class _DictDevice(MideaDevice):
@@ -177,10 +180,34 @@ def test_fetch_v2_message() -> None:
     """Test fetch v2 message."""
     assert MideaDevice.fetch_v2_message(bytes([])) == ([], bytes([]))
     assert MideaDevice.fetch_v2_message(bytes([0x1])) == ([], bytes([0x1]))
-    assert MideaDevice.fetch_v2_message(bytes([0x1] * 5 + [0x0] + [0x1] * 7)) == (
-        [bytes([0x1])],
-        bytes([0x1] * 4 + [0x0] + [0x1] * 7),
+    frame = b"\x5a\x5a\x01\x00\x38\x00" + bytes(50)
+    assert MideaDevice.fetch_v2_message(frame + frame + frame[:10]) == (
+        [frame, frame],
+        frame[:10],
     )
+
+
+@pytest.mark.parametrize("length", [0, 1, 5, 55])
+def test_fetch_v2_message_rejects_short_declared_length(length: int) -> None:
+    """A declared length shorter than a V2 frame must fail parsing."""
+
+    class GuardedBytes(bytes):
+        """Fail instead of hanging if the parser tries to consume zero bytes."""
+
+        @overload
+        def __getitem__(self, key: SupportsIndex) -> int: ...
+
+        @overload
+        def __getitem__(self, key: slice) -> bytes: ...
+
+        def __getitem__(self, key: SupportsIndex | slice) -> int | bytes:
+            if isinstance(key, slice) and key.start == 0 and key.stop is None:
+                raise AssertionError("Parser did not consume input")
+            return super().__getitem__(key)
+
+    frame = GuardedBytes(b"\x5a\x5a\x01\x00" + bytes([length, 0]))
+    with pytest.raises(ValueError, match="length"):
+        MideaDevice.fetch_v2_message(frame)
 
 
 def test_pre_process_message_short_message() -> None:
@@ -279,6 +306,186 @@ class TestMideaDevice:
         assert self.device.subtype == 1
         assert self.device.mac == "1234567890ab"
         assert self.device.serial_number == "test_serial"
+
+    @pytest.mark.parametrize("split", [1, 16, 40, 71])
+    def test_authenticate_accepts_fragmented_frame(self, split: int) -> None:
+        """TCP read boundaries must not affect valid handshake authentication."""
+        plain = bytes(32)
+        payload = self.device._security.aes_cbc_encrypt(plain, self.device._key)
+        payload += sha256(plain).digest()
+        response = self.device._security.encode_8370(
+            payload,
+            MSGTYPE_HANDSHAKE_RESPONSE,
+        )
+        sock = MagicMock()
+        pending = [bytearray(response[:split]), bytearray(response[split:] + b"next")]
+
+        def recv(size: int) -> bytes:
+            chunk = pending[0][:size]
+            del pending[0][:size]
+            if not pending[0]:
+                pending.pop(0)
+            return bytes(chunk)
+
+        sock.recv.side_effect = recv
+        self.device._socket = sock
+        self.device.authenticate()
+        assert sock.recv.call_count >= 2
+        # Leave subsequent data in the socket for the normal receive path.
+        assert pending == [bytearray(b"next")]
+
+    def test_authenticate_fragment_deadline(self) -> None:
+        """Repeated partial handshake reads cannot restart the timeout."""
+        sock = MagicMock()
+        sock.recv.return_value = b"\x83"
+        self.device._socket = sock
+        with (
+            patch("midealocal.device.time.monotonic", side_effect=[0, 0, 11]),
+            pytest.raises(TimeoutError),
+        ):
+            self.device.authenticate()
+        sock.recv.assert_called_once()
+
+    def test_query_fragment_deadline(self) -> None:
+        """Ordinary queries have the same deadline as queries with a predicate."""
+        self.device._device_protocol_version = ProtocolVersion.V2
+        sock = MagicMock()
+        sock.recv.side_effect = [b"\x5a\x5a\x01\x00\x38\x00", TimeoutError()]
+        self.device._socket = sock
+        with (
+            patch("midealocal.device.time.monotonic", side_effect=[0, 0, 6]),
+            pytest.raises(TimeoutError),
+        ):
+            self.device._wait_for_query_response()
+        sock.recv.assert_called_once()
+
+    @pytest.mark.parametrize(
+        ("interval", "response_at"),
+        [(2, 0), (15, 0), (0, 0), (2, 100)],
+    )
+    def test_run_schedules_refresh_without_shortening_offline_timeout(
+        self,
+        interval: int,
+        response_at: int,
+    ) -> None:
+        """Short scheduling waits do not declare a silent device offline early."""
+        clock = 0.0
+        refresh_times: list[float] = []
+        heartbeat_times: list[float] = []
+        sock = MagicMock()
+        self.device._socket = sock
+        self.device._device_protocol_version = ProtocolVersion.V2
+        self.device._is_run = True
+        self.device.set_refresh_interval(interval)
+
+        def recv(_size: int) -> bytes:
+            nonlocal clock
+            clock += sock.settimeout.call_args.args[0]
+            if response_at and clock == response_at:
+                return b"\x5a\x5a\x01\x00\x38\x00" + bytes(50)
+            if clock > response_at + RESPONSE_TIMEOUT * SOCKET_TIMEOUT:
+                raise AssertionError("Offline detection missed its deadline")
+            raise TimeoutError
+
+        sock.recv.side_effect = recv
+        with (
+            patch("midealocal.device.time.monotonic", side_effect=lambda: clock),
+            patch.object(self.device, "_connect_loop"),
+            patch.object(
+                self.device,
+                "close_socket",
+                side_effect=lambda: setattr(self.device, "_is_run", False),
+            ),
+            patch.object(
+                self.device,
+                "refresh_status",
+                side_effect=lambda: refresh_times.append(clock),
+            ),
+            patch.object(
+                self.device,
+                "send_heartbeat",
+                side_effect=lambda: heartbeat_times.append(clock),
+            ),
+        ):
+            self.device.run()
+        assert clock == response_at + RESPONSE_TIMEOUT * SOCKET_TIMEOUT
+        expected = list(range(interval, int(clock), interval)) if interval else []
+        assert refresh_times == expected
+        assert heartbeat_times == list(
+            range(SOCKET_TIMEOUT, int(clock), SOCKET_TIMEOUT),
+        )
+
+    @pytest.mark.parametrize(
+        ("heartbeat_duration", "poll_ready", "expected_refresh", "expected_replies"),
+        [
+            (0, True, [2, 7, 12], [5, 10, 15]),
+            (3, True, [2, 7, 13], [5, 13, 16]),
+            (3, False, [2, 7, 13, 18], [5, 16, 21]),
+        ],
+    )
+    def test_run_reads_responses_when_refresh_takes_longer_than_interval(
+        self,
+        heartbeat_duration: int,
+        poll_ready: bool,
+        expected_refresh: list[int],
+        expected_replies: list[int],
+    ) -> None:
+        """Slow sends cannot keep scheduling overdue refreshes ahead of reads."""
+        clock = 0.0
+        pending_reply = False
+        refresh_times: list[float] = []
+        reply_times: list[float] = []
+        heartbeat_times: list[float] = []
+        sock = MagicMock()
+        self.device._socket = sock
+        self.device._device_protocol_version = ProtocolVersion.V2
+        self.device._is_run = True
+        self.device.set_refresh_interval(2)
+
+        def refresh() -> None:
+            nonlocal clock, pending_reply
+            refresh_times.append(clock)
+            clock += 3
+            pending_reply = True
+
+        def heartbeat() -> None:
+            nonlocal clock
+            heartbeat_times.append(clock)
+            clock += heartbeat_duration
+
+        def recv(_size: int) -> bytes:
+            nonlocal clock, pending_reply
+            if not poll_ready and sock.settimeout.call_args.args[0] == 0:
+                raise BlockingIOError
+            if pending_reply:
+                pending_reply = False
+                reply_times.append(clock)
+                return b"\x5a\x5a\x01\x00\x38\x00" + bytes(50)
+            if len(reply_times) == 3:
+                return b""
+            clock += sock.settimeout.call_args.args[0]
+            raise TimeoutError
+
+        sock.recv.side_effect = recv
+        with (
+            patch("midealocal.device.time.monotonic", side_effect=lambda: clock),
+            patch.object(self.device, "_connect_loop"),
+            patch.object(self.device, "refresh_status", side_effect=refresh),
+            patch.object(
+                self.device,
+                "send_heartbeat",
+                side_effect=heartbeat,
+            ),
+            patch.object(
+                self.device,
+                "close_socket",
+                side_effect=lambda: setattr(self.device, "_is_run", False),
+            ),
+        ):
+            self.device.run()
+        assert refresh_times == expected_refresh
+        assert reply_times == expected_replies
+        assert heartbeat_times == [10]
 
     def test_get_attribute(self) -> None:
         """Test get_attribute reads from the internal attributes dict."""
@@ -435,7 +642,8 @@ class TestMideaDevice:
             side_effect=[
                 bytearray(),
                 bytearray(
-                    [0x00] * (8 + 32)
+                    [0x83, 0x70, 0x00, 0x40, 0x20, 0x01, 0x00, 0x00]
+                    + [0x00] * 32
                     + [
                         0xCE,
                         0x8C,
@@ -491,7 +699,8 @@ class TestMideaDevice:
             "recv",
             side_effect=[
                 bytearray(
-                    [0x00] * (8 + 32)
+                    [0x83, 0x70, 0x00, 0x40, 0x20, 0x01, 0x00, 0x00]
+                    + [0x00] * 32
                     + [
                         0xCE,
                         0x8C,
@@ -548,6 +757,20 @@ class TestMideaDevice:
         self.device.send_message_v2(bytes([0x0] * 20), query=True)
         socket_mock.settimeout.assert_called_once_with(QUERY_TIMEOUT)
         socket_mock.send.assert_called_once()
+
+    @pytest.mark.parametrize("receive_timeout", [0, 0.5])
+    def test_send_message_resets_receive_timeout(self, receive_timeout: float) -> None:
+        """A heartbeat must not inherit a poll or short receive timeout."""
+        sock = MagicMock()
+        self.device._socket = sock
+        self.device._device_protocol_version = ProtocolVersion.V2
+        sock.settimeout(receive_timeout)
+        send_timeouts: list[float] = []
+        sock.send.side_effect = lambda _data: send_timeouts.append(
+            sock.settimeout.call_args.args[0],
+        )
+        self.device.send_heartbeat()
+        assert send_timeouts == [SOCKET_TIMEOUT]
 
     @pytest.mark.parametrize(
         "exc",
@@ -624,6 +847,24 @@ class TestMideaDevice:
                 self.device.refresh_status(True)  # Timeout
             with pytest.raises(NoSupportedProtocol):
                 self.device.refresh_status(True)  # Unsupported protocol
+
+    def test_query_response_predicate_has_a_bounded_deadline(self) -> None:
+        """Unrelated successful packets cannot extend a control query forever."""
+        sock = MagicMock()
+        sock.recv.return_value = b"unrelated"
+        self.device._socket = sock
+        with (
+            patch("midealocal.device.time.monotonic", side_effect=[0, 1, 6]),
+            patch.object(
+                self.device,
+                "parse_message",
+                return_value=MessageResult.SUCCESS,
+            ),
+            pytest.raises(TimeoutError),
+        ):
+            self.device._wait_for_query_response(lambda: False)
+        sock.recv.assert_called_once()
+        sock.settimeout.assert_called_once_with(QUERY_TIMEOUT - 1)
 
     def test_refresh_status_recovers_after_single_timeout(self) -> None:
         """A single timeout during the probe must not blacklist the protocol."""
@@ -765,6 +1006,29 @@ class TestMideaDevice:
 
         build_send.assert_called_once_with(real_cmd, query=True)
         wait_mock.assert_not_called()
+
+    def test_refresh_status_advances_sequence_after_response(self) -> None:
+        """Query generators can select later commands using the first reply."""
+        self.device._appliance_query = False
+        first, second = MagicMock(), MagicMock()
+        replied = False
+
+        def sequence() -> Iterator:
+            yield first
+            assert replied
+            yield second
+
+        def receive() -> None:
+            nonlocal replied
+            replied = True
+
+        with (
+            patch.object(self.device, "_build_query_sequence", side_effect=sequence),
+            patch.object(self.device, "build_send") as send,
+            patch.object(self.device, "_wait_for_query_response", side_effect=receive),
+        ):
+            self.device.refresh_status(True)
+        assert [call.args[0] for call in send.call_args_list] == [first, second]
 
     def test_parse_message(self) -> None:
         """Test parse message."""
@@ -993,7 +1257,10 @@ class TestMideaDevice:
         """Test _check_refresh triggers refresh_status once the interval elapses."""
         self.device._refresh_interval = 30
         self.device._previous_refresh = 0.0
-        with patch.object(self.device, "refresh_status") as refresh_mock:
+        with (
+            patch.object(self.device, "refresh_status") as refresh_mock,
+            patch("midealocal.device.time.monotonic", return_value=30.0),
+        ):
             # Not enough time elapsed yet: no refresh.
             self.device._check_refresh(10.0)
             refresh_mock.assert_not_called()
@@ -1008,7 +1275,10 @@ class TestMideaDevice:
         """Test _check_heartbeat triggers send_heartbeat once the interval elapses."""
         self.device._heartbeat_interval = 10
         self.device._previous_heartbeat = 0.0
-        with patch.object(self.device, "send_heartbeat") as heartbeat_mock:
+        with (
+            patch.object(self.device, "send_heartbeat") as heartbeat_mock,
+            patch("midealocal.device.time.monotonic", return_value=10.0),
+        ):
             self.device._check_heartbeat(5.0)
             heartbeat_mock.assert_not_called()
             assert self.device._previous_heartbeat == 0.0

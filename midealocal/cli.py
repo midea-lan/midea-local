@@ -6,7 +6,9 @@ import inspect
 import json
 import logging
 import sys
+import time
 from argparse import ArgumentParser, BooleanOptionalAction, Namespace
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, NoReturn
 
@@ -44,14 +46,35 @@ LOG_FORMAT = (
 )
 
 
+@contextlib.contextmanager
+def _log_stage(description: str) -> Iterator[None]:
+    """Announce a blocking CLI stage before it starts and report its duration."""
+    started = time.monotonic()
+    _LOGGER.info("%s...", description)
+    try:
+        yield
+    except Exception:
+        _LOGGER.info("%s failed after %.2fs", description, time.monotonic() - started)
+        raise
+    else:
+        _LOGGER.info("%s completed in %.2fs", description, time.monotonic() - started)
+
+
 class MideaCLI:
     """Midea CLI."""
 
     session: aiohttp.ClientSession
     namespace: Namespace
 
+    def __init__(self) -> None:
+        """Keep cloud authentication within this CLI invocation."""
+        self._cloud: MideaCloud | None = None
+        self._cloud_logged_in: bool | None = None
+
     async def _get_cloud(self) -> MideaCloud:
         """Get cloud instance."""
+        if self._cloud is not None:
+            return self._cloud
         if not hasattr(self, "session"):
             self.session = aiohttp.ClientSession()
 
@@ -63,19 +86,20 @@ class MideaCLI:
             default_cloud = get_preset_account_cloud()
             default_cloud_name = get_default_cloud()
             _LOGGER.info("Using preset account.")
-            return get_midea_cloud(
+            self._cloud = get_midea_cloud(
                 cloud_name=default_cloud_name,
                 session=self.session,
                 account=default_cloud["username"],
                 password=default_cloud["password"],
             )
-
-        return get_midea_cloud(
-            cloud_name=self.namespace.cloud_name,
-            session=self.session,
-            account=self.namespace.username,
-            password=self.namespace.password,
-        )
+        else:
+            self._cloud = get_midea_cloud(
+                cloud_name=self.namespace.cloud_name,
+                session=self.session,
+                account=self.namespace.username,
+                password=self.namespace.password,
+            )
+        return self._cloud
 
     async def _load_devices_cache(self) -> list[Any]:
         """Load the device token/key cache (see midea-devices.json)."""
@@ -139,15 +163,16 @@ class MideaCLI:
     async def _get_keys(self, device_id: int) -> dict[int, dict[str, Any]]:
         cloud = await self._get_cloud()
         default_keys = await cloud.get_default_keys()
-        try:
-            logged_in = await cloud.login()
-        except CloudLoginError as err:
-            _LOGGER.warning(
-                "Cloud login failed (%s). Using only default keys.",
-                err,
-            )
-            return default_keys
-        if not logged_in:
+        if self._cloud_logged_in is None:
+            try:
+                self._cloud_logged_in = bool(await cloud.login())
+            except CloudLoginError as err:
+                self._cloud_logged_in = False
+                _LOGGER.warning(
+                    "Cloud login failed (%s). Using only default keys.",
+                    err,
+                )
+        if not self._cloud_logged_in:
             _LOGGER.warning(
                 "Failed to authenticate to the cloud. Using only default keys.",
             )
@@ -193,8 +218,11 @@ class MideaCLI:
             try:
                 # connect() already authenticates V3 devices, so there
                 # is no need to call authenticate() again here.
-                _LOGGER.debug("Trying to retrieve device attributes.")
-                dev.refresh_status(True)
+                with _log_stage("Reading current device state (waiting for network)"):
+                    if getattr(self.namespace, "command", None) == "setattr":
+                        dev.refresh_status_for_set(self.namespace.attribute)
+                    else:
+                        dev.refresh_status(True)
                 _LOGGER.info("Found device:\n%s", dev.attributes)
                 device_list.append(dev)
                 success = True
@@ -213,13 +241,16 @@ class MideaCLI:
             finally:
                 if not success:
                     dev.close_socket()
+        else:
+            _LOGGER.warning("Device connection/authentication failed")
         return success
 
     async def discover(self) -> list[MideaDevice]:
         """Discover device information."""
         device_list: list[MideaDevice] = []
 
-        devices = discover(ip_address=self.namespace.host)
+        with _log_stage("Discovering devices (waiting for UDP replies)"):
+            devices = discover(ip_address=self.namespace.host)
 
         if len(devices) == 0:
             _LOGGER.error("No devices found.")
@@ -246,7 +277,9 @@ class MideaCLI:
 
             # no cache, or the cached key no longer works: fetch from the
             # cloud and try each candidate, caching whichever one connects.
-            for key in (await self._get_keys(device["device_id"])).values():
+            with _log_stage("Fetching device keys (waiting for cloud)"):
+                keys = await self._get_keys(device["device_id"])
+            for key in keys.values():
                 if self._try_connect(device, key, device_list):
                     await self._cache_device_keys(device["device_id"], key)
                     break
@@ -475,8 +508,10 @@ class MideaCLI:
 
     async def set_attribute(self) -> None:
         """Set attribute for device."""
-        device_list = await self.discover()
+        started = time.monotonic()
+        device_list: list[MideaDevice] = []
         try:
+            device_list = await self.discover()
             if len(device_list) != 1:
                 return
 
@@ -486,16 +521,20 @@ class MideaCLI:
                 device_list[0].device_id,
                 device_list[0].device_type,
             )
-            device_list[0].set_attribute(
-                self.namespace.attribute,
-                self._cast_attr_value(),
-            )
-            await asyncio.sleep(2)
-            device_list[0].refresh_status(True)
+            with _log_stage("Sending setting to device"):
+                device_list[0].set_attribute(
+                    self.namespace.attribute,
+                    self._cast_attr_value(),
+                )
+            with _log_stage("Waiting 2s for device to apply setting"):
+                await asyncio.sleep(2)
+            with _log_stage("Reading back device state (waiting for network)"):
+                device_list[0].refresh_status_for_set(self.namespace.attribute)
             _LOGGER.info("New device status:\n%s", device_list[0].attributes)
         finally:
             for dev in device_list:
                 dev.close_socket()
+            _LOGGER.info("setattr total elapsed: %.2fs", time.monotonic() - started)
 
     def _cast_attr_value(self) -> int | bool | str:
         if self.namespace.attr_type == "bool":

@@ -1,7 +1,7 @@
 """Test AC Device."""
 
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -10,6 +10,8 @@ from midealocal.base_classes.climate import (
     DEFAULT_MIN_TARGET_TEMPERATURE,
 )
 from midealocal.const import ProtocolVersion
+from midealocal.crc8 import calculate
+from midealocal.device import MessageResult, NoSupportedProtocol
 from midealocal.devices.ac import DeviceAttributes, MideaACDevice
 from midealocal.devices.ac.message import (
     MessageCapabilitiesAdditionalQuery,
@@ -33,7 +35,7 @@ from midealocal.devices.ac.message import (
     NewProtocolTags,
     PowerFormats,
 )
-from midealocal.message import ListTypes, MessageBase
+from midealocal.message import ListTypes, MessageBase, MessageType
 from tests.base_classes.climate_test import DummyFanMode, DummyHVACMode, DummySwingMode
 
 
@@ -76,6 +78,85 @@ class TestMideaACDevice:
         assert self.device.current_humidity() is None
         assert self.device.current_temperature() is None
         assert self.device.target_temperature() == 24.0
+
+    def test_control_refresh_skips_telemetry_and_waits_for_basic_status(self) -> None:
+        """Ignore unrelated replies and read real state before building a set."""
+        self.device._appliance_query = False
+        sock = MagicMock()
+        sock.recv.side_effect = [b"unrelated", b"status"]
+        self.device._socket = sock
+        body = bytearray(23)
+        body[0] = 0xC0
+        body[1] = 1
+        body[2] = (5 << 5) | 10  # fan mode, 26 C
+        body[3] = 60
+
+        def parse(data: bytes) -> MessageResult:
+            if data == b"status":
+                self.device.process_message(self._response(body))
+            return MessageResult.SUCCESS
+
+        with (
+            patch.object(self.device, "parse_message", side_effect=parse),
+            patch.object(self.device, "build_send") as send,
+        ):
+            self.device.refresh_status_for_set("mode")
+            assert send.call_count == 1
+            query = send.call_args.args[0]
+            assert isinstance(query, MessageQuery)
+            assert sock.recv.call_count == 2
+            self.device.set_attribute("mode", 2)
+            command = send.call_args.args[0]
+            assert command.mode == 2
+            assert command.target_temperature == 26
+            assert command.fan_speed == 60
+
+    def test_control_refresh_does_not_accept_optimistic_state(self) -> None:
+        """A mode stored locally cannot substitute for a device response."""
+        self.device._appliance_query = False
+        self.device._attributes[DeviceAttributes.mode] = 2
+        self.device._socket = MagicMock()
+        self.device._socket.recv.side_effect = TimeoutError
+        with (
+            patch.object(self.device, "build_send"),
+            pytest.raises(NoSupportedProtocol),
+        ):
+            self.device.refresh_status_for_set("mode")
+
+    def test_control_refresh_detects_bb_protocol(self) -> None:
+        """A BB reply redirects a previously unknown model to its full queries."""
+        self.device._appliance_query = False
+        self.device._socket = MagicMock()
+        self.device._socket.recv.return_value = b"bb"
+
+        def parse(_data: bytes) -> MessageResult:
+            self.device._used_subprotocol = True
+            return MessageResult.SUCCESS
+
+        with (
+            patch.object(self.device, "parse_message", side_effect=parse),
+            patch.object(self.device, "build_send"),
+            patch.object(self.device, "refresh_status") as refresh,
+        ):
+            self.device.refresh_status_for_set("mode")
+        refresh.assert_called_once_with(True)
+
+    @pytest.mark.parametrize(
+        ("attribute", "bb", "new_temperature"),
+        [("self_clean", False, False), ("mode", True, False), ("mode", False, True)],
+    )
+    def test_control_refresh_preserves_special_protocol_queries(
+        self,
+        attribute: str,
+        bb: bool,
+        new_temperature: bool,
+    ) -> None:
+        """Special functions and models retain the complete query path."""
+        self.device._used_subprotocol = bb
+        self.device._uses_new_protocol_temperature = new_temperature
+        with patch.object(self.device, "refresh_status") as refresh:
+            self.device.refresh_status_for_set(attribute)
+        refresh.assert_called_once_with(True)
 
     def test_turn_on_turn_off(self) -> None:
         """Test turn on and turn off."""
@@ -405,6 +486,148 @@ class TestMideaACDevice:
         assert isinstance(queries[9], MessageGroupSevenQuery)
         assert isinstance(queries[10], MessageCapabilitiesQuery)
         assert isinstance(queries[11], MessageCapabilitiesAdditionalQuery)
+
+    def test_refresh_switches_to_bb_before_sending_other_legacy_queries(self) -> None:
+        """A BB discovery response changes the remaining initialization queries."""
+        self.device._appliance_query = False
+        body = bytearray(21)
+        body[:6] = bytes([0xBB, 0, 0, 0, 0, 0x10])
+
+        with (
+            patch.object(self.device, "build_send") as send,
+            patch.object(
+                self.device,
+                "_wait_for_query_response",
+                side_effect=lambda: self.device.process_message(self._response(body)),
+            ),
+        ):
+            self.device.refresh_status(True)
+
+        assert [type(call.args[0]) for call in send.call_args_list] == [
+            MessageQuery,
+            MessageSubProtocolQuery10,
+            MessageSubProtocolQuery11,
+            MessageSubProtocolQuery30,
+        ]
+
+    @pytest.mark.parametrize("additional", [False, True])
+    @pytest.mark.parametrize("next_frame_flag", [False, True])
+    def test_capabilities_cache_only_the_matching_reply_page(
+        self,
+        additional: bool,
+        next_frame_flag: bool,
+    ) -> None:
+        """An identified B5 reply suppresses only its own page in later polling."""
+        query_type = (
+            MessageCapabilitiesAdditionalQuery
+            if additional
+            else MessageCapabilitiesQuery
+        )
+        query = query_type(1)
+        with patch("midealocal.device.MideaDevice.build_send"):
+            self.device.build_send(query, query=True)
+        body = bytearray([0xB5, 1, 0x14, 0x02, 1, 7])
+        if next_frame_flag:
+            body.append(0)
+        body.append(query.message_id)
+        body.append(calculate(body))
+        self.device.process_message(self._response(body))
+
+        capability_types = [
+            type(cmd)
+            for cmd in self.device.build_query()
+            if isinstance(cmd, MessageCapabilitiesQuery)
+        ]
+        assert query_type not in capability_types
+        assert len(capability_types) == 1
+
+    def test_polling_stops_b5_only_after_both_distinct_replies(self) -> None:
+        """Duplicate first-page responses cannot confirm the second pending page."""
+        self.device._appliance_query = False
+        queries = [MessageCapabilitiesQuery(1), MessageCapabilitiesAdditionalQuery(1)]
+        with patch("midealocal.device.MideaDevice.build_send"):
+            for query in queries:
+                self.device.build_send(query, query=True)
+        for index in (0, 0, 1):
+            body = bytearray([0xB5, 0, 0, queries[index].message_id])
+            body.append(calculate(body))
+            self.device.process_message(self._response(body))
+            with (
+                patch("midealocal.device.MideaDevice.build_send") as send,
+                patch.object(self.device, "_wait_for_query_response") as wait,
+            ):
+                self.device.refresh_status()
+            capability_queries = [
+                call.args[0]
+                for call in send.call_args_list
+                if isinstance(call.args[0], MessageCapabilitiesQuery)
+            ]
+            if index == 0:
+                assert len(capability_queries) == 1
+                assert isinstance(
+                    capability_queries[0],
+                    MessageCapabilitiesAdditionalQuery,
+                )
+                # Polling sent a fresh second-page ID; reply to that latest request.
+                queries[1] = capability_queries[0]
+            else:
+                assert len(send.call_args_list) == 10
+                assert not capability_queries
+            wait.assert_not_called()
+
+    @pytest.mark.parametrize("invalid", ["id", "crc", "truncated", "missing_id"])
+    def test_unidentified_capability_reply_keeps_both_pages(self, invalid: str) -> None:
+        """Uncorrelated or incomplete replies cannot suppress future queries."""
+        query = MessageCapabilitiesQuery(1)
+        with patch("midealocal.device.MideaDevice.build_send"):
+            self.device.build_send(query, query=True)
+        body = bytearray([0xB5, 1, 0x14, 0x02, 1, 7, 0, query._message_id])
+        if invalid == "id":
+            body[-1] = (body[-1] + 1) % 256
+        elif invalid == "truncated":
+            body[1] = 2
+        elif invalid == "missing_id":
+            body = body[:-2]
+        body.append(calculate(body))
+        if invalid == "crc":
+            body[-1] ^= 1
+        self.device.process_message(self._response(body))
+
+        assert (
+            sum(
+                isinstance(cmd, MessageCapabilitiesQuery)
+                for cmd in self.device.build_query()
+            )
+            == 2
+        )
+
+    def test_capability_pages_are_requeried_after_reconnect_or_explicit_probe(
+        self,
+    ) -> None:
+        """A connection or explicit probe refreshes cached capability pages."""
+        for trigger in ("connect", "refresh_status"):
+            for query in (
+                MessageCapabilitiesQuery(1),
+                MessageCapabilitiesAdditionalQuery(1),
+            ):
+                with patch("midealocal.device.MideaDevice.build_send"):
+                    self.device.build_send(query, query=True)
+                body = bytearray([0xB5, 0, 0, query._message_id])
+                body.append(calculate(body))
+                self.device.process_message(self._response(body))
+            assert not any(
+                isinstance(cmd, MessageCapabilitiesQuery)
+                for cmd in self.device.build_query()
+            )
+            with patch(f"midealocal.device.MideaDevice.{trigger}"):
+                getattr(self.device, trigger)(True)
+            assert (
+                sum(
+                    isinstance(cmd, MessageCapabilitiesQuery)
+                    for cmd in self.device.build_query()
+                )
+                == 2
+            )
 
     def test_build_query_omits_rate_select_until_capability_confirmed(self) -> None:
         """Test rate_select stays out of the B1 query until b5_electricity confirms it.
@@ -899,6 +1122,7 @@ class TestMideaACDevice:
         """After 0x7e temperatures are seen, stale C0 temperatures are ignored."""
         new_protocol_msg = SimpleNamespace(
             body_type=ListTypes.B5,
+            message_type=MessageType.query,
             has_new_protocol_temperature=True,
             power=True,
             target_temperature=27.0,
@@ -907,6 +1131,8 @@ class TestMideaACDevice:
         )
         stale_c0_msg = SimpleNamespace(
             body_type=ListTypes.C0,
+            message_type=MessageType.query,
+            control_message_id=None,
             power=True,
             target_temperature=16.0,
             indoor_temperature=4.2,

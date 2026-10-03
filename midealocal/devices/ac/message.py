@@ -20,6 +20,11 @@ from midealocal.message import (
 _LOGGER = logging.getLogger(__name__)
 
 A1_MIN_BODY_LENGTH = 18
+B5_PROPERTY_COUNT_INDEX = 1
+B5_PROPERTIES_OFFSET = 2
+B5_PROPERTY_HEADER_LENGTH = 3
+B5_RESPONSE_TRAILER_LENGTHS = (2, 3)  # Optional next-frame flag, message ID, CRC.
+C0_CORRELATED_MIN_LENGTH = 25  # 23 status bytes, request ID, CRC.
 
 BB_AC_MODES = [0, 3, 1, 2, 4, 5]
 BB_MIN_BODY_LENGTH = 21
@@ -356,6 +361,11 @@ class MessageACBase(MessageRequest):
         if MessageACBase._message_serial >= MAX_MSG_SERIAL_NUM:
             MessageACBase._message_serial = 1
         self._message_id = MessageACBase._message_serial
+
+    @property
+    def message_id(self) -> int:
+        """Return the request identity echoed by compatible replies."""
+        return self._message_id
 
     @property
     def _body(self) -> bytearray:
@@ -1320,6 +1330,8 @@ class XB5MessageBody(NewProtocolMessageBody):
         """Initialize AC BX message body."""
         super().__init__(body, bt)
 
+        self.capability_message_id = self._response_message_id(body)
+
         params = self.parse()
         # parse b5 protocol, github issue https://github.com/wuwentao/midea_ac_lan/issues/673
         if NewProtocolTags.b5_mode in params:
@@ -1355,6 +1367,25 @@ class XB5MessageBody(NewProtocolMessageBody):
         if NewProtocolTags.b5_humidity in params:
             self.b5_humidity = params[NewProtocolTags.b5_humidity][0]
         self._parse_capabilities(params)
+
+    @staticmethod
+    def _response_message_id(body: bytearray) -> int | None:
+        """Identify only complete capability replies with a valid trailing CRC.
+
+        B5 replies can include a next-frame flag before their ID and CRC. Older
+        devices without this trailer remain queryable but cannot be cached by page.
+        """
+        if len(body) < B5_PROPERTIES_OFFSET:
+            return None
+        cursor = B5_PROPERTIES_OFFSET
+        for _ in range(body[B5_PROPERTY_COUNT_INDEX]):
+            if cursor + B5_PROPERTY_HEADER_LENGTH > len(body):
+                return None
+            size = body[cursor + B5_PROPERTY_HEADER_LENGTH - 1]
+            cursor += B5_PROPERTY_HEADER_LENGTH + size
+        if len(body) - cursor not in B5_RESPONSE_TRAILER_LENGTHS or calculate(body):
+            return None
+        return body[-2]
 
     def _parse_capabilities(self, params: dict[int, bytearray]) -> None:
         """Decode B5 capability values into feature flags.
@@ -1755,6 +1786,14 @@ class MessageACResponse(MessageResponse):
     ) -> None:
         """Initialize AC message response."""
         super().__init__(message)
+        self.control_message_id: int | None = None
+        if (
+            self.message_type == MessageType.query
+            and self.body_type == ListTypes.C0
+            and len(super().body) >= C0_CORRELATED_MIN_LENGTH
+            and calculate(super().body) == 0
+        ):
+            self.control_message_id = super().body[-2]
         # dataType 0x05 and messageBytes[0] 0xA0
         if self.message_type == MessageType.notify2 and self.body_type == ListTypes.A0:
             self.set_body(XA0MessageBody(super().body))

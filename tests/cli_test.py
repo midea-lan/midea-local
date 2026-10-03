@@ -33,6 +33,31 @@ from midealocal.exceptions import (
 _DEFAULT_KEYS = {99: {"key": "key99", "token": "token99"}}
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "login_result",
+    [True, False, CloudLoginError(7610, "limited")],
+)
+async def test_cloud_login_is_reused_for_multiple_devices(login_result: object) -> None:
+    """One command logs in once, including when the account is unavailable."""
+    instance = MideaCLI()
+    instance.session = AsyncMock()
+    instance.namespace = Namespace(cloud_name="SmartHome", username="u", password="p")
+    cloud = AsyncMock()
+    cloud.get_default_keys.return_value = _DEFAULT_KEYS
+    cloud.get_cloud_keys.return_value = {}
+    if isinstance(login_result, Exception):
+        cloud.login.side_effect = login_result
+    else:
+        cloud.login.return_value = login_result
+    with patch("midealocal.cli.get_midea_cloud", return_value=cloud) as factory:
+        for device_id in (1, 2, 3):
+            await instance._get_keys(device_id)
+    factory.assert_called_once()
+    cloud.login.assert_awaited_once()
+    assert cloud.get_cloud_keys.await_count == (3 if login_result is True else 0)
+
+
 @pytest.fixture
 def cli() -> MideaCLI:
     """Return a MideaCLI with the minimal namespace the cloud-key paths need."""
@@ -122,12 +147,16 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
 
         # test default cloud
         self.namespace.cloud_name = None
+        self.cli = MideaCLI()
+        self.cli.namespace = self.namespace
+        self.cli.session = mock_session_instance
         cloud = await self.cli._get_cloud()
         assert isinstance(cloud, MideaAirCloud)
         assert cloud._session == mock_session_instance
 
     async def test_get_keys(self) -> None:
         """Test get keys."""
+        self.cli.session = AsyncMock()
         mock_cloud = AsyncMock()
         with (
             patch("midealocal.cli.get_midea_cloud", return_value=mock_cloud),
@@ -159,7 +188,10 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             mock_cloud_keys.assert_called_once_with(0)
             mock_cloud_keys.reset_mock()
 
-            keys = await self.cli._get_keys(0)
+            fresh_cli = MideaCLI()
+            fresh_cli.namespace = self.namespace
+            fresh_cli.session = self.cli.session
+            keys = await fresh_cli._get_keys(0)
             assert len(keys) == 1
             assert keys[99]["key"] == "key99"
             assert keys[99]["token"] == "token99"
@@ -1040,6 +1072,32 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             short_sn[9:17],
             "0000",
         )
+
+    async def test_setattr_uses_control_refresh_before_and_after_write(self) -> None:
+        """CLI control must not go through full discovery status probes."""
+        self.namespace.command = "setattr"
+        dev = MagicMock()
+        info = {
+            "device_id": 1,
+            "type": 172,
+            "ip_address": self.namespace.host,
+            "port": 6444,
+            "protocol": ProtocolVersion.V2,
+            "model": "test",
+            "mac": None,
+            "sn": None,
+        }
+        with (
+            patch("midealocal.cli.discover", return_value={1: info}),
+            patch("midealocal.cli.device_selector", return_value=dev),
+            patch("midealocal.cli.asyncio.sleep", new=AsyncMock()),
+        ):
+            await self.cli.set_attribute()
+        assert dev.refresh_status_for_set.call_count == 2
+        dev.refresh_status_for_set.assert_called_with("power")
+        dev.refresh_status.assert_not_called()
+        dev.set_attribute.assert_called_once_with("power", False)
+        dev.close_socket.assert_called_once()
 
     async def test_set_attribute(self) -> None:
         """Test set attribute."""
