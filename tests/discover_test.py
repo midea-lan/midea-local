@@ -1,6 +1,7 @@
 """Midea local discover test."""
 
-from unittest.mock import MagicMock, patch
+from collections.abc import Sequence
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -15,6 +16,7 @@ from midealocal.discover import (
 )
 from midealocal.exceptions import ElementMissing
 from midealocal.security import LocalSecurity
+from tests.conftest import make_stream_pair
 
 SSID = b"net_ac_XXXX"
 SN_TYPE1 = b"000000000" + b"12345678" + b"abbccddeeff" + b"0000"
@@ -58,11 +60,24 @@ def _build_v3_packet(device_id: int = DEVICE_ID) -> bytes:
     return b"\x83\x70" + b"\x00" * 6 + _build_v2_packet(device_id) + b"\x00" * 16
 
 
-def _mock_sock_with(data: bytes, ip: str = DEVICE_IP) -> MagicMock:
-    """Return a socket mock whose recvfrom yields the given datagram."""
-    sock = MagicMock()
-    sock.recvfrom.return_value = (data, (ip, 6445))
-    return sock
+def _fake_loop(
+    sendto_side_effect: BaseException | None = None,
+    recvfrom_side_effect: Sequence[
+        tuple[bytes, tuple[str, int]] | BaseException | type[BaseException]
+    ] = (),
+) -> MagicMock:
+    """Build a fake running-loop whose sock_sendto/sock_recvfrom are scripted."""
+    loop = MagicMock()
+    loop.sock_sendto = AsyncMock(side_effect=sendto_side_effect)
+    loop.sock_recvfrom = AsyncMock(side_effect=list(recvfrom_side_effect))
+    return loop
+
+
+def _fake_recv_call(data: bytes, ip: str = DEVICE_IP) -> tuple[MagicMock, MagicMock]:
+    """Return a (loop, sock) pair whose sock_recvfrom yields the given datagram."""
+    loop = MagicMock()
+    loop.sock_recvfrom = AsyncMock(return_value=(data, (ip, 6445)))
+    return loop, MagicMock()
 
 
 V1_XML = (
@@ -109,6 +124,7 @@ def test_extract_mac(
 class TestParseDiscoverResponse:
     """_parse_discover_response test case."""
 
+    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         ("data", "protocol"),
         [
@@ -116,9 +132,10 @@ class TestParseDiscoverResponse:
             (_build_v3_packet(), 3),
         ],
     )
-    def test_parse_v2_v3(self, data: bytes, protocol: int) -> None:
+    async def test_parse_v2_v3(self, data: bytes, protocol: int) -> None:
         """Test parsing valid v2 and v3 responses."""
-        device_id, device = _parse_discover_response(_mock_sock_with(data), {})
+        loop, sock = _fake_recv_call(data)
+        device_id, device = await _parse_discover_response(loop, sock, {})
         assert device_id == DEVICE_ID
         assert device == {
             "device_id": DEVICE_ID,
@@ -131,26 +148,34 @@ class TestParseDiscoverResponse:
             "mac": "aabbccddeeff",
         }
 
-    def test_parse_duplicate_device(self) -> None:
+    @pytest.mark.asyncio
+    async def test_parse_duplicate_device(self) -> None:
         """Test a device already in found_devices is skipped."""
-        sock = _mock_sock_with(_build_v2_packet())
-        assert _parse_discover_response(sock, {DEVICE_ID: {}}) == (0, None)
+        loop, sock = _fake_recv_call(_build_v2_packet())
+        assert await _parse_discover_response(loop, sock, {DEVICE_ID: {}}) == (0, None)
 
-    def test_parse_unknown_header(self) -> None:
+    @pytest.mark.asyncio
+    async def test_parse_unknown_header(self) -> None:
         """Test 5a5a at offset 8 but unknown leading bytes."""
         data = b"\xff" * 8 + _build_v2_packet()
-        assert _parse_discover_response(_mock_sock_with(data), {}) == (0, None)
+        loop, sock = _fake_recv_call(data)
+        assert await _parse_discover_response(loop, sock, {}) == (0, None)
 
-    def test_parse_decrypt_failure(self) -> None:
+    @pytest.mark.asyncio
+    async def test_parse_decrypt_failure(self) -> None:
         """Test undecryptable encrypt_data is reported as unsupported."""
         data = _build_v2_packet(encrypt_data=b"\xde\xad" * 40)
-        assert _parse_discover_response(_mock_sock_with(data), {}) == (0, None)
+        loop, sock = _fake_recv_call(data)
+        assert await _parse_discover_response(loop, sock, {}) == (0, None)
 
-    def test_parse_garbage(self) -> None:
+    @pytest.mark.asyncio
+    async def test_parse_garbage(self) -> None:
         """Test a datagram matching no known protocol."""
         data = b"\xff" * 120
-        assert _parse_discover_response(_mock_sock_with(data), {}) == (0, None)
+        loop, sock = _fake_recv_call(data)
+        assert await _parse_discover_response(loop, sock, {}) == (0, None)
 
+    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         ("sn", "model"),
         [
@@ -159,15 +184,15 @@ class TestParseDiscoverResponse:
             ("odd_length_sn", ""),
         ],
     )
-    def test_parse_v1(self, sn: str, model: str) -> None:
+    async def test_parse_v1(self, sn: str, model: str) -> None:
         """Test parsing a v1 XML broadcast response."""
         data = V1_XML % sn.encode()
-        sock = _mock_sock_with(data)
+        loop, sock = _fake_recv_call(data)
         with patch(
             "midealocal.discover.get_device_info",
             return_value=_build_id_response(),
         ) as mock_info:
-            device_id, device = _parse_discover_response(sock, {})
+            device_id, device = await _parse_discover_response(loop, sock, {})
         mock_info.assert_called_once_with(DEVICE_IP, DEVICE_PORT)
         assert device_id == 0x78563412
         assert device == {
@@ -181,13 +206,16 @@ class TestParseDiscoverResponse:
             "mac": "8abbccddeeff" if len(sn) == 32 else None,
         }
 
-    def test_parse_v1_missing_element(self) -> None:
+    @pytest.mark.asyncio
+    async def test_parse_v1_missing_element(self) -> None:
         """Test a v1 XML response without a body/device element."""
         data = b'<?xml version="1.0" encoding="utf-8"?><root><body/></root>'
+        loop, sock = _fake_recv_call(data)
         with pytest.raises(ElementMissing):
-            _parse_discover_response(_mock_sock_with(data), {})
+            await _parse_discover_response(loop, sock, {})
 
-    def test_parse_v1_childless_device_element(self) -> None:
+    @pytest.mark.asyncio
+    async def test_parse_v1_childless_device_element(self) -> None:
         """Test a `<device .../>` element with no subelements is found.
 
         The element is present (root.find() does not return None) even
@@ -199,11 +227,12 @@ class TestParseDiscoverResponse:
             b'<device port="6444" apc_sn="%s" apc_type="172"/>'
             b"</body></root>" % SN_TYPE1
         )
+        loop, sock = _fake_recv_call(data)
         with patch(
             "midealocal.discover.get_device_info",
             return_value=_build_id_response(),
         ):
-            device_id, device = _parse_discover_response(_mock_sock_with(data), {})
+            device_id, device = await _parse_discover_response(loop, sock, {})
         assert device_id == 0x78563412
         assert device is not None
         assert device["sn"] == SN_TYPE1.decode()
@@ -212,50 +241,50 @@ class TestParseDiscoverResponse:
 class TestDiscover:
     """discover test case."""
 
-    def test_discover_found_devices(self) -> None:
+    @pytest.mark.asyncio
+    async def test_discover_found_devices(self) -> None:
         """Test discovery finding one supported device then timing out."""
-        sock = MagicMock()
-        sock.recvfrom.side_effect = [
-            (_build_v2_packet(), (DEVICE_IP, 6445)),
-            (_build_v2_packet(), (DEVICE_IP, 6445)),  # duplicate: parsed as None
-            TimeoutError,
-        ]
-        mock_socket = MagicMock()
-        mock_socket.__enter__.return_value = sock
+        loop = _fake_loop(
+            recvfrom_side_effect=[
+                (_build_v2_packet(), (DEVICE_IP, 6445)),
+                (_build_v2_packet(), (DEVICE_IP, 6445)),  # duplicate: parsed as None
+                TimeoutError,
+            ],
+        )
         with (
-            patch("midealocal.discover.socket.socket", return_value=mock_socket),
+            patch("midealocal.discover.asyncio.get_running_loop", return_value=loop),
             patch(
                 "midealocal.discover.enum_all_broadcast",
                 return_value=["192.168.1.255"],
             ),
         ):
-            result = discover()
+            result = await discover()
         assert list(result) == [DEVICE_ID]
         assert result[DEVICE_ID]["type"] == 0xAC
-        assert sock.sendto.call_count == 2
+        assert loop.sock_sendto.call_count == 2
 
-    def test_discover_type_filter(self) -> None:
+    @pytest.mark.asyncio
+    async def test_discover_type_filter(self) -> None:
         """Test a device with a non-matching type is not returned."""
-        sock = MagicMock()
-        sock.recvfrom.side_effect = [
-            (_build_v2_packet(), (DEVICE_IP, 6445)),
-            TimeoutError,
-        ]
-        mock_socket = MagicMock()
-        mock_socket.__enter__.return_value = sock
-        with patch("midealocal.discover.socket.socket", return_value=mock_socket):
-            result = discover(discover_type=[0xFF], ip_address=["192.168.1.255"])
+        loop = _fake_loop(
+            recvfrom_side_effect=[
+                (_build_v2_packet(), (DEVICE_IP, 6445)),
+                TimeoutError,
+            ],
+        )
+        with patch("midealocal.discover.asyncio.get_running_loop", return_value=loop):
+            result = await discover(discover_type=[0xFF], ip_address=["192.168.1.255"])
         assert result == {}
 
-    def test_discover_send_and_socket_errors(self) -> None:
+    @pytest.mark.asyncio
+    async def test_discover_send_and_socket_errors(self) -> None:
         """Test sendto OSError and recvfrom OSError are survived."""
-        sock = MagicMock()
-        sock.sendto.side_effect = OSError("network unreachable")
-        sock.recvfrom.side_effect = [OSError("bad recv"), TimeoutError]
-        mock_socket = MagicMock()
-        mock_socket.__enter__.return_value = sock
-        with patch("midealocal.discover.socket.socket", return_value=mock_socket):
-            result = discover(ip_address=["192.168.1.255"])
+        loop = _fake_loop(
+            sendto_side_effect=OSError("network unreachable"),
+            recvfrom_side_effect=[OSError("bad recv"), TimeoutError],
+        )
+        with patch("midealocal.discover.asyncio.get_running_loop", return_value=loop):
+            result = await discover(ip_address=["192.168.1.255"])
         assert result == {}
 
 
@@ -308,26 +337,29 @@ def test_bytes2port(value_bytes: bytes | bytearray | None, expected: int) -> Non
 class TestGetDeviceInfo:
     """get_device_info test case."""
 
-    def test_get_device_info(self) -> None:
+    @pytest.mark.asyncio
+    async def test_get_device_info(self) -> None:
         """Test a successful device info exchange."""
-        sock = MagicMock()
-        sock.recv.return_value = b"\x12\x34"
-        mock_socket = MagicMock()
-        mock_socket.__enter__.return_value = sock
-        with patch("midealocal.discover.socket.socket", return_value=mock_socket):
-            assert get_device_info(DEVICE_IP, DEVICE_PORT) == bytearray(b"\x12\x34")
-        sock.connect.assert_called_once_with((DEVICE_IP, DEVICE_PORT))
-        sock.sendall.assert_called_once()
+        reader, writer = make_stream_pair([b"\x12\x34"])
+        with patch(
+            "midealocal.discover.asyncio.open_connection",
+            new=AsyncMock(return_value=(reader, writer)),
+        ):
+            assert await get_device_info(DEVICE_IP, DEVICE_PORT) == bytearray(
+                b"\x12\x34",
+            )
+        writer.write.assert_called_once()
+        writer.close.assert_called_once()
 
+    @pytest.mark.asyncio
     @pytest.mark.parametrize("exception", [TimeoutError, OSError])
-    def test_get_device_info_errors(self, exception: type[Exception]) -> None:
-        """Test timeout and socket errors return an empty response."""
-        sock = MagicMock()
-        sock.connect.side_effect = exception
-        mock_socket = MagicMock()
-        mock_socket.__enter__.return_value = sock
-        with patch("midealocal.discover.socket.socket", return_value=mock_socket):
-            assert get_device_info(DEVICE_IP, DEVICE_PORT) == bytearray(0)
+    async def test_get_device_info_errors(self, exception: type[Exception]) -> None:
+        """Test timeout and connection errors return an empty response."""
+        with patch(
+            "midealocal.discover.asyncio.open_connection",
+            new=AsyncMock(side_effect=exception),
+        ):
+            assert await get_device_info(DEVICE_IP, DEVICE_PORT) == bytearray(0)
 
 
 def _mock_ip(

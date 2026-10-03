@@ -93,7 +93,7 @@ class Midea13Device(MideaDevice):
         if hasattr(message, "control_success"):
             new_status: dict[str, Any] = {"control_success": message.control_success}
             if message.control_success:
-                self.refresh_status()
+                self.request_refresh()
             return new_status
         return self.update_attributes_from_message(
             message,
