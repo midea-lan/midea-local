@@ -44,6 +44,7 @@ from .message import (
     MessageSubProtocolQuery10,
     MessageSubProtocolQuery11,
     MessageSubProtocolQuery30,
+    MessageSubProtocolResetFilter,
     MessageSubProtocolSet,
     MessageToggleDisplay,
 )
@@ -316,9 +317,9 @@ class MideaACDevice(MideaClimateDevice):
                 DeviceAttributes.water_pump_running: None,
                 DeviceAttributes.outdoor_fan_speed: None,
                 DeviceAttributes.compressor_power: None,
-                DeviceAttributes.reset_filter: False,
             },
         )
+        self._is_filter_reset_supported = True
         self._model_key = (str(self.model), int(self.subtype))
         self._model_capabilities = AC_MODEL_CAPABILITIES.get(
             self._model_key,
@@ -383,6 +384,27 @@ class MideaACDevice(MideaClimateDevice):
             if self._capabilities.get(f"{mode.name.lower()}_mode", True):
                 modes.add(mode)
         return modes
+
+    @override
+    def reset_filter(self) -> None:
+        """Reset filter timer."""
+        messages: list[
+            MessageGeneralSet | MessageSubProtocolResetFilter | MessageNewProtocolSet
+        ] = []
+        if self._used_subprotocol:
+            messages.append(
+                MessageSubProtocolResetFilter(self._message_protocol_version),
+            )
+        else:
+            message: MessageGeneralSet | MessageNewProtocolSet = self.make_message_set()
+            message.reset_filter = True
+            messages.append(message)
+            message = MessageNewProtocolSet(self._message_protocol_version)
+            message.reset_filter = True
+            messages.append(message)
+
+        for m in messages:
+            self.build_send(m)
 
     @override
     def hvac_mode(self, zone: int | None = None) -> MideaHVACMode | None:

@@ -2216,6 +2216,31 @@ class TestMessageACResponse:
         assert not hasattr(response, "outdoor_temperature")
 
 
+class TestMessageNewProtocolSetFilter:
+    """Test MessageNewProtocolSet for reset filter."""
+
+    @pytest.mark.parametrize(
+        ("value", "expected_bytes"),
+        [
+            (
+                True,
+                bytearray(
+                    [0xB0, 0x04, 0xB8, 0x00, 0x01, 0x01, 0x3D, 0x00, 0x05]
+                    + [0x00] * 5
+                    + [0x85, 0x00, 0x01, 0x01, 0xCC, 0x00, 0x01, 0x01],
+                ),
+            ),
+            (False, bytearray([0xB0, 0x00])),
+        ],
+    )
+    def test_reset_filter(self, value: bool, expected_bytes: bytearray) -> None:
+        """Test reset filter status."""
+        msg = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
+        msg.reset_filter = value
+        body = msg.body[:-2]
+        assert body == expected_bytes
+
+
 class TestMessageNewProtocolSetNewFeatures:
     """Test MessageNewProtocolSet for sound and self_clean."""
 
