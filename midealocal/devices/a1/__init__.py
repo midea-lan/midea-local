@@ -199,6 +199,12 @@ class MideaA1Device(MideaDevice):
                 setattr(message, str(attr), value)
             self.build_send(message)
 
+    def reset_filter(self) -> None:
+        """Send the filter cleaning reminder reset command."""
+        message = self.make_message_set()
+        message.filter_reset = True
+        self.build_send(message)
+
     def set_customize(self, customize: str) -> None:
         """Midea A1 Device set customize."""
         self._speeds = self._default_speeds
