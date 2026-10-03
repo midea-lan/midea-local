@@ -77,6 +77,7 @@ class TestMideaACDevice:
         assert self.device.current_humidity() is None
         assert self.device.current_temperature() is None
         assert self.device.target_temperature() == 24.0
+        assert self.device.is_filter_reset_supported
 
     def test_turn_on_turn_off(self) -> None:
         """Test turn on and turn off."""

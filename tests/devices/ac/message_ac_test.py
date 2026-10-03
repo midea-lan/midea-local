@@ -1898,6 +1898,25 @@ class TestMessageACResponse:
         assert hasattr(response, "error_code")
         assert response.error_code == 5
 
+    def test_message_b1_filter_status(self) -> None:
+        """Test filter_status parsed from B1 response."""
+        self.header[9] = 0x03
+        body = bytearray(14)
+        body[0] = 0xB1
+        body[1] = 0x01  # 1 param
+        body[2] = NewProtocolTags.filter_status & 0xFF
+        body[3] = NewProtocolTags.filter_status >> 8
+        body[4] = 0x00  # padding
+        body[5] = 0x05  # length
+        body[6] = 0x00  # filter status 1
+        body[7] = 0x00  # filter status 2
+        body[8] = 0x00  # filter status 3
+        body[9] = 0x00  # filter status 4
+        body[10] = 0x01  # filter full_dust
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "full_dust")
+        assert response.full_dust
+
     def test_message_b1_sound(self) -> None:
         """Test sound parsed from B1 response (buzzer_all tag)."""
         self.header[9] = 0x03
