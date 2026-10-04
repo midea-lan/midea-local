@@ -29,6 +29,7 @@ from midealocal.devices.ac.message import (
     MessageSubProtocolQuery10,
     MessageSubProtocolQuery11,
     MessageSubProtocolQuery30,
+    MessageSubProtocolResetFilter,
     MessageToggleDisplay,
     NewProtocolTags,
     PowerFormats,
@@ -76,6 +77,7 @@ class TestMideaACDevice:
         assert self.device.current_humidity() is None
         assert self.device.current_temperature() is None
         assert self.device.target_temperature() == 24.0
+        assert self.device.is_filter_reset_supported
 
     def test_turn_on_turn_off(self) -> None:
         """Test turn on and turn off."""
@@ -380,6 +382,21 @@ class TestMideaACDevice:
             self.device.set_preset_mode("comfort")
         with pytest.raises(ValueError, match="Unsupported preset mode: away"):
             self.device.set_preset_mode("away")
+
+    def test_reset_filter(self) -> None:
+        """Test reset filter."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.reset_filter()
+            mock_build_send.assert_called()
+            for i in range(mock_build_send.call_count):
+                assert mock_build_send.call_args_list[i].args[0].reset_filter is True
+        self.device._used_subprotocol = True
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.reset_filter()
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert isinstance(message, MessageSubProtocolResetFilter)
+            assert message._subprotocol_body == bytearray([0x40 | 0x80, 0x01])
 
     def test_build_query(self) -> None:
         """Test build query."""
