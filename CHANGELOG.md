@@ -1,5 +1,22 @@
 # Changelog
 
+## [12.2.0](https://github.com/midea-lan/midea-local/compare/v12.1.0...v12.2.0) (2026-10-04)
+
+
+### Features
+
+* **a1:** add filter reminder reset command ([#849](https://github.com/midea-lan/midea-local/issues/849)) ([7bfba22](https://github.com/midea-lan/midea-local/commit/7bfba22cbb7f0f7a24d62f36ceb039b2dfd65d6d))
+* **b1:** map oven programmes for model 711001F5 ([#850](https://github.com/midea-lan/midea-local/issues/850)) ([d18d3fe](https://github.com/midea-lan/midea-local/commit/d18d3fea4e435e9e246b2e8dd73ac6daa57fd43f))
+* **b8:** support the second-generation ("750004CE") protocol ([#758](https://github.com/midea-lan/midea-local/issues/758)) ([c8d90ab](https://github.com/midea-lan/midea-local/commit/c8d90abfc0172d34bf5a95ca73da545716101a3a))
+* **climate:** add reset_filter method to reset filter timers ([#852](https://github.com/midea-lan/midea-local/issues/852)) ([b8fc9b1](https://github.com/midea-lan/midea-local/commit/b8fc9b10bdc46db6f9ad35ec029d977b55920b08))
+
+
+### Bug Fixes
+
+* **a1:** support modes for 00000Q1C subtype 41377 ([#848](https://github.com/midea-lan/midea-local/issues/848)) ([4c1c609](https://github.com/midea-lan/midea-local/commit/4c1c609bfcc959317bb6ac11bc52aa1bdf815ad2))
+* **cloud:** redact session credentials in Midea Air debug log ([#863](https://github.com/midea-lan/midea-local/issues/863)) ([3253d18](https://github.com/midea-lan/midea-local/commit/3253d1834026066418a299863b986221039ce8d6))
+* **e2:** warn on unsupported attrs, halve read temperature ([#808](https://github.com/midea-lan/midea-local/issues/808)) ([5b20010](https://github.com/midea-lan/midea-local/commit/5b20010a76e75b5baf4448c1c8955acf6d173bfa))
+
 ## [12.1.0](https://github.com/midea-lan/midea-local/compare/v12.0.0...v12.1.0) (2026-09-18)
 
 
