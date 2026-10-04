@@ -162,10 +162,11 @@ def _mask_token(token: str) -> str:
     return visible + block * max(0, len(token) - len(visible))
 
 
-# ``"token": "..."`` / ``"key": "..."`` as they appear in a getToken response,
+# Credential fields (getToken ``token``/``key``, session and password fields),
 # tolerating escaped quotes from ``str(bytes)`` rendering.
 _CREDENTIAL_FIELD = re.compile(
-    r'(\\?["\'](?:token|key)\\?["\']\s*:\s*\\?["\'])([^"\'\\]+)',
+    r'(\\?["\'](?:token|key|accessToken|sessionId|password)\\?["\']\s*:\s*\\?["\'])'
+    r'([^"\'\\]+)',
     re.IGNORECASE,
 )
 
@@ -1113,8 +1114,8 @@ class MideaAirCloud(MideaCloud):
                     _LOGGER.debug(
                         "Midea cloud API url: %s, data: %s, response: %s",
                         url,
-                        data,
-                        raw,
+                        _redact_data(str(data)),
+                        _redact_data(str(raw)),
                     )
                     response = json.loads(raw)
             except (TimeoutError, ClientConnectionError, json.JSONDecodeError) as e:
