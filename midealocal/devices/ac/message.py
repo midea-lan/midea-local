@@ -35,6 +35,7 @@ BB_INDOOR_TEMPERATURE_HIGH_INDEX = 8
 BB_INDOOR_HUMIDITY_INDEX = 30
 BB_SN8_FLAG_INDEX = 80
 BB_OUTDOOR_TEMPERATURE_HIGH_INDEX = 6
+BX_FILTER_STATUS_LENGTH = 5
 CONFORT_MODE_MIN_LENGTH = 16
 CONFORT_MODE_MIN_LENGTH2 = 23
 SMART_DRY_MIN_LENGTH = 20
@@ -281,14 +282,17 @@ class NewProtocolTags(IntEnum):
     child_prevent_cold_wind = 0x003A
     cool_hot_sense = 0x0021
     degerming = 0x005A
+    dust_full_time_reset = 0x00B8
     error_code_query = 0x003F
     even_wind = 0x004E
     extreme_wind = 0x004C
     face_register = 0x0044
     filter_level = 0x0409
+    filter_status = 0x003D
     fresh_air_1 = 0x0233
     fresh_air_2 = 0x004B  # queryType == "fresh_air"
     fresh_air_parm = 0x0250
+    fresh_filter_reset = 0x0085
     gentle_wind_sense = 0x0043
     high_temp_remove_odor_alone = 0x005E
     high_temperature_monitor = 0x0047
@@ -332,6 +336,7 @@ class NewProtocolTags(IntEnum):
     wind_straight = 0x0032
     wind_top = 0x0061
     wind_ud_angle = 0x0009
+    wet_film_reset = 0x00CC
 
 
 class MessageACBase(MessageRequest):
@@ -854,6 +859,22 @@ class MessageSubProtocolFreshAirSet(MessageSubProtocol):
         return body
 
 
+class MessageSubProtocolResetFilter(MessageSubProtocol):
+    """AC message reset filter."""
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize AC message reset filter."""
+        super().__init__(
+            protocol_version,
+            message_type=MessageType.set,
+            subprotocol_query_type=ListTypes.AB,
+        )
+
+    @property
+    def _subprotocol_body(self) -> bytearray:
+        return bytearray([0x40 | 0x80, 0x01])
+
+
 class MessageGeneralSet(MessageACBase):
     """AC message general set."""
 
@@ -883,6 +904,7 @@ class MessageGeneralSet(MessageACBase):
         self.frost_protect = False
         self.comfort_mode = False
         self.anion = False
+        self.reset_filter = False
 
     @property
     def _body(self) -> bytearray:
@@ -915,12 +937,14 @@ class MessageGeneralSet(MessageACBase):
         temp_fahrenheit = 0x04 if self.temp_fahrenheit else 0
         sleep_mode = 0x01 if self.sleep_mode else 0
         boost_mode_1 = 0x02 if self.boost_mode else 0
+        common_filter_reset = 0x80 if self.reset_filter else 0
         # Byte 17 natural_wind
         natural_wind = 0x40 if self.natural_wind else 0
         # Byte 21 frost_protect
         frost_protect = 0x80 if self.frost_protect else 0
         # Byte 22 comfort_mode
         comfort_mode = 0x01 if self.comfort_mode else 0
+        fresh_filter_reset = 0x08 if self.reset_filter else 0
 
         return bytearray(
             [
@@ -933,7 +957,7 @@ class MessageGeneralSet(MessageACBase):
                 swing_mode,
                 boost_mode | power_saving,
                 smart_eye | dry | aux_heating | eco_mode | anion,
-                temp_fahrenheit | sleep_mode | boost_mode_1,
+                temp_fahrenheit | sleep_mode | boost_mode_1 | common_filter_reset,
                 0x00,
                 0x00,
                 0x00,
@@ -945,7 +969,7 @@ class MessageGeneralSet(MessageACBase):
                 0x00,
                 0x00,
                 frost_protect,
-                comfort_mode,
+                comfort_mode | fresh_filter_reset,
             ],
         )
 
@@ -972,6 +996,7 @@ class MessageNewProtocolSet(MessageACBase):
         self.out_silent: bool | None = None
         self.sound: bool | None = None
         self.self_clean: bool | None = None
+        self.reset_filter: bool = False
 
     @property
     def _body(self) -> bytearray:
@@ -1092,6 +1117,32 @@ class MessageNewProtocolSet(MessageACBase):
                 NewProtocolMessageBody.pack(
                     param=NewProtocolTags.rate_select,
                     value=bytearray([int(self.rate_select)]),
+                ),
+            )
+        if self.reset_filter:
+            pack_count += 4
+            payload.extend(
+                NewProtocolMessageBody.pack(
+                    param=NewProtocolTags.dust_full_time_reset,
+                    value=bytearray([0x1]),
+                ),
+            )
+            payload.extend(
+                NewProtocolMessageBody.pack(
+                    param=NewProtocolTags.filter_status,
+                    value=bytearray([0x0] * 5),
+                ),
+            )
+            payload.extend(
+                NewProtocolMessageBody.pack(
+                    param=NewProtocolTags.fresh_filter_reset,
+                    value=bytearray([0x1]),
+                ),
+            )
+            payload.extend(
+                NewProtocolMessageBody.pack(
+                    param=NewProtocolTags.wet_film_reset,
+                    value=bytearray([0x1]),
                 ),
             )
         payload[0] = pack_count
@@ -1243,6 +1294,13 @@ class XBXMessageBody(NewProtocolMessageBody):
             self.sound = params[NewProtocolTags.buzzer_all][0] > 0
         if NewProtocolTags.error_code_query in params:
             self.error_code = params[NewProtocolTags.error_code_query][0]
+        if (
+            NewProtocolTags.filter_status in params
+            and len(params[NewProtocolTags.filter_status]) == BX_FILTER_STATUS_LENGTH
+        ):
+            self.full_dust = (
+                params[NewProtocolTags.filter_status][BX_FILTER_STATUS_LENGTH - 1] > 0
+            )
         if NewProtocolTags.self_clean in params and bt != ListTypes.B5:
             # A B5 body carries this tag as a capability flag (always 1 when the
             # model supports self-clean), so only B0/B1 bodies report live state.
