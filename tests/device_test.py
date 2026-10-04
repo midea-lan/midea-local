@@ -570,7 +570,7 @@ class TestMideaDevice:
         [TimeoutError, ConnectionResetError, OSError, ValueError],
     )
     def test_send_message_v2_send_errors_reraised(self, exc: type[Exception]) -> None:
-        """Test send_message_v2 logs and re-raises every writer.write failure."""
+        """Test send_message_v2 propagates every writer.write failure."""
         _reader, writer = make_stream_pair()
         writer.write.side_effect = exc("boom")
         self.device._writer = writer
@@ -596,12 +596,55 @@ class TestMideaDevice:
             await self.device._wait_for_query_response()
 
     @pytest.mark.asyncio
-    async def test_wait_for_query_response_done_reader_task_raises_socket_exception(
+    @pytest.mark.parametrize(
+        ("reader_exc", "expected", "expected_cause"),
+        [
+            pytest.param(None, SocketException, type(None), id="no_exception"),
+            pytest.param(
+                ResponseException(),
+                SocketException,
+                ResponseException,
+                id="unsolicited_error_frame",
+            ),
+            pytest.param(
+                ConnectionResetError(),
+                ConnectionResetError,
+                type(None),
+                id="connection_reset",
+            ),
+            pytest.param(
+                ValueError("bug"),
+                ValueError,
+                type(None),
+                id="unexpected_error",
+            ),
+        ],
+    )
+    async def test_wait_for_query_response_done_reader_task(
         self,
+        reader_exc: Exception | None,
+        expected: type[Exception],
+        expected_cause: type[BaseException | None],
     ) -> None:
-        """Test _wait_for_query_response once the reader task has already exited."""
-        task = asyncio.create_task(asyncio.sleep(0))
-        await task
+        """Test _wait_for_query_response surfaces why the reader task exited."""
+
+        async def _reader() -> None:
+            if reader_exc is not None:
+                raise reader_exc
+
+        task = asyncio.create_task(_reader())
+        await asyncio.wait({task})
+        self.device._reader_task = task
+        with pytest.raises(expected) as exc_info:
+            await self.device._wait_for_query_response()
+        assert type(exc_info.value.__cause__) is expected_cause
+
+    @pytest.mark.asyncio
+    async def test_wait_for_query_response_cancelled_reader_task(self) -> None:
+        """Test _wait_for_query_response once the reader task was cancelled."""
+        task = asyncio.create_task(asyncio.sleep(100))
+        task.cancel()
+        await asyncio.wait({task})
         self.device._reader_task = task
         with pytest.raises(SocketException):
             await self.device._wait_for_query_response()
@@ -1310,6 +1353,69 @@ class TestMideaDevice:
         assert "Supervisor task stopped unexpectedly" in caplog.text
         assert self.device._is_run is False
         assert self.device.available is False
+
+    @pytest.mark.asyncio
+    async def test_open_logs_external_supervisor_cancellation(
+        self,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """A supervisor cancelled by anything but close() must be logged."""
+        with patch.object(
+            self.device,
+            "_run",
+            new=AsyncMock(side_effect=asyncio.Event().wait),
+        ):
+            await self.device.open()
+            assert self.device._task is not None
+            self.device._task.cancel()
+            await asyncio.wait({self.device._task})
+            await asyncio.sleep(0)  # let the done callback run
+        assert "Supervisor task stopped unexpectedly" in caplog.text
+        assert self.device._is_run is False
+        assert self.device.available is False
+
+    @pytest.mark.asyncio
+    async def test_close_after_unexpected_supervisor_exit_closes_socket(self) -> None:
+        """close() still releases the connection of a supervisor that died."""
+        with patch.object(
+            self.device,
+            "_run",
+            new=AsyncMock(side_effect=RuntimeError("boom")),
+        ):
+            await self.device.open()
+            assert self.device._task is not None
+            await asyncio.wait({self.device._task})
+            await asyncio.sleep(0)  # let the done callback run
+        assert self.device._is_run is False
+        _reader, writer = make_stream_pair()
+        self.device._writer = writer
+        await self.device.close()
+        writer.close.assert_called()
+        assert self.device._writer is None
+
+    @pytest.mark.asyncio
+    async def test_close_propagates_caller_cancellation(self) -> None:
+        """Cancelling the caller of close() is not swallowed, and still cleans up."""
+        release = asyncio.Event()
+
+        async def _slow_to_stop() -> None:
+            try:
+                await asyncio.Event().wait()
+            finally:
+                await release.wait()
+
+        self.device._is_run = True
+        self.device._task = asyncio.create_task(_slow_to_stop())
+        await asyncio.sleep(0)
+        _reader, writer = make_stream_pair()
+        self.device._writer = writer
+        closer = asyncio.create_task(self.device.close())
+        await asyncio.sleep(0)
+        closer.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await closer
+        writer.close.assert_called()
+        release.set()
 
     @pytest.mark.asyncio
     async def test_close_does_not_log_supervisor_exit(

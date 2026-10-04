@@ -1,7 +1,6 @@
 """Midea local device."""
 
 import asyncio
-import contextlib
 import logging
 import time
 from collections.abc import Callable, Mapping, Sequence
@@ -445,24 +444,8 @@ class MideaDevice:
             )
             # raise exception to caller
             raise SocketException
-        try:
-            self._writer.write(data)
-        except OSError as e:
-            _LOGGER.debug(
-                "[%s] send_message_v2 OSError: %s",
-                self._device_id,
-                e,
-            )
-            # raise exception to caller
-            raise
-        except Exception as e:
-            _LOGGER.exception(
-                "[%s] send_message_v2 Unexpected socket error",
-                self._device_id,
-                exc_info=e,
-            )
-            # raise exception to caller
-            raise
+        # write() only buffers; transport errors surface in _read_loop instead.
+        self._writer.write(data)
 
     def send_message_v3(
         self,
@@ -487,8 +470,18 @@ class MideaDevice:
         of the connection) resolving ``self._response_waiter``; this method
         never touches the reader directly.
         """
-        if self._reader_task is None or self._reader_task.done():
+        reader_task = self._reader_task
+        if reader_task is None or reader_task.cancelled():
             raise SocketException
+        if reader_task.done():
+            exc = reader_task.exception()
+            # An unsolicited ERROR frame killed the connection; it is not this
+            # query failing, which _refresh_query would otherwise count it as.
+            if exc is None or isinstance(exc, ResponseException):
+                raise SocketException from exc
+            # Same handling as _run gives a failed reader, instead of masking
+            # an unexpected error as a plain SocketException.
+            raise exc
         self._response_waiter = asyncio.get_running_loop().create_future()
         try:
             await asyncio.wait_for(self._response_waiter, timeout=QUERY_TIMEOUT)
@@ -843,25 +836,31 @@ class MideaDevice:
 
     def _on_supervisor_done(self, task: asyncio.Task) -> None:
         """Surface a supervisor exit that close() did not ask for."""
-        if task.cancelled() or not self._is_run:
+        # close() clears _is_run before cancelling, so any exit while it is
+        # still set, including a cancellation from elsewhere, is unexpected.
+        if not self._is_run:
             return
         _LOGGER.error(
             "[%s] Supervisor task stopped unexpectedly",
             self._device_id,
-            exc_info=task.exception(),
+            exc_info=None if task.cancelled() else task.exception(),
         )
         self._is_run = False
         self.set_available(False)
 
     async def close(self) -> None:
         """Stop the supervisor task and close the connection."""
-        if self._is_run:
-            self._is_run = False
-            task, self._task = self._task, None
-            if task is not None:
+        # Not gated on _is_run: a supervisor that stopped on its own already
+        # cleared it, but left the connection open.
+        self._is_run = False
+        task, self._task = self._task, None
+        try:
+            if task is not None and not task.done():
                 task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await task
+                # wait() never raises the task's own CancelledError, so a
+                # cancellation of the caller still propagates.
+                await asyncio.wait({task})
+        finally:
             await self.close_socket()
 
     def _should_run(self) -> bool:
