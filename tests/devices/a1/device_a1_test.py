@@ -210,6 +210,19 @@ class TestMideaA1Device:
             self.device.set_attribute(DeviceAttributes.pump, True)
             mock_build_send.assert_called()
 
+    def test_reset_filter(self) -> None:
+        """Test reset sends one pulse without changing cached attributes."""
+        attributes = self.device.attributes.copy()
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.reset_filter()
+
+        mock_build_send.assert_called_once()
+        message = mock_build_send.call_args.args[0]
+        assert message.filter_reset
+        assert message._body[8] & 0x80
+        assert self.device.attributes == attributes
+        assert not self.device.make_message_set().filter_reset
+
     def test_set_customize(self) -> None:
         """Test set customize with valid speeds and modes."""
         with patch.object(self.device, "update_all") as mock_update_all:

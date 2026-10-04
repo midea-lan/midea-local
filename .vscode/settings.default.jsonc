@@ -5,9 +5,10 @@
     "--cov-report",
     "xml:cov.xml",
     "--cov",
-    "midealocal"
+    "midealocal",
   ],
-  "python.testing.pytestEnabled": true,
+  // Opt in locally: discovery runs on every window load and file save
+  "python.testing.pytestEnabled": false,
   "pylint.importStrategy": "fromEnvironment",
-  "python.testing.unittestEnabled": false
+  "python.testing.unittestEnabled": false,
 }

@@ -12,6 +12,12 @@ $ErrorActionPreference = "Stop"
 # Move to the repository root (parent of this script's directory).
 Set-Location (Join-Path $PSScriptRoot "..")
 
+# Add default VS Code settings if not existing.
+if (-not (Test-Path ".vscode\settings.json")) {
+    Write-Host "Copying .vscode\settings.default.jsonc to .vscode\settings.json..."
+    Copy-Item ".vscode\settings.default.jsonc" ".vscode\settings.json"
+}
+
 if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
     Write-Error "'uv' is not installed. Install it: powershell -c `"irm https://astral.sh/uv/install.ps1 | iex`""
     exit 1
