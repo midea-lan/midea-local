@@ -312,6 +312,22 @@ async def test_msmartcloud_get_cloud_keys_error_handling(
         assert result == expected_keys
 
 
+@pytest.mark.parametrize(
+    "field",
+    [
+        pytest.param("accessToken", id="access_token"),
+        pytest.param("sessionId", id="session_id"),
+        pytest.param("password", id="password"),
+    ],
+)
+def test_redact_data_masks_session_fields(field: str) -> None:
+    """Test _redact_data masks session and password fields of a dict repr."""
+    value = "ab527a62ed1caaa9f61b873475e5bfc3"
+    redacted = _redact_data(str({field: value, "format": "2"}))
+    assert f"'{field}': '{_mask_token(value)}'" in redacted
+    assert "'format': '2'" in redacted
+
+
 class CloudTest(IsolatedAsyncioTestCase):
     """Cloud test case."""
 
@@ -1219,6 +1235,35 @@ class CloudTest(IsolatedAsyncioTestCase):
         )
         assert cloud is not None
         assert await cloud.login()
+
+    async def test_mideaaircloud_login_does_not_log_credentials(self) -> None:
+        """Test MideaAirCloud keeps session and password material out of the log."""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["mideaaircloud_login_id.json"],
+                self.responses["mideaaircloud_login.json"],
+            ],
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "Midea Air",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert cloud is not None
+
+        with self.assertLogs("midealocal.cloud", level="DEBUG") as logs:
+            assert await cloud.login()
+
+        login_data = session.request.call_args.kwargs["data"]
+        login_result = json.loads(self.responses["mideaaircloud_login.json"])["result"]
+        blob = "\n".join(logs.output)
+        assert login_data["password"] not in blob
+        assert login_result["sessionId"] not in blob
+        assert login_result["accessToken"] not in blob
 
     async def test_mideaaircloud_login_invalid_user(self) -> None:
         """Test MideaAirCloud login invalid user."""
