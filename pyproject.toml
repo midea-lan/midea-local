@@ -1,0 +1,32 @@
+[project]
+name = "midea-local"
+dynamic = ["version", "dependencies"]
+requires-python = ">=3.12"
+description = "Control your Midea M-Smart appliances via local area network"
+authors = [
+{ name = "rokam", email = "lucas@mindello.com.br" },
+{ name = "chemelli74", email = "simone.chemelli@gmail.com" }
+]
+license = "MIT"
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/midea-lan/midea-local"
+
+[project.scripts]
+midealocal = "midealocal.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "midealocal.version.__version__" }
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools.packages.find]
+include = ["midealocal*"]
+
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
