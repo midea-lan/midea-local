@@ -5,6 +5,7 @@ requires-python = ">=3.12"
 description = "Control your Midea M-Smart appliances via local area network"
 authors = [
 { name = "rokam", email = "lucas@mindello.com.br" },
+{ name = "chemelli74", email = "simone.chemelli@gmail.com" }
 ]
 license = "MIT"
 readme = "README.md"
