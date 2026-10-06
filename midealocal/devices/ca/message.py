@@ -1,13 +1,88 @@
 """Midea local CA message."""
 
+from typing import Any
+
 from midealocal.const import DeviceType
 from midealocal.message import (
     ListTypes,
     MessageBody,
+    MessageCheckSumError,
+    MessageLenError,
     MessageRequest,
     MessageResponse,
     MessageType,
 )
+
+# Toshiba IoLIFE refrigerators (manufacturer code 0008, e.g. GR-Y540XFS) wrap their
+# payload in a "55 AA CC 33" frame instead of the AA frame (see lua/ca/T_0008_CA_*):
+# 55 AA CC 33 | length (LE16, total - 4) | 01 CA | 00 x6 | data type (LE16) | body |
+# CRC16-CCITT (LE16, poly 0x1021, init 0, over everything before it)
+TOSHIBA_FRAME_HEADER = b"\x55\xaa\xcc\x33"
+TOSHIBA_FRAME_HEADER_LENGTH = 16
+TOSHIBA_FRAME_CRC_LENGTH = 2
+TOSHIBA_FRAME_LENGTH_OFFSET = 4
+TOSHIBA_FRAME_DATA_TYPE_INDEX = 14
+TOSHIBA_FRAME_PREFIX = 0x01
+TOSHIBA_DATA_TYPE_QUERY = 0x0003
+TOSHIBA_FUNCTION_STATUS = 0x00
+TOSHIBA_FUNCTION_AUTO_SAVING = 0x05
+TOSHIBA_FUNCTION_DOOR = 0x22
+TOSHIBA_STATUS_MIN_BODY_LENGTH = 16
+TOSHIBA_STATUS_ERROR_CODE_BODY_LENGTH = 18
+TOSHIBA_STATUS_AMBIENT_TEMP_BODY_LENGTH = 20
+TOSHIBA_DOOR_MIN_BODY_LENGTH = 2
+TOSHIBA_DOOR_ALARM_BODY_LENGTH = 3
+TOSHIBA_AUTO_SAVING_MIN_BODY_LENGTH = 3
+TOSHIBA_CHILLED_TEMP_THAWING = 0x02
+TOSHIBA_NO_ERROR_CODE = b"\xff\xff"
+TOSHIBA_SIGNED16_SIGN_BIT = 0x8000
+TOSHIBA_SIGNED16_RANGE = 0x10000
+TOSHIBA_AMBIENT_TEMP_SCALE = 10
+
+# Value names follow the Toshiba Lua (T_0008_*_CA_*) where it defines them.
+TOSHIBA_ICE_MAKER_STATUS = {
+    0x00: "running",
+    0x01: "water_shortage",
+    0x02: "ice_full",
+    0x03: "stop",
+}
+TOSHIBA_ICE_MAKING_MODE = {0x00: "normal", 0x01: "quick", 0x02: "off"}
+TOSHIBA_POWER_SAVING_MODE = {
+    0x00: "normal",
+    0x01: "power_saving_auto",
+    0x02: "power_saving_auto_plus",
+    0x03: "power_saving",
+    0x04: "low_power_cooling",
+}
+TOSHIBA_UPPER_FREEZER_MODE = {
+    0x00: "normal",
+    0x01: "quick_freezing",
+    0x06: "rough_heat_removal",
+    0x07: "cool_cooking",
+    0x08: "timer",
+    0x09: "frozen_rice",
+}
+TOSHIBA_CHILLED_ROOM_MODE = {
+    0x00: "normal",
+    0x01: "power_low_temp",
+    0x02: "deli_chilled",
+}
+# Refrigerator / freezer setting, five steps from weak to strong. 0x80 is reported
+# while another mode (low power cooling, or a special chilled mode) controls it.
+TOSHIBA_SETTING_LEVEL = {
+    0x02: "weak",
+    0x07: "slightly_weak",
+    0x0C: "medium",
+    0x11: "slightly_strong",
+    0x16: "strong",
+    0x80: "auto",
+}
+TOSHIBA_AUTO_SAVING_STATUS = {
+    0x00: "normal",
+    0x01: "eco_auto",
+    0x02: "precool",
+    0x03: "auto_saving_off",
+}
 
 MIN_CA_GENERAL_BODY_LENGTH = 24
 MIN_CA_EXCEPTION_BODY_LENGTH = 8
@@ -56,6 +131,85 @@ class MessageQuery(MessageCABase):
     @property
     def _body(self) -> bytearray:
         return bytearray([])
+
+
+def toshiba_crc16(data: bytes | bytearray) -> int:
+    """CRC16-CCITT (poly 0x1021, init 0) used by the Toshiba frame."""
+    crc = 0
+    for byte in data:
+        crc ^= byte << 8
+        for _ in range(8):
+            crc = ((crc << 1) ^ 0x1021) if crc & 0x8000 else crc << 1
+            crc &= 0xFFFF
+    return crc
+
+
+def toshiba_frame_header(body_length: int, data_type: int) -> bytearray:
+    """Build the 16-byte Toshiba frame header for a body of ``body_length`` bytes."""
+    total = TOSHIBA_FRAME_HEADER_LENGTH + body_length + TOSHIBA_FRAME_CRC_LENGTH
+    header = bytearray(TOSHIBA_FRAME_HEADER_LENGTH)
+    header[0:4] = TOSHIBA_FRAME_HEADER
+    header[4:6] = (total - TOSHIBA_FRAME_LENGTH_OFFSET).to_bytes(2, "little")
+    header[6] = TOSHIBA_FRAME_PREFIX
+    header[7] = DeviceType.CA
+    header[14:16] = data_type.to_bytes(2, "little")
+    return header
+
+
+def extract_toshiba_frame(message: bytes | bytearray) -> tuple[int, bytes]:
+    """Validate a Toshiba frame and return its (data type, body).
+
+    The decrypted payload may carry AES padding after the frame, so the frame
+    length field decides where it ends.
+    """
+    min_length = TOSHIBA_FRAME_HEADER_LENGTH + 1 + TOSHIBA_FRAME_CRC_LENGTH
+    if len(message) < min_length or not bytes(message).startswith(
+        TOSHIBA_FRAME_HEADER,
+    ):
+        raise MessageLenError
+    total = int.from_bytes(message[4:6], "little") + TOSHIBA_FRAME_LENGTH_OFFSET
+    if total < min_length or total > len(message):
+        raise MessageLenError
+    frame = bytes(message[:total])
+    if toshiba_crc16(frame[:-TOSHIBA_FRAME_CRC_LENGTH]) != int.from_bytes(
+        frame[-TOSHIBA_FRAME_CRC_LENGTH:],
+        "little",
+    ):
+        raise MessageCheckSumError
+    return (
+        frame[TOSHIBA_FRAME_DATA_TYPE_INDEX],
+        frame[TOSHIBA_FRAME_HEADER_LENGTH:-TOSHIBA_FRAME_CRC_LENGTH],
+    )
+
+
+class MessageToshibaQuery(MessageCABase):
+    """CA status query in the Toshiba IoLIFE frame format.
+
+    Serializes to ``55 aa cc 33 0f 00 01 ca 00 00 00 00 00 00 03 00 00 35 7c``.
+    """
+
+    def __init__(self) -> None:
+        """Initialize Toshiba CA status query."""
+        super().__init__(
+            protocol_version=0,
+            message_type=MessageType.query,
+            body_type=ListTypes.X00,  # function type 0x00: status
+        )
+
+    @property
+    def header(self) -> bytearray:
+        """Toshiba frame header."""
+        return toshiba_frame_header(len(self.body), TOSHIBA_DATA_TYPE_QUERY)
+
+    @property
+    def _body(self) -> bytearray:
+        return bytearray([])
+
+    def serialize(self) -> bytearray:
+        """Serialize to a Toshiba frame (header, body, CRC16)."""
+        stream = self.header + self.body
+        stream.extend(toshiba_crc16(stream).to_bytes(2, "little"))
+        return stream
 
 
 class CAGeneralMessageBody(MessageBody):
@@ -362,3 +516,97 @@ class MessageCAResponse(MessageResponse):
         ):
             self.set_body(CANotify01MessageBody(super().body))
         self.set_attr()
+
+
+class MessageToshibaCAResponse:
+    """CA response or notification in the Toshiba IoLIFE frame format.
+
+    Only the fields carried by the received function type are set as attributes,
+    so ``update_attributes_from_message`` leaves the others untouched.
+    """
+
+    def __init__(self, message: bytes) -> None:
+        """Parse a Toshiba frame."""
+        self.data_type, body = extract_toshiba_frame(message)
+        self.function_type = body[0] if body else None
+        if (
+            self.function_type == TOSHIBA_FUNCTION_STATUS
+            and len(body) >= TOSHIBA_STATUS_MIN_BODY_LENGTH
+        ):
+            self._parse_status(body)
+        elif (
+            self.function_type == TOSHIBA_FUNCTION_DOOR
+            and len(body) >= TOSHIBA_DOOR_MIN_BODY_LENGTH
+        ):
+            self._parse_door(body)
+        elif (
+            self.function_type == TOSHIBA_FUNCTION_AUTO_SAVING
+            and len(body) >= TOSHIBA_AUTO_SAVING_MIN_BODY_LENGTH
+        ):
+            # Pushed only; a query with body 0x05 is not answered.
+            self.auto_saving_status = TOSHIBA_AUTO_SAVING_STATUS.get(body[2])
+
+    def _parse_status(self, body: bytes) -> None:
+        """Parse function type 0x00 (full status)."""
+        chilled = body[1]
+        self.chilled_room_mode = (
+            "thawing"
+            if chilled >> 4 == TOSHIBA_CHILLED_TEMP_THAWING
+            else TOSHIBA_CHILLED_ROOM_MODE.get(chilled & 0x0F)
+        )
+        self.power_saving_mode = TOSHIBA_POWER_SAVING_MODE.get(body[3])
+        self.upper_freezer_mode = TOSHIBA_UPPER_FREEZER_MODE.get(body[4])
+        self.refrigerator_setting_level = TOSHIBA_SETTING_LEVEL.get(body[5])
+        self.freezer_setting_level = TOSHIBA_SETTING_LEVEL.get(body[6])
+        self.ice_making_mode = TOSHIBA_ICE_MAKING_MODE.get(body[7] & 0x0F)
+        self.ice_maker_status = TOSHIBA_ICE_MAKER_STATUS.get(body[7] >> 4)
+        self.vegetable_sterilization = bool(body[8] & 0x01)
+        self.ice_tray_cleaning = bool(body[8] & 0x02)
+        self.moisturizing = bool(body[10] & 0x01)
+        self.precooling = bool(body[10] & 0x02)
+        self.defrosting = bool(body[10] & 0x04)
+        self.refrigerator_door = bool(body[11] & 0x01)
+        self.freezer_door = bool(body[11] & 0x02)
+        self.ice_door = bool(body[11] & 0x04)
+        self.vegetable_door = bool(body[11] & 0x08)
+        self.upper_freezer_door = bool(body[11] & 0x10)
+        # The Lua reads these two as big-endian, but on the device they are
+        # little-endian (checked against a smart plug). The power is the
+        # appliance's own estimate and reads ~1.3-1.4x the measured value while
+        # the compressor runs; the energy resets at midnight.
+        self.estimated_power = int.from_bytes(body[12:14], "little")
+        self.daily_energy = int.from_bytes(body[14:16], "little")
+        if len(body) >= TOSHIBA_STATUS_ERROR_CODE_BODY_LENGTH:
+            raw_error = bytes(body[16:18])
+            # 401 while the door-open alarm sounds
+            self.error_code = (
+                None
+                if raw_error == TOSHIBA_NO_ERROR_CODE
+                else int.from_bytes(raw_error, "little")
+            )
+        if len(body) >= TOSHIBA_STATUS_AMBIENT_TEMP_BODY_LENGTH:
+            raw_temp = int.from_bytes(body[18:20], "little")
+            if raw_temp & TOSHIBA_SIGNED16_SIGN_BIT:
+                raw_temp -= TOSHIBA_SIGNED16_RANGE
+            self.ambient_temperature = raw_temp / TOSHIBA_AMBIENT_TEMP_SCALE
+
+    def _parse_door(self, body: bytes) -> None:
+        """Parse function type 0x22 (door info, pushed on every open/close).
+
+        The bit order differs from the status body.
+        """
+        doors = body[1]
+        self.refrigerator_door = bool(doors & 0x01)
+        self.vegetable_door = bool(doors & 0x02)
+        self.ice_door = bool(doors & 0x04)
+        self.upper_freezer_door = bool(doors & 0x08)
+        self.freezer_door = bool(doors & 0x10)
+        if len(body) >= TOSHIBA_DOOR_ALARM_BODY_LENGTH:
+            # chillingRoomTempThan12 / freezingRoomTempThan10 in the Lua
+            self.refrigerator_high_temperature = bool(body[2] & 0x01)
+            self.freezer_high_temperature = bool(body[2] & 0x02)
+
+    def __str__(self) -> str:
+        """Parse to string."""
+        attributes: dict[str, Any] = dict(self.__dict__)
+        return str(attributes)
