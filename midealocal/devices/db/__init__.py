@@ -13,6 +13,10 @@ from .message import MessageDBResponse, MessagePower, MessageQuery, MessageStart
 _LOGGER = logging.getLogger(__name__)
 
 
+WASHING_DATA_SIZE = 13
+WASHING_DATA_FILL = 0xFF
+
+
 class DeviceAttributes(StrEnum):
     """Midea DB device attributes."""
 
@@ -212,18 +216,17 @@ class MideaDBDevice(MideaDevice):
             attributes={
                 DeviceAttributes.power: False,
                 DeviceAttributes.start: False,
-                DeviceAttributes.status: None,
-                DeviceAttributes.mode: None,
-                DeviceAttributes.program: None,
-                DeviceAttributes.water_level: None,
-                DeviceAttributes.temperature: None,
-                DeviceAttributes.dehydration_speed: None,
+                DeviceAttributes.status: "idle",
+                DeviceAttributes.mode: "normal",
+                DeviceAttributes.program: "default",
+                DeviceAttributes.water_level: "default",
+                DeviceAttributes.temperature: "default",
+                DeviceAttributes.dehydration_speed: "default",
                 DeviceAttributes.wash_time: None,
                 DeviceAttributes.dehydration_time: None,
                 DeviceAttributes.detergent: None,
                 DeviceAttributes.softener: None,
-                DeviceAttributes.washing_data: bytearray([]),
-                DeviceAttributes.progress: None,
+                DeviceAttributes.progress: "unknown",
                 DeviceAttributes.stains: None,
                 DeviceAttributes.time_remaining: None,
                 DeviceAttributes.wash_time_value: None,
@@ -271,8 +274,73 @@ class MideaDBDevice(MideaDevice):
         elif attr == DeviceAttributes.start:
             message = MessageStart(self._message_protocol_version)
             message.start = value
-            message.washing_data = self._attributes[DeviceAttributes.washing_data]
+            message.washing_data = self._build_washing_data()
             self.build_send(message)
+
+    def _get_key_from_value(
+        self,
+        value: str,
+        mapping: dict[int, str],
+        default: int = WASHING_DATA_FILL,
+    ) -> int:
+        """Get the key from the value in the mapping."""
+        for key, val in mapping.items():
+            if val == value:
+                return key
+        return default
+
+    def _build_washing_data(self) -> bytearray:
+        """Build washing data."""
+        washing_data = bytearray(
+            [WASHING_DATA_FILL] * WASHING_DATA_SIZE,
+        )
+
+        washing_data[0] = self._get_key_from_value(
+            str(self.get_attribute(DeviceAttributes.mode)),
+            self._mode,
+        )
+
+        washing_data[1] = self._get_key_from_value(
+            str(self.get_attribute(DeviceAttributes.program)),
+            self._program,
+        )
+
+        washing_data[2] = self._get_key_from_value(
+            str(self.get_attribute(DeviceAttributes.water_level)),
+            self._water_level,
+        )
+
+        washing_data[4] = self._get_key_from_value(
+            str(self.get_attribute(DeviceAttributes.temperature)),
+            self._temperature,
+        )
+
+        washing_data[5] = self._get_key_from_value(
+            str(self.get_attribute(DeviceAttributes.dehydration_speed)),
+            self._dehydration_speed,
+        )
+
+        wash_time = self.get_attribute(DeviceAttributes.wash_time)
+        if not isinstance(wash_time, int):
+            wash_time = WASHING_DATA_FILL
+        washing_data[6] = wash_time
+
+        dehydration_time = self.get_attribute(DeviceAttributes.dehydration_time)
+        if not isinstance(dehydration_time, int):
+            dehydration_time = WASHING_DATA_FILL
+        washing_data[7] = dehydration_time
+
+        detergent = self.get_attribute(DeviceAttributes.detergent)
+        if not isinstance(detergent, int):
+            detergent = WASHING_DATA_FILL
+        washing_data[8] = detergent
+
+        softener = self.get_attribute(DeviceAttributes.softener)
+        if not isinstance(softener, int):
+            softener = WASHING_DATA_FILL
+        washing_data[9] = softener
+
+        return washing_data
 
 
 class MideaAppliance(MideaDBDevice):
