@@ -161,6 +161,30 @@ class TestToshibaResponse:
         assert message.auto_saving_status == "normal"
         assert not hasattr(message, "refrigerator_door")
 
+    def test_short_status_body(self) -> None:
+        """A status body without the error code and temperature fields."""
+        _, body = extract_toshiba_frame(STATUS_RUNNING)
+        message = MessageToshibaCAResponse(_frame(body[:16], data_type=0x0003))
+        assert message.ice_maker_status == "running"
+        assert not hasattr(message, "error_code")
+        assert not hasattr(message, "ambient_temperature")
+
+    def test_negative_ambient_temperature(self) -> None:
+        """The ambient temperature is a signed value."""
+        message = MessageToshibaCAResponse(_status_frame(b18=0x9C, b19=0xFF))
+        assert message.ambient_temperature == pytest.approx(-10.0)
+
+    def test_door_notification_without_alarms(self) -> None:
+        """A door body without the alarm byte leaves the alarms unset."""
+        message = MessageToshibaCAResponse(_frame(bytes([0x22, 0x01])))
+        assert message.refrigerator_door is True
+        assert not hasattr(message, "refrigerator_high_temperature")
+
+    def test_str(self) -> None:
+        """The debug representation lists the parsed fields."""
+        text = str(MessageToshibaCAResponse(STATUS_WATER_SHORTAGE))
+        assert "'ice_maker_status': 'water_shortage'" in text
+
     def test_unknown_function_sets_nothing(self) -> None:
         """Log frames (e.g. 0x21) are parsed without attributes."""
         message = MessageToshibaCAResponse(_frame(bytes([0x21]) + bytes(20)))
