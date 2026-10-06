@@ -107,7 +107,6 @@ class DAGeneralMessageBody(MessageBody):
         self.wash_strength = body[6] & 0xF
         self.softener = (body[8] & 0xF0) >> 4
         self.detergent = body[8] & 0x0F
-        self.washing_data = body[3:15]
         self.progress = 0
         self.time_remaining: int | None = None
         for i in range(1, 7):
