@@ -1,42 +1,19 @@
 """Midea local CA device."""
 
 import logging
-from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
-from .message import MessageCAResponse, MessageQuery
+from .message import (
+    DeviceAttributes,
+    MessageCAResponse,
+    MessageQuery,
+    MessageQueryToshiba,
+)
 
 _LOGGER = logging.getLogger(__name__)
-
-
-class DeviceAttributes(StrEnum):
-    """Midea CA device attributes."""
-
-    mode = "mode"
-    energy_consumption = "energy_consumption"
-    refrigerator_actual_temp = "refrigerator_actual_temp"
-    freezer_actual_temp = "freezer_actual_temp"
-    flex_zone_actual_temp = "flex_zone_actual_temp"
-    right_flex_zone_actual_temp = "right_flex_zone_actual_temp"
-    refrigerator_setting_temp = "refrigerator_setting_temp"
-    freezer_setting_temp = "freezer_setting_temp"
-    flex_zone_setting_temp = "flex_zone_setting_temp"
-    right_flex_zone_setting_temp = "right_flex_zone_setting_temp"
-    refrigerator_door_overtime = "refrigerator_door_overtime"
-    freezer_door_overtime = "freezer_door_overtime"
-    bar_door_overtime = "bar_door_overtime"
-    flex_zone_door_overtime = "flex_zone_door_overtime"
-    refrigerator_door = "refrigerator_door"
-    freezer_door = "freezer_door"
-    bar_door = "bar_door"
-    flex_zone_door = "flex_zone_door"
-    microcrystal_fresh = "microcrystal_fresh"
-    electronic_smell = "electronic_smell"
-    humidity = "humidity"
-    variable_mode = "variable_mode"
 
 
 class MideaCADevice(MideaDevice):
@@ -100,9 +77,12 @@ class MideaCADevice(MideaDevice):
         )
         self._modes = [""]
 
-    def build_query(self) -> list[MessageQuery]:
+    def build_query(self) -> list[MessageQuery | MessageQueryToshiba]:
         """Midea CA device build query."""
-        return [MessageQuery(self._message_protocol_version)]
+        return [
+            MessageQuery(self._message_protocol_version),
+            MessageQueryToshiba(self._message_protocol_version),
+        ]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea CA device process message."""

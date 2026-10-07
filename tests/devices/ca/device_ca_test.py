@@ -4,7 +4,7 @@ import pytest
 
 from midealocal.const import ProtocolVersion
 from midealocal.devices.ca import DeviceAttributes, MideaCADevice
-from midealocal.devices.ca.message import MessageQuery
+from midealocal.devices.ca.message import MessageQuery, MessageQueryToshiba
 from midealocal.message import MessageType
 
 
@@ -90,8 +90,9 @@ class TestMideaCADevice:
     def test_build_query(self) -> None:
         """Test build query."""
         queries = self.device.build_query()
-        assert len(queries) == 1
+        assert len(queries) == 2
         assert isinstance(queries[0], MessageQuery)
+        assert isinstance(queries[1], MessageQueryToshiba)
 
     def test_mode_options(self) -> None:
         """variable_mode_options de-duplicates the repeated mapping value."""

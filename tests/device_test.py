@@ -806,10 +806,17 @@ class TestMideaDevice:
 
     def test_pre_process_message(self) -> None:
         """Test pre process message."""
-        assert self.device.pre_process_message(bytearray([0x0] * 10)) is True
+        assert (
+            self.device.pre_process_message(bytearray([0xAA, 0x0A] + [0x0] * 8)) is True
+        )
         assert (
             self.device.pre_process_message(
-                bytearray([0x0] * 9 + [MessageType.query_appliance] + [0x1] * 10),
+                bytearray(
+                    [0xAA, 20]
+                    + [0x00] * 7
+                    + [MessageType.query_appliance]
+                    + [0x1] * 10,
+                ),
             )
             is False
         )
