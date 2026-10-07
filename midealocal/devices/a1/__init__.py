@@ -49,6 +49,11 @@ class MideaA1Device(MideaDevice):
             10: "silent",
             11: "auto",
         },
+        ("00000Q1B", 41377): {
+            4: "clothes_dry",
+            10: "silent",
+            11: "auto",
+        },
     }
     _default_speeds: ClassVar[dict[int, str]] = {
         1: "lowest",

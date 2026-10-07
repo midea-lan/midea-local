@@ -46,8 +46,9 @@ class TestMideaA1Device:
             "shoes_dry",
         ]
 
-    def test_model_specific_modes(self) -> None:
-        """Test modes for model 00000Q1C subtype 41377."""
+    @pytest.mark.parametrize("model", ["00000Q1C", "00000Q1B"])
+    def test_model_specific_modes(self, model: str) -> None:
+        """Test modes for models 00000Q1C and 00000Q1B subtype 41377."""
         device = MideaA1Device(
             name="Test Device",
             device_id=1,
@@ -56,7 +57,7 @@ class TestMideaA1Device:
             token="AA",
             key="BB",
             device_protocol=ProtocolVersion.V3,
-            model="00000Q1C",
+            model=model,
             subtype=41377,
             customize="",
         )
