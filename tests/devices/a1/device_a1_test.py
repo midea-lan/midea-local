@@ -44,29 +44,11 @@ class TestMideaA1Device:
             "auto",
             "clothes_dry",
             "shoes_dry",
-        ]
-
-    def test_model_specific_modes(self) -> None:
-        """Test modes for model 00000Q1C subtype 41377."""
-        device = MideaA1Device(
-            name="Test Device",
-            device_id=1,
-            ip_address="192.168.1.100",
-            port=6444,
-            token="AA",
-            key="BB",
-            device_protocol=ProtocolVersion.V3,
-            model="00000Q1C",
-            subtype=41377,
-            customize="",
-        )
-
-        assert device.modes == [
-            "clothes_dry",
             "silent",
-            "auto",
         ]
 
+    def test_silent_and_auto_alias_modes(self) -> None:
+        """Test silent mode and auto reported as 11."""
         with patch("midealocal.devices.a1.MessageA1Response") as mock_message_response:
             mock_message = mock_message_response.return_value
             mock_message.protocol_version = ProtocolVersion.V3
@@ -80,22 +62,35 @@ class TestMideaA1Device:
             mock_message.water_level_set = "50"
 
             mock_message.mode = 10
-            new_status = device.process_message(b"")
+            new_status = self.device.process_message(b"")
             assert new_status[DeviceAttributes.mode.value] == "silent"
 
             mock_message.mode = 11
-            new_status = device.process_message(b"")
+            new_status = self.device.process_message(b"")
             assert new_status[DeviceAttributes.mode.value] == "auto"
 
-        with patch.object(device, "build_send") as mock_build_send:
-            device.set_attribute(DeviceAttributes.mode, "silent")
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.mode, "silent")
             assert mock_build_send.call_args[0][0].mode == 10
 
-            device.set_attribute(DeviceAttributes.mode, "auto")
-            assert mock_build_send.call_args[0][0].mode == 11
+            # auto is always sent as 3, even when the unit reported it as 11
+            self.device.set_attribute(DeviceAttributes.mode, "auto")
+            assert mock_build_send.call_args[0][0].mode == 3
 
-            device.set_attribute(DeviceAttributes.mode, "clothes_dry")
-            assert mock_build_send.call_args[0][0].mode == 4
+            self.device.set_attribute(DeviceAttributes.power, value=False)
+            assert mock_build_send.call_args[0][0].mode == 3
+
+    def test_empty_customize_keeps_default_modes(self) -> None:
+        """Test an empty customize keeps the default modes."""
+        self.device.set_customize("")
+        assert self.device.modes == [
+            "manual",
+            "continuous",
+            "auto",
+            "clothes_dry",
+            "shoes_dry",
+            "silent",
+        ]
 
     def test_fan_speeds(self) -> None:
         """Test fan speeds."""
@@ -140,7 +135,7 @@ class TestMideaA1Device:
             capabilities["pump"] = False
             assert self.device.capabilities == {"pump": True}
 
-            mock_message.mode = 10
+            mock_message.mode = 12
             mock_message.fan_speed = 99
             mock_message.pump_enable = False
             mock_message.tank = 30
