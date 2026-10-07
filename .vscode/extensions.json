@@ -2,7 +2,6 @@
   "recommendations": [
     "charliermarsh.ruff",
     "esbenp.prettier-vscode",
-    "ms-python.python",
-    "ryanluker.vscode-coverage-gutters"
+    "ms-python.python"
   ]
 }
