@@ -86,7 +86,7 @@ class MideaCADevice(MideaDevice):
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea CA device process message."""
-        message = MessageCAResponse(msg)
+        message = MessageCAResponse(message=msg, model=self.model)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         return self.update_attributes_from_message(
             message,

@@ -1,10 +1,11 @@
 """Midea local CA message."""
 
 from enum import IntEnum, StrEnum
-from typing import Literal
+from typing import Any, Literal
 
 from midealocal.const import DeviceType
 from midealocal.message import (
+    BodyParser,
     BoolParser,
     IntEnumParser,
     IntParser,
@@ -65,6 +66,10 @@ class DeviceMode(IntEnum):
     VEGETABLES_DRYING = 0x03
     CHILLED = 0x04
     THAWING = 0x05
+    ROUGH_HEAT_REMOVAL = 0x06
+    COOL_COOKING = 0x07
+    TIMER = 0x08
+    FROZEN_RICE = 0x09
 
 
 class IceMakingMode(IntEnum):
@@ -147,37 +152,72 @@ class MessageQueryToshiba(MessageCABase):
 class CAGeneralToshibaMessageBody(MessageBody):
     """CA message general Toshiba body."""
 
-    def __init__(self, body: bytearray) -> None:
+    def __init__(self, body: bytearray, model: str) -> None:
         """Initialize CA message general body."""
+        parser_list: list[BodyParser[Any]] = []
+        if model == "0000000D":
+            parser_list.extend(
+                [
+                    IntEnumParser(DeviceAttributes.mode, 4, DeviceMode),
+                    IntParser(DeviceAttributes.refrigerator_actual_temp, 5),
+                    IntParser(DeviceAttributes.freezer_actual_temp, 6),
+                    IntEnumParser(
+                        DeviceAttributes.ice_mode,
+                        7,
+                        IceMakingMode,
+                        byte_mask=0x0F,
+                    ),
+                    IntEnumParser(
+                        DeviceAttributes.ice_status,
+                        7,
+                        IceMakingStatus,
+                        byte_mask=0xF0,
+                    ),
+                    BoolParser(DeviceAttributes.refrigerator_door, 11, 0),
+                    BoolParser(DeviceAttributes.freezer_door, 11, 1),
+                    BoolParser(DeviceAttributes.ice_door, 11, 2),
+                    BoolParser(DeviceAttributes.flex_zone_door, 11, 3),
+                    IntParser(
+                        DeviceAttributes.energy_consumption,
+                        14,
+                        max_value=0xFFFF,
+                        length_in_bytes=2,
+                    ),
+                ],
+            )
+        else:
+            parser_list.extend(
+                [
+                    IntEnumParser(DeviceAttributes.mode, 2, DeviceMode),
+                    IntParser(DeviceAttributes.refrigerator_actual_temp, 3),
+                    IntParser(DeviceAttributes.freezer_actual_temp, 4),
+                    IntEnumParser(
+                        DeviceAttributes.ice_mode,
+                        5,
+                        IceMakingMode,
+                        byte_mask=0x0F,
+                    ),
+                    IntEnumParser(
+                        DeviceAttributes.ice_status,
+                        5,
+                        IceMakingStatus,
+                        byte_mask=0xF0,
+                    ),
+                    BoolParser(DeviceAttributes.refrigerator_door, 8, 0),
+                    BoolParser(DeviceAttributes.freezer_door, 8, 1),
+                    BoolParser(DeviceAttributes.ice_door, 8, 2),
+                    BoolParser(DeviceAttributes.flex_zone_door, 8, 3),
+                    IntParser(
+                        DeviceAttributes.energy_consumption,
+                        11,
+                        max_value=0xFFFF,
+                        length_in_bytes=2,
+                    ),
+                ],
+            )
         super().__init__(
-            body,
-            [
-                IntEnumParser(DeviceAttributes.mode, 2, DeviceMode),
-                IntParser(DeviceAttributes.refrigerator_actual_temp, 3),
-                IntParser(DeviceAttributes.freezer_actual_temp, 4),
-                IntEnumParser(
-                    DeviceAttributes.ice_mode,
-                    5,
-                    IceMakingMode,
-                    byte_mask=0x0F,
-                ),
-                IntEnumParser(
-                    DeviceAttributes.ice_status,
-                    5,
-                    IceMakingStatus,
-                    byte_mask=0xF0,
-                ),
-                BoolParser(DeviceAttributes.refrigerator_door, 8, 0),
-                BoolParser(DeviceAttributes.freezer_door, 8, 1),
-                BoolParser(DeviceAttributes.ice_door, 8, 2),
-                BoolParser(DeviceAttributes.flex_zone_door, 8, 3),
-                IntParser(
-                    DeviceAttributes.energy_consumption,
-                    11,
-                    max_value=0xFFFF,
-                    length_in_bytes=2,
-                ),
-            ],
+            body=body,
+            parser_list=parser_list,
         )
 
 
@@ -442,7 +482,7 @@ class CANotify01MessageBody(MessageBody):
 class MessageCAResponse(MessageResponse):
     """CA message response."""
 
-    def __init__(self, message: bytes) -> None:
+    def __init__(self, message: bytes, model: str = "00000000") -> None:
         """Initialize CA message response."""
         super().__init__(bytearray(message))
         # uptable["dataType"] 0x02 and messageBytes[0] 0x00
@@ -498,5 +538,5 @@ class MessageCAResponse(MessageResponse):
             in [MessageType.set, MessageType.query, MessageType.notify1]
             and self.body_type == ListTypes.X00
         ):
-            self.set_body(CAGeneralToshibaMessageBody(super().body))
+            self.set_body(CAGeneralToshibaMessageBody(super().body, model))
         self.set_attr()
