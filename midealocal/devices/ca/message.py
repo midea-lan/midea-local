@@ -146,7 +146,7 @@ class MessageQueryToshiba(MessageCABase):
 
     @property
     def _body(self) -> bytearray:
-        return bytearray([])
+        return bytearray([0x00])
 
 
 class CAGeneralToshibaMessageBody(MessageBody):

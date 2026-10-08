@@ -665,7 +665,7 @@ class MessageSubProtocol(MessageACBase):
         """AC message sub protocol body."""
         body = bytearray([self.body_type]) + self._body
         body.append(calculate(body))
-        body.append(self.checksum(body))
+        body.extend(self.checksum(body, self._checksum_type))
         return body
 
     @property

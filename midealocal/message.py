@@ -2,9 +2,10 @@
 
 import logging
 import warnings
+from binascii import crc_hqx
 from collections.abc import Callable
 from enum import IntEnum
-from typing import Any, Literal, SupportsIndex, cast, overload, override
+from typing import Any, Literal, overload, override
 
 from typing_extensions import deprecated
 
@@ -335,20 +336,31 @@ class MessageType(IntEnum):
         return "Unknown"
 
 
+class MessageChecksum(IntEnum):
+    """Message checksum type."""
+
+    SUM = 0x1
+    CRC_CCITT = 0x2
+
+
 class MessageBase:
     """Message base."""
 
-    def __init__(self) -> None:
+    def __init__(self, checksum_type: MessageChecksum = MessageChecksum.SUM) -> None:
         """Initialize message base."""
         self._device_type: DeviceType = DeviceType.X00
         self._message_type: MessageType = MessageType.default
         self._body_type: ListTypes = ListTypes.X00
         self._message_protocol_version: int = 0
+        self._checksum_type: MessageChecksum = checksum_type
+        self._checksum_lenght: int = 1 if checksum_type == MessageChecksum.SUM else 2
 
     @staticmethod
-    def checksum(data: bytes | bytearray) -> SupportsIndex:
+    def checksum(data: bytes | bytearray, checksum_type: MessageChecksum) -> bytes:
         """Message checksum."""
-        return cast("SupportsIndex", (~sum(data) + 1) & 0xFF)
+        if checksum_type == MessageChecksum.CRC_CCITT:
+            return crc_hqx(data, 0x1021).to_bytes(2)
+        return ((~sum(data) + 1) & 0xFF).to_bytes(1)
 
     @property
     def header(self) -> bytearray:
@@ -629,7 +641,11 @@ class MessageRequest(MessageBase):
         header_type: Literal[ListTypes.AA, ListTypes.X55] = ListTypes.AA,
     ) -> None:
         """Initialize message request."""
-        super().__init__()
+        super().__init__(
+            checksum_type=MessageChecksum.SUM
+            if header_type == ListTypes.AA
+            else MessageChecksum.CRC_CCITT,
+        )
         self.device_type = device_type
         self.protocol_version = protocol_version
         self.message_type = message_type
@@ -668,7 +684,7 @@ class MessageRequest(MessageBase):
     def serialize(self) -> bytearray:
         """Serialize message."""
         stream = self.header + self.body
-        stream.append(MessageBase.checksum(stream[1:]))
+        stream.extend(MessageBase.checksum(stream[1:], self._checksum_type))
         return stream
 
 
@@ -1123,11 +1139,16 @@ class MessageResponse(MessageBase):
             if message[0] == ListTypes.AA
             else MessageHeader55(data=message)
         )
+        super().__init__(
+            MessageChecksum.SUM
+            if header.type == ListTypes.AA
+            else MessageChecksum.CRC_CCITT,
+        )
 
         self.protocol_version = header.protocol_version
         self.message_type = header.message_type
         self.device_type = header.device_type
-        body = message[header.length : -1]
+        body = message[header.length : -1 * self._checksum_lenght]
         self._body = MessageBody(body)
         self.body_type = self._body.body_type
         self._header = header
