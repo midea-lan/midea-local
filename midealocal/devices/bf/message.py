@@ -637,13 +637,43 @@ class MessageSet(MessageBFBase):
 class MessageBFBody(MessageBody):
     """BF message body (totalState)."""
 
-    # Set by parse_all, read below to derive combined values
+    # Set by parse_all from the parser list below
+    cloudmenuid: int
+    totalstep: int
+    stepnum: int
+    probe: bool
+    turntable: bool
+    hour_set: int
+    minute_set: int
+    second_set: int
     temperature_above: int
     temperature_underside: int
+    probe_temperature: int
     work_hour: int
     work_minute: int
+    work_second: int
     cur_temperature_above: int
     cur_temperature_underside: int
+    cur_probe_temperature: int
+    child_lock: bool
+    door: bool
+    tank_ejected: bool
+    water_shortage: bool
+    water_change_reminder: bool
+    error_code: bool
+    flip_side: bool
+    reaction: bool
+    furnace_light: bool
+    high_temperature_lock: bool
+    high_temperature_work: bool
+    high_temperature: bool
+    probe_mode: bool
+    ramadan: bool
+    hot_wind: bool
+    clean_scale: bool
+    ota: bool
+    clean_sink_ponding: bool
+    dissipate_heat: bool
 
     def __init__(self, body: bytearray) -> None:
         """Initialize BF message body."""
