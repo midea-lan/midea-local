@@ -648,6 +648,24 @@ class TestMessageResponse:
         with pytest.raises(MessageLenError):
             MessageApplianceResponse(bytearray(5))
 
+    def test_empty_message(self) -> None:
+        """Test a too short message raises MessageLenError."""
+        with pytest.raises(MessageLenError):
+            MessageApplianceResponse(bytearray())
+
+    @pytest.mark.parametrize(
+        ("length"),
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+    )
+    def test_too_short_message55(self, length: int) -> None:
+        """Test a too short message raises MessageLenError."""
+        with pytest.raises(MessageLenError):
+            MessageApplianceResponse(
+                bytearray(
+                    [0x55] + [0x00] * length,
+                ),
+            )
+
     def test_invalid_header_message(self) -> None:
         """Test an invalid header message raises MessageLenError."""
         message = bytearray(
