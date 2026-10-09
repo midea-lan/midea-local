@@ -15,6 +15,8 @@ from .message import (
 
 _LOGGER = logging.getLogger(__name__)
 
+TOSHIBA_MANUFACTURER_CODE = "0008"
+
 
 class MideaCADevice(MideaDevice):
     """Midea CA device."""
@@ -83,7 +85,7 @@ class MideaCADevice(MideaDevice):
 
     def build_query(self) -> list[MessageQuery | MessageQueryToshiba]:
         """Midea CA device build query."""
-        if self.manufacturer_code == "0008":
+        if self.manufacturer_code == TOSHIBA_MANUFACTURER_CODE:
             return [MessageQueryToshiba(self._message_protocol_version)]
         return [MessageQuery(self._message_protocol_version)]
 

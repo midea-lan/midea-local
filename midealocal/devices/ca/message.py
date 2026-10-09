@@ -26,6 +26,8 @@ TEMP_POS_UPPER_VALUE = 29
 TEMP_NEG_LOWER_VALUE = 49
 TEMP_NEG_UPPER_VALUE = 54
 
+MODEL_0000000D = "0000000D"
+
 
 class DeviceAttributes(StrEnum):
     """Midea CA device attributes."""
@@ -163,7 +165,7 @@ class CAGeneralToshibaMessageBody(MessageBody):
         """Generate parser list based on model."""
         initial_offset = 0
         bool_offset = 0
-        if model == "0000000D":
+        if model == MODEL_0000000D:
             initial_offset = 2
             bool_offset = 3
 
