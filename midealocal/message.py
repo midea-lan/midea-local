@@ -353,7 +353,7 @@ class MessageBase:
         self._body_type: ListTypes = ListTypes.X00
         self._message_protocol_version: int = 0
         self._checksum_type: MessageChecksum = checksum_type
-        self._checksum_lenght: int = 1 if checksum_type == MessageChecksum.SUM else 2
+        self._checksum_length: int = 1 if checksum_type == MessageChecksum.SUM else 2
 
     @staticmethod
     def checksum(data: bytes | bytearray, checksum_type: MessageChecksum) -> bytes:
@@ -1137,6 +1137,8 @@ class MessageResponse(MessageBase):
 
     def __init__(self, message: bytearray) -> None:
         """Initialize message response."""
+        if not message:
+            raise MessageLenError
         header = (
             MessageHeaderAA(data=message)
             if message[0] == ListTypes.AA
@@ -1147,11 +1149,12 @@ class MessageResponse(MessageBase):
             if header.type == ListTypes.AA
             else MessageChecksum.CRC_CCITT,
         )
-
+        if len(message) < header.length + self._checksum_length + 1:
+            raise MessageLenError
         self.protocol_version = header.protocol_version
         self.message_type = header.message_type
         self.device_type = header.device_type
-        body = message[header.length : -1 * self._checksum_lenght]
+        body = message[header.length : -1 * self._checksum_length]
         self._body = MessageBody(body)
         self.body_type = self._body.body_type
         self._header = header
