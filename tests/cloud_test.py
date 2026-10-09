@@ -318,6 +318,8 @@ async def test_msmartcloud_get_cloud_keys_error_handling(
         pytest.param("accessToken", id="access_token"),
         pytest.param("sessionId", id="session_id"),
         pytest.param("password", id="password"),
+        pytest.param("iampwd", id="iampwd"),
+        pytest.param("tokenPwd", id="token_pwd"),
     ],
 )
 def test_redact_data_masks_session_fields(field: str) -> None:
@@ -326,6 +328,21 @@ def test_redact_data_masks_session_fields(field: str) -> None:
     redacted = _redact_data(str({field: value, "format": "2"}))
     assert f"'{field}': '{_mask_token(value)}'" in redacted
     assert "'format': '2'" in redacted
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        pytest.param("{{'nickname': '{name}', 'format': '2'}}", id="dict_repr"),
+        pytest.param('{{"nickname":"{name}","format":"2"}}', id="json"),
+    ],
+)
+def test_redact_data_masks_nickname(raw: str) -> None:
+    """Test _redact_data fully masks the account nickname."""
+    redacted = _redact_data(raw.format(name="Renato T"))
+    assert "Renat" not in redacted
+    assert "********" in redacted
+    assert "format" in redacted
 
 
 class CloudTest(IsolatedAsyncioTestCase):
