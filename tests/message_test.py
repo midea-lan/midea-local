@@ -540,14 +540,14 @@ class TestMessageHeader:
             protocol_version=1,
             message_type=MessageType.query,
         )
-        assert header.length == 15
+        assert header.length == 16
         assert header.serialize(2) == bytearray(
             [
                 0x55,
                 0xAA,
                 0xCC,
                 0x33,
-                17,
+                16,
                 0x00,
                 0x01,
                 0xAC,
@@ -558,6 +558,7 @@ class TestMessageHeader:
                 0x00,
                 0x00,
                 0x03,
+                0x00,
             ],
         )
 
@@ -709,7 +710,7 @@ class TestMessageResponse:
                 0xAA,
                 0xCC,
                 0x33,
-                0x11,
+                0x0F,
                 0x00,
                 0x01,
                 0xAC,
@@ -720,15 +721,15 @@ class TestMessageResponse:
                 0x00,
                 0x00,
                 0xA0,
-                0xC0,
                 0x00,
+                0xC0,
                 0x00,
                 0x00,
             ],
         )
         response = MessageApplianceResponse(message)
-        assert response.header == message[:15]
-        assert response.body == bytearray([0xC0, 0x00])
+        assert response.header == message[:16]
+        assert response.body == bytearray([0xC0])
         assert response.body_type == ListTypes.C0
         assert response.message_type == MessageType.query_appliance
         assert response.device_type == DeviceType.AC

@@ -359,7 +359,7 @@ class MessageBase:
     def checksum(data: bytes | bytearray, checksum_type: MessageChecksum) -> bytes:
         """Message checksum."""
         if checksum_type == MessageChecksum.CRC_CCITT:
-            return crc_hqx(data, 0x1021).to_bytes(2)
+            return crc_hqx(data, 0).to_bytes(2, "little")
         return ((~sum(data) + 1) & 0xFF).to_bytes(1)
 
     @property
@@ -560,7 +560,7 @@ class MessageHeaderAA(MessageHeader):
 class MessageHeader55(MessageHeader):
     """Message header 55."""
 
-    HEADER_LENGTH = 15
+    HEADER_LENGTH = 16
 
     @overload
     def __init__(self, *, data: bytearray) -> None: ...
@@ -600,7 +600,7 @@ class MessageHeader55(MessageHeader):
     @override
     def serialize(self, body_len: int) -> bytearray:
         """Message header."""
-        length = self.HEADER_LENGTH + body_len
+        length = self.HEADER_LENGTH + body_len - 2
         return bytearray(
             bytearray(
                 [
@@ -618,7 +618,7 @@ class MessageHeader55(MessageHeader):
                     int(self.device_type),
                 ]
                 + [0x00] * 6
-                + [min(int(self.message_type), 0xFF)],
+                + [min(int(self.message_type), 0xFF), 0x00],
             ),
         )
 
@@ -684,7 +684,10 @@ class MessageRequest(MessageBase):
     def serialize(self) -> bytearray:
         """Serialize message."""
         stream = self.header + self.body
-        stream.extend(MessageBase.checksum(stream[1:], self._checksum_type))
+        data = (
+            stream if self._checksum_type == MessageChecksum.CRC_CCITT else stream[1:]
+        )
+        stream.extend(MessageBase.checksum(data, self._checksum_type))
         return stream
 
 

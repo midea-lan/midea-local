@@ -96,9 +96,9 @@ class TestMessageQueryToshiba:
     def test_query_body(self) -> None:
         """Test query body only contains the body type."""
         msg = MessageQueryToshiba(protocol_version=ProtocolVersion.V1)
-        assert msg.body == bytearray([0x00] * 2)
+        assert msg.body == bytearray([0x00])
         assert msg.serialize() == bytes.fromhex(
-            "55aacc33110001ca000000000000030000cb3d",
+            "55aacc330f0001ca000000000000030000357c",
         )
 
 

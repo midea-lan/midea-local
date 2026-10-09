@@ -73,6 +73,10 @@ class MideaCADevice(MideaDevice):
                 DeviceAttributes.electronic_smell: False,
                 DeviceAttributes.humidity: None,
                 DeviceAttributes.variable_mode: None,
+                DeviceAttributes.mode: None,
+                DeviceAttributes.ice_mode: None,
+                DeviceAttributes.ice_status: None,
+                DeviceAttributes.ice_door: None,
             },
         )
         self._modes = [""]
