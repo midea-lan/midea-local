@@ -441,7 +441,7 @@ class TestMessageCAResponse:
         assert getattr(msg, DeviceAttributes.freezer_door) is True
         assert getattr(msg, DeviceAttributes.ice_door) is True
         assert getattr(msg, DeviceAttributes.flex_zone_door) is True
-        assert getattr(msg, DeviceAttributes.energy_consumption) == 0x6443
+        assert getattr(msg, DeviceAttributes.energy_consumption) == 0x4364
 
     @pytest.mark.parametrize(
         "message_type",
