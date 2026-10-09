@@ -48,10 +48,15 @@ class TestMideaBFDevice:
         """Midea BF Device setup."""
         self.device = _build_device()
 
-    def test_initial_attributes_all_none(self) -> None:
-        """Test all initial attributes are None."""
-        for attr in DeviceAttributes:
-            assert self.device.attributes[attr] is None
+    def test_initial_attributes(self) -> None:
+        """Test every attribute starts with a typed default."""
+        assert set(self.device.attributes) == set(DeviceAttributes)
+        assert self.device.attributes[DeviceAttributes.power] is False
+        assert self.device.attributes[DeviceAttributes.hot_wind] is False
+        assert self.device.attributes[DeviceAttributes.probe] is False
+        assert self.device.attributes[DeviceAttributes.status] is None
+        assert self.device.attributes[DeviceAttributes.work_mode] is None
+        assert self.device.attributes[DeviceAttributes.probe_temperature] is None
 
     def test_build_query(self) -> None:
         """Test build query returns one MessageQuery."""
@@ -242,9 +247,10 @@ class TestMideaBFDevice:
 
         Local state is not updated since sending fails.
         """
+        initial = self.device.attributes[attr]
         with pytest.raises(SocketException):
             self.device.set_attribute(attr, value)
-        assert self.device.attributes[attr] is None
+        assert self.device.attributes[attr] == initial
 
     @pytest.mark.parametrize(
         ("attr", "value"),
@@ -279,6 +285,41 @@ class TestMideaBFDevice:
         self._activate_work_mode()
         with pytest.raises(SocketException):
             self.device.set_attribute(attr, value)
+
+    @pytest.mark.parametrize(
+        ("probe_flag", "hot_wind_flag", "expected_b5", "expected_probe_bytes"),
+        [
+            pytest.param(0x00, 0x00, 0x00, (0x00, 0x00), id="probe_off"),
+            pytest.param(0x02, 0x00, 0x02, (0x00, 0x46), id="probe_on"),
+            pytest.param(0x00, 0x20, 0x10, (0x00, 0x00), id="hot_wind_on"),
+        ],
+    )
+    def test_make_message_set_b5_flags(
+        self,
+        probe_flag: int,
+        hot_wind_flag: int,
+        expected_b5: int,
+        expected_probe_bytes: tuple[int, int],
+    ) -> None:
+        """Test current probe/hot_wind state is carried into workModeControl b5.
+
+        Lua sets the b5 probe bit whenever probe_temperature is present, so a
+        stale target must not be sent when the probe flag is off.
+        """
+        body = bytearray(60)
+        body[0] = 0x01
+        body[6] = probe_flag
+        body[7] = 0x01  # microwave high
+        body[18] = 0x46  # probe_temperature = 70
+        body[31] = WorkStatus.work.value
+        body[35] = hot_wind_flag
+        self.device.process_message(_build_message(MessageType.query, body))
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.fire_power, "fire_power_5")
+        sent_body = mock_build_send.call_args[0][0].body
+        assert sent_body[0] == ListTypes.X01
+        assert sent_body[5] == expected_b5
+        assert (sent_body[16], sent_body[17]) == expected_probe_bytes
 
     def test_set_attribute_hot_wind_with_active_work_mode(self) -> None:
         """Test standalone hot_wind still routes via notWorkModeControl.

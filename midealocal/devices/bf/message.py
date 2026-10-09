@@ -4,11 +4,15 @@ from enum import IntEnum
 
 from midealocal.const import MAX_BYTE_VALUE, DeviceType
 from midealocal.message import (
+    BoolParser,
+    IntParser,
     ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
+    TimeParser,
+    WordParser,
 )
 
 # Body type constants
@@ -20,9 +24,7 @@ TOTALSTEP_SINGLE_STEP = 0x11
 
 # Byte offsets in MessageBFBody (body[0] is body_type, data starts at body[1])
 OFFSET_EXECUTE = 1
-OFFSET_CLOUDMENUID_HIGH = 2
-OFFSET_CLOUDMENUID_MID = 3
-OFFSET_CLOUDMENUID_LOW = 4
+OFFSET_CLOUDMENUID = 2  # 3 bytes, big-endian
 OFFSET_TOTALSTEP_STEPNUM = 5
 OFFSET_FLAGS_B6 = 6
 OFFSET_WORK_MODE_HIGH = 7
@@ -31,23 +33,17 @@ OFFSET_HOUR_SET = 9
 OFFSET_MINUTE_SET = 10
 OFFSET_SECOND_SET = 11
 OFFSET_FIRE_POWER = 12
-OFFSET_TEMP_ABOVE_HIGH = 13
-OFFSET_TEMP_ABOVE_LOW = 14
-OFFSET_TEMP_UNDERSIDE_HIGH = 15
-OFFSET_TEMP_UNDERSIDE_LOW = 16
-OFFSET_PROBE_TEMP_HIGH = 17
-OFFSET_PROBE_TEMP_LOW = 18
+OFFSET_TEMP_ABOVE = 13  # 16-bit words below are big-endian
+OFFSET_TEMP_UNDERSIDE = 15
+OFFSET_PROBE_TEMP = 17
 OFFSET_STEAM_QUANTITY = 19
 OFFSET_WEIGHT_PEOPLE = 20
 OFFSET_WORK_HOUR = 22
 OFFSET_WORK_MINUTE = 23
 OFFSET_WORK_SECOND = 24
-OFFSET_CUR_TEMP_ABOVE_HIGH = 25
-OFFSET_CUR_TEMP_ABOVE_LOW = 26
-OFFSET_CUR_TEMP_UNDERSIDE_HIGH = 27
-OFFSET_CUR_TEMP_UNDERSIDE_LOW = 28
-OFFSET_CUR_PROBE_TEMP_HIGH = 29
-OFFSET_CUR_PROBE_TEMP_LOW = 30
+OFFSET_CUR_TEMP_ABOVE = 25
+OFFSET_CUR_TEMP_UNDERSIDE = 27
+OFFSET_CUR_PROBE_TEMP = 29
 OFFSET_WORK_STATUS = 31
 OFFSET_FLAGS_B32 = 32
 OFFSET_FLAGS_B33 = 33
@@ -59,30 +55,9 @@ OFFSET_CBS_VERSION_PATCH = 49
 OFFSET_FLAGS_B56 = 56
 OFFSET_FLAGS_B58 = 58
 
-# Bit masks (response parsing)
-BIT_PROBE = 0x02
-BIT_TURNTABLE = 0x08
-BIT_HOT_WIND = 0x20
-BIT_RAMADAN = 0x20
-BIT_CHILD_LOCK = 0x01
-BIT_DOOR = 0x02
-BIT_TANK_EJECTED = 0x04
-BIT_WATER_SHORTAGE = 0x08
-BIT_WATER_CHANGE = 0x10
+# Bit masks (response parsing, byte 32)
 BIT_PREHEAT = 0x20
 BIT_PREHEAT_END = 0x40
-BIT_ERROR_CODE = 0x80
-BIT_FLIP_SIDE = 0x01
-BIT_REACTION = 0x02
-BIT_FURNACE_LIGHT = 0x04
-BIT_HIGH_TEMP_LOCK = 0x08
-BIT_HIGH_TEMP_WORK = 0x10
-BIT_HIGH_TEMP = 0x20
-BIT_PROBE_MODE = 0x40
-BIT_CLEAN_SCALE = 0x40
-BIT_OTA = 0x80
-BIT_CLEAN_SINK_PONDING = 0x01
-BIT_DISSIPATE_HEAT = 0x02
 
 # Bit masks (workModeControl set body, byte b5)
 BIT_SET_PRE_HEAT = 0x01
@@ -662,29 +637,88 @@ class MessageSet(MessageBFBase):
 class MessageBFBody(MessageBody):
     """BF message body (totalState)."""
 
+    # Set by parse_all, read below to derive combined values
+    temperature_above: int
+    temperature_underside: int
+    work_hour: int
+    work_minute: int
+    cur_temperature_above: int
+    cur_temperature_underside: int
+
     def __init__(self, body: bytearray) -> None:
         """Initialize BF message body."""
-        super().__init__(body)
+        super().__init__(
+            body,
+            [
+                IntParser(
+                    "cloudmenuid",
+                    OFFSET_CLOUDMENUID,
+                    max_value=0xFFFFFF,
+                    length_in_bytes=3,
+                    first_upper=True,
+                ),
+                IntParser(
+                    "totalstep",
+                    OFFSET_TOTALSTEP_STEPNUM,
+                    transform_func=lambda x: x >> 4,
+                ),
+                IntParser("stepnum", OFFSET_TOTALSTEP_STEPNUM, byte_mask=0x0F),
+                BoolParser("probe", OFFSET_FLAGS_B6, 1),
+                BoolParser("turntable", OFFSET_FLAGS_B6, 3),
+                TimeParser("hour_set", OFFSET_HOUR_SET),
+                TimeParser("minute_set", OFFSET_MINUTE_SET),
+                TimeParser("second_set", OFFSET_SECOND_SET),
+                WordParser("temperature_above", OFFSET_TEMP_ABOVE),
+                WordParser("temperature_underside", OFFSET_TEMP_UNDERSIDE),
+                WordParser("probe_temperature", OFFSET_PROBE_TEMP),
+                TimeParser("work_hour", OFFSET_WORK_HOUR),
+                TimeParser("work_minute", OFFSET_WORK_MINUTE),
+                TimeParser("work_second", OFFSET_WORK_SECOND),
+                WordParser("cur_temperature_above", OFFSET_CUR_TEMP_ABOVE),
+                WordParser("cur_temperature_underside", OFFSET_CUR_TEMP_UNDERSIDE),
+                WordParser("cur_probe_temperature", OFFSET_CUR_PROBE_TEMP),
+                BoolParser("child_lock", OFFSET_FLAGS_B32, 0),
+                BoolParser("door", OFFSET_FLAGS_B32, 1),
+                BoolParser("tank_ejected", OFFSET_FLAGS_B32, 2),
+                BoolParser("water_shortage", OFFSET_FLAGS_B32, 3),
+                BoolParser("water_change_reminder", OFFSET_FLAGS_B32, 4),
+                BoolParser("error_code", OFFSET_FLAGS_B32, 7),
+                BoolParser("flip_side", OFFSET_FLAGS_B33, 0),
+                BoolParser("reaction", OFFSET_FLAGS_B33, 1),
+                BoolParser("furnace_light", OFFSET_FLAGS_B33, 2),
+                # Bit cleared means locked
+                BoolParser(
+                    "high_temperature_lock",
+                    OFFSET_FLAGS_B33,
+                    3,
+                    true_value=0,
+                    false_value=1,
+                ),
+                BoolParser("high_temperature_work", OFFSET_FLAGS_B33, 4),
+                BoolParser("high_temperature", OFFSET_FLAGS_B33, 5),
+                BoolParser("probe_mode", OFFSET_FLAGS_B33, 6),
+                BoolParser("ramadan", OFFSET_RAMADAN, 5),
+                BoolParser("hot_wind", OFFSET_HOT_WIND, 5),
+                BoolParser("clean_scale", OFFSET_FLAGS_B56, 6),
+                BoolParser("ota", OFFSET_FLAGS_B56, 7),
+                BoolParser("clean_sink_ponding", OFFSET_FLAGS_B58, 0),
+                BoolParser("dissipate_heat", OFFSET_FLAGS_B58, 1),
+            ],
+        )
 
         self._parse_execute_status(body)
-        self._parse_cloudmenuid(body)
-        self._parse_steps(body)
-        self._parse_probe_turntable_flags(body)
         self._parse_work_mode(body)
-        self._parse_time_settings(body)
         self._parse_fire_power(body)
-        self._parse_temperatures(body)
         self._parse_steam_weight(body)
-        self._parse_work_time(body)
-        self._parse_current_temperatures(body)
         self._parse_status_and_power(body)
-        self._parse_byte32_flags(body)
-        self._parse_byte33_flags(body)
-        self._parse_byte34_flags(body)
-        self._parse_byte35_flags(body)
+        self._parse_pre_heat(body)
         self._parse_cbs_version(body)
-        self._parse_byte56_flags(body)
-        self._parse_byte58_flags(body)
+        self.temperature = self.temperature_above or self.temperature_underside
+        # Minutes, like b0/b1; seconds are dropped, same as Lua's totalState.
+        self.time_remaining = self.work_hour * MINUTES_PER_HOUR + self.work_minute
+        self.current_temperature = (
+            self.cur_temperature_above or self.cur_temperature_underside
+        )
 
     def _parse_execute_status(self, body: bytearray) -> None:
         """Parse execute status from body."""
@@ -696,44 +730,12 @@ class MessageBFBody(MessageBody):
             0x03: "param_range_error",
         }.get(execute, "unknown")
 
-    def _parse_cloudmenuid(self, body: bytearray) -> None:
-        """Parse cloudmenuid from body."""
-        self.cloudmenuid = (
-            self.read_byte(body, OFFSET_CLOUDMENUID_HIGH, 0) << 16
-            | self.read_byte(body, OFFSET_CLOUDMENUID_MID, 0) << 8
-            | self.read_byte(body, OFFSET_CLOUDMENUID_LOW, 0)
-        )
-
-    def _parse_steps(self, body: bytearray) -> None:
-        """Parse totalstep and stepnum from body."""
-        b = self.read_byte(body, OFFSET_TOTALSTEP_STEPNUM, 0)
-        self.totalstep = b >> 4
-        self.stepnum = b & 0x0F
-
-    def _parse_probe_turntable_flags(self, body: bytearray) -> None:
-        """Parse probe and turntable flags from body."""
-        b = self.read_byte(body, OFFSET_FLAGS_B6, 0)
-        self.probe = bool(b & BIT_PROBE)
-        self.turntable = bool(b & BIT_TURNTABLE)
-
     def _parse_work_mode(self, body: bytearray) -> None:
         """Parse work_mode from body."""
         self.work_mode = work_mode_to_name(
             self.read_byte(body, OFFSET_WORK_MODE_HIGH, BYTE_FF),
             self.read_byte(body, OFFSET_WORK_MODE_LOW, BYTE_FF),
         )
-
-    def _parse_time_settings(self, body: bytearray) -> None:
-        """Parse hour_set/minute_set/second_set from body."""
-        self.hour_set = self._read_time_byte(body, OFFSET_HOUR_SET)
-        self.minute_set = self._read_time_byte(body, OFFSET_MINUTE_SET)
-        self.second_set = self._read_time_byte(body, OFFSET_SECOND_SET)
-
-    def _read_time_byte(self, body: bytearray, offset: int) -> int:
-        """Read a time byte, returning 0 if 0xFF."""
-        if len(body) > offset and body[offset] != MAX_BYTE_VALUE:
-            return body[offset]
-        return 0
 
     def _parse_fire_power(self, body: bytearray) -> None:
         """Parse fire_power from body."""
@@ -743,29 +745,6 @@ class MessageBFBody(MessageBody):
         except ValueError:
             self.fire_power = "unknown"
 
-    def _parse_temperatures(self, body: bytearray) -> None:
-        """Parse temperature settings from body."""
-        self.temperature_above = self._read_word(
-            body,
-            OFFSET_TEMP_ABOVE_HIGH,
-            OFFSET_TEMP_ABOVE_LOW,
-        )
-        self.temperature_underside = self._read_word(
-            body,
-            OFFSET_TEMP_UNDERSIDE_HIGH,
-            OFFSET_TEMP_UNDERSIDE_LOW,
-        )
-        self.temperature = (
-            self.temperature_above
-            if self.temperature_above != 0
-            else self.temperature_underside
-        )
-        self.probe_temperature = self._read_word(
-            body,
-            OFFSET_PROBE_TEMP_HIGH,
-            OFFSET_PROBE_TEMP_LOW,
-        )
-
     def _parse_steam_weight(self, body: bytearray) -> None:
         """Parse steam_quantity and weight/people_number from body."""
         sq = self.read_byte(body, OFFSET_STEAM_QUANTITY, BYTE_FF)
@@ -773,39 +752,6 @@ class MessageBFBody(MessageBody):
         b = self.read_byte(body, OFFSET_WEIGHT_PEOPLE, BYTE_FF)
         self.weight = b * WEIGHT_DIVISOR if b != MAX_BYTE_VALUE else None
         self.people_number = b if b != MAX_BYTE_VALUE else None
-
-    def _parse_work_time(self, body: bytearray) -> None:
-        """Parse work_hour/minute/second and compute time_remaining.
-
-        time_remaining is minutes (hour * 60 + minute), matching every other
-        device in this library (e.g. b0/b1); the seconds component is not
-        included, same as Lua's own bf totalState handling.
-        """
-        self.work_hour = self._read_time_byte(body, OFFSET_WORK_HOUR)
-        self.work_minute = self._read_time_byte(body, OFFSET_WORK_MINUTE)
-        self.work_second = self._read_time_byte(body, OFFSET_WORK_SECOND)
-        self.time_remaining = self.work_hour * MINUTES_PER_HOUR + self.work_minute
-
-    def _parse_current_temperatures(self, body: bytearray) -> None:
-        """Parse current temperatures from body."""
-        self.cur_temperature_above = self._read_word(
-            body,
-            OFFSET_CUR_TEMP_ABOVE_HIGH,
-            OFFSET_CUR_TEMP_ABOVE_LOW,
-        )
-        self.cur_temperature_underside = self._read_word(
-            body,
-            OFFSET_CUR_TEMP_UNDERSIDE_HIGH,
-            OFFSET_CUR_TEMP_UNDERSIDE_LOW,
-        )
-        if (cur_temp := self.cur_temperature_above) == 0:
-            cur_temp = self.cur_temperature_underside
-        self.current_temperature = cur_temp
-        self.cur_probe_temperature = self._read_word(
-            body,
-            OFFSET_CUR_PROBE_TEMP_HIGH,
-            OFFSET_CUR_PROBE_TEMP_LOW,
-        )
 
     def _parse_status_and_power(self, body: bytearray) -> None:
         """Parse work_status and infer power state."""
@@ -817,39 +763,14 @@ class MessageBFBody(MessageBody):
         # save_power means device is off; unknown status cannot be trusted as on
         self.power = self.status not in ("save_power", "unknown")
 
-    def _parse_byte32_flags(self, body: bytearray) -> None:
-        """Parse flags from body byte 32."""
+    def _parse_pre_heat(self, body: bytearray) -> None:
+        """Parse pre_heat from body byte 32.
+
+        Lua distinguishes preheat "work" (bit5) from "end" (bit6); both are
+        reported here as pre_heat=True since DeviceAttributes.pre_heat is boolean.
+        """
         b = self.read_byte(body, OFFSET_FLAGS_B32, 0)
-        self.child_lock = bool(b & BIT_CHILD_LOCK)
-        self.door = bool(b & BIT_DOOR)
-        self.tank_ejected = bool(b & BIT_TANK_EJECTED)
-        self.water_shortage = bool(b & BIT_WATER_SHORTAGE)
-        self.water_change_reminder = bool(b & BIT_WATER_CHANGE)
-        self.error_code = bool(b & BIT_ERROR_CODE)
-        # Lua distinguishes preheat "work" (bit5) from "end" (bit6); both are
-        # reported here as pre_heat=True since DeviceAttributes.pre_heat is boolean.
         self.pre_heat = bool(b & (BIT_PREHEAT | BIT_PREHEAT_END))
-
-    def _parse_byte33_flags(self, body: bytearray) -> None:
-        """Parse flags from body byte 33."""
-        b = self.read_byte(body, OFFSET_FLAGS_B33, 0)
-        self.flip_side = bool(b & BIT_FLIP_SIDE)
-        self.reaction = bool(b & BIT_REACTION)
-        self.furnace_light = bool(b & BIT_FURNACE_LIGHT)
-        self.high_temperature_lock = (b & BIT_HIGH_TEMP_LOCK) == 0
-        self.high_temperature_work = bool(b & BIT_HIGH_TEMP_WORK)
-        self.high_temperature = bool(b & BIT_HIGH_TEMP)
-        self.probe_mode = bool(b & BIT_PROBE_MODE)
-
-    def _parse_byte34_flags(self, body: bytearray) -> None:
-        """Parse ramadan flag from body byte 34."""
-        b = self.read_byte(body, OFFSET_RAMADAN, 0)
-        self.ramadan = bool(b & BIT_RAMADAN)
-
-    def _parse_byte35_flags(self, body: bytearray) -> None:
-        """Parse hot_wind flag from body byte 35."""
-        b = self.read_byte(body, OFFSET_HOT_WIND, 0)
-        self.hot_wind = bool(b & BIT_HOT_WIND)
 
     def _parse_cbs_version(self, body: bytearray) -> None:
         """Parse cbs_version from body."""
@@ -860,26 +781,6 @@ class MessageBFBody(MessageBody):
             self.cbs_version = f"V{major}.{minor}.{patch}"
         else:
             self.cbs_version = "V0.0.0"
-
-    def _parse_byte56_flags(self, body: bytearray) -> None:
-        """Parse clean_scale and ota flags from body byte 56."""
-        b = self.read_byte(body, OFFSET_FLAGS_B56, 0)
-        self.clean_scale = bool(b & BIT_CLEAN_SCALE)
-        self.ota = bool(b & BIT_OTA)
-
-    def _parse_byte58_flags(self, body: bytearray) -> None:
-        """Parse clean_sink_ponding and dissipate_heat flags from body byte 58."""
-        b = self.read_byte(body, OFFSET_FLAGS_B58, 0)
-        self.clean_sink_ponding = bool(b & BIT_CLEAN_SINK_PONDING)
-        self.dissipate_heat = bool(b & BIT_DISSIPATE_HEAT)
-
-    def _read_word(self, body: bytearray, high_offset: int, low_offset: int) -> int:
-        """Read a 16-bit word from two body bytes."""
-        return self.read_byte(body, high_offset, 0) << 8 | self.read_byte(
-            body,
-            low_offset,
-            0,
-        )
 
 
 class MessageBFResponse(MessageResponse):

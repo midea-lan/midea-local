@@ -141,7 +141,56 @@ class MideaBFDevice(MideaDevice):
         super().__init__(
             device_type=DeviceType.BF,
             **kwargs,
-            attributes=dict.fromkeys(DeviceAttributes, None),
+            attributes={
+                DeviceAttributes.door: False,
+                DeviceAttributes.status: None,
+                DeviceAttributes.time_remaining: None,
+                DeviceAttributes.current_temperature: None,
+                DeviceAttributes.tank_ejected: False,
+                DeviceAttributes.water_change_reminder: False,
+                DeviceAttributes.water_shortage: False,
+                DeviceAttributes.work_mode: None,
+                DeviceAttributes.fire_power: None,
+                DeviceAttributes.pre_heat: False,
+                DeviceAttributes.turntable: False,
+                DeviceAttributes.hot_wind: False,
+                DeviceAttributes.temperature: None,
+                DeviceAttributes.temperature_above: None,
+                DeviceAttributes.temperature_underside: None,
+                DeviceAttributes.probe_temperature: None,
+                DeviceAttributes.cur_temperature_above: None,
+                DeviceAttributes.cur_temperature_underside: None,
+                DeviceAttributes.cur_probe_temperature: None,
+                DeviceAttributes.steam_quantity: None,
+                DeviceAttributes.weight: None,
+                DeviceAttributes.people_number: None,
+                DeviceAttributes.hour_set: None,
+                DeviceAttributes.minute_set: None,
+                DeviceAttributes.second_set: None,
+                DeviceAttributes.child_lock: False,
+                DeviceAttributes.furnace_light: False,
+                DeviceAttributes.flip_side: False,
+                DeviceAttributes.reaction: False,
+                DeviceAttributes.high_temperature_lock: False,
+                DeviceAttributes.high_temperature_work: False,
+                DeviceAttributes.high_temperature: False,
+                DeviceAttributes.probe_mode: False,
+                DeviceAttributes.probe: False,
+                DeviceAttributes.error_code: False,
+                DeviceAttributes.ramadan: False,
+                DeviceAttributes.totalstep: None,
+                DeviceAttributes.stepnum: None,
+                DeviceAttributes.cloudmenuid: None,
+                DeviceAttributes.clean_scale: False,
+                DeviceAttributes.clean_sink_ponding: False,
+                DeviceAttributes.dissipate_heat: False,
+                DeviceAttributes.cbs_version: None,
+                DeviceAttributes.ota: False,
+                DeviceAttributes.execute: None,
+                DeviceAttributes.power: False,
+                DeviceAttributes.screen_luminance: None,
+                DeviceAttributes.volume: None,
+            },
         )
 
     def build_query(self) -> list[MessageQuery]:
@@ -171,16 +220,24 @@ class MideaBFDevice(MideaDevice):
         message.temperature_underside = self._attributes[
             DeviceAttributes.temperature_underside
         ]
-        message.probe_temperature = self._attributes[DeviceAttributes.probe_temperature]
+        # A probe target sets the probe bit in workModeControl, so only carry it
+        # when a probe is actually in use.
+        if self._attributes[DeviceAttributes.probe]:
+            message.probe_temperature = self._attributes[
+                DeviceAttributes.probe_temperature
+            ]
         message.steam_quantity = self._attributes[DeviceAttributes.steam_quantity]
         message.weight = self._attributes[DeviceAttributes.weight]
         message.people_number = self._attributes[DeviceAttributes.people_number]
         message.turntable = self._attributes[DeviceAttributes.turntable]
         message.pre_heat = self._attributes[DeviceAttributes.pre_heat]
-        # Preserves current hot_wind state in the b5 flags of a workModeControl
+        # Preserves an active hot_wind in the b5 flags of a workModeControl
         # command built for another attribute; standalone hot_wind writes never
-        # reach here (see _WORK_MODE_SETTABLE_ATTRS).
-        message.hot_wind = self._attributes[DeviceAttributes.hot_wind]
+        # reach here (see _WORK_MODE_SETTABLE_ATTRS). Only "on" is carried: b5
+        # has no "off" encoding, and a non-None hot_wind alone would route the
+        # message to notWorkModeControl.
+        if self._attributes[DeviceAttributes.hot_wind]:
+            message.hot_wind = True
         return message
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
