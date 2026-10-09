@@ -424,7 +424,7 @@ class TestMessageCAResponse:
             + [0x0] * 3
             + [0x0F]
             + [0x0] * 2
-            + [0x43, 0x64]
+            + [0x64, 0x43]
             + [0x0] * 4,
         )
         msg = MessageCAResponse(

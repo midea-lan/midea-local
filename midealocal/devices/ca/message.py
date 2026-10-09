@@ -182,6 +182,7 @@ class CAGeneralToshibaMessageBody(MessageBody):
                         14,
                         max_value=0xFFFF,
                         length_in_bytes=2,
+                        first_upper=True,
                     ),
                 ],
             )
