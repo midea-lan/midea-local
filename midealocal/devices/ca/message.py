@@ -154,71 +154,46 @@ class CAGeneralToshibaMessageBody(MessageBody):
 
     def __init__(self, body: bytearray, model: str) -> None:
         """Initialize CA message general body."""
-        parser_list: list[BodyParser[Any]] = []
-        if model == "0000000D":
-            parser_list.extend(
-                [
-                    IntEnumParser(DeviceAttributes.mode, 4, DeviceMode),
-                    IntParser(DeviceAttributes.refrigerator_actual_temp, 5),
-                    IntParser(DeviceAttributes.freezer_actual_temp, 6),
-                    IntEnumParser(
-                        DeviceAttributes.ice_mode,
-                        7,
-                        IceMakingMode,
-                        byte_mask=0x0F,
-                    ),
-                    IntEnumParser(
-                        DeviceAttributes.ice_status,
-                        7,
-                        IceMakingStatus,
-                        byte_mask=0xF0,
-                    ),
-                    BoolParser(DeviceAttributes.refrigerator_door, 11, 0),
-                    BoolParser(DeviceAttributes.freezer_door, 11, 1),
-                    BoolParser(DeviceAttributes.ice_door, 11, 2),
-                    BoolParser(DeviceAttributes.flex_zone_door, 11, 3),
-                    IntParser(
-                        DeviceAttributes.energy_consumption,
-                        14,
-                        max_value=0xFFFF,
-                        length_in_bytes=2,
-                    ),
-                ],
-            )
-        else:
-            parser_list.extend(
-                [
-                    IntEnumParser(DeviceAttributes.mode, 2, DeviceMode),
-                    IntParser(DeviceAttributes.refrigerator_actual_temp, 3),
-                    IntParser(DeviceAttributes.freezer_actual_temp, 4),
-                    IntEnumParser(
-                        DeviceAttributes.ice_mode,
-                        5,
-                        IceMakingMode,
-                        byte_mask=0x0F,
-                    ),
-                    IntEnumParser(
-                        DeviceAttributes.ice_status,
-                        5,
-                        IceMakingStatus,
-                        byte_mask=0xF0,
-                    ),
-                    BoolParser(DeviceAttributes.refrigerator_door, 8, 0),
-                    BoolParser(DeviceAttributes.freezer_door, 8, 1),
-                    BoolParser(DeviceAttributes.ice_door, 8, 2),
-                    BoolParser(DeviceAttributes.flex_zone_door, 8, 3),
-                    IntParser(
-                        DeviceAttributes.energy_consumption,
-                        11,
-                        max_value=0xFFFF,
-                        length_in_bytes=2,
-                    ),
-                ],
-            )
         super().__init__(
             body=body,
-            parser_list=parser_list,
+            parser_list=self._generate_parser_list(model),
         )
+
+    def _generate_parser_list(self, model: str) -> list[BodyParser[Any]]:
+        """Generate parser list based on model."""
+        initial_offset = 0
+        bool_offset = 0
+        if model == "0000000D":
+            initial_offset = 2
+            bool_offset = 3
+
+        return [
+            IntEnumParser(DeviceAttributes.mode, 2 + initial_offset, DeviceMode),
+            IntParser(DeviceAttributes.refrigerator_actual_temp, 3 + initial_offset),
+            IntParser(DeviceAttributes.freezer_actual_temp, 4 + initial_offset),
+            IntEnumParser(
+                DeviceAttributes.ice_mode,
+                5 + initial_offset,
+                IceMakingMode,
+                byte_mask=0x0F,
+            ),
+            IntEnumParser(
+                DeviceAttributes.ice_status,
+                5 + initial_offset,
+                IceMakingStatus,
+                byte_mask=0xF0,
+            ),
+            BoolParser(DeviceAttributes.refrigerator_door, 8 + bool_offset, 0),
+            BoolParser(DeviceAttributes.freezer_door, 8 + bool_offset, 1),
+            BoolParser(DeviceAttributes.ice_door, 8 + bool_offset, 2),
+            BoolParser(DeviceAttributes.flex_zone_door, 8 + bool_offset, 3),
+            IntParser(
+                DeviceAttributes.energy_consumption,
+                11 + bool_offset,
+                max_value=0xFFFF,
+                length_in_bytes=2,
+            ),
+        ]
 
 
 class CAGeneralMessageBody(MessageBody):
@@ -482,7 +457,11 @@ class CANotify01MessageBody(MessageBody):
 class MessageCAResponse(MessageResponse):
     """CA message response."""
 
-    def __init__(self, message: bytes, model: str = "00000000") -> None:
+    def __init__(
+        self,
+        message: bytes,
+        model: str = "00000000",
+    ) -> None:
         """Initialize CA message response."""
         super().__init__(bytearray(message))
         # uptable["dataType"] 0x02 and messageBytes[0] 0x00

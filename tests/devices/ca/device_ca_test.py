@@ -87,12 +87,20 @@ class TestMideaCADevice:
         assert self.device.attributes[DeviceAttributes.humidity] is None
         assert self.device.attributes[DeviceAttributes.variable_mode] is None
 
-    def test_build_query(self) -> None:
+    @pytest.mark.parametrize(
+        ("manufacturer_code", "expected_query"),
+        [
+            ("0000", MessageQuery),
+            ("8214", MessageQuery),
+            ("0008", MessageQueryToshiba),
+        ],
+    )
+    def test_build_query(self, manufacturer_code: str, expected_query: type) -> None:
         """Test build query."""
+        self.device._manufacturer_code = manufacturer_code
         queries = self.device.build_query()
-        assert len(queries) == 2
-        assert isinstance(queries[0], MessageQuery)
-        assert isinstance(queries[1], MessageQueryToshiba)
+        assert len(queries) == 1
+        assert isinstance(queries[0], expected_query)
 
     def test_mode_options(self) -> None:
         """variable_mode_options de-duplicates the repeated mapping value."""
