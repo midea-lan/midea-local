@@ -617,9 +617,9 @@ class MessageHeader55(MessageHeader):
                     self.protocol_version,
                     int(self.device_type),
                 ]
-                + [0x00] * 6
-                + [min(int(self.message_type), 0xFF), 0x00],
-            ),
+                + [0x00] * 6,
+            )
+            + min(int(self.message_type), 0xFFFF).to_bytes(2, "little"),
         )
 
     @property
