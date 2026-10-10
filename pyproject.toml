@@ -67,6 +67,19 @@ warn_unreachable = true
 module = "tests.*"
 disallow_untyped_decorators = false
 
+[tool.pylint.MASTER]
+jobs = 0
+prefer-stubs = true
+py-version = "3.12"
+recursive = true
+
+[tool.pylint.BASIC]
+docstring-min-length = 4
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = ["all"]
+enable = ["E", "F"]
+
 [build-system]
 requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
