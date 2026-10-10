@@ -22,7 +22,7 @@ use that environment.
 - Coverage (as CI does): `uv run python -m pytest --cov=midealocal --cov-report xml ./tests/`
 - Lint/format/type-check all at once via `uv run prek run --all-files`. Individually:
   `uv run ruff check .`, `uv run ruff format .`, `uv run mypy midealocal`,
-  `uv run pylint --rcfile=pylintrc midealocal`.
+  `uv run pylint midealocal`.
 
 `ruff` uses `lint.select = ["ALL"]` with curated ignores in `ruff.toml`; `mypy` runs in
 strict mode (`[tool.mypy]` in `pyproject.toml`). Fix all reported issues before committing — CI runs the full
