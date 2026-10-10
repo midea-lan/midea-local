@@ -183,7 +183,7 @@ class MideaCCDevice(MideaClimateDevice):
         """Midea CC device fan modes."""
         if self._fan_speeds is None:
             return []
-        return [member for member in self._fan_speeds]
+        return [*self._fan_speeds]
 
     @property
     @override
