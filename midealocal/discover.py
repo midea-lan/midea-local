@@ -169,7 +169,7 @@ def _extract_mac(reply: bytes | bytearray, ssid_len: int, sn: str) -> str | None
     the serial number, which also may contain the MAC address.
     Otherwise return None.
     """
-    # Based on https://github.com/nbogojevic/midea-beautiful-air/blob/db3622e784891af0a522d70a626fb54e5c3e5e6f/midea_beautiful/lan.py#L264  # noqa: E501
+    # Based on https://github.com/nbogojevic/midea-beautiful-air/blob/db3622e784891af0a522d70a626fb54e5c3e5e6f/midea_beautiful/lan.py#L264
     mac = None
     mac_start = 63 + ssid_len
     mac_ends = mac_start + 6
