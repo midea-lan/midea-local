@@ -27,6 +27,9 @@ dependencies = { file = ["requirements.txt"] }
 [tool.setuptools.packages.find]
 include = ["midealocal*"]
 
+[tool.codespell]
+ignore-regex = '\bmapp\.appsmb\.com\b'
+
 [tool.coverage.run]
 branch = true
 source = ["midealocal"]
