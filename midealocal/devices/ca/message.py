@@ -1,7 +1,14 @@
 """Midea local CA message."""
 
-from midealocal.const import DeviceType
+from enum import IntEnum, StrEnum
+from typing import Any, Literal
+
+from midealocal.const import CA_MODEL_GRY540XFS, DeviceType
 from midealocal.message import (
+    BodyParser,
+    BoolParser,
+    IntEnumParser,
+    IntParser,
     ListTypes,
     MessageBody,
     MessageRequest,
@@ -20,6 +27,68 @@ TEMP_NEG_LOWER_VALUE = 49
 TEMP_NEG_UPPER_VALUE = 54
 
 
+class DeviceAttributes(StrEnum):
+    """Midea CA device attributes."""
+
+    mode = "mode"
+    energy_consumption = "energy_consumption"
+    refrigerator_actual_temp = "refrigerator_actual_temp"
+    freezer_actual_temp = "freezer_actual_temp"
+    flex_zone_actual_temp = "flex_zone_actual_temp"
+    right_flex_zone_actual_temp = "right_flex_zone_actual_temp"
+    refrigerator_setting_temp = "refrigerator_setting_temp"
+    freezer_setting_temp = "freezer_setting_temp"
+    flex_zone_setting_temp = "flex_zone_setting_temp"
+    right_flex_zone_setting_temp = "right_flex_zone_setting_temp"
+    refrigerator_door_overtime = "refrigerator_door_overtime"
+    freezer_door_overtime = "freezer_door_overtime"
+    bar_door_overtime = "bar_door_overtime"
+    flex_zone_door_overtime = "flex_zone_door_overtime"
+    refrigerator_door = "refrigerator_door"
+    freezer_door = "freezer_door"
+    bar_door = "bar_door"
+    flex_zone_door = "flex_zone_door"
+    microcrystal_fresh = "microcrystal_fresh"
+    electronic_smell = "electronic_smell"
+    humidity = "humidity"
+    variable_mode = "variable_mode"
+    ice_mode = "ice_mode"
+    ice_status = "ice_status"
+    ice_door = "ice_door"
+
+
+class DeviceMode(IntEnum):
+    """Device CA Mode."""
+
+    NORMAL = 0x00
+    QUICK_FREEZING = 0x01
+    VEGETABLES = 0x02
+    VEGETABLES_DRYING = 0x03
+    CHILLED = 0x04
+    THAWING = 0x05
+    ROUGH_HEAT_REMOVAL = 0x06
+    COOL_COOKING = 0x07
+    TIMER = 0x08
+    FROZEN_RICE = 0x09
+
+
+class IceMakingMode(IntEnum):
+    """Ice making mode."""
+
+    NORMAL = 0x00
+    QUICK = 0x01
+    OFF = 0x02
+
+
+class IceMakingStatus(IntEnum):
+    """Ice making status."""
+
+    RUNNING = 0x00
+    WATER_SHORTAGE = 0x10
+    ICE_FULL = 0x20
+    STOP = 0x30
+
+
 class MessageCABase(MessageRequest):
     """CA message base."""
 
@@ -28,6 +97,7 @@ class MessageCABase(MessageRequest):
         protocol_version: int,
         message_type: MessageType,
         body_type: ListTypes,
+        header_type: Literal[ListTypes.AA, ListTypes.X55] = ListTypes.AA,
     ) -> None:
         """Initialize CA message base."""
         super().__init__(
@@ -35,6 +105,7 @@ class MessageCABase(MessageRequest):
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
+            header_type=header_type,
         )
 
     @property
@@ -56,6 +127,73 @@ class MessageQuery(MessageCABase):
     @property
     def _body(self) -> bytearray:
         return bytearray([])
+
+
+class MessageQueryToshiba(MessageCABase):
+    """CA message query for Toshiba devices."""
+
+    def __init__(
+        self,
+        protocol_version: int,
+    ) -> None:
+        """Initialize CA message query for Toshiba devices."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.query,
+            body_type=ListTypes.X00,
+            header_type=ListTypes.X55,
+        )
+
+    @property
+    def _body(self) -> bytearray:
+        return bytearray([])
+
+
+class CAGeneralToshibaMessageBody(MessageBody):
+    """CA message general Toshiba body."""
+
+    def __init__(self, body: bytearray, model: str) -> None:
+        """Initialize CA message general body."""
+        super().__init__(
+            body=body,
+            parser_list=self._generate_parser_list(model),
+        )
+
+    def _generate_parser_list(self, model: str) -> list[BodyParser[Any]]:
+        """Generate parser list based on model."""
+        initial_offset = 0
+        bool_offset = 0
+        if model == CA_MODEL_GRY540XFS:
+            initial_offset = 2
+            bool_offset = 3
+
+        return [
+            IntEnumParser(DeviceAttributes.mode, 2 + initial_offset, DeviceMode),
+            IntParser(DeviceAttributes.refrigerator_actual_temp, 3 + initial_offset),
+            IntParser(DeviceAttributes.freezer_actual_temp, 4 + initial_offset),
+            IntEnumParser(
+                DeviceAttributes.ice_mode,
+                5 + initial_offset,
+                IceMakingMode,
+                byte_mask=0x0F,
+            ),
+            IntEnumParser(
+                DeviceAttributes.ice_status,
+                5 + initial_offset,
+                IceMakingStatus,
+                byte_mask=0xF0,
+            ),
+            BoolParser(DeviceAttributes.refrigerator_door, 8 + bool_offset, 0),
+            BoolParser(DeviceAttributes.freezer_door, 8 + bool_offset, 1),
+            BoolParser(DeviceAttributes.ice_door, 8 + bool_offset, 2),
+            BoolParser(DeviceAttributes.flex_zone_door, 8 + bool_offset, 3),
+            IntParser(
+                DeviceAttributes.energy_consumption,
+                11 + bool_offset,
+                max_value=0xFFFF,
+                length_in_bytes=2,
+            ),
+        ]
 
 
 class CAGeneralMessageBody(MessageBody):
@@ -319,46 +457,65 @@ class CANotify01MessageBody(MessageBody):
 class MessageCAResponse(MessageResponse):
     """CA message response."""
 
-    def __init__(self, message: bytes) -> None:
+    def __init__(
+        self,
+        message: bytes,
+        model: str = "00000000",
+    ) -> None:
         """Initialize CA message response."""
         super().__init__(bytearray(message))
         # uptable["dataType"] 0x02 and messageBytes[0] 0x00
         # uptable["dataType"] 0x03 and messageBytes[0] 0x00
         # uptable["dataType"] 0x04 and messageBytes[0] 0x02)
         if (
-            (
-                self.message_type in [MessageType.query, MessageType.set]
-                and self.body_type == ListTypes.X00
+            self.header_type == ListTypes.AA
+            and (
+                (
+                    self.message_type in [MessageType.query, MessageType.set]
+                    and self.body_type == ListTypes.X00
+                )
+                or (
+                    self.message_type == MessageType.notify1
+                    and self.body_type == ListTypes.X02
+                )
             )
-            or (
-                self.message_type == MessageType.notify1
-                and self.body_type == ListTypes.X02
-            )
-        ) and len(super().body) > MIN_CA_GENERAL_BODY_LENGTH:
+            and len(self.body) > MIN_CA_GENERAL_BODY_LENGTH
+        ):
             self.set_body(CAGeneralMessageBody(super().body))
         # uptable["dataType"] 0x06 and messageBytes[0] 0x01
         # uptable["dataType"] 0x03 and messageBytes[0] 0x02
         elif (
-            (
-                self.message_type == MessageType.exception
-                and self.body_type == ListTypes.X01
+            self.header_type == ListTypes.AA
+            and (
+                (
+                    self.message_type == MessageType.exception
+                    and self.body_type == ListTypes.X01
+                )
+                or (
+                    self.message_type == MessageType.query
+                    and self.body_type == ListTypes.X02
+                )
             )
-            or (
-                self.message_type == MessageType.query
-                and self.body_type == ListTypes.X02
-            )
-        ) and len(super().body) >= MIN_CA_EXCEPTION_BODY_LENGTH:
+            and len(super().body) >= MIN_CA_EXCEPTION_BODY_LENGTH
+        ):
             self.set_body(CAExceptionMessageBody(super().body))
         # uptable["dataType"] 0x04 and messageBytes[0] 0x00
-        elif (
+        elif self.header_type == ListTypes.AA and (
             self.message_type == MessageType.notify1 and self.body_type == ListTypes.X00
         ):
             self.set_body(CANotify00MessageBody(super().body))
         # uptable["dataType"] 0x04 and messageBytes[0] 0x01
         # uptable["dataType"] 0x03 and messageBytes[0] 0x01
-        elif (
+        elif self.header_type == ListTypes.AA and (
             self.message_type in [MessageType.query, MessageType.notify1]
             and self.body_type == ListTypes.X01
         ):
             self.set_body(CANotify01MessageBody(super().body))
+        elif (
+            self.header_type == ListTypes.X55
+            and self.message_type
+            in [MessageType.set, MessageType.query, MessageType.notify1]
+            and self.body_type == ListTypes.X00
+        ):
+            self.set_body(CAGeneralToshibaMessageBody(super().body, model))
         self.set_attr()

@@ -228,6 +228,7 @@ def _parse_discover_response(
             port = bytes2port(reply[4:8])
             model = reply[17:25].decode("ascii")
             sn = reply[8:40].decode("ascii")
+            manufacturer_code = reply[8:12].decode("ascii")
             mac = _extract_mac(reply, ssid_len, sn)
         else:
             _LOGGER.warning(
@@ -252,8 +253,10 @@ def _parse_discover_response(
         )
         response = get_device_info(ip, int(port))
         device_id = get_id_from_response(response)
+        manufacturer_code = "0000"
         if len(sn) == SERIAL_TYPE1_LENGTH:
             model = sn[9:17]
+            manufacturer_code = sn[:4]
         elif len(sn) == SERIAL_TYPE2_LENGTH:
             model = sn[3:11]
         else:
@@ -270,6 +273,7 @@ def _parse_discover_response(
         "sn": sn,
         "protocol": protocol,
         "mac": mac,
+        "manufacturer_code": manufacturer_code,
     }
 
 

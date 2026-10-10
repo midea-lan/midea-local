@@ -267,6 +267,7 @@ class TestMideaDevice:
             attributes={},
             mac="1234567890ab",
             serial_number="test_serial",
+            manufacturer_code="1234",
         )
 
     def test_initial_attributes(self) -> None:
@@ -279,6 +280,40 @@ class TestMideaDevice:
         assert self.device.subtype == 1
         assert self.device.mac == "1234567890ab"
         assert self.device.serial_number == "test_serial"
+        assert self.device.manufacturer_code == "1234"
+
+    @pytest.mark.parametrize(
+        ("serial", "expected_manufacturer_code"),
+        [
+            ("anything", "0000"),
+            ("ABC1234567800000000000", "0000"),
+            ("00000000012345678abbccddeeff0000", "0000"),
+            ("00230000012345678abbccddeeff0000", "0023"),
+            ("00080000012345678abbccddeeff0000", "0008"),
+        ],
+    )
+    def test_device_manufacturer_code_by_serial(
+        self,
+        serial: str,
+        expected_manufacturer_code: str,
+    ) -> None:
+        """Test device manutacturer_code based on the serial."""
+        device = MideaDevice(
+            name="Test Device",
+            device_id=1,
+            device_type=DeviceType.AC,
+            ip_address="192.168.1.100",
+            port=6444,
+            token=DEFAULT_KEYS[99]["token"],
+            key=DEFAULT_KEYS[99]["key"],
+            device_protocol=ProtocolVersion.V3,
+            model="test_model",
+            subtype=1,
+            attributes={},
+            mac="1234567890ab",
+            serial_number=serial,
+        )
+        assert device.manufacturer_code == expected_manufacturer_code
 
     def test_get_attribute(self) -> None:
         """Test get_attribute reads from the internal attributes dict."""
@@ -806,10 +841,17 @@ class TestMideaDevice:
 
     def test_pre_process_message(self) -> None:
         """Test pre process message."""
-        assert self.device.pre_process_message(bytearray([0x0] * 10)) is True
+        assert (
+            self.device.pre_process_message(bytearray([0xAA, 0x0A] + [0x0] * 8)) is True
+        )
         assert (
             self.device.pre_process_message(
-                bytearray([0x0] * 9 + [MessageType.query_appliance] + [0x1] * 10),
+                bytearray(
+                    [0xAA, 20]
+                    + [0x00] * 7
+                    + [MessageType.query_appliance]
+                    + [0x1] * 10,
+                ),
             )
             is False
         )
