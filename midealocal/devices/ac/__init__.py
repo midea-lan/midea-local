@@ -2,10 +2,13 @@
 
 import json
 import logging
+import math
+import threading
 import time
-from collections.abc import Mapping
-from dataclasses import dataclass
-from typing import Any, ClassVar, Unpack, cast, override
+from collections.abc import Iterator, Mapping
+from concurrent.futures import Future
+from dataclasses import dataclass, replace
+from typing import Any, ClassVar, Literal, Unpack, cast, override
 
 from midealocal.base_classes.climate import (
     DEFAULT_MAX_TARGET_TEMPERATURE,
@@ -17,8 +20,19 @@ from midealocal.base_classes.climate import (
     MideaSwingMode,
 )
 from midealocal.const import DeviceType
-from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs
-from midealocal.message import ListTypes
+from midealocal.device import (
+    QUERY_TIMEOUT,
+    SKIP_ATTRIBUTE,
+    MideaDeviceInitKwargs,
+    NoSupportedProtocol,
+)
+from midealocal.device_info import DiscoveryProfile
+from midealocal.message import (
+    ListTypes,
+    MessageQueryAppliance,
+    MessageRequest,
+    MessageType,
+)
 
 from .message import (
     ACFanSpeed,
@@ -68,6 +82,21 @@ ACQuery = (
 
 # AC mode constants
 DRY_MODE = 3
+CONTROL_CONFIRM_INTERVAL = 0.25
+CONTROL_MIN_TEMPERATURE = 16
+CONTROL_MAX_TEMPERATURE = 31.5
+
+# These controls use the general set packet, whose state is supplied by C0.
+GENERAL_CONTROL_ATTRIBUTES = frozenset(
+    {
+        DeviceAttributes.power,
+        DeviceAttributes.mode,
+        DeviceAttributes.target_temperature,
+        DeviceAttributes.fan_speed,
+        DeviceAttributes.swing_vertical,
+        DeviceAttributes.swing_horizontal,
+    },
+)
 
 
 class DeviceHVACMode(MideaHVACMode):
@@ -333,12 +362,21 @@ class MideaACDevice(MideaClimateDevice):
         self._default_temperature_step: float = 0.5
         self._temperature_step: float = 0.5
         self._used_subprotocol: bool = self._model_capabilities.uses_bb_protocol
+        self._control_status_version = 0
+        self._sent_control_query_id: int | None = None
+        self._correlated_control_state: tuple[int, dict[str, Any]] | None = None
+        self._control_query_correlated = False
         self._bb_sn8_flag: bool = False
         self._bb_timer: bool = False
         # per-mode setpoint limits from the B5 capability, keyed by mode value
         self._temperature_limits: dict[int, tuple[float, float]] | None = None
         # decoded B5 capability flags (accumulated across B5 frames)
         self._capabilities: dict[str, bool] = {}
+        self._capability_pages_received: set[type[MessageCapabilitiesQuery]] = set()
+        self._pending_capability_pages: dict[type[MessageCapabilitiesQuery], int] = {}
+        self._confirmed_capabilities: dict[str, bool] = {}
+        self._confirmed_temperature_limits: dict[int, tuple[float, float]] | None = None
+        self._restored_capability_pages = False
         # manual setpoint limits from customize (highest priority)
         self._customize_min_temperature: float | None = None
         self._customize_max_temperature: float | None = None
@@ -613,6 +651,160 @@ class MideaACDevice(MideaClimateDevice):
         """Midea AC device rate_select options."""
         return list(self._active_rate_selects().values())
 
+    @override
+    def refresh_status_for_set(self, attribute: str) -> None:
+        """Read basic control state without probing telemetry and capabilities."""
+        if (
+            attribute not in GENERAL_CONTROL_ATTRIBUTES
+            or self._used_subprotocol
+            or self._uses_new_protocol_temperature
+        ):
+            super().refresh_status_for_set(attribute)
+            return
+        if self._appliance_query:
+            self._refresh_query(MessageQueryAppliance(self.device_type), True, ())
+        version = self._control_status_version
+        query = MessageQuery(self._message_protocol_version)
+        failed = self._refresh_query(
+            query,
+            True,
+            [query],
+            response_received=lambda: (
+                self._control_status_version > version or self._used_subprotocol
+            ),
+        )
+        if failed:
+            # Never send a full set packet built from defaults, or report an
+            # optimistic attribute value as a successful device readback.
+            raise NoSupportedProtocol
+        if bool(self._used_subprotocol):
+            # A newly discovered BB device needs its own complete status groups.
+            super().refresh_status_for_set(attribute)
+
+    @override
+    def connect(
+        self,
+        check_protocol: bool = False,
+        *,
+        readiness: Literal["full", "control"] = "full",
+    ) -> bool:
+        """Refresh capability pages after opening a new device connection."""
+        self._control_query_correlated = False
+        self._sent_control_query_id = None
+        self._correlated_control_state = None
+        if not self._restored_capability_pages:
+            self._capability_pages_received.clear()
+            self._confirmed_capabilities.clear()
+            self._confirmed_temperature_limits = None
+        self._restored_capability_pages = False
+        self._pending_capability_pages.clear()
+        if readiness == "full":
+            return super().connect(check_protocol)
+        return super().connect(check_protocol, readiness=readiness)
+
+    @property
+    def supports_confirmed_controls(self) -> bool:
+        """Whether this connection has demonstrated correlated ordinary C0 replies."""
+        return self._control_query_correlated and not (
+            self._used_subprotocol or self._uses_new_protocol_temperature
+        )
+
+    @override
+    def _refresh_control_status(self) -> bool:
+        """Become safe to control before collecting optional telemetry."""
+        if self._used_subprotocol or self._uses_new_protocol_temperature:
+            self.refresh_status(True)
+            return False
+        self.refresh_status_for_set(DeviceAttributes.power)
+        return not (self._used_subprotocol or self._uses_new_protocol_temperature)
+
+    @override
+    def export_discovery_profile(self) -> DiscoveryProfile | None:
+        """Export confirmed metadata without storing live control state."""
+        profile = super().export_discovery_profile()
+        if profile is None:
+            return None
+        pages = (MessageCapabilitiesQuery, MessageCapabilitiesAdditionalQuery)
+        return replace(
+            profile,
+            capability_pages=tuple(
+                index
+                for index, page in enumerate(pages)
+                if page in self._capability_pages_received
+            ),
+            capabilities=dict(self._confirmed_capabilities),
+            uses_subprotocol=self._used_subprotocol,
+            temperature_limits=self._confirmed_temperature_limits,
+        )
+
+    @override
+    def restore_discovery_profile(self, profile: DiscoveryProfile) -> bool:
+        """Restore discovery hints; a fresh state read is still required."""
+        if not super().restore_discovery_profile(profile):
+            return False
+        pages = (MessageCapabilitiesQuery, MessageCapabilitiesAdditionalQuery)
+        self._capability_pages_received = {
+            pages[index] for index in profile.capability_pages
+        }
+        self._restored_capability_pages = True
+        self._used_subprotocol = (
+            profile.uses_subprotocol or self._model_capabilities.uses_bb_protocol
+        )
+        self._capabilities.clear()
+        self._confirmed_capabilities.clear()
+        self._temperature_limits = None
+        self._confirmed_temperature_limits = None
+        for attribute in self._capabilities_attr.values():
+            self._attributes.setdefault(attribute, None)
+        if profile.capability_pages:
+            self._capabilities = dict(profile.capabilities)
+            self._confirmed_capabilities = dict(profile.capabilities)
+            for cap, attribute in self._capabilities_attr.items():
+                if cap in self._capabilities and not self._capabilities[cap]:
+                    self._attributes.pop(attribute, None)
+            limits = profile.temperature_limits
+            self._temperature_limits = None if limits is None else dict(limits)
+            self._confirmed_temperature_limits = self._temperature_limits
+        self._refresh_temperature_limits()
+        return True
+
+    @override
+    def refresh_status(self, check_protocol: bool = False) -> None:
+        """Allow an explicit protocol probe to refresh capability information."""
+        if check_protocol:
+            self._capability_pages_received.clear()
+            self._pending_capability_pages.clear()
+            self._confirmed_capabilities.clear()
+            self._confirmed_temperature_limits = None
+        super().refresh_status(check_protocol)
+
+    @override
+    def build_send(self, cmd: MessageRequest, query: bool = False) -> None:
+        """Track capability request IDs separately for the two response pages."""
+        if isinstance(cmd, MessageQuery):
+            self._sent_control_query_id = cmd.message_id
+        if isinstance(cmd, MessageCapabilitiesQuery):
+            self._pending_capability_pages[type(cmd)] = cmd.message_id
+        try:
+            super().build_send(cmd, query=query)
+        except Exception:
+            if isinstance(cmd, MessageCapabilitiesQuery):
+                self._pending_capability_pages.pop(type(cmd), None)
+            raise
+
+    @override
+    def _build_query_sequence(self) -> Iterator[MessageRequest]:
+        """Switch to BB queries immediately when the basic reply identifies BB."""
+        queries = self.build_query()
+        if self._used_subprotocol:
+            yield from queries
+            return
+        yield queries[0]
+        if bool(self._used_subprotocol):
+            yield from self.build_query()
+        else:
+            yield from queries[1:]
+
     def build_query(self) -> list[ACQuery]:
         """Midea AC device build query."""
         if self._used_subprotocol:
@@ -645,7 +837,9 @@ class MideaACDevice(MideaClimateDevice):
             MessageCapabilitiesQuery(self._message_protocol_version),
             MessageCapabilitiesAdditionalQuery(self._message_protocol_version),
         ]
-        return queries
+        return [
+            cmd for cmd in queries if type(cmd) not in self._capability_pages_received
+        ]
 
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea AC device process message."""
@@ -761,6 +955,17 @@ class MideaACDevice(MideaClimateDevice):
         new_status.update(self._refresh_self_clean_status(message))
         new_status.update(self._refresh_temperature_limits(message))
         new_status.update(self._update_capabilities(message))
+        if message.message_type == MessageType.query and body_type == ListTypes.C0:
+            self._control_status_version += 1
+            if (
+                message.control_message_id is not None
+                and message.control_message_id == self._sent_control_query_id
+            ):
+                self._control_query_correlated = True
+                self._correlated_control_state = (
+                    message.control_message_id,
+                    dict(self._attributes),
+                )
         return new_status
 
     @staticmethod
@@ -795,6 +1000,19 @@ class MideaACDevice(MideaClimateDevice):
         changed) still reaches update_all(); callers that derive state from
         `capabilities` would otherwise never be notified of the change.
         """
+        capability_message_id = getattr(message, "capability_message_id", None)
+        if capability_message_id is not None:
+            for page, message_id in tuple(self._pending_capability_pages.items()):
+                if capability_message_id == message_id:
+                    self._capability_pages_received.add(page)
+                    del self._pending_capability_pages[page]
+                    self._confirmed_capabilities.update(
+                        getattr(message, "capabilities", {}),
+                    )
+                    if hasattr(message, "temperature_limits"):
+                        self._confirmed_temperature_limits = dict(
+                            message.temperature_limits,
+                        )
         if not hasattr(message, "capabilities"):
             return {}
         new_capabilities = message.capabilities
@@ -872,52 +1090,56 @@ class MideaACDevice(MideaClimateDevice):
             DeviceAttributes.max_temperature.value: maximum,
         }
 
-    def make_message_set(self) -> MessageGeneralSet:
+    def make_message_set(
+        self,
+        state: Mapping[str, Any] | None = None,
+    ) -> MessageGeneralSet:
         """Midea AC device make message set."""
+        state = self._attributes if state is None else state
         message = MessageGeneralSet(self._message_protocol_version)
-        message.power = self._attributes.get(DeviceAttributes.power, False)
-        message.prompt_tone = self._attributes.get(DeviceAttributes.prompt_tone, True)
-        message.mode = self._attributes.get(DeviceAttributes.mode, 0)
-        message.target_temperature = self._attributes.get(
+        message.power = state.get(DeviceAttributes.power, False)
+        message.prompt_tone = state.get(DeviceAttributes.prompt_tone, True)
+        message.mode = state.get(DeviceAttributes.mode, 0)
+        message.target_temperature = state.get(
             DeviceAttributes.target_temperature,
             20.0,
         )
-        message.fan_speed = self._attributes.get(DeviceAttributes.fan_speed, 102)
-        message.swing_vertical = self._attributes.get(
+        message.fan_speed = state.get(DeviceAttributes.fan_speed, 102)
+        message.swing_vertical = state.get(
             DeviceAttributes.swing_vertical,
             False,
         )
-        message.swing_horizontal = self._attributes.get(
+        message.swing_horizontal = state.get(
             DeviceAttributes.swing_horizontal,
             False,
         )
-        message.boost_mode = self._attributes.get(DeviceAttributes.boost_mode, False)
-        message.power_saving = self._attributes.get(
+        message.boost_mode = state.get(DeviceAttributes.boost_mode, False)
+        message.power_saving = state.get(
             DeviceAttributes.power_saving,
             False,
         )
-        message.smart_eye = self._attributes.get(DeviceAttributes.smart_eye, False)
-        message.dry = self._attributes.get(DeviceAttributes.dry, False)
-        message.aux_heating = self._attributes.get(DeviceAttributes.aux_heating, False)
-        message.eco_mode = self._attributes.get(DeviceAttributes.eco_mode, False)
-        message.temp_fahrenheit = self._attributes.get(
+        message.smart_eye = state.get(DeviceAttributes.smart_eye, False)
+        message.dry = state.get(DeviceAttributes.dry, False)
+        message.aux_heating = state.get(DeviceAttributes.aux_heating, False)
+        message.eco_mode = state.get(DeviceAttributes.eco_mode, False)
+        message.temp_fahrenheit = state.get(
             DeviceAttributes.temp_fahrenheit,
             False,
         )
-        message.sleep_mode = self._attributes.get(DeviceAttributes.sleep_mode, False)
-        message.natural_wind = self._attributes.get(
+        message.sleep_mode = state.get(DeviceAttributes.sleep_mode, False)
+        message.natural_wind = state.get(
             DeviceAttributes.natural_wind,
             False,
         )
-        message.frost_protect = self._attributes.get(
+        message.frost_protect = state.get(
             DeviceAttributes.frost_protect,
             False,
         )
-        message.comfort_mode = self._attributes.get(
+        message.comfort_mode = state.get(
             DeviceAttributes.comfort_mode,
             False,
         )
-        message.anion = self._attributes.get(DeviceAttributes.anion, False)
+        message.anion = state.get(DeviceAttributes.anion, False)
         return message
 
     def _make_newprotocol_message_set(
@@ -1090,8 +1312,175 @@ class MideaACDevice(MideaClimateDevice):
             message = self.make_message_set()
         return message
 
+    def set_attributes(
+        self,
+        changes: Mapping[str, bool | float | str],
+        *,
+        confirm: bool = True,
+    ) -> Future[dict[str, Any]]:
+        """Serialize a combined basic command and optionally confirm fresh state.
+
+        The Future reports validation, transport, and confirmation failures. A
+        SET is sent exactly once. Confirmation retries only status queries;
+        with confirm=False the result is empty, not an optimistic state report.
+        BB and model-specific temperature protocols retain their legacy setters.
+        """
+        requested = dict(changes)
+        return self.submit_operation(
+            lambda: self._set_attributes(requested, confirm=confirm),
+        )
+
+    def _validate_control_changes(
+        self,
+        changes: Mapping[str, bool | float | str],
+    ) -> None:
+        """Reject unsupported protocols and malformed changes before sending."""
+        if self._used_subprotocol or self._uses_new_protocol_temperature:
+            raise NotImplementedError("Confirmed controls require ordinary AC C0 state")
+        for attribute, value in changes.items():
+            valid = attribute in GENERAL_CONTROL_ATTRIBUTES
+            if attribute in {
+                DeviceAttributes.power,
+                DeviceAttributes.swing_vertical,
+                DeviceAttributes.swing_horizontal,
+            }:
+                valid = isinstance(value, bool)
+            elif attribute in {
+                DeviceAttributes.mode,
+                DeviceAttributes.fan_speed,
+                DeviceAttributes.target_temperature,
+            }:
+                valid = (
+                    isinstance(value, int | float)
+                    and not isinstance(value, bool)
+                    and math.isfinite(value)
+                )
+                if valid:
+                    numeric = float(value)
+                    if attribute == DeviceAttributes.mode:
+                        valid = (
+                            numeric.is_integer()
+                            and DeviceHVACMode.OFF <= numeric <= DeviceHVACMode.FAN_ONLY
+                        )
+                    elif attribute == DeviceAttributes.fan_speed:
+                        valid = numeric.is_integer() and 0 <= numeric <= ACFanSpeed.AUTO
+                    else:
+                        valid = (
+                            CONTROL_MIN_TEMPERATURE
+                            <= numeric
+                            <= CONTROL_MAX_TEMPERATURE
+                            and (numeric * 2).is_integer()
+                        )
+            if not valid:
+                raise ValueError(f"Invalid basic control value for {attribute}")
+
+    def _read_control_state(self, timeout: float = QUERY_TIMEOUT) -> dict[str, Any]:
+        """Read a CRC-validated snapshot belonging to this particular query."""
+        previous = self._correlated_control_state
+        query = MessageQuery(self._message_protocol_version)
+        self._sent_control_query_id = query.message_id
+        self.build_send(query, query=True)
+        self._wait_for_query_response(
+            lambda: (
+                self._correlated_control_state is not None
+                and self._correlated_control_state is not previous
+                and self._correlated_control_state[0] == query.message_id
+            ),
+            timeout=timeout,
+        )
+        response = self._correlated_control_state
+        if response is None:
+            raise TimeoutError("No correlated C0 reply")
+        return response[1]
+
+    def _control_value_matches(
+        self,
+        attribute: str,
+        expected: bool | float | str,
+        state: Mapping[str, Any] | None = None,
+    ) -> bool:
+        """Compare the captured reply, allowing existing named fan-speed buckets."""
+        state = self._attributes if state is None else state
+        if attribute == DeviceAttributes.fan_speed and expected in ACFanSpeed:
+            # Devices may report AUTO as 103 after a command of 102. Use the
+            # existing fan-mode buckets for named speeds, exact values otherwise.
+            speed = state.get(attribute)
+            if not isinstance(speed, int):
+                return False
+            mode = next(
+                (
+                    mode
+                    for threshold, mode in self._fan_speed_thresholds
+                    if speed > threshold
+                ),
+                ACFanSpeed.SILENT,
+            )
+            return mode == expected
+        return state.get(attribute) == expected
+
+    def _set_attributes(
+        self,
+        changes: dict[str, bool | float | str],
+        *,
+        confirm: bool,
+    ) -> dict[str, Any]:
+        """Send once from a correlated snapshot, then poll for the requested state."""
+        self._validate_control_changes(changes)
+        if not changes:
+            return {}
+        # Do not build an entire state packet from an earlier optimistic SET.
+        state = self._read_control_state()
+        self._validate_control_changes(changes)
+        message = self.make_message_set(state)
+        if changes.get(DeviceAttributes.mode) == DeviceHVACMode.OFF:
+            del changes[DeviceAttributes.mode]
+            changes[DeviceAttributes.power] = False
+        if DeviceAttributes.mode in changes:
+            message.dry = False
+            changes.setdefault(
+                DeviceAttributes.power,
+                changes[DeviceAttributes.mode] != DeviceHVACMode.OFF,
+            )
+            if state[DeviceAttributes.mode] == DRY_MODE:
+                message.fan_speed = ACFanSpeed.AUTO
+        for attribute, value in changes.items():
+            encoded_value = (
+                int(value)
+                if attribute in {DeviceAttributes.mode, DeviceAttributes.fan_speed}
+                else value
+            )
+            setattr(message, attribute, encoded_value)
+        self.build_send(message)
+        if not confirm:
+            return {}
+        deadline = time.monotonic() + QUERY_TIMEOUT
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            try:
+                state = self._read_control_state(remaining)
+            except TimeoutError:
+                break
+            if all(
+                self._control_value_matches(attribute, value, state)
+                for attribute, value in changes.items()
+            ):
+                return {attribute: state[attribute] for attribute in changes}
+            time.sleep(
+                min(CONTROL_CONFIRM_INTERVAL, max(0, deadline - time.monotonic())),
+            )
+        raise TimeoutError("AC command sent but requested state was not confirmed")
+
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea AC device set attribute."""
+        if attr == DeviceAttributes.prompt_tone:
+            self._attributes[DeviceAttributes.prompt_tone] = value
+            self.update_all({DeviceAttributes.prompt_tone.value: value})
+            return
+        if self._is_run and threading.current_thread() is not self:
+            self.submit_operation(lambda: self.set_attribute(attr, value)).result()
+            return
         # if nat a sensor
         message: (
             MessageToggleDisplay
@@ -1125,10 +1514,7 @@ class MideaACDevice(MideaClimateDevice):
             DeviceAttributes.outdoor_fan_speed,
             DeviceAttributes.compressor_power,
         ]:
-            if attr == DeviceAttributes.prompt_tone:
-                self._attributes[DeviceAttributes.prompt_tone] = value
-                self.update_all({DeviceAttributes.prompt_tone.value: value})
-            elif attr == DeviceAttributes.screen_display:
+            if attr == DeviceAttributes.screen_display:
                 # The AC firmware only exposes a toggle command for the
                 # display, so make the switch idempotent: toggle only when the
                 # requested state differs from the last reported state.
@@ -1225,6 +1611,15 @@ class MideaACDevice(MideaClimateDevice):
         zone: int | None = None,
     ) -> None:
         """Midea AC device set target temperature."""
+        if self._is_run and threading.current_thread() is not self:
+            self.submit_operation(
+                lambda: self.set_target_temperature(
+                    target_temperature,
+                    hvac_mode,
+                    zone,
+                ),
+            ).result()
+            return
         message: MessageSubProtocolSet | MessageGeneralSet = (
             self._make_message_uniq_set()
         )
@@ -1236,6 +1631,11 @@ class MideaACDevice(MideaClimateDevice):
 
     def _set_swing(self, swing_vertical: bool, swing_horizontal: bool) -> None:
         """Midea AC device set swing."""
+        if self._is_run and threading.current_thread() is not self:
+            self.submit_operation(
+                lambda: self._set_swing(swing_vertical, swing_horizontal),
+            ).result()
+            return
         message: MessageSubProtocolSet | MessageGeneralSet = (
             self._make_message_uniq_set()
         )

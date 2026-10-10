@@ -5,6 +5,36 @@ from typing import cast
 
 from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.device import MideaDevice
+from midealocal.device_info import DeviceCredentials, DeviceDescriptor, DiscoveryProfile
+
+
+def create_device(
+    descriptor: DeviceDescriptor,
+    credentials: DeviceCredentials,
+    profile: DiscoveryProfile | None = None,
+    *,
+    customize: str = "",
+) -> MideaDevice:
+    """Build a device from known inputs without discovery or network access.
+
+    A valid profile restores discovery hints only. A fresh status read remains
+    necessary before using cached appliance settings to build control messages.
+    """
+    device = cast(
+        "MideaDevice | None",
+        device_selector(
+            **descriptor.to_dict(),
+            token=credentials.token,
+            key=credentials.key,
+            customize=customize,
+        ),
+    )
+    if device is None:
+        msg = f"Unsupported device type: {descriptor.device_type:#04x}"
+        raise ValueError(msg)
+    if profile is not None and profile.is_valid_for(descriptor):
+        device.restore_discovery_profile(profile)
+    return device
 
 
 def device_selector(

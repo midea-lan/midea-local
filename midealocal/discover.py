@@ -3,6 +3,7 @@
 import logging
 import re
 import socket
+import time
 from ipaddress import IPv4Network
 from typing import Any
 
@@ -158,6 +159,16 @@ MAX_NETWORK_PREFIX_LENGHT = 32
 SERIAL_TYPE1_LENGTH = 32
 SERIAL_TYPE2_LENGTH = 22
 DISCOVERY_MIN_REPLY_LENGTH = 41
+DISCOVERY_TIMEOUT = 5
+DEVICE_INFO_TIMEOUT = 8
+
+
+def _set_timeout_until(sock: socket.socket, deadline: float) -> None:
+    """Limit the next socket operation to the remaining overall budget."""
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError
+    sock.settimeout(remaining)
 
 
 def _extract_mac(reply: bytes | bytearray, ssid_len: int, sn: str) -> str | None:
@@ -192,6 +203,9 @@ def _extract_mac(reply: bytes | bytearray, ssid_len: int, sn: str) -> str | None
 def _parse_discover_response(
     sock: socket.socket,
     found_devices: dict[int, dict[str, Any]],
+    *,
+    seen_v1: set[tuple[str, int, str]] | None = None,
+    deadline: float | None = None,
 ) -> tuple[int, dict[str, Any] | None]:
     security = LocalSecurity()
     data, addr = sock.recvfrom(512)
@@ -250,7 +264,12 @@ def _parse_discover_response(
             m["apc_sn"],
             str(hex(int(m["apc_type"])))[2:],
         )
-        response = get_device_info(ip, int(port))
+        identity = (ip, port, sn)
+        if seen_v1 is not None:
+            if identity in seen_v1:
+                return 0, None
+            seen_v1.add(identity)
+        response = get_device_info(ip, port, deadline=deadline)
         device_id = get_id_from_response(response)
         if len(sn) == SERIAL_TYPE1_LENGTH:
             model = sn[9:17]
@@ -261,7 +280,7 @@ def _parse_discover_response(
         mac = _extract_mac(b"", 0, sn)
     else:
         return 0, None
-    return device_id, {
+    device = {
         "device_id": device_id,
         "type": int(device_type, 16),
         "ip_address": ip,
@@ -271,37 +290,51 @@ def _parse_discover_response(
         "protocol": protocol,
         "mac": mac,
     }
+    return (device_id, device) if device_id else (0, None)
 
 
 def discover(
     discover_type: list | None = None,
-    ip_address: list | None = None,
+    ip_address: str | None = None,
 ) -> dict[int, dict[str, Any]]:
     """Discover devices."""
     if discover_type is None:
         discover_type = []
 
+    deadline = time.monotonic() + DISCOVERY_TIMEOUT
+    seen_v1: set[tuple[str, int, str]] = set()
     found_devices: dict[int, dict[str, Any]] = {}
     addrs = enum_all_broadcast() if ip_address is None else [ip_address]
 
     _LOGGER.debug("All addresses for broadcast: %s", addrs)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        sock.settimeout(5)
         for addr in addrs:
             try:
+                _set_timeout_until(sock, deadline)
                 sock.sendto(BROADCAST_MSG, (addr, 6445))
+                _set_timeout_until(sock, deadline)
                 sock.sendto(BROADCAST_MSG, (addr, 20086))
+            except TimeoutError:
+                return found_devices
             except OSError as e:
                 _LOGGER.warning("Can't access network %s: %s", addrs, repr(e))
         while True:
             try:
-                device_id, device = _parse_discover_response(sock, found_devices)
+                _set_timeout_until(sock, deadline)
+                device_id, device = _parse_discover_response(
+                    sock,
+                    found_devices,
+                    seen_v1=seen_v1,
+                    deadline=deadline,
+                )
                 if device is None:
                     continue
                 if len(discover_type) == 0 or device.get("type") in discover_type:
                     found_devices[device_id] = device
                     _LOGGER.debug("Found a supported device: %s", device)
+                    if device.get("ip_address") == ip_address:
+                        break
                 else:
                     _LOGGER.debug("Found a unsupported device: %s", device)
             except TimeoutError:
@@ -336,12 +369,19 @@ def bytes2port(value_bytes: bytes | bytearray | None) -> int:
     return i
 
 
-def get_device_info(device_ip: str, device_port: int) -> bytearray:
+def get_device_info(
+    device_ip: str,
+    device_port: int,
+    *,
+    deadline: float | None = None,
+) -> bytearray:
     """Get device info."""
     response = bytearray(0)
+    if deadline is None:
+        deadline = time.monotonic() + DEVICE_INFO_TIMEOUT
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.settimeout(8)
+            _set_timeout_until(sock, deadline)
             device_address = (device_ip, device_port)
             sock.connect(device_address)
             _LOGGER.debug(
@@ -350,12 +390,13 @@ def get_device_info(device_ip: str, device_port: int) -> bytearray:
                 device_port,
                 DEVICE_INFO_MSG.hex(),
             )
+            _set_timeout_until(sock, deadline)
             sock.sendall(DEVICE_INFO_MSG)
+            _set_timeout_until(sock, deadline)
             response = bytearray(sock.recv(512))
     except TimeoutError:
         _LOGGER.warning(
-            "Connect the device %s:%s timed out for 8s."
-            "Don't care about a small amount of this. if many maybe not support.",
+            "Device information query for %s:%s exceeded its time budget.",
             device_ip,
             device_port,
         )

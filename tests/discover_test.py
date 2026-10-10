@@ -168,7 +168,7 @@ class TestParseDiscoverResponse:
             return_value=_build_id_response(),
         ) as mock_info:
             device_id, device = _parse_discover_response(sock, {})
-        mock_info.assert_called_once_with(DEVICE_IP, DEVICE_PORT)
+        mock_info.assert_called_once_with(DEVICE_IP, DEVICE_PORT, deadline=None)
         assert device_id == 0x78563412
         assert device == {
             "device_id": 0x78563412,
@@ -212,6 +212,65 @@ class TestParseDiscoverResponse:
 class TestDiscover:
     """discover test case."""
 
+    @pytest.mark.parametrize("response", [_build_id_response(), bytearray()])
+    def test_v1_duplicates_query_tcp_only_once(self, response: bytearray) -> None:
+        """Duplicate replies cannot repeat successful or failed TCP probes."""
+        sock = MagicMock()
+        sock.__enter__.return_value = sock
+        sock.recvfrom.side_effect = [
+            (V1_XML % SN_TYPE1, (DEVICE_IP, 6445)),
+            (V1_XML % SN_TYPE1, (DEVICE_IP, 6445)),
+            TimeoutError,
+        ]
+        with (
+            patch("midealocal.discover.socket.socket", return_value=sock),
+            patch("midealocal.discover.get_device_info", return_value=response) as info,
+            patch("time.monotonic", return_value=10),
+        ):
+            result = discover(ip_address="192.168.1.255")
+        info.assert_called_once_with(DEVICE_IP, DEVICE_PORT, deadline=15)
+        assert len(result) == bool(response)
+
+    def test_irrelevant_packets_do_not_extend_discovery_budget(self) -> None:
+        """Continuous ignored packets stop at the original five-second deadline."""
+        elapsed = 0.0
+        sock = MagicMock()
+        sock.__enter__.return_value = sock
+
+        def receive(_size: int) -> tuple[bytes, tuple[str, int]]:
+            nonlocal elapsed
+            remaining = sock.settimeout.call_args.args[0]
+            if remaining < 2:
+                elapsed += remaining
+                raise TimeoutError
+            elapsed += 2
+            if elapsed > 10:
+                raise TimeoutError
+            return b"ignored", (DEVICE_IP, 6445)
+
+        sock.recvfrom.side_effect = receive
+        with (
+            patch("midealocal.discover.socket.socket", return_value=sock),
+            patch("time.monotonic", side_effect=lambda: elapsed),
+        ):
+            assert discover(ip_address=DEVICE_IP) == {}
+        assert sock.recvfrom.call_count <= 3
+        assert elapsed == 5
+
+    def test_targeted_discovery_returns_without_waiting_for_timeout(self) -> None:
+        """A unicast response completes discovery without another socket read."""
+        sock = MagicMock()
+        sock.recvfrom.side_effect = [
+            (_build_v2_packet(), (DEVICE_IP, 6445)),
+            TimeoutError,
+        ]
+        mock_socket = MagicMock()
+        mock_socket.__enter__.return_value = sock
+        with patch("midealocal.discover.socket.socket", return_value=mock_socket):
+            result = discover(ip_address=DEVICE_IP)
+        assert list(result) == [DEVICE_ID]
+        sock.recvfrom.assert_called_once()
+
     def test_discover_found_devices(self) -> None:
         """Test discovery finding one supported device then timing out."""
         sock = MagicMock()
@@ -244,7 +303,7 @@ class TestDiscover:
         mock_socket = MagicMock()
         mock_socket.__enter__.return_value = sock
         with patch("midealocal.discover.socket.socket", return_value=mock_socket):
-            result = discover(discover_type=[0xFF], ip_address=["192.168.1.255"])
+            result = discover(discover_type=[0xFF], ip_address="192.168.1.255")
         assert result == {}
 
     def test_discover_send_and_socket_errors(self) -> None:
@@ -255,7 +314,7 @@ class TestDiscover:
         mock_socket = MagicMock()
         mock_socket.__enter__.return_value = sock
         with patch("midealocal.discover.socket.socket", return_value=mock_socket):
-            result = discover(ip_address=["192.168.1.255"])
+            result = discover(ip_address="192.168.1.255")
         assert result == {}
 
 
@@ -307,6 +366,37 @@ def test_bytes2port(value_bytes: bytes | bytearray | None, expected: int) -> Non
 
 class TestGetDeviceInfo:
     """get_device_info test case."""
+
+    def test_expired_discovery_budget_does_not_open_a_connection(self) -> None:
+        """A late V1 reply cannot start another TCP wait past the deadline."""
+        sock = MagicMock()
+        sock.__enter__.return_value = sock
+        with (
+            patch("midealocal.discover.socket.socket", return_value=sock),
+            patch("time.monotonic", return_value=5),
+        ):
+            assert get_device_info(DEVICE_IP, DEVICE_PORT, deadline=5) == b""
+        sock.connect.assert_not_called()
+
+    def test_tcp_operations_share_the_discovery_deadline(self) -> None:
+        """TCP connect and send time reduce the remaining receive budget."""
+        elapsed = 1.0
+        sock = MagicMock()
+        sock.__enter__.return_value = sock
+        sock.recv.return_value = b"reply"
+
+        def advance(*_args: object) -> None:
+            nonlocal elapsed
+            elapsed += 1
+
+        sock.connect.side_effect = advance
+        sock.sendall.side_effect = advance
+        with (
+            patch("midealocal.discover.socket.socket", return_value=sock),
+            patch("time.monotonic", side_effect=lambda: elapsed),
+        ):
+            assert get_device_info(DEVICE_IP, DEVICE_PORT, deadline=5) == b"reply"
+        assert [call.args[0] for call in sock.settimeout.call_args_list] == [4, 3, 2]
 
     def test_get_device_info(self) -> None:
         """Test a successful device info exchange."""
