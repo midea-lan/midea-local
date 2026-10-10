@@ -20,6 +20,7 @@ class DeviceType(IntEnum):
     B6 = 0xB6
     B8 = 0xB8
     BF = 0xBF
+    C1 = 0xC1
     C2 = 0xC2
     C3 = 0xC3
     CA = 0xCA
