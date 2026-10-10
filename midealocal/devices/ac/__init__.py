@@ -446,7 +446,7 @@ class MideaACDevice(MideaClimateDevice):
     @override
     def fan_modes(self) -> list[MideaFanMode]:
         """Midea AC device fan modes."""
-        return [member for member in ACFanSpeed]
+        return [*ACFanSpeed]
 
     @property
     @override
