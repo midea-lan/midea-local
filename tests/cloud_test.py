@@ -318,6 +318,8 @@ async def test_msmartcloud_get_cloud_keys_error_handling(
         pytest.param("accessToken", id="access_token"),
         pytest.param("sessionId", id="session_id"),
         pytest.param("password", id="password"),
+        pytest.param("iampwd", id="iampwd"),
+        pytest.param("tokenPwd", id="token_pwd"),
     ],
 )
 def test_redact_data_masks_session_fields(field: str) -> None:
@@ -326,6 +328,43 @@ def test_redact_data_masks_session_fields(field: str) -> None:
     redacted = _redact_data(str({field: value, "format": "2"}))
     assert f"'{field}': '{_mask_token(value)}'" in redacted
     assert "'format': '2'" in redacted
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        pytest.param(str({"nickname": "Renato T", "format": "2"}), id="dict_repr"),
+        pytest.param(json.dumps({"nickname": "Renato T", "format": "2"}), id="json"),
+        pytest.param(
+            str({"nickname": "O'Reilly Renato", "format": "2"}),
+            id="dict_repr_apostrophe",
+        ),
+        pytest.param(
+            json.dumps({"nickname": "O'Reilly Renato", "format": "2"}),
+            id="json_apostrophe",
+        ),
+        pytest.param(
+            str(json.dumps({"nickname": "O'Reilly Renato", "format": "2"}).encode()),
+            id="bytes_repr_apostrophe",
+        ),
+        pytest.param(
+            json.dumps({"nickname": 'Renato "Tom" T', "format": "2"}),
+            id="json_escaped_quote",
+        ),
+        pytest.param(
+            json.dumps(json.dumps({"nickname": "O'Reilly Renato", "format": "2"})),
+            id="escaped_delimiters",
+        ),
+    ],
+)
+def test_redact_data_masks_nickname(raw: str) -> None:
+    """Test _redact_data fully masks the account nickname."""
+    redacted = _redact_data(raw)
+    assert "Renat" not in redacted
+    assert "Reilly" not in redacted
+    assert "Tom" not in redacted
+    assert "********" in redacted
+    assert "format" in redacted
 
 
 class CloudTest(IsolatedAsyncioTestCase):
