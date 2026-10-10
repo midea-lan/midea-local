@@ -2,17 +2,22 @@
 
 import pytest
 
-from midealocal.const import ProtocolVersion
+from midealocal.const import DeviceType, ProtocolVersion
 from midealocal.devices.ca.message import (
     CAExceptionMessageBody,
     CAGeneralMessageBody,
     CANotify00MessageBody,
     CANotify01MessageBody,
+    DeviceAttributes,
+    DeviceMode,
+    IceMakingMode,
+    IceMakingStatus,
     MessageCABase,
     MessageCAResponse,
     MessageQuery,
+    MessageQueryToshiba,
 )
-from midealocal.message import ListTypes, MessageType
+from midealocal.message import ListTypes, MessageHeader55, MessageType
 
 
 def _build_message(message_type: MessageType, body: bytearray) -> bytes:
@@ -21,6 +26,16 @@ def _build_message(message_type: MessageType, body: bytearray) -> bytes:
         [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [message_type],
     )
     return bytes(header + body + bytearray([0x00]))
+
+
+def _build_toshiba_message(message_type: MessageType, body: bytearray) -> bytes:
+    """Build a full CA response message."""
+    header = MessageHeader55(
+        device_type=DeviceType.CA,
+        protocol_version=1,
+        message_type=message_type,
+    )
+    return bytes(header.serialize(len(body)) + body + bytearray([0x00]))
 
 
 def _general_body(length: int) -> bytearray:
@@ -73,6 +88,18 @@ class TestMessageQuery:
         """Test query body only contains the body type."""
         msg = MessageQuery(protocol_version=ProtocolVersion.V1)
         assert msg.body == bytearray([0x00])
+
+
+class TestMessageQueryToshiba:
+    """Test CA Message Query."""
+
+    def test_query_body(self) -> None:
+        """Test query body only contains the body type."""
+        msg = MessageQueryToshiba(protocol_version=ProtocolVersion.V1)
+        assert msg.body == bytearray([0x00])
+        assert msg.serialize() == bytes.fromhex(
+            "55aacc330f0001ca000000000000030000357c",
+        )
 
 
 class TestCAGeneralMessageBody:
@@ -356,6 +383,65 @@ class TestMessageCAResponse:
         assert getattr(msg, "freezer_door", None) is True
         assert getattr(msg, "bar_door", None) is True
         assert getattr(msg, "flex_zone_door", None) is False
+
+    @pytest.mark.parametrize(
+        "message_type",
+        [MessageType.set, MessageType.query, MessageType.notify1],
+    )
+    def test_general_toshiba_response(self, message_type: MessageType) -> None:
+        """Test all types of general Toshiba response."""
+        body = bytearray(
+            [0x0] * 2
+            + [0x02, 5, 3, 0x21]
+            + [0x0] * 2
+            + [0x0F]
+            + [0x0] * 2
+            + [0x43, 0x64]
+            + [0x0] * 4,
+        )
+        msg = MessageCAResponse(_build_toshiba_message(message_type, body))
+
+        assert getattr(msg, DeviceAttributes.mode) == DeviceMode.VEGETABLES
+        assert getattr(msg, DeviceAttributes.refrigerator_actual_temp) == 5
+        assert getattr(msg, DeviceAttributes.freezer_actual_temp) == 3
+        assert getattr(msg, DeviceAttributes.ice_mode) == IceMakingMode.QUICK
+        assert getattr(msg, DeviceAttributes.ice_status) == IceMakingStatus.ICE_FULL
+        assert getattr(msg, DeviceAttributes.refrigerator_door) is True
+        assert getattr(msg, DeviceAttributes.freezer_door) is True
+        assert getattr(msg, DeviceAttributes.ice_door) is True
+        assert getattr(msg, DeviceAttributes.flex_zone_door) is True
+        assert getattr(msg, DeviceAttributes.energy_consumption) == 0x6443
+
+    @pytest.mark.parametrize(
+        "message_type",
+        [MessageType.set, MessageType.query, MessageType.notify1],
+    )
+    def test_0000000d_toshiba_response(self, message_type: MessageType) -> None:
+        """Test all types of 0000000D Toshiba response."""
+        body = bytearray(
+            [0x0] * 4
+            + [0x02, 5, 3, 0x21]
+            + [0x0] * 3
+            + [0x0F]
+            + [0x0] * 2
+            + [0x64, 0x43]
+            + [0x0] * 4,
+        )
+        msg = MessageCAResponse(
+            message=_build_toshiba_message(message_type, body),
+            model="0000000D",
+        )
+
+        assert getattr(msg, DeviceAttributes.mode) == DeviceMode.VEGETABLES
+        assert getattr(msg, DeviceAttributes.refrigerator_actual_temp) == 5
+        assert getattr(msg, DeviceAttributes.freezer_actual_temp) == 3
+        assert getattr(msg, DeviceAttributes.ice_mode) == IceMakingMode.QUICK
+        assert getattr(msg, DeviceAttributes.ice_status) == IceMakingStatus.ICE_FULL
+        assert getattr(msg, DeviceAttributes.refrigerator_door) is True
+        assert getattr(msg, DeviceAttributes.freezer_door) is True
+        assert getattr(msg, DeviceAttributes.ice_door) is True
+        assert getattr(msg, DeviceAttributes.flex_zone_door) is True
+        assert getattr(msg, DeviceAttributes.energy_consumption) == 0x4364
 
     @pytest.mark.parametrize(
         "message_type",

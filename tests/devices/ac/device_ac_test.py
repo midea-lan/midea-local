@@ -34,7 +34,7 @@ from midealocal.devices.ac.message import (
     NewProtocolTags,
     PowerFormats,
 )
-from midealocal.message import ListTypes, MessageBase
+from midealocal.message import ListTypes, MessageBase, MessageChecksum
 from tests.base_classes.climate_test import DummyFanMode, DummyHVACMode, DummySwingMode
 
 
@@ -114,7 +114,7 @@ class TestMideaACDevice:
         header = bytearray([0xAA, 0, 0xAC, 0, 0, 0, 0, 0, 1, 3])
         header[1] = len(header) + len(body)
         frame = header + body
-        frame.append(MessageBase.checksum(frame[1:]))
+        frame.extend(MessageBase.checksum(frame[1:], MessageChecksum.SUM))
         return bytes(frame)
 
     def test_customize_accepts_bcd_energy_binary_power_format(self) -> None:
@@ -962,7 +962,7 @@ class TestMideaACDevice:
         header = bytearray([0xAA, 0, 0xAC, 0, 0, 0, 0, 0, 1, 3])
         header[1] = len(header) + len(body)
         frame = header + body
-        frame.append(MessageBase.checksum(frame[1:]))
+        frame.extend(MessageBase.checksum(frame[1:], MessageChecksum.SUM))
         return bytes(frame)
 
     def test_process_message_0x7e_temperatures_are_gated_by_model(self) -> None:

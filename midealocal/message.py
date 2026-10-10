@@ -2,9 +2,10 @@
 
 import logging
 import warnings
+from binascii import crc_hqx
 from collections.abc import Callable
 from enum import IntEnum
-from typing import Any, SupportsIndex, cast
+from typing import Any, Literal, overload, override
 
 from typing_extensions import deprecated
 
@@ -335,22 +336,31 @@ class MessageType(IntEnum):
         return "Unknown"
 
 
+class MessageChecksum(IntEnum):
+    """Message checksum type."""
+
+    SUM = 0x1
+    CRC_CCITT = 0x2
+
+
 class MessageBase:
     """Message base."""
 
-    HEADER_LENGTH = 10
-
-    def __init__(self) -> None:
+    def __init__(self, checksum_type: MessageChecksum = MessageChecksum.SUM) -> None:
         """Initialize message base."""
         self._device_type: DeviceType = DeviceType.X00
         self._message_type: MessageType = MessageType.default
         self._body_type: ListTypes = ListTypes.X00
         self._message_protocol_version: int = 0
+        self._checksum_type: MessageChecksum = checksum_type
+        self._checksum_length: int = 1 if checksum_type == MessageChecksum.SUM else 2
 
     @staticmethod
-    def checksum(data: bytes | bytearray) -> SupportsIndex:
+    def checksum(data: bytes | bytearray, checksum_type: MessageChecksum) -> bytes:
         """Message checksum."""
-        return cast("SupportsIndex", (~sum(data) + 1) & 0xFF)
+        if checksum_type == MessageChecksum.CRC_CCITT:
+            return crc_hqx(data, 0).to_bytes(2, "little")
+        return ((~sum(data) + 1) & 0xFF).to_bytes(1)
 
     @property
     def header(self) -> bytearray:
@@ -440,33 +450,88 @@ class MessageBase:
         return str(attributes)
 
 
-class MessageRequest(MessageBase):
-    """Message request."""
+class MessageHeader:
+    """Message header."""
+
+    HEADER_LENGTH = 0
 
     def __init__(
         self,
+        data: bytearray,
+    ) -> None:
+        """Initialize message header."""
+        if len(data) < self.HEADER_LENGTH + 1:
+            raise MessageLenError
+        _header_type = data[0]
+        if _header_type != self.type:
+            msg = f"Message is not an {self.type:02X} frame."
+            raise ValueError(msg)
+
+    def serialize(self, body_len: int) -> bytearray:
+        """Message header."""
+        raise NotImplementedError
+
+    @property
+    def type(self) -> ListTypes:
+        """Message header type."""
+        raise NotImplementedError
+
+    @property
+    def length(self) -> int:
+        """Message header length."""
+        return self.HEADER_LENGTH
+
+
+class MessageHeaderAA(MessageHeader):
+    """Message header AA."""
+
+    HEADER_LENGTH = 10
+
+    @overload
+    def __init__(self, *, data: bytearray) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        *,
         device_type: DeviceType,
         protocol_version: int,
         message_type: MessageType,
-        body_type: ListTypes,
-    ) -> None:
-        """Initialize message request."""
-        super().__init__()
-        self.device_type = device_type
-        self.protocol_version = protocol_version
-        self.message_type = message_type
-        self.body_type = body_type
+    ) -> None: ...
 
-    @property
-    def header(self) -> bytearray:
+    def __init__(
+        self,
+        device_type: DeviceType | None = None,
+        protocol_version: int | None = None,
+        message_type: MessageType | None = None,
+        data: bytearray | None = None,
+    ) -> None:
+        """Initialize AA message header."""
+        self._header_type = ListTypes.AA
+        if data is not None:
+            super().__init__(data=data)
+            self.device_type = DeviceType(data[2])
+            self.protocol_version = data[8]
+            self.message_type = MessageType(data[9])
+        elif (
+            protocol_version is not None
+            and message_type is not None
+            and device_type is not None
+        ):
+            self.device_type = device_type
+            self.protocol_version = protocol_version
+            self.message_type = message_type
+
+    @override
+    def serialize(self, body_len: int) -> bytearray:
         """Message header."""
-        length = self.HEADER_LENGTH + len(self.body)
+        length = self.HEADER_LENGTH + body_len
         return bytearray(
             [
                 # flag
                 0xAA,
                 # length
-                length,
+                min(length, 0xFF),
                 # device type
                 self.device_type,
                 # frame checksum
@@ -481,9 +546,128 @@ class MessageRequest(MessageBase):
                 # device protocol version
                 self.protocol_version,
                 # frame type
-                self.message_type,
+                min(self.message_type, 0xFF),
             ],
         )
+
+    @property
+    @override
+    def type(self) -> ListTypes:
+        """Message header type."""
+        return ListTypes.AA
+
+
+class MessageHeader55(MessageHeader):
+    """Message header 55."""
+
+    HEADER_LENGTH = 16
+
+    @overload
+    def __init__(self, *, data: bytearray) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        *,
+        device_type: DeviceType,
+        protocol_version: int,
+        message_type: MessageType,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        device_type: DeviceType | None = None,
+        protocol_version: int | None = None,
+        message_type: MessageType | None = None,
+        data: bytearray | None = None,
+    ) -> None:
+        """Initialize AA message header."""
+        self._header_type = ListTypes.X55
+        if data is not None:
+            super().__init__(data=data)
+            self.device_type = DeviceType(data[7])
+            self.protocol_version = data[6]
+            self.message_type = MessageType(data[14])
+        elif (
+            protocol_version is not None
+            and message_type is not None
+            and device_type is not None
+        ):
+            self.device_type = device_type
+            self.protocol_version = protocol_version
+            self.message_type = message_type
+
+    @override
+    def serialize(self, body_len: int) -> bytearray:
+        """Message header."""
+        length = self.HEADER_LENGTH + body_len - 2
+        return bytearray(
+            bytearray(
+                [
+                    # flag
+                    0x55,
+                    0xAA,
+                    0xCC,
+                    0x33,
+                ],
+            )
+            + min(length, 0xFFFF).to_bytes(2, "little")
+            + bytearray(
+                [
+                    self.protocol_version,
+                    int(self.device_type),
+                ]
+                + [0x00] * 6,
+            )
+            + min(int(self.message_type), 0xFFFF).to_bytes(2, "little"),
+        )
+
+    @property
+    @override
+    def type(self) -> ListTypes:
+        """Message header type."""
+        return ListTypes.X55
+
+
+class MessageRequest(MessageBase):
+    """Message request."""
+
+    def __init__(
+        self,
+        device_type: DeviceType,
+        protocol_version: int,
+        message_type: MessageType,
+        body_type: ListTypes,
+        header_type: Literal[ListTypes.AA, ListTypes.X55] = ListTypes.AA,
+    ) -> None:
+        """Initialize message request."""
+        super().__init__(
+            checksum_type=MessageChecksum.SUM
+            if header_type == ListTypes.AA
+            else MessageChecksum.CRC_CCITT,
+        )
+        self.device_type = device_type
+        self.protocol_version = protocol_version
+        self.message_type = message_type
+        self.body_type = body_type
+        self._header: MessageHeader = (
+            MessageHeaderAA(
+                device_type=device_type,
+                protocol_version=protocol_version,
+                message_type=message_type,
+            )
+            if header_type == ListTypes.AA
+            else MessageHeader55(
+                device_type=device_type,
+                protocol_version=protocol_version,
+                message_type=message_type,
+            )
+        )
+
+    @property
+    def header(self) -> bytearray:
+        """Message header."""
+        return self._header.serialize(len(self.body))
 
     @property
     def _body(self) -> bytearray:
@@ -500,7 +684,10 @@ class MessageRequest(MessageBase):
     def serialize(self) -> bytearray:
         """Serialize message."""
         stream = self.header + self.body
-        stream.append(MessageBase.checksum(stream[1:]))
+        data = (
+            stream if self._checksum_type == MessageChecksum.CRC_CCITT else stream[1:]
+        )
+        stream.extend(MessageBase.checksum(data, self._checksum_type))
         return stream
 
 
@@ -528,6 +715,7 @@ class MessageQuestCustom(MessageRequest):
         return bytearray([])
 
     @property
+    @override
     def body(self) -> bytearray:
         """Message body."""
         return self._cmd_body
@@ -949,21 +1137,37 @@ class MessageResponse(MessageBase):
 
     def __init__(self, message: bytearray) -> None:
         """Initialize message response."""
-        super().__init__()
-        if message is None or len(message) < self.HEADER_LENGTH + 1:
+        if not message:
             raise MessageLenError
-        self._header = message[: self.HEADER_LENGTH]
-        self.protocol_version = self._header[-2]
-        self.message_type = MessageType(self._header[-1])
-        self.device_type = DeviceType(self._header[2])
-        body = message[self.HEADER_LENGTH : -1]
+        header = (
+            MessageHeaderAA(data=message)
+            if message[0] == ListTypes.AA
+            else MessageHeader55(data=message)
+        )
+        super().__init__(
+            MessageChecksum.SUM
+            if header.type == ListTypes.AA
+            else MessageChecksum.CRC_CCITT,
+        )
+        if len(message) < header.length + self._checksum_length + 1:
+            raise MessageLenError
+        self.protocol_version = header.protocol_version
+        self.message_type = header.message_type
+        self.device_type = header.device_type
+        body = message[header.length : -1 * self._checksum_length]
         self._body = MessageBody(body)
         self.body_type = self._body.body_type
+        self._header = header
 
     @property
     def header(self) -> bytearray:
         """Message response header."""
-        return self._header
+        return self._header.serialize(len(self.body))
+
+    @property
+    def header_type(self) -> ListTypes:
+        """Message response header type."""
+        return self._header.type
 
     @property
     def body(self) -> bytearray:
