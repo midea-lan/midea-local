@@ -165,7 +165,7 @@ class MideaCLI:
 
         return {**cloud_keys, **default_keys}
 
-    def _try_connect(
+    async def _try_connect(
         self,
         device: dict[str, Any],
         key: dict[str, str],
@@ -189,12 +189,12 @@ class MideaCLI:
         )
         _LOGGER.debug("Opening socket for device.")
         success = False
-        if dev.connect():
+        if await dev.connect():
             try:
                 # connect() already authenticates V3 devices, so there
                 # is no need to call authenticate() again here.
                 _LOGGER.debug("Trying to retrieve device attributes.")
-                dev.refresh_status(True)
+                await dev.refresh_status(True)
                 _LOGGER.info("Found device:\n%s", dev.attributes)
                 device_list.append(dev)
                 success = True
@@ -212,14 +212,14 @@ class MideaCLI:
                 _LOGGER.exception("Connection error during device query.")
             finally:
                 if not success:
-                    dev.close_socket()
+                    await dev.close_socket()
         return success
 
     async def discover(self) -> list[MideaDevice]:
         """Discover device information."""
         device_list: list[MideaDevice] = []
 
-        devices = discover(ip_address=self.namespace.host)
+        devices = await discover(ip_address=self.namespace.host)
 
         if len(devices) == 0:
             _LOGGER.error("No devices found.")
@@ -233,7 +233,7 @@ class MideaCLI:
             return device_list
         for device in devices.values():
             if device["protocol"] != ProtocolVersion.V3:
-                self._try_connect(device, {"token": "", "key": ""}, device_list)
+                await self._try_connect(device, {"token": "", "key": ""}, device_list)
                 continue
 
             cached = await self._get_cached_device_keys(device["device_id"])
@@ -241,13 +241,13 @@ class MideaCLI:
                 _LOGGER.info(
                     "Found cached token/key, using those instead of asking cloud.",
                 )
-                if self._try_connect(device, cached, device_list):
+                if await self._try_connect(device, cached, device_list):
                     continue
 
             # no cache, or the cached key no longer works: fetch from the
             # cloud and try each candidate, caching whichever one connects.
             for key in (await self._get_keys(device["device_id"])).values():
-                if self._try_connect(device, key, device_list):
+                if await self._try_connect(device, key, device_list):
                     await self._cache_device_keys(device["device_id"], key)
                     break
         return device_list
@@ -440,7 +440,7 @@ class MideaCLI:
 
         # download with host ip: LAN discovery provides the device type
         if self.namespace.host:
-            devices = discover(ip_address=self.namespace.host)
+            devices = await discover(ip_address=self.namespace.host)
             if len(devices) == 0:
                 _LOGGER.error("No devices found.")
                 return
@@ -491,11 +491,11 @@ class MideaCLI:
                 self._cast_attr_value(),
             )
             await asyncio.sleep(2)
-            device_list[0].refresh_status(True)
+            await device_list[0].refresh_status(True)
             _LOGGER.info("New device status:\n%s", device_list[0].attributes)
         finally:
             for dev in device_list:
-                dev.close_socket()
+                await dev.close_socket()
 
     def _cast_attr_value(self) -> int | bool | str:
         if self.namespace.attr_type == "bool":
