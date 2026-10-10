@@ -22,6 +22,8 @@ from midealocal.message import (
     MessageType,
     NewProtocolMessageBody,
     SubBodyType,
+    TimeParser,
+    WordParser,
 )
 
 
@@ -230,6 +232,38 @@ class TestIntParser:
         parser = IntParser("name", 0, byte_mask=0x7F)
         for i in range(256):
             assert parser._get_raw_value(bytearray([i])) == (i & 0x7F)
+
+
+class TestTimeParser:
+    """Test TimeParser."""
+
+    @pytest.mark.parametrize(
+        ("body", "expected"),
+        [
+            pytest.param(bytearray([0x00, 0x1E]), 30, id="value"),
+            pytest.param(bytearray([0x00, 0xFF]), 0, id="unset"),
+            pytest.param(bytearray([0x00]), 0, id="short_body"),
+        ],
+    )
+    def test_time(self, body: bytearray, expected: int) -> None:
+        """Test 0xFF and missing bytes read as 0."""
+        assert TimeParser("minute", 1).get_value(body) == expected
+
+
+class TestWordParser:
+    """Test WordParser."""
+
+    @pytest.mark.parametrize(
+        ("body", "expected"),
+        [
+            pytest.param(bytearray([0x00, 0x01, 0x2C]), 300, id="big_endian"),
+            pytest.param(bytearray([0x00, 0xFF, 0xFF]), 0xFFFF, id="max"),
+            pytest.param(bytearray([0x00, 0x01]), 0, id="short_body"),
+        ],
+    )
+    def test_word(self, body: bytearray, expected: int) -> None:
+        """Test 16-bit big-endian read."""
+        assert WordParser("temperature", 1).get_value(body) == expected
 
 
 class TestFloatParser:

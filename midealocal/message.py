@@ -8,7 +8,7 @@ from typing import Any, SupportsIndex, cast
 
 from typing_extensions import deprecated
 
-from midealocal.const import DeviceType
+from midealocal.const import MAX_BYTE_VALUE, DeviceType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -706,6 +706,24 @@ class IntParser(BodyParser[int]):
             return self._max_value
         if raw_value < self._min_value:
             return self._min_value
+        return raw_value
+
+
+class TimeParser(BodyParser[int]):
+    """Time byte parser, 0xFF (unset) reads as 0."""
+
+    def _parse(self, raw_value: int) -> int:
+        return 0 if raw_value == MAX_BYTE_VALUE else raw_value
+
+
+class WordParser(BodyParser[int]):
+    """Big-endian 16-bit parser."""
+
+    def __init__(self, name: str, byte: int) -> None:
+        """Init 16-bit parser."""
+        super().__init__(name, byte, length_in_bytes=2, first_upper=True)
+
+    def _parse(self, raw_value: int) -> int:
         return raw_value
 
 
