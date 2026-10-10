@@ -171,8 +171,10 @@ _CREDENTIAL_FIELD = re.compile(
     re.IGNORECASE,
 )
 # Personal fields: masked fully, a short name would survive _mask_token intact.
+# The value runs up to its own closing quote, so apostrophes and escapes inside
+# it are masked too.
 _PERSONAL_FIELD = re.compile(
-    r'(\\?["\']nickname\\?["\']\s*:\s*\\?["\'])([^"\'\\]+)',
+    r'(\\?["\']nickname\\?["\']\s*:\s*(\\?["\']))((?:\\.|[^\\])*?)(?=\2)',
     re.IGNORECASE,
 )
 
@@ -182,7 +184,7 @@ def _redact_data(data: str) -> str:
     # Do this first: the generic patterns below only chew up parts of a token,
     # which leaves most of the credential readable and looks redacted.
     data = _CREDENTIAL_FIELD.sub(lambda m: m.group(1) + _mask_token(m.group(2)), data)
-    data = _PERSONAL_FIELD.sub(lambda m: m.group(1) + block * len(m.group(2)), data)
+    data = _PERSONAL_FIELD.sub(lambda m: m.group(1) + block * len(m.group(3)), data)
     patterns = [
         # Email
         r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",

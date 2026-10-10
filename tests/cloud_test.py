@@ -333,14 +333,36 @@ def test_redact_data_masks_session_fields(field: str) -> None:
 @pytest.mark.parametrize(
     "raw",
     [
-        pytest.param("{{'nickname': '{name}', 'format': '2'}}", id="dict_repr"),
-        pytest.param('{{"nickname":"{name}","format":"2"}}', id="json"),
+        pytest.param(str({"nickname": "Renato T", "format": "2"}), id="dict_repr"),
+        pytest.param(json.dumps({"nickname": "Renato T", "format": "2"}), id="json"),
+        pytest.param(
+            str({"nickname": "O'Reilly Renato", "format": "2"}),
+            id="dict_repr_apostrophe",
+        ),
+        pytest.param(
+            json.dumps({"nickname": "O'Reilly Renato", "format": "2"}),
+            id="json_apostrophe",
+        ),
+        pytest.param(
+            str(json.dumps({"nickname": "O'Reilly Renato", "format": "2"}).encode()),
+            id="bytes_repr_apostrophe",
+        ),
+        pytest.param(
+            json.dumps({"nickname": 'Renato "Tom" T', "format": "2"}),
+            id="json_escaped_quote",
+        ),
+        pytest.param(
+            json.dumps(json.dumps({"nickname": "O'Reilly Renato", "format": "2"})),
+            id="escaped_delimiters",
+        ),
     ],
 )
 def test_redact_data_masks_nickname(raw: str) -> None:
     """Test _redact_data fully masks the account nickname."""
-    redacted = _redact_data(raw.format(name="Renato T"))
+    redacted = _redact_data(raw)
     assert "Renat" not in redacted
+    assert "Reilly" not in redacted
+    assert "Tom" not in redacted
     assert "********" in redacted
     assert "format" in redacted
 
