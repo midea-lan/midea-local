@@ -152,14 +152,23 @@ class MessageQueryToshiba(MessageCABase):
 class CAGeneralToshibaMessageBody(MessageBody):
     """CA message general Toshiba body."""
 
-    def __init__(self, body: bytearray, model: str) -> None:
+    def __init__(
+        self,
+        body: bytearray,
+        model: str,
+        message_type: MessageType = MessageType.query,
+    ) -> None:
         """Initialize CA message general body."""
         super().__init__(
             body=body,
-            parser_list=self._generate_parser_list(model),
+            parser_list=self._generate_parser_list(model, message_type),
         )
 
-    def _generate_parser_list(self, model: str) -> list[BodyParser[Any]]:
+    def _generate_parser_list(
+        self,
+        model: str,
+        message_type: MessageType = MessageType.query,
+    ) -> list[BodyParser[Any]]:
         """Generate parser list based on model."""
         initial_offset = 0
         bool_offset = 0
@@ -167,7 +176,7 @@ class CAGeneralToshibaMessageBody(MessageBody):
             initial_offset = 2
             bool_offset = 3
 
-        return [
+        parsers: list[BodyParser[Any]] = [
             IntEnumParser(DeviceAttributes.mode, 2 + initial_offset, DeviceMode),
             IntParser(DeviceAttributes.refrigerator_actual_temp, 3 + initial_offset),
             IntParser(DeviceAttributes.freezer_actual_temp, 4 + initial_offset),
@@ -187,13 +196,21 @@ class CAGeneralToshibaMessageBody(MessageBody):
             BoolParser(DeviceAttributes.freezer_door, 8 + bool_offset, 1),
             BoolParser(DeviceAttributes.ice_door, 8 + bool_offset, 2),
             BoolParser(DeviceAttributes.flex_zone_door, 8 + bool_offset, 3),
-            IntParser(
-                DeviceAttributes.energy_consumption,
-                11 + bool_offset,
-                max_value=0xFFFF,
-                length_in_bytes=2,
-            ),
         ]
+        # The energy is only valid in query responses, where it is the energy used
+        # over the last 24 hours (Wh, refreshed hourly). Pushed status frames
+        # (notify) carry a stale value in the same bytes, so leave the attribute
+        # untouched for them; the next query refreshes it.
+        if message_type == MessageType.query:
+            parsers.append(
+                IntParser(
+                    DeviceAttributes.energy_consumption,
+                    11 + bool_offset,
+                    max_value=0xFFFF,
+                    length_in_bytes=2,
+                ),
+            )
+        return parsers
 
 
 class CAGeneralMessageBody(MessageBody):
@@ -517,5 +534,7 @@ class MessageCAResponse(MessageResponse):
             in [MessageType.set, MessageType.query, MessageType.notify1]
             and self.body_type == ListTypes.X00
         ):
-            self.set_body(CAGeneralToshibaMessageBody(super().body, model))
+            self.set_body(
+                CAGeneralToshibaMessageBody(super().body, model, self.message_type),
+            )
         self.set_attr()

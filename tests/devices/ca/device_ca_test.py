@@ -1,5 +1,7 @@
 """Test CA Device."""
 
+from binascii import crc_hqx
+
 import pytest
 
 from midealocal.const import ProtocolVersion
@@ -189,3 +191,46 @@ class TestMideaCADevice:
         """Test set attribute is a no-op."""
         self.device.set_attribute(DeviceAttributes.microcrystal_fresh.value, True)
         assert self.device.attributes[DeviceAttributes.microcrystal_fresh] is False
+
+
+# Status frames captured from a Toshiba GR-Y540XFS (model 0000000D, SN 0008...).
+# Query response (data type 03 80): energy 238 Wh over the last 24 hours.
+TOSHIBA_QUERY_RESPONSE = bytes.fromhex(
+    "55aacc334d0001ca000000000000038000000002000c0c10000000000b00ee000000e400"
+    "000e646464640c190c0c001600063c63633263630000070000000000000000000000000000"
+    "ffffffffffff4106",
+)
+
+
+def _as_pushed_frame(frame: bytes, energy: int) -> bytes:
+    """Turn a query response into a pushed status frame (data type 04 80)."""
+    pushed = bytearray(frame)
+    pushed[14] = 0x04
+    pushed[30:32] = energy.to_bytes(2, "little")
+    pushed[-2:] = crc_hqx(bytes(pushed[:-2]), 0).to_bytes(2, "little")
+    return bytes(pushed)
+
+
+def test_toshiba_pushed_status_keeps_queried_energy() -> None:
+    """A pushed status frame must not overwrite the energy with its stale value."""
+    device = MideaCADevice(
+        name="Toshiba",
+        device_id=1,
+        ip_address="192.168.1.1",
+        port=6444,
+        token="AA",
+        key="BB",
+        device_protocol=ProtocolVersion.V3,
+        model="0000000D",
+        subtype=0,
+        customize="",
+        serial_number="0008CA" + "0" * 26,
+    )
+    status = device.process_message(TOSHIBA_QUERY_RESPONSE)
+    assert status[DeviceAttributes.energy_consumption] == 238
+
+    status = device.process_message(_as_pushed_frame(TOSHIBA_QUERY_RESPONSE, 1210))
+    assert DeviceAttributes.energy_consumption not in status
+    assert device.attributes[DeviceAttributes.energy_consumption] == 238
+    # the rest of the pushed frame is still applied
+    assert status[DeviceAttributes.refrigerator_door] is False

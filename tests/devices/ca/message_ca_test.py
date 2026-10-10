@@ -410,7 +410,11 @@ class TestMessageCAResponse:
         assert getattr(msg, DeviceAttributes.freezer_door) is True
         assert getattr(msg, DeviceAttributes.ice_door) is True
         assert getattr(msg, DeviceAttributes.flex_zone_door) is True
-        assert getattr(msg, DeviceAttributes.energy_consumption) == 0x6443
+        # energy is only taken from query responses (stale in pushed frames)
+        if message_type == MessageType.query:
+            assert getattr(msg, DeviceAttributes.energy_consumption) == 0x6443
+        else:
+            assert not hasattr(msg, DeviceAttributes.energy_consumption)
 
     @pytest.mark.parametrize(
         "message_type",
@@ -441,7 +445,11 @@ class TestMessageCAResponse:
         assert getattr(msg, DeviceAttributes.freezer_door) is True
         assert getattr(msg, DeviceAttributes.ice_door) is True
         assert getattr(msg, DeviceAttributes.flex_zone_door) is True
-        assert getattr(msg, DeviceAttributes.energy_consumption) == 0x4364
+        # energy is only taken from query responses (stale in pushed frames)
+        if message_type == MessageType.query:
+            assert getattr(msg, DeviceAttributes.energy_consumption) == 0x4364
+        else:
+            assert not hasattr(msg, DeviceAttributes.energy_consumption)
 
     @pytest.mark.parametrize(
         "message_type",
