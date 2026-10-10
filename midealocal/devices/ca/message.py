@@ -3,7 +3,7 @@
 from enum import IntEnum, StrEnum
 from typing import Any, Literal
 
-from midealocal.const import CA_MODEL_0000000D, DeviceType
+from midealocal.const import CA_MODEL_GRY540XFS, DeviceType
 from midealocal.message import (
     BodyParser,
     BoolParser,
@@ -163,7 +163,7 @@ class CAGeneralToshibaMessageBody(MessageBody):
         """Generate parser list based on model."""
         initial_offset = 0
         bool_offset = 0
-        if model == CA_MODEL_0000000D:
+        if model == CA_MODEL_GRY540XFS:
             initial_offset = 2
             bool_offset = 3
 
