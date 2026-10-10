@@ -5,6 +5,10 @@ from enum import IntEnum
 MAX_BYTE_VALUE = 0xFF
 MAX_DOUBLE_BYTE_VALUE = 0xFFFF
 
+MANUFACTURER_CODE_TOSHIBA = "0008"
+
+CA_MODEL_0000000D = "0000000D"
+
 
 class DeviceType(IntEnum):
     """Device Type."""

@@ -3,7 +3,7 @@
 import logging
 from typing import Any, ClassVar, Unpack
 
-from midealocal.const import DeviceType
+from midealocal.const import MANUFACTURER_CODE_TOSHIBA, DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import (
@@ -14,8 +14,6 @@ from .message import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-TOSHIBA_MANUFACTURER_CODE = "0008"
 
 
 class MideaCADevice(MideaDevice):
@@ -85,7 +83,7 @@ class MideaCADevice(MideaDevice):
 
     def build_query(self) -> list[MessageQuery | MessageQueryToshiba]:
         """Midea CA device build query."""
-        if self.manufacturer_code == TOSHIBA_MANUFACTURER_CODE:
+        if self.manufacturer_code == MANUFACTURER_CODE_TOSHIBA:
             return [MessageQueryToshiba(self._message_protocol_version)]
         return [MessageQuery(self._message_protocol_version)]
 
