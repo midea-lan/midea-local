@@ -36,9 +36,8 @@ class TestMideaDADevice:
         assert not self.device.attributes[DeviceAttributes.power]
         assert not self.device.attributes[DeviceAttributes.start]
         assert self.device.attributes[DeviceAttributes.error_code] is None
-        assert self.device.attributes[DeviceAttributes.washing_data] == bytearray([])
         assert self.device.attributes[DeviceAttributes.program] is None
-        assert self.device.attributes[DeviceAttributes.progress] == "Unknown"
+        assert self.device.attributes[DeviceAttributes.progress] == "unknown"
         assert self.device.attributes[DeviceAttributes.time_remaining] is None
         assert self.device.attributes[DeviceAttributes.wash_time] is None
         assert self.device.attributes[DeviceAttributes.soak_time] is None
@@ -121,6 +120,31 @@ class TestMideaDADevice:
         queries = self.device.build_query()
         assert len(queries) == 1
         assert isinstance(queries[0], MessageQuery)
+
+    def test_build_washing_data(self) -> None:
+        """Test washing data is rebuilt from device attributes."""
+        with patch("midealocal.devices.da.MessageDAResponse") as mock_response:
+            message = mock_response.return_value
+            message.progress = 1
+            message.program = 5
+            message.rinse_level = 4
+            message.wash_level = 1
+            message.dehydration_speed = 3
+            message.wash_strength = 2
+            message.softener = 5
+            message.detergent = 4
+            message.wash_time = 30
+            message.dehydration_time = 2
+            message.rinse_count = 3
+            message.soak_time = 10
+            self.device.process_message(b"")
+
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.start, True)
+            sent_message = mock_build_send.call_args.args[0]
+            assert sent_message.washing_data == bytearray(
+                [0xFF, 5, 0x41, 0x32, 0xFF, 0x54, 30, 0x23, 0xFF, 10, 0xFF, 0xFF],
+            )
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""

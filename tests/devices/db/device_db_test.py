@@ -36,18 +36,17 @@ class TestMideaDBDevice:
         """Test initial attributes."""
         assert self.device.attributes[DeviceAttributes.power] is False
         assert self.device.attributes[DeviceAttributes.start] is False
-        assert self.device.attributes[DeviceAttributes.status] is None
-        assert self.device.attributes[DeviceAttributes.mode] is None
-        assert self.device.attributes[DeviceAttributes.program] is None
-        assert self.device.attributes[DeviceAttributes.water_level] is None
-        assert self.device.attributes[DeviceAttributes.temperature] is None
-        assert self.device.attributes[DeviceAttributes.dehydration_speed] is None
+        assert self.device.attributes[DeviceAttributes.status] == "idle"
+        assert self.device.attributes[DeviceAttributes.mode] == "normal"
+        assert self.device.attributes[DeviceAttributes.program] == "default"
+        assert self.device.attributes[DeviceAttributes.water_level] == "default"
+        assert self.device.attributes[DeviceAttributes.temperature] == "default"
+        assert self.device.attributes[DeviceAttributes.dehydration_speed] == "default"
         assert self.device.attributes[DeviceAttributes.wash_time] is None
         assert self.device.attributes[DeviceAttributes.dehydration_time] is None
         assert self.device.attributes[DeviceAttributes.detergent] is None
         assert self.device.attributes[DeviceAttributes.softener] is None
-        assert self.device.attributes[DeviceAttributes.washing_data] == bytearray([])
-        assert self.device.attributes[DeviceAttributes.progress] is None
+        assert self.device.attributes[DeviceAttributes.progress] == "unknown"
         assert self.device.attributes[DeviceAttributes.stains] is None
         assert self.device.attributes[DeviceAttributes.time_remaining] is None
         assert self.device.attributes[DeviceAttributes.wash_time_value] is None
@@ -68,6 +67,89 @@ class TestMideaDBDevice:
             "service",
             "normal_continus",
         ]
+
+    @pytest.mark.parametrize(
+        ("attributes", "expected"),
+        [
+            ({}, bytearray([0x00] + [0xFF] * 12)),
+            ({DeviceAttributes.mode: None}, bytearray([0xFF] * 13)),
+            (
+                {
+                    DeviceAttributes.mode: "factory_test",
+                    DeviceAttributes.program: "quick_wash",
+                    DeviceAttributes.water_level: "high",
+                    DeviceAttributes.temperature: "40",
+                    DeviceAttributes.dehydration_speed: "1200",
+                    DeviceAttributes.wash_time: 30,
+                    DeviceAttributes.dehydration_time: 10,
+                    DeviceAttributes.detergent: 1,
+                    DeviceAttributes.softener: 2,
+                },
+                bytearray(
+                    [
+                        0x01,
+                        0x12,
+                        0x03,
+                        0xFF,
+                        0x04,
+                        0x05,
+                        0x1E,
+                        0x0A,
+                        0x01,
+                        0x02,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                    ],
+                ),
+            ),
+            (
+                {
+                    DeviceAttributes.mode: "factory_test",
+                    DeviceAttributes.program: "specialist",
+                    DeviceAttributes.water_level: "auto",
+                    DeviceAttributes.temperature: "95",
+                    DeviceAttributes.dehydration_speed: "1000",
+                    DeviceAttributes.wash_time: 90,
+                    DeviceAttributes.dehydration_time: 20,
+                    DeviceAttributes.detergent: 4,
+                    DeviceAttributes.softener: 3,
+                },
+                bytearray(
+                    [
+                        0x01,
+                        0x23,
+                        0x05,
+                        0xFF,
+                        0x06,
+                        0x04,
+                        90,
+                        20,
+                        4,
+                        3,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                    ],
+                ),
+            ),
+        ],
+    )
+    def test_build_washing_data_mode(
+        self,
+        attributes: dict[str, str | int | None],
+        expected: bytearray,
+    ) -> None:
+        """Build washing data from the mode name, defaulting unmapped modes."""
+        for attr, value in attributes.items():
+            self.device._attributes[attr] = value
+
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.start.value, True)
+
+        message = mock_build_send.call_args[0][0]
+        assert isinstance(message, MessageStart)
+        assert message.washing_data == expected
 
     @pytest.mark.parametrize(
         "message_type",
@@ -112,7 +194,6 @@ class TestMideaDBDevice:
         assert self.device.attributes[DeviceAttributes.dehydration_time] == 0x0A
         assert self.device.attributes[DeviceAttributes.detergent] == 1
         assert self.device.attributes[DeviceAttributes.softener] == 2
-        assert self.device.attributes[DeviceAttributes.washing_data] == body[3:16]
         assert self.device.attributes[DeviceAttributes.progress] == "spin"
         assert self.device.attributes[DeviceAttributes.stains] == 3
         assert self.device.attributes[DeviceAttributes.time_remaining] == 286
@@ -174,7 +255,7 @@ class TestMideaDBDevice:
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageStart)
             assert message.start is True
-            assert message.washing_data == bytearray([])
+            assert message.washing_data == self.device._build_washing_data()
 
     def test_set_attribute_not_supported(self) -> None:
         """Test set attribute with an unsupported attribute does not send."""
