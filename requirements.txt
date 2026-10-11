@@ -1,9 +1,0 @@
-aiofiles
-aiohttp
-anyio
-colorlog
-defusedxml
-ifaddr
-pycryptodome
-platformdirs
-typing_extensions>=4.5.0
