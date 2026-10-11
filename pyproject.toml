@@ -68,6 +68,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
+files = ["midealocal", "tests"]
 python_version = "3.12"
 show_error_codes = true
 follow_imports = "silent"
