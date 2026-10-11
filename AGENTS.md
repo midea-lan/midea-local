@@ -12,7 +12,7 @@ message encoding/decoding. Python ≥ 3.12 (CI tests 3.12–3.14).
 
 The dev environment uses [uv](https://docs.astral.sh/uv/). Bootstrap it with
 `./scripts/setup.sh` (Linux/macOS/WSL2) or `scripts\setup.ps1` (Windows), which creates a
-`.venv`, installs everything (runtime + dev + types) from `requirements-all.txt`, and
+`.venv`, installs everything (runtime + dev + types) from `pyproject.toml`/`uv.lock`, and
 installs the [prek](https://github.com/j178/prek) hooks. Prefix commands with `uv run` to
 use that environment.
 
@@ -20,7 +20,7 @@ use that environment.
 - Run one test file: `uv run python -m pytest tests/devices/ac/message_ac_test.py`
 - Run one test: `uv run python -m pytest tests/devices/ac/message_ac_test.py::TestACMessage::test_message_query -v`
 - Coverage (as CI does): `uv run python -m pytest --cov=midealocal --cov-report xml ./tests/`
-- Lint/format/type-check all at once via `uv run prek run --all-files`. Individually:
+- Lint/format/type-check all at once via `prek run --all-files`. Individually:
   `uv run ruff check .`, `uv run ruff format .`, `uv run mypy midealocal`,
   `uv run pylint midealocal`.
 
