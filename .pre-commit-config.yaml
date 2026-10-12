@@ -55,7 +55,7 @@ repos:
     rev: v2.4.3
     hooks:
       - id: codespell
-        exclude: '\.lua$'
+        exclude: ^lua/
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v2.4.0
     hooks:
