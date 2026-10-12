@@ -780,6 +780,7 @@ class MideaACDevice(MideaClimateDevice):
         return mode
 
     @property
+    @override
     def attributes(self) -> dict[str, Any]:
         """Attributes."""
         ret = super().attributes
