@@ -713,14 +713,15 @@ class TestMideaACDevice:
         first += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode, no rate_select
 
         self.device.process_message(self._response(first))
-        assert DeviceAttributes.rate_select not in self.device._attributes
+        assert DeviceAttributes.rate_select not in self.device.attributes
 
         second = bytearray([0xB5, 0x03])
         second += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode
         second += bytearray([0x1E, 0x02, 0x01, 1])  # b5_anion -> caps change
 
         self.device.process_message(self._response(second))
-        assert DeviceAttributes.rate_select not in self.device._attributes
+        assert DeviceAttributes.anion in self.device.attributes
+        assert DeviceAttributes.rate_select not in self.device.attributes
 
     def test_process_message(self) -> None:
         """Test process message."""
@@ -808,7 +809,7 @@ class TestMideaACDevice:
             mock_message.power = False
             result = self.device.process_message(b"")
             assert not result[DeviceAttributes.screen_display.value]
-            assert not self.device.attributes[DeviceAttributes.screen_display]
+            assert not self.device._attributes[DeviceAttributes.screen_display]
 
             assert self.device.current_humidity() == 60.0
             assert self.device.current_temperature() == 25.0
