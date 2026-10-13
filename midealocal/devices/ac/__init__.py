@@ -780,6 +780,16 @@ class MideaACDevice(MideaClimateDevice):
         return mode
 
     @property
+    @override
+    def attributes(self) -> dict[str, Any]:
+        """Attributes."""
+        ret = super().attributes
+        for cap in MideaACDevice._capabilities_attr:
+            if not self._capabilities.get(cap, False):
+                ret.pop(MideaACDevice._capabilities_attr[cap], None)
+        return ret
+
+    @property
     def _self_clean_pending_timeout(self) -> int:
         """Return the stale-status window for a pending self-clean command."""
         return (
@@ -804,9 +814,7 @@ class MideaACDevice(MideaClimateDevice):
         ):
             return {}
         self._capabilities.update(new_capabilities)
-        for cap in MideaACDevice._capabilities_attr:
-            if not self._capabilities.get(cap, False):
-                self._attributes.pop(MideaACDevice._capabilities_attr[cap], None)
+
         return {"capabilities": dict(self._capabilities)}
 
     def _refresh_self_clean_status(self, message: MessageACResponse) -> dict[str, Any]:
