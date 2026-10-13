@@ -1,5 +1,21 @@
 # Changelog
 
+## [12.3.0](https://github.com/midea-lan/midea-local/compare/v12.2.0...v12.3.0) (2026-10-13)
+
+
+### Features
+
+* **ca:** add support for toshiba protocol ([#868](https://github.com/midea-lan/midea-local/issues/868)) ([6b3aef0](https://github.com/midea-lan/midea-local/commit/6b3aef071cc519e6c6191992ce9e02d35bc507a2))
+* **e2:** allow setting eplus (MegaWater) mode ([#893](https://github.com/midea-lan/midea-local/issues/893)) ([e1a141e](https://github.com/midea-lan/midea-local/commit/e1a141eddb472383c4ad4e7e7630ad66e044f617))
+
+
+### Bug Fixes
+
+* **a1:** add silent mode and accept auto reported as 11 ([#869](https://github.com/midea-lan/midea-local/issues/869)) ([e6ca37b](https://github.com/midea-lan/midea-local/commit/e6ca37b91e3aefc3f0ee1d484734eb2b6650b220))
+* **ac:** capabilities attribute handling in AC device ([#894](https://github.com/midea-lan/midea-local/issues/894)) ([2f3321a](https://github.com/midea-lan/midea-local/commit/2f3321a2b43770e17f3d333c53fcb52c8d7757d4))
+* **ca:** ignore stale energy in Toshiba push frames ([#884](https://github.com/midea-lan/midea-local/issues/884)) ([baa0948](https://github.com/midea-lan/midea-local/commit/baa0948cbb14775b48998f5fdd9737dd51b3f2c9))
+* **cloud:** resolve SmartHome accounts using current router ([#896](https://github.com/midea-lan/midea-local/issues/896)) ([6a05eb1](https://github.com/midea-lan/midea-local/commit/6a05eb13f2021d5572fa79810f340dd211b2a554))
+
 ## [12.2.0](https://github.com/midea-lan/midea-local/compare/v12.1.0...v12.2.0) (2026-10-04)
 
 
