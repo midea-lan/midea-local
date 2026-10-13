@@ -136,6 +136,18 @@ class TestMeijuCloudSecurity:
 class TestMSmartCloudSecurity:
     """Test MSmartCloudSecurity."""
 
+    def test_encrypt_account(self) -> None:
+        """Encrypt a synthetic account with the app key, not session keys."""
+        security = MSmartCloudSecurity("login_key", "iot_key", "hmac_key")
+        # Independent OpenSSL AES-128-CBC vector with PKCS#7 padding.
+        expected = "73fe41a2150d4b8fa13c30fa5ae6e5906a2174fa83dd6fdcbabe26719ad99022"
+        assert security.encrypt_account("user@example.com") == expected
+        security._aes_key = b"secret_aes_key00"
+        security._aes_iv = b"secret_aes_iv000"
+        assert security.encrypt_account("user@example.com") == expected
+        assert security._aes_key == b"secret_aes_key00"
+        assert security._aes_iv == b"secret_aes_iv000"
+
     def test_encrypt_iam_password(self) -> None:
         """Test encrypt_iam_password combines MD5 and SHA256 digests."""
         security = MSmartCloudSecurity("login_key", "iot_key", "hmac_key")
