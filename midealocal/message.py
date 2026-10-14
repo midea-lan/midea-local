@@ -870,7 +870,7 @@ class IntParser(BodyParser[int]):
         self,
         name: str,
         byte: int,
-        max_value: int = 255,
+        max_value: int | None = None,
         min_value: int = 0,
         length_in_bytes: int = 1,
         first_upper: bool = False,
@@ -886,7 +886,9 @@ class IntParser(BodyParser[int]):
             transform_func=transform_func,
             byte_mask=byte_mask,
         )
-        self._max_value = max_value
+        self._max_value = (
+            max_value if max_value is not None else pow(2, length_in_bytes * 8) - 1
+        )
         self._min_value = min_value
 
     def _parse(self, raw_value: int) -> int:
