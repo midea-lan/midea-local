@@ -744,7 +744,12 @@ class MessageQueryAppliance(MessageRequest):
 
 
 class BodyParser[T]:
-    """Body parser to decode message."""
+    """Decode one value from a message body.
+
+    Each parser instance describes one logical attribute embedded in a raw body
+    byte array. The parser stores the field metadata needed to locate, slice,
+    normalize, and transform the bytes into a Python value.
+    """
 
     def __init__(
         self,
@@ -757,7 +762,26 @@ class BodyParser[T]:
         transform_func: Callable[[T], T] = lambda data: data,
         byte_mask: int | None = None,
     ) -> None:
-        """Init body parser with attribute name."""
+        """Initialize a parser for one message-body attribute.
+
+        Args:
+            name: Attribute name to expose on the parsed message body object.
+            byte: Offset in bytes where the value starts within the message body.
+            bit: Optional bit index to read from a byte; if set, only that bit is
+                extracted.
+            length_in_bytes: Number of bytes used to represent the value.
+            first_upper: Whether the value should be interpreted with the first
+                byte as the most significant byte.
+            default_raw_value: Raw value to return when body data is incomplete.
+            transform_func: Callable invoked after raw decoding to convert the
+                value into its semantic representation.
+            byte_mask: Optional bitmask applied to the final raw value.
+
+        Raises:
+            ValueError: If the parser length is negative or the bit index falls
+                outside the range covered by the configured byte width.
+
+        """
         self.name = name
         self._byte = byte
         self._bit = bit
@@ -804,7 +828,7 @@ class BodyParser[T]:
 
 
 class BoolParser(BodyParser[bool]):
-    """Bool message body parser."""
+    """Parse a boolean value from a body byte or bit flag."""
 
     def __init__(
         self,
@@ -816,7 +840,19 @@ class BoolParser(BodyParser[bool]):
         default_value: bool = True,
         byte_mask: int | None = None,
     ) -> None:
-        """Init bool body parser."""
+        """Initialize a boolean parser.
+
+        Args:
+            name: Attribute name to assign on the parsed body object.
+            byte: Offset in the body where the bit or byte resides.
+            bit: Optional bit position to examine within the selected byte.
+            true_value: Raw value that maps to True.
+            false_value: Raw value that maps to False.
+            default_value: Boolean returned when decoding does not match either
+                expected value.
+            byte_mask: Optional bitmask applied before comparing the raw value.
+
+        """
         super().__init__(name, byte, bit, byte_mask=byte_mask)
         self._true_value = true_value
         self._default_value = default_value
@@ -829,7 +865,7 @@ class BoolParser(BodyParser[bool]):
 
 
 class IntEnumParser[E: IntEnum](BodyParser[E]):
-    """IntEnum message body parser."""
+    """Parse a numeric value into an IntEnum member."""
 
     def __init__(
         self,
@@ -841,7 +877,18 @@ class IntEnumParser[E: IntEnum](BodyParser[E]):
         default_value: E | None = None,
         byte_mask: int | None = None,
     ) -> None:
-        """Init IntEnum body parser."""
+        """Initialize an IntEnum parser.
+
+        Args:
+            name: Attribute name to assign on the parsed message body.
+            byte: Starting byte offset of the enum value.
+            enum_class: IntEnum subclass used to convert the raw integer.
+            length_in_bytes: Number of bytes reserved for the enum value.
+            first_upper: Whether higher-order bytes should be read first.
+            default_value: Fallback enum member when the raw value is not valid.
+            byte_mask: Optional mask applied to the raw integer before lookup.
+
+        """
         super().__init__(
             name,
             byte,
@@ -864,7 +911,7 @@ class IntEnumParser[E: IntEnum](BodyParser[E]):
 
 
 class IntParser(BodyParser[int]):
-    """Int message body parser."""
+    """Parse an integer value with bounds and optional scaling."""
 
     def __init__(
         self,
@@ -877,7 +924,19 @@ class IntParser(BodyParser[int]):
         transform_func: Callable[[int], int] = lambda x: x,
         byte_mask: int | None = None,
     ) -> None:
-        """Init Int body parser."""
+        """Initialize an integer parser.
+
+        Args:
+            name: Attribute name for the parsed integer.
+            byte: Starting offset of the integer in the body.
+            max_value: Maximum raw value accepted before clipping.
+            min_value: Minimum raw value accepted before clipping.
+            length_in_bytes: Number of bytes used by the integer.
+            first_upper: Whether the first byte is the most significant byte.
+            transform_func: Conversion applied after raw decoding.
+            byte_mask: Optional mask applied to the final raw value.
+
+        """
         super().__init__(
             name,
             byte,
@@ -898,7 +957,7 @@ class IntParser(BodyParser[int]):
 
 
 class FloatParser(BodyParser[float]):
-    """Float message body parser."""
+    """Parse a floating-point value from a raw body field."""
 
     def __init__(
         self,
@@ -910,7 +969,20 @@ class FloatParser(BodyParser[float]):
         transform_func: Callable[[float], float] = lambda data: data,
         byte_mask: int | None = None,
     ) -> None:
-        """Init Float body parser."""
+        """Initialize a float parser.
+
+        Args:
+            name: Attribute name for the parsed floating-point value.
+            byte: Starting byte offset of the value in the message body.
+            length_in_bytes: Number of bytes used by the float representation.
+            first_upper: Whether the first byte is considered the most
+                significant byte.
+            default_raw_value: Fallback raw value used when the payload is short.
+            transform_func: Optional callable used to transform the decoded
+                float value.
+            byte_mask: Optional mask applied before returning the raw value.
+
+        """
         super().__init__(
             name,
             byte,
