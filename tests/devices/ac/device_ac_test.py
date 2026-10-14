@@ -807,9 +807,10 @@ class TestMideaACDevice:
             assert result[DeviceAttributes.fresh_air_mode.value] == "off"
 
             mock_message.power = False
+            self.device._capabilities["display_control"] = True
             result = self.device.process_message(b"")
             assert not result[DeviceAttributes.screen_display.value]
-            assert not self.device._attributes[DeviceAttributes.screen_display]
+            assert not self.device.attributes[DeviceAttributes.screen_display]
 
             assert self.device.current_humidity() == 60.0
             assert self.device.current_temperature() == 25.0

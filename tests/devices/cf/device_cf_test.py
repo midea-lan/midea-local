@@ -319,7 +319,7 @@ class TestMideaCFDevice:
 
     def test_set_hvac_mode_falls_back_to_min_temperature(self) -> None:
         """Test set_hvac_mode falls back to min_temperature when unset."""
-        assert self.device._attributes[DeviceAttributes.target_temperature] is None
+        assert self.device.attributes[DeviceAttributes.target_temperature] is None
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_raw_hvac_mode("heat")
             message = mock_build_send.call_args[0][0]
