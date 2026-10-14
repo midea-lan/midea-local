@@ -321,24 +321,20 @@ class MideaDBDevice(MideaDevice):
         )
 
         wash_time = self.get_attribute(DeviceAttributes.wash_time)
-        if not isinstance(wash_time, int):
-            wash_time = WASHING_DATA_FILL
-        washing_data[6] = wash_time
+        if isinstance(wash_time, int):
+            washing_data[6] = wash_time
 
         dehydration_time = self.get_attribute(DeviceAttributes.dehydration_time)
-        if not isinstance(dehydration_time, int):
-            dehydration_time = WASHING_DATA_FILL
-        washing_data[7] = dehydration_time
+        if isinstance(dehydration_time, int):
+            washing_data[7] = dehydration_time
 
         detergent = self.get_attribute(DeviceAttributes.detergent)
-        if not isinstance(detergent, int):
-            detergent = WASHING_DATA_FILL
-        washing_data[8] = detergent
+        if isinstance(detergent, int):
+            washing_data[8] = detergent
 
         softener = self.get_attribute(DeviceAttributes.softener)
-        if not isinstance(softener, int):
-            softener = WASHING_DATA_FILL
-        washing_data[9] = softener
+        if isinstance(softener, int):
+            washing_data[9] = softener
 
         return washing_data
 

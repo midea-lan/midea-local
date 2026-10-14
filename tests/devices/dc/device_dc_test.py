@@ -163,7 +163,7 @@ class TestMideaDCDevice:
             message = mock_build_send.call_args[0][0]
             assert isinstance(message, MessageStart)
             assert message.start is True
-            assert message.washing_data == bytearray([])
+            assert message.washing_data == bytearray([0xFF] * 12)
 
     def test_set_attribute_not_supported(self) -> None:
         """Test set attribute with an unsupported attribute does not send."""
@@ -201,3 +201,79 @@ class TestMideaDCDevice:
         ):
             self.device.set_attribute(DeviceAttributes.power.value, 5)
         mock_build_send.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("attributes", "expected_washing_data"),
+        [
+            ({}, bytearray([0xFF] * 12)),
+            (
+                {
+                    DeviceAttributes.program: "bedsheet",
+                    DeviceAttributes.intensity: 5,
+                    DeviceAttributes.dryness_level: 5,
+                },
+                bytearray(
+                    [
+                        0xFF,
+                        0x04,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                        0x05,
+                        0x05,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                    ],
+                ),
+            ),
+            (
+                {
+                    DeviceAttributes.program: "quick_dry_30",
+                    DeviceAttributes.intensity: "high",
+                    DeviceAttributes.dryness_level: "quick",
+                },
+                bytearray(
+                    [
+                        0xFF,
+                        21,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                    ],
+                ),
+            ),
+        ],
+    )
+    def test_build_washing_data_mode(
+        self,
+        attributes: dict[str, str | int | None],
+        expected_washing_data: bytearray,
+    ) -> None:
+        """Build washing data from the mode name, defaulting unmapped modes."""
+        for attr, value in attributes.items():
+            self.device._attributes[attr] = value
+
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.start.value, True)
+
+            message = mock_build_send.call_args[0][0]
+            assert isinstance(message, MessageStart)
+            assert message.body[1:] == bytearray([0xFF, 0x01]) + expected_washing_data
+
+            mock_build_send.reset_mock()
+
+            self.device.set_attribute(DeviceAttributes.start.value, False)
+
+            message = mock_build_send.call_args[0][0]
+            assert isinstance(message, MessageStart)
+            assert message.body[1:] == bytearray([0xFF, 0x00])

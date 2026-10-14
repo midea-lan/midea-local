@@ -142,9 +142,30 @@ class TestMideaDADevice:
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(DeviceAttributes.start, True)
             sent_message = mock_build_send.call_args.args[0]
-            assert sent_message.washing_data == bytearray(
-                [0xFF, 5, 0x41, 0x32, 0xFF, 0x54, 30, 0x23, 0xFF, 10, 0xFF, 0xFF],
+            assert sent_message.body[1:] == bytearray(
+                [
+                    0xFF,
+                    0x01,
+                    0xFF,
+                    5,
+                    0x41,
+                    0x32,
+                    0xFF,
+                    0x54,
+                    30,
+                    0x23,
+                    0xFF,
+                    10,
+                    0xFF,
+                    0xFF,
+                ],
             )
+
+            mock_build_send.reset_mock()
+
+            self.device.set_attribute(DeviceAttributes.start, False)
+            sent_message = mock_build_send.call_args.args[0]
+            assert sent_message.body[1:] == bytearray([0xFF, 0x00])
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""

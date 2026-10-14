@@ -69,7 +69,7 @@ class TestMideaDBDevice:
         ]
 
     @pytest.mark.parametrize(
-        ("attributes", "expected"),
+        ("attributes", "expected_washing_data"),
         [
             ({}, bytearray([0x00] + [0xFF] * 12)),
             ({DeviceAttributes.mode: None}, bytearray([0xFF] * 13)),
@@ -138,7 +138,7 @@ class TestMideaDBDevice:
     def test_build_washing_data_mode(
         self,
         attributes: dict[str, str | int | None],
-        expected: bytearray,
+        expected_washing_data: bytearray,
     ) -> None:
         """Build washing data from the mode name, defaulting unmapped modes."""
         for attr, value in attributes.items():
@@ -147,9 +147,17 @@ class TestMideaDBDevice:
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(DeviceAttributes.start.value, True)
 
-        message = mock_build_send.call_args[0][0]
-        assert isinstance(message, MessageStart)
-        assert message.washing_data == expected
+            message = mock_build_send.call_args[0][0]
+            assert isinstance(message, MessageStart)
+            assert message.body[1:] == bytearray([0xFF, 0x01]) + expected_washing_data
+
+            mock_build_send.reset_mock()
+
+            self.device.set_attribute(DeviceAttributes.start.value, False)
+
+            message = mock_build_send.call_args[0][0]
+            assert isinstance(message, MessageStart)
+            assert message.body[1:] == bytearray([0xFF, 0x00])
 
     @pytest.mark.parametrize(
         "message_type",
