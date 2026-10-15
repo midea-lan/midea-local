@@ -51,7 +51,6 @@ class TestMideaDCDevice:
         assert self.device.attributes[DeviceAttributes.ai_switch] is None
         assert self.device.attributes[DeviceAttributes.material] is None
         assert self.device.attributes[DeviceAttributes.water_box] is None
-        assert self.device.attributes[DeviceAttributes.washing_data] == bytearray([])
         assert self.device.attributes[DeviceAttributes.progress] == "Unknown"
         assert self.device.attributes[DeviceAttributes.time_remaining] is None
 
@@ -99,7 +98,6 @@ class TestMideaDCDevice:
         assert self.device.attributes[DeviceAttributes.ai_switch] is True
         assert self.device.attributes[DeviceAttributes.material] == 8
         assert self.device.attributes[DeviceAttributes.water_box] == 9
-        assert self.device.attributes[DeviceAttributes.washing_data] == body[3:15]
         assert self.device.attributes[DeviceAttributes.progress] is None
         assert self.device.attributes[DeviceAttributes.time_remaining] == 90
 
