@@ -121,44 +121,119 @@ class TestMideaDADevice:
         assert len(queries) == 1
         assert isinstance(queries[0], MessageQuery)
 
-    def test_build_washing_data(self) -> None:
-        """Test washing data is rebuilt from device attributes."""
-        with patch("midealocal.devices.da.MessageDAResponse") as mock_response:
-            message = mock_response.return_value
-            message.progress = 1
-            message.program = 5
-            message.rinse_level = 4
-            message.wash_level = 1
-            message.dehydration_speed = 3
-            message.wash_strength = 2
-            message.softener = 5
-            message.detergent = 4
-            message.wash_time = 30
-            message.dehydration_time = 2
-            message.rinse_count = 3
-            message.soak_time = 10
-            self.device.process_message(b"")
+    @pytest.mark.parametrize(
+        ("attributes", "expected_washing_data"),
+        [
+            ({}, bytearray([0xFF] * 12)),
+            (
+                {
+                    DeviceAttributes.program: "standard",
+                    DeviceAttributes.rinse_level: 1,
+                    DeviceAttributes.wash_level: 2,
+                    DeviceAttributes.dehydration_speed: "medium",
+                    DeviceAttributes.wash_strength: "weak",
+                    DeviceAttributes.softener: "intelligent",
+                    DeviceAttributes.detergent: "medium",
+                    DeviceAttributes.wash_time: 30,
+                    DeviceAttributes.dehydration_time: 10,
+                    DeviceAttributes.rinse_count: 3,
+                    DeviceAttributes.soak_time: 5,
+                },
+                bytearray(
+                    [
+                        0xFF,
+                        0x00,
+                        0x12,
+                        0x21,
+                        0xFF,
+                        0x12,
+                        30,
+                        0xA3,
+                        0xFF,
+                        0x05,
+                        0xFF,
+                        0xFF,
+                    ],
+                ),
+            ),
+            (
+                {
+                    DeviceAttributes.program: "child",
+                    DeviceAttributes.rinse_level: None,
+                    DeviceAttributes.wash_level: 5,
+                    DeviceAttributes.dehydration_speed: "none",
+                    DeviceAttributes.wash_strength: None,
+                    DeviceAttributes.softener: None,
+                    DeviceAttributes.detergent: "less",
+                    DeviceAttributes.wash_time: 50,
+                    DeviceAttributes.dehydration_time: None,
+                    DeviceAttributes.rinse_count: 5,
+                    DeviceAttributes.soak_time: 10,
+                },
+                bytearray(
+                    [
+                        0xFF,
+                        0x06,
+                        0xF5,
+                        0x0F,
+                        0xFF,
+                        0xF1,
+                        50,
+                        0xF5,
+                        0xFF,
+                        10,
+                        0xFF,
+                        0xFF,
+                    ],
+                ),
+            ),
+            (
+                {
+                    DeviceAttributes.program: "child",
+                    DeviceAttributes.rinse_level: "none",
+                    DeviceAttributes.wash_level: None,
+                    DeviceAttributes.dehydration_speed: None,
+                    DeviceAttributes.wash_strength: "unknown",
+                    DeviceAttributes.softener: None,
+                    DeviceAttributes.detergent: "unknown",
+                    DeviceAttributes.wash_time: 25,
+                    DeviceAttributes.dehydration_time: 7,
+                    DeviceAttributes.rinse_count: None,
+                    DeviceAttributes.soak_time: 40,
+                },
+                bytearray(
+                    [
+                        0xFF,
+                        0x06,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                        25,
+                        0x7F,
+                        0xFF,
+                        40,
+                        0xFF,
+                        0xFF,
+                    ],
+                ),
+            ),
+        ],
+    )
+    def test_build_washing_data_mode(
+        self,
+        attributes: dict[str, str | int | None],
+        expected_washing_data: bytearray,
+    ) -> None:
+        """Build washing data from the mode name, defaulting unmapped modes."""
+        for attr, value in attributes.items():
+            self.device._attributes[attr] = value
 
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(DeviceAttributes.start, True)
             sent_message = mock_build_send.call_args.args[0]
-            assert sent_message.body[1:] == bytearray(
-                [
-                    0xFF,
-                    0x01,
-                    0xFF,
-                    5,
-                    0x41,
-                    0x32,
-                    0xFF,
-                    0x54,
-                    30,
-                    0x23,
-                    0xFF,
-                    10,
-                    0xFF,
-                    0xFF,
-                ],
+            assert (
+                sent_message.body[1:] == bytearray([0xFF, 0x01]) + expected_washing_data
             )
 
             mock_build_send.reset_mock()
