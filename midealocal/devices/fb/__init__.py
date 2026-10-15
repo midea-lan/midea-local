@@ -9,7 +9,7 @@ from midealocal.base_classes.climate import (
     MideaHVACMode,
     MideaPreset,
 )
-from midealocal.const import DeviceType
+from midealocal.const import TEMPERATURE_STEP_HALF, DeviceType
 from midealocal.device import MideaDeviceInitKwargs
 
 from .message import MessageFBResponse, MessageQuery, MessageSet
@@ -280,7 +280,7 @@ class MideaFBDevice(MideaClimateDevice):
     ) -> None:
         """Midea FB device set target temperature."""
         message = MessageSet(self._message_protocol_version, self.subtype)
-        setattr(message, DeviceAttributes.target_temperature, target_temperature)
+        message.target_temperature = int(target_temperature + TEMPERATURE_STEP_HALF)
         if hvac_mode is not None and hvac_mode != DeviceHVACMode.OFF:
             message.power = True
         self.build_send(message)

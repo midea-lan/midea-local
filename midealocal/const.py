@@ -9,6 +9,8 @@ MANUFACTURER_CODE_TOSHIBA = "0008"
 
 CA_MODEL_GRY540XFS = "0000000D"
 
+TEMPERATURE_STEP_HALF = 0.5
+
 
 class DeviceType(IntEnum):
     """Device Type."""

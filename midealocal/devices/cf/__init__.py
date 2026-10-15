@@ -11,7 +11,7 @@ from midealocal.base_classes.climate import (
     MideaClimateDevice,
     MideaHVACMode,
 )
-from midealocal.const import DeviceType
+from midealocal.const import TEMPERATURE_STEP_HALF, DeviceType
 from midealocal.device import MideaDeviceInitKwargs
 from midealocal.exceptions import ValueWrongType
 
@@ -194,7 +194,11 @@ class MideaCFDevice(MideaClimateDevice):
         """Midea CF device set target temperature."""
         message = MessageSet(self._message_protocol_version)
         message.mode = self._attributes[DeviceAttributes.mode]
-        message.target_temperature = target_temperature
+        temp_multiplier = 2 if self.temperature_step == TEMPERATURE_STEP_HALF else 1
+        message.target_temperature = float(
+            int(target_temperature * temp_multiplier + TEMPERATURE_STEP_HALF)
+            / temp_multiplier,
+        )
         if hvac_mode is not None:
             message.power = hvac_mode != 0
             message.mode = hvac_mode

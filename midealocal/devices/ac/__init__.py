@@ -16,7 +16,7 @@ from midealocal.base_classes.climate import (
     MideaPreset,
     MideaSwingMode,
 )
-from midealocal.const import DeviceType
+from midealocal.const import TEMPERATURE_STEP_HALF, DeviceType
 from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs
 from midealocal.message import ListTypes
 
@@ -1236,7 +1236,11 @@ class MideaACDevice(MideaClimateDevice):
         message: MessageSubProtocolSet | MessageGeneralSet = (
             self._make_message_uniq_set()
         )
-        message.target_temperature = target_temperature
+        temp_multiplier = 2 if self.temperature_step == TEMPERATURE_STEP_HALF else 1
+        message.target_temperature = float(
+            int(target_temperature * temp_multiplier + TEMPERATURE_STEP_HALF)
+            / temp_multiplier,
+        )
         if hvac_mode is not None:
             message.power = hvac_mode != DeviceHVACMode.OFF
             message.mode = hvac_mode
