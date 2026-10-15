@@ -24,6 +24,10 @@ from .message import (
 _LOGGER = logging.getLogger(__name__)
 
 
+WASHING_DATA_SIZE = 12
+WASHING_DATA_FILL = 0xFF
+
+
 class DeviceAttributes(StrEnum):
     """Midea DC device attributes."""
 
@@ -39,7 +43,6 @@ class DeviceAttributes(StrEnum):
     ai_switch = "ai_switch"
     material = "material"
     water_box = "water_box"
-    washing_data = "washing_data"
     progress = "progress"
     time_remaining = "time_remaining"
 
@@ -136,7 +139,6 @@ class MideaDCDevice(MideaDevice):
                 DeviceAttributes.ai_switch: None,
                 DeviceAttributes.material: None,
                 DeviceAttributes.water_box: None,
-                DeviceAttributes.washing_data: bytearray([]),
                 DeviceAttributes.progress: "Unknown",
                 DeviceAttributes.time_remaining: None,
             },
@@ -184,12 +186,44 @@ class MideaDCDevice(MideaDevice):
         elif attr == DeviceAttributes.start:
             message = MessageStart(self._message_protocol_version)
             message.start = value
-            message.washing_data = self._attributes[DeviceAttributes.washing_data]
+            message.washing_data = self._build_washing_data()
             self.build_send(message)
         elif attr == DeviceAttributes.ai_switch:
             message = MessageSetAISwitch(self._message_protocol_version)
             message.ai_switch = value
             self.build_send(message)
+
+    def _get_key_from_value(
+        self,
+        value: str,
+        mapping: dict[int, str],
+        default: int = WASHING_DATA_FILL,
+    ) -> int:
+        """Get the key from the value in the mapping."""
+        for key, val in mapping.items():
+            if val == value:
+                return key
+        return default
+
+    def _build_washing_data(self) -> bytearray:
+        """Build washing data."""
+        washing_data = bytearray(
+            [WASHING_DATA_FILL] * WASHING_DATA_SIZE,
+        )
+
+        washing_data[1] = self._get_key_from_value(
+            str(self.get_attribute(DeviceAttributes.program)),
+            self._program,
+        )
+
+        if isinstance(intensity := self.get_attribute(DeviceAttributes.intensity), int):
+            washing_data[6] = int(intensity)
+        if isinstance(
+            dryness_level := self.get_attribute(DeviceAttributes.dryness_level),
+            int,
+        ):
+            washing_data[7] = dryness_level
+        return washing_data
 
 
 class MideaAppliance(MideaDCDevice):
