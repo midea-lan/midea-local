@@ -43,7 +43,6 @@ class DeviceAttributes(StrEnum):
     ai_switch = "ai_switch"
     material = "material"
     water_box = "water_box"
-    washing_data = "washing_data"
     progress = "progress"
     time_remaining = "time_remaining"
 
@@ -140,7 +139,6 @@ class MideaDCDevice(MideaDevice):
                 DeviceAttributes.ai_switch: None,
                 DeviceAttributes.material: None,
                 DeviceAttributes.water_box: None,
-                DeviceAttributes.washing_data: bytearray([]),
                 DeviceAttributes.progress: "Unknown",
                 DeviceAttributes.time_remaining: None,
             },
