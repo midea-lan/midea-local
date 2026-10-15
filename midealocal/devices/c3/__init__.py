@@ -6,7 +6,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack, cast, override
 
 from midealocal.base_classes.climate import MideaClimateDevice, MideaHVACMode
-from midealocal.const import TEMPERATURE_STEP_HALF, DeviceType
+from midealocal.const import DeviceType
 from midealocal.device import MideaDeviceInitKwargs
 
 from .message import (
@@ -471,11 +471,10 @@ class MideaC3Device(MideaClimateDevice):
             )
 
         message = self.make_message_set()
-        temp_multiplier = 2 if self.temperature_step == TEMPERATURE_STEP_HALF else 1
-        round_temp = float(
-            int(target_temperature * temp_multiplier + TEMPERATURE_STEP_HALF)
-            / temp_multiplier,
+        temp_step = (
+            self.temperature_step if isinstance(self.temperature_step, float) else 1.0
         )
+        round_temp = round(target_temperature / temp_step) * temp_step
         if self._attributes[DeviceAttributes.zone_temp_type][zone]:
             message.zone_target_temp[zone] = round_temp
         else:

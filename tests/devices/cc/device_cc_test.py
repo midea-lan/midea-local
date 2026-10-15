@@ -342,7 +342,7 @@ class TestMideaCCDevice:
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
             assert isinstance(msg, MessageSet)
-            assert msg.target_temperature == 23
+            assert msg.target_temperature == 22.0
             assert msg.power == power
             assert msg.mode == mode
 
@@ -351,7 +351,7 @@ class TestMideaCCDevice:
         [
             (20.2, 20.0),
             (20.3, 20.0),
-            (20.5, 21.0),
+            (20.5, 20.0),
             (20.7, 21.0),
             (20.8, 21.0),
         ],

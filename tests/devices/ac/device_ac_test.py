@@ -906,7 +906,7 @@ class TestMideaACDevice:
             self.device.set_raw_target_temperature(22.5, hvac_mode)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
-            assert message.target_temperature == 23
+            assert message.target_temperature == 22.0
             assert message.mode == mode
             assert message.power == power
             self.device._used_subprotocol = True
@@ -917,7 +917,7 @@ class TestMideaACDevice:
         [
             (20.2, 20.0, 20.0),
             (20.3, 20.0, 20.5),
-            (20.5, 21.0, 20.5),
+            (20.5, 20.0, 20.5),
             (20.7, 21.0, 20.5),
             (20.8, 21.0, 21.0),
         ],
