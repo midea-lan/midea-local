@@ -34,7 +34,6 @@ class DeviceAttributes(StrEnum):
     dehydration_time_value = "dehydration_time_value"
     detergent = "detergent"
     softener = "softener"
-    washing_data = "washing_data"
     progress = "progress"
     time_remaining = "time_remaining"
     stains = "stains"
