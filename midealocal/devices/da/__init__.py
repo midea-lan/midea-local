@@ -194,13 +194,13 @@ class MideaDADevice(MideaDevice):
             rinse_level := self.get_attribute(DeviceAttributes.rinse_level),
             int,
         ):
-            rinse_level_value = rinse_level
+            rinse_level_value = rinse_level & 0x0F
 
         if isinstance(
             wash_level := self.get_attribute(DeviceAttributes.wash_level),
             int,
         ):
-            wash_level_value = wash_level
+            wash_level_value = wash_level & 0x0F
 
         washing_data[2] = rinse_level_value << 4 | wash_level_value
 
@@ -210,22 +210,24 @@ class MideaDADevice(MideaDevice):
             dehydration_speed := self.get_attribute(DeviceAttributes.dehydration_speed),
             str,
         ):
-            speed = self._get_index_from_value(dehydration_speed, self._speed)
+            speed = self._get_index_from_value(dehydration_speed, self._speed) & 0x0F
 
         if isinstance(
             wash_strength := self.get_attribute(DeviceAttributes.wash_strength),
             str,
         ):
-            strength = self._get_index_from_value(wash_strength, self._strength)
+            strength = self._get_index_from_value(wash_strength, self._strength) & 0x0F
 
         washing_data[3] = (speed << 4) & 0xF0 | strength
 
         softener_value = 0xF
         detergent_value = 0xF
         if isinstance(softener := self.get_attribute(DeviceAttributes.softener), str):
-            softener_value = self._get_index_from_value(softener, self._softener)
+            softener_value = self._get_index_from_value(softener, self._softener) & 0x0F
         if isinstance(detergent := self.get_attribute(DeviceAttributes.detergent), str):
-            detergent_value = self._get_index_from_value(detergent, self._detergent)
+            detergent_value = (
+                self._get_index_from_value(detergent, self._detergent) & 0x0F
+            )
 
         washing_data[5] = (softener_value << 4) & 0xF0 | detergent_value
 
@@ -238,12 +240,12 @@ class MideaDADevice(MideaDevice):
             dehydration_time := self.get_attribute(DeviceAttributes.dehydration_time),
             int,
         ):
-            dehydration_time_value = dehydration_time
+            dehydration_time_value = dehydration_time & 0x0F
         if isinstance(
             rinse_count := self.get_attribute(DeviceAttributes.rinse_count),
             int,
         ):
-            rinse_count_value = rinse_count
+            rinse_count_value = rinse_count & 0x0F
         washing_data[7] = (dehydration_time_value << 4) & 0xF0 | rinse_count_value
 
         if isinstance(soak_time := self.get_attribute(DeviceAttributes.soak_time), int):
