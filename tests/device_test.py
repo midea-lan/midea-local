@@ -401,7 +401,7 @@ class TestMideaDevice:
             default_transform=default_transform,
         )
         assert new_status == expected_status
-        assert self.device._attributes["mode"] == expected_attribute
+        assert self.device.attributes["mode"] == expected_attribute
 
     def test_celsius_to_fahrenheit(self) -> None:
         """Test celsius_to_fahrenheit conversion and pass-through branches."""
