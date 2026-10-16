@@ -10,6 +10,7 @@ from typing import Any, ClassVar, Unpack, cast, override
 from midealocal.base_classes.climate import (
     DEFAULT_MAX_TARGET_TEMPERATURE,
     DEFAULT_MIN_TARGET_TEMPERATURE,
+    TEMPERATURE_STEP_HALF,
     MideaClimateDevice,
     MideaFanMode,
     MideaHVACMode,
@@ -330,8 +331,8 @@ class MideaACDevice(MideaClimateDevice):
         )
         self._fresh_air_version: DeviceAttributes | None = None
         self._pending_self_clean: tuple[bool, float] | None = None
-        self._default_temperature_step: float = 0.5
-        self._temperature_step: float = 0.5
+        self._default_temperature_step: float = TEMPERATURE_STEP_HALF
+        self._temperature_step: float = TEMPERATURE_STEP_HALF
         self._used_subprotocol: bool = self._model_capabilities.uses_bb_protocol
         self._bb_sn8_flag: bool = False
         self._bb_timer: bool = False
@@ -515,7 +516,7 @@ class MideaACDevice(MideaClimateDevice):
         )
 
     @property
-    def temperature_step(self) -> float | None:
+    def temperature_step(self) -> float:
         """Midea AC device temperature step."""
         return self._temperature_step
 
@@ -1264,8 +1265,15 @@ class MideaACDevice(MideaClimateDevice):
         if customize and len(customize) > 0:
             try:
                 params = json.loads(customize)
-                if params and "temperature_step" in params:
-                    self._temperature_step = params.get("temperature_step")
+                if (
+                    params
+                    and "temperature_step" in params
+                    and isinstance(
+                        temp_step := params.get("temperature_step"),
+                        (int, float),
+                    )
+                ):
+                    self._temperature_step = float(temp_step)
                 if params and "power_analysis_method" in params:
                     self._power_analysis_method = params.get("power_analysis_method")
                 if params and "min_temperature" in params:

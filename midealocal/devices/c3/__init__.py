@@ -5,7 +5,11 @@ import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, cast, override
 
-from midealocal.base_classes.climate import MideaClimateDevice, MideaHVACMode
+from midealocal.base_classes.climate import (
+    TEMPERATURE_STEP_HALF,
+    MideaClimateDevice,
+    MideaHVACMode,
+)
 from midealocal.const import DeviceType
 from midealocal.device import MideaDeviceInitKwargs
 
@@ -171,8 +175,8 @@ class MideaC3Device(MideaClimateDevice):
                 DeviceAttributes.error_code: 0,
             },
         )
-        self._default_temperature_step: float = 0.5
-        self._temperature_step: float = 0.5
+        self._default_temperature_step: float = TEMPERATURE_STEP_HALF
+        self._temperature_step: float = TEMPERATURE_STEP_HALF
         self.set_customize(customize)
 
     @property
@@ -229,7 +233,7 @@ class MideaC3Device(MideaClimateDevice):
         self._set_mode(zone, hvac_mode)
 
     @property
-    def temperature_step(self) -> float | None:
+    def temperature_step(self) -> float:
         """Midea C3 device temperature step."""
         return self._temperature_step
 

@@ -528,9 +528,9 @@ class TestMideaCCDevice:
         assert self.device.temperature_step == 1.0
 
     def test_temperature_step_invalid_type_returns_none(self) -> None:
-        """Test temperature_step returns None for an unexpected attribute type."""
+        """Test temperature_step returns 1.0 for an unexpected attribute type."""
         self.device._attributes[DeviceAttributes.temperature_precision] = None
-        assert self.device.temperature_step is None
+        assert self.device.temperature_step == 1.0
 
 
 class TestMideaCCDeviceFEControl:
