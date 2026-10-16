@@ -1265,9 +1265,12 @@ class MideaACDevice(MideaClimateDevice):
                 if (
                     params
                     and "temperature_step" in params
-                    and isinstance(params.get("temperature_step"), (int, float))
+                    and isinstance(
+                        temp_step := params.get("temperature_step"),
+                        (int, float),
+                    )
                 ):
-                    self._temperature_step = float(params.get("temperature_step"))
+                    self._temperature_step = float(temp_step)
                 if params and "power_analysis_method" in params:
                     self._power_analysis_method = params.get("power_analysis_method")
                 if params and "min_temperature" in params:
