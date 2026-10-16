@@ -1,5 +1,27 @@
 # Changelog
 
+## [13.0.0](https://github.com/midea-lan/midea-local/compare/v12.3.0...v13.0.0) (2026-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **climate:** temperature step always return float ([#907](https://github.com/midea-lan/midea-local/issues/907))
+
+### Features
+
+* **climate:** temperature step always return float ([#907](https://github.com/midea-lan/midea-local/issues/907)) ([3a0df17](https://github.com/midea-lan/midea-local/commit/3a0df17b415c80a84a5fed682d949295cdc665d2))
+
+
+### Bug Fixes
+
+* **climate:** round temperature before sending to device ([#905](https://github.com/midea-lan/midea-local/issues/905)) ([904bd5e](https://github.com/midea-lan/midea-local/commit/904bd5ec74d7e173702ecc2603ddb5afe22aabb6))
+* **message:** intparser default max_value default is based on length_in_bytes ([#900](https://github.com/midea-lan/midea-local/issues/900)) ([d2e31e4](https://github.com/midea-lan/midea-local/commit/d2e31e44885f81fe82b8d80878fe8b46449abe37))
+
+
+### Documentation
+
+* **message:** add args info to bodyparsers init ([#901](https://github.com/midea-lan/midea-local/issues/901)) ([ef28169](https://github.com/midea-lan/midea-local/commit/ef28169926914d15f40fe521b9cc3d3c2f553c59))
+
 ## [12.3.0](https://github.com/midea-lan/midea-local/compare/v12.2.0...v12.3.0) (2026-10-13)
 
 
