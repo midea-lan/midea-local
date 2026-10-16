@@ -1237,10 +1237,9 @@ class MideaACDevice(MideaClimateDevice):
         message: MessageSubProtocolSet | MessageGeneralSet = (
             self._make_message_uniq_set()
         )
-        temp_step = (
-            self.temperature_step if isinstance(self.temperature_step, float) else 1.0
+        message.target_temperature = (
+            round(target_temperature / self.temperature_step) * self.temperature_step
         )
-        message.target_temperature = round(target_temperature / temp_step) * temp_step
         if hvac_mode is not None:
             message.power = hvac_mode != DeviceHVACMode.OFF
             message.mode = hvac_mode

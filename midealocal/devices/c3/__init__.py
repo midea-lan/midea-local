@@ -475,10 +475,9 @@ class MideaC3Device(MideaClimateDevice):
             )
 
         message = self.make_message_set()
-        temp_step = (
-            self.temperature_step if isinstance(self.temperature_step, float) else 1.0
+        round_temp = (
+            round(target_temperature / self.temperature_step) * self.temperature_step
         )
-        round_temp = round(target_temperature / temp_step) * temp_step
         if self._attributes[DeviceAttributes.zone_temp_type][zone]:
             message.zone_target_temp[zone] = round_temp
         else:
