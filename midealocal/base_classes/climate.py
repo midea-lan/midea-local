@@ -10,6 +10,8 @@ from midealocal.device import MideaDevice
 # Fallback target temperature bounds for devices that do not report their own.
 DEFAULT_MIN_TARGET_TEMPERATURE = 16.0
 DEFAULT_MAX_TARGET_TEMPERATURE = 30.0
+TEMPERATURE_STEP_WHOLE = 1.0
+TEMPERATURE_STEP_HALF = 0.5
 
 
 class MideaPreset(StrEnum):
@@ -270,9 +272,9 @@ class MideaClimateDevice(MideaDevice, ABC):
         self.set_swing_mode(mode)
 
     @property
-    def temperature_step(self) -> float | None:
-        """Return the target temperature step, or None if fixed/unknown."""
-        return None
+    def temperature_step(self) -> float:
+        """Return the target temperature step."""
+        return TEMPERATURE_STEP_WHOLE
 
     @property
     def preset_modes(self) -> Sequence[MideaPreset]:
