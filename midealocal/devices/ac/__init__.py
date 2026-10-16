@@ -1262,8 +1262,12 @@ class MideaACDevice(MideaClimateDevice):
         if customize and len(customize) > 0:
             try:
                 params = json.loads(customize)
-                if params and "temperature_step" in params:
-                    self._temperature_step = params.get("temperature_step")
+                if (
+                    params
+                    and "temperature_step" in params
+                    and isinstance(params.get("temperature_step"), (int, float))
+                ):
+                    self._temperature_step = float(params.get("temperature_step"))
                 if params and "power_analysis_method" in params:
                     self._power_analysis_method = params.get("power_analysis_method")
                 if params and "min_temperature" in params:
