@@ -305,6 +305,36 @@ class TestMideaC3Device:
             assert message.mode == mode
             assert message.zone2_power == power
 
+    @pytest.mark.parametrize(
+        ("temperature", "expected_step_whole", "expected_step_half"),
+        [
+            (20.2, 20.0, 20.0),
+            (20.3, 20.0, 20.5),
+            (20.5, 20.0, 20.5),
+            (20.7, 21.0, 20.5),
+            (20.8, 21.0, 21.0),
+        ],
+    )
+    def test_set_target_temperature_rounded(
+        self,
+        temperature: float,
+        expected_step_whole: float,
+        expected_step_half: float,
+    ) -> None:
+        """Test set target temperature to be rounded."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_raw_target_temperature(temperature, "auto", 0)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.room_target_temp == expected_step_whole
+            mock_build_send.reset_mock()
+
+            self.device._temperature_step = 0.5
+            self.device.set_raw_target_temperature(temperature, "auto", 0)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.room_target_temp == expected_step_half
+
     def test_set_target_temperature_without_hvac(
         self,
     ) -> None:

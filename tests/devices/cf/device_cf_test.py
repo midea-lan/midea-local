@@ -206,6 +206,29 @@ class TestMideaCFDevice:
             assert message.target_temperature == 30
 
     @pytest.mark.parametrize(
+        ("temperature", "expected_step_whole"),
+        [
+            (20.2, 20.0),
+            (20.3, 20.0),
+            (20.5, 20.0),
+            (20.7, 21.0),
+            (20.8, 21.0),
+        ],
+    )
+    def test_set_target_temperature_rounded(
+        self,
+        temperature: float,
+        expected_step_whole: float,
+    ) -> None:
+        """Test set target temperature to be rounded."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_raw_target_temperature(temperature, "auto")
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.target_temperature == expected_step_whole
+            mock_build_send.reset_mock()
+
+    @pytest.mark.parametrize(
         ("attr", "value", "expected"),
         [
             (DeviceAttributes.power, True, True),

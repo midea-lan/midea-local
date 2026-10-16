@@ -385,7 +385,9 @@ class MideaCCDevice(MideaClimateDevice):
             self._send_fe_control(controls)
             return
         message = self.make_message_set()
-        message.target_temperature = target_temperature
+        message.target_temperature = (
+            round(target_temperature / self.temperature_step) * self.temperature_step
+        )
         if hvac_mode is not None:
             message.power = hvac_mode != 0
             message.mode = hvac_mode

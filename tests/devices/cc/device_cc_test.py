@@ -342,9 +342,32 @@ class TestMideaCCDevice:
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
             assert isinstance(msg, MessageSet)
-            assert msg.target_temperature == 22.5
+            assert msg.target_temperature == 22.0
             assert msg.power == power
             assert msg.mode == mode
+
+    @pytest.mark.parametrize(
+        ("temperature", "expected_step_whole"),
+        [
+            (20.2, 20.0),
+            (20.3, 20.0),
+            (20.5, 20.0),
+            (20.7, 21.0),
+            (20.8, 21.0),
+        ],
+    )
+    def test_set_target_temperature_rounded(
+        self,
+        temperature: float,
+        expected_step_whole: float,
+    ) -> None:
+        """Test set target temperature to be rounded."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_raw_target_temperature(temperature, "auto")
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.target_temperature == expected_step_whole
+            mock_build_send.reset_mock()
 
     def test_set_target_temperature_without_mode(self) -> None:
         """Setting temperature without a mode keeps the current power state."""

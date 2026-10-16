@@ -475,10 +475,13 @@ class MideaC3Device(MideaClimateDevice):
             )
 
         message = self.make_message_set()
+        round_temp = (
+            round(target_temperature / self.temperature_step) * self.temperature_step
+        )
         if self._attributes[DeviceAttributes.zone_temp_type][zone]:
-            message.zone_target_temp[zone] = target_temperature
+            message.zone_target_temp[zone] = round_temp
         else:
-            message.room_target_temp = target_temperature
+            message.room_target_temp = round_temp
         if hvac_mode is not None:
             if zone == 0:
                 message.zone1_power = hvac_mode != 0
