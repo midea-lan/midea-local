@@ -205,6 +205,15 @@ class MSmartCloudSecurity(CloudSecurity):
             16429062708050928556,
         )
 
+    def encrypt_account(self, account: str) -> str:
+        """Encrypt the account name for SmartHome's account routing endpoint."""
+        key_digest = sha256(self._login_key.encode("ascii")).hexdigest()
+        return self.aes_encrypt(
+            account.encode("utf-8"),
+            key_digest[:16].encode("ascii"),
+            key_digest[16:32].encode("ascii"),
+        ).hex()
+
     def encrypt_iam_password(self, login_id: str, data: str) -> str:
         """Encrypt IAM password."""
         md = md5()

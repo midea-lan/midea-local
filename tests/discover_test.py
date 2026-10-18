@@ -19,7 +19,7 @@ from midealocal.security import LocalSecurity
 from tests.conftest import make_stream_pair
 
 SSID = b"net_ac_XXXX"
-SN_TYPE1 = b"000000000" + b"12345678" + b"abbccddeeff" + b"0000"
+SN_TYPE1 = b"000800000" + b"12345678" + b"abbccddeeff" + b"0000"
 DEVICE_ID = 12345
 DEVICE_IP = "192.168.1.100"
 DEVICE_PORT = 6444
@@ -146,6 +146,7 @@ class TestParseDiscoverResponse:
             "sn": SN_TYPE1.decode(),
             "protocol": protocol,
             "mac": "aabbccddeeff",
+            "manufacturer_code": "0008",
         }
 
     @pytest.mark.asyncio
@@ -177,14 +178,14 @@ class TestParseDiscoverResponse:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        ("sn", "model"),
+        ("sn", "model", "manufacturer_code"),
         [
-            (SN_TYPE1.decode(), "12345678"),
-            ("ABC" + "12345678" + "00000000000", "12345678"),
-            ("odd_length_sn", ""),
+            (SN_TYPE1.decode(), "12345678", "0008"),
+            ("ABC" + "12345678" + "00000000000", "12345678", "0000"),
+            ("odd_length_sn", "", "0000"),
         ],
     )
-    async def test_parse_v1(self, sn: str, model: str) -> None:
+    async def test_parse_v1(self, sn: str, model: str, manufacturer_code: str) -> None:
         """Test parsing a v1 XML broadcast response."""
         data = V1_XML % sn.encode()
         loop, sock = _fake_recv_call(data)
@@ -204,6 +205,7 @@ class TestParseDiscoverResponse:
             "sn": sn,
             "protocol": 1,
             "mac": "8abbccddeeff" if len(sn) == 32 else None,
+            "manufacturer_code": manufacturer_code,
         }
 
     @pytest.mark.asyncio

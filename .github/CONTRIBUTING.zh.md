@@ -81,17 +81,18 @@ cd midea-local
 
 该脚本会：
 
-1. 用 Python 3.12 创建 `.venv`（`uv venv --python 3.12`），
-2. 安装运行时 + 开发 + 类型声明依赖（`uv pip install -r requirements-all.txt`），
+1. 用 Python 3.12 创建 `.venv`，并按 `pyproject.toml`/`uv.lock` 安装运行时 + 开发依赖
+   （`uv sync --all-groups --python 3.12`），
+2. 激活该环境，
 3. 安装 prek 钩子（commit 与 commit-msg 阶段）。
 
 **手动搭建**（与脚本等效）：
 
 ```bash
-uv venv --python 3.12
-uv pip install -r requirements-all.txt prek
-uv run prek install
-uv run prek install --hook-type commit-msg
+uv sync --all-groups --python 3.12
+uv tool install prek
+prek install
+prek install --hook-type commit-msg
 ```
 
 之后可以激活环境（`source .venv/bin/activate`），或在命令前加 `uv run`
@@ -136,10 +137,10 @@ export UV_PYTHON_INSTALL_MIRROR="https://mirror.nju.edu.cn/github-release/astral
 | 运行全部测试             | `uv run python -m pytest ./tests/`                                            |
 | 运行单个测试文件         | `uv run python -m pytest tests/devices/ac/message_ac_test.py`                 |
 | 覆盖率报告               | `uv run python -m pytest --cov=midealocal --cov-report term-missing ./tests/` |
-| 代码检查 / 格式化 / 类型 | `uv run prek run --all-files`                                                 |
+| 代码检查 / 格式化 / 类型 | `prek run --all-files`                                                        |
 | 仅运行 Ruff              | `uv run ruff check .` / `uv run ruff format .`                                |
 | 构建软件包               | `uv run python -m build`                                                      |
-| 新增依赖                 | 编辑 `requirements*.txt`，再执行 `uv pip install -r requirements-all.txt`     |
+| 新增依赖                 | `uv add <包名>`（运行时）或 `uv add --dev <包名>`（开发）                     |
 
 ---
 
@@ -179,7 +180,7 @@ export UV_PYTHON_INSTALL_MIRROR="https://mirror.nju.edu.cn/github-release/astral
   - `ruff` → 代码检查与格式化
   - `mypy` → 类型检查（严格模式）
   - `pylint` → 额外的静态分析
-- 随时可用 `uv run prek run --all-files` 运行完整套件，提交前请修复所有报告的问题。
+- 随时可用 `prek run --all-files` 运行完整套件，提交前请修复所有报告的问题。
 - 测试使用 `pytest`。CI 会在 Python 3.12/3.13/3.14 × Linux/macOS/Windows 矩阵上运行完整的
   prek 套件与测试，失败则阻止合并。
 

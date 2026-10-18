@@ -1,5 +1,60 @@
 # Changelog
 
+## [13.0.0](https://github.com/midea-lan/midea-local/compare/v12.3.0...v13.0.0) (2026-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **climate:** temperature step always return float ([#907](https://github.com/midea-lan/midea-local/issues/907))
+
+### Features
+
+* **climate:** temperature step always return float ([#907](https://github.com/midea-lan/midea-local/issues/907)) ([3a0df17](https://github.com/midea-lan/midea-local/commit/3a0df17b415c80a84a5fed682d949295cdc665d2))
+
+
+### Bug Fixes
+
+* **climate:** round temperature before sending to device ([#905](https://github.com/midea-lan/midea-local/issues/905)) ([904bd5e](https://github.com/midea-lan/midea-local/commit/904bd5ec74d7e173702ecc2603ddb5afe22aabb6))
+* **message:** intparser default max_value default is based on length_in_bytes ([#900](https://github.com/midea-lan/midea-local/issues/900)) ([d2e31e4](https://github.com/midea-lan/midea-local/commit/d2e31e44885f81fe82b8d80878fe8b46449abe37))
+
+
+### Documentation
+
+* **message:** add args info to bodyparsers init ([#901](https://github.com/midea-lan/midea-local/issues/901)) ([ef28169](https://github.com/midea-lan/midea-local/commit/ef28169926914d15f40fe521b9cc3d3c2f553c59))
+
+## [12.3.0](https://github.com/midea-lan/midea-local/compare/v12.2.0...v12.3.0) (2026-10-13)
+
+
+### Features
+
+* **ca:** add support for toshiba protocol ([#868](https://github.com/midea-lan/midea-local/issues/868)) ([6b3aef0](https://github.com/midea-lan/midea-local/commit/6b3aef071cc519e6c6191992ce9e02d35bc507a2))
+* **e2:** allow setting eplus (MegaWater) mode ([#893](https://github.com/midea-lan/midea-local/issues/893)) ([e1a141e](https://github.com/midea-lan/midea-local/commit/e1a141eddb472383c4ad4e7e7630ad66e044f617))
+
+
+### Bug Fixes
+
+* **a1:** add silent mode and accept auto reported as 11 ([#869](https://github.com/midea-lan/midea-local/issues/869)) ([e6ca37b](https://github.com/midea-lan/midea-local/commit/e6ca37b91e3aefc3f0ee1d484734eb2b6650b220))
+* **ac:** capabilities attribute handling in AC device ([#894](https://github.com/midea-lan/midea-local/issues/894)) ([2f3321a](https://github.com/midea-lan/midea-local/commit/2f3321a2b43770e17f3d333c53fcb52c8d7757d4))
+* **ca:** ignore stale energy in Toshiba push frames ([#884](https://github.com/midea-lan/midea-local/issues/884)) ([baa0948](https://github.com/midea-lan/midea-local/commit/baa0948cbb14775b48998f5fdd9737dd51b3f2c9))
+* **cloud:** resolve SmartHome accounts using current router ([#896](https://github.com/midea-lan/midea-local/issues/896)) ([6a05eb1](https://github.com/midea-lan/midea-local/commit/6a05eb13f2021d5572fa79810f340dd211b2a554))
+
+## [12.2.0](https://github.com/midea-lan/midea-local/compare/v12.1.0...v12.2.0) (2026-10-04)
+
+
+### Features
+
+* **a1:** add filter reminder reset command ([#849](https://github.com/midea-lan/midea-local/issues/849)) ([7bfba22](https://github.com/midea-lan/midea-local/commit/7bfba22cbb7f0f7a24d62f36ceb039b2dfd65d6d))
+* **b1:** map oven programmes for model 711001F5 ([#850](https://github.com/midea-lan/midea-local/issues/850)) ([d18d3fe](https://github.com/midea-lan/midea-local/commit/d18d3fea4e435e9e246b2e8dd73ac6daa57fd43f))
+* **b8:** support the second-generation ("750004CE") protocol ([#758](https://github.com/midea-lan/midea-local/issues/758)) ([c8d90ab](https://github.com/midea-lan/midea-local/commit/c8d90abfc0172d34bf5a95ca73da545716101a3a))
+* **climate:** add reset_filter method to reset filter timers ([#852](https://github.com/midea-lan/midea-local/issues/852)) ([b8fc9b1](https://github.com/midea-lan/midea-local/commit/b8fc9b10bdc46db6f9ad35ec029d977b55920b08))
+
+
+### Bug Fixes
+
+* **a1:** support modes for 00000Q1C subtype 41377 ([#848](https://github.com/midea-lan/midea-local/issues/848)) ([4c1c609](https://github.com/midea-lan/midea-local/commit/4c1c609bfcc959317bb6ac11bc52aa1bdf815ad2))
+* **cloud:** redact session credentials in Midea Air debug log ([#863](https://github.com/midea-lan/midea-local/issues/863)) ([3253d18](https://github.com/midea-lan/midea-local/commit/3253d1834026066418a299863b986221039ce8d6))
+* **e2:** warn on unsupported attrs, halve read temperature ([#808](https://github.com/midea-lan/midea-local/issues/808)) ([5b20010](https://github.com/midea-lan/midea-local/commit/5b20010a76e75b5baf4448c1c8955acf6d173bfa))
+
 ## [12.1.0](https://github.com/midea-lan/midea-local/compare/v12.0.0...v12.1.0) (2026-09-18)
 
 

@@ -48,10 +48,10 @@ class _MinimalClimateDevice(MideaClimateDevice):
         self._attributes[attr] = value
 
     def current_temperature(self) -> float | None:
-        return cast("float | None", self._attributes.get("current_temperature"))
+        return cast("float | None", self.attributes.get("current_temperature"))
 
     def target_temperature(self, zone: int | None = None) -> float | None:  # noqa: ARG002
-        return cast("float | None", self._attributes.get("target_temperature"))
+        return cast("float | None", self.attributes.get("target_temperature"))
 
     def turn_on(self, zone: int | None = None) -> None:  # noqa: ARG002
         self._attributes["power"] = True
@@ -60,7 +60,7 @@ class _MinimalClimateDevice(MideaClimateDevice):
         self._attributes["power"] = False
 
     def current_humidity(self) -> float | None:
-        return cast("float | None", self._attributes.get("current_humidity"))
+        return cast("float | None", self.attributes.get("current_humidity"))
 
 
 class _FlagPresetClimateDevice(_MinimalClimateDevice):
@@ -140,9 +140,9 @@ class TestMideaClimateDevice:
         with pytest.raises(NotImplementedError, match="Swing mode"):
             self.device.set_swing_mode(DummySwingMode.OFF)
 
-    def test_temperature_step_defaults_to_none(self) -> None:
-        """Test temperature_step defaults to None."""
-        assert self.device.temperature_step is None
+    def test_temperature_step_defaults_to_whole(self) -> None:
+        """Test temperature_step defaults to 1.0."""
+        assert self.device.temperature_step == 1.0
 
     def test_target_temperature_bounds_default(self) -> None:
         """Test min/max target temperature fall back to the shared defaults."""

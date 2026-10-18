@@ -6,6 +6,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack, override
 
 from midealocal.base_classes.climate import (
+    TEMPERATURE_STEP_WHOLE,
     MideaClimateDevice,
     MideaFanMode,
     MideaHVACMode,
@@ -183,7 +184,7 @@ class MideaCCDevice(MideaClimateDevice):
         """Midea CC device fan modes."""
         if self._fan_speeds is None:
             return []
-        return [member for member in self._fan_speeds]
+        return [*self._fan_speeds]
 
     @property
     @override
@@ -266,11 +267,11 @@ class MideaCCDevice(MideaClimateDevice):
 
     @property
     @override
-    def temperature_step(self) -> float | None:
+    def temperature_step(self) -> float:
         """Midea CC device temperature step."""
         value = self._attributes[DeviceAttributes.temperature_precision]
         if not isinstance(value, (int, float, str)):
-            return None
+            return TEMPERATURE_STEP_WHOLE
         return float(value)
 
     def build_query(self) -> list[MessageQuery]:
@@ -384,7 +385,9 @@ class MideaCCDevice(MideaClimateDevice):
             self._send_fe_control(controls)
             return
         message = self.make_message_set()
-        message.target_temperature = target_temperature
+        message.target_temperature = (
+            round(target_temperature / self.temperature_step) * self.temperature_step
+        )
         if hvac_mode is not None:
             message.power = hvac_mode != 0
             message.mode = hvac_mode

@@ -28,23 +28,25 @@ if ! command -v uv >/dev/null 2>&1; then
   fi
 fi
 
-# Create the virtual environment (uv downloads Python 3.12 if needed).
-echo "Creating virtual environment (.venv) with Python 3.12..."
-uv venv --python 3.12
+# Create .venv and install runtime + dev dependencies
+# (uv downloads Python 3.12 if needed).
+echo "Syncing virtual environment (.venv) with Python 3.12..."
+uv sync --all-groups --python 3.12
 
-# Activate it so the tools below resolve to this project's .venv. (This repo has no
-# pyproject.toml, so `uv run` cannot auto-discover the environment.)
+# Activate it so the tools below resolve to this project's .venv.
 # shellcheck disable=SC1091
 source .venv/bin/activate
 
-# Install runtime + dev + type-stub dependencies, plus prek.
-echo "Installing dependencies from requirements-all.txt..."
-uv pip install -r requirements-all.txt prek
+# prek is a global uv tool, not a project dependency.
+if ! prek --version >/dev/null 2>&1; then
+  echo "Installing prek..."
+  uv tool install prek
+fi
 
 # Install the git hooks (commit + commit-msg stages).
 echo "Installing prek hooks..."
-prek install
-prek install --hook-type commit-msg
+prek install --overwrite
+prek install --hook-type commit-msg --overwrite
 
 # Shim so muscle-memory `pre-commit` invocations still work, backed by prek.
 cat > .venv/bin/pre-commit <<'EOF'

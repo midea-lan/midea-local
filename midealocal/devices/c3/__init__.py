@@ -5,7 +5,11 @@ import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, cast, override
 
-from midealocal.base_classes.climate import MideaClimateDevice, MideaHVACMode
+from midealocal.base_classes.climate import (
+    TEMPERATURE_STEP_HALF,
+    MideaClimateDevice,
+    MideaHVACMode,
+)
 from midealocal.const import DeviceType
 from midealocal.device import MideaDeviceInitKwargs
 
@@ -171,8 +175,8 @@ class MideaC3Device(MideaClimateDevice):
                 DeviceAttributes.error_code: 0,
             },
         )
-        self._default_temperature_step: float = 0.5
-        self._temperature_step: float = 0.5
+        self._default_temperature_step: float = TEMPERATURE_STEP_HALF
+        self._temperature_step: float = TEMPERATURE_STEP_HALF
         self.set_customize(customize)
 
     @property
@@ -229,7 +233,7 @@ class MideaC3Device(MideaClimateDevice):
         self._set_mode(zone, hvac_mode)
 
     @property
-    def temperature_step(self) -> float | None:
+    def temperature_step(self) -> float:
         """Midea C3 device temperature step."""
         return self._temperature_step
 
@@ -471,10 +475,13 @@ class MideaC3Device(MideaClimateDevice):
             )
 
         message = self.make_message_set()
+        round_temp = (
+            round(target_temperature / self.temperature_step) * self.temperature_step
+        )
         if self._attributes[DeviceAttributes.zone_temp_type][zone]:
-            message.zone_target_temp[zone] = target_temperature
+            message.zone_target_temp[zone] = round_temp
         else:
-            message.room_target_temp = target_temperature
+            message.room_target_temp = round_temp
         if hvac_mode is not None:
             if zone == 0:
                 message.zone1_power = hvac_mode != 0

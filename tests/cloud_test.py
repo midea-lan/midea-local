@@ -43,6 +43,10 @@ UDP_IDS = {
     2: "b2dd199071d527a33c8239833a5bf5fb",
 }
 
+# AES-CBC vector for the public SmartHome app key and a synthetic account,
+# generated independently with OpenSSL.
+_ENCRYPTED_ACCOUNT = "3b976d7c85354a6faea1e1de797b36810786035477166ae21b1e4ad55e4dc7a5"
+
 
 def _token_requests(session: Mock) -> list[tuple[str, dict]]:
     """Return (url, payload) for every getToken request the client actually sent.
@@ -133,6 +137,91 @@ async def test_msmartcloud_login_raises_cloud_login_error(code: int, msg: str) -
     with pytest.raises(CloudLoginError) as err:
         await cloud.login()
     assert err.value.code == code
+    # Authentication failures must not trigger more routing or password attempts.
+    assert session.request.await_count == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "host",
+    ["mp-us-prod.appsmb.com", "mp-prod.appsmb.com", "ru-eu.appsmb.com"],
+)
+async def test_smarthome_account_routing(
+    host: str,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Resolve the account's server before login without a region override."""
+    api_url = f"https://{host}/mas/v5/app/proxy?alias="
+    session = Mock()
+    response = Mock()
+    response.read = AsyncMock(
+        side_effect=[
+            json.dumps({"code": "0", "data": {"masUrl": api_url}}).encode(),
+            _RESPONSES["cloud_login_id.json"],
+            _RESPONSES["msmartcloud_login.json"],
+        ],
+    )
+    session.request = AsyncMock(return_value=response)
+    cloud = SmartHomeCloud("SmartHome", session, "user@example.com", "password")
+
+    with caplog.at_level(logging.DEBUG, logger="midealocal.cloud"):
+        assert await cloud.login()
+
+    route, login_id, login = session.request.await_args_list
+    assert route.args[1] == (
+        "https://mp-prod.appsmb.com/mas/v5/app/proxy?alias="
+        "/v1/unitcenter/router/user/name"
+    )
+    payload = json.loads(route.kwargs["data"])
+    assert payload["userName"] == _ENCRYPTED_ACCOUNT
+    assert payload["clientType"] == 8
+    assert payload["clientSrc"] == 8
+    assert payload["userType"] == "0"
+    assert payload["platformId"] == "1"
+    assert "password" not in payload
+    assert login_id.args[1] == api_url + "/v1/user/login/id/get"
+    assert login.args[1] == api_url + "/mj/user/login"
+    assert json.loads(login_id.kwargs["data"])["clientType"] == "1"
+    assert _ENCRYPTED_ACCOUNT not in caplog.text
+    assert "user@example.com" not in caplog.text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "route_responses",
+    [
+        [b'{"code": 10004, "msg": "The user router is not exist"}'],
+        [b'{"code": 40404, "msg": "Not supported"}'],
+        [b'{"code": 0, "data": {}}'],
+        [b'{"code": 0, "data": {"masUrl": ""}}'],
+        [ClientConnectionError()] * _RETRY_ATTEMPTS,
+    ],
+    ids=["unknown-account", "unsupported", "missing-url", "empty-url", "offline"],
+)
+async def test_smarthome_account_routing_falls_back(route_responses: list) -> None:
+    """Keep legacy routing for servers that cannot resolve the new request."""
+    session = Mock()
+    response = Mock()
+    response.read = AsyncMock(
+        side_effect=[
+            *route_responses,
+            _RESPONSES["msmartcloud_reroute.json"],
+            _RESPONSES["cloud_login_id.json"],
+            _RESPONSES["msmartcloud_login.json"],
+        ],
+    )
+    session.request = AsyncMock(return_value=response)
+    cloud = SmartHomeCloud("SmartHome", session, "user@example.com", "password")
+    assert await cloud.login()
+
+    legacy, login_id, login = session.request.await_args_list[-3:]
+    assert legacy.args[1].endswith("/v1/multicloud/platform/user/route")
+    payload = json.loads(legacy.kwargs["data"])
+    assert payload["userName"] == "user@example.com"
+    assert payload["clientType"] == "1"
+    assert "clientSrc" not in payload
+    assert login_id.args[1] == "https://reroute.url//v1/user/login/id/get"
+    assert login.args[1] == "https://reroute.url//mj/user/login"
 
 
 @pytest.mark.asyncio
@@ -141,14 +230,14 @@ async def test_msmartcloud_login_raises_cloud_login_error(code: int, msg: str) -
     [
         pytest.param(
             "SmartHome",
-            [_RESPONSES["cloud_invalid_response.json"]] * 2,
+            [_RESPONSES["cloud_invalid_response.json"]] * 3,
             True,
             id="unclassified-code",
         ),
         pytest.param(
             "SmartHome",
-            # re_route and login/id each burn a full retry budget on 9999.
-            [_SYSTEM_ERROR_9999] * (_RETRY_ATTEMPTS * 2),
+            # Both routing endpoints and login/id exhaust their retry budgets.
+            [_SYSTEM_ERROR_9999] * (_RETRY_ATTEMPTS * 3),
             True,
             id="system-error-9999-v5-proxy",
         ),
@@ -310,6 +399,75 @@ async def test_msmartcloud_get_cloud_keys_error_handling(
         assert err.value.message == "You have no permissions."
     else:
         assert result == expected_keys
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        pytest.param("accessToken", id="access_token"),
+        pytest.param("sessionId", id="session_id"),
+        pytest.param("password", id="password"),
+        pytest.param("iampwd", id="iampwd"),
+        pytest.param("tokenPwd", id="token_pwd"),
+    ],
+)
+def test_redact_data_masks_session_fields(field: str) -> None:
+    """Test _redact_data masks session and password fields of a dict repr."""
+    value = "ab527a62ed1caaa9f61b873475e5bfc3"
+    redacted = _redact_data(str({field: value, "format": "2"}))
+    assert f"'{field}': '{_mask_token(value)}'" in redacted
+    assert "'format': '2'" in redacted
+
+
+@pytest.mark.parametrize(
+    "serialize",
+    [str, json.dumps, lambda data: str(json.dumps(data).encode())],
+    ids=["dict-repr", "json", "bytes-repr"],
+)
+def test_redact_data_masks_encrypted_account(serialize: Callable) -> None:
+    """Mask the entire reversible account ciphertext in every log format."""
+    raw = serialize({"userName": _ENCRYPTED_ACCOUNT, "format": "2"})
+    redacted = _redact_data(raw)
+    assert "*" * len(_ENCRYPTED_ACCOUNT) in redacted
+    assert _ENCRYPTED_ACCOUNT[:8] not in redacted
+    assert "format" in redacted
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        pytest.param(str({"nickname": "Renato T", "format": "2"}), id="dict_repr"),
+        pytest.param(json.dumps({"nickname": "Renato T", "format": "2"}), id="json"),
+        pytest.param(
+            str({"nickname": "O'Reilly Renato", "format": "2"}),
+            id="dict_repr_apostrophe",
+        ),
+        pytest.param(
+            json.dumps({"nickname": "O'Reilly Renato", "format": "2"}),
+            id="json_apostrophe",
+        ),
+        pytest.param(
+            str(json.dumps({"nickname": "O'Reilly Renato", "format": "2"}).encode()),
+            id="bytes_repr_apostrophe",
+        ),
+        pytest.param(
+            json.dumps({"nickname": 'Renato "Tom" T', "format": "2"}),
+            id="json_escaped_quote",
+        ),
+        pytest.param(
+            json.dumps(json.dumps({"nickname": "O'Reilly Renato", "format": "2"})),
+            id="escaped_delimiters",
+        ),
+    ],
+)
+def test_redact_data_masks_nickname(raw: str) -> None:
+    """Test _redact_data fully masks the account nickname."""
+    redacted = _redact_data(raw)
+    assert "Renat" not in redacted
+    assert "Reilly" not in redacted
+    assert "Tom" not in redacted
+    assert "********" in redacted
+    assert "format" in redacted
 
 
 class CloudTest(IsolatedAsyncioTestCase):
@@ -1219,6 +1377,35 @@ class CloudTest(IsolatedAsyncioTestCase):
         )
         assert cloud is not None
         assert await cloud.login()
+
+    async def test_mideaaircloud_login_does_not_log_credentials(self) -> None:
+        """Test MideaAirCloud keeps session and password material out of the log."""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["mideaaircloud_login_id.json"],
+                self.responses["mideaaircloud_login.json"],
+            ],
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "Midea Air",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert cloud is not None
+
+        with self.assertLogs("midealocal.cloud", level="DEBUG") as logs:
+            assert await cloud.login()
+
+        login_data = session.request.call_args.kwargs["data"]
+        login_result = json.loads(self.responses["mideaaircloud_login.json"])["result"]
+        blob = "\n".join(logs.output)
+        assert login_data["password"] not in blob
+        assert login_result["sessionId"] not in blob
+        assert login_result["accessToken"] not in blob
 
     async def test_mideaaircloud_login_invalid_user(self) -> None:
         """Test MideaAirCloud login invalid user."""

@@ -119,7 +119,6 @@ class DBGeneralMessageBody(MessageBody):
         super().__init__(body)
         self.power = body[1] > 0
         self.start = body[2] in [2, 6]
-        self.washing_data = body[3:16]
         self.status = body[2]
         self.mode = body[3]
         self.program = body[4]

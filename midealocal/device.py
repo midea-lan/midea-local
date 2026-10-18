@@ -9,6 +9,8 @@ from typing import Any, ClassVar, NotRequired, TypedDict, Unpack
 
 from typing_extensions import deprecated
 
+from midealocal.discover import SERIAL_TYPE1_LENGTH
+
 from .const import DeviceType, ProtocolVersion
 from .exceptions import SocketException
 from .message import (
@@ -185,6 +187,7 @@ class MideaDeviceInitKwargs(TypedDict):
     subtype: int
     mac: NotRequired[str | None]
     serial_number: NotRequired[str | None]
+    manufacturer_code: NotRequired[str | None]
 
 
 class MideaDevice:
@@ -238,6 +241,12 @@ class MideaDevice:
         # empty ``apc_sn`` attribute; normalize these to None (mirrors set_mac).
         sn = kwargs.get("serial_number")
         self._serial_number = (sn.strip("\x00").strip() or None) if sn else None
+        self._manufacturer_code = kwargs.get("manufacturer_code") or (
+            "0000"
+            if self._serial_number is None
+            or len(self._serial_number) != SERIAL_TYPE1_LENGTH
+            else self._serial_number[:4]
+        )
 
     _fahrenheit_default: ClassVar[bool] = False
 
@@ -317,6 +326,11 @@ class MideaDevice:
     def mac(self) -> str | None:
         """Device MAC address."""
         return self._mac
+
+    @property
+    def manufacturer_code(self) -> str:
+        """Device manufacturer code."""
+        return self._manufacturer_code
 
     @property
     def serial_number(self) -> str | None:

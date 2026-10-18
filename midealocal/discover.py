@@ -170,7 +170,7 @@ def _extract_mac(reply: bytes | bytearray, ssid_len: int, sn: str) -> str | None
     the serial number, which also may contain the MAC address.
     Otherwise return None.
     """
-    # Based on https://github.com/nbogojevic/midea-beautiful-air/blob/db3622e784891af0a522d70a626fb54e5c3e5e6f/midea_beautiful/lan.py#L264  # noqa: E501
+    # Based on https://github.com/nbogojevic/midea-beautiful-air/blob/db3622e784891af0a522d70a626fb54e5c3e5e6f/midea_beautiful/lan.py#L264
     mac = None
     mac_start = 63 + ssid_len
     mac_ends = mac_start + 6
@@ -230,6 +230,7 @@ async def _parse_discover_response(
             port = bytes2port(reply[4:8])
             model = reply[17:25].decode("ascii")
             sn = reply[8:40].decode("ascii")
+            manufacturer_code = reply[8:12].decode("ascii")
             mac = _extract_mac(reply, ssid_len, sn)
         else:
             _LOGGER.warning(
@@ -254,8 +255,10 @@ async def _parse_discover_response(
         )
         response = await get_device_info(ip, int(port))
         device_id = get_id_from_response(response)
+        manufacturer_code = "0000"
         if len(sn) == SERIAL_TYPE1_LENGTH:
             model = sn[9:17]
+            manufacturer_code = sn[:4]
         elif len(sn) == SERIAL_TYPE2_LENGTH:
             model = sn[3:11]
         else:
@@ -272,6 +275,7 @@ async def _parse_discover_response(
         "sn": sn,
         "protocol": protocol,
         "mac": mac,
+        "manufacturer_code": manufacturer_code,
     }
 
 

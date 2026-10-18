@@ -214,9 +214,9 @@ class TestMideaCDDevice:
         assert status[DeviceAttributes.auto_sterilize_week.value] is None
         assert status[DeviceAttributes.auto_sterilize_hour.value] is None
         assert status[DeviceAttributes.auto_sterilize_minute.value] is None
-        assert self.device._attributes[DeviceAttributes.auto_sterilize_week] is None
-        assert self.device._attributes[DeviceAttributes.auto_sterilize_hour] is None
-        assert self.device._attributes[DeviceAttributes.auto_sterilize_minute] is None
+        assert self.device.attributes[DeviceAttributes.auto_sterilize_week] is None
+        assert self.device.attributes[DeviceAttributes.auto_sterilize_hour] is None
+        assert self.device.attributes[DeviceAttributes.auto_sterilize_minute] is None
 
     def test_process_message_publishes_valid_auto_sterilize_values(self) -> None:
         """Valid status schedule values still update HA state."""

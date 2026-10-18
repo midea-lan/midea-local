@@ -2,9 +2,10 @@
 
 import logging
 import warnings
+from binascii import crc_hqx
 from collections.abc import Callable
 from enum import IntEnum
-from typing import Any, SupportsIndex, cast
+from typing import Any, Literal, overload, override
 
 from typing_extensions import deprecated
 
@@ -335,22 +336,31 @@ class MessageType(IntEnum):
         return "Unknown"
 
 
+class MessageChecksum(IntEnum):
+    """Message checksum type."""
+
+    SUM = 0x1
+    CRC_CCITT = 0x2
+
+
 class MessageBase:
     """Message base."""
 
-    HEADER_LENGTH = 10
-
-    def __init__(self) -> None:
+    def __init__(self, checksum_type: MessageChecksum = MessageChecksum.SUM) -> None:
         """Initialize message base."""
         self._device_type: DeviceType = DeviceType.X00
         self._message_type: MessageType = MessageType.default
         self._body_type: ListTypes = ListTypes.X00
         self._message_protocol_version: int = 0
+        self._checksum_type: MessageChecksum = checksum_type
+        self._checksum_length: int = 1 if checksum_type == MessageChecksum.SUM else 2
 
     @staticmethod
-    def checksum(data: bytes | bytearray) -> SupportsIndex:
+    def checksum(data: bytes | bytearray, checksum_type: MessageChecksum) -> bytes:
         """Message checksum."""
-        return cast("SupportsIndex", (~sum(data) + 1) & 0xFF)
+        if checksum_type == MessageChecksum.CRC_CCITT:
+            return crc_hqx(data, 0).to_bytes(2, "little")
+        return ((~sum(data) + 1) & 0xFF).to_bytes(1)
 
     @property
     def header(self) -> bytearray:
@@ -440,33 +450,88 @@ class MessageBase:
         return str(attributes)
 
 
-class MessageRequest(MessageBase):
-    """Message request."""
+class MessageHeader:
+    """Message header."""
+
+    HEADER_LENGTH = 0
 
     def __init__(
         self,
+        data: bytearray,
+    ) -> None:
+        """Initialize message header."""
+        if len(data) < self.HEADER_LENGTH + 1:
+            raise MessageLenError
+        _header_type = data[0]
+        if _header_type != self.type:
+            msg = f"Message is not an {self.type:02X} frame."
+            raise ValueError(msg)
+
+    def serialize(self, body_len: int) -> bytearray:
+        """Message header."""
+        raise NotImplementedError
+
+    @property
+    def type(self) -> ListTypes:
+        """Message header type."""
+        raise NotImplementedError
+
+    @property
+    def length(self) -> int:
+        """Message header length."""
+        return self.HEADER_LENGTH
+
+
+class MessageHeaderAA(MessageHeader):
+    """Message header AA."""
+
+    HEADER_LENGTH = 10
+
+    @overload
+    def __init__(self, *, data: bytearray) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        *,
         device_type: DeviceType,
         protocol_version: int,
         message_type: MessageType,
-        body_type: ListTypes,
-    ) -> None:
-        """Initialize message request."""
-        super().__init__()
-        self.device_type = device_type
-        self.protocol_version = protocol_version
-        self.message_type = message_type
-        self.body_type = body_type
+    ) -> None: ...
 
-    @property
-    def header(self) -> bytearray:
+    def __init__(
+        self,
+        device_type: DeviceType | None = None,
+        protocol_version: int | None = None,
+        message_type: MessageType | None = None,
+        data: bytearray | None = None,
+    ) -> None:
+        """Initialize AA message header."""
+        self._header_type = ListTypes.AA
+        if data is not None:
+            super().__init__(data=data)
+            self.device_type = DeviceType(data[2])
+            self.protocol_version = data[8]
+            self.message_type = MessageType(data[9])
+        elif (
+            protocol_version is not None
+            and message_type is not None
+            and device_type is not None
+        ):
+            self.device_type = device_type
+            self.protocol_version = protocol_version
+            self.message_type = message_type
+
+    @override
+    def serialize(self, body_len: int) -> bytearray:
         """Message header."""
-        length = self.HEADER_LENGTH + len(self.body)
+        length = self.HEADER_LENGTH + body_len
         return bytearray(
             [
                 # flag
                 0xAA,
                 # length
-                length,
+                min(length, 0xFF),
                 # device type
                 self.device_type,
                 # frame checksum
@@ -481,9 +546,128 @@ class MessageRequest(MessageBase):
                 # device protocol version
                 self.protocol_version,
                 # frame type
-                self.message_type,
+                min(self.message_type, 0xFF),
             ],
         )
+
+    @property
+    @override
+    def type(self) -> ListTypes:
+        """Message header type."""
+        return ListTypes.AA
+
+
+class MessageHeader55(MessageHeader):
+    """Message header 55."""
+
+    HEADER_LENGTH = 16
+
+    @overload
+    def __init__(self, *, data: bytearray) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        *,
+        device_type: DeviceType,
+        protocol_version: int,
+        message_type: MessageType,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        device_type: DeviceType | None = None,
+        protocol_version: int | None = None,
+        message_type: MessageType | None = None,
+        data: bytearray | None = None,
+    ) -> None:
+        """Initialize AA message header."""
+        self._header_type = ListTypes.X55
+        if data is not None:
+            super().__init__(data=data)
+            self.device_type = DeviceType(data[7])
+            self.protocol_version = data[6]
+            self.message_type = MessageType(data[14])
+        elif (
+            protocol_version is not None
+            and message_type is not None
+            and device_type is not None
+        ):
+            self.device_type = device_type
+            self.protocol_version = protocol_version
+            self.message_type = message_type
+
+    @override
+    def serialize(self, body_len: int) -> bytearray:
+        """Message header."""
+        length = self.HEADER_LENGTH + body_len - 2
+        return bytearray(
+            bytearray(
+                [
+                    # flag
+                    0x55,
+                    0xAA,
+                    0xCC,
+                    0x33,
+                ],
+            )
+            + min(length, 0xFFFF).to_bytes(2, "little")
+            + bytearray(
+                [
+                    self.protocol_version,
+                    int(self.device_type),
+                ]
+                + [0x00] * 6,
+            )
+            + min(int(self.message_type), 0xFFFF).to_bytes(2, "little"),
+        )
+
+    @property
+    @override
+    def type(self) -> ListTypes:
+        """Message header type."""
+        return ListTypes.X55
+
+
+class MessageRequest(MessageBase):
+    """Message request."""
+
+    def __init__(
+        self,
+        device_type: DeviceType,
+        protocol_version: int,
+        message_type: MessageType,
+        body_type: ListTypes,
+        header_type: Literal[ListTypes.AA, ListTypes.X55] = ListTypes.AA,
+    ) -> None:
+        """Initialize message request."""
+        super().__init__(
+            checksum_type=MessageChecksum.SUM
+            if header_type == ListTypes.AA
+            else MessageChecksum.CRC_CCITT,
+        )
+        self.device_type = device_type
+        self.protocol_version = protocol_version
+        self.message_type = message_type
+        self.body_type = body_type
+        self._header: MessageHeader = (
+            MessageHeaderAA(
+                device_type=device_type,
+                protocol_version=protocol_version,
+                message_type=message_type,
+            )
+            if header_type == ListTypes.AA
+            else MessageHeader55(
+                device_type=device_type,
+                protocol_version=protocol_version,
+                message_type=message_type,
+            )
+        )
+
+    @property
+    def header(self) -> bytearray:
+        """Message header."""
+        return self._header.serialize(len(self.body))
 
     @property
     def _body(self) -> bytearray:
@@ -500,7 +684,10 @@ class MessageRequest(MessageBase):
     def serialize(self) -> bytearray:
         """Serialize message."""
         stream = self.header + self.body
-        stream.append(MessageBase.checksum(stream[1:]))
+        data = (
+            stream if self._checksum_type == MessageChecksum.CRC_CCITT else stream[1:]
+        )
+        stream.extend(MessageBase.checksum(data, self._checksum_type))
         return stream
 
 
@@ -528,6 +715,7 @@ class MessageQuestCustom(MessageRequest):
         return bytearray([])
 
     @property
+    @override
     def body(self) -> bytearray:
         """Message body."""
         return self._cmd_body
@@ -556,7 +744,12 @@ class MessageQueryAppliance(MessageRequest):
 
 
 class BodyParser[T]:
-    """Body parser to decode message."""
+    """Decode one value from a message body.
+
+    Each parser instance describes one logical attribute embedded in a raw body
+    byte array. The parser stores the field metadata needed to locate, slice,
+    normalize, and transform the bytes into a Python value.
+    """
 
     def __init__(
         self,
@@ -569,7 +762,26 @@ class BodyParser[T]:
         transform_func: Callable[[T], T] = lambda data: data,
         byte_mask: int | None = None,
     ) -> None:
-        """Init body parser with attribute name."""
+        """Initialize a parser for one message-body attribute.
+
+        Args:
+            name: Attribute name to expose on the parsed message body object.
+            byte: Offset in bytes where the value starts within the message body.
+            bit: Optional bit index to read from a byte; if set, only that bit is
+                extracted.
+            length_in_bytes: Number of bytes used to represent the value.
+            first_upper: Whether the value should be interpreted with the first
+                byte as the most significant byte.
+            default_raw_value: Raw value to return when body data is incomplete.
+            transform_func: Callable invoked after raw decoding to convert the
+                value into its semantic representation.
+            byte_mask: Optional bitmask applied to the final raw value.
+
+        Raises:
+            ValueError: If the parser length is negative or the bit index falls
+                outside the range covered by the configured byte width.
+
+        """
         self.name = name
         self._byte = byte
         self._bit = bit
@@ -616,7 +828,7 @@ class BodyParser[T]:
 
 
 class BoolParser(BodyParser[bool]):
-    """Bool message body parser."""
+    """Parse a boolean value from a body byte or bit flag."""
 
     def __init__(
         self,
@@ -628,7 +840,19 @@ class BoolParser(BodyParser[bool]):
         default_value: bool = True,
         byte_mask: int | None = None,
     ) -> None:
-        """Init bool body parser."""
+        """Initialize a boolean parser.
+
+        Args:
+            name: Attribute name to assign on the parsed body object.
+            byte: Offset in the body where the bit or byte resides.
+            bit: Optional bit position to examine within the selected byte.
+            true_value: Raw value that maps to True.
+            false_value: Raw value that maps to False.
+            default_value: Boolean returned when decoding does not match either
+                expected value.
+            byte_mask: Optional bitmask applied before comparing the raw value.
+
+        """
         super().__init__(name, byte, bit, byte_mask=byte_mask)
         self._true_value = true_value
         self._default_value = default_value
@@ -641,7 +865,7 @@ class BoolParser(BodyParser[bool]):
 
 
 class IntEnumParser[E: IntEnum](BodyParser[E]):
-    """IntEnum message body parser."""
+    """Parse a numeric value into an IntEnum member."""
 
     def __init__(
         self,
@@ -653,7 +877,18 @@ class IntEnumParser[E: IntEnum](BodyParser[E]):
         default_value: E | None = None,
         byte_mask: int | None = None,
     ) -> None:
-        """Init IntEnum body parser."""
+        """Initialize an IntEnum parser.
+
+        Args:
+            name: Attribute name to assign on the parsed message body.
+            byte: Starting byte offset of the enum value.
+            enum_class: IntEnum subclass used to convert the raw integer.
+            length_in_bytes: Number of bytes reserved for the enum value.
+            first_upper: Whether higher-order bytes should be read first.
+            default_value: Fallback enum member when the raw value is not valid.
+            byte_mask: Optional mask applied to the raw integer before lookup.
+
+        """
         super().__init__(
             name,
             byte,
@@ -676,20 +911,32 @@ class IntEnumParser[E: IntEnum](BodyParser[E]):
 
 
 class IntParser(BodyParser[int]):
-    """Int message body parser."""
+    """Parse an integer value with bounds and optional scaling."""
 
     def __init__(
         self,
         name: str,
         byte: int,
-        max_value: int = 255,
+        max_value: int | None = None,
         min_value: int = 0,
         length_in_bytes: int = 1,
         first_upper: bool = False,
         transform_func: Callable[[int], int] = lambda x: x,
         byte_mask: int | None = None,
     ) -> None:
-        """Init Int body parser."""
+        """Initialize an integer parser.
+
+        Args:
+            name: Attribute name for the parsed integer.
+            byte: Starting offset of the integer in the body.
+            max_value: Maximum raw value accepted before clipping.
+            min_value: Minimum raw value accepted before clipping.
+            length_in_bytes: Number of bytes used by the integer.
+            first_upper: Whether the first byte is the most significant byte.
+            transform_func: Conversion applied after raw decoding.
+            byte_mask: Optional mask applied to the final raw value.
+
+        """
         super().__init__(
             name,
             byte,
@@ -698,7 +945,7 @@ class IntParser(BodyParser[int]):
             transform_func=transform_func,
             byte_mask=byte_mask,
         )
-        self._max_value = max_value
+        self._max_value = max_value or pow(2, length_in_bytes * 8) - 1
         self._min_value = min_value
 
     def _parse(self, raw_value: int) -> int:
@@ -710,7 +957,7 @@ class IntParser(BodyParser[int]):
 
 
 class FloatParser(BodyParser[float]):
-    """Float message body parser."""
+    """Parse a floating-point value from a raw body field."""
 
     def __init__(
         self,
@@ -722,7 +969,20 @@ class FloatParser(BodyParser[float]):
         transform_func: Callable[[float], float] = lambda data: data,
         byte_mask: int | None = None,
     ) -> None:
-        """Init Float body parser."""
+        """Initialize a float parser.
+
+        Args:
+            name: Attribute name for the parsed floating-point value.
+            byte: Starting byte offset of the value in the message body.
+            length_in_bytes: Number of bytes used by the float representation.
+            first_upper: Whether the first byte is considered the most
+                significant byte.
+            default_raw_value: Fallback raw value used when the payload is short.
+            transform_func: Optional callable used to transform the decoded
+                float value.
+            byte_mask: Optional mask applied before returning the raw value.
+
+        """
         super().__init__(
             name,
             byte,
@@ -949,21 +1209,37 @@ class MessageResponse(MessageBase):
 
     def __init__(self, message: bytearray) -> None:
         """Initialize message response."""
-        super().__init__()
-        if message is None or len(message) < self.HEADER_LENGTH + 1:
+        if not message:
             raise MessageLenError
-        self._header = message[: self.HEADER_LENGTH]
-        self.protocol_version = self._header[-2]
-        self.message_type = MessageType(self._header[-1])
-        self.device_type = DeviceType(self._header[2])
-        body = message[self.HEADER_LENGTH : -1]
+        header = (
+            MessageHeaderAA(data=message)
+            if message[0] == ListTypes.AA
+            else MessageHeader55(data=message)
+        )
+        super().__init__(
+            MessageChecksum.SUM
+            if header.type == ListTypes.AA
+            else MessageChecksum.CRC_CCITT,
+        )
+        if len(message) < header.length + self._checksum_length + 1:
+            raise MessageLenError
+        self.protocol_version = header.protocol_version
+        self.message_type = header.message_type
+        self.device_type = header.device_type
+        body = message[header.length : -1 * self._checksum_length]
         self._body = MessageBody(body)
         self.body_type = self._body.body_type
+        self._header = header
 
     @property
     def header(self) -> bytearray:
         """Message response header."""
-        return self._header
+        return self._header.serialize(len(self.body))
+
+    @property
+    def header_type(self) -> ListTypes:
+        """Message response header type."""
+        return self._header.type
 
     @property
     def body(self) -> bytearray:

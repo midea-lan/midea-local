@@ -44,29 +44,11 @@ class TestMideaA1Device:
             "auto",
             "clothes_dry",
             "shoes_dry",
-        ]
-
-    def test_model_specific_modes(self) -> None:
-        """Test modes for model 00000Q1C subtype 41377."""
-        device = MideaA1Device(
-            name="Test Device",
-            device_id=1,
-            ip_address="192.168.1.100",
-            port=6444,
-            token="AA",
-            key="BB",
-            device_protocol=ProtocolVersion.V3,
-            model="00000Q1C",
-            subtype=41377,
-            customize="",
-        )
-
-        assert device.modes == [
-            "clothes_dry",
             "silent",
-            "auto",
         ]
 
+    def _process_mode(self, code: int) -> dict:
+        """Process a status message reporting the given mode code."""
         with patch("midealocal.devices.a1.MessageA1Response") as mock_message_response:
             mock_message = mock_message_response.return_value
             mock_message.protocol_version = ProtocolVersion.V3
@@ -78,24 +60,61 @@ class TestMideaA1Device:
             mock_message.pump_enable = False
             mock_message.tank = 0
             mock_message.water_level_set = "50"
+            mock_message.mode = code
+            return self.device.process_message(b"")
 
-            mock_message.mode = 10
-            new_status = device.process_message(b"")
-            assert new_status[DeviceAttributes.mode.value] == "silent"
+    @pytest.mark.parametrize(
+        ("code", "mode"),
+        [
+            (1, "manual"),
+            (2, "continuous"),
+            (3, "auto"),
+            (4, "clothes_dry"),
+            (5, "shoes_dry"),
+            (10, "silent"),
+            (11, "auto"),
+        ],
+    )
+    def test_process_message_modes(self, code: int, mode: str) -> None:
+        """Test every reported mode code is decoded."""
+        new_status = self._process_mode(code)
+        assert new_status[DeviceAttributes.mode.value] == mode
 
-            mock_message.mode = 11
-            new_status = device.process_message(b"")
-            assert new_status[DeviceAttributes.mode.value] == "auto"
+    @pytest.mark.parametrize(
+        ("mode", "code"),
+        [
+            ("manual", 1),
+            ("continuous", 2),
+            ("auto", 3),
+            ("clothes_dry", 4),
+            ("shoes_dry", 5),
+            ("silent", 10),
+        ],
+    )
+    def test_set_attribute_modes(self, mode: str, code: int) -> None:
+        """Test every mode is sent with its code, auto as 3."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.mode, mode)
+            assert mock_build_send.call_args[0][0].mode == code
 
-        with patch.object(device, "build_send") as mock_build_send:
-            device.set_attribute(DeviceAttributes.mode, "silent")
-            assert mock_build_send.call_args[0][0].mode == 10
+    def test_reported_auto_11_is_sent_as_3(self) -> None:
+        """Test other commands send auto as 3 after the unit reported 11."""
+        self._process_mode(11)
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.power, value=False)
+            assert mock_build_send.call_args[0][0].mode == 3
 
-            device.set_attribute(DeviceAttributes.mode, "auto")
-            assert mock_build_send.call_args[0][0].mode == 11
-
-            device.set_attribute(DeviceAttributes.mode, "clothes_dry")
-            assert mock_build_send.call_args[0][0].mode == 4
+    def test_empty_customize_keeps_default_modes(self) -> None:
+        """Test an empty customize keeps the default modes."""
+        self.device.set_customize("")
+        assert self.device.modes == [
+            "manual",
+            "continuous",
+            "auto",
+            "clothes_dry",
+            "shoes_dry",
+            "silent",
+        ]
 
     def test_fan_speeds(self) -> None:
         """Test fan speeds."""
@@ -140,7 +159,7 @@ class TestMideaA1Device:
             capabilities["pump"] = False
             assert self.device.capabilities == {"pump": True}
 
-            mock_message.mode = 10
+            mock_message.mode = 12
             mock_message.fan_speed = 99
             mock_message.pump_enable = False
             mock_message.tank = 30
