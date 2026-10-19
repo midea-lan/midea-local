@@ -69,7 +69,7 @@ repos:
           - defusedxml==0.7.1
           - ifaddr==0.2.0
           - platformdirs==4.12.2
-          - pycryptodome==3.23.0
+          - pycryptodome==3.24.1
           - pytest==9.1.1
           - types-aiofiles==25.1.0.20260518
           - typing-extensions==4.16.0
