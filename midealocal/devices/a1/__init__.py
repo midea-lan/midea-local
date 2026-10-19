@@ -42,13 +42,10 @@ class MideaA1Device(MideaDevice):
         3: "auto",
         4: "clothes_dry",
         5: "shoes_dry",
-    }
-    _model_modes: ClassVar[dict[tuple[str, int], dict[int, str]]] = {
-        ("00000Q1C", 41377): {
-            4: "clothes_dry",
-            10: "silent",
-            11: "auto",
-        },
+        10: "silent",
+        # Some units report auto as 11 but switch to it when sent 3, while
+        # others keep 3; the first matching code (3) is the one sent.
+        11: "auto",
     }
     _default_speeds: ClassVar[dict[int, str]] = {
         1: "lowest",
@@ -90,16 +87,13 @@ class MideaA1Device(MideaDevice):
         )
         self._capabilities: dict[str, bool] = {}
         self._speeds = self._default_speeds
-        self._modes = self._model_modes.get(
-            (self.model, self.subtype),
-            self._default_modes,
-        )
+        self._modes = self._default_modes
         self.set_customize(customize)
 
     @property
     def modes(self) -> list[str]:
         """Midea A1 device modes."""
-        return list(self._modes.values())
+        return list(dict.fromkeys(self._modes.values()))
 
     @property
     def fan_speeds(self) -> list[str]:
@@ -115,6 +109,10 @@ class MideaA1Device(MideaDevice):
     def capabilities(self) -> dict[str, bool]:
         """Return the capabilities reported by the device."""
         return dict(self._capabilities)
+
+    def _mode_code(self, mode: str) -> int:
+        """Return the first code for a mode, as several codes can share a name."""
+        return next(code for code, name in self._modes.items() if name == mode)
 
     def build_query(self) -> list[MessageQuery]:
         """Midea A1 device build query."""
@@ -156,9 +154,7 @@ class MideaA1Device(MideaDevice):
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
         message.child_lock = self._attributes[DeviceAttributes.child_lock]
         if self._attributes[DeviceAttributes.mode] in self._modes.values():
-            message.mode = {v: k for k, v in self._modes.items()}[
-                self._attributes[DeviceAttributes.mode]
-            ]
+            message.mode = self._mode_code(self._attributes[DeviceAttributes.mode])
         else:
             message.mode = 1
         if self._attributes[DeviceAttributes.fan_speed] in self._speeds.values():
@@ -186,7 +182,7 @@ class MideaA1Device(MideaDevice):
             message = self.make_message_set()
             if attr == DeviceAttributes.mode:
                 if value in self._modes.values():
-                    message.mode = {v: k for k, v in self._modes.items()}[str(value)]
+                    message.mode = self._mode_code(str(value))
             elif attr == DeviceAttributes.fan_speed:
                 if value in self._speeds.values():
                     message.fan_speed = {v: k for k, v in self._speeds.items()}[

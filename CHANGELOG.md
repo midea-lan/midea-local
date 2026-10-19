@@ -1,5 +1,43 @@
 # Changelog
 
+## [13.0.0](https://github.com/midea-lan/midea-local/compare/v12.3.0...v13.0.0) (2026-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **climate:** temperature step always return float ([#907](https://github.com/midea-lan/midea-local/issues/907))
+
+### Features
+
+* **climate:** temperature step always return float ([#907](https://github.com/midea-lan/midea-local/issues/907)) ([3a0df17](https://github.com/midea-lan/midea-local/commit/3a0df17b415c80a84a5fed682d949295cdc665d2))
+
+
+### Bug Fixes
+
+* **climate:** round temperature before sending to device ([#905](https://github.com/midea-lan/midea-local/issues/905)) ([904bd5e](https://github.com/midea-lan/midea-local/commit/904bd5ec74d7e173702ecc2603ddb5afe22aabb6))
+* **message:** intparser default max_value default is based on length_in_bytes ([#900](https://github.com/midea-lan/midea-local/issues/900)) ([d2e31e4](https://github.com/midea-lan/midea-local/commit/d2e31e44885f81fe82b8d80878fe8b46449abe37))
+
+
+### Documentation
+
+* **message:** add args info to bodyparsers init ([#901](https://github.com/midea-lan/midea-local/issues/901)) ([ef28169](https://github.com/midea-lan/midea-local/commit/ef28169926914d15f40fe521b9cc3d3c2f553c59))
+
+## [12.3.0](https://github.com/midea-lan/midea-local/compare/v12.2.0...v12.3.0) (2026-10-13)
+
+
+### Features
+
+* **ca:** add support for toshiba protocol ([#868](https://github.com/midea-lan/midea-local/issues/868)) ([6b3aef0](https://github.com/midea-lan/midea-local/commit/6b3aef071cc519e6c6191992ce9e02d35bc507a2))
+* **e2:** allow setting eplus (MegaWater) mode ([#893](https://github.com/midea-lan/midea-local/issues/893)) ([e1a141e](https://github.com/midea-lan/midea-local/commit/e1a141eddb472383c4ad4e7e7630ad66e044f617))
+
+
+### Bug Fixes
+
+* **a1:** add silent mode and accept auto reported as 11 ([#869](https://github.com/midea-lan/midea-local/issues/869)) ([e6ca37b](https://github.com/midea-lan/midea-local/commit/e6ca37b91e3aefc3f0ee1d484734eb2b6650b220))
+* **ac:** capabilities attribute handling in AC device ([#894](https://github.com/midea-lan/midea-local/issues/894)) ([2f3321a](https://github.com/midea-lan/midea-local/commit/2f3321a2b43770e17f3d333c53fcb52c8d7757d4))
+* **ca:** ignore stale energy in Toshiba push frames ([#884](https://github.com/midea-lan/midea-local/issues/884)) ([baa0948](https://github.com/midea-lan/midea-local/commit/baa0948cbb14775b48998f5fdd9737dd51b3f2c9))
+* **cloud:** resolve SmartHome accounts using current router ([#896](https://github.com/midea-lan/midea-local/issues/896)) ([6a05eb1](https://github.com/midea-lan/midea-local/commit/6a05eb13f2021d5572fa79810f340dd211b2a554))
+
 ## [12.2.0](https://github.com/midea-lan/midea-local/compare/v12.1.0...v12.2.0) (2026-10-04)
 
 

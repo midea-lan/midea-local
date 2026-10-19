@@ -10,6 +10,7 @@ from typing import Any, ClassVar, Unpack, cast, override
 from midealocal.base_classes.climate import (
     DEFAULT_MAX_TARGET_TEMPERATURE,
     DEFAULT_MIN_TARGET_TEMPERATURE,
+    TEMPERATURE_STEP_HALF,
     MideaClimateDevice,
     MideaFanMode,
     MideaHVACMode,
@@ -330,8 +331,8 @@ class MideaACDevice(MideaClimateDevice):
         )
         self._fresh_air_version: DeviceAttributes | None = None
         self._pending_self_clean: tuple[bool, float] | None = None
-        self._default_temperature_step: float = 0.5
-        self._temperature_step: float = 0.5
+        self._default_temperature_step: float = TEMPERATURE_STEP_HALF
+        self._temperature_step: float = TEMPERATURE_STEP_HALF
         self._used_subprotocol: bool = self._model_capabilities.uses_bb_protocol
         self._bb_sn8_flag: bool = False
         self._bb_timer: bool = False
@@ -446,7 +447,7 @@ class MideaACDevice(MideaClimateDevice):
     @override
     def fan_modes(self) -> list[MideaFanMode]:
         """Midea AC device fan modes."""
-        return [member for member in ACFanSpeed]
+        return [*ACFanSpeed]
 
     @property
     @override
@@ -515,7 +516,7 @@ class MideaACDevice(MideaClimateDevice):
         )
 
     @property
-    def temperature_step(self) -> float | None:
+    def temperature_step(self) -> float:
         """Midea AC device temperature step."""
         return self._temperature_step
 
@@ -780,6 +781,16 @@ class MideaACDevice(MideaClimateDevice):
         return mode
 
     @property
+    @override
+    def attributes(self) -> dict[str, Any]:
+        """Attributes."""
+        ret = super().attributes
+        for cap in MideaACDevice._capabilities_attr:
+            if not self._capabilities.get(cap, False):
+                ret.pop(MideaACDevice._capabilities_attr[cap], None)
+        return ret
+
+    @property
     def _self_clean_pending_timeout(self) -> int:
         """Return the stale-status window for a pending self-clean command."""
         return (
@@ -804,9 +815,7 @@ class MideaACDevice(MideaClimateDevice):
         ):
             return {}
         self._capabilities.update(new_capabilities)
-        for cap in MideaACDevice._capabilities_attr:
-            if not self._capabilities.get(cap, False):
-                self._attributes.pop(MideaACDevice._capabilities_attr[cap], None)
+
         return {"capabilities": dict(self._capabilities)}
 
     def _refresh_self_clean_status(self, message: MessageACResponse) -> dict[str, Any]:
@@ -1228,7 +1237,9 @@ class MideaACDevice(MideaClimateDevice):
         message: MessageSubProtocolSet | MessageGeneralSet = (
             self._make_message_uniq_set()
         )
-        message.target_temperature = target_temperature
+        message.target_temperature = (
+            round(target_temperature / self.temperature_step) * self.temperature_step
+        )
         if hvac_mode is not None:
             message.power = hvac_mode != DeviceHVACMode.OFF
             message.mode = hvac_mode
@@ -1253,8 +1264,15 @@ class MideaACDevice(MideaClimateDevice):
         if customize and len(customize) > 0:
             try:
                 params = json.loads(customize)
-                if params and "temperature_step" in params:
-                    self._temperature_step = params.get("temperature_step")
+                if (
+                    params
+                    and "temperature_step" in params
+                    and isinstance(
+                        temp_step := params.get("temperature_step"),
+                        (int, float),
+                    )
+                ):
+                    self._temperature_step = float(temp_step)
                 if params and "power_analysis_method" in params:
                     self._power_analysis_method = params.get("power_analysis_method")
                 if params and "min_temperature" in params:

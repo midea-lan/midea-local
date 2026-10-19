@@ -35,7 +35,7 @@ from midealocal.devices.ac.message import (
     PowerFormats,
     parse_indoor_humidity,
 )
-from midealocal.message import ListTypes, MessageBase, MessageType
+from midealocal.message import ListTypes, MessageBase, MessageChecksum, MessageType
 
 
 @pytest.mark.parametrize(
@@ -1815,7 +1815,7 @@ class TestMessageACResponse:
         assert len(frame) == frame[1] + 1
         assert len(frame[10:-1]) == frame[11]
         assert calculate(frame[10:-2]) == 0
-        assert MessageBase.checksum(frame[1:-1]) == frame[-1]
+        assert MessageBase.checksum(frame[1:-1], MessageChecksum.SUM)[0] == frame[-1]
 
         response = MessageACResponse(frame)
 

@@ -33,6 +33,18 @@ from midealocal.exceptions import (
 _DEFAULT_KEYS = {99: {"key": "key99", "token": "token99"}}
 
 
+def _mock_device(*, connect: bool | list[bool] = True) -> MagicMock:
+    """Build a MideaDevice mock with its async lifecycle methods properly async."""
+    device = MagicMock()
+    if isinstance(connect, list):
+        device.connect = AsyncMock(side_effect=connect)
+    else:
+        device.connect = AsyncMock(return_value=connect)
+    device.refresh_status = AsyncMock()
+    device.close_socket = AsyncMock()
+    return device
+
+
 @pytest.fixture
 def cli() -> MideaCLI:
     """Return a MideaCLI with the minimal namespace the cloud-key paths need."""
@@ -197,8 +209,8 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "mac": "1234567890AB",
         }
         mock_cloud_instance = AsyncMock()
-        mock_device_instance = MagicMock()
-        mock_device_instance.connect.return_value = True
+        mock_device_instance = _mock_device()
+        refresh_status_mock = mock_device_instance.refresh_status
         tmpdir = TemporaryDirectory()
         self.addCleanup(tmpdir.cleanup)
         cache_file = Path(tmpdir.name) / "midea-devices.json"
@@ -215,10 +227,6 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 "midealocal.cli.device_selector",
                 return_value=mock_device_instance,
             ),
-            patch.object(
-                mock_device_instance,
-                "refresh_status",
-            ) as refresh_status_mock,
             patch(
                 "midealocal.cli.get_devices_cache_path",
                 return_value=cache_file,
@@ -282,8 +290,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
 
     async def test_try_connect_auth_exception_does_not_log_key(self) -> None:
         """Test the AuthException log message never includes the actual key/token."""
-        mock_device_instance = MagicMock()
-        mock_device_instance.connect.return_value = True
+        mock_device_instance = _mock_device()
         mock_device_instance.refresh_status.side_effect = AuthException
         device = {
             "device_id": 1,
@@ -303,7 +310,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             ),
             self.assertLogs("cli", level="DEBUG") as log,
         ):
-            success = self.cli._try_connect(device, secret_key, [])
+            success = await self.cli._try_connect(device, secret_key, [])
 
         assert success is False
         logged_text = "\n".join(log.output)
@@ -322,8 +329,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "sn": "0000AC12300000001234567890ABCDEF",
             "mac": "1234567890AB",
         }
-        mock_device_instance = MagicMock()
-        mock_device_instance.connect.return_value = True
+        mock_device_instance = _mock_device()
         with TemporaryDirectory() as tmpdir:
             cache_file = Path(tmpdir) / "midea-devices.json"
             with (
@@ -387,8 +393,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "sn": "0000AC12300000001234567890ABCDEF",
             "mac": "1234567890AB",
         }
-        mock_device_instance = MagicMock()
-        mock_device_instance.connect.return_value = True
+        mock_device_instance = _mock_device()
         with TemporaryDirectory() as tmpdir:
             cache_file = Path(tmpdir) / "midea-devices.json"
             cache_file.write_text(
@@ -457,9 +462,8 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "sn": "0000AC12300000001234567890ABCDEF",
             "mac": "1234567890AB",
         }
-        mock_device_instance = MagicMock()
         # the stale cached key fails to even connect; a fresh cloud key does
-        mock_device_instance.connect.side_effect = [False, True]
+        mock_device_instance = _mock_device(connect=[False, True])
         with TemporaryDirectory() as tmpdir:
             cache_file = Path(tmpdir) / "midea-devices.json"
             cache_file.write_text(
@@ -1043,8 +1047,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
 
     async def test_set_attribute(self) -> None:
         """Test set attribute."""
-        mock_device_instance = MagicMock()
-        mock_device_instance.connect.return_value = True
+        mock_device_instance = _mock_device()
         with (
             patch.object(
                 self.cli,

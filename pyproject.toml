@@ -1,6 +1,6 @@
 [project]
 name = "midea-local"
-dynamic = ["version", "dependencies"]
+dynamic = ["version"]
 requires-python = ">=3.12"
 description = "Control your Midea M-Smart appliances via local area network"
 authors = [
@@ -13,6 +13,17 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+"aiofiles",
+"aiohttp",
+"anyio",
+"colorlog",
+"defusedxml",
+"ifaddr",
+"pycryptodome",
+"platformdirs",
+"typing_extensions>=4.5.0",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/midea-lan/midea-local"
@@ -20,12 +31,45 @@ classifiers = [
 [project.scripts]
 midealocal = "midealocal.cli:main"
 
+[dependency-groups]
+dev = [
+    "build",
+    "mypy",
+    "pylint",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "ruff",
+    "setuptools",
+    "types-aiofiles",
+]
+
 [tool.setuptools.dynamic]
 version = { attr = "midealocal.version.__version__" }
-dependencies = { file = ["requirements.txt"] }
 
 [tool.setuptools.packages.find]
 include = ["midealocal*"]
+
+[tool.pytest.ini_options]
+addopts = "-v -Wdefault --cov=midealocal --cov-report=term-missing"
+testpaths = ["tests"]
+
+[tool.codespell]
+ignore-words-list = "astroid"
+ignore-regex = '\bmapp\.appsmb\.com\b'
+
+[tool.coverage.run]
+branch = true
+source = ["midealocal"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "@overload",
+    "if TYPE_CHECKING",
+    "raise NotImplementedError",
+    'if __name__ == "__main__":',
+]
 
 [tool.mypy]
 python_version = "3.12"
@@ -50,6 +94,19 @@ warn_unreachable = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_decorators = false
+
+[tool.pylint.MASTER]
+jobs = 0
+prefer-stubs = true
+py-version = "3.12"
+recursive = true
+
+[tool.pylint.BASIC]
+docstring-min-length = 4
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = ["all"]
+enable = ["E", "F"]
 
 [build-system]
 requires = ["setuptools>=77", "wheel"]
