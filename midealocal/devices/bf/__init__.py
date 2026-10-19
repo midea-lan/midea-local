@@ -276,11 +276,13 @@ class MideaBFDevice(MideaDevice):
         # MessageSet routes to workModeControl instead of an empty setControl.
         if attr in _WORK_MODE_SETTABLE_ATTRS:
             message = self.make_message_set()
-            # Lua lets temperature_above/underside override temperature, so the
-            # copied per-element targets would mask the new value.
+            # Lua gives temperature_above/underside priority over temperature and
+            # weight over people_number, so copied values would mask the write.
             if attr == DeviceAttributes.temperature:
                 message.temperature_above = None
                 message.temperature_underside = None
+            elif attr == DeviceAttributes.people_number:
+                message.weight = None
         else:
             message = MessageSet(self._message_protocol_version)
         setattr(message, attr, value)

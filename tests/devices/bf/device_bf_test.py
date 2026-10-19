@@ -345,6 +345,19 @@ class TestMideaBFDevice:
         sent_body = mock_build_send.call_args[0][0].body
         assert sent_body[12:16] == bytearray([0x00, 200, 0x00, 200])
 
+    def test_set_attribute_people_number_overrides_current_weight(self) -> None:
+        """Test a people_number write is not masked by the copied weight."""
+        body = bytearray(60)
+        body[0] = 0x01
+        body[7] = 0x01  # microwave high
+        body[20] = 50  # weight 500 / people_number 50
+        body[31] = WorkStatus.work.value
+        self.device.process_message(_build_message(MessageType.query, body))
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.people_number, 4)
+        sent_body = mock_build_send.call_args[0][0].body
+        assert sent_body[19] == 4
+
     @pytest.mark.parametrize(
         ("work_hour", "work_minute", "expected_time"),
         [
