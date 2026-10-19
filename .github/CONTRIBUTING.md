@@ -44,7 +44,9 @@ fast, and works the same on Linux, macOS, Windows, and WSL2 — no Docker requir
 - **Git**
 - **Node.js (optional):** only needed for the `commitlint` commit-message hook
 - **Editor:** any. For VS Code, the workspace is preconfigured (`.vscode/`) to use `.venv`;
-  the recommended extensions are `charliermarsh.ruff` and `ms-python.python`.
+  the recommended extensions are `charliermarsh.ruff` and `ms-python.python`. The setup
+  script copies `.vscode/settings.default.jsonc` to the git-ignored `.vscode/settings.json`,
+  which you can customize (e.g. set `python.testing.pytestEnabled` to `true` for the Test Explorer).
 
 ---
 
@@ -80,17 +82,18 @@ cd midea-local
 
 The setup script:
 
-1. creates a `.venv` with Python 3.12 (`uv venv --python 3.12`),
-2. installs runtime + dev + type-stub dependencies (`uv pip install -r requirements-all.txt`),
+1. creates a `.venv` with Python 3.12 and installs runtime + dev dependencies from
+   `pyproject.toml`/`uv.lock` (`uv sync --all-groups --python 3.12`),
+2. activates the environment,
 3. installs the prek hooks (commit and commit-msg stages).
 
 **Manual setup** (equivalent to the script):
 
 ```bash
-uv venv --python 3.12
-uv pip install -r requirements-all.txt prek
-uv run prek install
-uv run prek install --hook-type commit-msg
+uv sync --all-groups --python 3.12
+uv tool install prek
+prek install
+prek install --hook-type commit-msg
 ```
 
 Then either activate the environment (`source .venv/bin/activate`) or prefix commands with
@@ -136,10 +139,10 @@ persist these in your shell profile.
 | Run all tests              | `uv run python -m pytest ./tests/`                                            |
 | Run one test file          | `uv run python -m pytest tests/devices/ac/message_ac_test.py`                 |
 | Coverage report            | `uv run python -m pytest --cov=midealocal --cov-report term-missing ./tests/` |
-| Lint / format / type-check | `uv run prek run --all-files`                                                 |
+| Lint / format / type-check | `prek run --all-files`                                                        |
 | Ruff only                  | `uv run ruff check .` / `uv run ruff format .`                                |
 | Build the package          | `uv run python -m build`                                                      |
-| Add a dependency           | edit `requirements*.txt`, then `uv pip install -r requirements-all.txt`       |
+| Add a dependency           | `uv add <pkg>` (runtime) or `uv add --dev <pkg>` (dev)                        |
 
 ---
 
@@ -180,7 +183,7 @@ persist these in your shell profile.
   - `ruff` → Linting and formatting
   - `mypy` → Type checking (strict)
   - `pylint` → Additional static analysis
-- Run the full suite any time with `uv run prek run --all-files`, and fix all reported
+- Run the full suite any time with `prek run --all-files`, and fix all reported
   issues before committing.
 - Tests use `pytest`. CI runs the full prek suite and the tests across the
   Python 3.12/3.13/3.14 × Linux/macOS/Windows matrix and blocks merge on failure.

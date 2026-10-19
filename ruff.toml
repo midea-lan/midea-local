@@ -5,7 +5,6 @@ lint.select = ["ALL"]
 lint.preview = false
 
 lint.ignore = [
-    "ANN101",   # Missing type annotation for `self` in method
     "B909",     # Mutation to loop iterable `self._attributes` during iteration
     "C416",     # Unnecessary `dict` comprehension (rewrite using `dict()`)
     "CPY001",   # Missing copyright notice at top of file

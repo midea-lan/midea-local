@@ -41,21 +41,20 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          uv venv --python ${{ matrix.python-version }}
-          uv pip install -r requirements-all.txt prek build
+          uv sync --frozen --all-groups --python ${{ matrix.python-version }}
+          uv tool install prek
         shell: bash
       - name: Activate virtualenv
-        # This repo has no pyproject.toml, so expose the .venv to later steps by
-        # putting it on PATH. On Windows the venv layout is .venv/Scripts and
-        # GITHUB_PATH needs a native path (cygpath), otherwise system hooks like
-        # pylint can't find their executable.
+        # Expose the .venv to later steps by putting it on PATH. On Windows the
+        # venv layout is .venv/Scripts and GITHUB_PATH needs a native path
+        # (cygpath), otherwise system hooks like pylint can't find their executable.
         run: |
           if [ -d .venv/bin ]; then
             echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
@@ -103,7 +102,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
       - name: Set up Python

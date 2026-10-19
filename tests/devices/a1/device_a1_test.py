@@ -44,6 +44,76 @@ class TestMideaA1Device:
             "auto",
             "clothes_dry",
             "shoes_dry",
+            "silent",
+        ]
+
+    def _process_mode(self, code: int) -> dict:
+        """Process a status message reporting the given mode code."""
+        with patch("midealocal.devices.a1.MessageA1Response") as mock_message_response:
+            mock_message = mock_message_response.return_value
+            mock_message.protocol_version = ProtocolVersion.V3
+            mock_message.power = True
+            mock_message.prompt_tone = False
+            mock_message.fan_speed = 80
+            mock_message.target_humidity = 50
+            mock_message.pump = False
+            mock_message.pump_enable = False
+            mock_message.tank = 0
+            mock_message.water_level_set = "50"
+            mock_message.mode = code
+            return self.device.process_message(b"")
+
+    @pytest.mark.parametrize(
+        ("code", "mode"),
+        [
+            (1, "manual"),
+            (2, "continuous"),
+            (3, "auto"),
+            (4, "clothes_dry"),
+            (5, "shoes_dry"),
+            (10, "silent"),
+            (11, "auto"),
+        ],
+    )
+    def test_process_message_modes(self, code: int, mode: str) -> None:
+        """Test every reported mode code is decoded."""
+        new_status = self._process_mode(code)
+        assert new_status[DeviceAttributes.mode.value] == mode
+
+    @pytest.mark.parametrize(
+        ("mode", "code"),
+        [
+            ("manual", 1),
+            ("continuous", 2),
+            ("auto", 3),
+            ("clothes_dry", 4),
+            ("shoes_dry", 5),
+            ("silent", 10),
+        ],
+    )
+    def test_set_attribute_modes(self, mode: str, code: int) -> None:
+        """Test every mode is sent with its code, auto as 3."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.mode, mode)
+            assert mock_build_send.call_args[0][0].mode == code
+
+    def test_reported_auto_11_is_sent_as_3(self) -> None:
+        """Test other commands send auto as 3 after the unit reported 11."""
+        self._process_mode(11)
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.power, value=False)
+            assert mock_build_send.call_args[0][0].mode == 3
+
+    def test_empty_customize_keeps_default_modes(self) -> None:
+        """Test an empty customize keeps the default modes."""
+        self.device.set_customize("")
+        assert self.device.modes == [
+            "manual",
+            "continuous",
+            "auto",
+            "clothes_dry",
+            "shoes_dry",
+            "silent",
         ]
 
     def test_fan_speeds(self) -> None:
@@ -89,7 +159,7 @@ class TestMideaA1Device:
             capabilities["pump"] = False
             assert self.device.capabilities == {"pump": True}
 
-            mock_message.mode = 10
+            mock_message.mode = 12
             mock_message.fan_speed = 99
             mock_message.pump_enable = False
             mock_message.tank = 30
@@ -158,6 +228,19 @@ class TestMideaA1Device:
 
             self.device.set_attribute(DeviceAttributes.pump, True)
             mock_build_send.assert_called()
+
+    def test_reset_filter(self) -> None:
+        """Test reset sends one pulse without changing cached attributes."""
+        attributes = self.device.attributes.copy()
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.reset_filter()
+
+        mock_build_send.assert_called_once()
+        message = mock_build_send.call_args.args[0]
+        assert message.filter_reset
+        assert message._body[8] & 0x80
+        assert self.device.attributes == attributes
+        assert not self.device.make_message_set().filter_reset
 
     def test_set_customize(self) -> None:
         """Test set customize with valid speeds and modes."""

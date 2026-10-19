@@ -309,6 +309,18 @@ class TestMideaE2Device:
         assert message.target_temperature == 45
         assert message._body == bytearray([0x07, 45])
 
+    def test_set_attribute_eplus_for_subtype_255(self) -> None:
+        """Subtype 255 sends eplus (MegaWater) via the mode command."""
+        device = self._device(subtype=255)
+        with patch.object(device, "build_send") as mock_build_send:
+            device.set_attribute(DeviceAttributes.eplus.value, True)
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+        assert isinstance(message, MessageNewProtocolSet)
+        assert message._body == bytearray(
+            [0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        )
+
     def test_set_attribute_old_protocol_ignores_unsupported_attribute(
         self,
         caplog: pytest.LogCaptureFixture,

@@ -12,27 +12,35 @@ $ErrorActionPreference = "Stop"
 # Move to the repository root (parent of this script's directory).
 Set-Location (Join-Path $PSScriptRoot "..")
 
+# Add default VS Code settings if not existing.
+if (-not (Test-Path ".vscode\settings.json")) {
+    Write-Host "Copying .vscode\settings.default.jsonc to .vscode\settings.json..."
+    Copy-Item ".vscode\settings.default.jsonc" ".vscode\settings.json"
+}
+
 if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
     Write-Error "'uv' is not installed. Install it: powershell -c `"irm https://astral.sh/uv/install.ps1 | iex`""
     exit 1
 }
 
-# Create the virtual environment (uv downloads Python 3.12 if needed).
-Write-Host "Creating virtual environment (.venv) with Python 3.12..."
-uv venv --python 3.12
+# Create .venv and install runtime + dev dependencies
+# (uv downloads Python 3.12 if needed).
+Write-Host "Syncing virtual environment (.venv) with Python 3.12..."
+uv sync --all-groups --python 3.12
 
-# Activate it so the tools below resolve to this project's .venv. (This repo has no
-# pyproject.toml, so `uv run` cannot auto-discover the environment.)
+# Activate it so the tools below resolve to this project's .venv.
 & .venv\Scripts\Activate.ps1
 
-# Install runtime + dev + type-stub dependencies, plus prek.
-Write-Host "Installing dependencies from requirements-all.txt..."
-uv pip install -r requirements-all.txt prek
+# prek is a global uv tool, not a project dependency.
+if (-not (Get-Command prek -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing prek..."
+    uv tool install prek
+}
 
 # Install the git hooks (commit + commit-msg stages).
 Write-Host "Installing prek hooks..."
-prek install
-prek install --hook-type commit-msg
+prek install --overwrite
+prek install --hook-type commit-msg --overwrite
 
 # Shim so muscle-memory `pre-commit` invocations still work, backed by prek.
 Set-Content -Path ".venv\Scripts\pre-commit.cmd" -Value "@echo off`r`nprek %*"

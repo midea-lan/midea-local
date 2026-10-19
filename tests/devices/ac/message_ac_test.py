@@ -35,7 +35,7 @@ from midealocal.devices.ac.message import (
     PowerFormats,
     parse_indoor_humidity,
 )
-from midealocal.message import ListTypes, MessageBase, MessageType
+from midealocal.message import ListTypes, MessageBase, MessageChecksum, MessageType
 
 
 @pytest.mark.parametrize(
@@ -691,6 +691,7 @@ class TestMessageGeneralSet:
         msg.natural_wind = True
         msg.frost_protect = True
         msg.comfort_mode = True
+        msg.reset_filter = True
         expected_body[1] = 0x01
         expected_body[2] = (
             (0x02 << 5) & 0xE0 | (24 & 0xF) | (0x10 if 24 % 2 != 0 else 0)
@@ -699,10 +700,10 @@ class TestMessageGeneralSet:
         expected_body[7] = 0x30 | 0x0C | 0x03
         expected_body[8] = 0x20 | 0x08
         expected_body[9] = 0x01 | 0x04 | 0x08 | 0x80
-        expected_body[10] = 0x04 | 0x01 | 0x02
+        expected_body[10] = 0x04 | 0x01 | 0x02 | 0x80
         expected_body[17] = 0x40
         expected_body[21] = 0x80
-        expected_body[22] = 0x01
+        expected_body[22] = 0x01 | 0x08
         assert msg.body[:-2] == expected_body
 
 
@@ -1814,7 +1815,7 @@ class TestMessageACResponse:
         assert len(frame) == frame[1] + 1
         assert len(frame[10:-1]) == frame[11]
         assert calculate(frame[10:-2]) == 0
-        assert MessageBase.checksum(frame[1:-1]) == frame[-1]
+        assert MessageBase.checksum(frame[1:-1], MessageChecksum.SUM)[0] == frame[-1]
 
         response = MessageACResponse(frame)
 
@@ -1896,6 +1897,25 @@ class TestMessageACResponse:
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "error_code")
         assert response.error_code == 5
+
+    def test_message_b1_filter_status(self) -> None:
+        """Test filter_status parsed from B1 response."""
+        self.header[9] = 0x03
+        body = bytearray(14)
+        body[0] = 0xB1
+        body[1] = 0x01  # 1 param
+        body[2] = NewProtocolTags.filter_status & 0xFF
+        body[3] = NewProtocolTags.filter_status >> 8
+        body[4] = 0x00  # padding
+        body[5] = 0x05  # length
+        body[6] = 0x00  # filter status 1
+        body[7] = 0x00  # filter status 2
+        body[8] = 0x00  # filter status 3
+        body[9] = 0x00  # filter status 4
+        body[10] = 0x01  # filter full_dust
+        response = MessageACResponse(self.header + body)
+        assert hasattr(response, "full_dust")
+        assert response.full_dust
 
     def test_message_b1_sound(self) -> None:
         """Test sound parsed from B1 response (buzzer_all tag)."""
@@ -2213,6 +2233,31 @@ class TestMessageACResponse:
         assert not hasattr(response, "target_temperature")
         assert not hasattr(response, "indoor_temperature")
         assert not hasattr(response, "outdoor_temperature")
+
+
+class TestMessageNewProtocolSetFilter:
+    """Test MessageNewProtocolSet for reset filter."""
+
+    @pytest.mark.parametrize(
+        ("value", "expected_bytes"),
+        [
+            (
+                True,
+                bytearray(
+                    [0xB0, 0x04, 0xB8, 0x00, 0x01, 0x01, 0x3D, 0x00, 0x05]
+                    + [0x00] * 5
+                    + [0x85, 0x00, 0x01, 0x01, 0xCC, 0x00, 0x01, 0x01],
+                ),
+            ),
+            (False, bytearray([0xB0, 0x00])),
+        ],
+    )
+    def test_reset_filter(self, value: bool, expected_bytes: bytearray) -> None:
+        """Test reset filter status."""
+        msg = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
+        msg.reset_filter = value
+        body = msg.body[:-2]
+        assert body == expected_bytes
 
 
 class TestMessageNewProtocolSetNewFeatures:

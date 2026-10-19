@@ -99,6 +99,22 @@ class TestMessageNewProtocolQuery:
 class TestMessageSet:
     """Test Message Set."""
 
+    def test_filter_reset_flag(self) -> None:
+        """Test the filter reset bit is sent only when requested."""
+        msg_set = MessageSet(protocol_version=ProtocolVersion.V1)
+        msg_set.anion = True
+        msg_set.pump = True
+        msg_set.pump_enable = True
+
+        normal_body = msg_set._body
+        msg_set.filter_reset = True
+        reset_body = msg_set._body
+
+        assert normal_body[8] == 0x58
+        assert reset_body[8] == 0xD8
+        assert reset_body[:8] == normal_body[:8]
+        assert reset_body[9:] == normal_body[9:]
+
     def test_set_body(self) -> None:
         """Test set body."""
         msg_set = MessageSet(protocol_version=ProtocolVersion.V1)

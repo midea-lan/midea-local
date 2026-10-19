@@ -137,6 +137,7 @@ reports/
 
 # IDE
 .idea/
+.vscode/settings.json
 
 # Optional config file
 midea-local.json

@@ -19,6 +19,7 @@ from midealocal.message import (
 MAX_MSG_SERIAL_NUM = 100
 MIN_TARGET_HUMIDITY = 35
 MIN_FAN_SPEED = 5
+FILTER_RESET_FLAG = 0x80
 
 
 class NewProtocolTags(IntEnum):
@@ -140,6 +141,7 @@ class MessageSet(MessageA1Base):
         self.anion = False
         self.pump = False
         self.pump_enable = False
+        self.filter_reset = False
         self.water_level_set = 50
 
     @property
@@ -159,6 +161,7 @@ class MessageSet(MessageA1Base):
         anion = 0x40 if self.anion else 0x00
         pump = 0x08 if self.pump else 0x00
         pump_enable = 0x10 if self.pump_enable else 0x00
+        filter_reset = FILTER_RESET_FLAG if self.filter_reset else 0x00
         # byte10 swing
         swing = 0x08 if self.swing else 0x00
         # byte 13 water_level_set
@@ -173,7 +176,7 @@ class MessageSet(MessageA1Base):
                 0x00,
                 target_humidity,
                 child_lock,
-                anion | pump | pump_enable,
+                anion | pump | pump_enable | filter_reset,
                 swing,
                 0x00,
                 0x00,

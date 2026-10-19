@@ -162,10 +162,20 @@ def _mask_token(token: str) -> str:
     return visible + block * max(0, len(token) - len(visible))
 
 
-# ``"token": "..."`` / ``"key": "..."`` as they appear in a getToken response,
+# Credential fields (getToken ``token``/``key``, session and password fields),
 # tolerating escaped quotes from ``str(bytes)`` rendering.
 _CREDENTIAL_FIELD = re.compile(
-    r'(\\?["\'](?:token|key)\\?["\']\s*:\s*\\?["\'])([^"\'\\]+)',
+    r'(\\?["\'](?:token|key|accessToken|sessionId|password|iampwd|tokenPwd)'
+    r'\\?["\']\s*:\s*\\?["\'])'
+    r'([^"\'\\]+)',
+    re.IGNORECASE,
+)
+# Personal fields: masked fully, a short name would survive _mask_token intact.
+# The value runs up to its own closing quote, so apostrophes and escapes inside
+# it are masked too.
+_PERSONAL_FIELD = re.compile(
+    r'(\\?["\'](?:nickname|userName)\\?["\']\s*:\s*(\\?["\']))'
+    r"((?:\\.|[^\\])*?)(?=\2)",
     re.IGNORECASE,
 )
 
@@ -175,6 +185,7 @@ def _redact_data(data: str) -> str:
     # Do this first: the generic patterns below only chew up parts of a token,
     # which leaves most of the credential readable and looks redacted.
     data = _CREDENTIAL_FIELD.sub(lambda m: m.group(1) + _mask_token(m.group(2)), data)
+    data = _PERSONAL_FIELD.sub(lambda m: m.group(1) + block * len(m.group(3)), data)
     patterns = [
         # Email
         r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
@@ -846,6 +857,8 @@ class MeijuCloud(MideaCloud):
 class SmartHomeCloud(MideaCloud):
     """MSmart Home Cloud."""
 
+    _security: MSmartCloudSecurity
+
     def __init__(
         self,
         cloud_name: str,
@@ -889,6 +902,27 @@ class SmartHomeCloud(MideaCloud):
         return await super()._api_request(endpoint, data, header, raise_for_error)
 
     async def _re_route(self) -> None:
+        # The legacy router can miss accounts hosted in another region. The
+        # account router expects the web client fields and an encrypted name.
+        data = self._make_general_data()
+        data.update(
+            {
+                "clientType": 8,
+                "clientSrc": 8,
+                "userType": "0",
+                "userName": self._security.encrypt_account(self._account),
+            },
+        )
+        if (
+            response := await self._api_request(
+                endpoint="/v1/unitcenter/router/user/name",
+                data=data,
+            )
+        ) and (api_url := response.get("masUrl")):
+            self._api_url = api_url
+            return
+
+        # Keep existing routing for accounts not served by the newer endpoint.
         data = self._make_general_data()
         data.update({"userType": "0", "userName": f"{self._account}"})
         if (
@@ -1113,8 +1147,8 @@ class MideaAirCloud(MideaCloud):
                     _LOGGER.debug(
                         "Midea cloud API url: %s, data: %s, response: %s",
                         url,
-                        data,
-                        raw,
+                        _redact_data(str(data)),
+                        _redact_data(str(raw)),
                     )
                     response = json.loads(raw)
             except (TimeoutError, ClientConnectionError, json.JSONDecodeError) as e:

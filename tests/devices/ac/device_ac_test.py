@@ -29,11 +29,12 @@ from midealocal.devices.ac.message import (
     MessageSubProtocolQuery10,
     MessageSubProtocolQuery11,
     MessageSubProtocolQuery30,
+    MessageSubProtocolResetFilter,
     MessageToggleDisplay,
     NewProtocolTags,
     PowerFormats,
 )
-from midealocal.message import ListTypes, MessageBase
+from midealocal.message import ListTypes, MessageBase, MessageChecksum
 from tests.base_classes.climate_test import DummyFanMode, DummyHVACMode, DummySwingMode
 
 
@@ -76,6 +77,7 @@ class TestMideaACDevice:
         assert self.device.current_humidity() is None
         assert self.device.current_temperature() is None
         assert self.device.target_temperature() == 24.0
+        assert self.device.is_filter_reset_supported
 
     def test_turn_on_turn_off(self) -> None:
         """Test turn on and turn off."""
@@ -112,7 +114,7 @@ class TestMideaACDevice:
         header = bytearray([0xAA, 0, 0xAC, 0, 0, 0, 0, 0, 1, 3])
         header[1] = len(header) + len(body)
         frame = header + body
-        frame.append(MessageBase.checksum(frame[1:]))
+        frame.extend(MessageBase.checksum(frame[1:], MessageChecksum.SUM))
         return bytes(frame)
 
     def test_customize_accepts_bcd_energy_binary_power_format(self) -> None:
@@ -380,6 +382,21 @@ class TestMideaACDevice:
             self.device.set_preset_mode("comfort")
         with pytest.raises(ValueError, match="Unsupported preset mode: away"):
             self.device.set_preset_mode("away")
+
+    def test_reset_filter(self) -> None:
+        """Test reset filter."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.reset_filter()
+            mock_build_send.assert_called()
+            for i in range(mock_build_send.call_count):
+                assert mock_build_send.call_args_list[i].args[0].reset_filter is True
+        self.device._used_subprotocol = True
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.reset_filter()
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert isinstance(message, MessageSubProtocolResetFilter)
+            assert message._subprotocol_body == bytearray([0x40 | 0x80, 0x01])
 
     def test_build_query(self) -> None:
         """Test build query."""
@@ -696,14 +713,15 @@ class TestMideaACDevice:
         first += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode, no rate_select
 
         self.device.process_message(self._response(first))
-        assert DeviceAttributes.rate_select not in self.device._attributes
+        assert DeviceAttributes.rate_select not in self.device.attributes
 
         second = bytearray([0xB5, 0x03])
         second += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode
         second += bytearray([0x1E, 0x02, 0x01, 1])  # b5_anion -> caps change
 
         self.device.process_message(self._response(second))
-        assert DeviceAttributes.rate_select not in self.device._attributes
+        assert DeviceAttributes.anion in self.device.attributes
+        assert DeviceAttributes.rate_select not in self.device.attributes
 
     def test_process_message(self) -> None:
         """Test process message."""
@@ -789,6 +807,7 @@ class TestMideaACDevice:
             assert result[DeviceAttributes.fresh_air_mode.value] == "off"
 
             mock_message.power = False
+            self.device._capabilities["display_control"] = True
             result = self.device.process_message(b"")
             assert not result[DeviceAttributes.screen_display.value]
             assert not self.device.attributes[DeviceAttributes.screen_display]
@@ -887,11 +906,41 @@ class TestMideaACDevice:
             self.device.set_raw_target_temperature(22.5, hvac_mode)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
-            assert message.target_temperature == 22.5
+            assert message.target_temperature == 22.0
             assert message.mode == mode
             assert message.power == power
             self.device._used_subprotocol = True
             self.device.set_raw_target_temperature(22.5, "auto")
+
+    @pytest.mark.parametrize(
+        ("temperature", "expected_step_whole", "expected_step_half"),
+        [
+            (20.2, 20.0, 20.0),
+            (20.3, 20.0, 20.5),
+            (20.5, 20.0, 20.5),
+            (20.7, 21.0, 20.5),
+            (20.8, 21.0, 21.0),
+        ],
+    )
+    def test_set_target_temperature_rounded(
+        self,
+        temperature: float,
+        expected_step_whole: float,
+        expected_step_half: float,
+    ) -> None:
+        """Test set target temperature to be rounded."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_raw_target_temperature(temperature, "auto")
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.target_temperature == expected_step_whole
+            mock_build_send.reset_mock()
+
+            self.device._temperature_step = 0.5
+            self.device.set_raw_target_temperature(temperature, "auto")
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.target_temperature == expected_step_half
 
     def test_process_message_ignores_stale_c0_temperatures_after_new_protocol(
         self,
@@ -945,7 +994,7 @@ class TestMideaACDevice:
         header = bytearray([0xAA, 0, 0xAC, 0, 0, 0, 0, 0, 1, 3])
         header[1] = len(header) + len(body)
         frame = header + body
-        frame.append(MessageBase.checksum(frame[1:]))
+        frame.extend(MessageBase.checksum(frame[1:], MessageChecksum.SUM))
         return bytes(frame)
 
     def test_process_message_0x7e_temperatures_are_gated_by_model(self) -> None:

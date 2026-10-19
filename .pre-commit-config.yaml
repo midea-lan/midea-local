@@ -4,8 +4,7 @@ exclude: "CHANGELOG.md|.copier-answers.yml|^tests/lua_conformance/GENERATED_.*[.
 default_stages: [pre-commit]
 
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+  - repo: builtin
     hooks:
       - id: no-commit-to-branch
         args: ["--branch", "main"]
@@ -14,22 +13,27 @@ repos:
       - id: check-xml
       - id: check-yaml
       - id: detect-private-key
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.13.1
+    hooks:
+      - id: uv-lock
+        args: ["--check"]
   - repo: https://github.com/JohnnyMorganz/StyLua
-    rev: v2.5.2
+    rev: v2.6.0
     hooks:
       - id: stylua
         name: check LUA formatting
         files: '\.lua$'
         types: [file]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.8
+    rev: v0.17.1
     hooks:
       - id: ruff-check
         args:
           - --fix
       - id: ruff-format
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.18.1
+    rev: v4.19.2
     hooks:
       - id: commitizen
         stages: [commit-msg]
@@ -39,12 +43,12 @@ repos:
       - id: commitlint
         stages: [commit-msg]
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.9.8
+    rev: v3.9.10
     hooks:
       - id: prettier
         args: ["--tab-width", "2"]
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.2
+    rev: v3.22.0
     hooks:
       - id: pyupgrade
         args: [--py312-plus]
@@ -52,17 +56,26 @@ repos:
     rev: v2.4.3
     hooks:
       - id: codespell
-        exclude: '\.lua$'
+        exclude: ^lua/
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.3.1
+    rev: v2.4.0
     hooks:
       - id: mypy
+        pass_filenames: false
         additional_dependencies:
-          - types-aiofiles
-          - pycryptodome
-          - platformdirs
+          - aiofiles==25.1.0
+          - aiohttp==3.14.5
+          - anyio==4.15.1
+          - colorlog==6.12.0
+          - defusedxml==0.7.1
+          - ifaddr==0.2.0
+          - platformdirs==4.12.2
+          - pycryptodome==3.24.1
+          - pytest==9.1.1
+          - types-aiofiles==25.1.0.20260518
+          - typing-extensions==4.16.0
   - repo: https://github.com/PyCQA/pylint
-    rev: v4.0.8
+    rev: v4.1.3
     hooks:
       - id: pylint
         name: pylint
@@ -81,7 +94,6 @@ repos:
         args: [
             "-rn", # Only display messages
             "-sn", # Don't display the score
-            "--rcfile=pylintrc",
             "--ignore-paths=tests",
           ]
   - repo: local

@@ -10,6 +10,8 @@ from midealocal.device import MideaDevice
 # Fallback target temperature bounds for devices that do not report their own.
 DEFAULT_MIN_TARGET_TEMPERATURE = 16.0
 DEFAULT_MAX_TARGET_TEMPERATURE = 30.0
+TEMPERATURE_STEP_WHOLE = 1.0
+TEMPERATURE_STEP_HALF = 0.5
 
 
 class MideaPreset(StrEnum):
@@ -51,6 +53,8 @@ class MideaClimateDevice(MideaDevice, ABC):
     routine read.
     """
 
+    _is_filter_reset_supported: bool = False
+
     @property
     def _preset_attributes(self) -> Mapping[MideaPreset, str]:
         """Flag-style presets: {generic preset name: boolean device attribute}.
@@ -59,6 +63,11 @@ class MideaClimateDevice(MideaDevice, ABC):
         below instead of this mapping.
         """
         return {}
+
+    @property
+    def is_filter_reset_supported(self) -> bool:
+        """Return True if the device supports filter reset, else False."""
+        return self._is_filter_reset_supported
 
     @property
     @abstractmethod
@@ -163,6 +172,9 @@ class MideaClimateDevice(MideaDevice, ABC):
     def turn_off(self, zone: int | None = None) -> None:
         """Turn the device off. See set_target_temperature for the zone parameter."""
 
+    def reset_filter(self) -> None:
+        """Reset filter timer."""
+
     def min_temperature(self, zone: int | None = None) -> float:  # noqa: ARG002
         """Return the minimum settable target temperature.
 
@@ -260,9 +272,9 @@ class MideaClimateDevice(MideaDevice, ABC):
         self.set_swing_mode(mode)
 
     @property
-    def temperature_step(self) -> float | None:
-        """Return the target temperature step, or None if fixed/unknown."""
-        return None
+    def temperature_step(self) -> float:
+        """Return the target temperature step."""
+        return TEMPERATURE_STEP_WHOLE
 
     @property
     def preset_modes(self) -> Sequence[MideaPreset]:

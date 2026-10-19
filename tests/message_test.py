@@ -15,6 +15,8 @@ from midealocal.message import (
     MessageBase,
     MessageBit,
     MessageBody,
+    MessageHeader55,
+    MessageHeaderAA,
     MessageLenError,
     MessageQueryAppliance,
     MessageQuestCustom,
@@ -505,6 +507,139 @@ class TestNewProtocolMessageBody:
             body.parse()
 
 
+class TestMessageHeader:
+    """Test MessageHeader parsing."""
+
+    def test_create_aa_header(self) -> None:
+        """Test to create a AA header."""
+        header = MessageHeaderAA(
+            device_type=DeviceType.AC,
+            protocol_version=1,
+            message_type=MessageType.query,
+        )
+        assert header.length == 10
+        assert header.serialize(2) == bytearray(
+            [
+                0xAA,
+                0x0C,
+                0xAC,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x03,
+            ],
+        )
+
+    def test_create_55_header(self) -> None:
+        """Test to create a 55 header."""
+        header = MessageHeader55(
+            device_type=DeviceType.AC,
+            protocol_version=1,
+            message_type=MessageType.query,
+        )
+        assert header.length == 16
+        assert header.serialize(2) == bytearray(
+            [
+                0x55,
+                0xAA,
+                0xCC,
+                0x33,
+                16,
+                0x00,
+                0x01,
+                0xAC,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x03,
+                0x00,
+            ],
+        )
+
+    def test_create_invalid_header(self) -> None:
+        """Test to create invalid header."""
+        with pytest.raises(ValueError, match="Message is not an AA frame"):
+            MessageHeaderAA(
+                data=bytearray(
+                    [
+                        0xA1,
+                        0x0C,
+                        0xAC,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x03,
+                        0xA0,
+                        0xC0,
+                        0x00,
+                        0x00,
+                    ],
+                ),
+            )
+
+        with pytest.raises(ValueError, match="Message is not an 55 frame"):
+            MessageHeader55(
+                data=bytearray(
+                    [
+                        0x52,
+                        0xAA,
+                        0xCC,
+                        0x33,
+                        17,
+                        0x00,
+                        0x01,
+                        0xAC,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0xA0,
+                        0xC0,
+                        0x00,
+                        0x00,
+                    ],
+                ),
+            )
+
+        with pytest.raises(MessageLenError):
+            MessageHeaderAA(
+                data=bytearray(
+                    [
+                        0xAA,
+                        0x0C,
+                        0xAC,
+                        0x00,
+                        0x00,
+                        0x00,
+                    ],
+                ),
+            )
+
+        with pytest.raises(MessageLenError):
+            MessageHeader55(
+                data=bytearray(
+                    [
+                        0x55,
+                        0x0C,
+                        0xAC,
+                        0x00,
+                        0x00,
+                        0x00,
+                    ],
+                ),
+            )
+
+
 class TestMessageResponse:
     """Test MessageResponse and MessageApplianceResponse."""
 
@@ -513,18 +648,110 @@ class TestMessageResponse:
         with pytest.raises(MessageLenError):
             MessageApplianceResponse(bytearray(5))
 
+    def test_empty_message(self) -> None:
+        """Test a too short message raises MessageLenError."""
+        with pytest.raises(MessageLenError):
+            MessageApplianceResponse(bytearray())
+
+    @pytest.mark.parametrize(
+        ("length"),
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+    )
+    def test_too_short_message55(self, length: int) -> None:
+        """Test a too short message raises MessageLenError."""
+        with pytest.raises(MessageLenError):
+            MessageApplianceResponse(
+                bytearray(
+                    [0x55] + [0x00] * length,
+                ),
+            )
+
+    def test_invalid_header_message(self) -> None:
+        """Test an invalid header message raises MessageLenError."""
+        message = bytearray(
+            [
+                0x54,
+                0xAA,
+                0xCC,
+                0x33,
+                17,
+                0x00,
+                0x01,
+                0xAC,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0xA0,
+                0xC0,
+                0x00,
+                0x00,
+            ],
+        )
+        with pytest.raises(ValueError, match="Message is not an 55 frame"):
+            MessageApplianceResponse(message)
+
     def test_appliance_response(self) -> None:
         """Test a valid appliance response."""
         message = bytearray(
-            [0xAA, 0x0C, 0xAC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xA0, 0xC0, 0x00],
+            [
+                0xAA,
+                0x0C,
+                0xAC,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x03,
+                0xA0,
+                0xC0,
+                0x00,
+                0x00,
+            ],
         )
         response = MessageApplianceResponse(message)
         assert response.header == message[:10]
-        assert response.body == bytearray([0xC0])
+        assert response.body == bytearray([0xC0, 0x00])
         assert response.body_type == ListTypes.C0
         assert response.message_type == MessageType.query_appliance
         assert response.device_type == DeviceType.AC
         assert response.protocol_version == 3
+
+    def test_appliance_response_55(self) -> None:
+        """Test a valid appliance response."""
+        message = bytearray(
+            [
+                0x55,
+                0xAA,
+                0xCC,
+                0x33,
+                0x0F,
+                0x00,
+                0x01,
+                0xAC,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0xA0,
+                0x00,
+                0xC0,
+                0x00,
+                0x00,
+            ],
+        )
+        response = MessageApplianceResponse(message)
+        assert response.header == message[:16]
+        assert response.body == bytearray([0xC0])
+        assert response.body_type == ListTypes.C0
+        assert response.message_type == MessageType.query_appliance
+        assert response.device_type == DeviceType.AC
+        assert response.protocol_version == 1
 
     def test_set_body_and_set_attr(self) -> None:
         """Test set_body replaces the body and set_attr copies its attrs."""
