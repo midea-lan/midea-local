@@ -398,6 +398,14 @@ class TestMideaBFDevice:
             sent_message = mock_build_send.call_args[0][0]
             assert sent_message.body[0] == ListTypes.X02
 
+    def test_set_attribute_status_sends_work_status(self) -> None:
+        """Test a status write is sent as work_status via notWorkModeControl."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.status, "work")
+        sent_body = mock_build_send.call_args[0][0].body
+        assert sent_body[0] == ListTypes.X02
+        assert sent_body[1] == WorkStatus.work.value
+
     def test_set_attribute_status_invalid_type(self) -> None:
         """Test set_attribute with status as non-string logs warning and returns."""
         # This should not crash, just log a warning and return early

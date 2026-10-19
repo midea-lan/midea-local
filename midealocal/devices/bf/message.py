@@ -362,12 +362,7 @@ class MessageSet(MessageBFBase):
     def body(self) -> bytearray:
         """Message body. Override to set body_type from control type."""
         content = self._body  # determines and sets self.body_type
-        body = bytearray([])
-        if self.body_type is not None:
-            body.append(self.body_type)
-        if content is not None:
-            body.extend(content)
-        return body
+        return bytearray([self.body_type]) + content
 
     @property
     def _body(self) -> bytearray:
