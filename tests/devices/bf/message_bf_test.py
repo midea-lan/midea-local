@@ -242,6 +242,14 @@ class TestMessageSet:
         assert body[14] == 0  # temp_underside_high
         assert body[15] == 180  # temp_underside_low
 
+    def test_work_mode_control_steam_quantity_masked(self) -> None:
+        """Test an out-of-range steam_quantity is masked to one byte."""
+        msg = MessageSet(protocol_version=ProtocolVersion.V1)
+        msg.work_mode = "microwave"
+        msg.steam_quantity = 0x103
+        body = msg.body
+        assert body[18] == 0x03
+
     def test_work_mode_control_weight(self) -> None:
         """Test workModeControl with weight."""
         msg = MessageSet(protocol_version=ProtocolVersion.V1)

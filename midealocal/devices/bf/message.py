@@ -526,7 +526,11 @@ class MessageSet(MessageBFBase):
             probe_low = self.probe_temperature & BYTE_FF
 
         # Steam quantity
-        steam_byte = self.steam_quantity if self.steam_quantity is not None else BYTE_FF
+        steam_byte = (
+            self.steam_quantity & BYTE_FF
+            if self.steam_quantity is not None
+            else BYTE_FF
+        )
 
         # Weight / people number
         if self.weight is not None:

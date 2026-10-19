@@ -321,6 +321,56 @@ class TestMideaBFDevice:
         assert sent_body[5] == expected_b5
         assert (sent_body[16], sent_body[17]) == expected_probe_bytes
 
+    def test_set_attribute_work_mode_only_with_idle_work_mode(self) -> None:
+        """Test an idle device's "unknown" work_mode is not sent as a mode."""
+        body = bytearray(60)
+        body[0] = 0x01
+        body[31] = WorkStatus.standby.value
+        self.device.process_message(_build_message(MessageType.query, body))
+        assert self.device.attributes[DeviceAttributes.work_mode] == "unknown"
+        with pytest.raises(ValueError, match="no control fields"):
+            self.device.set_attribute(DeviceAttributes.fire_power, "fire_power_5")
+
+    def test_set_attribute_temperature_overrides_current_targets(self) -> None:
+        """Test a temperature write is not masked by copied above/underside."""
+        body = bytearray(60)
+        body[0] = 0x01
+        body[7] = 0x01  # microwave high
+        body[14] = 180  # temperature_above low byte
+        body[16] = 180  # temperature_underside low byte
+        body[31] = WorkStatus.work.value
+        self.device.process_message(_build_message(MessageType.query, body))
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.temperature, 200)
+        sent_body = mock_build_send.call_args[0][0].body
+        assert sent_body[12:16] == bytearray([0x00, 200, 0x00, 200])
+
+    @pytest.mark.parametrize(
+        ("work_hour", "work_minute", "expected_time"),
+        [
+            pytest.param(1, 25, (1, 25, 0), id="remaining"),
+            pytest.param(0, 0, (0, 0, 0), id="none_remaining"),
+        ],
+    )
+    def test_make_message_set_carries_remaining_time(
+        self,
+        work_hour: int,
+        work_minute: int,
+        expected_time: tuple[int, int, int],
+    ) -> None:
+        """Test a runtime adjustment keeps the remaining cook time."""
+        body = bytearray(60)
+        body[0] = 0x01
+        body[7] = 0x01  # microwave high
+        body[22] = work_hour
+        body[23] = work_minute
+        body[31] = WorkStatus.work.value
+        self.device.process_message(_build_message(MessageType.query, body))
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.fire_power, "fire_power_5")
+        sent_body = mock_build_send.call_args[0][0].body
+        assert tuple(sent_body[8:11]) == expected_time
+
     def test_set_attribute_hot_wind_with_active_work_mode(self) -> None:
         """Test standalone hot_wind still routes via notWorkModeControl.
 

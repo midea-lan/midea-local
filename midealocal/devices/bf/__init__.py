@@ -8,6 +8,8 @@ from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import (
+    MINUTES_PER_HOUR,
+    WORK_MODE_MAP,
     MessageBFResponse,
     MessageQuery,
     MessageSet,
@@ -213,7 +215,17 @@ class MideaBFDevice(MideaDevice):
         rather than producing an empty setControl command.
         """
         message = MessageSet(self._message_protocol_version)
-        message.work_mode = self._attributes[DeviceAttributes.work_mode]
+        # An idle device parses as "unknown", which must not be sent as a mode.
+        work_mode = self._attributes[DeviceAttributes.work_mode]
+        if work_mode in WORK_MODE_MAP:
+            message.work_mode = work_mode
+        # workModeControl restarts the cook with this duration; seconds are not
+        # kept in time_remaining.
+        if time_remaining := self._attributes[DeviceAttributes.time_remaining]:
+            message.work_hour, message.work_minute = divmod(
+                time_remaining,
+                MINUTES_PER_HOUR,
+            )
         message.fire_power = self._attributes[DeviceAttributes.fire_power]
         message.temperature = self._attributes[DeviceAttributes.temperature]
         message.temperature_above = self._attributes[DeviceAttributes.temperature_above]
@@ -264,6 +276,11 @@ class MideaBFDevice(MideaDevice):
         # MessageSet routes to workModeControl instead of an empty setControl.
         if attr in _WORK_MODE_SETTABLE_ATTRS:
             message = self.make_message_set()
+            # Lua lets temperature_above/underside override temperature, so the
+            # copied per-element targets would mask the new value.
+            if attr == DeviceAttributes.temperature:
+                message.temperature_above = None
+                message.temperature_underside = None
         else:
             message = MessageSet(self._message_protocol_version)
         setattr(message, attr, value)
