@@ -50,6 +50,10 @@ version = { attr = "midealocal.version.__version__" }
 [tool.setuptools.packages.find]
 include = ["midealocal*"]
 
+[tool.pytest.ini_options]
+addopts = "-v -Wdefault --cov=midealocal --cov-report=term-missing"
+testpaths = ["tests"]
+
 [tool.codespell]
 ignore-words-list = "astroid"
 ignore-regex = '\bmapp\.appsmb\.com\b'

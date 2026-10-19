@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, Unpack
+from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
 from midealocal.device import (
@@ -18,6 +18,8 @@ from .message import MessageDAResponse, MessagePower, MessageQuery, MessageStart
 _LOGGER = logging.getLogger(__name__)
 
 MIN_TEMP = 15
+WASHING_DATA_SIZE = 12
+WASHING_DATA_FILL = 0xFF
 
 
 class DeviceAttributes(StrEnum):
@@ -45,6 +47,57 @@ class DeviceAttributes(StrEnum):
 class MideaDADevice(MideaDevice):
     """Midea DA device."""
 
+    _progress: ClassVar[list[str]] = [
+        "idle",
+        "spin",
+        "rinse",
+        "wash",
+        "weight",
+        "unknown",
+        "dry",
+        "soak",
+    ]
+    _program: ClassVar[list[str]] = [
+        "standard",
+        "fast",
+        "blanket",
+        "wool",
+        "embathe",
+        "memory",
+        "child",
+        "down_jacket",
+        "stir",
+        "mute",
+        "bucket_self_clean",
+        "air_dry",
+    ]
+    _speed: ClassVar[list[str]] = ["none", "low", "medium", "high"]
+    _strength: ClassVar[list[str]] = ["none", "weak", "medium", "strong"]
+    _detergent: ClassVar[list[str]] = [
+        "no",
+        "less",
+        "medium",
+        "more",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "insufficient",
+    ]
+    _softener: ClassVar[list[str]] = [
+        "no",
+        "intelligent",
+        "programed",  # codespell:ignore
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "insufficient",
+    ]
+
     def __init__(
         self,
         *,
@@ -59,9 +112,8 @@ class MideaDADevice(MideaDevice):
                 DeviceAttributes.power: False,
                 DeviceAttributes.start: False,
                 DeviceAttributes.error_code: None,
-                DeviceAttributes.washing_data: bytearray([]),
                 DeviceAttributes.program: None,
-                DeviceAttributes.progress: "Unknown",
+                DeviceAttributes.progress: "unknown",
                 DeviceAttributes.time_remaining: None,
                 DeviceAttributes.wash_time: None,
                 DeviceAttributes.soak_time: None,
@@ -84,57 +136,17 @@ class MideaDADevice(MideaDevice):
         """Midea DA device process message."""
         message = MessageDAResponse(msg)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
-        progress = ["idle", "spin", "rinse", "wash", "weight", "unknown", "dry", "soak"]
-        program = [
-            "standard",
-            "fast",
-            "blanket",
-            "wool",
-            "embathe",
-            "memory",
-            "child",
-            "down_jacket",
-            "stir",
-            "mute",
-            "bucket_self_clean",
-            "air_dry",
-        ]
-        speed = ["none", "low", "medium", "high"]
-        strength = ["none", "weak", "medium", "strong"]
-        detergent = [
-            "no",
-            "less",
-            "medium",
-            "more",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "insufficient",
-        ]
-        softener = [
-            "no",
-            "intelligent",
-            "programed",  # codespell:ignore
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "insufficient",
-        ]
+
         return self.update_attributes_from_message(
             message,
             {
-                DeviceAttributes.progress: list_translator(progress),
-                DeviceAttributes.program: list_translator(program),
+                DeviceAttributes.progress: list_translator(self._progress),
+                DeviceAttributes.program: list_translator(self._program),
                 DeviceAttributes.rinse_level: sentinel_translator(MIN_TEMP, "none"),
-                DeviceAttributes.dehydration_speed: list_translator(speed),
-                DeviceAttributes.detergent: list_translator(detergent),
-                DeviceAttributes.softener: list_translator(softener),
-                DeviceAttributes.wash_strength: list_translator(strength),
+                DeviceAttributes.dehydration_speed: list_translator(self._speed),
+                DeviceAttributes.detergent: list_translator(self._detergent),
+                DeviceAttributes.softener: list_translator(self._softener),
+                DeviceAttributes.wash_strength: list_translator(self._strength),
             },
         )
 
@@ -150,8 +162,96 @@ class MideaDADevice(MideaDevice):
         elif attr == DeviceAttributes.start:
             message = MessageStart(self._message_protocol_version)
             message.start = value
-            message.washing_data = self._attributes[DeviceAttributes.washing_data]
+            message.washing_data = self._build_washing_data()
             self.build_send(message)
+
+    def _get_index_from_value(
+        self,
+        value: str,
+        values: list[str],
+        default: int = WASHING_DATA_FILL,
+    ) -> int:
+        """Get the key from the value in the mapping."""
+        if value in values:
+            return values.index(value)
+        return default
+
+    def _build_washing_data(self) -> bytearray:
+        """Build washing data."""
+        washing_data = bytearray(
+            [WASHING_DATA_FILL] * WASHING_DATA_SIZE,
+        )
+
+        if isinstance(program := self.get_attribute(DeviceAttributes.program), str):
+            washing_data[1] = self._get_index_from_value(
+                program,
+                self._program,
+            )
+
+        rinse_level_value = 0xF
+        wash_level_value = 0xF
+        if isinstance(
+            rinse_level := self.get_attribute(DeviceAttributes.rinse_level),
+            int,
+        ):
+            rinse_level_value = rinse_level & 0x0F
+
+        if isinstance(
+            wash_level := self.get_attribute(DeviceAttributes.wash_level),
+            int,
+        ):
+            wash_level_value = wash_level & 0x0F
+
+        washing_data[2] = rinse_level_value << 4 | wash_level_value
+
+        speed = 0xF
+        strength = 0xF
+        if isinstance(
+            dehydration_speed := self.get_attribute(DeviceAttributes.dehydration_speed),
+            str,
+        ):
+            speed = self._get_index_from_value(dehydration_speed, self._speed) & 0x0F
+
+        if isinstance(
+            wash_strength := self.get_attribute(DeviceAttributes.wash_strength),
+            str,
+        ):
+            strength = self._get_index_from_value(wash_strength, self._strength) & 0x0F
+
+        washing_data[3] = (speed << 4) & 0xF0 | strength
+
+        softener_value = 0xF
+        detergent_value = 0xF
+        if isinstance(softener := self.get_attribute(DeviceAttributes.softener), str):
+            softener_value = self._get_index_from_value(softener, self._softener) & 0x0F
+        if isinstance(detergent := self.get_attribute(DeviceAttributes.detergent), str):
+            detergent_value = (
+                self._get_index_from_value(detergent, self._detergent) & 0x0F
+            )
+
+        washing_data[5] = (softener_value << 4) & 0xF0 | detergent_value
+
+        if isinstance(wash_time := self.get_attribute(DeviceAttributes.wash_time), int):
+            washing_data[6] = wash_time
+
+        dehydration_time_value = 0xF
+        rinse_count_value = 0xF
+        if isinstance(
+            dehydration_time := self.get_attribute(DeviceAttributes.dehydration_time),
+            int,
+        ):
+            dehydration_time_value = dehydration_time & 0x0F
+        if isinstance(
+            rinse_count := self.get_attribute(DeviceAttributes.rinse_count),
+            int,
+        ):
+            rinse_count_value = rinse_count & 0x0F
+        washing_data[7] = (dehydration_time_value << 4) & 0xF0 | rinse_count_value
+
+        if isinstance(soak_time := self.get_attribute(DeviceAttributes.soak_time), int):
+            washing_data[9] = soak_time
+
+        return washing_data
 
 
 class MideaAppliance(MideaDADevice):

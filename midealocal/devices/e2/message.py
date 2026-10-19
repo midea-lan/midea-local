@@ -102,16 +102,19 @@ class MessageNewProtocolSet(MessageE2Base):
         self.always_fell: bool | None = None
         self.smart_sterilize: bool | None = None
         self.uv_sterilize: bool | None = None
+        self.eplus: bool | None = None
         self.memory: bool | None = None
 
     @property
     def _body(self) -> bytearray:
         byte12 = 0x00
         byte13 = 0x00
-        # memory (Memo U): "mode" command 0x03, flag on the 4th body byte (0x80)
-        if self.memory is not None:
-            value = 0x80 if self.memory else 0x00
-            return bytearray([0x03, 0x00, 0x00, value, 0x00, 0x00, 0x00, 0x00, 0x00])
+        # "mode" command 0x03: eplus (MegaWater) on the 2nd body byte (0x01),
+        # memory (Memo U) on the 4th body byte (0x80)
+        if self.eplus is not None or self.memory is not None:
+            eplus = 0x01 if self.eplus else 0x00
+            memory = 0x80 if self.memory else 0x00
+            return bytearray([0x03, eplus, 0x00, memory, 0x00, 0x00, 0x00, 0x00, 0x00])
         if self.target_temperature is not None:
             byte12 = 0x07
             byte13 = int(self.target_temperature) & 0xFF

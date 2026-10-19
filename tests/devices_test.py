@@ -1,7 +1,10 @@
 """Midea local device selector tests."""
 
+import pkgutil
+
+import midealocal.devices
 from midealocal.const import DeviceType, ProtocolVersion
-from midealocal.devices import device_selector
+from midealocal.devices import _DEVICE_CLASSES, device_selector
 from midealocal.devices.ac import MideaACDevice
 from midealocal.devices.x13 import Midea13Device
 
@@ -60,3 +63,15 @@ class TestDeviceSelector:
             customize="",
         )
         assert device is None
+
+    def test_every_device_package_is_registered(self) -> None:
+        """Test every device package is reachable through device_selector."""
+        packages = {
+            module.name
+            for module in pkgutil.iter_modules(midealocal.devices.__path__)
+            if module.ispkg
+        }
+        registered = {
+            cls.__module__.rsplit(".", 1)[-1] for cls in _DEVICE_CLASSES.values()
+        }
+        assert registered == packages

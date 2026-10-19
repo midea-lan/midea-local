@@ -43,6 +43,8 @@ across all three:
   device-type byte in hex (e.g. `ac`, `a1`, `e2`; types `< 0xA0` are prefixed with `x`,
   e.g. `x13`, `x40`). Each package has `__init__.py` (the device class) and `message.py`
   (that device's request/response messages).
+  - **Body parsing**: subclasses of MessageBody must use BodyParser when parsing structured payloads. Parsers are created in the top-level message.py.
+  - **Protocol changes**: preserve backward compatibility unless the issue explicitly requires a breaking change. Add regression tests using captured or documented payloads for every new message format, flag, or parser branch.
 
 Entry points: `discover.py` finds devices on the LAN; `devices/__init__.py`
 `device_selector()` dynamically `import_module`s the right `devices/<type>` package and
@@ -59,9 +61,8 @@ user-facing harness.
   `make_message_set`, and `set_attribute`.
 - **Attributes** are declared as a `DeviceAttributes(StrEnum)` per device and exposed
   through the `device.attributes` dict; state is never accessed by raw key elsewhere.
-- **No magic numbers**: protocol offsets, lengths, and flag values are named module-level
-  constants (see the block at the top of each `message.py` and `const.py`). Follow this
-  when adding parsing logic; ruff's `PLR2004` enforces it outside `tests/`.
+- **No magic numbers**: name protocol offsets, lengths, and flag values as module-level constants (see the block at the top of each `message.py` and `const.py`). The only exception is the byte and bit indices passed directly to BodyParser, which must remain numeric literals. Follow this when adding parsing logic; ruff's `PLR2004` enforces it outside `tests/`.
+- **Avoid undocumented parsers**: Every parse should be backed by Lua scripts at `lua/<type>/*.lua`. When no Lua reference exists, document the evidence source in a concise code comment (for example, appliance model, captured payload, or vendor documentation).
 - **Device type registry**: register new appliance bytes in `const.py` `DeviceType` and,
   where relevant, `ListTypes` in `message.py`.
 - **Tests** mirror the source tree under `tests/`, suffixed `_test.py`
@@ -70,5 +71,6 @@ user-facing harness.
 - **Commits** must follow Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`,
   `refactor:`, `test:`); commitlint/commitizen enforce this and CI validates PR messages.
   Do not commit directly to `main` (prek `no-commit-to-branch`).
+- **Small PRs** are recommended. Keep each PR focused and concise; large pull requests are unlikely to be merged.
 - Recommended dev environment is **uv + a local `.venv`** (`./scripts/setup.sh` or
   `scripts\setup.ps1`); see `.github/CONTRIBUTING.md`.

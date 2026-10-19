@@ -13,7 +13,7 @@ repos:
       - id: check-yaml
       - id: detect-private-key
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.12.20
+    rev: 0.13.1
     hooks:
       - id: uv-lock
         args: ["--check"]
@@ -25,7 +25,7 @@ repos:
         files: '\.lua$'
         types: [file]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.17.0
+    rev: v0.17.1
     hooks:
       - id: ruff-check
         args:
@@ -55,7 +55,7 @@ repos:
     rev: v2.4.3
     hooks:
       - id: codespell
-        exclude: '\.lua$'
+        exclude: ^lua/
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v2.4.0
     hooks:

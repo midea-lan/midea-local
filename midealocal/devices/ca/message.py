@@ -206,7 +206,6 @@ class CAGeneralToshibaMessageBody(MessageBody):
                 IntParser(
                     DeviceAttributes.energy_consumption,
                     11 + bool_offset,
-                    max_value=0xFFFF,
                     length_in_bytes=2,
                 ),
             )

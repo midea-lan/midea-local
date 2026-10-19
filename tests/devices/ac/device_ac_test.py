@@ -713,14 +713,15 @@ class TestMideaACDevice:
         first += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode, no rate_select
 
         self.device.process_message(self._response(first))
-        assert DeviceAttributes.rate_select not in self.device._attributes
+        assert DeviceAttributes.rate_select not in self.device.attributes
 
         second = bytearray([0xB5, 0x03])
         second += bytearray([0x14, 0x02, 0x01, 7])  # b5_mode
         second += bytearray([0x1E, 0x02, 0x01, 1])  # b5_anion -> caps change
 
         self.device.process_message(self._response(second))
-        assert DeviceAttributes.rate_select not in self.device._attributes
+        assert DeviceAttributes.anion in self.device.attributes
+        assert DeviceAttributes.rate_select not in self.device.attributes
 
     def test_process_message(self) -> None:
         """Test process message."""
@@ -806,6 +807,7 @@ class TestMideaACDevice:
             assert result[DeviceAttributes.fresh_air_mode.value] == "off"
 
             mock_message.power = False
+            self.device._capabilities["display_control"] = True
             result = self.device.process_message(b"")
             assert not result[DeviceAttributes.screen_display.value]
             assert not self.device.attributes[DeviceAttributes.screen_display]
@@ -904,11 +906,41 @@ class TestMideaACDevice:
             self.device.set_raw_target_temperature(22.5, hvac_mode)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
-            assert message.target_temperature == 22.5
+            assert message.target_temperature == 22.0
             assert message.mode == mode
             assert message.power == power
             self.device._used_subprotocol = True
             self.device.set_raw_target_temperature(22.5, "auto")
+
+    @pytest.mark.parametrize(
+        ("temperature", "expected_step_whole", "expected_step_half"),
+        [
+            (20.2, 20.0, 20.0),
+            (20.3, 20.0, 20.5),
+            (20.5, 20.0, 20.5),
+            (20.7, 21.0, 20.5),
+            (20.8, 21.0, 21.0),
+        ],
+    )
+    def test_set_target_temperature_rounded(
+        self,
+        temperature: float,
+        expected_step_whole: float,
+        expected_step_half: float,
+    ) -> None:
+        """Test set target temperature to be rounded."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_raw_target_temperature(temperature, "auto")
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.target_temperature == expected_step_whole
+            mock_build_send.reset_mock()
+
+            self.device._temperature_step = 0.5
+            self.device.set_raw_target_temperature(temperature, "auto")
+            mock_build_send.assert_called_once()
+            message = mock_build_send.call_args[0][0]
+            assert message.target_temperature == expected_step_half
 
     def test_process_message_ignores_stale_c0_temperatures_after_new_protocol(
         self,

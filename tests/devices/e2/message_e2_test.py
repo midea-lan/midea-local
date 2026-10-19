@@ -111,16 +111,21 @@ class TestMessageNewProtocolSet:
         assert msg._body == bytearray([byte12, byte13])
 
     @pytest.mark.parametrize(
-        ("memory", "flag"),
-        [(True, 0x80), (False, 0x00)],
+        ("attr", "value", "index", "flag"),
+        [
+            pytest.param("eplus", True, 1, 0x01, id="eplus_on"),
+            pytest.param("eplus", False, 1, 0x00, id="eplus_off"),
+            pytest.param("memory", True, 3, 0x80, id="memory_on"),
+            pytest.param("memory", False, 3, 0x00, id="memory_off"),
+        ],
     )
-    def test_body_memory(self, memory: bool, flag: int) -> None:
-        """Test new protocol set body for the memory command."""
+    def test_body_mode(self, attr: str, value: bool, index: int, flag: int) -> None:
+        """Test new protocol set body for the mode command."""
         msg = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
-        msg.memory = memory
-        assert msg._body == bytearray(
-            [0x03, 0x00, 0x00, flag, 0x00, 0x00, 0x00, 0x00, 0x00],
-        )
+        setattr(msg, attr, value)
+        expected = bytearray([0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+        expected[index] = flag
+        assert msg._body == expected
 
     def test_body_defaults(self) -> None:
         """Test new protocol set body with no attribute set."""
