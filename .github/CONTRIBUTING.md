@@ -182,7 +182,6 @@ persist these in your shell profile.
   every commit. It includes:
   - `ruff` → Linting and formatting
   - `mypy` → Type checking (strict)
-  - `pylint` → Additional static analysis
 - Run the full suite any time with `prek run --all-files`, and fix all reported
   issues before committing.
 - Tests use `pytest`. CI runs the full prek suite and the tests across the

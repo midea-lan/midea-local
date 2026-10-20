@@ -179,7 +179,6 @@ export UV_PYTHON_INSTALL_MIRROR="https://mirror.nju.edu.cn/github-release/astral
 - **[prek](https://github.com/j178/prek)** 由 setup 脚本安装，并在每次提交时运行，包含：
   - `ruff` → 代码检查与格式化
   - `mypy` → 类型检查（严格模式）
-  - `pylint` → 额外的静态分析
 - 随时可用 `prek run --all-files` 运行完整套件，提交前请修复所有报告的问题。
 - 测试使用 `pytest`。CI 会在 Python 3.12/3.13/3.14 × Linux/macOS/Windows 矩阵上运行完整的
   prek 套件与测试，失败则阻止合并。
