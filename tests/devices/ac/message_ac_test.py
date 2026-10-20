@@ -1553,13 +1553,14 @@ class TestMessageACResponse:
     def test_message_query_c1_0x41_short_body(self) -> None:
         """Test Message parse query C1 0x41 with a truncated body."""
         self.header[9] = 0x03
-        body = bytearray(10)
+        body = bytearray(6)
         body[0] = 0xC1  # Body type
         body[3] = 0x41  # group 1
+        body[4] = 40
 
         response = MessageACResponse(self.header + body)
-        assert not hasattr(response, "compressor_frequency")
-        assert not hasattr(response, "discharge_pipe_temperature")
+        assert getattr(response, "compressor_frequency", None) == 40
+        assert getattr(response, "discharge_pipe_temperature", None) == 0
 
     def test_message_query_c1_0x42(self) -> None:
         """Test Message parse query C1 0x42, indoor fan group data."""
@@ -1600,8 +1601,8 @@ class TestMessageACResponse:
         body[3] = 0x42  # group 2
 
         response = MessageACResponse(self.header + body)
-        assert not hasattr(response, "indoor_fan_speed")
-        assert not hasattr(response, "water_pump_running")
+        assert getattr(response, "indoor_fan_speed", None) == 0
+        assert not getattr(response, "water_pump_running", True)
 
     @pytest.mark.parametrize("group_discriminator", [0x03, 0x43])
     def test_message_query_c1_group_three(self, group_discriminator: int) -> None:
@@ -1614,7 +1615,7 @@ class TestMessageACResponse:
 
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "outdoor_fan_speed")
-        assert response.outdoor_fan_speed == 848
+        assert getattr(response, "outdoor_fan_speed", None) == 848
 
     def test_message_query_c1_0x03_short_body(self) -> None:
         """Test a truncated group 3 response defaults fan speed to zero."""
@@ -1625,7 +1626,7 @@ class TestMessageACResponse:
 
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "outdoor_fan_speed")
-        assert response.outdoor_fan_speed == 0
+        assert getattr(response, "outdoor_fan_speed", None) == 0
 
     def test_message_query_c1_0x47(self) -> None:
         """Test Message parse query C1 0x47, compressor power group data."""
@@ -1638,7 +1639,7 @@ class TestMessageACResponse:
 
         response = MessageACResponse(self.header + body)
         assert hasattr(response, "compressor_power")
-        assert response.compressor_power == 269
+        assert getattr(response, "compressor_power", None) == 269
 
     def test_message_query_c1_0x47_short_body(self) -> None:
         """Test Message parse query C1 0x47 with a truncated body."""
@@ -1648,7 +1649,7 @@ class TestMessageACResponse:
         body[3] = 0x47  # group 7
 
         response = MessageACResponse(self.header + body)
-        assert not hasattr(response, "compressor_power")
+        assert getattr(response, "compressor_power", None) == 0
 
     def test_captured_c1_0x41_response(self) -> None:
         """Test a complete response captured from model 22390001 subtype 8."""
@@ -1838,8 +1839,8 @@ class TestMessageACResponse:
 
         assert response.used_subprotocol is True
         if data_type == 0x10:
-            assert not hasattr(response, "indoor_humidity")
-            assert not hasattr(response, "sn8_flag")
+            assert getattr(response, "indoor_humidity", None) == 0
+            assert not getattr(response, "sn8_flag", True)
 
     def test_message_query_bb_unimplemented(self) -> None:
         """Test Message parse query BB unimplemented."""
