@@ -6,7 +6,8 @@ working in the `midea-local` repository. This is the canonical instructions file
 
 `midea-local` is a Python library to control Midea M-Smart appliances over the local
 network. It handles device discovery, the encrypted Midea LAN protocol, and per-device
-message encoding/decoding. Python ≥ 3.12 (CI tests 3.12–3.14).
+message encoding/decoding. Python ≥ 3.12 (CI tests every
+version in the `.github/workflows/python-build.yml` matrix).
 
 ## Build, test, lint
 
