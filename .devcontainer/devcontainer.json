@@ -26,7 +26,6 @@
         "python.experiments.optOutFrom": ["pythonTestAdapter"],
         "python.terminal.activateEnvInCurrentTerminal": true,
         "python.testing.pytestArgs": ["--no-cov"],
-        "pylint.importStrategy": "fromEnvironment",
         "python.languageServer": "Pylance",
         "editor.formatOnPaste": false,
         "editor.formatOnSave": true,

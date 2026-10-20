@@ -54,7 +54,7 @@ jobs:
       - name: Activate virtualenv
         # Expose the .venv to later steps by putting it on PATH. On Windows the
         # venv layout is .venv/Scripts and GITHUB_PATH needs a native path
-        # (cygpath), otherwise system hooks like pylint can't find their executable.
+        # (cygpath).
         run: |
           if [ -d .venv/bin ]; then
             echo "$PWD/.venv/bin" >> "$GITHUB_PATH"

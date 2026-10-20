@@ -9,6 +9,5 @@
   ],
   // Opt in locally: discovery runs on every window load and file save
   "python.testing.pytestEnabled": false,
-  "pylint.importStrategy": "fromEnvironment",
   "python.testing.unittestEnabled": false,
 }
