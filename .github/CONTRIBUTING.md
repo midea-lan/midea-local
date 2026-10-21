@@ -27,8 +27,9 @@ GitHub Path: `.github/CONTRIBUTING.md`
 ## 1. Overview
 
 This project uses **uv** to manage the Python toolchain and a local `.venv` virtual
-environment. uv installs the right Python version for you (3.12–3.14 are supported), is
-fast, and works the same on Linux, macOS, Windows, and WSL2 — no Docker required.
+environment. uv installs the right Python version for you (see `requires-python` in
+`pyproject.toml`), is fast, and works the same on Linux, macOS, Windows, and WSL2 — no
+Docker required.
 
 > ✅ Recommended: run `./scripts/setup.sh` (or `scripts\setup.ps1` on Windows) once after
 > cloning; it creates the `.venv`, installs all dependencies, and wires up the prek
@@ -184,8 +185,9 @@ persist these in your shell profile.
   - `mypy` → Type checking (strict)
 - Run the full suite any time with `prek run --all-files`, and fix all reported
   issues before committing.
-- Tests use `pytest`. CI runs the full prek suite and the tests across the
-  Python 3.12/3.13/3.14 × Linux/macOS/Windows matrix and blocks merge on failure.
+- Tests use `pytest`. On pull requests and pushes to `main`, CI runs the full prek suite
+  and the tests on every Python version in the `.github/workflows/python-build.yml`
+  matrix × Linux/macOS/Windows and blocks merge on failure.
 
 ---
 
