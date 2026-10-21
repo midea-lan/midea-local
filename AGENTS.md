@@ -26,7 +26,7 @@ use that environment.
 
 `ruff` uses `lint.select = ["ALL"]` with curated ignores in `ruff.toml`; `mypy` runs in
 strict mode (`[tool.mypy]` in `pyproject.toml`). Fix all reported issues before committing — CI runs the full
-prek suite across the OS/Python matrix and blocks merge on failure.
+prek suite in a dedicated lint job and blocks merge on failure.
 
 ## Architecture
 
