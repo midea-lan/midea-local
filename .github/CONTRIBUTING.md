@@ -186,8 +186,8 @@ persist these in your shell profile.
 - Run the full suite any time with `prek run --all-files`, and fix all reported
   issues before committing.
 - Tests use `pytest`. On pull requests and pushes to `main`, CI runs the full prek suite
-  and the tests on every Python version in the `.github/workflows/python-build.yml`
-  matrix × Linux/macOS/Windows and blocks merge on failure.
+  once in a dedicated lint job, and the tests on every Python version in the
+  `.github/workflows/python-build.yml` matrix × Linux/macOS/Windows; failures block merge.
 
 ---
 

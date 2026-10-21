@@ -180,9 +180,9 @@ export UV_PYTHON_INSTALL_MIRROR="https://mirror.nju.edu.cn/github-release/astral
   - `ruff` → 代码检查与格式化
   - `mypy` → 类型检查（严格模式）
 - 随时可用 `prek run --all-files` 运行完整套件，提交前请修复所有报告的问题。
-- 测试使用 `pytest`。在拉取请求和推送到 `main` 时，CI 会在
-  `.github/workflows/python-build.yml` 矩阵中的每个 Python 版本 × Linux/macOS/Windows 上运行完整的
-  prek 套件与测试，失败则阻止合并。
+- 测试使用 `pytest`。在拉取请求和推送到 `main` 时，CI 会在独立的 lint 任务中运行一次完整的 prek 套件，
+  并在 `.github/workflows/python-build.yml` 矩阵中的每个 Python 版本 × Linux/macOS/Windows 上运行测试，
+  失败则阻止合并。
 
 ---
 
