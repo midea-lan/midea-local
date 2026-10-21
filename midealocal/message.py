@@ -827,6 +827,41 @@ class BodyParser[T]:
         raise NotImplementedError
 
 
+class FunctionParser[T](BodyParser[T]):
+    """Parse from bytearray using a function."""
+
+    def __init__(
+        self,
+        name: str,
+        byte: int,
+        parse_function: Callable[[bytearray], T],
+        default_value: T,
+        length_in_bytes: int = 1,
+    ) -> None:
+        """Initialize a function parser.
+
+        Args:
+            name: Attribute name to assign on the parsed body object.
+            byte: Offset in the body where the bit or byte resides.
+            parse_function: Callable invoked that will parse from bytearray to T.
+            default_value: Default value to be returned if byte out of range.
+            length_in_bytes: Number of bytes used to represent the value.
+
+        """
+        self._parse_function = parse_function
+        self._default_value = default_value
+        super().__init__(name, byte, length_in_bytes=length_in_bytes)
+
+    @override
+    def get_value(self, body: bytearray) -> T:
+        """Get attribute value."""
+        if len(body) < self._byte + self._length_in_bytes:
+            return self._default_value
+        return self._parse_function(
+            body[self._byte : self._byte + self._length_in_bytes],
+        )
+
+
 class BoolParser(BodyParser[bool]):
     """Parse a boolean value from a body byte or bit flag."""
 
