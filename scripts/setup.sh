@@ -11,6 +11,11 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Always use this repo's .venv, even if the shell exports another project's
+# environment (e.g. a shared devcontainer)
+export UV_PROJECT_ENVIRONMENT="$PWD/.venv"
+export VIRTUAL_ENV="$UV_PROJECT_ENVIRONMENT"
+
 # Add default VS Code settings if not existing.
 if [ ! -f .vscode/settings.json ]; then
   echo "Copying .vscode/settings.default.jsonc to .vscode/settings.json..."
