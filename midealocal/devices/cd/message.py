@@ -275,6 +275,8 @@ class MessageSet(MessageCDBase):
         self.fahrenheit: bool = False
         # vacation target temperature (full[21] / vacationTsValue)
         self.vacation_temperature: float = 0
+        self.max_ts: int = 65
+        self.dr_switch: int = 0
 
     def read_field(self, field: str) -> int:
         """CD message set read field."""
@@ -342,6 +344,9 @@ class MessageSet(MessageCDBase):
                 0,  # full[19]
                 0,  # full[20]
                 vacation_ts,  # full[21] vacationTsValue
+                0,  # full[22] timer_type
+                self.max_ts,  # full[23] tsMax
+                self.dr_switch,  # full[24] dr_switch
             ],
         )
 
