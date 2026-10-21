@@ -1,5 +1,21 @@
 # Changelog
 
+## [14.0.0](https://github.com/midea-lan/midea-local/compare/v13.0.0...v14.0.0) (2026-10-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **device:** make MideaDevice and discover() fully async ([#814](https://github.com/midea-lan/midea-local/issues/814))
+
+### Features
+
+* **device:** make MideaDevice and discover() fully async ([#814](https://github.com/midea-lan/midea-local/issues/814)) ([f94cd71](https://github.com/midea-lan/midea-local/commit/f94cd7155d952989009f4557e1b7e6ce7fec771f))
+
+
+### Bug Fixes
+
+* **ed:** water consumption isn't divided by 100 ([#924](https://github.com/midea-lan/midea-local/issues/924)) ([3ed4c5b](https://github.com/midea-lan/midea-local/commit/3ed4c5bf8391eadf209dd6c9672a365e0ca422a2)), closes [#923](https://github.com/midea-lan/midea-local/issues/923)
+
 ## [13.0.0](https://github.com/midea-lan/midea-local/compare/v12.3.0...v13.0.0) (2026-10-16)
 
 
