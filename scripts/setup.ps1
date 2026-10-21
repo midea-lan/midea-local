@@ -17,6 +17,9 @@ Set-Location (Join-Path $PSScriptRoot "..")
 $env:UV_PROJECT_ENVIRONMENT = Join-Path (Get-Location) ".venv"
 $env:VIRTUAL_ENV = $env:UV_PROJECT_ENVIRONMENT
 
+# Use copy mode for UV to avoid hardlink warnings on different filesystems
+$env:UV_LINK_MODE = "copy"
+
 # Add default VS Code settings if not existing.
 if (-not (Test-Path ".vscode\settings.json")) {
     Write-Host "Copying .vscode\settings.default.jsonc to .vscode\settings.json..."
@@ -31,7 +34,7 @@ if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
 # Create .venv and install runtime + dev dependencies
 # (uv downloads Python 3.12 if needed).
 Write-Host "Syncing virtual environment (.venv) with Python 3.12..."
-uv sync --all-groups --python 3.12
+uv sync --frozen --all-groups --python 3.12
 
 # Activate it so the tools below resolve to this project's .venv.
 & .venv\Scripts\Activate.ps1

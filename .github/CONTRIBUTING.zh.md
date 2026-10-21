@@ -81,18 +81,18 @@ cd midea-local
 
 该脚本会：
 
-1. 用 Python 3.12 创建 `.venv`，并按 `pyproject.toml`/`uv.lock` 安装运行时 + 开发依赖
-   （`uv sync --all-groups --python 3.12`），
-2. 激活该环境，
+1. 安装固定版本的 uv（如需要），并将 prek 安装为全局 uv 工具，
+2. 创建 `.venv`，并按 `pyproject.toml`/`uv.lock` 安装运行时 + 开发依赖
+   （`uv sync --frozen --all-groups`），
 3. 安装 prek 钩子（commit 与 commit-msg 阶段）。
 
 **手动搭建**（与脚本等效）：
 
 ```bash
-uv sync --all-groups --python 3.12
 uv tool install prek
-prek install
-prek install --hook-type commit-msg
+uv sync --frozen --all-groups
+prek install --overwrite
+prek install --hook-type commit-msg --overwrite
 ```
 
 之后可以激活环境（`source .venv/bin/activate`），或在命令前加 `uv run`
