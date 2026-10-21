@@ -80,7 +80,7 @@ XC1_GROUP_SEVEN_MIN_LENGTH = 12
 # Refrigerant circuit temperatures are reported as half degrees with an offset:
 # T1/T2 (indoor ambient / indoor coil) use 30, T3/T4 (outdoor coil / ambient) use 50.
 TEMP_INDOOR_OFFSET = 30
-XC1_TEMP_OUTDOOR_OFFSET = 50
+TEMP_OUTDOOR_OFFSET = 50
 TEMP_DIVISOR = 2
 # Indoor fan speed is reported in units of 8 RPM.
 XC1_FAN_SPEED_FACTOR = 8
@@ -1238,11 +1238,13 @@ class XA0MessageBody(MessageBody):
                     DeviceAttributes.screen_display,
                     14,
                     byte_mask=0x70,
+                    false_value=0x70,
                 ),
                 IntParser(
                     DeviceAttributes.boost_mode,
                     8,
                     length_in_bytes=3,
+                    first_upper=True,
                     byte_mask=0x200002,
                     transform_func=bool,
                 ),
@@ -1282,6 +1284,7 @@ class XA1MessageBody(XMessageBody):
                     "current_work_time",
                     9,
                     length_in_bytes=4,
+                    first_upper=True,
                     transform_func=lambda x: (
                         (((x >> 16) & 0xFFFF) * 60 * 24)
                         + (((x >> 8) & 0xFF) * 60)
@@ -1594,6 +1597,7 @@ class XC0MessageBody(XMessageBody):
                     DeviceAttributes.boost_mode,
                     byte=8,
                     length_in_bytes=3,
+                    first_upper=True,
                     byte_mask=0x200002,
                     transform_func=bool,
                 ),
@@ -1794,26 +1798,26 @@ class XC141MessageBody(MessageBody):
                 FloatParser(
                     DeviceAttributes.indoor_ambient_temperature,
                     byte=6,
+                    default_raw_value=TEMP_INDOOR_OFFSET,
                     transform_func=lambda x: (x - TEMP_INDOOR_OFFSET) / TEMP_DIVISOR,
                 ),
                 FloatParser(
                     DeviceAttributes.indoor_coil_temperature,
                     byte=7,
+                    default_raw_value=TEMP_INDOOR_OFFSET,
                     transform_func=lambda x: (x - TEMP_INDOOR_OFFSET) / TEMP_DIVISOR,
                 ),
                 FloatParser(
                     DeviceAttributes.outdoor_coil_temperature,
                     byte=8,
-                    transform_func=lambda x: (
-                        (x - XC1_TEMP_OUTDOOR_OFFSET) / TEMP_DIVISOR
-                    ),
+                    default_raw_value=TEMP_OUTDOOR_OFFSET,
+                    transform_func=lambda x: (x - TEMP_OUTDOOR_OFFSET) / TEMP_DIVISOR,
                 ),
                 FloatParser(
                     DeviceAttributes.outdoor_ambient_temperature,
                     byte=9,
-                    transform_func=lambda x: (
-                        (x - XC1_TEMP_OUTDOOR_OFFSET) / TEMP_DIVISOR
-                    ),
+                    default_raw_value=TEMP_OUTDOOR_OFFSET,
+                    transform_func=lambda x: (x - TEMP_OUTDOOR_OFFSET) / TEMP_DIVISOR,
                 ),
                 IntParser(DeviceAttributes.discharge_pipe_temperature, byte=10),
             ],

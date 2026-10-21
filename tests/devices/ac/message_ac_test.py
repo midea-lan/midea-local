@@ -753,6 +753,7 @@ class TestMessageACResponse:
         assert hasattr(response, "swing_vertical")
         assert hasattr(response, "swing_horizontal")
         assert hasattr(response, "boost_mode")
+        assert response.boost_mode is True
         assert hasattr(response, "power_saving")
         assert response.power_saving is True
         assert hasattr(response, "smart_eye")
@@ -787,12 +788,15 @@ class TestMessageACResponse:
         self.header[9] = 0x04
         body = bytearray(22)
         body[0] = 0xA1  # Body type
+        body[9:13] = bytearray([0x00, 0x01, 0x02, 0x03])
         body[13] = 100  # Indoor temperature byte
         body[14] = 60  # Outdoor temperature byte
         body[17] = 50  # Indoor humidity byte
         body[18] = 0xF3  # Decimal part for temperature
         response = MessageACResponse(self.header + body)
 
+        assert hasattr(response, "current_work_time")
+        assert response.current_work_time == 1563
         assert hasattr(response, "indoor_temperature")
         assert response.indoor_temperature == 25.3  # ((100 - 50) / 2) + 0.3 = 25.3
         assert hasattr(response, "outdoor_temperature")
@@ -1561,6 +1565,10 @@ class TestMessageACResponse:
         response = MessageACResponse(self.header + body)
         assert getattr(response, "compressor_frequency", None) == 40
         assert getattr(response, "discharge_pipe_temperature", None) == 0
+        assert getattr(response, "indoor_ambient_temperature", None) == 0.0
+        assert getattr(response, "indoor_coil_temperature", None) == 0.0
+        assert getattr(response, "outdoor_coil_temperature", None) == 0.0
+        assert getattr(response, "outdoor_ambient_temperature", None) == 0.0
 
     def test_message_query_c1_0x42(self) -> None:
         """Test Message parse query C1 0x42, indoor fan group data."""
@@ -1703,6 +1711,7 @@ class TestMessageACResponse:
         assert hasattr(response, "power")
         assert hasattr(response, "dry")
         assert hasattr(response, "boost_mode")
+        assert response.boost_mode is True
         assert hasattr(response, "aux_heating")
         assert hasattr(response, "sleep_mode")
         assert hasattr(response, "mode")
