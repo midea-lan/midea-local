@@ -817,7 +817,7 @@ class TestEDMessageBody09:
     def test_water_consumption_big(self) -> None:
         """Test water_consumption_big."""
         body = self._make_body(length=60)
-        # 0x00017A82 = 96898, /100 = 968.98 (little-endian)
+        # 0x00017A82 = 96898 (little-endian)
         body[25] = 0x82
         body[26] = 0x7A
         body[27] = 0x01
