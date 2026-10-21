@@ -136,6 +136,7 @@ class TestMideaCDDevice:
     def test_disable_vacation_sets_flag_and_mode(self) -> None:
         """Disabling vacation clears flag and forces Energy-save mode."""
         self.device._attributes[DeviceAttributes.vacation_mode] = True
+        self.device._attributes[DeviceAttributes.max_temperature] = None
 
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.vacation_mode.value, False)
@@ -144,6 +145,7 @@ class TestMideaCDDevice:
             assert msg.vacation_flag is False
             assert msg.vacation_days == 0
             assert msg.mode == 0x01
+            assert len(msg.body) == 25
 
     def test_set_vacation_days_encodes_days(self) -> None:
         """vacation_days SET marks the vacation flag and encodes the day count."""
