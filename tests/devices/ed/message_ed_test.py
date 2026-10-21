@@ -823,7 +823,7 @@ class TestEDMessageBody09:
         body[27] = 0x01
         body[28] = 0x00
         msg = EDMessageBody09(body=body)
-        assert msg.water_consumption_big == 968.98
+        assert msg.water_consumption_big == 96898
 
     def test_water_consumption_average_little_endian(self) -> None:
         """Test water_consumption_average 2-byte little-endian."""
