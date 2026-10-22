@@ -1,6 +1,5 @@
 """Midea local AC device."""
 
-import json
 import logging
 import time
 from collections.abc import Mapping
@@ -18,6 +17,7 @@ from midealocal.base_classes.climate import (
     MideaSwingMode,
 )
 from midealocal.const import DeviceType
+from midealocal.const.climate_exceptions import AC_EXCEPTIONS
 from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs
 from midealocal.message import ListTypes
 
@@ -247,7 +247,7 @@ class MideaACDevice(MideaClimateDevice):
     def __init__(
         self,
         *,
-        customize: str,
+        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea AC device."""
@@ -331,8 +331,11 @@ class MideaACDevice(MideaClimateDevice):
         )
         self._fresh_air_version: DeviceAttributes | None = None
         self._pending_self_clean: tuple[bool, float] | None = None
-        self._default_temperature_step: float = TEMPERATURE_STEP_HALF
-        self._temperature_step: float = TEMPERATURE_STEP_HALF
+        exceptions = AC_EXCEPTIONS.get(str(self.model), {})
+        self._temperature_step: float = exceptions.get(
+            "temperature_step",
+            TEMPERATURE_STEP_HALF,
+        )
         self._used_subprotocol: bool = self._model_capabilities.uses_bb_protocol
         self._bb_sn8_flag: bool = False
         self._bb_timer: bool = False
@@ -340,11 +343,13 @@ class MideaACDevice(MideaClimateDevice):
         self._temperature_limits: dict[int, tuple[float, float]] | None = None
         # decoded B5 capability flags (accumulated across B5 frames)
         self._capabilities: dict[str, bool] = {}
-        # manual setpoint limits from customize (highest priority)
-        self._customize_min_temperature: float | None = None
-        self._customize_max_temperature: float | None = None
-        self._power_analysis_method: int = 1
-        self._default_power_analysis_method: int = 1
+        self._attributes[DeviceAttributes.min_temperature] = exceptions.get(
+            "min_temperature",
+        )
+        self._attributes[DeviceAttributes.max_temperature] = exceptions.get(
+            "max_temperature",
+        )
+        self._power_analysis_method: int = exceptions.get("power_analysis_method", 1)
         # 0x7e temperature decoding is restricted to verified models.
         self._uses_new_protocol_temperature = (
             str(self.model) in NEW_PROTOCOL_TEMPERATURE_MODELS
@@ -352,7 +357,6 @@ class MideaACDevice(MideaClimateDevice):
         # Once 0x7e-derived temperatures are seen, ignore stale C0 temperature
         # fields to avoid brief UI flicker caused by query ordering.
         self._prefer_new_protocol_temperature: bool = False
-        self.set_customize(customize)
 
     @property
     @override
@@ -862,18 +866,15 @@ class MideaACDevice(MideaClimateDevice):
     ) -> dict[str, Any]:
         """Resolve min/max setpoint limits.
 
-        Priority: customize option > B5 capability > None (the consumer then
+        Priority: model exception > B5 capability > None (the consumer then
         falls back to its own default range).
         """
         if message is not None and hasattr(message, "temperature_limits"):
             self._temperature_limits = message.temperature_limits
         b5 = self._b5_temperature_limits()
-        minimum = self._customize_min_temperature
-        if minimum is None and b5 is not None:
-            minimum = b5[0]
-        maximum = self._customize_max_temperature
-        if maximum is None and b5 is not None:
-            maximum = b5[1]
+        exceptions = AC_EXCEPTIONS.get(str(self.model), {})
+        minimum = exceptions.get("min_temperature", b5[0] if b5 else None)
+        maximum = exceptions.get("max_temperature", b5[1] if b5 else None)
         self._attributes[DeviceAttributes.min_temperature] = minimum
         self._attributes[DeviceAttributes.max_temperature] = maximum
         return {
@@ -1254,35 +1255,6 @@ class MideaACDevice(MideaClimateDevice):
             message.swing_vertical = swing_vertical
             message.swing_horizontal = swing_horizontal
         self.build_send(message)
-
-    def set_customize(self, customize: str) -> None:
-        """Midea AC device set custommize."""
-        self._temperature_step = self._default_temperature_step
-        self._power_analysis_method = self._default_power_analysis_method
-        self._customize_min_temperature = None
-        self._customize_max_temperature = None
-        if customize and len(customize) > 0:
-            try:
-                params = json.loads(customize)
-                if (
-                    params
-                    and "temperature_step" in params
-                    and isinstance(
-                        temp_step := params.get("temperature_step"),
-                        (int, float),
-                    )
-                ):
-                    self._temperature_step = float(temp_step)
-                if params and "power_analysis_method" in params:
-                    self._power_analysis_method = params.get("power_analysis_method")
-                if params and "min_temperature" in params:
-                    self._customize_min_temperature = params.get("min_temperature")
-                if params and "max_temperature" in params:
-                    self._customize_max_temperature = params.get("max_temperature")
-            except Exception:
-                _LOGGER.exception("[%s] Set customize error", self.device_id)
-            self.update_all({"temperature_step": self._temperature_step})
-            self.update_all(self._refresh_temperature_limits())
 
 
 class MideaAppliance(MideaACDevice):
