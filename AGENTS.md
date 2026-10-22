@@ -6,7 +6,8 @@ working in the `midea-local` repository. This is the canonical instructions file
 
 `midea-local` is a Python library to control Midea M-Smart appliances over the local
 network. It handles device discovery, the encrypted Midea LAN protocol, and per-device
-message encoding/decoding. Python ≥ 3.12 (CI tests 3.12–3.14).
+message encoding/decoding. Python ≥ 3.12 (CI tests every
+version in the `.github/workflows/python-build.yml` matrix).
 
 ## Build, test, lint
 
@@ -21,12 +22,11 @@ use that environment.
 - Run one test: `uv run python -m pytest tests/devices/ac/message_ac_test.py::TestACMessage::test_message_query -v`
 - Coverage (as CI does): `uv run python -m pytest --cov=midealocal --cov-report xml ./tests/`
 - Lint/format/type-check all at once via `prek run --all-files`. Individually:
-  `uv run ruff check .`, `uv run ruff format .`, `uv run mypy midealocal`,
-  `uv run pylint midealocal`.
+  `uv run ruff check .`, `uv run ruff format .`, `uv run mypy midealocal`.
 
 `ruff` uses `lint.select = ["ALL"]` with curated ignores in `ruff.toml`; `mypy` runs in
 strict mode (`[tool.mypy]` in `pyproject.toml`). Fix all reported issues before committing — CI runs the full
-prek suite across the OS/Python matrix and blocks merge on failure.
+prek suite in a dedicated lint job and blocks merge on failure.
 
 ## Architecture
 

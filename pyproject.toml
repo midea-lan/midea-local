@@ -35,7 +35,6 @@ midealocal = "midealocal.cli:main"
 dev = [
     "build",
     "mypy",
-    "pylint",
     "pytest",
     "pytest-asyncio",
     "pytest-cov",
@@ -55,7 +54,6 @@ addopts = "-v -Wdefault --cov=midealocal --cov-report=term-missing"
 testpaths = ["tests"]
 
 [tool.codespell]
-ignore-words-list = "astroid"
 ignore-regex = '\bmapp\.appsmb\.com\b'
 
 [tool.coverage.run]
@@ -72,6 +70,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
+files = ["midealocal", "tests"]
 python_version = "3.12"
 show_error_codes = true
 follow_imports = "silent"
@@ -94,19 +93,6 @@ warn_unreachable = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_decorators = false
-
-[tool.pylint.MASTER]
-jobs = 0
-prefer-stubs = true
-py-version = "3.12"
-recursive = true
-
-[tool.pylint.BASIC]
-docstring-min-length = 4
-
-[tool.pylint."MESSAGES CONTROL"]
-disable = ["all"]
-enable = ["E", "F"]
 
 [build-system]
 requires = ["setuptools>=77", "wheel"]

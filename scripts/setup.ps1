@@ -12,6 +12,11 @@ $ErrorActionPreference = "Stop"
 # Move to the repository root (parent of this script's directory).
 Set-Location (Join-Path $PSScriptRoot "..")
 
+# Always use this repo's .venv, even if the shell exports another project's
+# environment (e.g. a shared devcontainer)
+$env:UV_PROJECT_ENVIRONMENT = Join-Path (Get-Location) ".venv"
+$env:VIRTUAL_ENV = $env:UV_PROJECT_ENVIRONMENT
+
 # Add default VS Code settings if not existing.
 if (-not (Test-Path ".vscode\settings.json")) {
     Write-Host "Copying .vscode\settings.default.jsonc to .vscode\settings.json..."

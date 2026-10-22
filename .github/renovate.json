@@ -39,6 +39,18 @@
     {
       "matchManagers": ["github-actions"],
       "addLabels": ["github_actions"]
+    },
+    {
+      "description": "New Python releases (3.x -> 3.y is a minor update for Renovate) are adopted deliberately, in step with Home Assistant",
+      "matchDepNames": ["python"],
+      "matchUpdateTypes": ["major", "minor"],
+      "enabled": false
+    },
+    {
+      "description": "Same for the Python version of the devcontainer image",
+      "matchPackageNames": ["mcr.microsoft.com/devcontainers/python"],
+      "matchUpdateTypes": ["major", "minor"],
+      "enabled": false
     }
   ],
   "lockFileMaintenance": {
