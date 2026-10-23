@@ -22,7 +22,7 @@ dependencies = [
 "ifaddr",
 "pycryptodome",
 "platformdirs",
-"typing_extensions>=4.5.0",
+"typing_extensions>=4.16.0",
 ]
 
 [project.urls]
@@ -99,5 +99,5 @@ module = "tests.*"
 disallow_untyped_decorators = false
 
 [build-system]
-requires = ["setuptools>=77", "wheel"]
+requires = ["setuptools>=84.2.1", "wheel"]
 build-backend = "setuptools.build_meta"
