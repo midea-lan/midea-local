@@ -267,7 +267,7 @@ class MideaCloud:
         data: dict[str, Any],
         header: dict[str, Any] | None = None,
         raise_for_error: bool = False,
-    ) -> dict | None:
+    ) -> dict[str, Any] | None:
         header = header or {}
         if not data.get("reqId"):
             data.update({"reqId": token_hex(16)})
@@ -291,7 +291,7 @@ class MideaCloud:
             header.update({"uid": self._uid})
         if self._access_token is not None:
             header.update({"accessToken": self._access_token})
-        response: dict = {"code": -1}
+        response: dict[str, Any] = {"code": -1}
         for attempt in range(_RETRY_ATTEMPTS):
             try:
                 async with self._api_lock:
@@ -321,7 +321,7 @@ class MideaCloud:
                 break
         code = int(response["code"])
         if code == 0 and "data" in response:
-            return cast("dict", response["data"])
+            return cast("dict[str, Any]", response["data"])
         self._handle_error_code(
             url,
             code,
@@ -480,7 +480,7 @@ class MideaCloud:
         if (response := await self.list_appliances(home_id=None)) and (
             int(device_id) in response
         ):
-            return cast("dict", response[device_id])
+            return response[device_id]
         return None
 
     async def download_lua(
@@ -1132,7 +1132,7 @@ class MideaAirCloud(MideaCloud):
             header.update({"uid": self._uid})
         if self._access_token is not None:
             header.update({"accessToken": self._access_token})
-        response: dict = {"errorCode": -1}
+        response: dict[str, Any] = {"errorCode": -1}
         for attempt in range(_RETRY_ATTEMPTS):
             try:
                 async with self._api_lock:
