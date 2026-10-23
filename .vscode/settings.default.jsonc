@@ -16,4 +16,7 @@
   "terminal.integrated.env.osx": {
     "ZDOTDIR": "${workspaceFolder}/.vscode/zsh",
   },
+  "json.schemaDownload.trustedDomains": {
+    "https://docs.renovatebot.com/": true,
+  },
 }

@@ -17,9 +17,20 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["pyproject.toml"],
+      "matchStrings": [
+        "Programming Language :: Python :: (?<currentValue>[0-9.]+)\",\\s*#\\s*renovate:\\s*customPinnedDependency=python,\\s*datasource=python-version"
+      ],
+      "depNameTemplate": "python",
+      "datasourceTemplate": "python-version",
+      "versioningTemplate": "python",
+      "autoReplaceStringTemplate": "Programming Language :: Python :: {{{currentValue}}}\",\n    \"Programming Language :: Python :: {{{newValue}}}\", # renovate: customPinnedDependency=python,datasource=python-version"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": [".pre-commit-config.yaml"],
       "matchStrings": [
-        "-\\s(?<depName>[A-Za-z0-9._-]+)==(?<currentValue>[^\\s]+)"
+        "\\s-\\s(?<depName>[A-Za-z0-9][A-Za-z0-9._-]*)==(?<currentValue>[^\\s#]+)"
       ],
       "datasourceTemplate": "pypi"
     }
@@ -45,8 +56,25 @@
       "automerge": true
     },
     {
+      "matchPackageNames": ["uv"],
+      "matchUpdateTypes": ["major"],
+      "automerge": true
+    },
+    {
       "matchManagers": ["github-actions"],
       "addLabels": ["github_actions"]
+    },
+    {
+      "matchManagers": ["pep621"],
+      "rangeStrategy": "bump"
+    },
+    {
+      "description": "Keep the mypy hook pins consistent with each other and pyproject",
+      "matchManagers": ["pep621", "custom.regex"],
+      "matchDatasources": ["pypi"],
+      "matchFileNames": ["pyproject.toml", ".pre-commit-config.yaml"],
+      "matchPackageNames": ["!uv"],
+      "groupName": "python dependencies"
     },
     {
       "description": "New Python releases (3.x -> 3.y is a minor update for Renovate) are adopted deliberately, in step with Home Assistant",
@@ -62,7 +90,6 @@
     }
   ],
   "lockFileMaintenance": {
-    "enabled": true,
-    "automerge": true
+    "enabled": true
   }
 }
