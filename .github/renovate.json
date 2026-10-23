@@ -9,6 +9,14 @@
   "customManagers": [
     {
       "customType": "regex",
+      "managerFilePatterns": ["pyproject.toml"],
+      "matchStrings": [
+        "version\\s*=\\s*\"(?<currentValue>[0-9.]+)\"\\s*#\\s*renovate:\\s*depName=(?<depName>[^\\s]+)\\s+datasource=(?<datasource>[^\\s]+)"
+      ],
+      "versioningTemplate": "semver-coerced"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": [".pre-commit-config.yaml"],
       "matchStrings": [
         "-\\s(?<depName>[A-Za-z0-9._-]+)==(?<currentValue>[^\\s]+)"

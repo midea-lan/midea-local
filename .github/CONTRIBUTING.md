@@ -83,18 +83,18 @@ cd midea-local
 
 The setup script:
 
-1. creates a `.venv` with Python 3.12 and installs runtime + dev dependencies from
-   `pyproject.toml`/`uv.lock` (`uv sync --all-groups --python 3.12`),
-2. activates the environment,
+1. installs the pinned uv version (if needed) and prek as a global uv tool,
+2. creates a `.venv` and installs runtime + dev dependencies from
+   `pyproject.toml`/`uv.lock` (`uv sync --frozen --all-groups`),
 3. installs the prek hooks (commit and commit-msg stages).
 
 **Manual setup** (equivalent to the script):
 
 ```bash
-uv sync --all-groups --python 3.12
 uv tool install prek
-prek install
-prek install --hook-type commit-msg
+uv sync --frozen --all-groups
+prek install --overwrite
+prek install --hook-type commit-msg --overwrite
 ```
 
 Then either activate the environment (`source .venv/bin/activate`) or prefix commands with

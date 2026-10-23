@@ -43,6 +43,10 @@ dev = [
     "types-aiofiles",
 ]
 
+[tool.uv-version]
+# Source of truth for the uv version. All other version references must be derived from this value.
+version = "0.13.4" # renovate: depName=uv datasource=pypi
+
 [tool.setuptools.dynamic]
 version = { attr = "midealocal.version.__version__" }
 

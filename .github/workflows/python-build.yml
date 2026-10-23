@@ -53,9 +53,14 @@ jobs:
         os: ["windows-latest", "ubuntu-latest", "macos-latest"]
     steps:
       - uses: actions/checkout@v7
+      - name: Extract UV version
+        run: |
+          echo "UV_VERSION=$(./scripts/get-pyproject-uv.version.sh)" >> "$GITHUB_ENV"
+        shell: bash
       - name: Install uv
         uses: astral-sh/setup-uv@v10.3.2
         with:
+          version: ${{ env.UV_VERSION }}
           enable-cache: true
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
@@ -103,9 +108,14 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v7
+      - name: Extract UV version
+        run: |
+          echo "UV_VERSION=$(./scripts/get-pyproject-uv.version.sh)" >> "$GITHUB_ENV"
+        shell: bash
       - name: Install uv
         uses: astral-sh/setup-uv@v10.3.2
         with:
+          version: ${{ env.UV_VERSION }}
           enable-cache: true
       - name: Set up Python
         run: uv python install 3.14
