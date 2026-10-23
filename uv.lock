@@ -620,7 +620,7 @@ requires-dist = [
     { name = "ifaddr" },
     { name = "platformdirs" },
     { name = "pycryptodome" },
-    { name = "typing-extensions", specifier = ">=4.5.0" },
+    { name = "typing-extensions", specifier = ">=4.16.0" },
 ]
 
 [package.metadata.requires-dev]
