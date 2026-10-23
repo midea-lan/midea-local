@@ -109,9 +109,10 @@ class TestMideaCDDevice:
             self.device.set_attribute(DeviceAttributes.power.value, True)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
-            assert len(msg.body) == 22
+            assert len(msg.body) == 25
             assert msg.body[21] == 0  # vacationTs left 0 on plain set
             assert msg.body[4] != 0  # target present
+            assert msg.body[23] == 70  # max_ts
 
     def test_set_target_temperature_body_length(self) -> None:
         """set_temperature builds the 22-byte new-protocol body (#468)."""
@@ -128,8 +129,9 @@ class TestMideaCDDevice:
             msg = mock_send.call_args[0][0]
             assert msg.target_temperature == 63.0
             assert msg.use_old_protocol is False
-            assert len(msg.body) == 22
+            assert len(msg.body) == 25
             assert msg.body[4] == 63
+            assert msg.body[23] == 65  # max_ts
 
     def test_disable_vacation_sets_flag_and_mode(self) -> None:
         """Disabling vacation clears flag and forces Energy-save mode."""
@@ -142,6 +144,7 @@ class TestMideaCDDevice:
             assert msg.vacation_flag is False
             assert msg.vacation_days == 0
             assert msg.mode == 0x01
+            assert len(msg.body) == 25
 
     def test_set_vacation_days_encodes_days(self) -> None:
         """vacation_days SET marks the vacation flag and encodes the day count."""
