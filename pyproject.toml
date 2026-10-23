@@ -99,5 +99,5 @@ module = "tests.*"
 disallow_untyped_decorators = false
 
 [build-system]
-requires = ["setuptools>=77", "wheel"]
+requires = ["setuptools>=77.0.3", "wheel"]
 build-backend = "setuptools.build_meta"
