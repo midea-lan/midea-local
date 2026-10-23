@@ -9,7 +9,7 @@ from typing import Any, Literal, overload, override
 
 from typing_extensions import deprecated
 
-from midealocal.const import DeviceType
+from midealocal.const import MAX_BYTE_VALUE, DeviceType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -827,6 +827,41 @@ class BodyParser[T]:
         raise NotImplementedError
 
 
+class FunctionParser[T](BodyParser[T]):
+    """Parse from bytearray using a function."""
+
+    def __init__(
+        self,
+        name: str,
+        byte: int,
+        parse_function: Callable[[bytearray], T],
+        default_value: T,
+        length_in_bytes: int = 1,
+    ) -> None:
+        """Initialize a function parser.
+
+        Args:
+            name: Attribute name to assign on the parsed body object.
+            byte: Offset in the body where the bit or byte resides.
+            parse_function: Callable invoked that will parse from bytearray to T.
+            default_value: Default value to be returned if byte out of range.
+            length_in_bytes: Number of bytes used to represent the value.
+
+        """
+        self._parse_function = parse_function
+        self._default_value = default_value
+        super().__init__(name, byte, length_in_bytes=length_in_bytes)
+
+    @override
+    def get_value(self, body: bytearray) -> T:
+        """Get attribute value."""
+        if len(body) < self._byte + self._length_in_bytes:
+            return self._default_value
+        return self._parse_function(
+            body[self._byte : self._byte + self._length_in_bytes],
+        )
+
+
 class BoolParser(BodyParser[bool]):
     """Parse a boolean value from a body byte or bit flag."""
 
@@ -953,6 +988,24 @@ class IntParser(BodyParser[int]):
             return self._max_value
         if raw_value < self._min_value:
             return self._min_value
+        return raw_value
+
+
+class TimeParser(BodyParser[int]):
+    """Time byte parser, 0xFF (unset) reads as 0."""
+
+    def _parse(self, raw_value: int) -> int:
+        return 0 if raw_value == MAX_BYTE_VALUE else raw_value
+
+
+class WordParser(BodyParser[int]):
+    """Big-endian 16-bit parser."""
+
+    def __init__(self, name: str, byte: int) -> None:
+        """Init 16-bit parser."""
+        super().__init__(name, byte, length_in_bytes=2, first_upper=True)
+
+    def _parse(self, raw_value: int) -> int:
         return raw_value
 
 
