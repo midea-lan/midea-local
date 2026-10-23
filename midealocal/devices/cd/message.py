@@ -246,6 +246,9 @@ class MessageSet(MessageCDBase):
       full[9..10]  = vacation days (big-endian)
       full[11..20] = date / vacation-start fields (0 for a plain set)
       full[21]     = vacationTsValue
+      full[22]     = timer_type
+      full[23]     = tsMax
+      full[24]     = dr_switch
     """
 
     DEFAULT_VACATION_DAYS = 100
