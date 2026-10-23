@@ -796,12 +796,10 @@ class MideaCDDevice(MideaDevice):
             DeviceAttributes.vacation_days,
         ]:
             message = MessageSet(self._message_protocol_version)
-            if (
-                max_ts := cast(
-                    "int | float | None",
-                    self.get_attribute(DeviceAttributes.max_temperature),
-                )
-            ) is not None:
+            if isinstance(
+                max_ts := self.get_attribute(DeviceAttributes.max_temperature),
+                (int, float),
+            ):
                 message.max_ts = int(max_ts)
             message.fields = dict(self._fields) if self._fields else {}
             # align temperature encoding with lua protocol selection

@@ -112,7 +112,7 @@ class TestMideaCDDevice:
             assert len(msg.body) == 25
             assert msg.body[21] == 0  # vacationTs left 0 on plain set
             assert msg.body[4] != 0  # target present
-            assert msg.body[23] == 70  # default max_ts
+            assert msg.body[23] == 70  # max_ts
 
     def test_set_target_temperature_body_length(self) -> None:
         """set_temperature builds the 22-byte new-protocol body (#468)."""
@@ -131,12 +131,11 @@ class TestMideaCDDevice:
             assert msg.use_old_protocol is False
             assert len(msg.body) == 25
             assert msg.body[4] == 63
-            assert msg.body[23] == 65  # default max_ts
+            assert msg.body[23] == 65  # max_ts
 
     def test_disable_vacation_sets_flag_and_mode(self) -> None:
         """Disabling vacation clears flag and forces Energy-save mode."""
         self.device._attributes[DeviceAttributes.vacation_mode] = True
-        self.device._attributes[DeviceAttributes.max_temperature] = None
 
         with patch.object(self.device, "build_send") as mock_send:
             self.device.set_attribute(DeviceAttributes.vacation_mode.value, False)
