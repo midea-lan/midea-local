@@ -1,13 +1,35 @@
 """Midea local DB message."""
 
+from collections.abc import Mapping
+
 from midealocal.const import DeviceType
 from midealocal.message import (
+    FunctionParser,
     ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
 )
+
+CONTROL_DATA_SIZE = 21
+CONTROL_DATA_FILL = 0xFF
+CONTROL_PROGRAM_OFFSET = 3
+CONTROL_WATER_LEVEL_OFFSET = 4
+CONTROL_DRYER_OFFSET = 5
+CONTROL_TEMPERATURE_OFFSET = 6
+CONTROL_DEHYDRATION_SPEED_OFFSET = 7
+CONTROL_WASH_TIME_OFFSET = 8
+CONTROL_DEHYDRATION_TIME_OFFSET = 9
+CONTROL_DETERGENT_OFFSET = 10
+CONTROL_SOFTENER_OFFSET = 11
+CONTROL_OPTIONS_OFFSET = 15
+DRYER_MASK = 0x0F
+DRYER_UNCHANGED_SOAK_COUNT = 0xF0
+STEAM_WASH_BIT = 4
+FAST_CLEAN_WASH_BIT = 5
+OPTIONS_COMMON_MASK = 0x3F
+CONTROL_SOAK_BIT = 6
 
 
 class MessageDBBase(MessageRequest):
@@ -90,6 +112,32 @@ class MessagePower(MessageDBBase):
         )
 
 
+class MessageSet(MessageDBBase):
+    """Update wash parameters without changing power or work status."""
+
+    def __init__(
+        self,
+        protocol_version: int,
+        parameters: Mapping[int, int] | None = None,
+    ) -> None:
+        """Initialize DB parameter control."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.set,
+            body_type=ListTypes.X02,
+        )
+        self.parameters = dict(parameters) if parameters is not None else {}
+
+    @property
+    def _body(self) -> bytearray:
+        # lua/db/T_0000_DB_33.lua jsonToData: 22-byte control body;
+        # omitted power/control_status and unchanged parameters stay 0xFF.
+        body = bytearray([CONTROL_DATA_FILL] * CONTROL_DATA_SIZE)
+        for offset, value in self.parameters.items():
+            body[offset] = value
+        return body
+
+
 class MessageStart(MessageDBBase):
     """DB message start."""
 
@@ -116,7 +164,41 @@ class DBGeneralMessageBody(MessageBody):
 
     def __init__(self, body: bytearray) -> None:
         """Initialize DB message general body."""
-        super().__init__(body)
+        # DB_33: response byte 25 bits 0-5 map to control byte 16;
+        # soak comes from response byte 29 bit 0, not byte 25 bit 6.
+        super().__init__(
+            body,
+            [
+                FunctionParser[int | None](
+                    "dryer",
+                    6,
+                    lambda data: data[0] & DRYER_MASK,
+                    None,
+                ),
+                FunctionParser[bool | None](
+                    "steam_wash",
+                    25,
+                    lambda data: bool(data[0] & (1 << STEAM_WASH_BIT)),
+                    None,
+                ),
+                FunctionParser[bool | None](
+                    "fast_clean_wash",
+                    25,
+                    lambda data: bool(data[0] & (1 << FAST_CLEAN_WASH_BIT)),
+                    None,
+                ),
+                FunctionParser[int | None](
+                    "control_options",
+                    25,
+                    lambda data: (
+                        (data[0] & OPTIONS_COMMON_MASK)
+                        | ((data[4] & 0x01) << CONTROL_SOAK_BIT)
+                    ),
+                    None,
+                    length_in_bytes=5,
+                ),
+            ],
+        )
         self.power = body[1] > 0
         self.start = body[2] in [2, 6]
         self.status = body[2]
