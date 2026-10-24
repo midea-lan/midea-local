@@ -1,20 +1,44 @@
 """Midea local DB device."""
 
 import logging
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from enum import StrEnum
+from types import MappingProxyType
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs, dict_translator
 from midealocal.exceptions import ValueWrongType
 
-from .message import MessageDBResponse, MessagePower, MessageQuery, MessageStart
+from .message import (
+    CONTROL_DEHYDRATION_SPEED_OFFSET,
+    CONTROL_DEHYDRATION_TIME_OFFSET,
+    CONTROL_DETERGENT_OFFSET,
+    CONTROL_DRYER_OFFSET,
+    CONTROL_OPTIONS_OFFSET,
+    CONTROL_PROGRAM_OFFSET,
+    CONTROL_TEMPERATURE_OFFSET,
+    CONTROL_WASH_TIME_OFFSET,
+    CONTROL_WATER_LEVEL_OFFSET,
+    DRYER_UNCHANGED_SOAK_COUNT,
+    FAST_CLEAN_WASH_BIT,
+    STEAM_WASH_BIT,
+    MessageDBResponse,
+    MessagePower,
+    MessageQuery,
+    MessageSet,
+    MessageStart,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 
 WASHING_DATA_SIZE = 13
 WASHING_DATA_FILL = 0xFF
+PARAMETER_BYTE_MAX = WASHING_DATA_FILL - 1
+DOSAGE_LEVEL_MAX = 5
+MIXED_WASH_TIME_LEVEL_MAX = 4
 
 
 class DeviceAttributes(StrEnum):
@@ -38,6 +62,61 @@ class DeviceAttributes(StrEnum):
     time_remaining = "time_remaining"
     stains = "stains"
     dirty_degree = "dirty_degree"
+    dryer = "dryer"
+    steam_wash = "steam_wash"
+    fast_clean_wash = "fast_clean_wash"
+
+
+@dataclass(frozen=True)
+class DBParameterSpec:
+    """Encoding and validation for one byte in a parameter control payload."""
+
+    offset: int
+    mapping: Mapping[int, str] | None = None
+    maximum: int = PARAMETER_BYTE_MAX
+    bit: int | None = None
+    unchanged_bits: int = 0
+    maximum_by_program: Mapping[str, int] = field(
+        default_factory=lambda: MappingProxyType({}),
+    )
+
+    def encode(self, value: bool | float | str, program: str = "") -> int:
+        """Reject invalid types, unknown enum values and unchanged sentinels."""
+        if self.bit is not None:
+            if not isinstance(value, bool):
+                raise ValueWrongType("[db] Expected bool")
+            return int(value) << self.bit
+        if self.mapping is not None:
+            if not isinstance(value, str):
+                raise ValueWrongType("[db] Expected str")
+            encoded = next(
+                (code for code, name in self.mapping.items() if name == value),
+                None,
+            )
+            if encoded is None or encoded == WASHING_DATA_FILL:
+                raise ValueWrongType(f"[db] Unsupported parameter value: {value}")
+            return encoded
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ValueWrongType("[db] Expected int")
+        maximum = self.maximum_by_program.get(program, self.maximum)
+        if not 0 <= value <= maximum:
+            raise ValueWrongType(f"[db] Expected value between 0 and {maximum}")
+        return value
+
+
+@dataclass(frozen=True)
+class DBModelProfile:
+    """Protocol program codes and writable parameter rules for a DB variant."""
+
+    programs: Mapping[int, str]
+    parameters: Mapping[DeviceAttributes, DBParameterSpec] = field(
+        default_factory=lambda: MappingProxyType({}),
+    )
+
+    @property
+    def writable_attributes(self) -> frozenset[DeviceAttributes]:
+        """Derive writable attributes from the configured parameter rules."""
+        return frozenset(self.parameters)
 
 
 class MideaDBDevice(MideaDevice):
@@ -174,6 +253,17 @@ class MideaDBDevice(MideaDevice):
         0xFF: "default",
     }
 
+    # Lua downloaded for model 38131408 / subtype 13146 matches
+    # lua/db/T_0000_DB_33.lua. Preserve the legacy table for other models.
+    _program_38131408: ClassVar[dict[int, str]] = {
+        **_program,
+        0x0D: "underwear",
+        0x0E: "outdoor",
+        0x15: "air_wash",
+        0x50: "diy0",
+        0x51: "diy1",
+    }
+
     _temperature: ClassVar[dict[int, str]] = {
         0x01: "0",
         0x02: "20",
@@ -183,6 +273,86 @@ class MideaDBDevice(MideaDevice):
         0x06: "95",
         0x07: "70",
         0xFF: "default",
+    }
+
+    _default_profile: ClassVar[DBModelProfile] = DBModelProfile(
+        programs=MappingProxyType(_program),
+    )
+    # Panel selections captured on 38131408 / 13146 (2026-10-29).
+    # Code 11 is 180 minutes; codes 2 and 8-10 are not exposed on this model.
+    _dryer_38131408: ClassVar[Mapping[int, str]] = MappingProxyType(
+        {
+            0: "off",
+            1: "auto",
+            3: "low_temperature",
+            4: "30",
+            5: "60",
+            6: "90",
+            7: "120",
+            11: "180",
+        }
+    )
+    # DB_33 jsonToData supports partial updates. Time fields are level codes;
+    # actual minutes depend on the program/options and come from *_time_value.
+    # Mixed-wash levels 0-4 were captured on this model; other programs retain
+    # the protocol byte range until their bounds are known.
+    # Model 38131408 has no automatic softener dispenser (owner confirmed).
+    _profile_38131408: ClassVar[DBModelProfile] = DBModelProfile(
+        programs=MappingProxyType(_program_38131408),
+        parameters=MappingProxyType(
+            {
+                DeviceAttributes.program: DBParameterSpec(
+                    CONTROL_PROGRAM_OFFSET,
+                    MappingProxyType(_program_38131408),
+                ),
+                DeviceAttributes.temperature: DBParameterSpec(
+                    CONTROL_TEMPERATURE_OFFSET,
+                    MappingProxyType(_temperature),
+                ),
+                DeviceAttributes.water_level: DBParameterSpec(
+                    CONTROL_WATER_LEVEL_OFFSET,
+                    MappingProxyType(_water_level),
+                ),
+                DeviceAttributes.dehydration_speed: DBParameterSpec(
+                    CONTROL_DEHYDRATION_SPEED_OFFSET,
+                    MappingProxyType(_dehydration_speed),
+                ),
+                DeviceAttributes.wash_time: DBParameterSpec(
+                    CONTROL_WASH_TIME_OFFSET,
+                    maximum_by_program=MappingProxyType(
+                        {"mixed_wash": MIXED_WASH_TIME_LEVEL_MAX}
+                    ),
+                ),
+                DeviceAttributes.dehydration_time: DBParameterSpec(
+                    CONTROL_DEHYDRATION_TIME_OFFSET,
+                    maximum_by_program=MappingProxyType(
+                        {"mixed_wash": MIXED_WASH_TIME_LEVEL_MAX}
+                    ),
+                ),
+                DeviceAttributes.detergent: DBParameterSpec(
+                    CONTROL_DETERGENT_OFFSET,
+                    maximum=DOSAGE_LEVEL_MAX,
+                ),
+                DeviceAttributes.dryer: DBParameterSpec(
+                    CONTROL_DRYER_OFFSET,
+                    _dryer_38131408,
+                    unchanged_bits=DRYER_UNCHANGED_SOAK_COUNT,
+                ),
+                DeviceAttributes.steam_wash: DBParameterSpec(
+                    CONTROL_OPTIONS_OFFSET,
+                    bit=STEAM_WASH_BIT,
+                ),
+                DeviceAttributes.fast_clean_wash: DBParameterSpec(
+                    CONTROL_OPTIONS_OFFSET,
+                    bit=FAST_CLEAN_WASH_BIT,
+                ),
+            },
+        ),
+    )
+    _model_profiles: ClassVar[dict[tuple[str, int], DBModelProfile]] = {
+        ("38131408", 13146): _profile_38131408,
+        # CLI LAN discovery has the model but passes subtype=0.
+        ("38131408", 0): _profile_38131408,
     }
 
     _progress: ClassVar[list[str]] = [
@@ -234,6 +404,17 @@ class MideaDBDevice(MideaDevice):
             },
         )
 
+        self._model_profile = self._model_profiles.get(
+            (self.model, self.subtype),
+            self._default_profile,
+        )
+        self._attributes.update(
+            dict.fromkeys(
+                self._model_profile.parameters.keys() - self._attributes.keys(),
+            )
+        )
+        self._control_options: int | None = None
+
     def build_query(self) -> list[MessageQuery]:
         """Midea DB device build query."""
         return [MessageQuery(self._message_protocol_version)]
@@ -241,6 +422,7 @@ class MideaDBDevice(MideaDevice):
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea DB device process message."""
         message = MessageDBResponse(msg)
+        self._control_options = getattr(message, "control_options", None)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         return self.update_attributes_from_message(
             message,
@@ -253,33 +435,60 @@ class MideaDBDevice(MideaDevice):
                 DeviceAttributes.water_level: dict_translator(
                     MideaDBDevice._water_level,
                 ),
-                DeviceAttributes.program: dict_translator(MideaDBDevice._program),
+                DeviceAttributes.program: dict_translator(self._model_profile.programs),
                 DeviceAttributes.temperature: dict_translator(
                     MideaDBDevice._temperature,
                 ),
                 DeviceAttributes.progress: MideaDBDevice._progress.__getitem__,
+                **{
+                    attr: dict_translator(spec.mapping)
+                    for attr, spec in self._model_profile.parameters.items()
+                    if spec.mapping is not None
+                },
             },
         )
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea DB device set attribute."""
+        if attr in self._model_profile.parameters:
+            spec = self._model_profile.parameters[DeviceAttributes(attr)]
+            encoded = spec.encode(
+                value, str(self.get_attribute(DeviceAttributes.program))
+            )
+            if spec.bit is not None:
+                if self._control_options is None:
+                    raise ValueWrongType(
+                        "[db] Read current options before changing a switch"
+                    )
+                encoded |= self._control_options & ~(1 << spec.bit)
+            parameters = MessageSet(
+                self._message_protocol_version,
+                {spec.offset: encoded | spec.unchanged_bits},
+            )
+            # Any parameter change may alter dependent options. Await a new
+            # response before attempting another shared-byte update.
+            self._control_options = None
+            self.build_send(parameters)
+            return
         if not isinstance(value, bool):
             raise ValueWrongType("[db] Expected bool")
         message: MessagePower | MessageStart | None = None
         if attr == DeviceAttributes.power:
             message = MessagePower(self._message_protocol_version)
             message.power = value
+            self._control_options = None
             self.build_send(message)
         elif attr == DeviceAttributes.start:
             message = MessageStart(self._message_protocol_version)
             message.start = value
             message.washing_data = self._build_washing_data()
+            self._control_options = None
             self.build_send(message)
 
     def _get_key_from_value(
         self,
         value: str,
-        mapping: dict[int, str],
+        mapping: Mapping[int, str],
         default: int = WASHING_DATA_FILL,
     ) -> int:
         """Get the key from the value in the mapping."""
@@ -301,7 +510,7 @@ class MideaDBDevice(MideaDevice):
 
         washing_data[1] = self._get_key_from_value(
             str(self.get_attribute(DeviceAttributes.program)),
-            self._program,
+            self._model_profile.programs,
         )
 
         washing_data[2] = self._get_key_from_value(
