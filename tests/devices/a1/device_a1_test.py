@@ -1,5 +1,6 @@
 """Test a1 Device."""
 
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -47,7 +48,7 @@ class TestMideaA1Device:
             "silent",
         ]
 
-    def _process_mode(self, code: int) -> dict:
+    def _process_mode(self, code: int) -> dict[str, Any]:
         """Process a status message reporting the given mode code."""
         with patch("midealocal.devices.a1.MessageA1Response") as mock_message_response:
             mock_message = mock_message_response.return_value

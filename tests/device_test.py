@@ -1173,7 +1173,7 @@ class TestMideaDevice:
             self.device._message_protocol_version = 8
             self.device._appliance_query = False
 
-        def _capture_build_query() -> list:
+        def _capture_build_query() -> list[Any]:
             nonlocal seen_protocol_version
             seen_protocol_version = self.device._message_protocol_version
             return []
