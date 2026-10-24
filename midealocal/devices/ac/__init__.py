@@ -16,12 +16,13 @@ from midealocal.base_classes.climate import (
     MideaPreset,
     MideaSwingMode,
 )
-from midealocal.const import DeviceType
+from midealocal.const import MANUFACTURER_CODE_TOSHIBA, DeviceType
 from midealocal.const.climate_exceptions import AC_EXCEPTIONS
 from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs
 from midealocal.message import ListTypes
 
 from .message import (
+    TOSHIBA_PROTOCOL_VERSION,
     ACFanSpeed,
     ACSwingMode,
     DeviceAttributes,
@@ -48,6 +49,8 @@ from .message import (
     MessageSubProtocolResetFilter,
     MessageSubProtocolSet,
     MessageToggleDisplay,
+    MessageToshibaSet,
+    ToshibaPropertyTags,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -127,6 +130,164 @@ STALE_C0_TEMPERATURE_ATTRIBUTES = (
     DeviceAttributes.indoor_temperature,
     DeviceAttributes.outdoor_temperature,
 )
+
+# Toshiba IoLife units (manufacturer code 0008) speak their own property
+# protocol; see ToshibaPropertyTags. The attributes it can report or set:
+TOSHIBA_ATTRIBUTES = frozenset(
+    {
+        DeviceAttributes.prompt_tone,
+        DeviceAttributes.power,
+        DeviceAttributes.mode,
+        DeviceAttributes.target_temperature,
+        DeviceAttributes.min_temperature,
+        DeviceAttributes.max_temperature,
+        DeviceAttributes.fan_speed,
+        DeviceAttributes.swing_vertical,
+        DeviceAttributes.swing_horizontal,
+        DeviceAttributes.wind_ud_angle,
+        DeviceAttributes.wind_lr_angle,
+        DeviceAttributes.indoor_temperature,
+        DeviceAttributes.outdoor_temperature,
+        DeviceAttributes.indoor_humidity,
+        DeviceAttributes.eco_mode,
+        DeviceAttributes.anion,
+        DeviceAttributes.dry,
+        DeviceAttributes.comfort_mode,
+        DeviceAttributes.screen_display,
+        DeviceAttributes.breezeless,
+        DeviceAttributes.self_clean,
+        DeviceAttributes.full_dust,
+        DeviceAttributes.error_code,
+    },
+)
+TOSHIBA_EXTRA_ATTRIBUTES: Mapping[DeviceAttributes, Any] = {
+    DeviceAttributes.breezeless_direction: None,
+    DeviceAttributes.clean_manual: False,
+    DeviceAttributes.cleaning: False,
+    DeviceAttributes.dehumidify: 0,
+    DeviceAttributes.energy_save: False,
+}
+# Read-only attributes are ignored rather than warned about, so a consumer that
+# writes every attribute back does not spam the log.
+TOSHIBA_READ_ONLY_ATTRIBUTES = frozenset(
+    {
+        DeviceAttributes.indoor_temperature,
+        DeviceAttributes.outdoor_temperature,
+        DeviceAttributes.indoor_humidity,
+        DeviceAttributes.min_temperature,
+        DeviceAttributes.max_temperature,
+        DeviceAttributes.full_dust,
+        DeviceAttributes.error_code,
+        DeviceAttributes.cleaning,
+    },
+)
+# The protocol has no capability query, so report what every IoLife unit has;
+# MideaACDevice.attributes hides capability-gated attributes not listed here.
+TOSHIBA_CAPABILITIES: Mapping[str, bool] = {
+    "anion": True,
+    "display_control": True,
+    "humidity": True,
+    "swing_horizontal_angle": True,
+    "swing_vertical_angle": True,
+}
+# Setpoint range of the target_temperature property, in degrees Celsius.
+TOSHIBA_MIN_TARGET_TEMPERATURE = 16.0
+TOSHIBA_MAX_TARGET_TEMPERATURE = 32.0
+# Attributes written as a 0/1 flag or as a single raw byte.
+TOSHIBA_BOOL_PROPERTIES: Mapping[str, ToshibaPropertyTags] = {
+    DeviceAttributes.power: ToshibaPropertyTags.power,
+    DeviceAttributes.eco_mode: ToshibaPropertyTags.eco_mode,
+    DeviceAttributes.anion: ToshibaPropertyTags.anion,
+    DeviceAttributes.energy_save: ToshibaPropertyTags.energy_save,
+    DeviceAttributes.comfort_mode: ToshibaPropertyTags.comfort_mode,
+}
+TOSHIBA_BYTE_PROPERTIES: Mapping[str, ToshibaPropertyTags] = {
+    DeviceAttributes.fan_speed: ToshibaPropertyTags.fan_speed,
+    DeviceAttributes.swing_vertical: ToshibaPropertyTags.swing_vertical,
+    DeviceAttributes.swing_horizontal: ToshibaPropertyTags.swing_horizontal,
+    DeviceAttributes.dehumidify: ToshibaPropertyTags.dehumidify,
+    DeviceAttributes.breezeless: ToshibaPropertyTags.breezeless,
+}
+# screen_display is a 0-100 backlight brightness, driven as an on/off switch.
+TOSHIBA_SCREEN_DISPLAY_ON = 100
+# Upper bound the firmware accepts for a deflector angle.
+TOSHIBA_MAX_WIND_ANGLE = 100
+# Deflection directions of the breezeless airflow; breezeless is its on/off.
+TOSHIBA_BREEZELESS_DIRECTIONS: Mapping[int, str] = {
+    0: "off",
+    1: "full",
+    2: "left",
+    3: "right",
+}
+# Dry sub-modes of the dehumidify property.
+TOSHIBA_DEHUMIDIFY_WEAK = 1
+TOSHIBA_DEHUMIDIFY_STRONG = 2
+TOSHIBA_DEHUMIDIFY_RECOMMENDED = 4
+# The unit drives the fan itself in dry mode, so the sub-mode stands in for the
+# fan setting there, each reported as the speed a consumer shows by that name.
+TOSHIBA_DRY_FAN_SPEEDS: Mapping[int, ACFanSpeed] = {
+    TOSHIBA_DEHUMIDIFY_WEAK: ACFanSpeed.LOW,
+    TOSHIBA_DEHUMIDIFY_STRONG: ACFanSpeed.HIGH,
+    TOSHIBA_DEHUMIDIFY_RECOMMENDED: ACFanSpeed.AUTO,
+}
+
+
+def _toshiba_dry_fan_to_dehumidify(speed: int) -> int:
+    """Fold a requested fan speed onto the nearest dry sub-mode.
+
+    Silent and low become weak, medium (and auto) recommended, high and full
+    strong.
+    """
+    if speed <= ACFanSpeed.LOW:
+        return TOSHIBA_DEHUMIDIFY_WEAK
+    if speed <= ACFanSpeed.MEDIUM or speed > ACFanSpeed.FULL:
+        return TOSHIBA_DEHUMIDIFY_RECOMMENDED
+    return TOSHIBA_DEHUMIDIFY_STRONG
+
+
+def _toshiba_wind_angle(
+    angles: Mapping[int, str],
+    value: bool | float | str,
+) -> int | None:
+    """Resolve a deflector position name (or a raw 0-100 value) to its byte."""
+    for raw, name in angles.items():
+        if name == value:
+            return raw
+    try:
+        raw_value = int(float(value))
+    except (TypeError, ValueError):
+        return None
+    return raw_value if 0 <= raw_value <= TOSHIBA_MAX_WIND_ANGLE else None
+
+
+def _toshiba_params(
+    attr: str,
+    value: bool | float | str,
+) -> dict[ToshibaPropertyTags, bytearray] | None:
+    """Return the property write for a single-property attribute, if any."""
+    if attr in TOSHIBA_BOOL_PROPERTIES:
+        return {TOSHIBA_BOOL_PROPERTIES[attr]: bytearray([1 if value else 0])}
+    if attr in TOSHIBA_BYTE_PROPERTIES:
+        return {TOSHIBA_BYTE_PROPERTIES[attr]: bytearray([int(value)])}
+    if attr == DeviceAttributes.target_temperature:
+        return {
+            ToshibaPropertyTags.target_temperature: bytearray(
+                [round(float(value) * 2)],
+            ),
+        }
+    if attr == DeviceAttributes.screen_display:
+        # Accept a brightness as-is; a plain switch value becomes 0 or 100.
+        brightness = (
+            int(float(value))
+            if not isinstance(value, bool)
+            else TOSHIBA_SCREEN_DISPLAY_ON * value
+        )
+        return {ToshibaPropertyTags.screen_display: bytearray([brightness])}
+    if attr == DeviceAttributes.breezeless_direction:
+        for raw, name in TOSHIBA_BREEZELESS_DIRECTIONS.items():
+            if name == value:
+                return {ToshibaPropertyTags.breezeless_direction: bytearray([raw])}
+    return None
 
 
 class MideaACDevice(MideaClimateDevice):
@@ -236,6 +397,10 @@ class MideaACDevice(MideaClimateDevice):
     _bb_unsupported_presets: ClassVar[frozenset[MideaPreset]] = frozenset(
         {MideaPreset.COMFORT, MideaPreset.AWAY},
     )
+    _toshiba_preset_attributes: ClassVar[dict[MideaPreset, str]] = {
+        MideaPreset.COMFORT: DeviceAttributes.comfort_mode,
+        MideaPreset.ECO: DeviceAttributes.eco_mode,
+    }
 
     _swing_modes: ClassVar[dict[ACSwingMode, tuple[bool, bool]]] = {
         ACSwingMode.OFF: (False, False),
@@ -357,6 +522,34 @@ class MideaACDevice(MideaClimateDevice):
         # Once 0x7e-derived temperatures are seen, ignore stale C0 temperature
         # fields to avoid brief UI flicker caused by query ordering.
         self._prefer_new_protocol_temperature: bool = False
+        self._is_toshiba = self.manufacturer_code == MANUFACTURER_CODE_TOSHIBA
+        if self._is_toshiba:
+            self._init_toshiba()
+
+    def _init_toshiba(self) -> None:
+        """Narrow the device to what a Toshiba IoLife unit supports."""
+        # The Toshiba firmware never answers MessageQueryAppliance, so skip it
+        # rather than spending a failed query on every connect.
+        self._appliance_query = False
+        self._is_filter_reset_supported = False
+        self._attributes = {
+            attr: value
+            for attr, value in self._attributes.items()
+            if attr in TOSHIBA_ATTRIBUTES
+        }
+        self._attributes.update(TOSHIBA_EXTRA_ATTRIBUTES)
+        self._capabilities = dict(TOSHIBA_CAPABILITIES)
+        # Raw deflector angles as last reported or written. The attributes hold
+        # names, which cannot represent auto (0xF0) or an angle between steps.
+        self._toshiba_wind_angles: dict[DeviceAttributes, int] = {}
+        if self._attributes[DeviceAttributes.min_temperature] is None:
+            self._attributes[DeviceAttributes.min_temperature] = (
+                TOSHIBA_MIN_TARGET_TEMPERATURE
+            )
+        if self._attributes[DeviceAttributes.max_temperature] is None:
+            self._attributes[DeviceAttributes.max_temperature] = (
+                TOSHIBA_MAX_TARGET_TEMPERATURE
+            )
 
     @property
     @override
@@ -367,6 +560,8 @@ class MideaACDevice(MideaClimateDevice):
         doesn't serialize comfort_mode/frost_protect, so those commands
         would have no effect.
         """
+        if self._is_toshiba:
+            return MideaACDevice._toshiba_preset_attributes
         if self._used_subprotocol:
             return {
                 preset: attr
@@ -393,6 +588,8 @@ class MideaACDevice(MideaClimateDevice):
     @override
     def reset_filter(self) -> None:
         """Reset filter timer."""
+        if self._is_toshiba:
+            return
         messages: list[
             MessageGeneralSet | MessageSubProtocolResetFilter | MessageNewProtocolSet
         ] = []
@@ -598,6 +795,13 @@ class MideaACDevice(MideaClimateDevice):
         """Midea AC device wind_ud_angle."""
         return list(MideaACDevice._wind_ud_angles.values())
 
+    @property
+    def breezeless_directions(self) -> list[str]:
+        """Selectable breezeless directions (Toshiba IoLife units only)."""
+        if not self._is_toshiba:
+            return []
+        return list(TOSHIBA_BREEZELESS_DIRECTIONS.values())
+
     def _active_rate_selects(self) -> dict[int, str]:
         """Midea AC device rate_select gear map for the reported gear count.
 
@@ -620,6 +824,8 @@ class MideaACDevice(MideaClimateDevice):
 
     def build_query(self) -> list[ACQuery]:
         """Midea AC device build query."""
+        if self._is_toshiba:
+            return [MessageQuery(TOSHIBA_PROTOCOL_VERSION, header_type=ListTypes.X55)]
         if self._used_subprotocol:
             # BB responses are independent status groups. Query each group with
             # its own identity so an unsupported response for one group does not
@@ -660,6 +866,8 @@ class MideaACDevice(MideaClimateDevice):
             self._uses_new_protocol_temperature,
         )
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
+        if self._is_toshiba:
+            return self._process_toshiba_message(message)
         new_status: dict[str, Any] = {}
         has_fresh_air = False
         body_type = getattr(message, "body_type", None)
@@ -766,6 +974,34 @@ class MideaACDevice(MideaClimateDevice):
         new_status.update(self._refresh_self_clean_status(message))
         new_status.update(self._refresh_temperature_limits(message))
         new_status.update(self._update_capabilities(message))
+        return new_status
+
+    def _process_toshiba_message(self, message: MessageACResponse) -> dict[str, Any]:
+        """Apply a Toshiba IoLife status frame."""
+        for attr in (DeviceAttributes.wind_ud_angle, DeviceAttributes.wind_lr_angle):
+            if (angle := getattr(message, attr.value, None)) is not None:
+                self._toshiba_wind_angles[attr] = angle
+        new_status = self.update_attributes_from_message(
+            message,
+            {
+                # .get leaves an unlisted raw value as None -- notably the auto
+                # position, which is deliberately not a selectable option.
+                DeviceAttributes.wind_lr_angle: MideaACDevice._wind_lr_angles.get,
+                DeviceAttributes.wind_ud_angle: MideaACDevice._wind_ud_angles.get,
+                DeviceAttributes.breezeless_direction: (
+                    TOSHIBA_BREEZELESS_DIRECTIONS.get
+                ),
+            },
+        )
+        # In dry mode, report the dehumidify sub-mode as the fan speed. Clothes
+        # drying has no fan equivalent, so it shows whatever the unit reports.
+        if self._attributes[DeviceAttributes.mode] == DRY_MODE and (
+            speed := TOSHIBA_DRY_FAN_SPEEDS.get(
+                self._attributes[DeviceAttributes.dehumidify],
+            )
+        ):
+            self._attributes[DeviceAttributes.fan_speed] = int(speed)
+            new_status[DeviceAttributes.fan_speed.value] = int(speed)
         return new_status
 
     @staticmethod
@@ -1102,6 +1338,9 @@ class MideaACDevice(MideaClimateDevice):
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea AC device set attribute."""
+        if self._is_toshiba:
+            self._set_toshiba_attribute(attr, value)
+            return
         # if nat a sensor
         message: (
             MessageToggleDisplay
@@ -1235,6 +1474,19 @@ class MideaACDevice(MideaClimateDevice):
         zone: int | None = None,
     ) -> None:
         """Midea AC device set target temperature."""
+        if self._is_toshiba:
+            params = {
+                ToshibaPropertyTags.target_temperature: bytearray(
+                    [round(target_temperature * 2)],
+                ),
+            }
+            if hvac_mode == DeviceHVACMode.OFF:
+                params[ToshibaPropertyTags.power] = bytearray([0])
+            elif hvac_mode is not None:
+                params[ToshibaPropertyTags.power] = bytearray([1])
+                params[ToshibaPropertyTags.mode] = bytearray([hvac_mode])
+            self._send_toshiba(params)
+            return
         message: MessageSubProtocolSet | MessageGeneralSet = (
             self._make_message_uniq_set()
         )
@@ -1248,6 +1500,16 @@ class MideaACDevice(MideaClimateDevice):
 
     def _set_swing(self, swing_vertical: bool, swing_horizontal: bool) -> None:
         """Midea AC device set swing."""
+        if self._is_toshiba:
+            self._send_toshiba(
+                {
+                    ToshibaPropertyTags.swing_vertical: bytearray([swing_vertical]),
+                    ToshibaPropertyTags.swing_horizontal: bytearray(
+                        [swing_horizontal],
+                    ),
+                },
+            )
+            return
         message: MessageSubProtocolSet | MessageGeneralSet = (
             self._make_message_uniq_set()
         )
@@ -1255,6 +1517,127 @@ class MideaACDevice(MideaClimateDevice):
             message.swing_vertical = swing_vertical
             message.swing_horizontal = swing_horizontal
         self.build_send(message)
+
+    def _send_toshiba(self, params: Mapping[ToshibaPropertyTags, bytearray]) -> None:
+        """Send Toshiba IoLife property writes, muted unless prompt_tone is on."""
+        message = MessageToshibaSet(TOSHIBA_PROTOCOL_VERSION)
+        if not self._attributes[DeviceAttributes.prompt_tone]:
+            message.set_param(ToshibaPropertyTags.buzzer, bytearray([0]))
+        for tag, value in params.items():
+            message.set_param(tag, value)
+        self.build_send(message)
+
+    def _set_toshiba_attribute(self, attr: str, value: bool | float | str) -> None:
+        """Toshiba IoLife set attribute."""
+        if attr == DeviceAttributes.prompt_tone:
+            # Local-only flag: the protocol has no prompt-tone state to read
+            # back, so mirror it to consumers immediately.
+            self._attributes[DeviceAttributes.prompt_tone] = bool(value)
+            self.update_all({DeviceAttributes.prompt_tone.value: bool(value)})
+        elif attr in (DeviceAttributes.wind_ud_angle, DeviceAttributes.wind_lr_angle):
+            self._set_toshiba_wind_angle(attr, value)
+        elif attr == DeviceAttributes.mode:
+            self._set_toshiba_mode(int(value))
+        elif (
+            attr == DeviceAttributes.fan_speed
+            and self._attributes[DeviceAttributes.mode] == DRY_MODE
+        ):
+            # The fan speed is not settable in dry mode; steer the sub-mode instead.
+            self._set_toshiba_attribute(
+                DeviceAttributes.dehumidify,
+                _toshiba_dry_fan_to_dehumidify(int(value)),
+            )
+        elif attr in (DeviceAttributes.self_clean, DeviceAttributes.clean_manual):
+            self._set_toshiba_clean(attr, bool(value))
+        elif (params := _toshiba_params(attr, value)) is not None:
+            self._send_toshiba(params)
+        elif attr not in TOSHIBA_READ_ONLY_ATTRIBUTES:
+            _LOGGER.warning(
+                "[%s] set_attribute: unsupported attr %s",
+                self.device_id,
+                attr,
+            )
+
+    def _set_toshiba_wind_angle(self, attr: str, value: bool | float | str) -> None:
+        """Write the deflector property, which carries both axes at once."""
+        vertical = attr == DeviceAttributes.wind_ud_angle
+        angles = (
+            MideaACDevice._wind_ud_angles if vertical else MideaACDevice._wind_lr_angles
+        )
+        angle = _toshiba_wind_angle(angles, value)
+        other_attr = (
+            DeviceAttributes.wind_lr_angle
+            if vertical
+            else DeviceAttributes.wind_ud_angle
+        )
+        # The firmware ignores the whole property when either axis is the 0xFF
+        # keep-as-is marker (device-tested), so resend the other axis as it is.
+        other = self._toshiba_wind_angles.get(other_attr)
+        if angle is None or other is None:
+            _LOGGER.warning(
+                "[%s] set_attribute: cannot set %s to %s (other axis unknown: %s)",
+                self.device_id,
+                attr,
+                value,
+                other is None,
+            )
+            return
+        self._send_toshiba(
+            {
+                ToshibaPropertyTags.wind_angle: bytearray(
+                    [angle, other] if vertical else [other, angle],
+                ),
+            },
+        )
+        # Remember the write so a second write before the next status resends
+        # this axis at its new position rather than its old one.
+        self._toshiba_wind_angles[DeviceAttributes(attr)] = angle
+
+    def _set_toshiba_mode(self, mode: int) -> None:
+        """Switch operating mode, powering the unit on as consumers expect.
+
+        Writing the mode on its own leaves a powered-off unit off, so selecting
+        an HVAC mode would appear to do nothing; send the power flag with it.
+        """
+        params = {
+            ToshibaPropertyTags.power: bytearray([1]),
+            ToshibaPropertyTags.mode: bytearray([mode]),
+        }
+        if mode == DRY_MODE and self._attributes[DeviceAttributes.mode] != DRY_MODE:
+            # Entering dry resumes whichever sub-mode was last used, so start
+            # from the recommended one rather than, say, clothes drying. Only on
+            # the way in, so a sub-mode chosen while in dry is left alone.
+            params[ToshibaPropertyTags.dehumidify] = bytearray(
+                [TOSHIBA_DEHUMIDIFY_RECOMMENDED],
+            )
+        self._send_toshiba(params)
+
+    def _set_toshiba_clean(self, attr: str, value: bool) -> None:
+        """Write the clean property, which carries both clean flags at once."""
+        flags = {
+            DeviceAttributes.clean_manual: bool(
+                self._attributes[DeviceAttributes.clean_manual],
+            ),
+            DeviceAttributes.self_clean: bool(
+                self._attributes[DeviceAttributes.self_clean],
+            ),
+        }
+        flags[DeviceAttributes(attr)] = value
+        self._send_toshiba(
+            {
+                ToshibaPropertyTags.clean: bytearray(
+                    [
+                        flags[DeviceAttributes.clean_manual],
+                        flags[DeviceAttributes.self_clean],
+                    ],
+                ),
+            },
+        )
+        # The unit has no readback for this property, and the status bit only
+        # reports a cycle in progress (cleaning). Mirror the write so the switch
+        # does not spring back to off.
+        self._attributes[attr] = value
+        self.update_all({str(attr): value})
 
 
 class MideaAppliance(MideaACDevice):

@@ -4,6 +4,7 @@ import logging
 from collections.abc import Callable, Mapping
 from enum import IntEnum, StrEnum
 from types import MappingProxyType
+from typing import Literal
 
 from midealocal.base_classes.climate import MideaFanMode, MideaSwingMode
 from midealocal.const import MAX_BYTE_VALUE, DeviceType
@@ -15,6 +16,7 @@ from midealocal.message import (
     IntParser,
     ListTypes,
     MessageBody,
+    MessageChecksum,
     MessageRequest,
     MessageResponse,
     MessageType,
@@ -137,6 +139,29 @@ B5_HUMIDITY_SUPPORTED_MASK = 0x3
 # (sensor absent or faulted) are placeholders, not real readings.
 INVALID_INDOOR_HUMIDITY = frozenset({0, MAX_BYTE_VALUE})
 
+# Toshiba IoLife units (manufacturer code 0008) carry their own status bodies and
+# property IDs inside the 0x55 frame. Layouts follow T_0008_AC_29.lua and were
+# checked against IoLife units reporting model 0000000F.
+# The frame's protocol byte the units were device-tested with.
+TOSHIBA_PROTOCOL_VERSION = 0x01
+TOSHIBA_C0_MIN_BODY_LENGTH = 22
+# A B0/B5 body needs its body type and parameter count before any parameter.
+TOSHIBA_NEW_PROTOCOL_MIN_BODY_LENGTH = 2
+TOSHIBA_C0_INDOOR_TEMPERATURE_BYTE = 13
+TOSHIBA_C0_OUTDOOR_TEMPERATURE_BYTE = 14
+TOSHIBA_C0_TEMPERATURE_DECIMAL_BYTE = 15
+TOSHIBA_A1_INDOOR_TEMPERATURE_BYTE = 13
+TOSHIBA_A1_OUTDOOR_TEMPERATURE_BYTE = 14
+TOSHIBA_A1_TEMPERATURE_DECIMAL_BYTE = 18
+# Temperatures are half degrees above -25 C; 0x00 and 0xFF mean "no reading".
+TOSHIBA_TEMPERATURE_OFFSET = 50
+TOSHIBA_TEMPERATURE_INVALID = frozenset({0x00, MAX_BYTE_VALUE})
+TOSHIBA_TEMPERATURE_PROPERTY_LENGTH = 2
+TOSHIBA_WIND_ANGLE_PROPERTY_LENGTH = 2
+TOSHIBA_LOW_NIBBLE = 0x0F
+TOSHIBA_NIBBLE_SHIFT = 4
+TOSHIBA_DEHUMIDIFY_SHIFT = 1
+
 
 def parse_indoor_humidity(raw: int) -> int | None:
     """Return the indoor humidity byte, or None for the invalid placeholders."""
@@ -216,6 +241,12 @@ class DeviceAttributes(StrEnum):
     outdoor_fan_speed = "outdoor_fan_speed"
     # group 7: real time compressor power
     compressor_power = "compressor_power"
+    # Toshiba IoLife (manufacturer code 0008) only
+    breezeless_direction = "breezeless_direction"
+    clean_manual = "clean_manual"
+    cleaning = "cleaning"
+    dehumidify = "dehumidify"
+    energy_save = "energy_save"
 
 
 class ACFanSpeed(MideaFanMode):
@@ -353,6 +384,7 @@ class MessageACBase(MessageRequest):
         protocol_version: int,
         message_type: MessageType,
         body_type: ListTypes,
+        header_type: Literal[ListTypes.AA, ListTypes.X55] = ListTypes.AA,
     ) -> None:
         """Initialize AC message base."""
         super().__init__(
@@ -360,6 +392,7 @@ class MessageACBase(MessageRequest):
             protocol_version=protocol_version,
             message_type=message_type,
             body_type=body_type,
+            header_type=header_type,
         )
         MessageACBase._message_serial += 1
         if MessageACBase._message_serial >= MAX_MSG_SERIAL_NUM:
@@ -415,14 +448,22 @@ class MessageA0LongQuery(MessageACBase):
 
 
 class MessageQuery(MessageACBase):
-    """AC message query(queryType == nil)."""
+    """AC message query(queryType == nil).
 
-    def __init__(self, protocol_version: int) -> None:
+    Toshiba IoLife units take the same body inside a 0x55 frame.
+    """
+
+    def __init__(
+        self,
+        protocol_version: int,
+        header_type: Literal[ListTypes.AA, ListTypes.X55] = ListTypes.AA,
+    ) -> None:
         """Initialize AC message query."""
         super().__init__(
             protocol_version=protocol_version,
             message_type=MessageType.query,
             body_type=ListTypes.X41,
+            header_type=header_type,
         )
 
     @property
@@ -1150,6 +1191,57 @@ class MessageNewProtocolSet(MessageACBase):
                 ),
             )
         payload[0] = pack_count
+        return payload
+
+
+class ToshibaPropertyTags(IntEnum):
+    """Toshiba IoLife AC property IDs (T_0008_AC_29.lua)."""
+
+    power = 0x0001
+    mode = 0x0002
+    target_temperature = 0x0003
+    indoor_temperature = 0x0004
+    outdoor_temperature = 0x0005
+    fan_speed = 0x0006
+    swing_vertical = 0x0008
+    swing_horizontal = 0x0009
+    wind_angle = 0x000A  # [ud_angle, lr_angle]; 0xFF keeps an axis as it is
+    eco_mode = 0x000D
+    anion = 0x000E
+    dry = 0x0010
+    indoor_humidity = 0x0015
+    screen_display = 0x0017  # 0-100 backlight brightness
+    breezeless = 0x0018
+    buzzer = 0x001A
+    clean = 0x0046  # [clean_manual, self_clean]; both are always sent together
+    energy_save = 0x0050
+    dehumidify = 0x0051
+    comfort_mode = 0x0055
+    breezeless_direction = 0x0070
+
+
+class MessageToshibaSet(MessageACBase):
+    """AC property set for Toshiba IoLife units (B0 body in a 0x55 frame)."""
+
+    def __init__(self, protocol_version: int) -> None:
+        """Initialize AC Toshiba property set."""
+        super().__init__(
+            protocol_version=protocol_version,
+            message_type=MessageType.set,
+            body_type=ListTypes.B0,
+            header_type=ListTypes.X55,
+        )
+        self._params: dict[int, bytearray] = {}
+
+    def set_param(self, tag: ToshibaPropertyTags, value: bytearray) -> None:
+        """Add a property write to the command."""
+        self._params[tag] = value
+
+    @property
+    def _body(self) -> bytearray:
+        payload = bytearray([len(self._params)])
+        for tag, value in self._params.items():
+            payload.extend(NewProtocolMessageBody.pack(param=tag, value=value))
         return payload
 
 
@@ -2173,6 +2265,211 @@ class XBBMessageBody(MessageBody):
                     setattr(self, key, value)
 
 
+def _toshiba_temperature(raw: int, decimal: int) -> float | None:
+    """Decode a Toshiba IoLife temperature byte and its tenths nibble."""
+    if raw in TOSHIBA_TEMPERATURE_INVALID:
+        return None
+    return (raw - TOSHIBA_TEMPERATURE_OFFSET) / 2 + decimal / 10
+
+
+class XToshibaC0MessageBody(MessageBody):
+    """AC Toshiba IoLife C0/D0 status body."""
+
+    def __init__(self, body: bytearray) -> None:
+        """Initialize AC Toshiba IoLife C0/D0 status body."""
+        super().__init__(
+            body,
+            [
+                BoolParser("power", 1, 0),
+                IntParser(
+                    "mode",
+                    2,
+                    byte_mask=0xF0,
+                    transform_func=lambda raw: raw >> TOSHIBA_NIBBLE_SHIFT,
+                ),
+                IntParser("fan_speed", 3, byte_mask=0x7F),
+                FloatParser(
+                    "target_temperature",
+                    4,
+                    byte_mask=0x7F,
+                    transform_func=lambda raw: raw / 2,
+                ),
+                FunctionParser(
+                    "indoor_humidity",
+                    10,
+                    lambda data: parse_indoor_humidity(data[0]),
+                    None,
+                ),
+                BoolParser("swing_horizontal", 11, byte_mask=0x0F),
+                BoolParser("swing_vertical", 11, true_value=0x10, byte_mask=0xF0),
+                BoolParser("eco_mode", 16, 0),
+                BoolParser("anion", 16, 1),
+                BoolParser("dry", 16, 2),
+                BoolParser("clean_manual", 16, 4),
+                BoolParser("cleaning", 16, 5),
+                BoolParser("full_dust", 17, 5),
+                # Low nibble of byte 18 is no_wind_sense. Byte 24 bits 4-5 are the
+                # separate new_no_wind_sense property, the breezeless direction.
+                BoolParser("breezeless", 18, byte_mask=0x0F),
+                IntParser("wind_ud_angle", 19),
+                IntParser("wind_lr_angle", 20),
+                BoolParser("energy_save", 21, 0),
+                IntParser(
+                    "dehumidify",
+                    21,
+                    byte_mask=0x0E,
+                    transform_func=lambda raw: raw >> TOSHIBA_DEHUMIDIFY_SHIFT,
+                ),
+                BoolParser("comfort_mode", 21, 4),
+                IntParser("error_code", 23),
+                IntParser(
+                    "breezeless_direction",
+                    24,
+                    byte_mask=0x30,
+                    transform_func=lambda raw: raw >> TOSHIBA_NIBBLE_SHIFT,
+                ),
+            ],
+        )
+        # Each temperature takes its whole part from one byte and its tenths from
+        # a nibble of a shared byte, which a single parser cannot span.
+        decimal = self.read_byte(body, TOSHIBA_C0_TEMPERATURE_DECIMAL_BYTE)
+        self.indoor_temperature = _toshiba_temperature(
+            body[TOSHIBA_C0_INDOOR_TEMPERATURE_BYTE],
+            decimal & TOSHIBA_LOW_NIBBLE,
+        )
+        self.outdoor_temperature = _toshiba_temperature(
+            body[TOSHIBA_C0_OUTDOOR_TEMPERATURE_BYTE],
+            decimal >> TOSHIBA_NIBBLE_SHIFT,
+        )
+
+
+class XToshibaA1MessageBody(MessageBody):
+    """AC Toshiba IoLife A1 temperature notification body."""
+
+    def __init__(self, body: bytearray) -> None:
+        """Initialize AC Toshiba IoLife A1 temperature notification body."""
+        super().__init__(body)
+        decimal = self.read_byte(body, TOSHIBA_A1_TEMPERATURE_DECIMAL_BYTE)
+        self.indoor_temperature = _toshiba_temperature(
+            self.read_byte(body, TOSHIBA_A1_INDOOR_TEMPERATURE_BYTE),
+            decimal & TOSHIBA_LOW_NIBBLE,
+        )
+        self.outdoor_temperature = _toshiba_temperature(
+            self.read_byte(body, TOSHIBA_A1_OUTDOOR_TEMPERATURE_BYTE),
+            decimal >> TOSHIBA_NIBBLE_SHIFT,
+        )
+
+
+# Single-byte properties a Toshiba B0 query reply carries, with their decoders.
+_TOSHIBA_B0_PROPERTIES: Mapping[ToshibaPropertyTags, Callable[[int], bool | int]] = (
+    MappingProxyType(
+        {
+            ToshibaPropertyTags.power: bool,
+            ToshibaPropertyTags.mode: int,
+            ToshibaPropertyTags.fan_speed: int,
+            ToshibaPropertyTags.swing_vertical: bool,
+            ToshibaPropertyTags.swing_horizontal: bool,
+            ToshibaPropertyTags.eco_mode: bool,
+            ToshibaPropertyTags.anion: bool,
+            ToshibaPropertyTags.dry: bool,
+            ToshibaPropertyTags.indoor_humidity: int,
+            ToshibaPropertyTags.screen_display: bool,
+            ToshibaPropertyTags.breezeless: bool,
+            ToshibaPropertyTags.breezeless_direction: int,
+            ToshibaPropertyTags.energy_save: bool,
+            ToshibaPropertyTags.dehumidify: int,
+            ToshibaPropertyTags.comfort_mode: bool,
+        },
+    )
+)
+
+# A B5 push notification only ever carries this subset.
+_TOSHIBA_B5_PROPERTIES: Mapping[ToshibaPropertyTags, Callable[[int], bool | int]] = (
+    MappingProxyType(
+        {
+            tag: decode
+            for tag, decode in _TOSHIBA_B0_PROPERTIES.items()
+            if tag
+            not in {
+                ToshibaPropertyTags.indoor_humidity,
+                ToshibaPropertyTags.screen_display,
+                ToshibaPropertyTags.breezeless,
+                ToshibaPropertyTags.breezeless_direction,
+                ToshibaPropertyTags.dehumidify,
+            }
+        },
+    )
+)
+
+
+class XToshibaBXMessageBody(NewProtocolMessageBody):
+    """AC Toshiba IoLife B0 query reply / B5 push notification body.
+
+    An attribute is only set when its property is present in the frame, so a
+    partial notification leaves the other attributes as they were.
+    """
+
+    def __init__(self, body: bytearray, bt: int) -> None:
+        """Initialize AC Toshiba IoLife B0/B5 body."""
+        super().__init__(body, bt)
+        params = self.parse()
+        properties = (
+            _TOSHIBA_B5_PROPERTIES if bt == ListTypes.B5 else _TOSHIBA_B0_PROPERTIES
+        )
+        for tag, decode in properties.items():
+            if tag in params:
+                setattr(self, tag.name, decode(params[tag][0]))
+        if ToshibaPropertyTags.target_temperature in params:
+            self.target_temperature = (
+                params[ToshibaPropertyTags.target_temperature][0] / 2
+            )
+        angles = params.get(ToshibaPropertyTags.wind_angle)
+        if angles is not None and len(angles) >= TOSHIBA_WIND_ANGLE_PROPERTY_LENGTH:
+            self.wind_ud_angle = angles[0]
+            self.wind_lr_angle = angles[1]
+        for tag in (
+            ToshibaPropertyTags.indoor_temperature,
+            ToshibaPropertyTags.outdoor_temperature,
+        ):
+            data = params.get(tag)
+            if data is not None and len(data) >= TOSHIBA_TEMPERATURE_PROPERTY_LENGTH:
+                setattr(self, tag.name, data[0] + data[1] / 10)
+
+
+# Toshiba body type -> (minimum body length, parser).
+_TOSHIBA_BODIES: Mapping[int, tuple[int, Callable[[bytearray], MessageBody]]] = (
+    MappingProxyType(
+        {
+            ListTypes.C0: (TOSHIBA_C0_MIN_BODY_LENGTH, XToshibaC0MessageBody),
+            ListTypes.D0: (TOSHIBA_C0_MIN_BODY_LENGTH, XToshibaC0MessageBody),
+            ListTypes.A1: (1, XToshibaA1MessageBody),
+            ListTypes.B0: (
+                TOSHIBA_NEW_PROTOCOL_MIN_BODY_LENGTH,
+                lambda body: XToshibaBXMessageBody(body, ListTypes.B0),
+            ),
+            ListTypes.B5: (
+                TOSHIBA_NEW_PROTOCOL_MIN_BODY_LENGTH,
+                lambda body: XToshibaBXMessageBody(body, ListTypes.B5),
+            ),
+        },
+    )
+)
+
+
+def _toshiba_message_body(message: bytearray, body: bytearray) -> MessageBody | None:
+    """Return the parsed body of a Toshiba IoLife frame, or None to skip it."""
+    if MessageResponse.checksum(
+        message[:-2],
+        MessageChecksum.CRC_CCITT,
+    ) != bytes(message[-2:]):
+        _LOGGER.debug("Skipping Toshiba frame with a bad CRC: %s", message.hex())
+        return None
+    if not body or (entry := _TOSHIBA_BODIES.get(body[0])) is None:
+        return None
+    min_length, parse = entry
+    return parse(body) if len(body) >= min_length else None
+
+
 class MessageACResponse(MessageResponse):
     """AC message response."""
 
@@ -2184,8 +2481,15 @@ class MessageACResponse(MessageResponse):
     ) -> None:
         """Initialize AC message response."""
         super().__init__(message)
+        # Toshiba IoLife units answer in 0x55 frames with their own body layouts.
+        if self.header_type == ListTypes.X55:
+            toshiba_body = _toshiba_message_body(message, super().body)
+            if toshiba_body is not None:
+                self.set_body(toshiba_body)
         # dataType 0x05 and messageBytes[0] 0xA0
-        if self.message_type == MessageType.notify2 and self.body_type == ListTypes.A0:
+        elif (
+            self.message_type == MessageType.notify2 and self.body_type == ListTypes.A0
+        ):
             self.set_body(XA0MessageBody(super().body))
         # dataType 0x04 and messageBytes[0] 0xA1
         elif (
