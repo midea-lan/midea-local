@@ -32,7 +32,7 @@ repos:
           - --fix
       - id: ruff-format
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.19.2
+    rev: v4.19.3
     hooks:
       - id: commitizen
         stages: [commit-msg]
