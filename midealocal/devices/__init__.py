@@ -39,6 +39,7 @@ from . import (
     fb,
     fc,
     fd,
+    x0008ac,
     x13,
     x26,
     x34,
@@ -86,6 +87,13 @@ _DEVICE_CLASSES: dict[int, Callable[..., MideaDevice]] = {
     DeviceType.X40: x40.MideaAppliance,
 }
 
+# sn[9:17] of Toshiba IoLife serial numbers; "00000008" = AC, "0000000F" = washer-dryer.
+# Matched here because the API does not expose a separate manufacturer-code field.
+_TOSHIBA_IOLIFE_MODELS = {"00000008", "0000000F"}
+_TOSHIBA_IOLIFE_CLASSES: dict[int, Callable[..., MideaDevice]] = {
+    DeviceType.AC: x0008ac.MideaAppliance,
+}
+
 
 def device_selector(
     name: str,
@@ -103,7 +111,10 @@ def device_selector(
     serial_number: str | None = None,
 ) -> MideaDevice:
     """Select and load device."""
-    if (device_class := _DEVICE_CLASSES.get(device_type)) is None:
+    classes = (
+        _TOSHIBA_IOLIFE_CLASSES if model in _TOSHIBA_IOLIFE_MODELS else _DEVICE_CLASSES
+    )
+    if (device_class := classes.get(device_type)) is None:
         return cast("MideaDevice", None)
     return device_class(
         name=name,

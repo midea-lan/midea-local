@@ -4,7 +4,11 @@ import pkgutil
 
 import midealocal.devices
 from midealocal.const import DeviceType, ProtocolVersion
-from midealocal.devices import _DEVICE_CLASSES, device_selector
+from midealocal.devices import (
+    _DEVICE_CLASSES,
+    _TOSHIBA_IOLIFE_CLASSES,
+    device_selector,
+)
 from midealocal.devices.ac import MideaACDevice
 from midealocal.devices.x13 import Midea13Device
 
@@ -72,6 +76,7 @@ class TestDeviceSelector:
             if module.ispkg
         }
         registered = {
-            cls.__module__.rsplit(".", 1)[-1] for cls in _DEVICE_CLASSES.values()
+            cls.__module__.rsplit(".", 1)[-1]
+            for cls in (*_DEVICE_CLASSES.values(), *_TOSHIBA_IOLIFE_CLASSES.values())
         }
         assert registered == packages
