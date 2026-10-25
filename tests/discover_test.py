@@ -244,6 +244,34 @@ class TestDiscover:
     """discover test case."""
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("target", "expected_reads"),
+        [(DEVICE_IP, 1), ("192.168.1.101", 2), ("192.168.1.255", 2), (None, 2)],
+    )
+    async def test_discovery_waits_only_when_target_is_not_found(
+        self,
+        target: str | None,
+        expected_reads: int,
+    ) -> None:
+        """Only a response from the requested address ends discovery early."""
+        loop = _fake_loop(
+            recvfrom_side_effect=[
+                (_build_v2_packet(), (DEVICE_IP, 6445)),
+                TimeoutError,
+            ],
+        )
+        with (
+            patch("midealocal.discover.asyncio.get_running_loop", return_value=loop),
+            patch(
+                "midealocal.discover.enum_all_broadcast",
+                return_value=["192.168.1.255"],
+            ),
+        ):
+            result = await discover(ip_address=target)
+        assert list(result) == [DEVICE_ID]
+        assert loop.sock_recvfrom.await_count == expected_reads
+
+    @pytest.mark.asyncio
     async def test_discover_found_devices(self) -> None:
         """Test discovery finding one supported device then timing out."""
         loop = _fake_loop(
@@ -275,8 +303,9 @@ class TestDiscover:
             ],
         )
         with patch("midealocal.discover.asyncio.get_running_loop", return_value=loop):
-            result = await discover(discover_type=[0xFF], ip_address="192.168.1.255")
+            result = await discover(discover_type=[0xFF], ip_address=DEVICE_IP)
         assert result == {}
+        assert loop.sock_recvfrom.await_count == 2
 
     @pytest.mark.asyncio
     async def test_discover_send_and_socket_errors(self) -> None:

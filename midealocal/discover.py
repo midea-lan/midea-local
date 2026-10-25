@@ -283,7 +283,7 @@ async def discover(
     discover_type: list[int] | None = None,
     ip_address: str | None = None,
 ) -> dict[int, dict[str, Any]]:
-    """Discover devices."""
+    """Discover devices, returning early when the requested address responds."""
     if discover_type is None:
         discover_type = []
 
@@ -313,6 +313,8 @@ async def discover(
                 if len(discover_type) == 0 or device.get("type") in discover_type:
                     found_devices[device_id] = device
                     _LOGGER.debug("Found a supported device: %s", device)
+                    if device.get("ip_address") == ip_address:
+                        break
                 else:
                     _LOGGER.debug("Found a unsupported device: %s", device)
             except TimeoutError:
