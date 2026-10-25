@@ -280,7 +280,7 @@ async def _parse_discover_response(
 
 
 async def discover(
-    discover_type: list | None = None,
+    discover_type: list[int] | None = None,
     ip_address: str | None = None,
 ) -> dict[int, dict[str, Any]]:
     """Discover devices."""
@@ -385,7 +385,7 @@ async def get_device_info(device_ip: str, device_port: int) -> bytearray:
     return response
 
 
-def enum_all_broadcast() -> list:
+def enum_all_broadcast() -> list[str]:
     """Enum all broadcast addresses."""
     nets = []
     adapters = ifaddr.get_adapters()

@@ -190,7 +190,7 @@ class MideaB0Device(MideaDevice):
             MessageQuery31(self._message_protocol_version),
         ]
 
-    def process_message(self, msg: bytes) -> dict:
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         """B0 Midea device process message."""
         message = MessageB0Response(bytearray(msg))
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)

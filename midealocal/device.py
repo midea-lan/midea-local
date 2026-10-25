@@ -197,7 +197,7 @@ class MideaDevice:
         self,
         *,
         device_type: DeviceType,
-        attributes: dict,
+        attributes: dict[Any, Any],
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Midea device initialization."""
@@ -227,9 +227,9 @@ class MideaDevice:
         self._default_refresh_interval = 30
         self._previous_refresh = 0.0
         self._previous_heartbeat = 0.0
-        self._task: asyncio.Task | None = None
-        self._reader_task: asyncio.Task | None = None
-        self._refresh_task: asyncio.Task | None = None
+        self._task: asyncio.Task[None] | None = None
+        self._reader_task: asyncio.Task[None] | None = None
+        self._refresh_task: asyncio.Task[None] | None = None
         # This protocol has no per-message correlation id, so at most one
         # query/response exchange can ever be outstanding at a time.
         self._query_lock = asyncio.Lock()
@@ -338,7 +338,7 @@ class MideaDevice:
         return self._serial_number
 
     @staticmethod
-    def fetch_v2_message(msg: bytes) -> tuple[list, bytes]:
+    def fetch_v2_message(msg: bytes) -> tuple[list[bytes], bytes]:
         """Fetch V2 message."""
         result = []
         while len(msg) > 0:
@@ -576,7 +576,7 @@ class MideaDevice:
                     check_protocol,
                     (),
                 )
-            real_cmds: list = self.build_query()
+            real_cmds = self.build_query()
             error_count = 0
             _LOGGER.debug(
                 "[%s] refresh_status with cmds: %s, check_protocol %s, \
@@ -727,7 +727,7 @@ class MideaDevice:
                 )
         return MessageResult.SUCCESS
 
-    def build_query(self) -> list:
+    def build_query(self) -> Sequence[MessageRequest]:
         """Build query."""
         raise NotImplementedError
 
@@ -848,7 +848,7 @@ class MideaDevice:
             self._task = asyncio.create_task(self._run())
             self._task.add_done_callback(self._on_supervisor_done)
 
-    def _on_supervisor_done(self, task: asyncio.Task) -> None:
+    def _on_supervisor_done(self, task: asyncio.Task[None]) -> None:
         """Surface a supervisor exit that close() did not ask for."""
         # close() clears _is_run before cancelling, so any exit while it is
         # still set, including a cancellation from elsewhere, is unexpected.

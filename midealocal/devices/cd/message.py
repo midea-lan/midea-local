@@ -753,7 +753,7 @@ class CDGeneralMessageBody(MessageBody):
         # Note: body[38] bits 0x40/0x80 are maintain_warn_tag/maintain_warn
         #       body[39] bits 0x40/0x80 are mute_effect/mute_status
         _effect_masks = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20]
-        self.weekly_effects: dict | None = (
+        self.weekly_effects: dict[int, list[bool]] | None = (
             {day: [(body[38 + day] & m) > 0 for m in _effect_masks] for day in range(7)}
             if len(body) > 44  # noqa: PLR2004
             else None
