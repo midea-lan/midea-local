@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.py[cod]
+discovery*.json
+diagnosis*.csv
+diagnosis*.jsonl
+diagnosis*.log
+live_diagnosis.*
+*.log
+video/scene_*.svg
+video/concat.txt
+video/*.mp4

@@ -127,6 +127,10 @@ This creates a `.venv`, installs all dependencies, and sets up the prek hooks.
 Run tools with `uv run`, e.g. `uv run python -m pytest ./tests/`. See the contributing
 guide for the full workflow and per-OS uv install instructions.
 
+## Examples
+
+- [Read-only DA washer LAN diagnostics](examples/washer_diagnostics/README.md): an optional local dashboard and sampling example built on the public API. It is not part of the core library and does not expose appliance control endpoints.
+
 ## Contributing Guide
 
 [CONTRIBUTING](.github/CONTRIBUTING.md)
