@@ -280,8 +280,8 @@ async def _parse_discover_response(
 
 
 async def discover(
-    discover_type: list[int] | None = None,
-    ip_address: list[str] | None = None,
+    discover_type: list | None = None,
+    ip_address: str | None = None,
 ) -> dict[int, dict[str, Any]]:
     """Discover devices."""
     if discover_type is None:

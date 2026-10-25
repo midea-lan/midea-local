@@ -275,7 +275,7 @@ class TestDiscover:
             ],
         )
         with patch("midealocal.discover.asyncio.get_running_loop", return_value=loop):
-            result = await discover(discover_type=[0xFF], ip_address=["192.168.1.255"])
+            result = await discover(discover_type=[0xFF], ip_address="192.168.1.255")
         assert result == {}
 
     @pytest.mark.asyncio
@@ -286,7 +286,7 @@ class TestDiscover:
             recvfrom_side_effect=[OSError("bad recv"), TimeoutError],
         )
         with patch("midealocal.discover.asyncio.get_running_loop", return_value=loop):
-            result = await discover(ip_address=["192.168.1.255"])
+            result = await discover(ip_address="192.168.1.255")
         assert result == {}
 
 
