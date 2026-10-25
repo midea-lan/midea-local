@@ -50,6 +50,15 @@ Write-Host "Installing prek hooks..."
 prek install --overwrite
 prek install --hook-type commit-msg --overwrite
 
+# Initialize the Lua submodule and install its own prek hook.
+git submodule update --init --recursive --remote
+Push-Location "lua"
+try {
+    prek install --overwrite
+} finally {
+    Pop-Location
+}
+
 # Shim so muscle-memory `pre-commit` invocations still work, backed by prek.
 Set-Content -Path ".venv\Scripts\pre-commit.cmd" -Value "@echo off`r`nprek %*"
 
