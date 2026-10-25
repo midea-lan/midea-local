@@ -1,5 +1,6 @@
 """Midea local discover test."""
 
+import asyncio
 from collections.abc import Sequence
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -68,6 +69,7 @@ def _fake_loop(
 ) -> MagicMock:
     """Build a fake running-loop whose sock_sendto/sock_recvfrom are scripted."""
     loop = MagicMock()
+    loop.time = asyncio.get_running_loop().time
     loop.sock_sendto = AsyncMock(side_effect=sendto_side_effect)
     loop.sock_recvfrom = AsyncMock(side_effect=list(recvfrom_side_effect))
     return loop
@@ -76,6 +78,7 @@ def _fake_loop(
 def _fake_recv_call(data: bytes, ip: str = DEVICE_IP) -> tuple[MagicMock, MagicMock]:
     """Return a (loop, sock) pair whose sock_recvfrom yields the given datagram."""
     loop = MagicMock()
+    loop.time = asyncio.get_running_loop().time
     loop.sock_recvfrom = AsyncMock(return_value=(data, (ip, 6445)))
     return loop, MagicMock()
 

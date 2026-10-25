@@ -181,10 +181,8 @@ def test_fetch_v2_message() -> None:
     """Test fetch v2 message."""
     assert MideaDevice.fetch_v2_message(bytes([])) == ([], bytes([]))
     assert MideaDevice.fetch_v2_message(bytes([0x1])) == ([], bytes([0x1]))
-    assert MideaDevice.fetch_v2_message(bytes([0x1] * 5 + [0x0] + [0x1] * 7)) == (
-        [bytes([0x1])],
-        bytes([0x1] * 4 + [0x0] + [0x1] * 7),
-    )
+    with pytest.raises(ValueError, match="V2 frame length"):
+        MideaDevice.fetch_v2_message(bytes([0x1] * 5 + [0x0] + [0x1] * 7))
 
 
 def test_pre_process_message_short_message() -> None:
@@ -252,7 +250,8 @@ def test_parse_message_short_appliance_query_message_skips_process_message() -> 
 # A valid V3 handshake response: header + 32 zero bytes + a 32-byte payload
 # whose exact content is irrelevant to authenticate() beyond its length.
 _AUTH_HANDSHAKE_RESPONSE = bytearray(
-    [0x00] * (8 + 32)
+    [0x83, 0x70, 0, 64, 0x20, 1, 0, 0]
+    + [0x00] * 32
     + [
         0xCE,
         0x8C,
@@ -561,7 +560,12 @@ class TestMideaDevice:
     @pytest.mark.asyncio
     async def test_authenticate(self) -> None:
         """Test authenticate."""
-        reader, writer = make_stream_pair([bytearray(), _AUTH_HANDSHAKE_RESPONSE])
+        reader, writer = make_stream_pair()
+        reader.readexactly.side_effect = [
+            asyncio.IncompleteReadError(b"", 8),
+            _AUTH_HANDSHAKE_RESPONSE[:8],
+            _AUTH_HANDSHAKE_RESPONSE[8:],
+        ]
 
         with pytest.raises(SocketException):
             await self.device.authenticate()
@@ -575,7 +579,11 @@ class TestMideaDevice:
     @pytest.mark.asyncio
     async def test_send_message(self) -> None:
         """Test send message."""
-        reader, writer = make_stream_pair([_AUTH_HANDSHAKE_RESPONSE])
+        reader, writer = make_stream_pair()
+        reader.readexactly.side_effect = [
+            _AUTH_HANDSHAKE_RESPONSE[:8],
+            _AUTH_HANDSHAKE_RESPONSE[8:],
+        ]
         self.device._reader, self.device._writer = reader, writer
         await self.device.authenticate()
         self.device.send_message(bytes([0x0] * 20))
@@ -1644,7 +1652,8 @@ class TestMideaDevice:
             assert self.device._previous_refresh == 0.0
 
             # Interval elapsed: refresh triggered and previous_refresh updated.
-            await self.device._check_refresh(30.0)
+            with patch.object(asyncio.get_running_loop(), "time", return_value=30.0):
+                await self.device._check_refresh(30.0)
             refresh_mock.assert_called_once()
             assert self.device._previous_refresh == 30.0
 
@@ -1658,7 +1667,8 @@ class TestMideaDevice:
             heartbeat_mock.assert_not_called()
             assert self.device._previous_heartbeat == 0.0
 
-            await self.device._check_heartbeat(10.0)
+            with patch.object(asyncio.get_running_loop(), "time", return_value=10.0):
+                await self.device._check_heartbeat(10.0)
             heartbeat_mock.assert_called_once()
             assert self.device._previous_heartbeat == 10.0
 
