@@ -4,8 +4,8 @@ import asyncio
 import logging
 import time
 from collections.abc import Callable, Mapping, Sequence
-from enum import IntEnum, StrEnum
-from typing import Any, ClassVar, NotRequired, TypedDict, Unpack
+from enum import Enum, IntEnum, StrEnum, auto
+from typing import Any, ClassVar, Final, NotRequired, TypedDict, Unpack, overload
 
 from typing_extensions import deprecated
 
@@ -44,11 +44,27 @@ QUERY_PROBE_RETRIES = 2
 
 _LOGGER = logging.getLogger(__name__)
 
+type AttrValue = bool | int | float | str | None
+
+
+class SkipAttribute(Enum):
+    """Type of SKIP_ATTRIBUTE."""
+
+    SKIP_ATTRIBUTE = auto()
+
+
 # Sentinel returned by translators to preserve the stored attribute value.
-SKIP_ATTRIBUTE = object()
+SKIP_ATTRIBUTE: Final = SkipAttribute.SKIP_ATTRIBUTE
+
+type Translator = Callable[..., AttrValue | SkipAttribute]
+
+
+class _NoDefault(Enum):
+    NO_DEFAULT = auto()
+
 
 # Private marker that distinguishes an omitted default from an explicit default.
-_NO_DEFAULT = object()
+_NO_DEFAULT: Final = _NoDefault.NO_DEFAULT
 
 
 def list_translator(
@@ -78,18 +94,31 @@ def list_translator(
     return _translate
 
 
-def dict_translator(
-    mapping: Mapping[Any, Any],
-    default: Any = _NO_DEFAULT,  # noqa: ANN401
-) -> Callable[[Any], Any]:
+@overload
+def dict_translator[K, V](mapping: Mapping[K, V]) -> Callable[[K], V | K]: ...
+
+
+@overload
+def dict_translator[K, V, D](
+    mapping: Mapping[K, V],
+    default: D,
+) -> Callable[[K], V | D]: ...
+
+
+def dict_translator[K, V, D](
+    mapping: Mapping[K, V],
+    default: D | _NoDefault = _NO_DEFAULT,
+) -> Callable[[K], V | K | D]:
     """Build an update_attributes_from_message() translator for coded values.
 
     Looks up the raw value in ``mapping``. If absent, returns ``default`` when
     given, otherwise passes the raw value through unchanged.
     """
 
-    def _translate(value: Any) -> Any:  # noqa: ANN401
-        return mapping.get(value, value if default is _NO_DEFAULT else default)
+    def _translate(value: K) -> V | K | D:
+        if isinstance(default, _NoDefault):
+            return mapping.get(value, value)
+        return mapping.get(value, default)
 
     return _translate
 
@@ -126,14 +155,14 @@ def multiplier_translator(multiplier: float) -> Callable[[float | None], float |
     return _translate
 
 
-def sentinel_translator(sentinel: Any, replacement: Any) -> Callable[[Any], Any]:  # noqa: ANN401
+def sentinel_translator[T, R](sentinel: T, replacement: R) -> Callable[[T], T | R]:
     """Build an update_attributes_from_message() translator for sentinel values.
 
     Swaps a device-specific "unset" sentinel raw value for a display
     placeholder, passing every other value through unchanged.
     """
 
-    def _translate(value: Any) -> Any:  # noqa: ANN401
+    def _translate(value: T) -> T | R:
         return replacement if value == sentinel else value
 
     return _translate
@@ -197,7 +226,7 @@ class MideaDevice:
         self,
         *,
         device_type: DeviceType,
-        attributes: dict[Any, Any],
+        attributes: dict[str, Any],
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Midea device initialization."""
@@ -255,10 +284,10 @@ class MideaDevice:
         cls: type["MideaDevice"],
         dict_name: str,
         value: str,
-    ) -> Any:  # noqa: ANN401
+    ) -> int | None:
         """Get key by value from a specified class dictionary."""
         if hasattr(cls, dict_name) and isinstance(getattr(cls, dict_name), dict):
-            target_dict: dict[Any, str] = getattr(cls, dict_name)
+            target_dict: dict[int, str] = getattr(cls, dict_name)
             for key, val in target_dict.items():
                 if val == value:
                     return key
@@ -796,9 +825,8 @@ class MideaDevice:
     def update_attributes_from_message(
         self,
         message: object,
-        translators: dict[str, Callable[[Any], str | float | bool | None]]
-        | None = None,
-        default_transform: Callable[[Any], str | float | bool | None] | None = None,
+        translators: Mapping[str, Translator] | None = None,
+        default_transform: Translator | None = None,
     ) -> dict[str, Any]:
         """Copy matching attributes from a parsed response into self._attributes.
 

@@ -26,6 +26,7 @@ from midealocal.device import (
     precision_halves_translator,
     sentinel_translator,
 )
+from midealocal.devices.ac import DeviceAttributes as ACAttributes
 from midealocal.exceptions import SocketException
 from midealocal.message import MessageType
 from tests.conftest import make_stream_pair, running_reader_loop
@@ -367,8 +368,8 @@ class TestMideaDevice:
 
     def test_attributes_property(self) -> None:
         """Test attributes property stringifies keys from the internal dict."""
-        self.device._attributes[DeviceType.AC] = True
-        assert self.device.attributes == {str(DeviceType.AC): True}
+        self.device._attributes[ACAttributes.power] = True
+        assert self.device.attributes == {str(ACAttributes.power): True}
 
     @pytest.mark.parametrize(
         (
