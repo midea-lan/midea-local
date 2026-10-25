@@ -1,9 +1,10 @@
 """Midea local FC device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
+
+import orjson
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
@@ -211,7 +212,7 @@ class MideaFCDevice(MideaDevice):
         self._standby_detect = self._standby_detect_default
         if customize and len(customize) > 0:
             try:
-                params = json.loads(customize)
+                params = orjson.loads(customize)
                 if params and "standby_detect" in params:
                     settings = params.get("standby_detect")
                     if (

@@ -1,6 +1,5 @@
 """Test cloud."""
 
-import json
 import logging
 from collections.abc import Callable, Iterator
 from contextlib import AbstractContextManager, nullcontext
@@ -10,6 +9,7 @@ from typing import Any, ClassVar
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, Mock, patch
 
+import orjson
 import pytest
 from aiohttp import ClientConnectionError
 
@@ -60,7 +60,7 @@ def _token_requests(session: Mock) -> list[tuple[str, dict[str, Any]]]:
         url = call.args[1] if len(call.args) > 1 else call.kwargs.get("url", "")
         if "getToken" not in url:
             continue
-        out.append((url, json.loads(call.kwargs["data"])))
+        out.append((url, orjson.loads(call.kwargs["data"])))
     return out
 
 
@@ -89,7 +89,7 @@ _TOSHIBA_EXPECTED_SN = "0008AC0000000000000000000000BEEF"
 # 9999 "system error": a well-formed body that must be retried in place. Two
 # spellings so the same value works for the v5 proxy ("code") and the legacy
 # mapp.appsmb.com backend ("errorCode").
-_SYSTEM_ERROR_9999 = json.dumps({"code": 9999, "errorCode": 9999}).encode()
+_SYSTEM_ERROR_9999 = orjson.dumps({"code": 9999, "errorCode": 9999})
 
 
 @pytest.fixture(autouse=True)
@@ -124,7 +124,7 @@ async def test_msmartcloud_login_raises_cloud_login_error(code: int, msg: str) -
     response.read = AsyncMock(
         side_effect=[
             _RESPONSES["msmartcloud_reroute.json"],
-            json.dumps({"code": code, "msg": msg}).encode(),
+            orjson.dumps({"code": code, "msg": msg}),
         ],
     )
     session.request = AsyncMock(return_value=response)
@@ -156,7 +156,7 @@ async def test_smarthome_account_routing(
     response = Mock()
     response.read = AsyncMock(
         side_effect=[
-            json.dumps({"code": "0", "data": {"masUrl": api_url}}).encode(),
+            orjson.dumps({"code": "0", "data": {"masUrl": api_url}}),
             _RESPONSES["cloud_login_id.json"],
             _RESPONSES["msmartcloud_login.json"],
         ],
@@ -172,7 +172,7 @@ async def test_smarthome_account_routing(
         "https://mp-prod.appsmb.com/mas/v5/app/proxy?alias="
         "/v1/unitcenter/router/user/name"
     )
-    payload = json.loads(route.kwargs["data"])
+    payload = orjson.loads(route.kwargs["data"])
     assert payload["userName"] == _ENCRYPTED_ACCOUNT
     assert payload["clientType"] == 8
     assert payload["clientSrc"] == 8
@@ -181,7 +181,7 @@ async def test_smarthome_account_routing(
     assert "password" not in payload
     assert login_id.args[1] == api_url + "/v1/user/login/id/get"
     assert login.args[1] == api_url + "/mj/user/login"
-    assert json.loads(login_id.kwargs["data"])["clientType"] == "1"
+    assert orjson.loads(login_id.kwargs["data"])["clientType"] == "1"
     assert _ENCRYPTED_ACCOUNT not in caplog.text
     assert "user@example.com" not in caplog.text
 
@@ -218,7 +218,7 @@ async def test_smarthome_account_routing_falls_back(
 
     legacy, login_id, login = session.request.await_args_list[-3:]
     assert legacy.args[1].endswith("/v1/multicloud/platform/user/route")
-    payload = json.loads(legacy.kwargs["data"])
+    payload = orjson.loads(legacy.kwargs["data"])
     assert payload["userName"] == "user@example.com"
     assert payload["clientType"] == "1"
     assert "clientSrc" not in payload
@@ -422,15 +422,16 @@ def test_redact_data_masks_session_fields(field: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "serialize",
-    [str, json.dumps, lambda data: str(json.dumps(data).encode())],
+    "raw",
+    [
+        str({"userName": _ENCRYPTED_ACCOUNT, "format": "2"}),
+        f'{{"userName": "{_ENCRYPTED_ACCOUNT}", "format": "2"}}',
+        str(f'{{"userName": "{_ENCRYPTED_ACCOUNT}", "format": "2"}}'.encode()),
+    ],
     ids=["dict-repr", "json", "bytes-repr"],
 )
-def test_redact_data_masks_encrypted_account(
-    serialize: Callable[[dict[str, str]], str],
-) -> None:
+def test_redact_data_masks_encrypted_account(raw: str) -> None:
     """Mask the entire reversible account ciphertext in every log format."""
-    raw = serialize({"userName": _ENCRYPTED_ACCOUNT, "format": "2"})
     redacted = _redact_data(raw)
     assert "*" * len(_ENCRYPTED_ACCOUNT) in redacted
     assert _ENCRYPTED_ACCOUNT[:8] not in redacted
@@ -441,25 +442,25 @@ def test_redact_data_masks_encrypted_account(
     "raw",
     [
         pytest.param(str({"nickname": "Renato T", "format": "2"}), id="dict_repr"),
-        pytest.param(json.dumps({"nickname": "Renato T", "format": "2"}), id="json"),
+        pytest.param('{"nickname": "Renato T", "format": "2"}', id="json"),
         pytest.param(
             str({"nickname": "O'Reilly Renato", "format": "2"}),
             id="dict_repr_apostrophe",
         ),
         pytest.param(
-            json.dumps({"nickname": "O'Reilly Renato", "format": "2"}),
+            '{"nickname": "O\'Reilly Renato", "format": "2"}',
             id="json_apostrophe",
         ),
         pytest.param(
-            str(json.dumps({"nickname": "O'Reilly Renato", "format": "2"}).encode()),
+            'b\'{"nickname": "O\\\'Reilly Renato", "format": "2"}\'',
             id="bytes_repr_apostrophe",
         ),
         pytest.param(
-            json.dumps({"nickname": 'Renato "Tom" T', "format": "2"}),
+            '{"nickname": "Renato \\"Tom\\" T", "format": "2"}',
             id="json_escaped_quote",
         ),
         pytest.param(
-            json.dumps(json.dumps({"nickname": "O'Reilly Renato", "format": "2"})),
+            '"{\\"nickname\\": \\"O\'Reilly Renato\\", \\"format\\": \\"2\\"}"',
             id="escaped_delimiters",
         ),
     ],
@@ -1405,7 +1406,9 @@ class CloudTest(IsolatedAsyncioTestCase):
             assert await cloud.login()
 
         login_data = session.request.call_args.kwargs["data"]
-        login_result = json.loads(self.responses["mideaaircloud_login.json"])["result"]
+        login_result = orjson.loads(self.responses["mideaaircloud_login.json"])[
+            "result"
+        ]
         blob = "\n".join(logs.output)
         assert login_data["password"] not in blob
         assert login_result["sessionId"] not in blob

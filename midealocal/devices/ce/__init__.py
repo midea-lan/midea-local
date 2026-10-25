@@ -1,9 +1,10 @@
 """Midea local CE device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
+
+import orjson
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
@@ -139,7 +140,7 @@ class MideaCEDevice(MideaDevice):
         self._speed_count = self._default_speed_count
         if customize and len(customize) > 0:
             try:
-                params = json.loads(customize)
+                params = orjson.loads(customize)
                 if params and "speed_count" in params:
                     self._speed_count = params.get("speed_count")
             except Exception:

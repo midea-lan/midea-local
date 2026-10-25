@@ -1,9 +1,10 @@
 """Midea local C2 device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, Unpack
+
+import orjson
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
@@ -119,7 +120,7 @@ class MideaC2Device(MideaDevice):
         self._max_seat_temp_level = self._default_max_seat_temp_level
         if customize and len(customize) > 0:
             try:
-                params = json.loads(customize)
+                params = orjson.loads(customize)
                 if params and "max_dry_level" in params:
                     self._max_dry_level = params.get("max_dry_level")
                 if params and "max_water_temp_level" in params:

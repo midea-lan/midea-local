@@ -1,10 +1,11 @@
 """Midea local x40 device."""
 
-import json
 import logging
 import math
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
+
+import orjson
 
 from midealocal.const import DeviceType
 from midealocal.device import (
@@ -155,7 +156,7 @@ class MideaX40Device(MideaDevice):
         self._precision_halves = self._default_precision_halves
         if customize and len(customize) > 0:
             try:
-                params = json.loads(customize)
+                params = orjson.loads(customize)
                 if params and "precision_halves" in params:
                     self._precision_halves = params.get("precision_halves")
             except Exception:

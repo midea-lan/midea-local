@@ -1,10 +1,11 @@
 """Midea local CD device."""
 
-import json
 import logging
 from collections.abc import Callable
 from enum import IntEnum, StrEnum
 from typing import Any, ClassVar, Unpack, cast
+
+import orjson
 
 from midealocal.const import DeviceType
 from midealocal.device import (
@@ -948,7 +949,7 @@ class MideaCDDevice(MideaDevice):
         self._lua_protocol = self._default_lua_protocol
         if customize and len(customize) > 0:
             try:
-                params = json.loads(customize)
+                params = orjson.loads(customize)
                 if params and "temperature_step" in params:
                     self._temperature_step = params.get("temperature_step")
                 if params and "lua_protocol" in params:

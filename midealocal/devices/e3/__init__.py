@@ -1,9 +1,10 @@
 """Midea local E3 device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
+
+import orjson
 
 from midealocal.const import DeviceType
 from midealocal.device import (
@@ -142,7 +143,7 @@ class MideaE3Device(MideaDevice):
         self._temperature_step = self._default_temperature_step
         if customize and len(customize) > 0:
             try:
-                params = json.loads(customize)
+                params = orjson.loads(customize)
                 if params and "temperature_step" in params:
                     self._temperature_step = float(params.get("temperature_step"))
                 if params and "precision_halves" in params:

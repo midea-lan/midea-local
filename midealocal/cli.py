@@ -3,7 +3,6 @@
 import asyncio
 import contextlib
 import inspect
-import json
 import logging
 import sys
 from argparse import ArgumentParser, BooleanOptionalAction, Namespace
@@ -12,6 +11,7 @@ from typing import Any, NoReturn
 
 import aiohttp
 import anyio
+import orjson
 import platformdirs
 from colorlog import ColoredFormatter
 
@@ -83,11 +83,11 @@ class MideaCLI:
         if not await cache_file.exists():
             return []
         try:
-            devices = json.loads(await cache_file.read_text(encoding="utf-8")).get(
+            devices = orjson.loads(await cache_file.read_text(encoding="utf-8")).get(
                 "devices",
                 [],
             )
-        except (json.JSONDecodeError, AttributeError, OSError):
+        except (orjson.JSONDecodeError, AttributeError, OSError):
             # Malformed or unreadable cache: treat it as empty rather than
             # aborting discovery over a corrupt convenience file.
             _LOGGER.warning("Ignoring unreadable device cache %s.", cache_file)
@@ -128,7 +128,7 @@ class MideaCLI:
             # failure mid-write never leaves behind truncated/corrupt JSON.
             tmp_file = cache_file.with_name(cache_file.name + ".tmp")
             await tmp_file.write_text(
-                json.dumps({"devices": devices}, indent=2),
+                orjson.dumps({"devices": devices}, option=orjson.OPT_INDENT_2).decode(),
                 encoding="utf-8",
             )
             await tmp_file.chmod(0o600)
@@ -281,7 +281,7 @@ class MideaCLI:
             "password": self.namespace.password,
             "cloud_name": self.namespace.cloud_name,
         }
-        json_data = json.dumps(data)
+        json_data = orjson.dumps(data).decode()
         file = get_config_file_path(not self.namespace.user)
         with file.open(mode="w+", encoding="utf-8") as f:
             f.write(json_data)
@@ -711,7 +711,7 @@ def main() -> NoReturn:
     namespace = parser.parse_args()
     if config.exists():
         with config.open(encoding="utf-8") as f:
-            config_data = json.load(f)
+            config_data = orjson.loads(f.read())
             for key, value in config_data.items():
                 if not getattr(namespace, key):
                     setattr(namespace, key, value)

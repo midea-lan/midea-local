@@ -1,9 +1,10 @@
 """Midea local FA device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
+
+import orjson
 
 from midealocal.const import DeviceType
 from midealocal.device import (
@@ -485,7 +486,7 @@ class MideaFADevice(MideaDevice):
         self._mode_set_overrides = {}
         if customize and len(customize) > 0:
             try:
-                params = json.loads(customize)
+                params = orjson.loads(customize)
                 if params and "speed_count" in params:
                     self._speed_count = params.get("speed_count")
                 if params and "mode_set_overrides" in params:

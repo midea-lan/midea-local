@@ -1,9 +1,10 @@
 """Midea local C3 device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, cast, override
+
+import orjson
 
 from midealocal.base_classes.climate import (
     TEMPERATURE_STEP_HALF,
@@ -550,7 +551,7 @@ class MideaC3Device(MideaClimateDevice):
         self._temperature_step = self._default_temperature_step
         if customize and len(customize) > 0:
             try:
-                params = json.loads(customize)
+                params = orjson.loads(customize)
                 if params and "temperature_step" in params:
                     temp_step = params.get("temperature_step")
                     if isinstance(temp_step, float | int):
@@ -561,7 +562,7 @@ class MideaC3Device(MideaClimateDevice):
                             self.device_id,
                             temp_step,
                         )
-            except json.JSONDecodeError:
+            except orjson.JSONDecodeError:
                 _LOGGER.exception(
                     "[%s] JSON decode error in set_customize",
                     self.device_id,

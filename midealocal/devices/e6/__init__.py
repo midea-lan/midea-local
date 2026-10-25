@@ -1,10 +1,10 @@
 """Midea local E6 device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
+import orjson
 from typing_extensions import deprecated
 
 from midealocal.const import DeviceType
@@ -119,7 +119,7 @@ class MideaE6Device(MideaDevice):
         """Midea E2 device set customize."""
         if customize and len(customize) > 0:
             try:
-                params = json.loads(customize)
+                params = orjson.loads(customize)
                 if params and "temperature_step" in params:
                     self._temperature_step = float(params.get("temperature_step"))
             except Exception:

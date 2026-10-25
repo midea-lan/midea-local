@@ -1,6 +1,5 @@
 """Midea Local CLI tests."""
 
-import json
 import logging
 import runpy
 import subprocess
@@ -12,6 +11,7 @@ from tempfile import TemporaryDirectory
 from unittest import IsolatedAsyncioTestCase, skipIf
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import orjson
 import pytest
 
 from midealocal.cli import (
@@ -374,7 +374,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 serial_number="0000AC12300000001234567890ABCDEF",
             )
             assert result == [mock_device_instance]
-            cached = json.loads(cache_file.read_text(encoding="utf-8"))
+            cached = orjson.loads(cache_file.read_text(encoding="utf-8"))
             assert cached == {
                 "devices": [
                     {"device_id": "1", "token": "cloudtoken", "key": "cloudkey"},
@@ -397,7 +397,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         with TemporaryDirectory() as tmpdir:
             cache_file = Path(tmpdir) / "midea-devices.json"
             cache_file.write_text(
-                json.dumps(
+                orjson.dumps(
                     {
                         "devices": [
                             {
@@ -407,7 +407,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                             },
                         ],
                     },
-                ),
+                ).decode(),
                 encoding="utf-8",
             )
             with (
@@ -467,7 +467,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         with TemporaryDirectory() as tmpdir:
             cache_file = Path(tmpdir) / "midea-devices.json"
             cache_file.write_text(
-                json.dumps(
+                orjson.dumps(
                     {
                         "devices": [
                             {
@@ -477,7 +477,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                             },
                         ],
                     },
-                ),
+                ).decode(),
                 encoding="utf-8",
             )
             with (
@@ -511,7 +511,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             )
             assert result == [mock_device_instance]
             # the fresh, working key replaces the stale cached one
-            cached = json.loads(cache_file.read_text(encoding="utf-8"))
+            cached = orjson.loads(cache_file.read_text(encoding="utf-8"))
             assert cached == {
                 "devices": [
                     {"device_id": "1", "token": "freshtoken", "key": "freshkey"},
@@ -523,9 +523,9 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         with TemporaryDirectory() as tmpdir:
             cache_file = Path(tmpdir) / "midea-devices.json"
             cache_file.write_text(
-                json.dumps(
+                orjson.dumps(
                     {"devices": [{"device_id": "1", "token": "tok", "key": "key"}]},
-                ),
+                ).decode(),
                 encoding="utf-8",
             )
             with patch(
@@ -558,7 +558,9 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
 
             # JSON root is not an object
             non_object_root = Path(tmpdir) / "list.json"
-            non_object_root.write_text(json.dumps([1, 2, 3]), encoding="utf-8")
+            non_object_root.write_text(
+                orjson.dumps([1, 2, 3]).decode(), encoding="utf-8"
+            )
             with patch(
                 "midealocal.cli.get_devices_cache_path",
                 return_value=non_object_root,
@@ -567,7 +569,9 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
 
             # a "devices" entry that isn't an object
             bad_entry = Path(tmpdir) / "bad_entry.json"
-            bad_entry.write_text(json.dumps({"devices": ["oops"]}), encoding="utf-8")
+            bad_entry.write_text(
+                orjson.dumps({"devices": ["oops"]}).decode(), encoding="utf-8"
+            )
             with patch(
                 "midealocal.cli.get_devices_cache_path",
                 return_value=bad_entry,
@@ -577,7 +581,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             # a matching entry missing its token/key
             missing_fields = Path(tmpdir) / "missing_fields.json"
             missing_fields.write_text(
-                json.dumps({"devices": [{"device_id": "1"}]}),
+                orjson.dumps({"devices": [{"device_id": "1"}]}).decode(),
                 encoding="utf-8",
             )
             with patch(
@@ -624,9 +628,9 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         with TemporaryDirectory() as tmpdir:
             cache_file = Path(tmpdir) / "midea-devices.json"
             cache_file.write_text(
-                json.dumps(
+                orjson.dumps(
                     {"devices": [{"device_id": "1", "token": "old", "key": "old"}]},
-                ),
+                ).decode(),
                 encoding="utf-8",
             )
             with patch(
@@ -635,7 +639,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             ):
                 await self.cli._cache_device_keys(1, {"token": "new", "key": "new"})
 
-            cached = json.loads(cache_file.read_text(encoding="utf-8"))
+            cached = orjson.loads(cache_file.read_text(encoding="utf-8"))
             assert cached == {
                 "devices": [{"device_id": "1", "token": "new", "key": "new"}],
             }
@@ -680,13 +684,13 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             mock_path_instance.open.assert_called_once_with(mode="w+", encoding="utf-8")
             handle = mock_path_instance.open.return_value.__enter__.return_value
             handle.write.assert_called_once_with(
-                json.dumps(
+                orjson.dumps(
                     {
                         "username": self.namespace.username,
                         "password": self.namespace.password,
                         "cloud_name": self.namespace.cloud_name,
                     },
-                ),
+                ).decode(),
             )
             mock_path_instance.chmod.assert_called_once_with(0o600)
 
@@ -1168,7 +1172,9 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         with TemporaryDirectory() as tmpdir:
             config_file = Path(tmpdir) / "midea-local.json"
             config_file.write_text(
-                json.dumps({"username": "configuser", "password": "configpass"}),
+                orjson.dumps(
+                    {"username": "configuser", "password": "configpass"}
+                ).decode(),
                 encoding="utf-8",
             )
             exit_code: int | str | None = None

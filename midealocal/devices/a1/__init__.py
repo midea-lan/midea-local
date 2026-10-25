@@ -1,9 +1,10 @@
 """Midea local A1 device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
+
+import orjson
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
@@ -206,7 +207,7 @@ class MideaA1Device(MideaDevice):
         self._speeds = self._default_speeds
         if customize and len(customize) > 0:
             try:
-                params = json.loads(customize)
+                params = orjson.loads(customize)
                 if params:
                     to_update = {}
                     if "speeds" in params:

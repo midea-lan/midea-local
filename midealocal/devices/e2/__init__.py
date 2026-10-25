@@ -1,10 +1,11 @@
 """Midea Local E2 device."""
 
-import json
 import logging
 import math
 from enum import IntEnum, StrEnum
 from typing import Any, Unpack
+
+import orjson
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs, multiplier_translator
@@ -289,7 +290,7 @@ class MideaE2Device(MideaDevice):
         self._heating_power_multiplier = self._default_heating_power_multiplier
         if customize and len(customize) > 0:
             try:
-                params = json.loads(customize)
+                params = orjson.loads(customize)
                 if params and "old_protocol" in params:
                     self._old_protocol = self._normalize_old_protocol(
                         params["old_protocol"],

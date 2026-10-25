@@ -1,9 +1,10 @@
 """Midea local x13 device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
+
+import orjson
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
@@ -125,7 +126,7 @@ class Midea13Device(MideaDevice):
         self._color_temp_range = self._default_color_temp_range
         if customize and len(customize) > 0:
             try:
-                params = json.loads(customize)
+                params = orjson.loads(customize)
                 if params and "color_temp_range_kelvin" in params:
                     self._color_temp_range = params.get("color_temp_range_kelvin")
             except Exception:

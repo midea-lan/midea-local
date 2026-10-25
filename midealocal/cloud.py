@@ -1,7 +1,6 @@
 """Midea Local cloud."""
 
 import base64
-import json
 import logging
 import re
 import time
@@ -15,6 +14,7 @@ from secrets import token_hex
 from typing import Any, cast
 
 import aiofiles
+import orjson
 from aiohttp import ClientConnectionError, ClientSession, ClientTimeout
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
@@ -277,7 +277,7 @@ class MideaCloud:
             )
         random = str(int(time.time()))
         url = self._api_url + endpoint
-        dump_data = json.dumps(data)
+        dump_data = orjson.dumps(data).decode()
         sign = self._security.sign("", dump_data, random)
         header.update(
             {
@@ -309,8 +309,8 @@ class MideaCloud:
                         _redact_data(str(data)),
                         _redact_data(str(raw)),
                     )
-                    response = json.loads(raw)
-            except (TimeoutError, ClientConnectionError, json.JSONDecodeError) as e:
+                    response = orjson.loads(raw)
+            except (TimeoutError, ClientConnectionError, orjson.JSONDecodeError) as e:
                 _LOGGER.warning(
                     "Midea cloud API error, url: %s, error: %s",
                     url,
@@ -1150,8 +1150,8 @@ class MideaAirCloud(MideaCloud):
                         _redact_data(str(data)),
                         _redact_data(str(raw)),
                     )
-                    response = json.loads(raw)
-            except (TimeoutError, ClientConnectionError, json.JSONDecodeError) as e:
+                    response = orjson.loads(raw)
+            except (TimeoutError, ClientConnectionError, orjson.JSONDecodeError) as e:
                 _LOGGER.warning(
                     "Midea cloud API error, url: %s, error: %s",
                     url,
