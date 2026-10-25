@@ -576,7 +576,7 @@ class MideaDevice:
                     check_protocol,
                     (),
                 )
-            real_cmds: list[Any] = self.build_query()
+            real_cmds = self.build_query()
             error_count = 0
             _LOGGER.debug(
                 "[%s] refresh_status with cmds: %s, check_protocol %s, \
@@ -727,7 +727,7 @@ class MideaDevice:
                 )
         return MessageResult.SUCCESS
 
-    def build_query(self) -> list[Any]:
+    def build_query(self) -> Sequence[MessageRequest]:
         """Build query."""
         raise NotImplementedError
 

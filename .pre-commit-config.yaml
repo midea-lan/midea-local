@@ -60,6 +60,7 @@ repos:
     rev: v2.4.0
     hooks:
       - id: mypy
+        args: [--scripts-are-modules]
         pass_filenames: false
         additional_dependencies:
           - aiofiles==25.1.0
