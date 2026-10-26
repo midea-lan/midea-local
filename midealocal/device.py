@@ -32,6 +32,7 @@ AUTH_PAYLOAD_LENGTH = 64
 AUTH_LENGTH_OFFSET = 2
 AUTH_LENGTH_END = 4
 AUTH_TYPE_OFFSET = 5
+# V2 envelope: 40-byte header + 16-byte signature, excluding the payload.
 MIN_MSG_LENGTH = 56
 MESSAGE_TYPE_INDEX = 9  # offset of the message-type byte in the 10-byte header
 MIN_V2_FACTUAL_MSG_LENGTH = 6
@@ -379,6 +380,7 @@ class MideaDevice:
             if factual_msg_len < MIN_V2_FACTUAL_MSG_LENGTH:
                 break
             alleged_msg_len = msg[4] + (msg[5] << 8)
+            # Reject lengths smaller than the envelope; zero would never advance.
             if alleged_msg_len < MIN_MSG_LENGTH:
                 raise ValueError("Invalid V2 frame length")
             if factual_msg_len >= alleged_msg_len:
