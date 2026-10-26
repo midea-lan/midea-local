@@ -142,6 +142,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         """Test get keys."""
         mock_cloud = AsyncMock()
         with (
+            patch("aiohttp.ClientSession", return_value=AsyncMock()),
             patch("midealocal.cli.get_midea_cloud", return_value=mock_cloud),
             patch.object(
                 mock_cloud,
