@@ -28,7 +28,7 @@ jobs:
       - name: Create PR
         uses: peter-evans/create-pull-request@v6
         with:
-          commit-message: "feat: update all submodules"
-          branch: "chore/update-lua"
-          title: "chore: update lua"
+          commit-message: "chore: update all submodules"
+          branch: "chore/update-submodules"
+          title: "chore: update submodules"
           body: ${{ steps.submodules.outputs.prBody }}
