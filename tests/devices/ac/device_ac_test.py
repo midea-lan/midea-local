@@ -613,6 +613,21 @@ class TestMideaACDevice:
             assert exhaust_off.power is False
             assert exhaust_off.exhaust is True
 
+    def test_bb_fresh_air_unknown_mode_keeps_current_state(self) -> None:
+        """Test an unknown BB mode name leaves power and speed unchanged."""
+        device = self._make_device("23096633", 1)
+        device._attributes[DeviceAttributes.fresh_air_power] = True
+        device._attributes[DeviceAttributes.fresh_air_fan_speed] = 40
+
+        with patch.object(device, "build_send") as build_send:
+            device.set_attribute(DeviceAttributes.fresh_air_mode, "unknown")
+
+        message = build_send.call_args.args[0]
+        assert isinstance(message, MessageSubProtocolFreshAirSet)
+        assert message.power is True
+        assert message.speed == 40
+        assert message.exhaust is False
+
     def test_bb_fresh_air_exhaust_power_defaults_to_advertised_speed(self) -> None:
         """Test exhaust power-on uses a speed exposed by the preset list."""
         device = self._make_device("23096633", 1)
