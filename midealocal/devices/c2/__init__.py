@@ -1,11 +1,11 @@
 """Midea local C2 device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, Unpack
 
 from midealocal.const import DeviceType
+from midealocal.const.other_exceptions import C2_EXCEPTIONS
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import MessageC2Response, MessagePower, MessageQuery, MessageSet
@@ -37,7 +37,7 @@ class MideaC2Device(MideaDevice):
     def __init__(
         self,
         *,
-        customize: str,
+        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea C2 device."""
@@ -60,13 +60,10 @@ class MideaC2Device(MideaDevice):
                 DeviceAttributes.filter_life: None,
             },
         )
-        self._max_dry_level: int | None = None
-        self._max_water_temp_level: int | None = None
-        self._max_seat_temp_level: int | None = None
-        self._default_max_dry_level = 3
-        self._default_max_water_temp_level = 5
-        self._default_max_seat_temp_level = 5
-        self.set_customize(customize)
+        exceptions = C2_EXCEPTIONS.get(str(self.model), {})
+        self._max_dry_level: int = exceptions.get("max_dry_level", 3)
+        self._max_water_temp_level: int = exceptions.get("max_water_temp_level", 5)
+        self._max_seat_temp_level: int = exceptions.get("max_seat_temp_level", 5)
 
     @property
     def max_dry_level(self) -> int | None:
@@ -111,34 +108,6 @@ class MideaC2Device(MideaDevice):
             setattr(message, attr, value)
         if message:
             self.build_send(message)
-
-    def set_customize(self, customize: str) -> None:
-        """Midea C2 device set customize."""
-        self._max_dry_level = self._default_max_dry_level
-        self._max_water_temp_level = self._default_max_water_temp_level
-        self._max_seat_temp_level = self._default_max_seat_temp_level
-        if customize and len(customize) > 0:
-            try:
-                params = json.loads(customize)
-                if params and "max_dry_level" in params:
-                    self._max_dry_level = params.get("max_dry_level")
-                if params and "max_water_temp_level" in params:
-                    self._max_water_temp_level = params.get("max_water_temp_level")
-                if params and "max_seat_temp_level" in params:
-                    self._max_seat_temp_level = params.get("max_seat_temp_level")
-            except Exception:
-                _LOGGER.exception("[%s] Set customize error", self.device_id)
-            self.update_all(
-                {
-                    "dry_level": {"max_dry_level": self._max_dry_level},
-                    "water_temp_level": {
-                        "max_water_temp_level": self._max_water_temp_level,
-                    },
-                    "seat_temp_level": {
-                        "max_seat_temp_level": self._max_seat_temp_level,
-                    },
-                },
-            )
 
 
 class MideaAppliance(MideaC2Device):
