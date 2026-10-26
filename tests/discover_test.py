@@ -428,3 +428,59 @@ def test_enum_all_broadcast() -> None:
         return_value=[adapter],
     ):
         assert enum_all_broadcast() == ["192.168.1.255", "10.255.255.255"]
+
+
+class TestDiscoveryNetworkLatency:
+    """Network latency regressions using fragmented and delayed replies."""
+
+    @pytest.mark.asyncio
+    async def test_legacy_discovery_probes_each_endpoint_once(self) -> None:
+        """Duplicate UDP responses must not repeat the legacy TCP lookup."""
+        reply = (V1_XML % SN_TYPE1, (DEVICE_IP, 6445))
+        loop = _fake_loop(recvfrom_side_effect=[reply, reply, TimeoutError])
+        with (
+            patch("midealocal.discover.asyncio.get_running_loop", return_value=loop),
+            patch("midealocal.discover.enum_all_broadcast", return_value=[]),
+            patch(
+                "midealocal.discover.get_device_info",
+                new=AsyncMock(return_value=_build_id_response()),
+            ) as info,
+        ):
+            result = await discover()
+        assert len(result) == 1
+        info.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_discovery_budget_is_not_restarted_by_traffic(self) -> None:
+        """An expired scan returns already found devices without another UDP read."""
+        loop = _fake_loop(
+            recvfrom_side_effect=[(_build_v2_packet(), (DEVICE_IP, 6445))]
+        )
+        # No sends; deadline=5, first receive at t=0, second attempted at t=6.
+        loop.time = iter([0.0, 0.0, 6.0]).__next__
+        with (
+            patch("midealocal.discover.asyncio.get_running_loop", return_value=loop),
+            patch("midealocal.discover.enum_all_broadcast", return_value=[]),
+        ):
+            result = await discover()
+        assert len(result) == 1
+        loop.sock_recvfrom.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_device_info_drain_is_bounded_and_closed(self) -> None:
+        """A writer stuck in drain is covered by the same information-query budget."""
+        reader, writer = make_stream_pair()
+
+        async def block() -> None:
+            await asyncio.Future()
+
+        writer.drain.side_effect = block
+        with (
+            patch(
+                "midealocal.discover.asyncio.open_connection",
+                new=AsyncMock(return_value=(reader, writer)),
+            ),
+            patch("midealocal.discover.DEVICE_INFO_TIMEOUT", 0),
+        ):
+            assert await get_device_info(DEVICE_IP, 6444) == bytearray()
+        writer.close.assert_called_once()
