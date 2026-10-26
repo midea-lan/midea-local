@@ -196,7 +196,17 @@ class MideaEDDevice(MideaDevice):
         # Build single-message query for known subtypes; fall back to
         # the multi-message query set for unknown subtypes.
         # Subtype -> query message class mapping (single-message subtypes)
-        subtype_query: dict[int, Any] = {
+        subtype_query: dict[
+            int,
+            type[
+                MessageQuery01
+                | MessageQuery04
+                | MessageQuery05
+                | MessageQuery06
+                | MessageQuery07
+                | MessageQuery09
+            ],
+        ] = {
             **dict.fromkeys(
                 [309, 310, 311, 313, 314, 315, 317, 330],
                 MessageQuery04,

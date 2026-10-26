@@ -464,7 +464,7 @@ class MideaCloud:
         """Get available cloud servers."""
         return {i: cloud for i, cloud in enumerate(SUPPORTED_CLOUDS, start=1)}
 
-    async def list_home(self) -> dict[int, Any] | None:
+    async def list_home(self) -> dict[int, str] | None:
         """List homes."""
         return {1: "My home"}
 
@@ -636,7 +636,7 @@ class MeijuCloud(MideaCloud):
         _LOGGER.warning("Meiju Cloud login failed for device %s", self._device_id)
         return False
 
-    async def list_home(self) -> dict[int, Any] | None:
+    async def list_home(self) -> dict[int, str] | None:
         """List Meiju Cloud homes."""
         if response := await self._api_request(
             endpoint="/v1/homegroup/list/get",
@@ -1340,7 +1340,7 @@ class ToshibaIOLife(MideaAirCloud):
         data = self._make_general_data()
         data["appVersion"] = self._app_version
         # home/page/list/info returns result as a bare list, not {list: [...]}
-        page_list: Any = await self._api_request(
+        page_list: object = await self._api_request(
             endpoint="/v1/appliance/user/home/page/list/info",
             data=data,
         )

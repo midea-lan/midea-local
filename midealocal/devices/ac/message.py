@@ -994,8 +994,8 @@ class MessageNewProtocolSet(MessageACBase):
         self.screen_display_alternate: bytes | None = None
         self.fresh_air_1: bytes | None = None
         self.fresh_air_2: bytes | None = None
-        self.wind_lr_angle: bytes | None = None
-        self.wind_ud_angle: bytes | None = None
+        self.wind_lr_angle: int | None = None
+        self.wind_ud_angle: int | None = None
         self.rate_select: int | None = None
         self.out_silent: bool | None = None
         self.sound: bool | None = None

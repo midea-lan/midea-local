@@ -1,5 +1,6 @@
 """Test CD Device."""
 
+from collections.abc import Mapping
 from types import SimpleNamespace
 from typing import Literal
 from unittest.mock import patch
@@ -457,10 +458,17 @@ class TestMideaCDDevice:
         assert self.device.attributes[DeviceAttributes.power] is True
         assert new_status[DeviceAttributes.power.value] is True
 
+    def test_has_valid_timer_data_rejects_non_mapping(self) -> None:
+        """A schedule that is not a mapping is never considered valid."""
+        assert not MideaCDDevice._has_valid_timer_data(
+            DeviceAttributes.weekly_schedule,
+            [],
+        )
+
     def test_sanitize_set_fields_drops_unconvertible_tr_value(self) -> None:
         """A non-numeric trValue echo is dropped instead of raising."""
         clean = MideaCDDevice._sanitize_set_fields(
-            {"trValue": "abc", "openPTC": 1, "ptcTemp": 2, "byte8": 0x10},
+            {"trValue": "abc", "openPTC": 1, "ptcTemp": 2, "byte8": 0x10},  # type: ignore[dict-item]
         )
         assert clean == {}
 
@@ -899,6 +907,7 @@ class TestMideaCDExtendedDevice:
             (DeviceAttributes.weekly_schedule, {0: [None]}),
             (DeviceAttributes.weekly_schedule, {"0": []}),
             (DeviceAttributes.weekly_schedule, {0: [{"opentime": None}]}),
+            (DeviceAttributes.weekly_schedule, {0: [{"opentime": "abc"}]}),
             (DeviceAttributes.weekly_schedule, {0: [{"mode": False}]}),
             (DeviceAttributes.weekly_schedule, {0: [{"effect": "false"}]}),
         ],
@@ -906,7 +915,7 @@ class TestMideaCDExtendedDevice:
     def test_schedule_writes_reject_invalid_timer_data(
         self,
         attribute: DeviceAttributes,
-        schedule: dict[object, object],
+        schedule: Mapping[int, object] | Mapping[str, object],
     ) -> None:
         """Malformed nested timer collections never build a control frame."""
         with patch.object(self.device, "build_send") as mock_send:

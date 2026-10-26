@@ -50,13 +50,22 @@ Write-Host "Installing prek hooks..."
 prek install --overwrite
 prek install --hook-type commit-msg --overwrite
 
+# Initialize the Lua submodule and install its own prek hook.
+git submodule update --init --recursive --remote
+Push-Location "lua"
+try {
+    prek install --overwrite
+} finally {
+    Pop-Location
+}
+
 # Shim so muscle-memory `pre-commit` invocations still work, backed by prek.
 Set-Content -Path ".venv\Scripts\pre-commit.cmd" -Value "@echo off`r`nprek %*"
 
 # commitlint (a commit-msg hook) needs its shared config; install it if npm exists.
 if (Get-Command npm -ErrorAction SilentlyContinue) {
     Write-Host "Installing @commitlint/config-conventional..."
-    npm install --no-fund --no-audit @commitlint/config-conventional
+    npm ci
 } else {
     Write-Warning "'npm' not found - skipping @commitlint/config-conventional."
     Write-Warning "Install Node.js if the commitlint commit-msg hook fails."

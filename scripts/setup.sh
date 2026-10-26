@@ -36,4 +36,11 @@ uv sync --frozen --all-groups
 prek install --overwrite
 prek install --hook-type commit-msg --overwrite
 
-npm install --no-fund --no-audit @commitlint/config-conventional
+# Initialize the Lua submodule and install its own prek hook.
+git -C "$REPO_ROOT" submodule update --init --recursive --remote
+(
+    cd "$REPO_ROOT/lua"
+    prek install --overwrite
+)
+
+npm ci
