@@ -80,7 +80,7 @@ class TestToshibaACDevice:
         attributes = self.device.attributes
         assert attributes[DeviceAttributes.min_temperature] == 16.0
         assert attributes[DeviceAttributes.max_temperature] == 32.0
-        assert attributes[DeviceAttributes.dehumidify] == 0
+        assert attributes[DeviceAttributes.dehumidify] is None
         assert attributes[DeviceAttributes.breezeless_direction] is None
         assert attributes[DeviceAttributes.screen_display] is False
         assert attributes[DeviceAttributes.indoor_humidity] is None
@@ -99,6 +99,12 @@ class TestToshibaACDevice:
             MideaPreset.ECO,
         ]
         assert self.device.breezeless_directions == ["off", "full", "left", "right"]
+        assert self.device.dehumidify_modes == [
+            "weak",
+            "strong",
+            "clothes_dry",
+            "recommended",
+        ]
 
     def test_build_query(self) -> None:
         """A single standard query is sent in a 0x55 frame."""
@@ -140,30 +146,21 @@ class TestToshibaACDevice:
         assert status[DeviceAttributes.wind_lr_angle] == "right"
 
     @pytest.mark.parametrize(
-        ("dehumidify", "fan_mode"),
-        [(1, ACFanSpeed.LOW), (2, ACFanSpeed.HIGH), (4, ACFanSpeed.AUTO)],
+        ("dehumidify", "name"),
+        [(1, "weak"), (2, "strong"), (3, "clothes_dry"), (4, "recommended")],
     )
-    def test_dry_sub_mode_reported_as_fan(
-        self,
-        dehumidify: int,
-        fan_mode: ACFanSpeed,
-    ) -> None:
-        """In dry mode the sub-mode stands in for the fan speed."""
+    def test_dehumidify_reported_by_name(self, dehumidify: int, name: str) -> None:
+        """The dry sub-mode is reported by name; the fan speed is left as is."""
         status = self.device.process_message(
             c0_frame({2: 0x30, 3: 30, 21: dehumidify << 1}),
         )
-        assert status[DeviceAttributes.fan_speed] == fan_mode
-        assert self.device.fan_mode == fan_mode
-
-    def test_clothes_drying_leaves_the_fan_speed_alone(self) -> None:
-        """Clothes drying (sub-mode 3) has no fan equivalent."""
-        status = self.device.process_message(c0_frame({2: 0x30, 3: 30, 21: 3 << 1}))
+        assert status[DeviceAttributes.dehumidify] == name
         assert status[DeviceAttributes.fan_speed] == 30
 
-    def test_fan_speed_untouched_outside_dry(self) -> None:
-        """Outside dry the reported fan speed is used as is."""
-        status = self.device.process_message(c0_frame({2: 0x20, 3: 30, 21: 4 << 1}))
-        assert status[DeviceAttributes.fan_speed] == 30
+    def test_unknown_dehumidify_reads_as_none(self) -> None:
+        """A sub-mode value outside the known set is not a named option."""
+        status = self.device.process_message(c0_frame({2: 0x30, 21: 0}))
+        assert status[DeviceAttributes.dehumidify] is None
 
     @pytest.mark.parametrize(
         ("attr", "value", "tag", "payload"),
@@ -187,7 +184,18 @@ class TestToshibaACDevice:
                 ToshibaPropertyTags.swing_horizontal,
                 [0],
             ),
-            (DeviceAttributes.dehumidify, 2, ToshibaPropertyTags.dehumidify, [2]),
+            (
+                DeviceAttributes.dehumidify,
+                "strong",
+                ToshibaPropertyTags.dehumidify,
+                [2],
+            ),
+            (
+                DeviceAttributes.dehumidify,
+                "clothes_dry",
+                ToshibaPropertyTags.dehumidify,
+                [3],
+            ),
             (DeviceAttributes.breezeless, True, ToshibaPropertyTags.breezeless, [1]),
             (
                 DeviceAttributes.target_temperature,
@@ -256,6 +264,7 @@ class TestToshibaACDevice:
         [
             ("no_such_attribute", True),
             (DeviceAttributes.breezeless_direction, "sideways"),
+            (DeviceAttributes.dehumidify, 2),
         ],
     )
     def test_unsupported_value_is_refused(
@@ -310,26 +319,19 @@ class TestToshibaACDevice:
         self.device.set_attribute(DeviceAttributes.mode, 3)
         assert ToshibaPropertyTags.dehumidify not in self.sent()
 
-    @pytest.mark.parametrize(
-        ("fan_mode", "dehumidify"),
-        [
-            (ACFanSpeed.SILENT, 1),
-            (ACFanSpeed.LOW, 1),
-            (ACFanSpeed.MEDIUM, 4),
-            (ACFanSpeed.HIGH, 2),
-            (ACFanSpeed.FULL, 2),
-            (ACFanSpeed.AUTO, 4),
-        ],
-    )
-    def test_fan_mode_in_dry_sets_the_sub_mode(
-        self,
-        fan_mode: ACFanSpeed,
-        dehumidify: int,
-    ) -> None:
-        """In dry mode a fan setting picks the nearest dehumidify sub-mode."""
+    def test_fan_mode_in_dry_is_refused(self) -> None:
+        """In dry mode the unit drives the fan, so a fan write is refused."""
         self.device.process_message(c0_frame({2: 0x30}))
-        self.device.set_fan_mode(fan_mode)
-        assert self.sent() == {ToshibaPropertyTags.dehumidify: bytearray([dehumidify])}
+        with patch("midealocal.devices.ac._LOGGER") as logger:
+            self.device.set_fan_mode(ACFanSpeed.HIGH)
+        self.send.assert_not_called()
+        logger.warning.assert_called_once()
+
+    def test_fan_mode_outside_dry_is_written(self) -> None:
+        """Outside dry the fan speed is written as asked."""
+        self.device.process_message(c0_frame({2: 0x20}))
+        self.device.set_fan_mode(ACFanSpeed.HIGH)
+        assert self.sent() == {ToshibaPropertyTags.fan_speed: bytearray([80])}
 
     def test_set_target_temperature(self) -> None:
         """Without a mode only the setpoint is written."""
@@ -487,4 +489,5 @@ def test_non_toshiba_serial_keeps_the_midea_protocol() -> None:
     )
     assert device._is_toshiba is False
     assert device.breezeless_directions == []
+    assert device.dehumidify_modes == []
     assert len(device.build_query()) > 1

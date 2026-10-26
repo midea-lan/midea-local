@@ -164,7 +164,7 @@ TOSHIBA_EXTRA_ATTRIBUTES: Mapping[DeviceAttributes, Any] = {
     DeviceAttributes.breezeless_direction: None,
     DeviceAttributes.clean_manual: False,
     DeviceAttributes.cleaning: False,
-    DeviceAttributes.dehumidify: 0,
+    DeviceAttributes.dehumidify: None,
     DeviceAttributes.energy_save: False,
 }
 # Read-only attributes are ignored rather than warned about, so a consumer that
@@ -205,7 +205,6 @@ TOSHIBA_BYTE_PROPERTIES: Mapping[str, ToshibaPropertyTags] = {
     DeviceAttributes.fan_speed: ToshibaPropertyTags.fan_speed,
     DeviceAttributes.swing_vertical: ToshibaPropertyTags.swing_vertical,
     DeviceAttributes.swing_horizontal: ToshibaPropertyTags.swing_horizontal,
-    DeviceAttributes.dehumidify: ToshibaPropertyTags.dehumidify,
     DeviceAttributes.breezeless: ToshibaPropertyTags.breezeless,
 }
 # screen_display is a 0-100 backlight brightness, driven as an on/off switch.
@@ -219,30 +218,29 @@ TOSHIBA_BREEZELESS_DIRECTIONS: Mapping[int, str] = {
     2: "left",
     3: "right",
 }
-# Dry sub-modes of the dehumidify property.
-TOSHIBA_DEHUMIDIFY_WEAK = 1
-TOSHIBA_DEHUMIDIFY_STRONG = 2
+# Dry sub-modes of the dehumidify property. The unit drives the fan itself in
+# dry mode, so this is the setting that stands in for the fan speed there.
 TOSHIBA_DEHUMIDIFY_RECOMMENDED = 4
-# The unit drives the fan itself in dry mode, so the sub-mode stands in for the
-# fan setting there, each reported as the speed a consumer shows by that name.
-TOSHIBA_DRY_FAN_SPEEDS: Mapping[int, ACFanSpeed] = {
-    TOSHIBA_DEHUMIDIFY_WEAK: ACFanSpeed.LOW,
-    TOSHIBA_DEHUMIDIFY_STRONG: ACFanSpeed.HIGH,
-    TOSHIBA_DEHUMIDIFY_RECOMMENDED: ACFanSpeed.AUTO,
+TOSHIBA_DEHUMIDIFY_MODES: Mapping[int, str] = {
+    1: "weak",
+    2: "strong",
+    3: "clothes_dry",
+    TOSHIBA_DEHUMIDIFY_RECOMMENDED: "recommended",
 }
-
-
-def _toshiba_dry_fan_to_dehumidify(speed: int) -> int:
-    """Fold a requested fan speed onto the nearest dry sub-mode.
-
-    Silent and low become weak, medium (and auto) recommended, high and full
-    strong.
-    """
-    if speed <= ACFanSpeed.LOW:
-        return TOSHIBA_DEHUMIDIFY_WEAK
-    if speed <= ACFanSpeed.MEDIUM or speed > ACFanSpeed.FULL:
-        return TOSHIBA_DEHUMIDIFY_RECOMMENDED
-    return TOSHIBA_DEHUMIDIFY_STRONG
+# Attributes written as one of their property's named values.
+TOSHIBA_NAMED_PROPERTIES: Mapping[
+    str,
+    tuple[ToshibaPropertyTags, Mapping[int, str]],
+] = {
+    DeviceAttributes.breezeless_direction: (
+        ToshibaPropertyTags.breezeless_direction,
+        TOSHIBA_BREEZELESS_DIRECTIONS,
+    ),
+    DeviceAttributes.dehumidify: (
+        ToshibaPropertyTags.dehumidify,
+        TOSHIBA_DEHUMIDIFY_MODES,
+    ),
+}
 
 
 def _toshiba_wind_angle(
@@ -283,10 +281,11 @@ def _toshiba_params(
             else TOSHIBA_SCREEN_DISPLAY_ON * value
         )
         return {ToshibaPropertyTags.screen_display: bytearray([brightness])}
-    if attr == DeviceAttributes.breezeless_direction:
-        for raw, name in TOSHIBA_BREEZELESS_DIRECTIONS.items():
+    if attr in TOSHIBA_NAMED_PROPERTIES:
+        tag, names = TOSHIBA_NAMED_PROPERTIES[attr]
+        for raw, name in names.items():
             if name == value:
-                return {ToshibaPropertyTags.breezeless_direction: bytearray([raw])}
+                return {tag: bytearray([raw])}
     return None
 
 
@@ -802,6 +801,13 @@ class MideaACDevice(MideaClimateDevice):
             return []
         return list(TOSHIBA_BREEZELESS_DIRECTIONS.values())
 
+    @property
+    def dehumidify_modes(self) -> list[str]:
+        """Selectable dry-mode dehumidify modes (Toshiba IoLife units only)."""
+        if not self._is_toshiba:
+            return []
+        return list(TOSHIBA_DEHUMIDIFY_MODES.values())
+
     def _active_rate_selects(self) -> dict[int, str]:
         """Midea AC device rate_select gear map for the reported gear count.
 
@@ -981,7 +987,7 @@ class MideaACDevice(MideaClimateDevice):
         for attr in (DeviceAttributes.wind_ud_angle, DeviceAttributes.wind_lr_angle):
             if (angle := getattr(message, attr.value, None)) is not None:
                 self._toshiba_wind_angles[attr] = angle
-        new_status = self.update_attributes_from_message(
+        return self.update_attributes_from_message(
             message,
             {
                 # .get leaves an unlisted raw value as None -- notably the auto
@@ -991,18 +997,9 @@ class MideaACDevice(MideaClimateDevice):
                 DeviceAttributes.breezeless_direction: (
                     TOSHIBA_BREEZELESS_DIRECTIONS.get
                 ),
+                DeviceAttributes.dehumidify: TOSHIBA_DEHUMIDIFY_MODES.get,
             },
         )
-        # In dry mode, report the dehumidify sub-mode as the fan speed. Clothes
-        # drying has no fan equivalent, so it shows whatever the unit reports.
-        if self._attributes[DeviceAttributes.mode] == DRY_MODE and (
-            speed := TOSHIBA_DRY_FAN_SPEEDS.get(
-                self._attributes[DeviceAttributes.dehumidify],
-            )
-        ):
-            self._attributes[DeviceAttributes.fan_speed] = int(speed)
-            new_status[DeviceAttributes.fan_speed.value] = int(speed)
-        return new_status
 
     @staticmethod
     def _fresh_air_mode(
@@ -1542,10 +1539,11 @@ class MideaACDevice(MideaClimateDevice):
             attr == DeviceAttributes.fan_speed
             and self._attributes[DeviceAttributes.mode] == DRY_MODE
         ):
-            # The fan speed is not settable in dry mode; steer the sub-mode instead.
-            self._set_toshiba_attribute(
-                DeviceAttributes.dehumidify,
-                _toshiba_dry_fan_to_dehumidify(int(value)),
+            # The unit drives the fan itself in dry mode and does not take a fan
+            # speed there; the dehumidify mode is the setting to change instead.
+            _LOGGER.warning(
+                "[%s] set_attribute: fan speed cannot be set in dry mode",
+                self.device_id,
             )
         elif attr in (DeviceAttributes.self_clean, DeviceAttributes.clean_manual):
             self._set_toshiba_clean(attr, bool(value))
