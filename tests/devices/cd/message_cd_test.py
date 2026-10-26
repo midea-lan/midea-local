@@ -120,7 +120,7 @@ class TestMessageSet:
     def test_read_field(self) -> None:
         """read_field returns int values and 0 for missing/empty fields."""
         msg = MessageSet(protocol_version=ProtocolVersion.V1)
-        msg.fields = {"trValue": "5", "openPTC": 0}
+        msg.fields = {"trValue": "5", "openPTC": 0}  # type: ignore[dict-item]
         assert msg.read_field("trValue") == 5
         assert msg.read_field("openPTC") == 0
         assert msg.read_field("missing") == 0

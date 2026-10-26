@@ -14,7 +14,7 @@ from midealocal.base_classes.climate import (
     MideaSwingMode,
 )
 from midealocal.const import DeviceType
-from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs
+from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs, SkipAttribute
 
 from .message import (
     INDEX_TO_FE_MODE,
@@ -292,7 +292,7 @@ class MideaCCDevice(MideaClimateDevice):
         # once every other attribute (including fan_speed_level) is settled.
         fan_speed: int | None = None
 
-        def _capture_fan_speed(value: int) -> Any:  # noqa: ANN401
+        def _capture_fan_speed(value: int) -> SkipAttribute:
             nonlocal fan_speed
             fan_speed = value
             return SKIP_ATTRIBUTE
