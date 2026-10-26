@@ -1999,21 +1999,75 @@ class TestDeviceNetworkLatency:
         with pytest.raises(AuthException):
             await device.authenticate()
 
-    def test_invalid_v2_length_rejected(self) -> None:
-        """A declared length smaller than the envelope cannot consume a valid frame."""
+    @pytest.mark.parametrize("length", [0, 1, 55])
+    def test_invalid_v2_length_rejected(self, length: int) -> None:
+        """Reject undersized envelopes, including a length that cannot advance."""
         with pytest.raises(ValueError, match="V2 frame length"):
-            MideaDevice.fetch_v2_message(b"\x5a\x5a\x00\x00\x01\x00")
+            MideaDevice.fetch_v2_message(b"\x5a\x5a\x00\x00" + bytes([length, 0]))
+
+    def test_v2_frames_preserve_incomplete_tail(self) -> None:
+        """Extract a complete envelope and retain a following fragmented frame."""
+        empty_frame = bytes.fromhex("5a5a011038002000") + bytes(48)
+        payload_frame = bytes.fromhex("5a5a011148002000") + bytes(64)
+        messages, tail = MideaDevice.fetch_v2_message(empty_frame + payload_frame[:20])
+        assert messages == [empty_frame]
+        assert tail == payload_frame[:20]
+        assert MideaDevice.fetch_v2_message(tail + payload_frame[20:]) == (
+            [payload_frame],
+            b"",
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("length", "message_type"), [(63, 1), (65, 1), (64, 0), (64, 3)]
+    )
+    async def test_handshake_rejects_invalid_header(
+        self, device: MideaDevice, length: int, message_type: int
+    ) -> None:
+        """Reject an invalid header before reading its payload or deriving a key."""
+        reader, writer = make_stream_pair()
+        reader.readexactly.return_value = (
+            b"\x83\x70" + length.to_bytes(2, "big") + bytes([0x20, message_type, 0, 0])
+        )
+        device._reader, device._writer = reader, writer
+        with patch.object(device._security, "tcp_key") as key:
+            with pytest.raises(AuthException):
+                await device.authenticate()
+            key.assert_not_called()
+        reader.readexactly.assert_awaited_once_with(8)
 
     @pytest.mark.asyncio
     async def test_handshake_timeout_covers_all_fragments(
         self, device: MideaDevice
     ) -> None:
-        """A stalled payload cannot restart the authentication budget."""
-        reader = asyncio.StreamReader()
-        reader.feed_data(b"\x83\x70\x00\x40\x20\x01\x00\x00")
-        device._reader, device._writer = reader, make_stream_pair()[1]
-        with patch("midealocal.device.SOCKET_TIMEOUT", 0), pytest.raises(TimeoutError):
-            await device.authenticate()
+        """Individually timely reads must still share one authentication budget."""
+        reader, writer = make_stream_pair()
+        device._reader, device._writer = reader, writer
+        now = 100.0
+        chunks = iter([b"\x83\x70\x00\x40\x20\x01\x00\x00", bytes(64)])
+
+        async def delayed_read(_size: int) -> bytes:
+            nonlocal now
+            # Each read takes 3 s (< 5 s), but together they take 6 s (> 5 s).
+            # Advance the clock instead of sleeping; yield for timeout callbacks.
+            now += 3
+            await asyncio.sleep(0)
+            await asyncio.sleep(0)
+            return next(chunks)
+
+        reader.readexactly.side_effect = delayed_read
+        with (
+            patch("midealocal.device.SOCKET_TIMEOUT", 5),
+            patch.object(asyncio.get_running_loop(), "time", side_effect=lambda: now),
+            patch.object(device._security, "tcp_key") as key,
+        ):
+            with pytest.raises(TimeoutError):
+                await device.authenticate()
+            key.assert_not_called()
+        assert [call.args for call in reader.readexactly.await_args_list] == [
+            (8,),
+            (64,),
+        ]
 
     @pytest.mark.asyncio
     async def test_timer_deadline_and_refresh_completion(
@@ -2030,3 +2084,16 @@ class TestDeviceNetworkLatency:
         ):
             await device._check_refresh(102)
         assert device._previous_refresh == 110
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(("now", "delay"), [(109, 1), (110, 0), (111, 0)])
+    async def test_timer_with_refresh_disabled(
+        self, device: MideaDevice, now: float, delay: float
+    ) -> None:
+        """A disabled refresh cannot mask a future or overdue heartbeat."""
+        device._refresh_interval = 0
+        device._previous_refresh = 0
+        device._previous_heartbeat = 100
+        device._heartbeat_interval = 10
+        with patch.object(asyncio.get_running_loop(), "time", return_value=now):
+            assert device._next_timer_delay() == delay

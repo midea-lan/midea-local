@@ -484,3 +484,30 @@ class TestDiscoveryNetworkLatency:
         ):
             assert await get_device_info(DEVICE_IP, 6444) == bytearray()
         writer.close.assert_called_once()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("stalled_port", [6445, 20086])
+    async def test_discovery_send_timeout_ends_scan(self, stalled_port: int) -> None:
+        """A blocked broadcast send exhausts the budget without starting a receive."""
+        loop = _fake_loop()
+        sent_ports = []
+        send_cancelled = False
+
+        async def send(_sock: object, _data: bytes, address: tuple[str, int]) -> None:
+            nonlocal send_cancelled
+            sent_ports.append(address[1])
+            if address[1] == stalled_port:
+                try:
+                    await asyncio.Future()
+                finally:
+                    send_cancelled = True
+
+        loop.sock_sendto.side_effect = send
+        with (
+            patch("midealocal.discover.asyncio.get_running_loop", return_value=loop),
+            patch("midealocal.discover.DISCOVERY_TIMEOUT", 0),
+        ):
+            assert await asyncio.wait_for(discover(ip_address=DEVICE_IP), 1) == {}
+        assert sent_ports == ([6445] if stalled_port == 6445 else [6445, 20086])
+        assert send_cancelled
+        loop.sock_recvfrom.assert_not_awaited()
