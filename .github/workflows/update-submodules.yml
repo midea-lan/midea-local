@@ -5,16 +5,21 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-  pull-requests: write
-
 name: update-submodules
 
 jobs:
-  release-please:
+  update-submodules:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate token
+        uses: actions/create-github-app-token@v2
+        id: generate-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: midea-lan
+          repositories: midea-local
+
       - name: Checkout Repository
         uses: actions/checkout@v7
         with:
@@ -28,6 +33,7 @@ jobs:
       - name: Create PR
         uses: peter-evans/create-pull-request@v8
         with:
+          token: ${{ steps.generate-token.outputs.token }}
           commit-message: "chore: update all submodules"
           branch: "chore/update-submodules"
           title: "chore: update submodules"
