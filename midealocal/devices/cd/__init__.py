@@ -1,12 +1,12 @@
 """Midea local CD device."""
 
-import json
 import logging
 from collections.abc import Callable
 from enum import IntEnum, StrEnum
 from typing import Any, ClassVar, Unpack, cast
 
 from midealocal.const import DeviceType
+from midealocal.const.water_heater_exceptions import CD_EXCEPTIONS
 from midealocal.device import (
     SKIP_ATTRIBUTE,
     MideaDevice,
@@ -171,7 +171,7 @@ class MideaCDDevice(MideaDevice):
     def __init__(
         self,
         *,
-        customize: str,
+        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea CD device."""
@@ -265,14 +265,13 @@ class MideaCDDevice(MideaDevice):
             },
         )
         self._fields: dict[Any, Any] = {}
-        self._temperature_step: float | None = None
-        self._default_temperature_step: float = 1.0
-        # customize lua_protocol
-        self._default_lua_protocol = LuaProtocol.auto
-        self._lua_protocol = self._default_lua_protocol
+        exceptions = CD_EXCEPTIONS.get(str(self.model), {})
+        self._temperature_step: float = exceptions.get("temperature_step", 1.0)
+        self._lua_protocol = self._normalize_lua_protocol(
+            exceptions.get("lua_protocol", LuaProtocol.auto),
+        )
         # fahrenheit or celsius switch, default is celsius, update with message
         self._fahrenheit: bool = False
-        self.set_customize(customize)
 
     def _value_to_temperature(
         self,
@@ -301,22 +300,18 @@ class MideaCDDevice(MideaDevice):
         # new protocol
         return value
 
-    def _normalize_lua_protocol(self, value: str | bool | int) -> LuaProtocol:
-        # current only have str
-        if isinstance(value, str):
-            return_value = LuaProtocol(value)
-            # auto mode, use model to set value as old or new
-            if return_value == LuaProtocol.auto:
-                # old protocol: RSJ18RD2 (subtype 186), confirmed by
-                # real-device messages. Raw body[3]=148 decodes to 59C
-                # only with old protocol: (148-30)/2=59.
-                # subtype 186 was previously mapped to new protocol from
-                # an unverified RSJ000CB assumption; subtype alone cannot
-                # distinguish models with different protocol versions.
-                check_device = self.model in self._new_protocol_models
-                return_value = LuaProtocol.new if check_device else LuaProtocol.old
-        if isinstance(value, bool | int):
-            return_value = LuaProtocol.new if value else LuaProtocol.old
+    def _normalize_lua_protocol(self, value: str) -> LuaProtocol:
+        return_value = LuaProtocol(value)
+        # auto mode, use model to set value as old or new
+        if return_value == LuaProtocol.auto:
+            # old protocol: RSJ18RD2 (subtype 186), confirmed by
+            # real-device messages. Raw body[3]=148 decodes to 59C
+            # only with old protocol: (148-30)/2=59.
+            # subtype 186 was previously mapped to new protocol from
+            # an unverified RSJ000CB assumption; subtype alone cannot
+            # distinguish models with different protocol versions.
+            check_device = self.model in self._new_protocol_models
+            return_value = LuaProtocol.new if check_device else LuaProtocol.old
         return return_value
 
     @property
@@ -941,31 +936,6 @@ class MideaCDDevice(MideaDevice):
         if MessageSet.TR_VALUE_MIN <= tr_i <= MessageSet.TR_VALUE_MAX:
             return {"trValue": tr_i}
         return {}
-
-    def set_customize(self, customize: str) -> None:
-        """Midea CD device set customize."""
-        self._temperature_step = self._default_temperature_step
-        self._lua_protocol = self._default_lua_protocol
-        if customize and len(customize) > 0:
-            try:
-                params = json.loads(customize)
-                if params and "temperature_step" in params:
-                    self._temperature_step = params.get("temperature_step")
-                if params and "lua_protocol" in params:
-                    self._lua_protocol = self._normalize_lua_protocol(
-                        params["lua_protocol"],
-                    )
-            except Exception:
-                _LOGGER.exception("[%s] Set customize error", self.device_id)
-        # Always resolve auto to old/new based on device model
-        if self._lua_protocol == LuaProtocol.auto:
-            self._lua_protocol = self._normalize_lua_protocol(LuaProtocol.auto)
-        self.update_all(
-            {
-                "temperature_step": self._temperature_step,
-                "lua_protocol": self._lua_protocol,
-            },
-        )
 
 
 class MideaAppliance(MideaCDDevice):
