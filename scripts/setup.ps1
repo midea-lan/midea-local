@@ -65,7 +65,7 @@ Set-Content -Path ".venv\Scripts\pre-commit.cmd" -Value "@echo off`r`nprek %*"
 # commitlint (a commit-msg hook) needs its shared config; install it if npm exists.
 if (Get-Command npm -ErrorAction SilentlyContinue) {
     Write-Host "Installing @commitlint/config-conventional..."
-    npm install --no-fund --no-audit @commitlint/config-conventional
+    npm ci
 } else {
     Write-Warning "'npm' not found - skipping @commitlint/config-conventional."
     Write-Warning "Install Node.js if the commitlint commit-msg hook fails."
