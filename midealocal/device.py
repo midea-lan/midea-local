@@ -468,7 +468,14 @@ class MideaDevice:
                 payload = await self._reader.readexactly(length)
         except asyncio.IncompleteReadError as exc:
             raise AuthException from exc
-        messages, _ = self._security.decode_8370(header + payload)
+        response = header + payload
+        _LOGGER.debug(
+            "[%s] Received auth response with %d bytes: %s",
+            self._device_id,
+            len(response),
+            response.hex(),
+        )
+        messages, _ = self._security.decode_8370(response)
         self._security.tcp_key(messages[0], self._key)
         _LOGGER.debug("[%s] Authentication success", self._device_id)
 
