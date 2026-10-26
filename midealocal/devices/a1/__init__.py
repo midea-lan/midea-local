@@ -1,11 +1,11 @@
 """Midea local A1 device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
+from midealocal.const.humidifier_exceptions import A1_EXCEPTIONS
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import MessageA1Response, MessageQuery, MessageSet
@@ -60,7 +60,7 @@ class MideaA1Device(MideaDevice):
     def __init__(
         self,
         *,
-        customize: str,
+        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea A1 device."""
@@ -86,9 +86,9 @@ class MideaA1Device(MideaDevice):
             },
         )
         self._capabilities: dict[str, bool] = {}
-        self._speeds = self._default_speeds
-        self._modes = self._default_modes
-        self.set_customize(customize)
+        exceptions = A1_EXCEPTIONS.get(str(self.model), {})
+        self._speeds = exceptions.get("speeds", self._default_speeds)
+        self._modes = exceptions.get("modes", self._default_modes)
 
     @property
     def modes(self) -> list[str]:
@@ -200,41 +200,6 @@ class MideaA1Device(MideaDevice):
         message = self.make_message_set()
         message.filter_reset = True
         self.build_send(message)
-
-    def set_customize(self, customize: str) -> None:
-        """Midea A1 Device set customize."""
-        self._speeds = self._default_speeds
-        if customize and len(customize) > 0:
-            try:
-                params = json.loads(customize)
-                if params:
-                    to_update = {}
-                    if "speeds" in params:
-                        self._speeds = {}
-                        speeds = {}
-                        for k, v in params.get("speeds").items():
-                            speeds[int(k)] = v
-                        keys = sorted(speeds.keys())
-                        for k in keys:
-                            self._speeds[k] = speeds[k]
-                        to_update["speeds"] = self._speeds
-                    if "modes" in params:
-                        self._modes = {}
-                        modes = {}
-                        for k, v in params.get("modes").items():
-                            modes[int(k)] = v
-                        keys = sorted(modes.keys())
-                        for k in keys:
-                            self._modes[k] = modes[k]
-                        to_update["modes"] = self._modes
-                    if to_update:
-                        self.update_all(to_update)
-            except Exception:
-                _LOGGER.exception(
-                    "[%s] Set customize error - %s",
-                    self.device_id,
-                    customize,
-                )
 
 
 class MideaAppliance(MideaA1Device):
