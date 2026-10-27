@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+cd "$(dirname "$0")/.."
+
+# Virtual environments are handled by cleanup-venv.sh, node_modules is removed below.
+prune=(\( -path ./.git -o -path ./node_modules -o -path ./.venv -o -path ./venv -o -path ./env -o -path ./ENV -o -path ./env.bak -o -path ./venv.bak \) -prune -o)
+
 echo "🚀 Starting Python + Node dev cleanup..."
 
 # ----- Python bytecode -----
 echo "Removing __pycache__ and *.py[co]..."
-find . -type d -name "__pycache__" -exec rm -rf {} +
-find . -type f -name "*.py[co]" -delete
-find . -type f -name '*$py.class' -delete
+find . "${prune[@]}" -type d -name "__pycache__" -exec rm -rf {} +
+find . "${prune[@]}" -type f -name "*.py[co]" -exec rm -f {} +
+find . "${prune[@]}" -type f -name '*$py.class' -exec rm -f {} +
 
 # ----- Tool caches -----
 echo "Removing Python tool caches..."
@@ -21,7 +26,7 @@ done
 
 # ----- Build artifacts -----
 echo "Removing build artifacts..."
-for build in .Python build develop-eggs dist downloads eggs .eggs lib lib64 parts sdist var wheels share/python-wheels target out site docs/_build *.egg; do
+for build in .Python build develop-eggs dist downloads eggs .eggs lib64 parts sdist var wheels share/python-wheels target out site docs/_build *.egg; do
     [ -e "$build" ] && rm -rf "$build"
 done
 
@@ -29,8 +34,8 @@ for file in .installed.cfg MANIFEST; do
     [ -e "$file" ] && rm -rf "$file"
 done
 
-find . -type f \( -name '*.so' -o -name '*.manifest' -o -name '*.spec' \) -delete
-find . -type d -name "*.egg-info" -exec rm -rf {} +
+find . "${prune[@]}" -type f \( -name '*.so' -o -name '*.manifest' \) -exec rm -f {} +
+find . "${prune[@]}" -type d -name "*.egg-info" -exec rm -rf {} +
 
 # ----- IDE / project folders -----
 echo "Removing IDE folders..."
@@ -68,12 +73,12 @@ for runtime_file in celerybeat-schedule celerybeat.pid db.sqlite3 db.sqlite3-jou
     [ -e "$runtime_file" ] && rm -rf "$runtime_file"
 done
 
-find . -type f \( -name '*.mo' -o -name '*.pot' -o -name '*.log' \) -delete
+find . "${prune[@]}" -type f \( -name '*.mo' -o -name '*.log' \) -exec rm -f {} +
 
 # ----- Local config files -----
 if [ -f .env ] || [ -f local_settings.py ]; then
     echo ""
-    read -p "Do you want to purge local config files (.env, local_settings.py)? (y/n) " -n 1 -r
+    read -p "Do you want to purge local config files (.env, local_settings.py)? (y/n) " -n 1 -r || REPLY=n
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Removing local config files..."
