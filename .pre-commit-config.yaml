@@ -13,7 +13,7 @@ repos:
       - id: check-yaml
       - id: detect-private-key
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.13.5 # renovate: customPinnedDependency=uv,datasource=pypi
+    rev: 0.13.6 # renovate: customPinnedDependency=uv,datasource=pypi
     hooks:
       - id: uv-lock
         args: ["--check"]
