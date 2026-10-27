@@ -5,7 +5,7 @@ import warnings
 from binascii import crc_hqx
 from collections.abc import Callable
 from enum import IntEnum
-from typing import Any, Literal, overload, override
+from typing import Literal, Protocol, overload, override
 
 from typing_extensions import deprecated
 
@@ -280,13 +280,13 @@ class BodyType(IntEnum):
     """Body Types (Deprecated)."""
 
     @classmethod
-    def _missing_(cls, value: Any) -> IntEnum:  # noqa: ANN401
+    def _missing_(cls, value: object) -> IntEnum | None:
         warnings.warn(
             "BodyType is deprecated, use ListTypes instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return ListTypes(value)
+        return ListTypes(value) if isinstance(value, int) else None
 
 
 @deprecated("Use ListTypes instead")
@@ -294,13 +294,13 @@ class SubBodyType(IntEnum):
     """SubBody Types (Deprecated)."""
 
     @classmethod
-    def _missing_(cls, value: Any) -> IntEnum:  # noqa: ANN401
+    def _missing_(cls, value: object) -> IntEnum | None:
         warnings.warn(
             "SubBodyType is deprecated, use ListTypes instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return ListTypes(value)
+        return ListTypes(value) if isinstance(value, int) else None
 
 
 class MessageLenError(Exception):
@@ -743,6 +743,17 @@ class MessageQueryAppliance(MessageRequest):
         return bytearray([0x00] * 19)
 
 
+class ValueParser(Protocol):
+    """Read-only view of a BodyParser of any value type."""
+
+    @property
+    def name(self) -> str:
+        """Attribute name set on the parsed body."""
+
+    def get_value(self, body: bytearray) -> object:
+        """Decode the value from the message body."""
+
+
 class BodyParser[T]:
     """Decode one value from a message body.
 
@@ -1056,11 +1067,11 @@ class MessageBody:
     def __init__(
         self,
         body: bytearray,
-        parser_list: list[BodyParser[Any]] | None = None,
+        parser_list: list[ValueParser] | None = None,
     ) -> None:
         """Initialize message body."""
         self._data = body
-        self.parser_list: list[BodyParser[Any]] = (
+        self.parser_list: list[ValueParser] = (
             parser_list if parser_list is not None else []
         )
         self.parse_all()

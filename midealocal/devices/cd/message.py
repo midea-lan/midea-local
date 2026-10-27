@@ -1,6 +1,6 @@
 """Midea local CD message."""
 
-from typing import Any, NotRequired, TypedDict
+from typing import NotRequired, TypedDict
 
 from midealocal.const import DeviceType
 from midealocal.crc8 import calculate
@@ -266,7 +266,7 @@ class MessageSet(MessageCDBase):
         self.power: bool = False
         self.target_temperature: float = 0
         self.aux_heating: bool = False
-        self.fields: dict[Any, Any] = {}
+        self.fields: dict[str, int] = {}
         self.mode: int = 0
         # default to old protocol scaling unless explicitly disabled
         self.use_old_protocol: bool = True
@@ -1055,7 +1055,7 @@ class CD01MessageBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         """Initialize CD message set 01 body."""
         super().__init__(body)
-        self.fields: dict[Any, Any] = {}
+        self.fields: dict[str, int] = {}
         self.power = (body[2] & 0x01) > 0
         self.mode = body[3]
         self.target_temperature = float(body[4])

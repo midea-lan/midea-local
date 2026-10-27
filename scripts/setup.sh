@@ -43,4 +43,4 @@ git -C "$REPO_ROOT" submodule update --init --recursive --remote
     prek install --overwrite
 )
 
-npm install --no-fund --no-audit @commitlint/config-conventional
+npm ci
