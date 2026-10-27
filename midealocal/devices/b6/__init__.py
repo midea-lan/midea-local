@@ -1,11 +1,11 @@
 """Midea local B6 device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, Unpack
 
 from midealocal.const import DeviceType
+from midealocal.const.fan_exceptions import B6_EXCEPTIONS
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import MessageB6Response, MessageQuery, MessageSet
@@ -31,7 +31,7 @@ class MideaB6Device(MideaDevice):
     def __init__(
         self,
         *,
-        customize: str,
+        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea B6 device."""
@@ -48,11 +48,12 @@ class MideaB6Device(MideaDevice):
                 DeviceAttributes.cleaning_reminder: False,
             },
         )
-        self._default_speeds = {0: "off", 1: "low", 2: "high"}
-        self._default_power_speed = 2
-        self._power_speed = self._default_power_speed
-        self._speeds = self._default_speeds
-        self.set_customize(customize)
+        exceptions = B6_EXCEPTIONS.get(str(self.model), {})
+        self._power_speed: int = exceptions.get("default_speed", 2)
+        self._speeds: dict[int, str] = exceptions.get(
+            "speeds",
+            {0: "off", 1: "low", 2: "high"},
+        )
 
     @property
     def speed_count(self) -> int:
@@ -139,30 +140,6 @@ class MideaB6Device(MideaDevice):
                 list(self._speeds.values()).index(mode)
             ]
         self.build_send(message)
-
-    def set_customize(self, customize: str) -> None:
-        """Midea B6 device set customize."""
-        self._speeds = self._default_speeds
-        self._power_speed = self._default_power_speed
-        if customize and len(customize) > 0:
-            try:
-                params = json.loads(customize)
-                if params:
-                    if "default_speed" in params:
-                        self._power_speed = int(params.get("default_speed"))
-                    if "speeds" in params:
-                        self._speeds = {}
-                        speeds = {}
-                        for k, v in params.get("speeds").items():
-                            speeds[int(k)] = v
-                        keys = sorted(speeds.keys())
-                        for k in keys:
-                            self._speeds[k] = speeds[k]
-                    self.update_all(
-                        {"speeds": self._speeds, "default_speed": self._power_speed},
-                    )
-            except Exception:
-                _LOGGER.exception("[%s] Set customize error", self.device_id)
 
 
 class MideaAppliance(MideaB6Device):
