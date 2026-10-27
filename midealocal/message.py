@@ -5,11 +5,11 @@ import warnings
 from binascii import crc_hqx
 from collections.abc import Callable
 from enum import IntEnum
-from typing import Any, Literal, overload, override
+from typing import Literal, Protocol, overload, override
 
 from typing_extensions import deprecated
 
-from midealocal.const import DeviceType
+from midealocal.const import MAX_BYTE_VALUE, DeviceType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -280,13 +280,13 @@ class BodyType(IntEnum):
     """Body Types (Deprecated)."""
 
     @classmethod
-    def _missing_(cls, value: Any) -> IntEnum:  # noqa: ANN401
+    def _missing_(cls, value: object) -> IntEnum | None:
         warnings.warn(
             "BodyType is deprecated, use ListTypes instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return ListTypes(value)
+        return ListTypes(value) if isinstance(value, int) else None
 
 
 @deprecated("Use ListTypes instead")
@@ -294,13 +294,13 @@ class SubBodyType(IntEnum):
     """SubBody Types (Deprecated)."""
 
     @classmethod
-    def _missing_(cls, value: Any) -> IntEnum:  # noqa: ANN401
+    def _missing_(cls, value: object) -> IntEnum | None:
         warnings.warn(
             "SubBodyType is deprecated, use ListTypes instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return ListTypes(value)
+        return ListTypes(value) if isinstance(value, int) else None
 
 
 class MessageLenError(Exception):
@@ -743,6 +743,17 @@ class MessageQueryAppliance(MessageRequest):
         return bytearray([0x00] * 19)
 
 
+class ValueParser(Protocol):
+    """Read-only view of a BodyParser of any value type."""
+
+    @property
+    def name(self) -> str:
+        """Attribute name set on the parsed body."""
+
+    def get_value(self, body: bytearray) -> object:
+        """Decode the value from the message body."""
+
+
 class BodyParser[T]:
     """Decode one value from a message body.
 
@@ -825,6 +836,41 @@ class BodyParser[T]:
     def _parse(self, raw_value: int) -> T:
         """Convert raw value to attribute value."""
         raise NotImplementedError
+
+
+class FunctionParser[T](BodyParser[T]):
+    """Parse from bytearray using a function."""
+
+    def __init__(
+        self,
+        name: str,
+        byte: int,
+        parse_function: Callable[[bytearray], T],
+        default_value: T,
+        length_in_bytes: int = 1,
+    ) -> None:
+        """Initialize a function parser.
+
+        Args:
+            name: Attribute name to assign on the parsed body object.
+            byte: Offset in the body where the bit or byte resides.
+            parse_function: Callable invoked that will parse from bytearray to T.
+            default_value: Default value to be returned if byte out of range.
+            length_in_bytes: Number of bytes used to represent the value.
+
+        """
+        self._parse_function = parse_function
+        self._default_value = default_value
+        super().__init__(name, byte, length_in_bytes=length_in_bytes)
+
+    @override
+    def get_value(self, body: bytearray) -> T:
+        """Get attribute value."""
+        if len(body) < self._byte + self._length_in_bytes:
+            return self._default_value
+        return self._parse_function(
+            body[self._byte : self._byte + self._length_in_bytes],
+        )
 
 
 class BoolParser(BodyParser[bool]):
@@ -956,6 +1002,24 @@ class IntParser(BodyParser[int]):
         return raw_value
 
 
+class TimeParser(BodyParser[int]):
+    """Time byte parser, 0xFF (unset) reads as 0."""
+
+    def _parse(self, raw_value: int) -> int:
+        return 0 if raw_value == MAX_BYTE_VALUE else raw_value
+
+
+class WordParser(BodyParser[int]):
+    """Big-endian 16-bit parser."""
+
+    def __init__(self, name: str, byte: int) -> None:
+        """Init 16-bit parser."""
+        super().__init__(name, byte, length_in_bytes=2, first_upper=True)
+
+    def _parse(self, raw_value: int) -> int:
+        return raw_value
+
+
 class FloatParser(BodyParser[float]):
     """Parse a floating-point value from a raw body field."""
 
@@ -1003,11 +1067,11 @@ class MessageBody:
     def __init__(
         self,
         body: bytearray,
-        parser_list: list[BodyParser[Any]] | None = None,
+        parser_list: list[ValueParser] | None = None,
     ) -> None:
         """Initialize message body."""
         self._data = body
-        self.parser_list: list[BodyParser[Any]] = (
+        self.parser_list: list[ValueParser] = (
             parser_list if parser_list is not None else []
         )
         self.parse_all()

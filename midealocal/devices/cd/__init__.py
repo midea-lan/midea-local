@@ -1,16 +1,17 @@
 """Midea local CD device."""
 
-import json
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from enum import IntEnum, StrEnum
 from typing import Any, ClassVar, Unpack, cast
 
 from midealocal.const import DeviceType
+from midealocal.const.water_heater_exceptions import CD_EXCEPTIONS
 from midealocal.device import (
     SKIP_ATTRIBUTE,
     MideaDevice,
     MideaDeviceInitKwargs,
+    SkipAttribute,
     sentinel_translator,
 )
 from midealocal.message import MessageType
@@ -171,7 +172,7 @@ class MideaCDDevice(MideaDevice):
     def __init__(
         self,
         *,
-        customize: str,
+        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea CD device."""
@@ -264,15 +265,14 @@ class MideaCDDevice(MideaDevice):
                 DeviceAttributes.support_negative_temperature: None,
             },
         )
-        self._fields: dict[Any, Any] = {}
-        self._temperature_step: float | None = None
-        self._default_temperature_step: float = 1.0
-        # customize lua_protocol
-        self._default_lua_protocol = LuaProtocol.auto
-        self._lua_protocol = self._default_lua_protocol
+        self._fields: dict[str, int] = {}
+        exceptions = CD_EXCEPTIONS.get(str(self.model), {})
+        self._temperature_step: float = exceptions.get("temperature_step", 1.0)
+        self._lua_protocol = self._normalize_lua_protocol(
+            exceptions.get("lua_protocol", LuaProtocol.auto),
+        )
         # fahrenheit or celsius switch, default is celsius, update with message
         self._fahrenheit: bool = False
-        self.set_customize(customize)
 
     def _value_to_temperature(
         self,
@@ -301,22 +301,18 @@ class MideaCDDevice(MideaDevice):
         # new protocol
         return value
 
-    def _normalize_lua_protocol(self, value: str | bool | int) -> LuaProtocol:
-        # current only have str
-        if isinstance(value, str):
-            return_value = LuaProtocol(value)
-            # auto mode, use model to set value as old or new
-            if return_value == LuaProtocol.auto:
-                # old protocol: RSJ18RD2 (subtype 186), confirmed by
-                # real-device messages. Raw body[3]=148 decodes to 59C
-                # only with old protocol: (148-30)/2=59.
-                # subtype 186 was previously mapped to new protocol from
-                # an unverified RSJ000CB assumption; subtype alone cannot
-                # distinguish models with different protocol versions.
-                check_device = self.model in self._new_protocol_models
-                return_value = LuaProtocol.new if check_device else LuaProtocol.old
-        if isinstance(value, bool | int):
-            return_value = LuaProtocol.new if value else LuaProtocol.old
+    def _normalize_lua_protocol(self, value: str) -> LuaProtocol:
+        return_value = LuaProtocol(value)
+        # auto mode, use model to set value as old or new
+        if return_value == LuaProtocol.auto:
+            # old protocol: RSJ18RD2 (subtype 186), confirmed by
+            # real-device messages. Raw body[3]=148 decodes to 59C
+            # only with old protocol: (148-30)/2=59.
+            # subtype 186 was previously mapped to new protocol from
+            # an unverified RSJ000CB assumption; subtype alone cannot
+            # distinguish models with different protocol versions.
+            check_device = self.model in self._new_protocol_models
+            return_value = LuaProtocol.new if check_device else LuaProtocol.old
         return return_value
 
     @property
@@ -348,7 +344,7 @@ class MideaCDDevice(MideaDevice):
     def _is_extended_water_heater(self, message: object | None = None) -> bool:
         """Detect extended CD support from reported protocol fields."""
 
-        def _value(source: object, attribute: DeviceAttributes) -> Any:  # noqa: ANN401
+        def _value(source: object, attribute: DeviceAttributes) -> object:
             if isinstance(source, dict):
                 return source.get(attribute)
             return getattr(source, attribute, None)
@@ -380,8 +376,8 @@ class MideaCDDevice(MideaDevice):
             if isinstance(_value(source, DeviceAttributes.b0_reserved_flags), int):
                 return True
             if any(
-                isinstance(_value(source, attribute), int | float)
-                and _value(source, attribute) > 0
+                isinstance(limit := _value(source, attribute), int | float)
+                and limit > 0
                 for attribute in limits
             ):
                 return True
@@ -397,10 +393,13 @@ class MideaCDDevice(MideaDevice):
             else self._modes
         )
 
-    def _make_mode_translator(self, message: object) -> Callable[[int], Any]:
+    def _make_mode_translator(
+        self,
+        message: object,
+    ) -> Callable[[int], str | SkipAttribute]:
         """Build a mode translator using the capabilities in this response."""
 
-        def _translate(value: int) -> Any:  # noqa: ANN401
+        def _translate(value: int) -> str | SkipAttribute:
             # Extended mode 0x05 normally means Heat Pump, but the dedicated
             # vacation flag gives the same value Vacation semantics.
             if self._is_extended_water_heater(message) and getattr(
@@ -413,7 +412,10 @@ class MideaCDDevice(MideaDevice):
 
         return _translate
 
-    def _make_power_translator(self, message: object) -> Callable[[bool], Any]:
+    def _make_power_translator(
+        self,
+        message: object,
+    ) -> Callable[[bool], bool | SkipAttribute]:
         """Distrust the power bit from a SET echo.
 
         CD01MessageBody (controlType=0x01 SET response echo) parses power
@@ -425,7 +427,7 @@ class MideaCDDevice(MideaDevice):
         """
         is_set_echo = getattr(message, "message_type", None) == MessageType.set
 
-        def _translate(value: bool) -> Any:  # noqa: ANN401
+        def _translate(value: bool) -> bool | SkipAttribute:
             return SKIP_ATTRIBUTE if is_set_echo else value
 
         return _translate
@@ -451,7 +453,7 @@ class MideaCDDevice(MideaDevice):
     def _make_temperature_translator(
         self,
         attr: DeviceAttributes,
-    ) -> Callable[[float], Any]:
+    ) -> Callable[[float], float]:
         """Build a translator for one of the seven temperature-family attrs."""
         force_fahrenheit = (
             self.model in self._forced_temperature_models
@@ -468,7 +470,7 @@ class MideaCDDevice(MideaDevice):
             DeviceAttributes.current_temperature,
         }
 
-        def _translate(raw_value: float) -> Any:  # noqa: ANN401
+        def _translate(raw_value: float) -> float:
             parsed = self._value_to_temperature(
                 raw_value,
                 force_fahrenheit=force_fahrenheit,
@@ -494,7 +496,9 @@ class MideaCDDevice(MideaDevice):
         return _translate
 
     @staticmethod
-    def _translate_sterilize_time(clamp: Callable[[int], int]) -> Callable[[Any], Any]:
+    def _translate_sterilize_time(
+        clamp: Callable[[int], int],
+    ) -> Callable[[int | None], int | SkipAttribute | None]:
         """Build a translator that keeps only plausible schedule time values.
 
         SET echoes may omit these fields, and status frames can carry
@@ -502,7 +506,7 @@ class MideaCDDevice(MideaDevice):
         because later SET calls reuse the stored attributes.
         """
 
-        def _translate(value: Any) -> Any:  # noqa: ANN401
+        def _translate(value: int | None) -> int | SkipAttribute | None:
             if value is None:
                 return SKIP_ATTRIBUTE
             value = int(value)
@@ -673,9 +677,9 @@ class MideaCDDevice(MideaDevice):
         self.build_send(message)
 
     @staticmethod
-    def _is_integer_compatible(value: Any) -> bool:  # noqa: ANN401
+    def _is_integer_compatible(value: object) -> bool:
         """Return whether a schedule value can be encoded as an integer."""
-        if isinstance(value, bool):
+        if isinstance(value, bool) or not isinstance(value, int | float | str):
             return False
         try:
             int(value)
@@ -684,8 +688,10 @@ class MideaCDDevice(MideaDevice):
         return True
 
     @classmethod
-    def _has_valid_timer_data(cls, attr: str, value: dict[Any, Any]) -> bool:
+    def _has_valid_timer_data(cls, attr: str, value: object) -> bool:
         """Return whether a schedule contains safe timer collections."""
+        if not isinstance(value, dict):
+            return False
         numeric_fields: tuple[str, ...]
         if attr == DeviceAttributes.weekly_schedule:
             if any(
@@ -729,14 +735,14 @@ class MideaCDDevice(MideaDevice):
     def set_attribute(  # noqa: C901, PLR0911
         self,
         attr: str,
-        value: bool | float | str | dict[Any, Any],
+        value: bool | float | str | Mapping[int, object] | Mapping[str, object],
     ) -> None:
         """Midea CD device set attribute."""
         if attr in [
             DeviceAttributes.maintenance_reminder,
             DeviceAttributes.maintain_warn_tag,
         ]:
-            if isinstance(value, dict):
+            if isinstance(value, Mapping):
                 _LOGGER.warning("[%s] %s requires a scalar value", self.device_id, attr)
                 return
             self._set_maintenance_reminder(bool(value))
@@ -747,7 +753,7 @@ class MideaCDDevice(MideaDevice):
             DeviceAttributes.sterilize,
             DeviceAttributes.disinfection_temperature,
         ]:
-            if isinstance(value, dict):
+            if isinstance(value, Mapping):
                 _LOGGER.warning("[%s] %s requires a scalar value", self.device_id, attr)
                 return
             self._set_disinfection(attr, value)
@@ -777,7 +783,7 @@ class MideaCDDevice(MideaDevice):
                 self.build_send(daily)
             return
 
-        if isinstance(value, dict):
+        if isinstance(value, Mapping):
             _LOGGER.warning(
                 "[%s] %s requires a scalar value",
                 self.device_id,
@@ -796,6 +802,11 @@ class MideaCDDevice(MideaDevice):
             DeviceAttributes.vacation_days,
         ]:
             message = MessageSet(self._message_protocol_version)
+            if isinstance(
+                max_ts := self.get_attribute(DeviceAttributes.max_temperature),
+                (int, float),
+            ):
+                message.max_ts = int(max_ts)
             message.fields = dict(self._fields) if self._fields else {}
             # align temperature encoding with lua protocol selection
             message.use_old_protocol = self._lua_protocol == LuaProtocol.old
@@ -922,7 +933,7 @@ class MideaCDDevice(MideaDevice):
             self.build_send(message)
 
     @staticmethod
-    def _sanitize_set_fields(fields: dict[Any, Any]) -> dict[Any, Any]:
+    def _sanitize_set_fields(fields: dict[str, int]) -> dict[str, int]:
         """Keep only a valid Tr value from a SET echo.
 
         SET echoes may report openPTC=1 or an out-of-range trValue; neither
@@ -936,31 +947,6 @@ class MideaCDDevice(MideaDevice):
         if MessageSet.TR_VALUE_MIN <= tr_i <= MessageSet.TR_VALUE_MAX:
             return {"trValue": tr_i}
         return {}
-
-    def set_customize(self, customize: str) -> None:
-        """Midea CD device set customize."""
-        self._temperature_step = self._default_temperature_step
-        self._lua_protocol = self._default_lua_protocol
-        if customize and len(customize) > 0:
-            try:
-                params = json.loads(customize)
-                if params and "temperature_step" in params:
-                    self._temperature_step = params.get("temperature_step")
-                if params and "lua_protocol" in params:
-                    self._lua_protocol = self._normalize_lua_protocol(
-                        params["lua_protocol"],
-                    )
-            except Exception:
-                _LOGGER.exception("[%s] Set customize error", self.device_id)
-        # Always resolve auto to old/new based on device model
-        if self._lua_protocol == LuaProtocol.auto:
-            self._lua_protocol = self._normalize_lua_protocol(LuaProtocol.auto)
-        self.update_all(
-            {
-                "temperature_step": self._temperature_step,
-                "lua_protocol": self._lua_protocol,
-            },
-        )
 
 
 class MideaAppliance(MideaCDDevice):

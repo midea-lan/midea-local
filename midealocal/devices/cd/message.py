@@ -1,6 +1,6 @@
 """Midea local CD message."""
 
-from typing import Any, NotRequired, TypedDict
+from typing import NotRequired, TypedDict
 
 from midealocal.const import DeviceType
 from midealocal.crc8 import calculate
@@ -246,6 +246,9 @@ class MessageSet(MessageCDBase):
       full[9..10]  = vacation days (big-endian)
       full[11..20] = date / vacation-start fields (0 for a plain set)
       full[21]     = vacationTsValue
+      full[22]     = timer_type
+      full[23]     = tsMax
+      full[24]     = dr_switch
     """
 
     DEFAULT_VACATION_DAYS = 100
@@ -263,7 +266,7 @@ class MessageSet(MessageCDBase):
         self.power: bool = False
         self.target_temperature: float = 0
         self.aux_heating: bool = False
-        self.fields: dict[Any, Any] = {}
+        self.fields: dict[str, int] = {}
         self.mode: int = 0
         # default to old protocol scaling unless explicitly disabled
         self.use_old_protocol: bool = True
@@ -275,6 +278,8 @@ class MessageSet(MessageCDBase):
         self.fahrenheit: bool = False
         # vacation target temperature (full[21] / vacationTsValue)
         self.vacation_temperature: float = 0
+        self.max_ts: int = 65
+        self.dr_switch: int = 0
 
     def read_field(self, field: str) -> int:
         """CD message set read field."""
@@ -342,6 +347,9 @@ class MessageSet(MessageCDBase):
                 0,  # full[19]
                 0,  # full[20]
                 vacation_ts,  # full[21] vacationTsValue
+                0,  # full[22] timer_type
+                self.max_ts,  # full[23] tsMax
+                self.dr_switch,  # full[24] dr_switch
             ],
         )
 
@@ -745,7 +753,7 @@ class CDGeneralMessageBody(MessageBody):
         # Note: body[38] bits 0x40/0x80 are maintain_warn_tag/maintain_warn
         #       body[39] bits 0x40/0x80 are mute_effect/mute_status
         _effect_masks = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20]
-        self.weekly_effects: dict | None = (
+        self.weekly_effects: dict[int, list[bool]] | None = (
             {day: [(body[38 + day] & m) > 0 for m in _effect_masks] for day in range(7)}
             if len(body) > 44  # noqa: PLR2004
             else None
@@ -1047,7 +1055,7 @@ class CD01MessageBody(MessageBody):
     def __init__(self, body: bytearray) -> None:
         """Initialize CD message set 01 body."""
         super().__init__(body)
-        self.fields: dict[Any, Any] = {}
+        self.fields: dict[str, int] = {}
         self.power = (body[2] & 0x01) > 0
         self.mode = body[3]
         self.target_temperature = float(body[4])

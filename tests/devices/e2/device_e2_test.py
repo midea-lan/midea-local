@@ -5,6 +5,10 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.const.water_heater_exceptions import (
+    E2_EXCEPTIONS,
+    WaterHeaterExceptions,
+)
 from midealocal.devices.e2 import (
     DeviceAttributes,
     E2SubType,
@@ -22,30 +26,35 @@ from midealocal.devices.e2.message import (
 class TestMideaE2Device:
     """Test Midea E2 Device."""
 
-    def _device(self, customize: str = "", subtype: int = 1) -> MideaE2Device:
-        return MideaE2Device(
-            name="Test Device",
-            device_id=1,
-            ip_address="192.168.1.1",
-            port=6444,
-            token="AA",
-            key="BB",
-            device_protocol=ProtocolVersion.V1,
-            model="test_model",
-            subtype=subtype,
-            customize=customize,
-        )
+    def _device(
+        self,
+        exceptions: WaterHeaterExceptions | None = None,
+        subtype: int = 1,
+    ) -> MideaE2Device:
+        with patch.dict(E2_EXCEPTIONS, {"test_model": exceptions or {}}):
+            return MideaE2Device(
+                name="Test Device",
+                device_id=1,
+                ip_address="192.168.1.1",
+                port=6444,
+                token="AA",
+                key="BB",
+                device_protocol=ProtocolVersion.V1,
+                model="test_model",
+                subtype=subtype,
+                customize="",
+            )
 
     @pytest.mark.parametrize(
-        ("customize", "expected_power"),
+        ("exceptions", "expected_power"),
         [
-            ("", 2000),
-            ('{"heating_power_multiplier": 0.75}', 1500),
+            ({}, 2000),
+            ({"heating_power_multiplier": 0.75}, 1500),
         ],
     )
     def test_process_message_applies_heating_power_multiplier(
         self,
-        customize: str,
+        exceptions: WaterHeaterExceptions,
         expected_power: int,
     ) -> None:
         """E2 heating power can be calibrated while preserving the default."""
@@ -56,7 +65,7 @@ class TestMideaE2Device:
             flow_rate = 12
             bottom_temp = True
 
-        device = self._device(customize)
+        device = self._device(exceptions)
 
         with patch(
             "midealocal.devices.e2.MessageE2Response",
@@ -75,18 +84,18 @@ class TestMideaE2Device:
         assert device.attributes[DeviceAttributes.bottom_temp]
 
     @pytest.mark.parametrize(
-        ("customize", "subtype", "raw_value", "expected_temperature"),
+        ("exceptions", "subtype", "raw_value", "expected_temperature"),
         [
-            pytest.param("", 1, 80, 40.0, id="half-degree-wire-halves-on-read"),
+            pytest.param({}, 1, 80, 40.0, id="half-degree-wire-halves-on-read"),
             pytest.param(
-                '{"precision_halves": true}',
+                {"precision_halves": True},
                 1,
                 40,
                 40.0,
                 id="precision-halves-keeps-raw-value",
             ),
             pytest.param(
-                "",
+                {},
                 255,
                 45,
                 45.0,
@@ -96,7 +105,7 @@ class TestMideaE2Device:
     )
     def test_process_message_target_temperature_round_trips(
         self,
-        customize: str,
+        exceptions: WaterHeaterExceptions,
         subtype: int,
         raw_value: int,
         expected_temperature: float,
@@ -110,7 +119,7 @@ class TestMideaE2Device:
         class FakeMessage:
             target_temperature = raw_value
 
-        device = self._device(customize, subtype=subtype)
+        device = self._device(exceptions, subtype=subtype)
 
         with patch(
             "midealocal.devices.e2.MessageE2Response",
@@ -124,62 +133,26 @@ class TestMideaE2Device:
             == expected_temperature
         )
 
-    @pytest.mark.parametrize(
-        "customize",
-        [
-            '{"heating_power_multiplier": "nan"}',
-            '{"heating_power_multiplier": "inf"}',
-            '{"heating_power_multiplier": "-inf"}',
-        ],
-    )
-    def test_process_message_ignores_non_finite_heating_power_multiplier(
-        self,
-        customize: str,
-    ) -> None:
-        """Non-finite multipliers are ignored to keep published values valid."""
-
-        class FakeMessage:
-            heating_power = 2000
-
-        device = self._device(customize)
-
-        with patch(
-            "midealocal.devices.e2.MessageE2Response",
-            return_value=FakeMessage(),
-        ):
-            status = device.process_message(b"")
-
-        assert status[DeviceAttributes.heating_power.value] == 2000
-        assert isinstance(status[DeviceAttributes.heating_power.value], int)
-        assert device.attributes[DeviceAttributes.heating_power] == 2000
-
     def test_default_properties(self) -> None:
         """Test default precision halves and temperature step."""
         device = self._device()
         assert device.precision_halves is False
         assert device.temperature_step == 1.0
+        assert device._old_protocol == OldProtocol.auto
         assert device.attributes[DeviceAttributes.temperature_max] == 75.0
         assert device.attributes[DeviceAttributes.temperature_min] == 30.0
         assert device.attributes[DeviceAttributes.error_code] == 0
         assert device.attributes[DeviceAttributes.flow_rate] == 0
         assert not device.attributes[DeviceAttributes.bottom_temp]
 
-    def test_set_customize(self) -> None:
-        """Test customize sets old protocol, step and precision halves."""
+    def test_model_exceptions(self) -> None:
+        """Test model exceptions set old protocol, step and precision halves."""
         device = self._device(
-            '{"old_protocol": "false", "temperature_step": 0.5,'
-            ' "precision_halves": true}',
+            {"old_protocol": False, "temperature_step": 0.5, "precision_halves": True},
         )
         assert device.temperature_step == 0.5
         assert device.precision_halves is True
-        assert device._old_protocol == OldProtocol.false
-
-    def test_set_customize_invalid_json(self) -> None:
-        """Test invalid customize keeps the defaults."""
-        device = self._device("{")
-        assert device.precision_halves is False
-        assert device.temperature_step == 1.0
-        assert device._old_protocol == OldProtocol.auto
+        assert device._normalize_old_protocol(device._old_protocol) == OldProtocol.false
 
     @pytest.mark.parametrize(
         ("value", "subtype", "expected"),
@@ -289,7 +262,7 @@ class TestMideaE2Device:
 
     def test_set_attribute_precision_halves_keeps_temperature(self) -> None:
         """Test precision halves keeps the raw target temperature."""
-        device = self._device('{"precision_halves": true}')
+        device = self._device({"precision_halves": True})
         with patch.object(device, "build_send") as mock_build_send:
             device.set_attribute(DeviceAttributes.target_temperature.value, 40)
             message = mock_build_send.call_args[0][0]
@@ -340,7 +313,7 @@ class TestMideaE2Device:
 
     def test_set_attribute_new_protocol(self) -> None:
         """Test new protocol attributes use the new protocol set message."""
-        device = self._device('{"old_protocol": "false"}')
+        device = self._device({"old_protocol": False})
         with patch.object(device, "build_send") as mock_build_send:
             device.set_attribute(DeviceAttributes.sterilization.value, True)
             mock_build_send.assert_called_once()
@@ -355,7 +328,7 @@ class TestMideaE2Device:
         setattr(message, "protection", value) silently landed on a new,
         unread instance attribute instead: setting protection was a no-op.
         """
-        device = self._device('{"old_protocol": "false"}')
+        device = self._device({"old_protocol": False})
         with patch.object(device, "build_send") as mock_build_send:
             device.set_attribute(DeviceAttributes.protection.value, True)
             mock_build_send.assert_called_once()

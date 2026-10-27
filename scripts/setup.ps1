@@ -12,6 +12,14 @@ $ErrorActionPreference = "Stop"
 # Move to the repository root (parent of this script's directory).
 Set-Location (Join-Path $PSScriptRoot "..")
 
+# Always use this repo's .venv, even if the shell exports another project's
+# environment (e.g. a shared devcontainer)
+$env:UV_PROJECT_ENVIRONMENT = Join-Path (Get-Location) ".venv"
+$env:VIRTUAL_ENV = $env:UV_PROJECT_ENVIRONMENT
+
+# Use copy mode for UV to avoid hardlink warnings on different filesystems
+$env:UV_LINK_MODE = "copy"
+
 # Add default VS Code settings if not existing.
 if (-not (Test-Path ".vscode\settings.json")) {
     Write-Host "Copying .vscode\settings.default.jsonc to .vscode\settings.json..."
@@ -26,7 +34,7 @@ if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
 # Create .venv and install runtime + dev dependencies
 # (uv downloads Python 3.12 if needed).
 Write-Host "Syncing virtual environment (.venv) with Python 3.12..."
-uv sync --all-groups --python 3.12
+uv sync --frozen --all-groups --python 3.12
 
 # Activate it so the tools below resolve to this project's .venv.
 & .venv\Scripts\Activate.ps1
@@ -42,13 +50,22 @@ Write-Host "Installing prek hooks..."
 prek install --overwrite
 prek install --hook-type commit-msg --overwrite
 
+# Initialize the Lua submodule and install its own prek hook.
+git submodule update --init --recursive --remote
+Push-Location "lua"
+try {
+    prek install --overwrite
+} finally {
+    Pop-Location
+}
+
 # Shim so muscle-memory `pre-commit` invocations still work, backed by prek.
 Set-Content -Path ".venv\Scripts\pre-commit.cmd" -Value "@echo off`r`nprek %*"
 
 # commitlint (a commit-msg hook) needs its shared config; install it if npm exists.
 if (Get-Command npm -ErrorAction SilentlyContinue) {
     Write-Host "Installing @commitlint/config-conventional..."
-    npm install --no-fund --no-audit @commitlint/config-conventional
+    npm ci
 } else {
     Write-Warning "'npm' not found - skipping @commitlint/config-conventional."
     Write-Warning "Install Node.js if the commitlint commit-msg hook fails."

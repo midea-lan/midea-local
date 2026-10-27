@@ -2,14 +2,16 @@
 
 import logging
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs, dict_translator
+from midealocal.device import (
+    MideaDevice,
+    MideaDeviceInitKwargs,
+    Translator,
+    dict_translator,
+)
 from midealocal.message import ListTypes
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 from .message import (
     MessageB0Response,
@@ -190,7 +192,7 @@ class MideaB0Device(MideaDevice):
             MessageQuery31(self._message_protocol_version),
         ]
 
-    def process_message(self, msg: bytes) -> dict:
+    def process_message(self, msg: bytes) -> dict[str, Any]:
         """B0 Midea device process message."""
         message = MessageB0Response(bytearray(msg))
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
@@ -203,7 +205,7 @@ class MideaB0Device(MideaDevice):
             return {}
         # model 0TG025JG, subtype 2, uses the *31 tables instead
         use_v31_tables = self._subtype > 0
-        translators: dict[str, Callable[[Any], str | float | bool | None]] = {
+        translators: dict[str, Translator] = {
             DeviceAttributes.status: dict_translator(
                 MideaB0Device._status31 if use_v31_tables else MideaB0Device._status,
                 default=None,

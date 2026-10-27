@@ -1,47 +1,46 @@
 {
-  "name": "Midea Local Dev",
+  "name": "Python 3",
   "image": "mcr.microsoft.com/devcontainers/python:3-3.14",
-  "postCreateCommand": "scripts/setup.sh",
   "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/node:2": {
       "version": "lts"
-    }
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "runArgs": ["-e", "GIT_EDITOR=code --wait"],
-  "remoteUser": "vscode",
   "customizations": {
     "vscode": {
-      "extensions": [
-        "charliermarsh.ruff",
-        "ms-python.python",
-        "ms-python.vscode-pylance",
-        "redhat.vscode-yaml",
-        "esbenp.prettier-vscode",
-        "GitHub.vscode-pull-request-github",
-        "yinfei.luahelper"
-      ],
       "settings": {
-        "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
-        "python.experiments.optOutFrom": ["pythonTestAdapter"],
-        "python.terminal.activateEnvInCurrentTerminal": true,
-        "python.testing.pytestArgs": ["--no-cov"],
-        "pylint.importStrategy": "fromEnvironment",
-        "python.languageServer": "Pylance",
-        "editor.formatOnPaste": false,
-        "editor.formatOnSave": true,
-        "editor.formatOnType": true,
-        "files.trimTrailingWhitespace": true,
         "terminal.integrated.profiles.linux": {
           "zsh": {
             "path": "/usr/bin/zsh"
           }
         },
         "terminal.integrated.defaultProfile.linux": "zsh",
+        "python.terminal.activateEnvInCurrentTerminal": true,
+        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
+        "python.languageServer": "Pylance",
         "[python]": {
           "editor.defaultFormatter": "charliermarsh.ruff"
-        }
-      }
+        },
+        "python.experiments.optOutFrom": ["pythonTestAdapter"],
+        "python.testing.pytestArgs": ["--no-cov"],
+        "editor.formatOnPaste": false,
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "files.trimTrailingWhitespace": true
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "redhat.vscode-yaml",
+        "esbenp.prettier-vscode",
+        "GitHub.vscode-pull-request-github",
+        "yinfei.luahelper"
+      ]
     }
-  }
+  },
+  "postCreateCommand": "scripts/setup.sh",
+  "remoteUser": "vscode",
+  "runArgs": ["-e", "GIT_EDITOR=code --wait"]
 }

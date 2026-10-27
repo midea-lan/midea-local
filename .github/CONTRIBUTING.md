@@ -27,8 +27,9 @@ GitHub Path: `.github/CONTRIBUTING.md`
 ## 1. Overview
 
 This project uses **uv** to manage the Python toolchain and a local `.venv` virtual
-environment. uv installs the right Python version for you (3.12–3.14 are supported), is
-fast, and works the same on Linux, macOS, Windows, and WSL2 — no Docker required.
+environment. uv installs the right Python version for you (see `requires-python` in
+`pyproject.toml`), is fast, and works the same on Linux, macOS, Windows, and WSL2 — no
+Docker required.
 
 > ✅ Recommended: run `./scripts/setup.sh` (or `scripts\setup.ps1` on Windows) once after
 > cloning; it creates the `.venv`, installs all dependencies, and wires up the prek
@@ -82,18 +83,18 @@ cd midea-local
 
 The setup script:
 
-1. creates a `.venv` with Python 3.12 and installs runtime + dev dependencies from
-   `pyproject.toml`/`uv.lock` (`uv sync --all-groups --python 3.12`),
-2. activates the environment,
+1. installs the pinned uv version (if needed) and prek as a global uv tool,
+2. creates a `.venv` and installs runtime + dev dependencies from
+   `pyproject.toml`/`uv.lock` (`uv sync --frozen --all-groups`),
 3. installs the prek hooks (commit and commit-msg stages).
 
 **Manual setup** (equivalent to the script):
 
 ```bash
-uv sync --all-groups --python 3.12
 uv tool install prek
-prek install
-prek install --hook-type commit-msg
+uv sync --frozen --all-groups
+prek install --overwrite
+prek install --hook-type commit-msg --overwrite
 ```
 
 Then either activate the environment (`source .venv/bin/activate`) or prefix commands with
@@ -182,11 +183,11 @@ persist these in your shell profile.
   every commit. It includes:
   - `ruff` → Linting and formatting
   - `mypy` → Type checking (strict)
-  - `pylint` → Additional static analysis
 - Run the full suite any time with `prek run --all-files`, and fix all reported
   issues before committing.
-- Tests use `pytest`. CI runs the full prek suite and the tests across the
-  Python 3.12/3.13/3.14 × Linux/macOS/Windows matrix and blocks merge on failure.
+- Tests use `pytest`. On pull requests and pushes to `main`, CI runs the full prek suite
+  once in a dedicated lint job, and the tests on every Python version in the
+  `.github/workflows/python-build.yml` matrix × Linux/macOS/Windows; failures block merge.
 
 ---
 

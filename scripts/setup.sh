@@ -1,72 +1,46 @@
 #!/usr/bin/env bash
-# Bootstrap the midea-local development environment with uv.
-#
-# Prerequisite: install uv first (https://docs.astral.sh/uv/getting-started/installation/):
-#   curl -LsSf https://astral.sh/uv/install.sh | sh
-#
-# China Mainland users can point uv at a mirror before running this script, e.g.:
-#   export UV_DEFAULT_INDEX="https://pypi.tuna.tsinghua.edu.cn/simple"
-#   export UV_PYTHON_INSTALL_MIRROR="https://mirror.nju.edu.cn/github-release/astral-sh/python-build-standalone/"
-set -euo pipefail
+# Setups the repository.
 
-cd "$(dirname "$0")/.."
+# Stop on errors
+set -e
 
-# Add default VS Code settings if not existing.
-if [ ! -f .vscode/settings.json ]; then
-  echo "Copying .vscode/settings.default.jsonc to .vscode/settings.json..."
-  cp .vscode/settings.default.jsonc .vscode/settings.json
+# Use copy mode for UV to avoid hardlink warnings on different filesystems
+export UV_LINK_MODE=copy
+
+# Find the absolute path of the directory where this script resides
+SETUP_SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)
+
+# Always use this repo's .venv, even if the shell exports another project's
+# environment (e.g. a shared devcontainer)
+REPO_ROOT=$(dirname "$SETUP_SCRIPT_DIR")
+export UV_PROJECT_ENVIRONMENT="$REPO_ROOT/.venv"
+export VIRTUAL_ENV="$UV_PROJECT_ENVIRONMENT"
+
+# Add default VS Code settings if not existing
+if [ ! -f "$REPO_ROOT/.vscode/settings.json" ]; then
+    cp "$REPO_ROOT/.vscode/settings.default.jsonc" "$REPO_ROOT/.vscode/settings.json"
 fi
 
-if ! command -v uv >/dev/null 2>&1; then
-  if command -v pipx >/dev/null 2>&1; then
-    echo "Installing uv via pipx..."
-    pipx install uv
-  else
-    echo "Error: 'uv' is not installed." >&2
-    echo "Install it: curl -LsSf https://astral.sh/uv/install.sh | sh" >&2
-    exit 1
-  fi
+# Fetch the centralized uv version from the companion script
+UV_VERSION=$("$SETUP_SCRIPT_DIR/get-pyproject-uv.version.sh")
+
+if ! uv --version 2>/dev/null; then
+    pipx install "uv==$UV_VERSION"
+elif ! uv --version 2>/dev/null | grep -q "$UV_VERSION"; then
+    pipx upgrade "uv==$UV_VERSION"
 fi
-
-# Create .venv and install runtime + dev dependencies
-# (uv downloads Python 3.12 if needed).
-echo "Syncing virtual environment (.venv) with Python 3.12..."
-uv sync --all-groups --python 3.12
-
-# Activate it so the tools below resolve to this project's .venv.
-# shellcheck disable=SC1091
-source .venv/bin/activate
-
-# prek is a global uv tool, not a project dependency.
-if ! prek --version >/dev/null 2>&1; then
-  echo "Installing prek..."
-  uv tool install prek
+if ! prek --version 2>/dev/null; then
+    uv tool install prek
 fi
-
-# Install the git hooks (commit + commit-msg stages).
-echo "Installing prek hooks..."
+uv sync --frozen --all-groups
 prek install --overwrite
 prek install --hook-type commit-msg --overwrite
 
-# Shim so muscle-memory `pre-commit` invocations still work, backed by prek.
-cat > .venv/bin/pre-commit <<'EOF'
-#!/usr/bin/env bash
-exec prek "$@"
-EOF
-chmod +x .venv/bin/pre-commit
+# Initialize the Lua submodule and install its own prek hook.
+git -C "$REPO_ROOT" submodule update --init --recursive --remote
+(
+    cd "$REPO_ROOT/lua"
+    prek install --overwrite
+)
 
-# commitlint (a commit-msg hook) needs its shared config; install it if npm exists.
-if command -v npm >/dev/null 2>&1; then
-  echo "Installing @commitlint/config-conventional..."
-  npm install --no-fund --no-audit @commitlint/config-conventional
-else
-  echo "Warning: 'npm' not found - skipping @commitlint/config-conventional." >&2
-  echo "         Install Node.js if the commitlint commit-msg hook fails." >&2
-fi
-
-echo ""
-echo "Done. The environment is active in this shell. In new shells, activate with:"
-echo "  source .venv/bin/activate      # bash/zsh"
-echo "Then run tools directly, e.g.:"
-echo "  python3 -m pytest ./tests/"
-echo "  prek run --all-files"
+npm ci

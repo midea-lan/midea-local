@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.const.fan_exceptions import CE_EXCEPTIONS, FanExceptions
 from midealocal.devices.ce import DeviceAttributes, MideaCEDevice
 from midealocal.devices.ce.message import MessageQuery, MessageSet
 from midealocal.message import MessageType
@@ -18,7 +19,11 @@ class TestMideaCEDevice:
     @pytest.fixture(autouse=True)
     def _setup_device(self) -> None:
         """Midea CE Device setup."""
-        self.device = MideaCEDevice(
+        self.device = self._make_device()
+
+    def _make_device(self) -> MideaCEDevice:
+        """Create a device for the test model."""
+        return MideaCEDevice(
             name="Test Device",
             device_id=1,
             ip_address="192.168.1.1",
@@ -226,12 +231,20 @@ class TestMideaCEDevice:
             assert isinstance(message, MessageSet)
             assert message.fan_speed == 3
 
-    def test_set_customize(self) -> None:
-        """Test set customize."""
-        self.device.set_customize('{"speed_count": 5}')
-        assert self.device.speed_count == 5
+    @pytest.mark.parametrize(
+        ("exceptions", "expected_speed_count"),
+        [
+            pytest.param({}, 7, id="default"),
+            pytest.param({"test_model": {"speed_count": 5}}, 5, id="model_exception"),
+        ],
+    )
+    def test_speed_count_exception(
+        self,
+        exceptions: dict[str, FanExceptions],
+        expected_speed_count: int,
+    ) -> None:
+        """Test per-model speed count exceptions."""
+        with patch.dict(CE_EXCEPTIONS, exceptions):
+            device = self._make_device()
 
-    def test_set_customize_invalid_json(self) -> None:
-        """Test set customize with invalid JSON keeps the default."""
-        self.device.set_customize("{")
-        assert self.device.speed_count == 7
+        assert device.speed_count == expected_speed_count

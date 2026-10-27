@@ -2,10 +2,9 @@
 
 import asyncio
 import logging
-import time
 from collections.abc import Callable, Mapping, Sequence
-from enum import IntEnum, StrEnum
-from typing import Any, ClassVar, NotRequired, TypedDict, Unpack
+from enum import Enum, IntEnum, StrEnum, auto
+from typing import Any, ClassVar, Final, NotRequired, TypedDict, Unpack, overload
 
 from typing_extensions import deprecated
 
@@ -24,10 +23,16 @@ from .packet_builder import PacketBuilder
 from .security import (
     MSGTYPE_ENCRYPTED_REQUEST,
     MSGTYPE_HANDSHAKE_REQUEST,
+    MSGTYPE_HANDSHAKE_RESPONSE,
     LocalSecurity,
 )
 
-MIN_AUTH_RESPONSE = 20
+AUTH_HEADER_LENGTH = 8
+AUTH_PAYLOAD_LENGTH = 64
+AUTH_LENGTH_OFFSET = 2
+AUTH_LENGTH_END = 4
+AUTH_TYPE_OFFSET = 5
+# V2 envelope: 40-byte header + 16-byte signature, excluding the payload.
 MIN_MSG_LENGTH = 56
 MESSAGE_TYPE_INDEX = 9  # offset of the message-type byte in the 10-byte header
 MIN_V2_FACTUAL_MSG_LENGTH = 6
@@ -44,11 +49,27 @@ QUERY_PROBE_RETRIES = 2
 
 _LOGGER = logging.getLogger(__name__)
 
+type AttrValue = bool | int | float | str | None
+
+
+class SkipAttribute(Enum):
+    """Type of SKIP_ATTRIBUTE."""
+
+    SKIP_ATTRIBUTE = auto()
+
+
 # Sentinel returned by translators to preserve the stored attribute value.
-SKIP_ATTRIBUTE = object()
+SKIP_ATTRIBUTE: Final = SkipAttribute.SKIP_ATTRIBUTE
+
+type Translator = Callable[..., AttrValue | SkipAttribute]
+
+
+class _NoDefault(Enum):
+    NO_DEFAULT = auto()
+
 
 # Private marker that distinguishes an omitted default from an explicit default.
-_NO_DEFAULT = object()
+_NO_DEFAULT: Final = _NoDefault.NO_DEFAULT
 
 
 def list_translator(
@@ -78,18 +99,31 @@ def list_translator(
     return _translate
 
 
-def dict_translator(
-    mapping: Mapping[Any, Any],
-    default: Any = _NO_DEFAULT,  # noqa: ANN401
-) -> Callable[[Any], Any]:
+@overload
+def dict_translator[K, V](mapping: Mapping[K, V]) -> Callable[[K], V | K]: ...
+
+
+@overload
+def dict_translator[K, V, D](
+    mapping: Mapping[K, V],
+    default: D,
+) -> Callable[[K], V | D]: ...
+
+
+def dict_translator[K, V, D](
+    mapping: Mapping[K, V],
+    default: D | _NoDefault = _NO_DEFAULT,
+) -> Callable[[K], V | K | D]:
     """Build an update_attributes_from_message() translator for coded values.
 
     Looks up the raw value in ``mapping``. If absent, returns ``default`` when
     given, otherwise passes the raw value through unchanged.
     """
 
-    def _translate(value: Any) -> Any:  # noqa: ANN401
-        return mapping.get(value, value if default is _NO_DEFAULT else default)
+    def _translate(value: K) -> V | K | D:
+        if isinstance(default, _NoDefault):
+            return mapping.get(value, value)
+        return mapping.get(value, default)
 
     return _translate
 
@@ -126,14 +160,14 @@ def multiplier_translator(multiplier: float) -> Callable[[float | None], float |
     return _translate
 
 
-def sentinel_translator(sentinel: Any, replacement: Any) -> Callable[[Any], Any]:  # noqa: ANN401
+def sentinel_translator[T, R](sentinel: T, replacement: R) -> Callable[[T], T | R]:
     """Build an update_attributes_from_message() translator for sentinel values.
 
     Swaps a device-specific "unset" sentinel raw value for a display
     placeholder, passing every other value through unchanged.
     """
 
-    def _translate(value: Any) -> Any:  # noqa: ANN401
+    def _translate(value: T) -> T | R:
         return replacement if value == sentinel else value
 
     return _translate
@@ -197,7 +231,7 @@ class MideaDevice:
         self,
         *,
         device_type: DeviceType,
-        attributes: dict,
+        attributes: dict[str, Any],
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Midea device initialization."""
@@ -227,9 +261,9 @@ class MideaDevice:
         self._default_refresh_interval = 30
         self._previous_refresh = 0.0
         self._previous_heartbeat = 0.0
-        self._task: asyncio.Task | None = None
-        self._reader_task: asyncio.Task | None = None
-        self._refresh_task: asyncio.Task | None = None
+        self._task: asyncio.Task[None] | None = None
+        self._reader_task: asyncio.Task[None] | None = None
+        self._refresh_task: asyncio.Task[None] | None = None
         # This protocol has no per-message correlation id, so at most one
         # query/response exchange can ever be outstanding at a time.
         self._query_lock = asyncio.Lock()
@@ -255,10 +289,10 @@ class MideaDevice:
         cls: type["MideaDevice"],
         dict_name: str,
         value: str,
-    ) -> Any:  # noqa: ANN401
+    ) -> int | None:
         """Get key by value from a specified class dictionary."""
         if hasattr(cls, dict_name) and isinstance(getattr(cls, dict_name), dict):
-            target_dict: dict[Any, str] = getattr(cls, dict_name)
+            target_dict: dict[int, str] = getattr(cls, dict_name)
             for key, val in target_dict.items():
                 if val == value:
                     return key
@@ -338,7 +372,7 @@ class MideaDevice:
         return self._serial_number
 
     @staticmethod
-    def fetch_v2_message(msg: bytes) -> tuple[list, bytes]:
+    def fetch_v2_message(msg: bytes) -> tuple[list[bytes], bytes]:
         """Fetch V2 message."""
         result = []
         while len(msg) > 0:
@@ -346,6 +380,9 @@ class MideaDevice:
             if factual_msg_len < MIN_V2_FACTUAL_MSG_LENGTH:
                 break
             alleged_msg_len = msg[4] + (msg[5] << 8)
+            # Reject lengths smaller than the envelope; zero would never advance.
+            if alleged_msg_len < MIN_MSG_LENGTH:
+                raise ValueError("Invalid V2 frame length")
             if factual_msg_len >= alleged_msg_len:
                 result.append(msg[:alleged_msg_len])
                 msg = msg[alleged_msg_len:]
@@ -417,27 +454,31 @@ class MideaDevice:
             # raise exception to connect loop
             raise SocketException
         _LOGGER.debug("[%s] Authentication handshaking", self._device_id)
-        self._writer.write(request)
-        response = await asyncio.wait_for(
-            self._reader.read(512),
-            timeout=SOCKET_TIMEOUT,
-        )
+        try:
+            async with asyncio.timeout(SOCKET_TIMEOUT):
+                self._writer.write(request)
+                await self._writer.drain()
+                header = await self._reader.readexactly(AUTH_HEADER_LENGTH)
+                length = int.from_bytes(
+                    header[AUTH_LENGTH_OFFSET:AUTH_LENGTH_END], "big"
+                )
+                if (
+                    length != AUTH_PAYLOAD_LENGTH
+                    or header[AUTH_TYPE_OFFSET] != MSGTYPE_HANDSHAKE_RESPONSE
+                ):
+                    raise AuthException
+                payload = await self._reader.readexactly(length)
+        except asyncio.IncompleteReadError as exc:
+            raise AuthException from exc
+        response = header + payload
         _LOGGER.debug(
             "[%s] Received auth response with %d bytes: %s",
             self._device_id,
             len(response),
             response.hex(),
         )
-        if len(response) < MIN_AUTH_RESPONSE:
-            _LOGGER.debug(
-                "[%s] Received auth response len %d error, bytes: %s",
-                self._device_id,
-                len(response),
-                response.hex(),
-            )
-            raise AuthException
-        response = response[8:72]
-        self._security.tcp_key(response, self._key)
+        messages, _ = self._security.decode_8370(response)
+        self._security.tcp_key(messages[0], self._key)
         _LOGGER.debug("[%s] Authentication success", self._device_id)
 
     def send_message(self, data: bytes) -> None:
@@ -576,7 +617,7 @@ class MideaDevice:
                     check_protocol,
                     (),
                 )
-            real_cmds: list = self.build_query()
+            real_cmds = self.build_query()
             error_count = 0
             _LOGGER.debug(
                 "[%s] refresh_status with cmds: %s, check_protocol %s, \
@@ -727,7 +768,7 @@ class MideaDevice:
                 )
         return MessageResult.SUCCESS
 
-    def build_query(self) -> list:
+    def build_query(self) -> Sequence[MessageRequest]:
         """Build query."""
         raise NotImplementedError
 
@@ -796,9 +837,8 @@ class MideaDevice:
     def update_attributes_from_message(
         self,
         message: object,
-        translators: dict[str, Callable[[Any], str | float | bool | None]]
-        | None = None,
-        default_transform: Callable[[Any], str | float | bool | None] | None = None,
+        translators: Mapping[str, Translator] | None = None,
+        default_transform: Translator | None = None,
     ) -> dict[str, Any]:
         """Copy matching attributes from a parsed response into self._attributes.
 
@@ -848,7 +888,7 @@ class MideaDevice:
             self._task = asyncio.create_task(self._run())
             self._task.add_done_callback(self._on_supervisor_done)
 
-    def _on_supervisor_done(self, task: asyncio.Task) -> None:
+    def _on_supervisor_done(self, task: asyncio.Task[None]) -> None:
         """Surface a supervisor exit that close() did not ask for."""
         # close() clears _is_run before cancelling, so any exit while it is
         # still set, including a cancellation from elsewhere, is unexpected.
@@ -937,12 +977,19 @@ class MideaDevice:
     async def _check_refresh(self, now: float) -> None:
         if 0 < self._refresh_interval <= now - self._previous_refresh:
             await self.refresh_status()
-            self._previous_refresh = now
+            self._previous_refresh = asyncio.get_running_loop().time()
 
     async def _check_heartbeat(self, now: float) -> None:
         if now - self._previous_heartbeat >= self._heartbeat_interval:
             self.send_heartbeat()
-            self._previous_heartbeat = now
+            self._previous_heartbeat = asyncio.get_running_loop().time()
+
+    def _next_timer_delay(self) -> float:
+        """Return the remaining wait until refresh or heartbeat is due."""
+        deadline = self._previous_heartbeat + self._heartbeat_interval
+        if self._refresh_interval > 0:
+            deadline = min(deadline, self._previous_refresh + self._refresh_interval)
+        return max(0, deadline - asyncio.get_running_loop().time())
 
     async def _connect_loop(self) -> None:
         """Connect loop until device online."""
@@ -1083,7 +1130,7 @@ class MideaDevice:
             await self._connect_loop()
             if not self._should_run():
                 break
-            start = time.time()
+            start = asyncio.get_running_loop().time()
             self._previous_refresh = self._previous_heartbeat = start
             reader_task = self._reader_task
             if reader_task is None:
@@ -1094,15 +1141,13 @@ class MideaDevice:
                 should_reconnect = False
                 error_msg: str | None = None
                 try:
-                    now = time.time()
+                    now = asyncio.get_running_loop().time()
                     await self._check_refresh(now)
-                    await self._check_heartbeat(now)
-                    # Poll at the same cadence the old recv() timeout used, so
-                    # refresh/heartbeat get checked every SOCKET_TIMEOUT
-                    # regardless of how the two intervals are configured.
+                    await self._check_heartbeat(asyncio.get_running_loop().time())
+                    # Wake when the next timer is due, independently of reads.
                     done, _pending = await asyncio.wait(
                         {reader_task},
-                        timeout=SOCKET_TIMEOUT,
+                        timeout=self._next_timer_delay(),
                     )
                     if reader_task in done:
                         should_reconnect = True

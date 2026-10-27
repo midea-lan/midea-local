@@ -1,10 +1,15 @@
 """Test a1 Device."""
 
+from typing import Any
 from unittest.mock import patch
 
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.const.humidifier_exceptions import (
+    A1_EXCEPTIONS,
+    HumidifierExceptions,
+)
 from midealocal.devices.a1 import DeviceAttributes, MideaA1Device
 from midealocal.devices.a1.message import MessageQuery, MessageSet
 
@@ -15,7 +20,11 @@ class TestMideaA1Device:
     @pytest.fixture(autouse=True)
     def _setup_device(self) -> None:
         """Midea A1 Device setup."""
-        self.device = MideaA1Device(
+        self.device = self._make_device()
+
+    def _make_device(self) -> MideaA1Device:
+        """Create a device for the test model."""
+        return MideaA1Device(
             name="Test Device",
             device_id=1,
             ip_address="192.168.1.100",
@@ -25,7 +34,7 @@ class TestMideaA1Device:
             device_protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
-            customize="test_customize",
+            customize="",
         )
 
     def test_initial_attributes(self) -> None:
@@ -47,7 +56,7 @@ class TestMideaA1Device:
             "silent",
         ]
 
-    def _process_mode(self, code: int) -> dict:
+    def _process_mode(self, code: int) -> dict[str, Any]:
         """Process a status message reporting the given mode code."""
         with patch("midealocal.devices.a1.MessageA1Response") as mock_message_response:
             mock_message = mock_message_response.return_value
@@ -103,18 +112,6 @@ class TestMideaA1Device:
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(DeviceAttributes.power, value=False)
             assert mock_build_send.call_args[0][0].mode == 3
-
-    def test_empty_customize_keeps_default_modes(self) -> None:
-        """Test an empty customize keeps the default modes."""
-        self.device.set_customize("")
-        assert self.device.modes == [
-            "manual",
-            "continuous",
-            "auto",
-            "clothes_dry",
-            "shoes_dry",
-            "silent",
-        ]
 
     def test_fan_speeds(self) -> None:
         """Test fan speeds."""
@@ -242,18 +239,37 @@ class TestMideaA1Device:
         assert self.device.attributes == attributes
         assert not self.device.make_message_set().filter_reset
 
-    def test_set_customize(self) -> None:
-        """Test set customize with valid speeds and modes."""
-        with patch.object(self.device, "update_all") as mock_update_all:
-            self.device.set_customize(
-                '{"speeds": {"2": "New Low", "1": "New Lowest"},'
-                ' "modes": {"2": "New Mode", "1": "New Manual"}}',
-            )
-            assert self.device._speeds == {1: "New Lowest", 2: "New Low"}
-            assert self.device._modes == {1: "New Manual", 2: "New Mode"}
-            mock_update_all.assert_called_once_with(
+    @pytest.mark.parametrize(
+        ("exceptions", "expected_modes", "expected_speeds"),
+        [
+            pytest.param(
+                {},
+                ["manual", "continuous", "auto", "clothes_dry", "shoes_dry", "silent"],
+                ["lowest", "low", "medium", "high", "auto", "off"],
+                id="default",
+            ),
+            pytest.param(
                 {
-                    "speeds": {1: "New Lowest", 2: "New Low"},
-                    "modes": {1: "New Manual", 2: "New Mode"},
+                    "test_model": {
+                        "modes": {1: "New Manual", 2: "New Mode"},
+                        "speeds": {1: "New Lowest", 2: "New Low"},
+                    },
                 },
-            )
+                ["New Manual", "New Mode"],
+                ["New Lowest", "New Low"],
+                id="model_exception",
+            ),
+        ],
+    )
+    def test_modes_speeds_exception(
+        self,
+        exceptions: dict[str, HumidifierExceptions],
+        expected_modes: list[str],
+        expected_speeds: list[str],
+    ) -> None:
+        """Test per-model modes and speeds exceptions."""
+        with patch.dict(A1_EXCEPTIONS, exceptions):
+            device = self._make_device()
+
+        assert device.modes == expected_modes
+        assert device.fan_speeds == expected_speeds

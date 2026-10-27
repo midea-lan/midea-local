@@ -48,7 +48,7 @@ UDP_IDS = {
 _ENCRYPTED_ACCOUNT = "3b976d7c85354a6faea1e1de797b36810786035477166ae21b1e4ad55e4dc7a5"
 
 
-def _token_requests(session: Mock) -> list[tuple[str, dict]]:
+def _token_requests(session: Mock) -> list[tuple[str, dict[str, Any]]]:
     """Return (url, payload) for every getToken request the client actually sent.
 
     The response side_effect only controls what comes back; these assertions
@@ -198,7 +198,9 @@ async def test_smarthome_account_routing(
     ],
     ids=["unknown-account", "unsupported", "missing-url", "empty-url", "offline"],
 )
-async def test_smarthome_account_routing_falls_back(route_responses: list) -> None:
+async def test_smarthome_account_routing_falls_back(
+    route_responses: list[bytes | ClientConnectionError],
+) -> None:
     """Keep legacy routing for servers that cannot resolve the new request."""
     session = Mock()
     response = Mock()
@@ -265,7 +267,7 @@ async def test_smarthome_account_routing_falls_back(route_responses: list) -> No
 )
 async def test_login_returns_false(
     cloud_name: str,
-    read_side_effect: list,
+    read_side_effect: list[Any],
     warns_rejected: bool,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -424,7 +426,9 @@ def test_redact_data_masks_session_fields(field: str) -> None:
     [str, json.dumps, lambda data: str(json.dumps(data).encode())],
     ids=["dict-repr", "json", "bytes-repr"],
 )
-def test_redact_data_masks_encrypted_account(serialize: Callable) -> None:
+def test_redact_data_masks_encrypted_account(
+    serialize: Callable[[dict[str, str]], str],
+) -> None:
     """Mask the entire reversible account ciphertext in every log format."""
     raw = serialize({"userName": _ENCRYPTED_ACCOUNT, "format": "2"})
     redacted = _redact_data(raw)
@@ -700,7 +704,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert cloud is not None
 
         # test method1 + method2
-        keys3: dict = await cloud.get_cloud_keys(100)
+        keys3: dict[int, dict[str, Any]] = await cloud.get_cloud_keys(100)
         # test response token/key
         assert keys3[1]["token"] == "method1_return_token1"
         assert keys3[1]["key"] == "method1_return_key1"
@@ -710,7 +714,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert len(keys3) == 2
 
         # test method1
-        keys1: dict = await cloud.get_cloud_keys(100)
+        keys1: dict[int, dict[str, Any]] = await cloud.get_cloud_keys(100)
         # test response token/key
         assert keys1[1]["token"] == "method1_return_token1"
         assert keys1[1]["key"] == "method1_return_key1"
@@ -718,7 +722,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         assert len(keys1) == 1
 
         # test method2
-        keys2: dict = await cloud.get_cloud_keys(100)
+        keys2: dict[int, dict[str, Any]] = await cloud.get_cloud_keys(100)
         # test response token/key
         assert keys2[2]["token"] == "method2_return_token2"
         assert keys2[2]["key"] == "method2_return_key2"
@@ -807,7 +811,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         )
         assert cloud is not None
 
-        keys: dict = await cloud.get_cloud_keys(100)
+        keys: dict[int, dict[str, Any]] = await cloud.get_cloud_keys(100)
         assert keys[1]["token"] == "method1_return_token1"
         assert keys[1]["key"] == "method1_return_key1"
         assert keys[2]["token"] == "method2_return_token2"
@@ -856,7 +860,7 @@ class CloudTest(IsolatedAsyncioTestCase):
         )
         assert cloud is not None
 
-        keys: dict = await cloud.get_cloud_keys(100)
+        keys: dict[int, dict[str, Any]] = await cloud.get_cloud_keys(100)
         assert keys[1]["token"] == "method1_return_token1"
         assert len(keys) == 1
 

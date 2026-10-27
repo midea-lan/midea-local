@@ -9,6 +9,14 @@
   ],
   // Opt in locally: discovery runs on every window load and file save
   "python.testing.pytestEnabled": false,
-  "pylint.importStrategy": "fromEnvironment",
   "python.testing.unittestEnabled": false,
+  "terminal.integrated.env.linux": {
+    "ZDOTDIR": "${workspaceFolder}/.vscode/zsh",
+  },
+  "terminal.integrated.env.osx": {
+    "ZDOTDIR": "${workspaceFolder}/.vscode/zsh",
+  },
+  "json.schemaDownload.trustedDomains": {
+    "https://docs.renovatebot.com/": true,
+  },
 }

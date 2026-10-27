@@ -10,6 +10,7 @@ from midealocal.base_classes.climate import (
     DEFAULT_MIN_TARGET_TEMPERATURE,
 )
 from midealocal.const import ProtocolVersion
+from midealocal.const.climate_exceptions import AC_EXCEPTIONS, ClimateExceptions
 from midealocal.devices.ac import DeviceAttributes, MideaACDevice
 from midealocal.devices.ac.message import (
     MessageCapabilitiesAdditionalQuery,
@@ -56,7 +57,7 @@ class TestMideaACDevice:
             device_protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=1,
-            customize='{"temperature_step": 1, "power_analysis_method": 2}',
+            customize="",
         )
 
     def test_initial_attributes(self) -> None:
@@ -70,7 +71,7 @@ class TestMideaACDevice:
         assert not self.device.attributes[DeviceAttributes.swing_horizontal]
         assert not self.device.attributes[DeviceAttributes.power_saving]
         assert not self.device.attributes[DeviceAttributes.out_silent]
-        assert self.device.temperature_step == 1
+        assert self.device.temperature_step == 0.5
         assert self.device.fresh_air_fan_speeds is not None
         assert DeviceAttributes.compressor_frequency in self.device.attributes
         assert not self.device.fresh_air_exhaust_fan_speeds
@@ -117,20 +118,30 @@ class TestMideaACDevice:
         frame.extend(MessageBase.checksum(frame[1:], MessageChecksum.SUM))
         return bytes(frame)
 
-    def test_customize_accepts_bcd_energy_binary_power_format(self) -> None:
-        """Test customize can select BCD energy with binary realtime power."""
-        device = MideaACDevice(
-            name="Custom Power Format Device",
-            device_id=1,
-            ip_address="192.168.1.1",
-            port=12345,
-            token="AA",
-            key="BB",
-            device_protocol=ProtocolVersion.V1,
-            model="test_model",
-            subtype=1,
-            customize='{"power_analysis_method": 101}',
-        )
+    @pytest.mark.parametrize(
+        ("model", "expected_step"),
+        [
+            pytest.param("test_model", 0.5, id="default"),
+            pytest.param("00000Q18", 1.0, id="model_exception"),
+        ],
+    )
+    def test_temperature_step_exceptions(
+        self,
+        model: str,
+        expected_step: float,
+    ) -> None:
+        """Test per-model temperature step exceptions."""
+        device = self._make_device(model, 1)
+
+        assert device.temperature_step == expected_step
+
+    def test_power_analysis_method_exception(self) -> None:
+        """Test a model exception can select BCD energy with binary power."""
+        with patch.dict(
+            AC_EXCEPTIONS,
+            {"test_model": {"power_analysis_method": 101}},
+        ):
+            device = self._make_device("test_model", 1)
 
         assert device._power_analysis_method == PowerFormats.BCD_ENERGY_BINARY_POWER
 
@@ -318,11 +329,41 @@ class TestMideaACDevice:
             assert temp_message.mode == 2
             assert temp_message.target_temperature == 21
 
-    def test_customize_temperature_limits(self) -> None:
-        """Test customize min/max temperature limits."""
-        self.device.set_customize('{"min_temperature": 17, "max_temperature": 28}')
-        assert self.device.attributes[DeviceAttributes.min_temperature] == 17
-        assert self.device.attributes[DeviceAttributes.max_temperature] == 28
+    @pytest.mark.parametrize(
+        ("exceptions", "initial_limits", "b5_limits"),
+        [
+            pytest.param({}, (None, None), (17.0, 30.0), id="b5"),
+            pytest.param(
+                {"test_model": {"min_temperature": 16, "max_temperature": 28}},
+                (16, 28),
+                (16, 28),
+                id="model_exception",
+            ),
+        ],
+    )
+    def test_temperature_limits_exception(
+        self,
+        exceptions: dict[str, ClimateExceptions],
+        initial_limits: tuple[float | None, float | None],
+        b5_limits: tuple[float, float],
+    ) -> None:
+        """Test model exception min/max limits take priority over B5."""
+        with patch.dict(AC_EXCEPTIONS, exceptions):
+            device = self._make_device("test_model", 1)
+
+            assert (
+                device.attributes[DeviceAttributes.min_temperature],
+                device.attributes[DeviceAttributes.max_temperature],
+            ) == initial_limits
+
+            body = bytearray([0xB5, 0x01])
+            body += bytearray([0x25, 0x02, 0x07, 34, 60, 34, 60, 34, 60, 0])
+            device.process_message(self._response(body))
+
+        assert (
+            device.attributes[DeviceAttributes.min_temperature],
+            device.attributes[DeviceAttributes.max_temperature],
+        ) == b5_limits
 
     def test_target_temperature_bounds(self) -> None:
         """Test min/max target temperature read the device attributes, with fallback."""
@@ -571,6 +612,21 @@ class TestMideaACDevice:
             exhaust_off = build_send.call_args.args[0]
             assert exhaust_off.power is False
             assert exhaust_off.exhaust is True
+
+    def test_bb_fresh_air_unknown_mode_keeps_current_state(self) -> None:
+        """Test an unknown BB mode name leaves power and speed unchanged."""
+        device = self._make_device("23096633", 1)
+        device._attributes[DeviceAttributes.fresh_air_power] = True
+        device._attributes[DeviceAttributes.fresh_air_fan_speed] = 40
+
+        with patch.object(device, "build_send") as build_send:
+            device.set_attribute(DeviceAttributes.fresh_air_mode, "unknown")
+
+        message = build_send.call_args.args[0]
+        assert isinstance(message, MessageSubProtocolFreshAirSet)
+        assert message.power is True
+        assert message.speed == 40
+        assert message.exhaust is False
 
     def test_bb_fresh_air_exhaust_power_defaults_to_advertised_speed(self) -> None:
         """Test exhaust power-on uses a speed exposed by the preset list."""
@@ -906,7 +962,7 @@ class TestMideaACDevice:
             self.device.set_raw_target_temperature(22.5, hvac_mode)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
-            assert message.target_temperature == 22.0
+            assert message.target_temperature == 22.5
             assert message.mode == mode
             assert message.power == power
             self.device._used_subprotocol = True
@@ -929,14 +985,14 @@ class TestMideaACDevice:
         expected_step_half: float,
     ) -> None:
         """Test set target temperature to be rounded."""
-        with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_raw_target_temperature(temperature, "auto")
+        step_whole_device = self._make_device("00000Q18", 1)
+        with patch.object(step_whole_device, "build_send") as mock_build_send:
+            step_whole_device.set_raw_target_temperature(temperature, "auto")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.target_temperature == expected_step_whole
-            mock_build_send.reset_mock()
 
-            self.device._temperature_step = 0.5
+        with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_raw_target_temperature(temperature, "auto")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
@@ -1207,10 +1263,6 @@ class TestMideaACDevice:
         assert self.device.attributes[DeviceAttributes.self_clean] is False
         assert updates == []
         assert self.device._pending_self_clean is None
-
-    def test_invalid_customize_format(self) -> None:
-        """Test invalid customize format."""
-        self.device.set_customize("{")
 
     def test_hvac_modes(self) -> None:
         """Test hvac_modes lists every generic HVAC mode name by default."""

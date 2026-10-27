@@ -22,7 +22,7 @@ dependencies = [
 "ifaddr",
 "pycryptodome",
 "platformdirs",
-"typing_extensions>=4.5.0",
+"typing_extensions>=4.16.0",
 ]
 
 [project.urls]
@@ -35,14 +35,18 @@ midealocal = "midealocal.cli:main"
 dev = [
     "build",
     "mypy",
-    "pylint",
     "pytest",
     "pytest-asyncio",
     "pytest-cov",
     "ruff",
     "setuptools",
     "types-aiofiles",
+    "types-defusedxml",
 ]
+
+[tool.uv-version]
+# Source of truth for the uv version. All other version references must be derived from this value.
+version = "0.13.6" # renovate: depName=uv datasource=pypi
 
 [tool.setuptools.dynamic]
 version = { attr = "midealocal.version.__version__" }
@@ -55,7 +59,6 @@ addopts = "-v -Wdefault --cov=midealocal --cov-report=term-missing"
 testpaths = ["tests"]
 
 [tool.codespell]
-ignore-words-list = "astroid"
 ignore-regex = '\bmapp\.appsmb\.com\b'
 
 [tool.coverage.run]
@@ -74,41 +77,29 @@ exclude_lines = [
 [tool.mypy]
 files = ["midealocal", "tests"]
 python_version = "3.12"
-show_error_codes = true
-follow_imports = "silent"
-ignore_missing_imports = true
-strict_equality = true
-warn_incomplete_stub = true
-warn_redundant_casts = true
-warn_unused_configs = true
-warn_unused_ignores = true
 check_untyped_defs = true
+disallow_any_generics = true
 disallow_incomplete_defs = true
 disallow_subclassing_any = true
 disallow_untyped_calls = true
 disallow_untyped_decorators = true
 disallow_untyped_defs = true
 no_implicit_optional = true
+show_error_codes = true
+strict_equality = true
+warn_incomplete_stub = true
+warn_redundant_casts = true
 warn_return_any = true
 warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
 
 [[tool.mypy.overrides]]
 module = "tests.*"
+allow_untyped_defs = true
 disallow_untyped_decorators = false
 
-[tool.pylint.MASTER]
-jobs = 0
-prefer-stubs = true
-py-version = "3.12"
-recursive = true
-
-[tool.pylint.BASIC]
-docstring-min-length = 4
-
-[tool.pylint."MESSAGES CONTROL"]
-disable = ["all"]
-enable = ["E", "F"]
-
 [build-system]
-requires = ["setuptools>=77", "wheel"]
+requires = ["setuptools>=84.2.1", "wheel"]
 build-backend = "setuptools.build_meta"

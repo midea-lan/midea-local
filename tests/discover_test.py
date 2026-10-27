@@ -1,5 +1,6 @@
 """Midea local discover test."""
 
+import asyncio
 from collections.abc import Sequence
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -68,6 +69,7 @@ def _fake_loop(
 ) -> MagicMock:
     """Build a fake running-loop whose sock_sendto/sock_recvfrom are scripted."""
     loop = MagicMock()
+    loop.time = asyncio.get_running_loop().time
     loop.sock_sendto = AsyncMock(side_effect=sendto_side_effect)
     loop.sock_recvfrom = AsyncMock(side_effect=list(recvfrom_side_effect))
     return loop
@@ -76,6 +78,7 @@ def _fake_loop(
 def _fake_recv_call(data: bytes, ip: str = DEVICE_IP) -> tuple[MagicMock, MagicMock]:
     """Return a (loop, sock) pair whose sock_recvfrom yields the given datagram."""
     loop = MagicMock()
+    loop.time = asyncio.get_running_loop().time
     loop.sock_recvfrom = AsyncMock(return_value=(data, (ip, 6445)))
     return loop, MagicMock()
 
@@ -244,6 +247,34 @@ class TestDiscover:
     """discover test case."""
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("target", "expected_reads"),
+        [(DEVICE_IP, 1), ("192.168.1.101", 2), ("192.168.1.255", 2), (None, 2)],
+    )
+    async def test_discovery_waits_only_when_target_is_not_found(
+        self,
+        target: str | None,
+        expected_reads: int,
+    ) -> None:
+        """Only a response from the requested address ends discovery early."""
+        loop = _fake_loop(
+            recvfrom_side_effect=[
+                (_build_v2_packet(), (DEVICE_IP, 6445)),
+                TimeoutError,
+            ],
+        )
+        with (
+            patch("midealocal.discover.asyncio.get_running_loop", return_value=loop),
+            patch(
+                "midealocal.discover.enum_all_broadcast",
+                return_value=["192.168.1.255"],
+            ),
+        ):
+            result = await discover(ip_address=target)
+        assert list(result) == [DEVICE_ID]
+        assert loop.sock_recvfrom.await_count == expected_reads
+
+    @pytest.mark.asyncio
     async def test_discover_found_devices(self) -> None:
         """Test discovery finding one supported device then timing out."""
         loop = _fake_loop(
@@ -275,8 +306,9 @@ class TestDiscover:
             ],
         )
         with patch("midealocal.discover.asyncio.get_running_loop", return_value=loop):
-            result = await discover(discover_type=[0xFF], ip_address=["192.168.1.255"])
+            result = await discover(discover_type=[0xFF], ip_address=DEVICE_IP)
         assert result == {}
+        assert loop.sock_recvfrom.await_count == 2
 
     @pytest.mark.asyncio
     async def test_discover_send_and_socket_errors(self) -> None:
@@ -286,7 +318,7 @@ class TestDiscover:
             recvfrom_side_effect=[OSError("bad recv"), TimeoutError],
         )
         with patch("midealocal.discover.asyncio.get_running_loop", return_value=loop):
-            result = await discover(ip_address=["192.168.1.255"])
+            result = await discover(ip_address="192.168.1.255")
         assert result == {}
 
 
@@ -396,3 +428,86 @@ def test_enum_all_broadcast() -> None:
         return_value=[adapter],
     ):
         assert enum_all_broadcast() == ["192.168.1.255", "10.255.255.255"]
+
+
+class TestDiscoveryNetworkLatency:
+    """Network latency regressions using fragmented and delayed replies."""
+
+    @pytest.mark.asyncio
+    async def test_legacy_discovery_probes_each_endpoint_once(self) -> None:
+        """Duplicate UDP responses must not repeat the legacy TCP lookup."""
+        reply = (V1_XML % SN_TYPE1, (DEVICE_IP, 6445))
+        loop = _fake_loop(recvfrom_side_effect=[reply, reply, TimeoutError])
+        with (
+            patch("midealocal.discover.asyncio.get_running_loop", return_value=loop),
+            patch("midealocal.discover.enum_all_broadcast", return_value=[]),
+            patch(
+                "midealocal.discover.get_device_info",
+                new=AsyncMock(return_value=_build_id_response()),
+            ) as info,
+        ):
+            result = await discover()
+        assert len(result) == 1
+        info.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_discovery_budget_is_not_restarted_by_traffic(self) -> None:
+        """An expired scan returns already found devices without another UDP read."""
+        loop = _fake_loop(
+            recvfrom_side_effect=[(_build_v2_packet(), (DEVICE_IP, 6445))]
+        )
+        # No sends; deadline=5, first receive at t=0, second attempted at t=6.
+        loop.time = iter([0.0, 0.0, 6.0]).__next__
+        with (
+            patch("midealocal.discover.asyncio.get_running_loop", return_value=loop),
+            patch("midealocal.discover.enum_all_broadcast", return_value=[]),
+        ):
+            result = await discover()
+        assert len(result) == 1
+        loop.sock_recvfrom.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_device_info_drain_is_bounded_and_closed(self) -> None:
+        """A writer stuck in drain is covered by the same information-query budget."""
+        reader, writer = make_stream_pair()
+
+        async def block() -> None:
+            await asyncio.Future()
+
+        writer.drain.side_effect = block
+        with (
+            patch(
+                "midealocal.discover.asyncio.open_connection",
+                new=AsyncMock(return_value=(reader, writer)),
+            ),
+            patch("midealocal.discover.DEVICE_INFO_TIMEOUT", 0),
+        ):
+            assert await get_device_info(DEVICE_IP, 6444) == bytearray()
+        writer.close.assert_called_once()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("stalled_port", [6445, 20086])
+    async def test_discovery_send_timeout_ends_scan(self, stalled_port: int) -> None:
+        """A blocked broadcast send exhausts the budget without starting a receive."""
+        loop = _fake_loop()
+        sent_ports = []
+        send_cancelled = False
+
+        async def send(_sock: object, _data: bytes, address: tuple[str, int]) -> None:
+            nonlocal send_cancelled
+            sent_ports.append(address[1])
+            if address[1] == stalled_port:
+                try:
+                    await asyncio.Future()
+                finally:
+                    send_cancelled = True
+
+        loop.sock_sendto.side_effect = send
+        with (
+            patch("midealocal.discover.asyncio.get_running_loop", return_value=loop),
+            patch("midealocal.discover.DISCOVERY_TIMEOUT", 0),
+        ):
+            assert await asyncio.wait_for(discover(ip_address=DEVICE_IP), 1) == {}
+        assert sent_ports == ([6445] if stalled_port == 6445 else [6445, 20086])
+        assert send_cancelled
+        loop.sock_recvfrom.assert_not_awaited()

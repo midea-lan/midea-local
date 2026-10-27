@@ -1,11 +1,17 @@
 """Test CD Device."""
 
+from collections.abc import Mapping
 from types import SimpleNamespace
+from typing import Literal
 from unittest.mock import patch
 
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.const.water_heater_exceptions import (
+    CD_EXCEPTIONS,
+    WaterHeaterExceptions,
+)
 from midealocal.device import SKIP_ATTRIBUTE
 from midealocal.devices.cd import DeviceAttributes, LuaProtocol, MideaCDDevice
 from midealocal.devices.cd.message import (
@@ -21,20 +27,24 @@ from midealocal.devices.cd.message import (
 from midealocal.message import MessageType
 
 
-def _make_device(model: str = "test_model", customize: str = "") -> MideaCDDevice:
-    """Build a Midea CD device with a specific model/customize."""
-    return MideaCDDevice(
-        name="Test Device",
-        device_id=1,
-        ip_address="192.168.1.1",
-        port=6444,
-        token="AA",
-        key="BB",
-        device_protocol=ProtocolVersion.V1,
-        model=model,
-        subtype=1,
-        customize=customize,
-    )
+def _make_device(
+    model: str = "test_model",
+    exceptions: WaterHeaterExceptions | None = None,
+) -> MideaCDDevice:
+    """Build a Midea CD device with a specific model and model exceptions."""
+    with patch.dict(CD_EXCEPTIONS, {model: exceptions or {}}):
+        return MideaCDDevice(
+            name="Test Device",
+            device_id=1,
+            ip_address="192.168.1.1",
+            port=6444,
+            token="AA",
+            key="BB",
+            device_protocol=ProtocolVersion.V1,
+            model=model,
+            subtype=1,
+            customize="",
+        )
 
 
 def _build_message(message_type: MessageType, body: bytearray) -> bytes:
@@ -109,14 +119,15 @@ class TestMideaCDDevice:
             self.device.set_attribute(DeviceAttributes.power.value, True)
             mock_send.assert_called_once()
             msg = mock_send.call_args[0][0]
-            assert len(msg.body) == 22
+            assert len(msg.body) == 25
             assert msg.body[21] == 0  # vacationTs left 0 on plain set
             assert msg.body[4] != 0  # target present
+            assert msg.body[23] == 70  # max_ts
 
     def test_set_target_temperature_body_length(self) -> None:
         """set_temperature builds the 22-byte new-protocol body (#468)."""
         # RSJRAC07 uses the new (raw °C) Lua protocol — matches issue #468.
-        self.device.set_customize('{"lua_protocol": "new"}')
+        self.device = _make_device(exceptions={"lua_protocol": "new"})
         self.device._attributes[DeviceAttributes.max_temperature] = 65.0
         self.device._attributes[DeviceAttributes.target_temperature] = 60.0
         self.device._attributes[DeviceAttributes.power] = True
@@ -128,8 +139,9 @@ class TestMideaCDDevice:
             msg = mock_send.call_args[0][0]
             assert msg.target_temperature == 63.0
             assert msg.use_old_protocol is False
-            assert len(msg.body) == 22
+            assert len(msg.body) == 25
             assert msg.body[4] == 63
+            assert msg.body[23] == 65  # max_ts
 
     def test_disable_vacation_sets_flag_and_mode(self) -> None:
         """Disabling vacation clears flag and forces Energy-save mode."""
@@ -142,6 +154,7 @@ class TestMideaCDDevice:
             assert msg.vacation_flag is False
             assert msg.vacation_days == 0
             assert msg.mode == 0x01
+            assert len(msg.body) == 25
 
     def test_set_vacation_days_encodes_days(self) -> None:
         """vacation_days SET marks the vacation flag and encodes the day count."""
@@ -333,7 +346,7 @@ class TestMideaCDDevice:
 
     def test_value_to_temperature_new_protocol(self) -> None:
         """New protocol passes the value through, force_old still decodes."""
-        self.device.set_customize('{"lua_protocol": "new"}')
+        self.device = _make_device(exceptions={"lua_protocol": "new"})
         assert self.device._value_to_temperature(40.0, False, False) == 40.0
         assert self.device._value_to_temperature(110, False, True) == 40
 
@@ -348,7 +361,7 @@ class TestMideaCDDevice:
 
     def test_temperature_to_value_new_protocol(self) -> None:
         """New protocol passes the value through."""
-        self.device.set_customize('{"lua_protocol": "new"}')
+        self.device = _make_device(exceptions={"lua_protocol": "new"})
         assert self.device._temperature_to_value(40.0) == 40.0
 
     # ------------------------------------------------------------------ #
@@ -445,10 +458,17 @@ class TestMideaCDDevice:
         assert self.device.attributes[DeviceAttributes.power] is True
         assert new_status[DeviceAttributes.power.value] is True
 
+    def test_has_valid_timer_data_rejects_non_mapping(self) -> None:
+        """A schedule that is not a mapping is never considered valid."""
+        assert not MideaCDDevice._has_valid_timer_data(
+            DeviceAttributes.weekly_schedule,
+            [],
+        )
+
     def test_sanitize_set_fields_drops_unconvertible_tr_value(self) -> None:
         """A non-numeric trValue echo is dropped instead of raising."""
         clean = MideaCDDevice._sanitize_set_fields(
-            {"trValue": "abc", "openPTC": 1, "ptcTemp": 2, "byte8": 0x10},
+            {"trValue": "abc", "openPTC": 1, "ptcTemp": 2, "byte8": 0x10},  # type: ignore[dict-item]
         )
         assert clean == {}
 
@@ -528,7 +548,7 @@ class TestMideaCDDevice:
 
     def test_process_message_bad_temperature_keeps_existing(self) -> None:
         """Unparsable temperature values preserve the existing reading."""
-        self.device.set_customize('{"lua_protocol": "new"}')
+        self.device = _make_device(exceptions={"lua_protocol": "new"})
 
         class FakeMessage:
             max_temperature = "bad"
@@ -543,7 +563,7 @@ class TestMideaCDDevice:
 
     def test_process_message_zero_temperature_without_existing(self) -> None:
         """Zero temperatures are stored when no previous reading exists."""
-        self.device.set_customize('{"lua_protocol": "new"}')
+        self.device = _make_device(exceptions={"lua_protocol": "new"})
         assert self.device.attributes[DeviceAttributes.current_temperature] is None
 
         class FakeMessage:
@@ -720,36 +740,30 @@ class TestMideaCDDevice:
             assert msg.vacation_days == expected_days
 
     # ------------------------------------------------------------------ #
-    # set_customize                                                        #
+    # model exceptions                                                     #
     # ------------------------------------------------------------------ #
 
-    def test_set_customize_temperature_step(self) -> None:
-        """Customize can override the temperature step."""
-        self.device.set_customize('{"temperature_step": 0.5}')
-        assert self.device.temperature_step == 0.5
+    def test_temperature_step_exception(self) -> None:
+        """A model exception can override the temperature step."""
+        device = _make_device(exceptions={"temperature_step": 0.5})
+        assert device.temperature_step == 0.5
 
     @pytest.mark.parametrize(
-        ("customize", "expected"),
+        ("model", "lua_protocol", "expected"),
         [
-            pytest.param('{"lua_protocol": "new"}', LuaProtocol.new, id="string-new"),
-            pytest.param('{"lua_protocol": true}', LuaProtocol.new, id="bool-true"),
-            pytest.param('{"lua_protocol": false}', LuaProtocol.old, id="bool-false"),
+            pytest.param("test_model", "new", LuaProtocol.new, id="force-new"),
+            pytest.param("RSJRAC01", "old", LuaProtocol.old, id="force-old"),
         ],
     )
-    def test_set_customize_lua_protocol(
+    def test_lua_protocol_exception(
         self,
-        customize: str,
+        model: str,
+        lua_protocol: Literal["old", "new"],
         expected: LuaProtocol,
     ) -> None:
-        """Customize lua_protocol accepts a string or boolean value."""
-        self.device.set_customize(customize)
-        assert self.device._lua_protocol == expected
-
-    def test_set_customize_invalid_json(self) -> None:
-        """Invalid customize JSON keeps the defaults."""
-        self.device.set_customize("{bad json")
-        assert self.device.temperature_step == 1.0
-        assert self.device._lua_protocol == LuaProtocol.old
+        """A model exception overrides the auto-resolved lua protocol."""
+        device = _make_device(model=model, exceptions={"lua_protocol": lua_protocol})
+        assert device._lua_protocol == expected
 
     @pytest.mark.parametrize(
         "model",
@@ -893,6 +907,7 @@ class TestMideaCDExtendedDevice:
             (DeviceAttributes.weekly_schedule, {0: [None]}),
             (DeviceAttributes.weekly_schedule, {"0": []}),
             (DeviceAttributes.weekly_schedule, {0: [{"opentime": None}]}),
+            (DeviceAttributes.weekly_schedule, {0: [{"opentime": "abc"}]}),
             (DeviceAttributes.weekly_schedule, {0: [{"mode": False}]}),
             (DeviceAttributes.weekly_schedule, {0: [{"effect": "false"}]}),
         ],
@@ -900,7 +915,7 @@ class TestMideaCDExtendedDevice:
     def test_schedule_writes_reject_invalid_timer_data(
         self,
         attribute: DeviceAttributes,
-        schedule: dict[object, object],
+        schedule: Mapping[int, object] | Mapping[str, object],
     ) -> None:
         """Malformed nested timer collections never build a control frame."""
         with patch.object(self.device, "build_send") as mock_send:

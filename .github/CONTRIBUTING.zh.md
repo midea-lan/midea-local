@@ -27,8 +27,8 @@ GitHub 路径：`.github/CONTRIBUTING.zh.md`
 ## 1. 概述
 
 本项目使用 **uv** 管理 Python 工具链和本地 `.venv` 虚拟环境。uv 会自动为你安装合适的
-Python 版本（支持 3.12–3.14），速度快，并且在 Linux、macOS、Windows 和 WSL2 上表现一致，
-无需 Docker。
+Python 版本（见 `pyproject.toml` 中的 `requires-python`），速度快，并且在 Linux、macOS、
+Windows 和 WSL2 上表现一致，无需 Docker。
 
 > ✅ 推荐：克隆仓库后运行一次 `./scripts/setup.sh`（Windows 上使用 `scripts\setup.ps1`），
 > 它会创建 `.venv`、安装所有依赖并配置 prek 钩子。
@@ -81,18 +81,18 @@ cd midea-local
 
 该脚本会：
 
-1. 用 Python 3.12 创建 `.venv`，并按 `pyproject.toml`/`uv.lock` 安装运行时 + 开发依赖
-   （`uv sync --all-groups --python 3.12`），
-2. 激活该环境，
+1. 安装固定版本的 uv（如需要），并将 prek 安装为全局 uv 工具，
+2. 创建 `.venv`，并按 `pyproject.toml`/`uv.lock` 安装运行时 + 开发依赖
+   （`uv sync --frozen --all-groups`），
 3. 安装 prek 钩子（commit 与 commit-msg 阶段）。
 
 **手动搭建**（与脚本等效）：
 
 ```bash
-uv sync --all-groups --python 3.12
 uv tool install prek
-prek install
-prek install --hook-type commit-msg
+uv sync --frozen --all-groups
+prek install --overwrite
+prek install --hook-type commit-msg --overwrite
 ```
 
 之后可以激活环境（`source .venv/bin/activate`），或在命令前加 `uv run`
@@ -179,10 +179,10 @@ export UV_PYTHON_INSTALL_MIRROR="https://mirror.nju.edu.cn/github-release/astral
 - **[prek](https://github.com/j178/prek)** 由 setup 脚本安装，并在每次提交时运行，包含：
   - `ruff` → 代码检查与格式化
   - `mypy` → 类型检查（严格模式）
-  - `pylint` → 额外的静态分析
 - 随时可用 `prek run --all-files` 运行完整套件，提交前请修复所有报告的问题。
-- 测试使用 `pytest`。CI 会在 Python 3.12/3.13/3.14 × Linux/macOS/Windows 矩阵上运行完整的
-  prek 套件与测试，失败则阻止合并。
+- 测试使用 `pytest`。在拉取请求和推送到 `main` 时，CI 会在独立的 lint 任务中运行一次完整的 prek 套件，
+  并在 `.github/workflows/python-build.yml` 矩阵中的每个 Python 版本 × Linux/macOS/Windows 上运行测试，
+  失败则阻止合并。
 
 ---
 
