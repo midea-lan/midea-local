@@ -8,7 +8,7 @@
       "windows": {
         "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
       },
-      "args": ["-m", "pytest", "tests/"],
+      "args": ["-m", "pytest", "tests/", "--no-cov"],
       "group": "test",
       "problemMatcher": []
     },
