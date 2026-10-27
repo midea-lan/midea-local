@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.const.water_heater_exceptions import E3_EXCEPTIONS
 from midealocal.devices.e3 import DeviceAttributes, MideaE3Device
 from midealocal.devices.e3.message import (
     MessageNewProtocolSet,
@@ -23,7 +24,11 @@ class TestMideaE3Device:
     @pytest.fixture(autouse=True)
     def _setup_device(self) -> None:
         """Midea E3 Device setup."""
-        self.device = MideaE3Device(
+        self.device = self._make_device()
+
+    def _make_device(self) -> MideaE3Device:
+        """Midea E3 Device for the test model."""
+        return MideaE3Device(
             name="Test Device",
             device_id=1,
             ip_address="192.168.1.1",
@@ -126,7 +131,8 @@ class TestMideaE3Device:
 
     def test_process_message_precision_halves(self) -> None:
         """Test process message halves temperatures when configured."""
-        self.device.set_customize('{"precision_halves": true}')
+        with patch.dict(E3_EXCEPTIONS, {"test_model": {"precision_halves": True}}):
+            self.device = self._make_device()
         header = bytearray(
             [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.query],
         )
@@ -196,7 +202,8 @@ class TestMideaE3Device:
 
     def test_set_attribute_precision_halves(self) -> None:
         """Test set attribute doubles the target temperature when configured."""
-        self.device.set_customize('{"precision_halves": true}')
+        with patch.dict(E3_EXCEPTIONS, {"test_model": {"precision_halves": True}}):
+            self.device = self._make_device()
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(
                 DeviceAttributes.target_temperature.value,
@@ -254,16 +261,12 @@ class TestMideaE3Device:
         assert message.smart_volume is False
         assert message.target_temperature == 40.0
 
-    def test_set_customize(self) -> None:
-        """Test set customize."""
-        self.device.set_customize(
-            '{"temperature_step": 0.5, "precision_halves": true}',
-        )
-        assert self.device.temperature_step == 0.5
-        assert self.device.precision_halves is True
-
-    def test_set_customize_invalid_json(self) -> None:
-        """Test set customize with invalid JSON keeps defaults."""
-        self.device.set_customize("{")
-        assert self.device.temperature_step == 1.0
-        assert self.device.precision_halves is False
+    def test_model_exceptions(self) -> None:
+        """Test model exceptions override step and precision halves."""
+        with patch.dict(
+            E3_EXCEPTIONS,
+            {"test_model": {"temperature_step": 0.5, "precision_halves": True}},
+        ):
+            device = self._make_device()
+        assert device.temperature_step == 0.5
+        assert device.precision_halves is True
