@@ -4,6 +4,7 @@ import asyncio
 import logging
 import re
 import socket
+from contextlib import suppress
 from ipaddress import IPv4Network
 from typing import Any
 
@@ -159,6 +160,9 @@ MAX_NETWORK_PREFIX_LENGHT = 32
 SERIAL_TYPE1_LENGTH = 32
 SERIAL_TYPE2_LENGTH = 22
 DISCOVERY_MIN_REPLY_LENGTH = 41
+DISCOVERY_TIMEOUT = 5
+DEVICE_INFO_TIMEOUT = 8
+DEVICE_INFO_CLOSE_TIMEOUT = 1
 
 
 def _extract_mac(reply: bytes | bytearray, ssid_len: int, sn: str) -> str | None:
@@ -194,9 +198,17 @@ async def _parse_discover_response(
     loop: asyncio.AbstractEventLoop,
     sock: socket.socket,
     found_devices: dict[int, dict[str, Any]],
+    *,
+    seen_v1: set[tuple[str, int, str]] | None = None,
+    deadline: float | None = None,
 ) -> tuple[int, dict[str, Any] | None]:
     security = LocalSecurity()
-    data, addr = await asyncio.wait_for(loop.sock_recvfrom(sock, 512), timeout=5)
+    remaining = DISCOVERY_TIMEOUT if deadline is None else deadline - loop.time()
+    if remaining <= 0:
+        raise TimeoutError
+    data, addr = await asyncio.wait_for(
+        loop.sock_recvfrom(sock, 512), timeout=remaining
+    )
     ip = addr[0]
     _LOGGER.debug("Received response from %s: %s", addr, data.hex())
     if len(data) >= DISCOVERY_MIN_RESPONSE_LENGTH and (
@@ -253,7 +265,12 @@ async def _parse_discover_response(
             m["apc_sn"],
             str(hex(int(m["apc_type"])))[2:],
         )
-        response = await get_device_info(ip, int(port))
+        identity = (ip, port, sn)
+        if seen_v1 is not None:
+            if identity in seen_v1:
+                return 0, None
+            seen_v1.add(identity)
+        response = await get_device_info(ip, port)
         device_id = get_id_from_response(response)
         manufacturer_code = "0000"
         if len(sn) == SERIAL_TYPE1_LENGTH:
@@ -266,7 +283,7 @@ async def _parse_discover_response(
         mac = _extract_mac(b"", 0, sn)
     else:
         return 0, None
-    return device_id, {
+    device = {
         "device_id": device_id,
         "type": int(device_type, 16),
         "ip_address": ip,
@@ -277,13 +294,18 @@ async def _parse_discover_response(
         "mac": mac,
         "manufacturer_code": manufacturer_code,
     }
+    return (device_id, device) if device_id else (0, None)
 
 
 async def discover(
     discover_type: list[int] | None = None,
     ip_address: str | None = None,
 ) -> dict[int, dict[str, Any]]:
-    """Discover devices."""
+    """Scan for at most five seconds, returning early for the requested address.
+
+    A legacy information request started during the scan may finish within
+    its own eight-second budget, plus at most one second for socket cleanup.
+    """
     if discover_type is None:
         discover_type = []
 
@@ -292,13 +314,18 @@ async def discover(
 
     _LOGGER.debug("All addresses for broadcast: %s", addrs)
     loop = asyncio.get_running_loop()
+    deadline = loop.time() + DISCOVERY_TIMEOUT
+    seen_v1: set[tuple[str, int, str]] = set()
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         sock.setblocking(False)
         for addr in addrs:
             try:
-                await loop.sock_sendto(sock, BROADCAST_MSG, (addr, 6445))
-                await loop.sock_sendto(sock, BROADCAST_MSG, (addr, 20086))
+                async with asyncio.timeout_at(deadline):
+                    await loop.sock_sendto(sock, BROADCAST_MSG, (addr, 6445))
+                    await loop.sock_sendto(sock, BROADCAST_MSG, (addr, 20086))
+            except TimeoutError:
+                return found_devices
             except OSError as e:
                 _LOGGER.warning("Can't access network %s: %s", addrs, repr(e))
         while True:
@@ -307,12 +334,16 @@ async def discover(
                     loop,
                     sock,
                     found_devices,
+                    seen_v1=seen_v1,
+                    deadline=deadline,
                 )
                 if device is None:
                     continue
                 if len(discover_type) == 0 or device.get("type") in discover_type:
                     found_devices[device_id] = device
                     _LOGGER.debug("Found a supported device: %s", device)
+                    if device.get("ip_address") == ip_address:
+                        break
                 else:
                     _LOGGER.debug("Found a unsupported device: %s", device)
             except TimeoutError:
@@ -350,38 +381,24 @@ def bytes2port(value_bytes: bytes | bytearray | None) -> int:
 async def get_device_info(device_ip: str, device_port: int) -> bytearray:
     """Get device info."""
     response = bytearray(0)
+    writer = None
     try:
-        # Two separate wait_for calls, not one around the whole function:
-        # the original sock.settimeout(8) bounded each blocking operation
-        # at 8s, not the total call.
-        reader, writer = await asyncio.wait_for(
-            asyncio.open_connection(device_ip, device_port),
-            timeout=8,
-        )
-        try:
-            _LOGGER.debug(
-                "Sending to %s:%s %s",
-                device_ip,
-                device_port,
-                DEVICE_INFO_MSG.hex(),
-            )
+        async with asyncio.timeout(DEVICE_INFO_TIMEOUT):
+            reader, writer = await asyncio.open_connection(device_ip, device_port)
             writer.write(DEVICE_INFO_MSG)
             await writer.drain()
-            response = bytearray(
-                await asyncio.wait_for(reader.read(512), timeout=8),
-            )
-        finally:
-            writer.close()
-            await writer.wait_closed()
+            response = bytearray(await reader.read(512))
     except TimeoutError:
         _LOGGER.warning(
-            "Connect the device %s:%s timed out for 8s."
-            "Don't care about a small amount of this. if many maybe not support.",
-            device_ip,
-            device_port,
+            "Device information query for %s:%s timed out", device_ip, device_port
         )
     except OSError:
         _LOGGER.warning("Can't connect to Device %s:%s", device_ip, device_port)
+    finally:
+        if writer is not None:
+            writer.close()
+            with suppress(TimeoutError, OSError):
+                await asyncio.wait_for(writer.wait_closed(), DEVICE_INFO_CLOSE_TIMEOUT)
     return response
 
 
