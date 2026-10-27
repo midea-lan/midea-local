@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.const.fan_exceptions import B6_EXCEPTIONS, FanExceptions
 from midealocal.devices.b6 import DeviceAttributes, MideaB6Device
 from midealocal.devices.b6.message import MessageQuery
 from midealocal.message import MessageType
@@ -30,7 +31,11 @@ class TestMideaB6Device:
     @pytest.fixture(autouse=True)
     def _setup_device(self) -> None:
         """Midea B6 Device setup."""
-        self.device = MideaB6Device(
+        self.device = self._make_device()
+
+    def _make_device(self) -> MideaB6Device:
+        """Create a device for the test model."""
+        return MideaB6Device(
             name="Test Device",
             device_id=1,
             ip_address="192.168.1.1",
@@ -172,24 +177,33 @@ class TestMideaB6Device:
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].fan_level == self.device._power_speed
 
-    def test_set_customize(self) -> None:
-        """Test set customize."""
-        self.device.set_customize(
-            '{"default_speed": 1,'
-            ' "speeds": {"1": "low", "0": "off", "2": "mid", "3": "high"}}',
-        )
-        assert self.device.speed_count == 3
-        assert self.device.preset_modes == ["off", "low", "mid", "high"]
-        assert self.device._power_speed == 1
+    @pytest.mark.parametrize(
+        ("exceptions", "expected_modes", "expected_power_speed"),
+        [
+            pytest.param({}, ["off", "low", "high"], 2, id="default"),
+            pytest.param(
+                {
+                    "test_model": {
+                        "default_speed": 1,
+                        "speeds": {0: "off", 1: "low", 2: "mid", 3: "high"},
+                    },
+                },
+                ["off", "low", "mid", "high"],
+                1,
+                id="model_exception",
+            ),
+        ],
+    )
+    def test_speeds_exception(
+        self,
+        exceptions: dict[str, FanExceptions],
+        expected_modes: list[str],
+        expected_power_speed: int,
+    ) -> None:
+        """Test per-model speeds and default speed exceptions."""
+        with patch.dict(B6_EXCEPTIONS, exceptions):
+            device = self._make_device()
 
-    def test_set_customize_empty_params(self) -> None:
-        """Test set customize with an empty JSON object."""
-        self.device.set_customize("{}")
-        assert self.device.preset_modes == ["off", "low", "high"]
-        assert self.device._power_speed == 2
-
-    def test_set_customize_invalid(self) -> None:
-        """Test set customize with invalid JSON keeps defaults."""
-        self.device.set_customize("{")
-        assert self.device.preset_modes == ["off", "low", "high"]
-        assert self.device._power_speed == 2
+        assert device.speed_count == len(expected_modes) - 1
+        assert device.preset_modes == expected_modes
+        assert device._power_speed == expected_power_speed
