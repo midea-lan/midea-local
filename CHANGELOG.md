@@ -1,5 +1,30 @@
 # Changelog
 
+## [15.0.0](https://github.com/midea-lan/midea-local/compare/v14.0.0...v15.0.0) (2026-10-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* **ac:** move AC customize options to per-model climate exceptions ([#930](https://github.com/midea-lan/midea-local/issues/930))
+
+### Features
+
+* **ac:** move AC customize options to per-model climate exceptions ([#930](https://github.com/midea-lan/midea-local/issues/930)) ([5043b89](https://github.com/midea-lan/midea-local/commit/5043b89b6d19347a17b2d3058612e6cd78191959))
+* **bf:** add full support for microwave-steam-combi ovens ([#816](https://github.com/midea-lan/midea-local/issues/816)) ([755ec85](https://github.com/midea-lan/midea-local/commit/755ec85bbf3133b36b5a33d5e14b72d19c7a7408))
+
+
+### Bug Fixes
+
+* **cd:** add longer body for set messages ([#926](https://github.com/midea-lan/midea-local/issues/926)) ([ccb9881](https://github.com/midea-lan/midea-local/commit/ccb9881df975a1c5e262f311170dd6703d83bca9))
+* **deps:** update python dependencies ([#937](https://github.com/midea-lan/midea-local/issues/937)) ([1afafc3](https://github.com/midea-lan/midea-local/commit/1afafc324f4a72f25b99d918b85585dd17728d34))
+* **network:** bound discovery and handle fragmented handshakes ([#945](https://github.com/midea-lan/midea-local/issues/945)) ([8499165](https://github.com/midea-lan/midea-local/commit/84991653615ade9fc68b350bfd5c5d196d403d70))
+* type discover ip_address as a single address ([#941](https://github.com/midea-lan/midea-local/issues/941)) ([7b3f873](https://github.com/midea-lan/midea-local/commit/7b3f8737b7d63ed4fd79231bd739b3ff98a450b7))
+
+
+### Documentation
+
+* **agents:** update documentation for lua submodule ([#948](https://github.com/midea-lan/midea-local/issues/948)) ([98d43a8](https://github.com/midea-lan/midea-local/commit/98d43a8d021dcdfdee88c0bec5bf81e33f8cc9e2))
+
 ## [14.0.0](https://github.com/midea-lan/midea-local/compare/v13.0.0...v14.0.0) (2026-10-21)
 
 
