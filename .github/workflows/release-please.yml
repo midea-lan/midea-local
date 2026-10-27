@@ -16,8 +16,8 @@ jobs:
         uses: actions/create-github-app-token@v3
         id: generate-token
         with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.MIDEALANBOT_APP_ID }}
+          private-key: ${{ secrets.MIDEALANBOT_APP_PRIVATE_KEY }}
           owner: midea-lan
           repositories: midea-local
       - uses: googleapis/release-please-action@v5
