@@ -218,8 +218,9 @@ class MideaCLI:
     async def discover(self) -> list[MideaDevice]:
         """Discover device information."""
         device_list: list[MideaDevice] = []
-
-        devices = await discover(ip_address=self.namespace.host)
+        devices = await discover(
+            ip_address=None if self.namespace.host == "" else self.namespace.host,
+        )
 
         if len(devices) == 0:
             _LOGGER.error("No devices found.")
