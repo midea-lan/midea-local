@@ -101,6 +101,64 @@ class TestMidea13Device:
         assert self.device.attributes[DeviceAttributes.rgb_color] is None
         assert new_status[DeviceAttributes.power.value] is True
         assert DeviceAttributes.rgb_color.value not in new_status
+        assert "color_temp_range" not in new_status
+
+    @staticmethod
+    def _main_light_message(color_temp_range_bytes: list[int]) -> bytes:
+        """Build a main light response with the given trailing range bytes."""
+        header = bytearray(
+            [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.query],
+        )
+        body = bytearray(28)
+        body[0] = 0xA4  # main light body type
+        body[2] = 255  # color temperature
+        body[3] = 1  # effect
+        body += bytearray(color_temp_range_bytes)
+        return bytes(header + body + bytearray([0x00]))
+
+    @pytest.mark.parametrize(
+        ("color_temp_range_bytes", "expected_range", "expected_kelvin"),
+        [
+            pytest.param(
+                [0x0B, 0xB8, 0x16, 0x44],
+                [3000, 5700],
+                5700,
+                id="device_reported",
+            ),
+            pytest.param([0, 0, 0, 0], [2700, 6500], 6500, id="zero_range"),
+            pytest.param(
+                [0x16, 0x44, 0x0B, 0xB8],
+                [2700, 6500],
+                6500,
+                id="inverted_range",
+            ),
+            pytest.param([0x0B, 0xB8], [2700, 6500], 6500, id="short_body"),
+        ],
+    )
+    def test_process_message_color_temp_range(
+        self,
+        color_temp_range_bytes: list[int],
+        expected_range: list[int],
+        expected_kelvin: int,
+    ) -> None:
+        """Test the device-reported color temperature range."""
+        new_status = self.device.process_message(
+            self._main_light_message(color_temp_range_bytes),
+        )
+        assert self.device.color_temp_range == expected_range
+        assert new_status.get("color_temp_range", [2700, 6500]) == expected_range
+        assert (
+            self.device.attributes[DeviceAttributes.color_temperature]
+            == expected_kelvin
+        )
+
+    def test_process_message_color_temp_range_unchanged(self) -> None:
+        """Test an unchanged device-reported range is not pushed again."""
+        message = self._main_light_message([0x0B, 0xB8, 0x16, 0x44])
+        self.device.process_message(message)
+        new_status = self.device.process_message(message)
+        assert self.device.color_temp_range == [3000, 5700]
+        assert "color_temp_range" not in new_status
 
     def test_process_message_control_success(self) -> None:
         """Test process message with a successful set response requests a refresh."""
