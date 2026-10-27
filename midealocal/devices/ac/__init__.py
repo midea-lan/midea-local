@@ -18,7 +18,12 @@ from midealocal.base_classes.climate import (
 )
 from midealocal.const import DeviceType
 from midealocal.const.climate_exceptions import AC_EXCEPTIONS
-from midealocal.device import SKIP_ATTRIBUTE, MideaDeviceInitKwargs
+from midealocal.device import (
+    SKIP_ATTRIBUTE,
+    AttrValue,
+    MideaDeviceInitKwargs,
+    SkipAttribute,
+)
 from midealocal.message import ListTypes
 
 from .message import (
@@ -695,7 +700,7 @@ class MideaACDevice(MideaClimateDevice):
                 "int",
                 response_attributes["bb_fresh_air_exhaust_speed"],
             )
-            fresh_air_status = {
+            fresh_air_status: dict[str, AttrValue] = {
                 DeviceAttributes.fresh_air_power: fresh_air_power,
                 DeviceAttributes.fresh_air_fan_speed: fresh_air_speed,
                 DeviceAttributes.fresh_air_mode: self._fresh_air_mode(
@@ -721,7 +726,7 @@ class MideaACDevice(MideaClimateDevice):
             has_fresh_air = True
             return value
 
-        def _skip_if_stale_temperature(value: Any) -> Any:  # noqa: ANN401
+        def _skip_if_stale_temperature(value: AttrValue) -> AttrValue | SkipAttribute:
             return SKIP_ATTRIBUTE if is_stale_c0_temperature else value
 
         new_status.update(
@@ -1075,15 +1080,15 @@ class MideaACDevice(MideaClimateDevice):
             power = requested_speed > 0
             speed = requested_speed or current_speed
         elif attr == mode_attribute:
-            requested_speed = self.get_dict_key_by_value(
+            mode_speed = self.get_dict_key_by_value(
                 "_bb_fresh_air_exhaust_speeds"
                 if exhaust
                 else "_bb_fresh_air_fan_speeds",
                 str(value),
             )
-            if requested_speed is not None:
-                power = requested_speed > 0
-                speed = requested_speed or current_speed
+            if mode_speed is not None:
+                power = mode_speed > 0
+                speed = mode_speed or current_speed
         return MessageSubProtocolFreshAirSet(
             self._message_protocol_version,
             power,

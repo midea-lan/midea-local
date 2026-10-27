@@ -118,12 +118,15 @@ This project uses [uv](https://docs.astral.sh/uv/) for its development environme
 After [installing uv](https://docs.astral.sh/uv/getting-started/installation/):
 
 ```bash
-git clone https://github.com/midea-lan/midea-local.git
+git clone --recurse-submodules https://github.com/midea-lan/midea-local.git
 cd midea-local
 ./scripts/setup.sh          # Linux / macOS / WSL2  (Windows: scripts\setup.ps1)
 ```
 
-This creates a `.venv`, installs all dependencies, and sets up the prek hooks.
+This creates a `.venv`, installs all dependencies, initializes or updates the Lua
+submodule to the latest `main` branch, and sets up the prek hooks in both repositories.
+The setup script also initializes the submodule if you cloned without
+`--recurse-submodules`.
 Run tools with `uv run`, e.g. `uv run python -m pytest ./tests/`. See the contributing
 guide for the full workflow and per-OS uv install instructions.
 

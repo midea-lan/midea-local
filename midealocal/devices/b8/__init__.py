@@ -5,7 +5,7 @@ from enum import IntEnum, StrEnum
 from typing import Any, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.device import MideaDevice, MideaDeviceInitKwargs
+from midealocal.device import AttrValue, MideaDevice, MideaDeviceInitKwargs
 
 from .message import (
     B8CleanMode,
@@ -53,7 +53,7 @@ _WORK_MODE_TO_V2_TASK: dict[B8WorkMode, B8V2TaskControl] = {
 }
 
 
-def _translate_int_enum(v: Any) -> Any:  # noqa: ANN401
+def _translate_int_enum(v: AttrValue) -> AttrValue:
     return v.name.lower() if isinstance(v, IntEnum) else v
 
 

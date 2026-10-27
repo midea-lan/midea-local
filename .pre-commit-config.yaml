@@ -13,7 +13,7 @@ repos:
       - id: check-yaml
       - id: detect-private-key
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.13.5 # renovate: customPinnedDependency=uv,datasource=pypi
+    rev: 0.13.6 # renovate: customPinnedDependency=uv,datasource=pypi
     hooks:
       - id: uv-lock
         args: ["--check"]
@@ -25,7 +25,7 @@ repos:
         files: '\.lua$'
         types: [file]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.17.2
+    rev: v0.17.3
     hooks:
       - id: ruff-check
         args:
@@ -69,7 +69,7 @@ repos:
           - colorlog==6.12.0
           - defusedxml==0.7.1
           - ifaddr==0.2.0
-          - platformdirs==4.13.5
+          - platformdirs==4.13.6
           - pycryptodome==4.2.0
           - pytest==9.1.1
           - types-aiofiles==25.1.0.20260518
