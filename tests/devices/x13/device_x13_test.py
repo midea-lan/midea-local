@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.const.light_exceptions import X13_EXCEPTIONS, LightExceptions
 from midealocal.devices.x13 import DeviceAttributes, Midea13Device
 from midealocal.devices.x13.message import MessageQuery, MessageSet
 from midealocal.message import MessageType
@@ -18,7 +19,11 @@ class TestMidea13Device:
     @pytest.fixture(autouse=True)
     def _setup_device(self) -> None:
         """Midea x13 Device setup."""
-        self.device = Midea13Device(
+        self.device = self._make_device()
+
+    def _make_device(self) -> Midea13Device:
+        """Create a device for the test model."""
+        return Midea13Device(
             name="Test Device",
             device_id=1,
             ip_address="192.168.1.1",
@@ -50,9 +55,27 @@ class TestMidea13Device:
             "night",
         ]
 
-    def test_color_temp_range(self) -> None:
-        """Test default color temperature range."""
-        assert self.device.color_temp_range == [2700, 6500]
+    @pytest.mark.parametrize(
+        ("exceptions", "expected_range"),
+        [
+            pytest.param({}, [2700, 6500], id="default"),
+            pytest.param(
+                {"test_model": {"color_temp_range_kelvin": [3000, 6000]}},
+                [3000, 6000],
+                id="model_exception",
+            ),
+        ],
+    )
+    def test_color_temp_range(
+        self,
+        exceptions: dict[str, LightExceptions],
+        expected_range: list[int],
+    ) -> None:
+        """Test per-model color temperature range exceptions."""
+        with patch.dict(X13_EXCEPTIONS, exceptions):
+            device = self._make_device()
+
+        assert device.color_temp_range == expected_range
 
     @pytest.mark.parametrize(
         ("kelvin", "midea"),
@@ -189,30 +212,3 @@ class TestMidea13Device:
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(DeviceAttributes.rgb_color.value, 1)
             mock_build_send.assert_not_called()
-
-    def test_set_customize(self) -> None:
-        """Test set customize overrides the color temperature range."""
-        with patch.object(self.device, "update_all") as mock_update_all:
-            self.device.set_customize('{"color_temp_range_kelvin": [3000, 6000]}')
-            mock_update_all.assert_called_once_with(
-                {"color_temp_range": [3000, 6000]},
-            )
-        assert self.device.color_temp_range == [3000, 6000]
-
-    def test_set_customize_without_key(self) -> None:
-        """Test set customize without the key keeps the default range."""
-        with patch.object(self.device, "update_all") as mock_update_all:
-            self.device.set_customize('{"other": 1}')
-            mock_update_all.assert_called_once_with(
-                {"color_temp_range": [2700, 6500]},
-            )
-        assert self.device.color_temp_range == [2700, 6500]
-
-    def test_set_customize_invalid(self) -> None:
-        """Test set customize with invalid JSON keeps the default range."""
-        with patch.object(self.device, "update_all") as mock_update_all:
-            self.device.set_customize("{")
-            mock_update_all.assert_called_once_with(
-                {"color_temp_range": [2700, 6500]},
-            )
-        assert self.device.color_temp_range == [2700, 6500]
