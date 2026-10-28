@@ -1,11 +1,11 @@
 """Midea local x13 device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
+from midealocal.const.light_exceptions import X13_EXCEPTIONS
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import Message13Response, MessageQuery, MessageSet
@@ -38,7 +38,7 @@ class Midea13Device(MideaDevice):
     def __init__(
         self,
         *,
-        customize: str,
+        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea x13 Device."""
@@ -53,9 +53,10 @@ class Midea13Device(MideaDevice):
                 DeviceAttributes.power: False,
             },
         )
-        self._color_temp_range: list[int] = []
-        self._default_color_temp_range: list[int] = [2700, 6500]
-        self.set_customize(customize)
+        self._color_temp_range: list[int] = X13_EXCEPTIONS.get(
+            str(self.model),
+            {},
+        ).get("color_temp_range_kelvin", [2700, 6500])
 
     @property
     def effects(self) -> list[str]:
@@ -129,18 +130,6 @@ class Midea13Device(MideaDevice):
             else:
                 setattr(message, str(attr), value)
             self.build_send(message)
-
-    def set_customize(self, customize: str) -> None:
-        """Midea x13 Device set customize."""
-        self._color_temp_range = self._default_color_temp_range
-        if customize and len(customize) > 0:
-            try:
-                params = json.loads(customize)
-                if params and "color_temp_range_kelvin" in params:
-                    self._color_temp_range = params.get("color_temp_range_kelvin")
-            except Exception:
-                _LOGGER.exception("[%s] Set customize error", self.device_id)
-            self.update_all({"color_temp_range": self._color_temp_range})
 
 
 class MideaAppliance(Midea13Device):
