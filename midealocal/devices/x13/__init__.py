@@ -96,13 +96,23 @@ class Midea13Device(MideaDevice):
             if message.control_success:
                 self.request_refresh()
             return new_status
-        return self.update_attributes_from_message(
-            message,
-            {
-                DeviceAttributes.effect: Midea13Device._effects.__getitem__,
-                DeviceAttributes.color_temperature: self.midea_to_kelvin,
-            },
+        new_status = {}
+        # Must be applied before color_temperature is converted below.
+        if (
+            color_temp_range := getattr(message, "color_temp_range", None)
+        ) and color_temp_range != self._color_temp_range:
+            self._color_temp_range = color_temp_range
+            new_status["color_temp_range"] = color_temp_range
+        new_status.update(
+            self.update_attributes_from_message(
+                message,
+                {
+                    DeviceAttributes.effect: Midea13Device._effects.__getitem__,
+                    DeviceAttributes.color_temperature: self.midea_to_kelvin,
+                },
+            ),
         )
+        return new_status
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea x13 Device set attribute."""
