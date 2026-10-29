@@ -1,5 +1,50 @@
 # Changelog
 
+## [15.0.0](https://github.com/midea-lan/midea-local/compare/v14.0.0...v15.0.0) (2026-10-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove customize argument from devices and device_selector ([#993](https://github.com/midea-lan/midea-local/issues/993))
+* **c3:** move C3 customize options to per-model climate exceptions ([#992](https://github.com/midea-lan/midea-local/issues/992))
+* **x40:** move X40 customize options to per-model fan exceptions ([#991](https://github.com/midea-lan/midea-local/issues/991))
+* **c2,fc:** move C2 and FC customize options to per-model exceptions ([#966](https://github.com/midea-lan/midea-local/issues/966))
+* **x13:** move X13 customize options to per-model light exceptions ([#963](https://github.com/midea-lan/midea-local/issues/963))
+* **fan:** move fan customize options to per-model fan exceptions ([#956](https://github.com/midea-lan/midea-local/issues/956))
+* **a1:** move A1 customize options to per-model humidifier exceptions ([#959](https://github.com/midea-lan/midea-local/issues/959))
+* **water_heater:** move water heater customize options to per-model… ([#960](https://github.com/midea-lan/midea-local/issues/960))
+* **ac:** move AC customize options to per-model climate exceptions ([#930](https://github.com/midea-lan/midea-local/issues/930))
+
+### Features
+
+* **a1:** move A1 customize options to per-model humidifier exceptions ([#959](https://github.com/midea-lan/midea-local/issues/959)) ([110d147](https://github.com/midea-lan/midea-local/commit/110d147e91120f8b0c0562a4b4959a9fa2df55b8))
+* **ac:** move AC customize options to per-model climate exceptions ([#930](https://github.com/midea-lan/midea-local/issues/930)) ([5043b89](https://github.com/midea-lan/midea-local/commit/5043b89b6d19347a17b2d3058612e6cd78191959))
+* **bf:** add full support for microwave-steam-combi ovens ([#816](https://github.com/midea-lan/midea-local/issues/816)) ([755ec85](https://github.com/midea-lan/midea-local/commit/755ec85bbf3133b36b5a33d5e14b72d19c7a7408))
+* **c2,fc:** move C2 and FC customize options to per-model exceptions ([#966](https://github.com/midea-lan/midea-local/issues/966)) ([114418e](https://github.com/midea-lan/midea-local/commit/114418eb55d5296857f658981564ad4f29068b2d))
+* **c3:** move C3 customize options to per-model climate exceptions ([#992](https://github.com/midea-lan/midea-local/issues/992)) ([5eb54c0](https://github.com/midea-lan/midea-local/commit/5eb54c0c2975b3d55ebc2970a40e67817c0f5f9a))
+* **discover:** add subtype extraction from discovery response ([#989](https://github.com/midea-lan/midea-local/issues/989)) ([0ca38b8](https://github.com/midea-lan/midea-local/commit/0ca38b80b6836c15570c5939edb3f5a534c402d2))
+* **fan:** move fan customize options to per-model fan exceptions ([#956](https://github.com/midea-lan/midea-local/issues/956)) ([5e38797](https://github.com/midea-lan/midea-local/commit/5e38797643fcd485458ff99b20618b78f6de4d1e))
+* remove customize argument from devices and device_selector ([#993](https://github.com/midea-lan/midea-local/issues/993)) ([8caaa83](https://github.com/midea-lan/midea-local/commit/8caaa830bd3eb3cb0a526b3ae1deba9e5e557003))
+* **water_heater:** move water heater customize options to per-model… ([#960](https://github.com/midea-lan/midea-local/issues/960)) ([366b8de](https://github.com/midea-lan/midea-local/commit/366b8def1a872c486e4bbb05b2b9a9a1a88ea85b))
+* **x13:** move X13 customize options to per-model light exceptions ([#963](https://github.com/midea-lan/midea-local/issues/963)) ([dc69801](https://github.com/midea-lan/midea-local/commit/dc6980149e3eafd6f80d5e1f078ee812d93c69a7))
+* **x13:** use device-reported color temperature range ([#979](https://github.com/midea-lan/midea-local/issues/979)) ([bcb0517](https://github.com/midea-lan/midea-local/commit/bcb05172d44075f05dfa7e4183a50774330989e7))
+* **x40:** move X40 customize options to per-model fan exceptions ([#991](https://github.com/midea-lan/midea-local/issues/991)) ([107cd3b](https://github.com/midea-lan/midea-local/commit/107cd3b5d6696a892f8dffaac229c7c0c6ada5a0))
+
+
+### Bug Fixes
+
+* **ac:** decode 00000Q16 power and energy as binary ([#986](https://github.com/midea-lan/midea-local/issues/986)) ([84903f3](https://github.com/midea-lan/midea-local/commit/84903f3ab258aa3dd0b046812ad26b33f09e8c51)), closes [#984](https://github.com/midea-lan/midea-local/issues/984)
+* **cd:** add longer body for set messages ([#926](https://github.com/midea-lan/midea-local/issues/926)) ([ccb9881](https://github.com/midea-lan/midea-local/commit/ccb9881df975a1c5e262f311170dd6703d83bca9))
+* **cli:** discover with empty ip should broadcast ([#961](https://github.com/midea-lan/midea-local/issues/961)) ([ba471a7](https://github.com/midea-lan/midea-local/commit/ba471a7a20c459a40018823c66a2658df03926d5))
+* **deps:** update python dependencies ([#937](https://github.com/midea-lan/midea-local/issues/937)) ([1afafc3](https://github.com/midea-lan/midea-local/commit/1afafc324f4a72f25b99d918b85585dd17728d34))
+* **network:** bound discovery and handle fragmented handshakes ([#945](https://github.com/midea-lan/midea-local/issues/945)) ([8499165](https://github.com/midea-lan/midea-local/commit/84991653615ade9fc68b350bfd5c5d196d403d70))
+* type discover ip_address as a single address ([#941](https://github.com/midea-lan/midea-local/issues/941)) ([7b3f873](https://github.com/midea-lan/midea-local/commit/7b3f8737b7d63ed4fd79231bd739b3ff98a450b7))
+
+
+### Documentation
+
+* **agents:** update documentation for lua submodule ([#948](https://github.com/midea-lan/midea-local/issues/948)) ([98d43a8](https://github.com/midea-lan/midea-local/commit/98d43a8d021dcdfdee88c0bec5bf81e33f8cc9e2))
+
 ## [14.0.0](https://github.com/midea-lan/midea-local/compare/v13.0.0...v14.0.0) (2026-10-21)
 
 
