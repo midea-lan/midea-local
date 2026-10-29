@@ -160,6 +160,7 @@ MAX_NETWORK_PREFIX_LENGHT = 32
 SERIAL_TYPE1_LENGTH = 32
 SERIAL_TYPE2_LENGTH = 22
 DISCOVERY_MIN_REPLY_LENGTH = 41
+DISCOVERY_SUBTYPE_OFFSET = 57
 DISCOVERY_TIMEOUT = 5
 DEVICE_INFO_TIMEOUT = 8
 DEVICE_INFO_CLOSE_TIMEOUT = 1
@@ -194,6 +195,20 @@ def _extract_mac(reply: bytes | bytearray, ssid_len: int, sn: str) -> str | None
     return mac
 
 
+def _extract_subtype(reply: bytearray, ssid_len: int) -> int:
+    """Extract subtype from reply that contains the data or 0 if unavailable."""
+    if len(reply) > DISCOVERY_SUBTYPE_OFFSET + ssid_len:
+        return int.from_bytes(
+            reply[
+                DISCOVERY_SUBTYPE_OFFSET + ssid_len : DISCOVERY_SUBTYPE_OFFSET
+                + ssid_len
+                + 2
+            ],
+            "little",
+        )
+    return 0
+
+
 async def _parse_discover_response(
     loop: asyncio.AbstractEventLoop,
     sock: socket.socket,
@@ -210,6 +225,7 @@ async def _parse_discover_response(
         loop.sock_recvfrom(sock, 512), timeout=remaining
     )
     ip = addr[0]
+    subtype = 0
     _LOGGER.debug("Received response from %s: %s", addr, data.hex())
     if len(data) >= DISCOVERY_MIN_RESPONSE_LENGTH and (
         data[:2].hex() == "5a5a" or data[8:10].hex() == "5a5a"
@@ -244,6 +260,7 @@ async def _parse_discover_response(
             sn = reply[8:40].decode("ascii")
             manufacturer_code = reply[8:12].decode("ascii")
             mac = _extract_mac(reply, ssid_len, sn)
+            subtype = _extract_subtype(reply, ssid_len)
         else:
             _LOGGER.warning(
                 "Failed to decrypt the encrypt_data: %s from %s. Maybe not support.",
@@ -289,6 +306,7 @@ async def _parse_discover_response(
         "ip_address": ip,
         "port": port,
         "model": model,
+        "subtype": subtype,
         "sn": sn,
         "protocol": protocol,
         "mac": mac,

@@ -206,6 +206,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "ip_address": "192.168.0.2",
             "port": 6444,
             "model": "AC123000",
+            "subtype": 0,
             "sn": "0000AC12300000001234567890ABCDEF",
             "mac": "1234567890AB",
         }
@@ -300,6 +301,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "ip_address": "192.168.0.2",
             "port": 6444,
             "model": "AC123000",
+            "subtype": 0,
             "sn": "0000AC12300000001234567890ABCDEF",
             "mac": "1234567890AB",
         }
@@ -327,6 +329,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "ip_address": "192.168.0.2",
             "port": 6444,
             "model": "AC123000",
+            "subtype": 0,
             "sn": "0000AC12300000001234567890ABCDEF",
             "mac": "1234567890AB",
         }
@@ -391,6 +394,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "ip_address": "192.168.0.2",
             "port": 6444,
             "model": "AC123000",
+            "subtype": 0,
             "sn": "0000AC12300000001234567890ABCDEF",
             "mac": "1234567890AB",
         }
@@ -460,6 +464,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "ip_address": "192.168.0.2",
             "port": 6444,
             "model": "AC123000",
+            "subtype": 0,
             "sn": "0000AC12300000001234567890ABCDEF",
             "mac": "1234567890AB",
         }
