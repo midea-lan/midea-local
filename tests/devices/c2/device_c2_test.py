@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.const.toilet_exceptions import C2_EXCEPTIONS, ToiletExceptions
 from midealocal.devices.c2 import DeviceAttributes, MideaC2Device
 from midealocal.devices.c2.message import MessagePower, MessageQuery, MessageSet
 from midealocal.message import MessageType
@@ -18,7 +19,11 @@ class TestMideaC2Device:
     @pytest.fixture(autouse=True)
     def _setup_device(self) -> None:
         """Midea C2 Device setup."""
-        self.device = MideaC2Device(
+        self.device = self._make_device()
+
+    def _make_device(self) -> MideaC2Device:
+        """Create a device for the test model."""
+        return MideaC2Device(
             name="Test Device",
             device_id=1,
             ip_address="192.168.1.1",
@@ -139,18 +144,34 @@ class TestMideaC2Device:
             self.device.set_attribute(DeviceAttributes.light_status.value, True)
             mock_build_send.assert_not_called()
 
-    def test_set_customize(self) -> None:
-        """Test set customize."""
-        self.device.set_customize(
-            '{"max_dry_level": 2, "max_water_temp_level": 4, "max_seat_temp_level": 3}',
-        )
-        assert self.device.max_dry_level == 2
-        assert self.device.max_water_temp_level == 4
-        assert self.device.max_seat_temp_level == 3
+    @pytest.mark.parametrize(
+        ("exceptions", "expected_levels"),
+        [
+            pytest.param({}, (3, 5, 5), id="default"),
+            pytest.param(
+                {
+                    "test_model": {
+                        "max_dry_level": 2,
+                        "max_water_temp_level": 4,
+                        "max_seat_temp_level": 3,
+                    },
+                },
+                (2, 4, 3),
+                id="model_exception",
+            ),
+        ],
+    )
+    def test_max_levels_exception(
+        self,
+        exceptions: dict[str, ToiletExceptions],
+        expected_levels: tuple[int, int, int],
+    ) -> None:
+        """Test per-model max level exceptions."""
+        with patch.dict(C2_EXCEPTIONS, exceptions):
+            device = self._make_device()
 
-    def test_set_customize_invalid_json(self) -> None:
-        """Test set customize with invalid JSON keeps defaults."""
-        self.device.set_customize("{")
-        assert self.device.max_dry_level == 3
-        assert self.device.max_water_temp_level == 5
-        assert self.device.max_seat_temp_level == 5
+        assert (
+            device.max_dry_level,
+            device.max_water_temp_level,
+            device.max_seat_temp_level,
+        ) == expected_levels

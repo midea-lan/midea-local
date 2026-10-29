@@ -5,6 +5,10 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.const.air_purifier_exceptions import (
+    FC_EXCEPTIONS,
+    AirPurifierExceptions,
+)
 from midealocal.devices.fc import DeviceAttributes, MideaFCDevice
 from midealocal.devices.fc.message import MessageQuery
 from midealocal.message import MessageType
@@ -30,7 +34,11 @@ class TestMideaFCDevice:
     @pytest.fixture(autouse=True)
     def _setup_device(self) -> None:
         """Midea FC Device setup."""
-        self.device = MideaFCDevice(
+        self.device = self._make_device()
+
+    def _make_device(self) -> MideaFCDevice:
+        """Create a device for the test model."""
+        return MideaFCDevice(
             name="Test Device",
             device_id=1,
             ip_address="192.168.1.1",
@@ -383,27 +391,24 @@ class TestMideaFCDevice:
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].anion is True
 
-    def test_set_customize(self) -> None:
-        """Test set customize."""
-        self.device.set_customize('{"standby_detect": [50, 20]}')
-        assert self.device._standby_detect == [50, 20]
+    @pytest.mark.parametrize(
+        ("exceptions", "expected_standby_detect"),
+        [
+            pytest.param({}, [40, 20], id="default"),
+            pytest.param(
+                {"test_model": {"standby_detect": [50, 20]}},
+                [50, 20],
+                id="model_exception",
+            ),
+        ],
+    )
+    def test_standby_detect_exception(
+        self,
+        exceptions: dict[str, AirPurifierExceptions],
+        expected_standby_detect: list[int],
+    ) -> None:
+        """Test per-model standby detect exceptions reach the set message."""
+        with patch.dict(FC_EXCEPTIONS, exceptions):
+            device = self._make_device()
 
-    def test_set_customize_invalid_order(self) -> None:
-        """Test set customize with low value above high value keeps defaults."""
-        self.device.set_customize('{"standby_detect": [20, 50]}')
-        assert self.device._standby_detect == [40, 20]
-
-    def test_set_customize_wrong_length(self) -> None:
-        """Test set customize with a wrong-length list keeps defaults."""
-        self.device.set_customize('{"standby_detect": [50]}')
-        assert self.device._standby_detect == [40, 20]
-
-    def test_set_customize_empty_params(self) -> None:
-        """Test set customize with an empty JSON object."""
-        self.device.set_customize("{}")
-        assert self.device._standby_detect == [40, 20]
-
-    def test_set_customize_invalid(self) -> None:
-        """Test set customize with invalid JSON keeps defaults."""
-        self.device.set_customize("{")
-        assert self.device._standby_detect == [40, 20]
+        assert device.make_message_set().standby_detect == expected_standby_detect
