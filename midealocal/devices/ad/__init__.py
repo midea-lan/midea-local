@@ -11,8 +11,6 @@ from .message import Message21Query, Message31Query, MessageADResponse
 
 _LOGGER = logging.getLogger(__name__)
 
-STANDBY_DETECT_LENGTH = 2
-
 
 class DeviceAttributes(StrEnum):
     """Midea AD device attributes."""
@@ -93,9 +91,6 @@ class MideaADDevice(MideaDevice):
 
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
         """Midea AD device set attribute."""
-
-    def set_customize(self, customize: str) -> None:
-        """Midea AD device set customize."""
 
 
 class MideaAppliance(MideaADDevice):
