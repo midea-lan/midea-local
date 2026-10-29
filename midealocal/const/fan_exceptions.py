@@ -10,8 +10,10 @@ class FanExceptions(TypedDict, total=False):
     speeds: dict[int, str]
     default_speed: int
     mode_set_overrides: dict[int, int]
+    precision_halves: bool
 
 
 B6_EXCEPTIONS: dict[str, FanExceptions] = {}
 CE_EXCEPTIONS: dict[str, FanExceptions] = {}
 FA_EXCEPTIONS: dict[str, FanExceptions] = {}
+X40_EXCEPTIONS: dict[str, FanExceptions] = {}

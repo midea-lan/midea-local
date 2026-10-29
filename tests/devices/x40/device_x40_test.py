@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.const.fan_exceptions import X40_EXCEPTIONS, FanExceptions
 from midealocal.devices.x40 import DeviceAttributes, MideaX40Device
 from midealocal.devices.x40.message import MessageQuery, MessageSet
 
@@ -17,7 +18,11 @@ class TestMideaX40Device:
     @pytest.fixture(autouse=True)
     def _setup_device(self) -> None:
         """Midea DA Device setup."""
-        self.device = MideaX40Device(
+        self.device = self._make_device()
+
+    def _make_device(self) -> MideaX40Device:
+        """Create a device for the test model."""
+        return MideaX40Device(
             name="Test Device",
             device_id=1,
             ip_address="192.168.1.100",
@@ -30,8 +35,29 @@ class TestMideaX40Device:
             customize="",
         )
 
-    def test_customize(self) -> None:
-        """Test precision halves."""
+    @pytest.mark.parametrize(
+        ("exceptions", "expected_precision_halves", "expected_temperature"),
+        [
+            pytest.param({}, False, 53, id="default"),
+            pytest.param(
+                {"test_model": {"precision_halves": True}},
+                True,
+                26.5,
+                id="model_exception",
+            ),
+        ],
+    )
+    def test_precision_halves_exception(
+        self,
+        exceptions: dict[str, FanExceptions],
+        expected_precision_halves: bool,
+        expected_temperature: float,
+    ) -> None:
+        """Test per-model precision halves exceptions."""
+        with patch.dict(X40_EXCEPTIONS, exceptions):
+            device = self._make_device()
+
+        assert device.precision_halves is expected_precision_halves
         with patch(
             "midealocal.devices.x40.MessageX40Response",
         ) as mock_message_response:
@@ -41,19 +67,9 @@ class TestMideaX40Device:
             mock_message.fan_speed = 1
             mock_message.direction = 5
             mock_message.smelly_sensor = True
-
             mock_message.current_temperature = 53
-            new_status = self.device.process_message(b"")
-            assert new_status[DeviceAttributes.current_temperature] == 53
-
-            self.device.set_customize('{"precision_halves": true}')
-            assert self.device.precision_halves is True
-            mock_message.current_temperature = 53
-            new_status = self.device.process_message(b"")
-            assert new_status[DeviceAttributes.current_temperature] == 26.5
-
-            self.device.set_customize("{")  # Test invalid json
-            assert self.device.precision_halves is False
+            new_status = device.process_message(b"")
+        assert new_status[DeviceAttributes.current_temperature] == expected_temperature
 
     def test_directions(self) -> None:
         """Test the available directions."""
