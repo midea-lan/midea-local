@@ -8,6 +8,7 @@ import pytest
 
 from midealocal.discover import (
     _extract_mac,
+    _extract_subtype,
     _parse_discover_response,
     bytes2port,
     discover,
@@ -30,6 +31,7 @@ def _build_reply(
     ssid: bytes = SSID,
     sn: bytes = SN_TYPE1,
     mac: bytes = bytes.fromhex("aabbccddeeff"),
+    subtype: int = 0,
 ) -> bytes:
     """Build a decrypted v2/v3 discover reply payload."""
     return (
@@ -38,7 +40,9 @@ def _build_reply(
         + sn
         + bytes([len(ssid)])
         + ssid
-        + b"\x00" * 22  # pad up to mac_start = 63 + ssid_len
+        + b"\x00" * 16
+        + bytes([subtype])
+        + b"\x00" * 5
         + mac
     )
 
@@ -46,19 +50,25 @@ def _build_reply(
 def _build_v2_packet(
     device_id: int = DEVICE_ID,
     encrypt_data: bytes | None = None,
+    subtype: int = 0,
 ) -> bytes:
     """Build a v2 discover response packet."""
     if encrypt_data is None:
-        encrypt_data = bytes(LocalSecurity().aes_encrypt(_build_reply()))
+        encrypt_data = bytes(LocalSecurity().aes_encrypt(_build_reply(subtype=subtype)))
     header = bytearray(40)
     header[0:2] = b"\x5a\x5a"
     header[20:26] = device_id.to_bytes(6, "little")
     return bytes(header) + encrypt_data + b"\x00" * 16
 
 
-def _build_v3_packet(device_id: int = DEVICE_ID) -> bytes:
+def _build_v3_packet(device_id: int = DEVICE_ID, subtype: int = 0) -> bytes:
     """Build a v3 discover response packet wrapping a v2 packet."""
-    return b"\x83\x70" + b"\x00" * 6 + _build_v2_packet(device_id) + b"\x00" * 16
+    return (
+        b"\x83\x70"
+        + b"\x00" * 6
+        + _build_v2_packet(device_id, None, subtype)
+        + b"\x00" * 16
+    )
 
 
 def _fake_loop(
@@ -100,6 +110,25 @@ def _build_id_response(xml: bytes = ID_XML) -> bytearray:
 
 
 @pytest.mark.parametrize(
+    ("reply", "ssid_len", "expected"),
+    [
+        (_build_reply(), len(SSID), 0),
+        (_build_reply(subtype=2), len(SSID), 2),
+        (_build_reply(ssid=b"test123"), len("test123"), 0),
+        (_build_reply(ssid=b"test123", subtype=3), len("test123"), 3),
+        (b"", 0, 0),
+    ],
+)
+def test_extract_subtype(
+    reply: bytearray,
+    ssid_len: int,
+    expected: int,
+) -> None:
+    """Test _extract_mac branches."""
+    assert _extract_subtype(reply, ssid_len) == expected
+
+
+@pytest.mark.parametrize(
     ("reply", "ssid_len", "sn", "expected"),
     [
         # MAC taken from the reply bytes
@@ -129,13 +158,15 @@ class TestParseDiscoverResponse:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        ("data", "protocol"),
+        ("data", "protocol", "subtype"),
         [
-            (_build_v2_packet(), 2),
-            (_build_v3_packet(), 3),
+            (_build_v2_packet(), 2, 0),
+            (_build_v2_packet(subtype=3), 2, 3),
+            (_build_v3_packet(), 3, 0),
+            (_build_v3_packet(subtype=5), 3, 5),
         ],
     )
-    async def test_parse_v2_v3(self, data: bytes, protocol: int) -> None:
+    async def test_parse_v2_v3(self, data: bytes, protocol: int, subtype: int) -> None:
         """Test parsing valid v2 and v3 responses."""
         loop, sock = _fake_recv_call(data)
         device_id, device = await _parse_discover_response(loop, sock, {})
@@ -146,6 +177,7 @@ class TestParseDiscoverResponse:
             "ip_address": DEVICE_IP,
             "port": DEVICE_PORT,
             "model": "12345678",
+            "subtype": subtype,
             "sn": SN_TYPE1.decode(),
             "protocol": protocol,
             "mac": "aabbccddeeff",
@@ -205,6 +237,7 @@ class TestParseDiscoverResponse:
             "ip_address": DEVICE_IP,
             "port": DEVICE_PORT,
             "model": model,
+            "subtype": 0,
             "sn": sn,
             "protocol": 1,
             "mac": "8abbccddeeff" if len(sn) == 32 else None,
