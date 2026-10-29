@@ -45,7 +45,6 @@ class TestMideaB6Device:
             device_protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=1,
-            customize="",
         )
 
     def test_initial_attributes(self) -> None:

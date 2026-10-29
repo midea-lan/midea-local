@@ -370,7 +370,6 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 device_protocol=ProtocolVersion.V3,
                 model="AC123000",
                 subtype=0,
-                customize="",
                 mac="1234567890AB",
                 serial_number="0000AC12300000001234567890ABCDEF",
             )
@@ -441,7 +440,6 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 device_protocol=ProtocolVersion.V3,
                 model="AC123000",
                 subtype=0,
-                customize="",
                 mac="1234567890AB",
                 serial_number="0000AC12300000001234567890ABCDEF",
             )
@@ -663,7 +661,6 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 token="",
                 key="",
                 subtype=0,
-                customize="",
             )
             mock_device_instance.process_message.assert_called_once_with(
                 self.namespace.message,

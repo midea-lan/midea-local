@@ -36,8 +36,6 @@ class MideaC2Device(MideaDevice):
 
     def __init__(
         self,
-        *,
-        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea C2 device."""

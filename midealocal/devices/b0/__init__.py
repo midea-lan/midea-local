@@ -162,8 +162,6 @@ class MideaB0Device(MideaDevice):
 
     def __init__(
         self,
-        *,
-        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize B0 Midea device."""

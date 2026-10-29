@@ -32,7 +32,6 @@ class TestMideaX40Device:
             device_protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
-            customize="",
         )
 
     @pytest.mark.parametrize(

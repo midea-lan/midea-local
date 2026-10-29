@@ -57,7 +57,6 @@ class TestMideaACDevice:
             device_protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=1,
-            customize="",
         )
 
     def test_initial_attributes(self) -> None:
@@ -106,7 +105,6 @@ class TestMideaACDevice:
             device_protocol=ProtocolVersion.V1,
             model=model,
             subtype=subtype,
-            customize="",
         )
 
     @staticmethod

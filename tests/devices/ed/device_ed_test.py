@@ -40,7 +40,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
-            customize="test_customize",
         )
 
     def test_initial_attributes(self) -> None:
@@ -133,7 +132,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=subtype,
-            customize="test_customize",
         )
         queries = device.build_query()
         assert len(queries) == 1
@@ -160,7 +158,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
         assert tea_bar.attributes[DeviceAttributes.current_temperature] is None
         assert tea_bar.attributes[DeviceAttributes.target_temperature] is None
@@ -207,7 +204,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=394,
-            customize="",
         )
         for attribute in (
             DeviceAttributes.current_temperature,
@@ -246,7 +242,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
         queries = tea_bar.build_query()
         assert len(queries) == 1
@@ -262,7 +257,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000000",
             subtype=395,
-            customize="",
         )
         queries = other_model.build_query()
         assert len(queries) == 3
@@ -286,7 +280,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
         tea_bar._attributes[DeviceAttributes.current_temperature] = 60
 
@@ -324,7 +317,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
         with patch("midealocal.devices.ed.MessageEDResponse") as response:
             message = response.return_value
@@ -349,7 +341,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
         tea_bar._attributes[DeviceAttributes.current_temperature] = 60
         tea_bar._attributes[DeviceAttributes.boil_temperature] = 80
@@ -402,7 +393,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
         tea_bar._attributes[DeviceAttributes.dispensing] = True
 
@@ -446,7 +436,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
         tea_bar._attributes[DeviceAttributes.dispensing] = True
 
@@ -488,7 +477,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
         tea_bar._attributes[DeviceAttributes.current_temperature] = 20
         tea_bar._attributes[DeviceAttributes.dispensing] = True
@@ -523,7 +511,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
 
         with patch.object(tea_bar, "build_send") as mock_build_send:
@@ -586,7 +573,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
 
         with patch.object(tea_bar, "build_send") as mock_build_send:
@@ -606,7 +592,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
         tea_bar._attributes[DeviceAttributes.dispensing] = True
 
@@ -630,7 +615,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
         tea_bar._attributes[DeviceAttributes.current_temperature] = 20
 
@@ -653,7 +637,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
         tea_bar._attributes[DeviceAttributes.current_temperature] = 70
 
@@ -676,7 +659,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
         tea_bar._attributes[DeviceAttributes.current_temperature] = 20
 
@@ -706,7 +688,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000000",
             subtype=395,
-            customize="",
         )
 
         with patch.object(other_model, "build_send") as mock_build_send:
@@ -730,7 +711,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
         tea_bar._attributes[DeviceAttributes.keep_warm_time] = 3.0
 
@@ -754,7 +734,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
 
         with patch.object(tea_bar, "build_send") as mock_build_send:
@@ -778,7 +757,6 @@ class TestMideaEDDevice:
             device_protocol=ProtocolVersion.V3,
             model="63000622",
             subtype=395,
-            customize="",
         )
 
         with (
@@ -807,7 +785,6 @@ class TestMideaEDDeviceSoftWater:
             device_protocol=ProtocolVersion.V3,
             model="6360000A",
             subtype=703,
-            customize="",
         )
 
     def test_initial_soft_water_attributes(self) -> None:
