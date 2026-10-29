@@ -198,7 +198,14 @@ def _extract_mac(reply: bytes | bytearray, ssid_len: int, sn: str) -> str | None
 def _extract_subtype(reply: bytearray, ssid_len: int) -> int:
     """Extract subtype from reply that contains the data or 0 if unavailable."""
     if len(reply) > DISCOVERY_SUBTYPE_OFFSET + ssid_len:
-        return reply[DISCOVERY_SUBTYPE_OFFSET + ssid_len]
+        return int.from_bytes(
+            reply[
+                DISCOVERY_SUBTYPE_OFFSET + ssid_len : DISCOVERY_SUBTYPE_OFFSET
+                + ssid_len
+                + 2
+            ],
+            "little",
+        )
     return 0
 
 

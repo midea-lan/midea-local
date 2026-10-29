@@ -41,8 +41,8 @@ def _build_reply(
         + bytes([len(ssid)])
         + ssid
         + b"\x00" * 16
-        + bytes([subtype])
-        + b"\x00" * 5
+        + subtype.to_bytes(2, "little")
+        + b"\x00" * 4
         + mac
     )
 
@@ -114,6 +114,7 @@ def _build_id_response(xml: bytes = ID_XML) -> bytearray:
     [
         (_build_reply(), len(SSID), 0),
         (_build_reply(subtype=2), len(SSID), 2),
+        (_build_reply(subtype=0xFFFF), len(SSID), 0xFFFF),
         (_build_reply(ssid=b"test123"), len("test123"), 0),
         (_build_reply(ssid=b"test123", subtype=3), len("test123"), 3),
         (b"", 0, 0),
