@@ -42,7 +42,6 @@ class TestMideaE2Device:
                 device_protocol=ProtocolVersion.V1,
                 model="test_model",
                 subtype=subtype,
-                customize="",
             )
 
     @pytest.mark.parametrize(

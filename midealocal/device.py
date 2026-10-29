@@ -134,7 +134,7 @@ def precision_halves_translator(
     """Build an update_attributes_from_message() translator for halved readings.
 
     Some devices report values doubled (in 0.5-unit steps) when their
-    ``precision_halves`` customize flag is enabled. Returns a callable that
+    ``precision_halves`` exception is enabled. Returns a callable that
     divides by 2 when ``precision_halves`` is truthy, otherwise passes the
     value through unchanged.
     """
@@ -1195,9 +1195,6 @@ class MideaDevice:
     def get_attribute(self, attr: str) -> bool | int | str | list[int] | None:
         """Get attribute."""
         return self._attributes.get(attr)
-
-    def set_customize(self, customize: str) -> None:
-        """Set customize."""
 
     @property
     def attributes(self) -> dict[str, Any]:

@@ -20,7 +20,6 @@ def make_device(model: str = "711001F5", subtype: int = 0) -> MideaB1Device:
         device_protocol=ProtocolVersion.V1,
         model=model,
         subtype=subtype,
-        customize="",
     )
 
 

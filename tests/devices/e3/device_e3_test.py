@@ -38,7 +38,6 @@ class TestMideaE3Device:
             device_protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=1,
-            customize="",
         )
 
     def _old_subtype_device(self) -> MideaE3Device:
@@ -53,7 +52,6 @@ class TestMideaE3Device:
             device_protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=32,
-            customize="",
         )
 
     def test_initial_attributes(self) -> None:

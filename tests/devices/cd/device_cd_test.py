@@ -43,7 +43,6 @@ def _make_device(
             device_protocol=ProtocolVersion.V1,
             model=model,
             subtype=1,
-            customize="",
         )
 
 
@@ -92,7 +91,6 @@ class TestMideaCDDevice:
             device_protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=1,
-            customize="",
         )
 
     # ------------------------------------------------------------------ #

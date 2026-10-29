@@ -43,8 +43,6 @@ class MideaCADevice(MideaDevice):
 
     def __init__(
         self,
-        *,
-        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea CA device."""

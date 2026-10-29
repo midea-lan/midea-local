@@ -26,7 +26,6 @@ def _build_device() -> MideaBFDevice:
         device_protocol=ProtocolVersion.V1,
         model="test_model",
         subtype=1,
-        customize="",
     )
 
 
