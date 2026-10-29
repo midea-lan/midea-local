@@ -1,12 +1,12 @@
 """Midea local x40 device."""
 
-import json
 import logging
 import math
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
+from midealocal.const.fan_exceptions import X40_EXCEPTIONS
 from midealocal.device import (
     MideaDevice,
     MideaDeviceInitKwargs,
@@ -42,7 +42,7 @@ class MideaX40Device(MideaDevice):
     def __init__(
         self,
         *,
-        customize: str,
+        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea x40 Device."""
@@ -59,9 +59,10 @@ class MideaX40Device(MideaDevice):
             },
         )
         self._fields: dict[str, Any] = {}
-        self._precision_halves: bool | None = None
-        self._default_precision_halves = False
-        self.set_customize(customize)
+        self._precision_halves: bool = X40_EXCEPTIONS.get(str(self.model), {}).get(
+            "precision_halves",
+            False,
+        )
 
     @property
     def precision_halves(self) -> bool | None:
@@ -149,18 +150,6 @@ class MideaX40Device(MideaDevice):
             else:
                 setattr(message, str(attr), value)
             self.build_send(message)
-
-    def set_customize(self, customize: str) -> None:
-        """Midea 40 device set customize."""
-        self._precision_halves = self._default_precision_halves
-        if customize and len(customize) > 0:
-            try:
-                params = json.loads(customize)
-                if params and "precision_halves" in params:
-                    self._precision_halves = params.get("precision_halves")
-            except Exception:
-                _LOGGER.exception("[%s] Set customize error", self.device_id)
-            self.update_all({"precision_halves": self._precision_halves})
 
 
 class MideaAppliance(MideaX40Device):
