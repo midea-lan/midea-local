@@ -182,7 +182,7 @@ class MideaCLI:
             key=key["key"],
             device_protocol=device["protocol"],
             model=device["model"],
-            subtype=0,
+            subtype=device["subtype"],
             customize="",
             mac=device["mac"],
             serial_number=device["sn"],
