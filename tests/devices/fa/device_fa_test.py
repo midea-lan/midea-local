@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.const.fan_exceptions import FA_EXCEPTIONS, FanExceptions
 from midealocal.devices.fa import DeviceAttributes, MideaFADevice
 from midealocal.devices.fa.message import PROTOCOL_V5, MessageQuery
 from midealocal.message import MessageType
@@ -30,7 +31,11 @@ class TestMideaFADevice:
     @pytest.fixture(autouse=True)
     def _setup_device(self) -> None:
         """Midea FA Device setup."""
-        self.device = MideaFADevice(
+        self.device = self._make_device()
+
+    def _make_device(self) -> MideaFADevice:
+        """Create a device for the test model."""
+        return MideaFADevice(
             name="Test Device",
             device_id=1,
             ip_address="192.168.1.1",
@@ -40,7 +45,6 @@ class TestMideaFADevice:
             device_protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=1,
-            customize="",
         )
 
     def test_initial_attributes(self) -> None:
@@ -418,11 +422,11 @@ class TestMideaFADevice:
             assert mock_build_send.call_args[0][0].fan_speed == 3
 
     @pytest.mark.parametrize(
-        ("customize", "mode_name", "expected_mode", "expected_overrides"),
+        ("exceptions", "mode_name", "expected_mode", "expected_overrides"),
         [
-            pytest.param("", "sleep", 2, {}, id="no_override"),
+            pytest.param({}, "sleep", 2, {}, id="no_override"),
             pytest.param(
-                '{"mode_set_overrides": {"3": 41}}',
+                {"test_model": {"mode_set_overrides": {3: 41}}},
                 "comfort",
                 3,
                 {3: 41},
@@ -432,22 +436,23 @@ class TestMideaFADevice:
     )
     def test_set_attribute_mode(
         self,
-        customize: str,
+        exceptions: dict[str, FanExceptions],
         mode_name: str,
         expected_mode: int,
         expected_overrides: dict[int, int],
     ) -> None:
-        """Test set attribute mode, with and without a customized override table."""
-        self.device.set_customize(customize)
-        with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.mode.value, mode_name)
+        """Test set attribute mode, with and without a model override table."""
+        with patch.dict(FA_EXCEPTIONS, exceptions):
+            device = self._make_device()
+        with patch.object(device, "build_send") as mock_build_send:
+            device.set_attribute(DeviceAttributes.mode.value, mode_name)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.mode == expected_mode
             assert message.mode_set_overrides == expected_overrides
             mock_build_send.reset_mock()
 
-            self.device.set_attribute(DeviceAttributes.mode.value, "invalid")
+            device.set_attribute(DeviceAttributes.mode.value, "invalid")
             mock_build_send.assert_not_called()
 
     def test_set_attribute_other(self) -> None:
@@ -495,62 +500,22 @@ class TestMideaFADevice:
             assert mock_build_send.call_args[0][0].mode is None
 
     @pytest.mark.parametrize(
-        ("customize", "expected_speed_count"),
+        ("exceptions", "expected_speed_count"),
         [
-            pytest.param('{"speed_count": 5}', 5, id="speed_count"),
-            pytest.param("{}", 3, id="empty_params"),
-            pytest.param("{", 3, id="invalid_json"),
+            pytest.param({}, 3, id="default"),
+            pytest.param({"test_model": {"speed_count": 5}}, 5, id="model_exception"),
         ],
     )
-    def test_set_customize(
+    def test_speed_count_exception(
         self,
-        customize: str,
+        exceptions: dict[str, FanExceptions],
         expected_speed_count: int,
     ) -> None:
-        """Test set customize."""
-        self.device.set_customize(customize)
-        assert self.device.speed_count == expected_speed_count
+        """Test per-model speed count exceptions."""
+        with patch.dict(FA_EXCEPTIONS, exceptions):
+            device = self._make_device()
 
-    def test_set_customize_mode_set_overrides(self) -> None:
-        """Test set customize parses and resets the mode set override table."""
-        self.device.set_customize('{"mode_set_overrides": {"3": 41}}')
-        assert self.device._mode_set_overrides == {3: 41}
-
-        self.device.set_customize("{}")
-        assert self.device._mode_set_overrides == {}
-
-    @pytest.mark.parametrize(
-        "customize",
-        [
-            pytest.param('{"mode_set_overrides": {"3": 256}}', id="above_a_byte"),
-            pytest.param('{"mode_set_overrides": {"3": -1}}', id="below_a_byte"),
-            pytest.param('{"mode_set_overrides": {"3": 1.5}}', id="fraction"),
-            pytest.param('{"mode_set_overrides": {"3": true}}', id="bool"),
-            pytest.param(
-                '{"mode_set_overrides": {"3": 41, "4": 256}}',
-                id="one_entry_out_of_range",
-            ),
-        ],
-    )
-    def test_set_customize_mode_set_overrides_not_a_byte(
-        self,
-        customize: str,
-    ) -> None:
-        """Test an override that is not a byte is rejected, not carried into a set."""
-        self.device.set_customize(customize)
-        assert self.device._mode_set_overrides == {}
-
-        with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute(DeviceAttributes.mode.value, "comfort")
-            mock_build_send.assert_called_once()
-            message = mock_build_send.call_args[0][0]
-            assert message.mode_set_overrides == {}
-            assert message._body[3] == 0x09
-
-    def test_set_customize_mode_set_overrides_integral_float(self) -> None:
-        """Test a float that is a whole number is still a usable byte."""
-        self.device.set_customize('{"mode_set_overrides": {"3": 41.0}}')
-        assert self.device._mode_set_overrides == {3: 41}
+        assert device.speed_count == expected_speed_count
 
     def _receive_protocol_v5_status(self) -> None:
         """Push a protocol-5 status message so the device tracks _fa_protocol."""

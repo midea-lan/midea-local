@@ -1,12 +1,11 @@
 """Midea Local E2 device."""
 
-import json
 import logging
-import math
 from enum import IntEnum, StrEnum
 from typing import Any, Unpack
 
 from midealocal.const import DeviceType
+from midealocal.const.water_heater_exceptions import E2_EXCEPTIONS
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs, multiplier_translator
 
 from .message import (
@@ -99,8 +98,6 @@ class MideaE2Device(MideaDevice):
 
     def __init__(
         self,
-        *,
-        customize: str,
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea E2 device."""
@@ -156,16 +153,17 @@ class MideaE2Device(MideaDevice):
                 DeviceAttributes.bottom_temp: False,
             },
         )
-        self._default_old_protocol = OldProtocol.auto
-        self._old_protocol = self._default_old_protocol
-        # target_temperature step
-        self._temperature_step: float | None = None
-        self._default_temperature_step = 1.0
-        self._precision_halves: bool | None = None
-        self._default_precision_halves = False
-        self._default_heating_power_multiplier = 1.0
-        self._heating_power_multiplier = self._default_heating_power_multiplier
-        self.set_customize(customize)
+        exceptions = E2_EXCEPTIONS.get(str(self.model), {})
+        self._old_protocol: OldProtocol | bool = exceptions.get(
+            "old_protocol",
+            OldProtocol.auto,
+        )
+        self._temperature_step: float = exceptions.get("temperature_step", 1.0)
+        self._precision_halves: bool = exceptions.get("precision_halves", False)
+        self._heating_power_multiplier: float = exceptions.get(
+            "heating_power_multiplier",
+            1.0,
+        )
 
     @property
     def precision_halves(self) -> bool | None:
@@ -280,40 +278,6 @@ class MideaE2Device(MideaDevice):
                 message = MessageNewProtocolSet(self._message_protocol_version)
                 setattr(message, str(attr), value)
             self.build_send(message)
-
-    def set_customize(self, customize: str) -> None:
-        """Midea E2 device set customize."""
-        self._old_protocol = self._default_old_protocol
-        self._temperature_step = self._default_temperature_step
-        self._precision_halves = self._default_precision_halves
-        self._heating_power_multiplier = self._default_heating_power_multiplier
-        if customize and len(customize) > 0:
-            try:
-                params = json.loads(customize)
-                if params and "old_protocol" in params:
-                    self._old_protocol = self._normalize_old_protocol(
-                        params["old_protocol"],
-                    )
-                if params and "temperature_step" in params:
-                    self._temperature_step = float(params.get("temperature_step"))
-                if params and "precision_halves" in params:
-                    self._precision_halves = params.get("precision_halves")
-                if params and "heating_power_multiplier" in params:
-                    heating_power_multiplier = float(
-                        params.get("heating_power_multiplier"),
-                    )
-                    if math.isfinite(heating_power_multiplier):
-                        self._heating_power_multiplier = heating_power_multiplier
-            except Exception:
-                _LOGGER.exception("[%s] Set customize error", self.device_id)
-            self.update_all(
-                {
-                    "temperature_step": self._temperature_step,
-                    "old_protocol": self._old_protocol,
-                    "precision_halves": self._precision_halves,
-                    "heating_power_multiplier": self._heating_power_multiplier,
-                },
-            )
 
 
 class MideaAppliance(MideaE2Device):

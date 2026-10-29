@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.const.climate_exceptions import C3_EXCEPTIONS, ClimateExceptions
 from midealocal.devices.c3 import (
     DEFAULT_ZONE_MAX_TARGET_TEMPERATURE,
     DEFAULT_ZONE_MIN_TARGET_TEMPERATURE,
@@ -30,7 +31,12 @@ class TestMideaC3Device:
     @pytest.fixture(autouse=True)
     def _setup_device(self) -> None:
         """Midea C3 Device setup."""
-        self.device = MideaC3Device(
+        with patch.dict(C3_EXCEPTIONS, {"test_model": {"temperature_step": 1.0}}):
+            self.device = self._make_device()
+
+    def _make_device(self) -> MideaC3Device:
+        """Create a device for the test model."""
+        return MideaC3Device(
             name="Test Device",
             device_id=1,
             ip_address="192.168.1.1",
@@ -40,7 +46,6 @@ class TestMideaC3Device:
             device_protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=1,
-            customize='{"temperature_step": 1}',
         )
 
     def test_initial_attributes(self) -> None:
@@ -327,10 +332,10 @@ class TestMideaC3Device:
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.room_target_temp == expected_step_whole
-            mock_build_send.reset_mock()
 
-            self.device._temperature_step = 0.5
-            self.device.set_raw_target_temperature(temperature, "auto", 0)
+        step_half_device = self._make_device()
+        with patch.object(step_half_device, "build_send") as mock_build_send:
+            step_half_device.set_raw_target_temperature(temperature, "auto", 0)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.room_target_temp == expected_step_half
@@ -373,10 +378,27 @@ class TestMideaC3Device:
             assert message.zone2_power is True
             assert message.mode == C3DeviceMode.HEAT
 
-    def test_invalid_customize_format(self) -> None:
-        """Test invalid customize format."""
-        self.device.set_customize("{")
-        self.device.set_customize('{"temperature_step":"10"}')
+    @pytest.mark.parametrize(
+        ("exceptions", "expected_step"),
+        [
+            pytest.param({}, 0.5, id="default"),
+            pytest.param(
+                {"test_model": {"temperature_step": 1.0}},
+                1.0,
+                id="model_exception",
+            ),
+        ],
+    )
+    def test_temperature_step_exception(
+        self,
+        exceptions: dict[str, ClimateExceptions],
+        expected_step: float,
+    ) -> None:
+        """Test per-model temperature step exceptions."""
+        with patch.dict(C3_EXCEPTIONS, exceptions):
+            device = self._make_device()
+
+        assert device.temperature_step == expected_step
 
     def test_hvac_modes(self) -> None:
         """Test hvac_modes lists every generic HVAC mode name."""

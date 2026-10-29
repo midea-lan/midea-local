@@ -10,6 +10,7 @@ from midealocal.message import (
 )
 
 MAX_EFFECT = 5
+COLOR_TEMP_RANGE_BODY_LENGTH = 32
 
 
 class Message13Base(MessageRequest):
@@ -95,6 +96,13 @@ class MessageMainLightBody(MessageBody):
         if self.effect > MAX_EFFECT or self.effect < 0:
             self.effect = 1
         self.power = self.read_byte(body, 8) > 0
+        # Newer firmware reports its own kelvin range; older ones send a shorter body.
+        self.color_temp_range: list[int] | None = None
+        if len(body) >= COLOR_TEMP_RANGE_BODY_LENGTH:
+            color_temp_min = (body[28] << 8) | body[29]
+            color_temp_max = (body[30] << 8) | body[31]
+            if 0 < color_temp_min < color_temp_max:
+                self.color_temp_range = [color_temp_min, color_temp_max]
 
 
 class MessageMainLightResponseBody(MessageBody):

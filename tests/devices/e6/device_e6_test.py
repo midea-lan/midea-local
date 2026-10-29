@@ -5,6 +5,10 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.const.water_heater_exceptions import (
+    E6_EXCEPTIONS,
+    WaterHeaterExceptions,
+)
 from midealocal.devices.e6 import DeviceAttributes, MideaE6Device
 from midealocal.devices.e6.message import MessageQuery, MessageSet
 
@@ -15,7 +19,11 @@ class TestMideaE6Device:
     @pytest.fixture(autouse=True)
     def _setup_device(self) -> None:
         """Set up E6 device."""
-        self.device = MideaE6Device(
+        self.device = self._make_device()
+
+    def _make_device(self) -> MideaE6Device:
+        """Create an E6 device for the test model."""
+        return MideaE6Device(
             name="Test Device",
             device_id=1,
             ip_address="192.168.1.100",
@@ -25,7 +33,6 @@ class TestMideaE6Device:
             device_protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
-            customize='{"temperature_step": 1}',
         )
 
     def test_initial_attributes(self) -> None:
@@ -67,9 +74,26 @@ class TestMideaE6Device:
             assert result[DeviceAttributes.cold_water_dot.value] is False
             assert result[DeviceAttributes.heating_modes.value] == "home_mode"
 
-    def test_temperature_step(self) -> None:
-        """Test temperature_step property reflects customize."""
-        assert self.device.temperature_step == 1.0
+    @pytest.mark.parametrize(
+        ("exceptions", "expected_step"),
+        [
+            pytest.param({}, None, id="default"),
+            pytest.param(
+                {"test_model": {"temperature_step": 1.0}},
+                1.0,
+                id="model_exception",
+            ),
+        ],
+    )
+    def test_temperature_step(
+        self,
+        exceptions: dict[str, WaterHeaterExceptions],
+        expected_step: float | None,
+    ) -> None:
+        """Test temperature_step property reflects model exceptions."""
+        with patch.dict(E6_EXCEPTIONS, exceptions):
+            device = self._make_device()
+        assert device.temperature_step == expected_step
 
     def test_build_query(self) -> None:
         """Test build_query returns a single query message."""
@@ -122,19 +146,3 @@ class TestMideaE6Device:
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute("unknown_attribute", True)
             mock_build_send.assert_not_called()
-
-    def test_set_customize_invalid_json(self) -> None:
-        """Test set_customize logs and continues on invalid JSON."""
-        device = MideaE6Device(
-            name="Test Device",
-            device_id=1,
-            ip_address="192.168.1.100",
-            port=6444,
-            token="AA",
-            key="BB",
-            device_protocol=ProtocolVersion.V3,
-            model="test_model",
-            subtype=1,
-            customize="not-valid-json",
-        )
-        assert device.temperature_step is None

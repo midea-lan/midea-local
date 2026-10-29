@@ -1,11 +1,11 @@
 """Midea local CE device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
+from midealocal.const.fan_exceptions import CE_EXCEPTIONS
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import MessageCEResponse, MessageQuery, MessageSet
@@ -43,8 +43,6 @@ class MideaCEDevice(MideaDevice):
 
     def __init__(
         self,
-        *,
-        customize: str,
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea CE device."""
@@ -72,9 +70,8 @@ class MideaCEDevice(MideaDevice):
                 DeviceAttributes.error_code: 0,
             },
         )
-        self._default_speed_count = 7
-        self._speed_count = self._default_speed_count
-        self.set_customize(customize)
+        exceptions = CE_EXCEPTIONS.get(str(self.model), {})
+        self._speed_count: int = exceptions.get("speed_count", 7)
 
     @property
     def speed_count(self) -> int:
@@ -133,18 +130,6 @@ class MideaCEDevice(MideaDevice):
         else:
             setattr(message, str(attr), value)
         self.build_send(message)
-
-    def set_customize(self, customize: str) -> None:
-        """Midea CE device set customize."""
-        self._speed_count = self._default_speed_count
-        if customize and len(customize) > 0:
-            try:
-                params = json.loads(customize)
-                if params and "speed_count" in params:
-                    self._speed_count = params.get("speed_count")
-            except Exception:
-                _LOGGER.exception("[%s] Set customize error", self.device_id)
-            self.update_all({"speed_count": self._speed_count})
 
 
 class MideaAppliance(MideaCEDevice):

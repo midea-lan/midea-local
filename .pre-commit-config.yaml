@@ -57,7 +57,7 @@ repos:
       - id: codespell
         exclude: ^lua/
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.4.0
+    rev: v2.4.1
     hooks:
       - id: mypy
         args: [--scripts-are-modules]
@@ -69,9 +69,9 @@ repos:
           - colorlog==6.12.0
           - defusedxml==0.7.1
           - ifaddr==0.2.0
-          - platformdirs==4.13.6
+          - platformdirs==4.14.0
           - pycryptodome==4.2.0
-          - pytest==9.1.1
+          - pytest==9.2.0
           - types-aiofiles==25.1.0.20260518
           - types-defusedxml==0.7.0.20260504
           - typing-extensions==4.16.0

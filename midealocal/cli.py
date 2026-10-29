@@ -182,8 +182,7 @@ class MideaCLI:
             key=key["key"],
             device_protocol=device["protocol"],
             model=device["model"],
-            subtype=0,
-            customize="",
+            subtype=device["subtype"],
             mac=device["mac"],
             serial_number=device["sn"],
         )
@@ -268,7 +267,6 @@ class MideaCLI:
             token="",
             key="",
             subtype=0,
-            customize="",
         )
 
         result = device.process_message(self.namespace.message)
