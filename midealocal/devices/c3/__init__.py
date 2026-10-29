@@ -1,6 +1,5 @@
 """Midea local C3 device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack, cast, override
@@ -11,6 +10,7 @@ from midealocal.base_classes.climate import (
     MideaHVACMode,
 )
 from midealocal.const import DeviceType
+from midealocal.const.climate_exceptions import C3_EXCEPTIONS
 from midealocal.device import MideaDeviceInitKwargs
 
 from .message import (
@@ -121,7 +121,7 @@ class MideaC3Device(MideaClimateDevice):
     def __init__(
         self,
         *,
-        customize: str,
+        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea C3 device."""
@@ -175,9 +175,10 @@ class MideaC3Device(MideaClimateDevice):
                 DeviceAttributes.error_code: 0,
             },
         )
-        self._default_temperature_step: float = TEMPERATURE_STEP_HALF
-        self._temperature_step: float = TEMPERATURE_STEP_HALF
-        self.set_customize(customize)
+        self._temperature_step: float = C3_EXCEPTIONS.get(str(self.model), {}).get(
+            "temperature_step",
+            TEMPERATURE_STEP_HALF,
+        )
 
     @property
     @override
@@ -544,29 +545,6 @@ class MideaC3Device(MideaClimateDevice):
             attr=MideaC3Device._power_attributes[zone],
             value=False,
         )
-
-    def set_customize(self, customize: str) -> None:
-        """Midea C3 device set customize."""
-        self._temperature_step = self._default_temperature_step
-        if customize and len(customize) > 0:
-            try:
-                params = json.loads(customize)
-                if params and "temperature_step" in params:
-                    temp_step = params.get("temperature_step")
-                    if isinstance(temp_step, float | int):
-                        self._temperature_step = float(temp_step)
-                    else:
-                        _LOGGER.error(
-                            "[%s] Invalid type for temperature_step: %s",
-                            self.device_id,
-                            temp_step,
-                        )
-            except json.JSONDecodeError:
-                _LOGGER.exception(
-                    "[%s] JSON decode error in set_customize",
-                    self.device_id,
-                )
-            self.update_all({"temperature_step": self._temperature_step})
 
 
 class MideaAppliance(MideaC3Device):
