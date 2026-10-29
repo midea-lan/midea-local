@@ -1,18 +1,16 @@
 """Midea local FC device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
+from midealocal.const.air_purifier_exceptions import FC_EXCEPTIONS
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
 
 from .message import MessageFCResponse, MessageQuery, MessageSet
 
 _LOGGER = logging.getLogger(__name__)
-
-STANDBY_DETECT_LENGTH = 2
 
 
 class DeviceAttributes(StrEnum):
@@ -58,7 +56,7 @@ class MideaFCDevice(MideaDevice):
     def __init__(
         self,
         *,
-        customize: str,
+        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea FC device."""
@@ -83,9 +81,10 @@ class MideaFCDevice(MideaDevice):
             },
         )
 
-        self._standby_detect_default = [40, 20]
-        self._standby_detect = self._standby_detect_default
-        self.set_customize(customize)
+        self._standby_detect: list[int] = FC_EXCEPTIONS.get(
+            str(self.model),
+            {},
+        ).get("standby_detect", [40, 20])
 
     @property
     def modes(self) -> list[str]:
@@ -205,23 +204,6 @@ class MideaFCDevice(MideaDevice):
             else:
                 setattr(message, str(attr), value)
             self.build_send(message)
-
-    def set_customize(self, customize: str) -> None:
-        """Midea FC device set customize."""
-        self._standby_detect = self._standby_detect_default
-        if customize and len(customize) > 0:
-            try:
-                params = json.loads(customize)
-                if params and "standby_detect" in params:
-                    settings = params.get("standby_detect")
-                    if (
-                        len(settings) == STANDBY_DETECT_LENGTH
-                        and settings[0] > settings[1]
-                    ):
-                        self._standby_detect = settings
-            except Exception:
-                _LOGGER.exception("[%s] Set customize error", self.device_id)
-            self.update_all({"standby_detect": self._standby_detect})
 
 
 class MideaAppliance(MideaFCDevice):
