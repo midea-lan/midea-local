@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
+from midealocal.const.light_exceptions import X13_EXCEPTIONS, LightExceptions
 from midealocal.devices.x13 import DeviceAttributes, Midea13Device
 from midealocal.devices.x13.message import MessageQuery, MessageSet
 from midealocal.message import MessageType
@@ -18,7 +19,11 @@ class TestMidea13Device:
     @pytest.fixture(autouse=True)
     def _setup_device(self) -> None:
         """Midea x13 Device setup."""
-        self.device = Midea13Device(
+        self.device = self._make_device()
+
+    def _make_device(self) -> Midea13Device:
+        """Create a device for the test model."""
+        return Midea13Device(
             name="Test Device",
             device_id=1,
             ip_address="192.168.1.1",
@@ -50,9 +55,27 @@ class TestMidea13Device:
             "night",
         ]
 
-    def test_color_temp_range(self) -> None:
-        """Test default color temperature range."""
-        assert self.device.color_temp_range == [2700, 6500]
+    @pytest.mark.parametrize(
+        ("exceptions", "expected_range"),
+        [
+            pytest.param({}, [2700, 6500], id="default"),
+            pytest.param(
+                {"test_model": {"color_temp_range_kelvin": [3000, 6000]}},
+                [3000, 6000],
+                id="model_exception",
+            ),
+        ],
+    )
+    def test_color_temp_range(
+        self,
+        exceptions: dict[str, LightExceptions],
+        expected_range: list[int],
+    ) -> None:
+        """Test per-model color temperature range exceptions."""
+        with patch.dict(X13_EXCEPTIONS, exceptions):
+            device = self._make_device()
+
+        assert device.color_temp_range == expected_range
 
     @pytest.mark.parametrize(
         ("kelvin", "midea"),
@@ -101,6 +124,64 @@ class TestMidea13Device:
         assert self.device.attributes[DeviceAttributes.rgb_color] is None
         assert new_status[DeviceAttributes.power.value] is True
         assert DeviceAttributes.rgb_color.value not in new_status
+        assert "color_temp_range" not in new_status
+
+    @staticmethod
+    def _main_light_message(color_temp_range_bytes: list[int]) -> bytes:
+        """Build a main light response with the given trailing range bytes."""
+        header = bytearray(
+            [0xAA] + ([0x0] * 7) + [ProtocolVersion.V1] + [MessageType.query],
+        )
+        body = bytearray(28)
+        body[0] = 0xA4  # main light body type
+        body[2] = 255  # color temperature
+        body[3] = 1  # effect
+        body += bytearray(color_temp_range_bytes)
+        return bytes(header + body + bytearray([0x00]))
+
+    @pytest.mark.parametrize(
+        ("color_temp_range_bytes", "expected_range", "expected_kelvin"),
+        [
+            pytest.param(
+                [0x0B, 0xB8, 0x16, 0x44],
+                [3000, 5700],
+                5700,
+                id="device_reported",
+            ),
+            pytest.param([0, 0, 0, 0], [2700, 6500], 6500, id="zero_range"),
+            pytest.param(
+                [0x16, 0x44, 0x0B, 0xB8],
+                [2700, 6500],
+                6500,
+                id="inverted_range",
+            ),
+            pytest.param([0x0B, 0xB8], [2700, 6500], 6500, id="short_body"),
+        ],
+    )
+    def test_process_message_color_temp_range(
+        self,
+        color_temp_range_bytes: list[int],
+        expected_range: list[int],
+        expected_kelvin: int,
+    ) -> None:
+        """Test the device-reported color temperature range."""
+        new_status = self.device.process_message(
+            self._main_light_message(color_temp_range_bytes),
+        )
+        assert self.device.color_temp_range == expected_range
+        assert new_status.get("color_temp_range", [2700, 6500]) == expected_range
+        assert (
+            self.device.attributes[DeviceAttributes.color_temperature]
+            == expected_kelvin
+        )
+
+    def test_process_message_color_temp_range_unchanged(self) -> None:
+        """Test an unchanged device-reported range is not pushed again."""
+        message = self._main_light_message([0x0B, 0xB8, 0x16, 0x44])
+        self.device.process_message(message)
+        new_status = self.device.process_message(message)
+        assert self.device.color_temp_range == [3000, 5700]
+        assert "color_temp_range" not in new_status
 
     def test_process_message_control_success(self) -> None:
         """Test process message with a successful set response requests a refresh."""
@@ -189,30 +270,3 @@ class TestMidea13Device:
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(DeviceAttributes.rgb_color.value, 1)
             mock_build_send.assert_not_called()
-
-    def test_set_customize(self) -> None:
-        """Test set customize overrides the color temperature range."""
-        with patch.object(self.device, "update_all") as mock_update_all:
-            self.device.set_customize('{"color_temp_range_kelvin": [3000, 6000]}')
-            mock_update_all.assert_called_once_with(
-                {"color_temp_range": [3000, 6000]},
-            )
-        assert self.device.color_temp_range == [3000, 6000]
-
-    def test_set_customize_without_key(self) -> None:
-        """Test set customize without the key keeps the default range."""
-        with patch.object(self.device, "update_all") as mock_update_all:
-            self.device.set_customize('{"other": 1}')
-            mock_update_all.assert_called_once_with(
-                {"color_temp_range": [2700, 6500]},
-            )
-        assert self.device.color_temp_range == [2700, 6500]
-
-    def test_set_customize_invalid(self) -> None:
-        """Test set customize with invalid JSON keeps the default range."""
-        with patch.object(self.device, "update_all") as mock_update_all:
-            self.device.set_customize("{")
-            mock_update_all.assert_called_once_with(
-                {"color_temp_range": [2700, 6500]},
-            )
-        assert self.device.color_temp_range == [2700, 6500]

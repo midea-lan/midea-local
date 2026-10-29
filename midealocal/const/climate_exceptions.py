@@ -13,5 +13,6 @@ class ClimateExceptions(TypedDict, total=False):
 
 
 AC_EXCEPTIONS: dict[str, ClimateExceptions] = {
+    "00000Q16": {"power_analysis_method": 12},
     "00000Q18": {"temperature_step": 1.0},
 }

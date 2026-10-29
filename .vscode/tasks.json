@@ -2,21 +2,31 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Install requirements",
+      "label": "Pytest tests",
       "type": "shell",
-      "command": "uv sync --all-groups",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "windows": {
+        "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+      },
+      "args": ["-m", "pytest", "tests/", "--no-cov"],
+      "group": "test",
       "problemMatcher": []
     },
     {
-      "label": "Build and install midealocal lib",
+      "label": "Pytest tests with coverage",
       "type": "shell",
-      "command": "rm -rf dist/ && uv run python -m build && uv pip install dist/midea_local*.whl",
-      "problemMatcher": []
-    },
-    {
-      "label": "Generate code coverage report",
-      "type": "shell",
-      "command": "uv run python -m pytest --rootdir . --cov=midealocal --cov-report term-missing ./tests/",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "windows": {
+        "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+      },
+      "args": [
+        "-m",
+        "pytest",
+        "tests/",
+        "--cov=midealocal",
+        "--cov-report=term-missing:skip-covered"
+      ],
+      "group": "test",
       "problemMatcher": []
     }
   ]
