@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.const.other_exceptions import FC_EXCEPTIONS
+from midealocal.const.air_purifier_exceptions import FC_EXCEPTIONS
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
 
 from .message import MessageFCResponse, MessageQuery, MessageSet

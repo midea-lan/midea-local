@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
-from midealocal.const.other_exceptions import C2_EXCEPTIONS, OtherExceptions
+from midealocal.const.toilet_exceptions import C2_EXCEPTIONS, ToiletExceptions
 from midealocal.devices.c2 import DeviceAttributes, MideaC2Device
 from midealocal.devices.c2.message import MessagePower, MessageQuery, MessageSet
 from midealocal.message import MessageType
@@ -163,7 +163,7 @@ class TestMideaC2Device:
     )
     def test_max_levels_exception(
         self,
-        exceptions: dict[str, OtherExceptions],
+        exceptions: dict[str, ToiletExceptions],
         expected_levels: tuple[int, int, int],
     ) -> None:
         """Test per-model max level exceptions."""

@@ -5,7 +5,10 @@ from unittest.mock import patch
 import pytest
 
 from midealocal.const import ProtocolVersion
-from midealocal.const.other_exceptions import FC_EXCEPTIONS, OtherExceptions
+from midealocal.const.air_purifier_exceptions import (
+    FC_EXCEPTIONS,
+    AirPurifierExceptions,
+)
 from midealocal.devices.fc import DeviceAttributes, MideaFCDevice
 from midealocal.devices.fc.message import MessageQuery
 from midealocal.message import MessageType
@@ -401,7 +404,7 @@ class TestMideaFCDevice:
     )
     def test_standby_detect_exception(
         self,
-        exceptions: dict[str, OtherExceptions],
+        exceptions: dict[str, AirPurifierExceptions],
         expected_standby_detect: list[int],
     ) -> None:
         """Test per-model standby detect exceptions reach the set message."""

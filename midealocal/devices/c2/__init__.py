@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, Unpack
 
 from midealocal.const import DeviceType
-from midealocal.const.other_exceptions import C2_EXCEPTIONS
+from midealocal.const.toilet_exceptions import C2_EXCEPTIONS
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import MessageC2Response, MessagePower, MessageQuery, MessageSet
