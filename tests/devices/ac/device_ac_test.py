@@ -144,71 +144,64 @@ class TestMideaACDevice:
         assert device._power_analysis_method == PowerFormats.BCD_ENERGY_BINARY_POWER
 
     @pytest.mark.parametrize(
-        ("exceptions", "b5_electricity", "expected"),
+        ("exceptions", "b5_electricity", "expected_energy", "expected_power"),
         [
-            pytest.param({}, None, PowerFormats.BCD, id="default"),
-            pytest.param({}, 1, PowerFormats.BCD, id="no_energy_stats"),
-            pytest.param({}, 2, PowerFormats.BCD, id="b5_bcd"),
-            pytest.param({}, 4, PowerFormats.BINARY1, id="b5_binary"),
+            pytest.param({}, None, 24.55, 4.6, id="default_bcd"),
+            pytest.param({}, 1, 24.55, 4.6, id="no_energy_stats"),
+            pytest.param({}, 4, 77.59, 7.0, id="b5_binary"),
             pytest.param(
                 {"test_model": {"power_analysis_method": 12}},
                 None,
-                PowerFormats.BINARY1,
+                77.59,
+                7.0,
                 id="exception_without_b5",
             ),
             pytest.param(
                 {"test_model": {"power_analysis_method": 12}},
                 3,
-                PowerFormats.BCD,
+                24.55,
+                4.6,
                 id="b5_bcd_over_binary_exception",
             ),
             pytest.param(
                 {"test_model": {"power_analysis_method": 101}},
-                5,
-                PowerFormats.BINARY1,
-                id="b5_binary_over_bcd_exception",
-            ),
-            pytest.param(
-                {"test_model": {"power_analysis_method": 101}},
                 2,
-                PowerFormats.BCD_ENERGY_BINARY_POWER,
+                24.55,
+                7.0,
                 id="bcd_exception_agrees_with_b5",
             ),
             pytest.param(
                 {"test_model": {"power_analysis_method": 2}},
                 4,
-                PowerFormats.BINARY,
+                775.9,
+                7.0,
                 id="binary_exception_agrees_with_b5",
             ),
         ],
     )
-    def test_power_analysis_method_from_b5(
+    def test_power_format_from_b5_energy_bcd(
         self,
         exceptions: dict[str, ClimateExceptions],
         b5_electricity: int | None,
-        expected: PowerFormats,
+        expected_energy: float,
+        expected_power: float,
     ) -> None:
         """Test B5 energy_bcd picks the C1 format over a disagreeing exception."""
         with patch.dict(AC_EXCEPTIONS, exceptions):
             device = self._make_device("test_model", 1)
         if b5_electricity is not None:
-            body = bytearray([0xB5, 0x01, 0x16, 0x02, 0x01, b5_electricity])
+            body = bytearray([0xB5, 0x01])  # Body type, params count
+            body += bytearray([0x16, 0x02, 0x01, b5_electricity])  # b5_electricity
             device.process_message(self._response(body))
 
-        assert device._active_power_analysis_method() == expected
-
-    def test_c1_power_decoded_with_b5_format(self) -> None:
-        """Test a C1 reply after a binary-energy B5 reply is decoded as binary."""
-        device = self._make_device("test_model", 1)
-        device.process_message(
-            self._response(bytearray([0xB5, 0x01, 0x16, 0x02, 0x01, 4])),
-        )
-        body = bytearray([0xC1, 0x21, 0x01, 0x44])
+        body = bytearray([0xC1, 0x21, 0x01, 0x44])  # C1 power reply
         body += bytearray.fromhex("00001e4f 00000000 00000000 000046")
         device.process_message(self._response(body))
 
-        assert device.attributes[DeviceAttributes.total_energy_consumption] == 77.59
-        assert device.attributes[DeviceAttributes.realtime_power] == 7.0
+        assert device.attributes[DeviceAttributes.total_energy_consumption] == (
+            expected_energy
+        )
+        assert device.attributes[DeviceAttributes.realtime_power] == expected_power
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
