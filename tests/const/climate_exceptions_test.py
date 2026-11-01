@@ -24,7 +24,10 @@ def device(request: pytest.FixtureRequest) -> MideaACDevice:
 
 
 def _c1_power_response(energy_data: bytearray) -> bytes:
-    """Wrap C1 0x44 energy data in a complete query frame."""
+    """Wrap C1 0x44 energy data in a complete query frame.
+
+    The data holds three 4-byte energy counters, then 3 bytes of realtime power.
+    """
     body = bytearray([0xC1, 0x21, 0x01, 0x44]) + energy_data
     header = bytearray([0xAA, 0, 0xAC, 0, 0, 0, 0, 0, 1, 3])
     header[1] = len(header) + len(body)

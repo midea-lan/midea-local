@@ -260,7 +260,7 @@ class PowerFormats(IntEnum):
     BCD_ENERGY_BINARY_POWER = 101
 
 
-# Formats that read the energy counters as BCD, as B5 energy_bcd reports.
+# Power formats whose energy counters are BCD (B5 energy_bcd is true).
 BCD_ENERGY_FORMATS = frozenset(
     {PowerFormats.BCD, PowerFormats.BCD_ENERGY_BINARY_POWER},
 )
