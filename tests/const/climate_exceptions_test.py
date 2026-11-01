@@ -39,12 +39,12 @@ def _c1_power_response(energy_data: bytearray) -> bytes:
 @pytest.mark.parametrize(
     ("device", "energy_data", "expected_energy", "expected_power"),
     [
-        # Rebuilt from a 00000Q11 split unit's readings (#997): 24.55 kWh, 4.6 W as BCD.
+        # Captured from a 00000Q11 split unit (#997); BCD reads 24.56 kWh, 5.0 W.
         pytest.param(
             "00000Q11",
-            bytearray.fromhex("00001e4f 00000000 00000000 000046"),
-            77.59,
-            7.0,
+            bytearray.fromhex("00001e56 00000000 00000000 000050 0001da"),
+            77.66,
+            8.0,
             id="00000Q11",
         ),
         pytest.param(

@@ -38,6 +38,22 @@ from midealocal.devices.ac.message import (
 from midealocal.message import ListTypes, MessageBase, MessageChecksum
 from tests.base_classes.climate_test import DummyFanMode, DummyHVACMode, DummySwingMode
 
+# Captured from a 00000Q11 split unit (#997): C1 power reply, then its two B5
+# capability replies (b5_electricity 4: energy stats, binary energy).
+_Q11_POWER_REPLY = bytes.fromhex(
+    "aa20ac00000000000803c121014400001e5600000000000000000000500001da63",
+)
+_Q11_B5_REPLIES = (
+    bytes.fromhex(
+        "aa3dac00000000000803b50a12020101430001011402010115020101160201041a0201"
+        "01100201011f020103250207203c203c203c054000010001009f25",
+    ),
+    bytes.fromhex(
+        "aa3fac00000000000803b50b1e02010113020101220201001902010039000101510001"
+        "01090001010a000101480001012402010167000102e30001010000cf9b",
+    ),
+)
+
 
 class TestMideaACDevice:
     """Test Midea AC Device."""
@@ -146,35 +162,33 @@ class TestMideaACDevice:
     @pytest.mark.parametrize(
         ("exceptions", "b5_electricity", "expected_energy", "expected_power"),
         [
-            pytest.param({}, None, 24.55, 4.6, id="default_bcd"),
-            pytest.param({}, 1, 24.55, 4.6, id="no_energy_stats"),
-            pytest.param({}, 4, 77.59, 7.0, id="b5_binary"),
+            pytest.param({}, 1, 24.56, 5.0, id="no_energy_stats"),
             pytest.param(
                 {"test_model": {"power_analysis_method": 12}},
                 None,
-                77.59,
-                7.0,
+                77.66,
+                8.0,
                 id="exception_without_b5",
             ),
             pytest.param(
                 {"test_model": {"power_analysis_method": 12}},
                 3,
-                24.55,
-                4.6,
+                24.56,
+                5.0,
                 id="b5_bcd_over_binary_exception",
             ),
             pytest.param(
                 {"test_model": {"power_analysis_method": 101}},
                 2,
-                24.55,
-                7.0,
+                24.56,
+                8.0,
                 id="bcd_exception_agrees_with_b5",
             ),
             pytest.param(
                 {"test_model": {"power_analysis_method": 2}},
                 4,
-                775.9,
-                7.0,
+                776.6,
+                8.0,
                 id="binary_exception_agrees_with_b5",
             ),
         ],
@@ -194,14 +208,25 @@ class TestMideaACDevice:
             body += bytearray([0x16, 0x02, 0x01, b5_electricity])  # b5_electricity
             device.process_message(self._response(body))
 
-        body = bytearray([0xC1, 0x21, 0x01, 0x44])  # C1 power reply
-        body += bytearray.fromhex("00001e4f 00000000 00000000 000046")
-        device.process_message(self._response(body))
+        device.process_message(_Q11_POWER_REPLY)
 
         assert device.attributes[DeviceAttributes.total_energy_consumption] == (
             expected_energy
         )
         assert device.attributes[DeviceAttributes.realtime_power] == expected_power
+
+    def test_power_format_from_captured_b5(self) -> None:
+        """Test a captured B5 reply switches a model without exception to binary."""
+        device = self._make_device("test_model", 8)
+        device.process_message(_Q11_POWER_REPLY)
+        assert device.attributes[DeviceAttributes.realtime_power] == 5.0
+
+        for frame in _Q11_B5_REPLIES:
+            device.process_message(frame)
+        device.process_message(_Q11_POWER_REPLY)
+
+        assert device.attributes[DeviceAttributes.total_energy_consumption] == 77.66
+        assert device.attributes[DeviceAttributes.realtime_power] == 8.0
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
