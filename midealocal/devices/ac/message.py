@@ -260,6 +260,12 @@ class PowerFormats(IntEnum):
     BCD_ENERGY_BINARY_POWER = 101
 
 
+# Formats that read the energy counters as BCD, as B5 energy_bcd reports.
+BCD_ENERGY_FORMATS = frozenset(
+    {PowerFormats.BCD, PowerFormats.BCD_ENERGY_BINARY_POWER},
+)
+
+
 class NewProtocolTags(IntEnum):
     """New protocol tags in query and response."""
 

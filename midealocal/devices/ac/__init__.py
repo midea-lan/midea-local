@@ -27,6 +27,7 @@ from midealocal.device import (
 from midealocal.message import ListTypes
 
 from .message import (
+    BCD_ENERGY_FORMATS,
     ACFanSpeed,
     ACSwingMode,
     DeviceAttributes,
@@ -53,6 +54,7 @@ from .message import (
     MessageSubProtocolResetFilter,
     MessageSubProtocolSet,
     MessageToggleDisplay,
+    PowerFormats,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -621,6 +623,21 @@ class MideaACDevice(MideaClimateDevice):
         """Midea AC device rate_select options."""
         return list(self._active_rate_selects().values())
 
+    def _active_power_analysis_method(self) -> int:
+        """Midea AC device C1 power/energy format.
+
+        One model code can cover units with different formats, so when the
+        unit reports energy statistics, its B5 ``energy_bcd`` flag wins over a
+        model exception that reads the energy counters the other way. Without
+        that flag, the model exception (or BCD) applies.
+        """
+        if not self._capabilities.get("energy_stats"):
+            return self._power_analysis_method
+        energy_bcd = self._capabilities.get("energy_bcd", False)
+        if (self._power_analysis_method in BCD_ENERGY_FORMATS) == energy_bcd:
+            return self._power_analysis_method
+        return PowerFormats.BCD if energy_bcd else PowerFormats.BINARY1
+
     def build_query(self) -> list[ACQuery]:
         """Midea AC device build query."""
         if self._used_subprotocol:
@@ -641,6 +658,10 @@ class MideaACDevice(MideaClimateDevice):
             # Queried on its own so an empty response for the combined
             # new-protocol query does not suppress the self-clean state.
             MessageNewProtocolSelfCleanQuery(self._message_protocol_version),
+            # Before the power query: B5 energy_bcd picks the C1 format, so it
+            # must be known before the first C1 reply is parsed.
+            MessageCapabilitiesQuery(self._message_protocol_version),
+            MessageCapabilitiesAdditionalQuery(self._message_protocol_version),
             MessagePowerQuery(self._message_protocol_version),
             MessageHumidityQuery(self._message_protocol_version),
             MessageGroupZeroQuery(self._message_protocol_version),
@@ -650,8 +671,6 @@ class MideaACDevice(MideaClimateDevice):
             MessageGroupTwoQuery(self._message_protocol_version),
             MessageGroupThreeQuery(self._message_protocol_version),
             MessageGroupSevenQuery(self._message_protocol_version),
-            MessageCapabilitiesQuery(self._message_protocol_version),
-            MessageCapabilitiesAdditionalQuery(self._message_protocol_version),
         ]
         return queries
 
@@ -659,7 +678,7 @@ class MideaACDevice(MideaClimateDevice):
         """Midea AC device process message."""
         message = MessageACResponse(
             bytearray(msg),
-            self._power_analysis_method,
+            self._active_power_analysis_method(),
             self._uses_new_protocol_temperature,
         )
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
