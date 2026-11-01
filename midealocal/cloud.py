@@ -18,6 +18,7 @@ import aiofiles
 from aiohttp import ClientConnectionError, ClientSession, ClientTimeout
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
+from yarl import URL
 
 from midealocal.exceptions import (
     CLOUD_ERRORS,
@@ -276,7 +277,7 @@ class MideaCloud:
                 {"stamp": datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S")},
             )
         random = str(int(time.time()))
-        url = self._api_url + endpoint
+        url = str(URL(self._api_url).update_query(alias=endpoint))
         dump_data = json.dumps(data)
         sign = self._security.sign("", dump_data, random)
         header.update(
@@ -1124,7 +1125,7 @@ class MideaAirCloud(MideaCloud):
         raise_for_error: bool = False,
     ) -> dict[str, Any] | None:
         header = header or {}
-        url = self._api_url + endpoint
+        url = str(URL(self._api_url).with_path(endpoint))
 
         sign = self._security.sign(url, data, "")
         data.update({"sign": sign})

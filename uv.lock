@@ -650,6 +650,7 @@ dependencies = [
     { name = "platformdirs" },
     { name = "pycryptodome" },
     { name = "typing-extensions" },
+    { name = "yarl" },
 ]
 
 [package.dev-dependencies]
@@ -676,6 +677,7 @@ requires-dist = [
     { name = "platformdirs" },
     { name = "pycryptodome" },
     { name = "typing-extensions", specifier = ">=4.16.0" },
+    { name = "yarl" },
 ]
 
 [package.metadata.requires-dev]

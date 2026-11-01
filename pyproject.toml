@@ -23,6 +23,7 @@ dependencies = [
 "pycryptodome",
 "platformdirs",
 "typing_extensions>=4.16.0",
+"yarl",
 ]
 
 [project.urls]
