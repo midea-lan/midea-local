@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Virtual environments are handled by cleanup-venv.sh, node_modules is removed below.
-prune=(\( -path ./.git -o -path ./node_modules -o -path ./.venv -o -path ./venv -o -path ./env -o -path ./ENV -o -path ./env.bak -o -path ./venv.bak \) -prune -o)
+prune=(\( -name .git -o -name node_modules -o -name '.venv*' -o -name 'venv*' -o -name env -o -name ENV -o -name env.bak \) -prune -o)
 
 echo "🚀 Starting Python + Node dev cleanup..."
 
@@ -76,7 +76,8 @@ done
 find . "${prune[@]}" -type f \( -name '*.mo' -o -name '*.log' \) -exec rm -f {} +
 
 # ----- Local config files -----
-if [ -f .env ] || [ -f local_settings.py ]; then
+# Only a terminal counts as confirmation; piped input keeps the files.
+if [ -t 0 ] && { [ -f .env ] || [ -f local_settings.py ]; }; then
     echo ""
     read -p "Do you want to purge local config files (.env, local_settings.py)? (y/n) " -n 1 -r || REPLY=n
     echo
