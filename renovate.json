@@ -5,7 +5,7 @@
   "prConcurrentLimit": 0,
   "branchConcurrentLimit": 0,
   "rangeStrategy": "update-lockfile",
-  "labels": ["renovate"],
+  "labels": ["renovate", "core-patch-release"],
   "customManagers": [
     {
       "customType": "regex",

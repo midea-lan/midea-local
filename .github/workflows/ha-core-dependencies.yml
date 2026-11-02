@@ -1,0 +1,22 @@
+# This workflow checks the library dependencies against Home Assistant Core,
+# chosen by the core-beta-release or core-patch-release PR label.
+name: Home Assistant Core dependencies
+
+on:
+  # Label changes re-run only this check, not the build matrix
+  pull_request:
+    branches: ["main"]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  ha-core-dependencies:
+    name: Home Assistant Core dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: chemelli74/ha-core-dependency-check/label@7788df2ecd810988a459b20e599bb8c975dd7a3a # v1.3.0
