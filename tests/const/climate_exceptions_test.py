@@ -6,6 +6,9 @@ from midealocal.const import ProtocolVersion
 from midealocal.devices.ac import DeviceAttributes, MideaACDevice
 from midealocal.message import MessageBase, MessageChecksum
 
+# C1 power data captured from a 00000Q11 split unit (#997).
+_Q11_ENERGY_DATA = bytearray.fromhex("00001e56 00000000 00000000 000050 0001da")
+
 
 @pytest.fixture
 def device(request: pytest.FixtureRequest) -> MideaACDevice:
@@ -39,14 +42,7 @@ def _c1_power_response(energy_data: bytearray) -> bytes:
 @pytest.mark.parametrize(
     ("device", "energy_data", "expected_energy", "expected_power"),
     [
-        # Captured from a 00000Q11 split unit (#997); BCD reads 24.56 kWh, 5.0 W.
-        pytest.param(
-            "00000Q11",
-            bytearray.fromhex("00001e56 00000000 00000000 000050 0001da"),
-            77.66,
-            8.0,
-            id="00000Q11",
-        ),
+        pytest.param("00000Q11", _Q11_ENERGY_DATA, 77.66, 8.0, id="00000Q11"),
         pytest.param(
             "00000Q16",
             bytearray.fromhex("0000012c 00000000 00000000 0005dc"),
@@ -54,6 +50,7 @@ def _c1_power_response(energy_data: bytearray) -> bytes:
             150.0,
             id="00000Q16",
         ),
+        pytest.param("test_model", _Q11_ENERGY_DATA, 24.56, 5.0, id="default"),
     ],
     indirect=["device"],
 )
@@ -63,7 +60,7 @@ def test_power_analysis_method_exception(
     expected_energy: float,
     expected_power: float,
 ) -> None:
-    """Test models whose power and energy are binary decode them as binary."""
+    """Test the power format each model decodes with (BCD by default)."""
     device.process_message(_c1_power_response(energy_data))
 
     assert device.attributes[DeviceAttributes.total_energy_consumption] == (
@@ -74,9 +71,12 @@ def test_power_analysis_method_exception(
 
 @pytest.mark.parametrize(
     ("device", "expected"),
-    [pytest.param("00000Q18", 1.0, id="00000Q18")],
+    [
+        pytest.param("00000Q18", 1.0, id="00000Q18"),
+        pytest.param("test_model", 0.5, id="default"),
+    ],
     indirect=["device"],
 )
 def test_temperature_step_exception(device: MideaACDevice, expected: float) -> None:
-    """Test models with a whole-degree setpoint step."""
+    """Test the setpoint step of each model (0.5 by default)."""
     assert device.temperature_step == expected
