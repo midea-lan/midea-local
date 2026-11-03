@@ -1031,6 +1031,7 @@ class TestMessageACResponse:
             "humidity": True,
             "swing_horizontal_angle": True,
             "swing_vertical_angle": True,
+            "half_degree_steps": False,
         }
 
     @pytest.mark.parametrize(

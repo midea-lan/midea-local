@@ -70,7 +70,7 @@ class TestMideaACDevice:
         assert not self.device.attributes[DeviceAttributes.swing_horizontal]
         assert not self.device.attributes[DeviceAttributes.power_saving]
         assert not self.device.attributes[DeviceAttributes.out_silent]
-        assert self.device.temperature_step == 0.5
+        assert self.device.temperature_step == 1.0
         assert self.device.fresh_air_fan_speeds is not None
         assert DeviceAttributes.compressor_frequency in self.device.attributes
         assert not self.device.fresh_air_exhaust_fan_speeds
@@ -119,7 +119,7 @@ class TestMideaACDevice:
     @pytest.mark.parametrize(
         ("model", "expected_step"),
         [
-            pytest.param("test_model", 0.5, id="default"),
+            pytest.param("test_model", 1.0, id="default"),
             pytest.param("00000Q18", 1.0, id="model_exception"),
         ],
     )
@@ -960,7 +960,7 @@ class TestMideaACDevice:
             self.device.set_raw_target_temperature(22.5, hvac_mode)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
-            assert message.target_temperature == 22.5
+            assert message.target_temperature == 22.0
             assert message.mode == mode
             assert message.power == power
             self.device._used_subprotocol = True
@@ -983,12 +983,13 @@ class TestMideaACDevice:
         expected_step_half: float,
     ) -> None:
         """Test set target temperature to be rounded."""
-        step_whole_device = self._make_device("00000Q18", 1)
-        with patch.object(step_whole_device, "build_send") as mock_build_send:
-            step_whole_device.set_raw_target_temperature(temperature, "auto")
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_raw_target_temperature(temperature, "auto")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
             assert message.target_temperature == expected_step_whole
+
+        self.device._capabilities["half_degree_steps"] = True
 
         with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_raw_target_temperature(temperature, "auto")
