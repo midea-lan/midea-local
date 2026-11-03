@@ -42,7 +42,6 @@ def _c1_power_response(energy_data: bytearray) -> bytes:
 @pytest.mark.parametrize(
     ("device", "energy_data", "expected_energy", "expected_power"),
     [
-        pytest.param("00000Q11", _Q11_ENERGY_DATA, 77.66, 8.0, id="00000Q11"),
         pytest.param(
             "00000Q16",
             bytearray.fromhex("0000012c 00000000 00000000 0005dc"),

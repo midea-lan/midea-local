@@ -634,7 +634,7 @@ class MideaACDevice(MideaClimateDevice):
         if not self._capabilities.get("energy_stats"):
             return self._power_analysis_method
         energy_bcd = self._capabilities.get("energy_bcd", False)
-        if (self._power_analysis_method in BCD_ENERGY_FORMATS) == energy_bcd:
+        if energy_bcd == (self._power_analysis_method in BCD_ENERGY_FORMATS):
             return self._power_analysis_method
         return PowerFormats.BCD if energy_bcd else PowerFormats.BINARY1
 
