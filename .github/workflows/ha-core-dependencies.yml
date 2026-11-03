@@ -19,4 +19,4 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: chemelli74/ha-core-dependency-check/label@7788df2ecd810988a459b20e599bb8c975dd7a3a # v1.3.0
+      - uses: chemelli74/ha-core-dependency-check/label@0ce53675a52d2f728e7e9cd2dcdc4ec0e74348c4 # v1.3.1
