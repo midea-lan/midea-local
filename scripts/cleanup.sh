@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
+CDPATH= cd -- "$(dirname -- "$0")/.."
 
 # Virtual environments are handled by cleanup-venv.sh, node_modules is removed below.
 prune=(\( -name .git -o -name node_modules -o -name '.venv*' -o -name 'venv*' -o -name env -o -name ENV -o -name env.bak \) -prune -o)
@@ -53,7 +53,7 @@ fi
 
 # ----- Coverage files -----
 echo "Removing coverage files..."
-for coverage in .coverage coverage.xml nosetests.xml; do
+for coverage in .coverage coverage.xml cov.xml nosetests.xml; do
     [ -f "$coverage" ] && rm -f "$coverage"
 done
 

@@ -1,38 +1,50 @@
 #!/usr/bin/env bash
 # No strict mode: this script may be sourced and must not alter the caller's shell options.
 
-project_root="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")/.." && pwd)"
-venvs=(.venv venv env ENV env.bak venv.bak)
+# Function scope keeps variables out of the caller's shell when sourced.
+_cleanup_venv() {
+    local project_root venv
+    local venvs=(.venv venv env ENV env.bak venv.bak)
+    project_root="$(CDPATH= cd -- "$(dirname -- "$1")/.." && pwd)"
 
-echo "🗑️  Removing virtual environments..."
+    echo "🗑️  Removing virtual environments..."
 
-for venv in "${venvs[@]}"; do
-    if [ "${VIRTUAL_ENV:-}" = "$project_root/$venv" ]; then
-        echo "⚠️  Active virtual environment detected at $VIRTUAL_ENV."
-        if type deactivate > /dev/null 2>&1; then
-            echo "Attempting to deactivate..."
-            deactivate 2>/dev/null || true
+    for venv in "${venvs[@]}"; do
+        # -ef compares directory identity, so symlinked project paths still match.
+        if [ "${VIRTUAL_ENV:-}" -ef "$project_root/$venv" ]; then
+            echo "⚠️  Active virtual environment detected at $VIRTUAL_ENV."
+            if type deactivate > /dev/null 2>&1; then
+                echo "Attempting to deactivate..."
+                deactivate 2>/dev/null || true
+            fi
+            if [ -n "${VIRTUAL_ENV:-}" ]; then
+                echo "❌ $VIRTUAL_ENV is still active. Run 'deactivate' first, or source this script: source scripts/cleanup-venv.sh"
+                return 1
+            fi
+            break
         fi
-        if [ -n "${VIRTUAL_ENV:-}" ]; then
-            echo "❌ $VIRTUAL_ENV is still active. Run 'deactivate' first, or source this script: source scripts/cleanup-venv.sh"
-            # return when sourced, exit when executed
-            return 1 2>/dev/null || exit 1
+    done
+
+    for venv in "${venvs[@]}"; do
+        [ -d "$project_root/$venv" ] || continue
+        if [ ! -f "$project_root/$venv/pyvenv.cfg" ]; then
+            echo "⚠️  Skipping $venv: not a virtual environment (no pyvenv.cfg)"
+            continue
         fi
-        break
-    fi
-done
+        if ! rm -rf "${project_root:?}/$venv"; then
+            echo "❌ Failed to remove $venv"
+            return 1
+        fi
+        echo "Removed $venv"
+    done
 
-for venv in "${venvs[@]}"; do
-    [ -d "$project_root/$venv" ] || continue
-    if [ ! -f "$project_root/$venv/pyvenv.cfg" ]; then
-        echo "⚠️  Skipping $venv: not a virtual environment (no pyvenv.cfg)"
-        continue
-    fi
-    if ! rm -rf "${project_root:?}/$venv"; then
-        echo "❌ Failed to remove $venv"
-        return 1 2>/dev/null || exit 1
-    fi
-    echo "Removed $venv"
-done
+    echo "✅ Virtual environment cleanup complete!"
+}
 
-echo "✅ Virtual environment cleanup complete!"
+# zsh sets $0 to the function name inside functions, so resolve the path here.
+if ! _cleanup_venv "${BASH_SOURCE[0]:-$0}"; then
+    unset -f _cleanup_venv
+    # return when sourced, exit when executed
+    return 1 2>/dev/null || exit 1
+fi
+unset -f _cleanup_venv
