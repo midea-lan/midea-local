@@ -3,9 +3,19 @@
 
 # Function scope keeps variables out of the caller's shell when sourced.
 _cleanup_venv() {
-    local project_root venv
+    local project_root venv script target
     local venvs=(.venv venv env ENV env.bak venv.bak)
-    project_root="$(CDPATH= cd -- "$(dirname -- "$1")/.." && pwd)"
+
+    # Follow symlinks without readlink -f, which macOS lacks before 12.3.
+    script=$1
+    while [ -L "$script" ]; do
+        target=$(readlink -- "$script")
+        case $target in
+            /*) script=$target ;;
+            *) script=$(dirname -- "$script")/$target ;;
+        esac
+    done
+    project_root="$(CDPATH= cd -P -- "$(dirname -- "$script")/.." && pwd)"
 
     echo "🗑️  Removing virtual environments..."
 

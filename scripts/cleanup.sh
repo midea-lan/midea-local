@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CDPATH= cd -- "$(dirname -- "$0")/.."
+# Follow symlinks without readlink -f, which macOS lacks before 12.3.
+script=$0
+while [ -L "$script" ]; do
+    target=$(readlink -- "$script")
+    case $target in
+        /*) script=$target ;;
+        *) script=$(dirname -- "$script")/$target ;;
+    esac
+done
+CDPATH= cd -P -- "$(dirname -- "$script")/.."
 
 # Virtual environments are handled by cleanup-venv.sh, node_modules is removed below.
 prune=(\( -name .git -o -name node_modules -o -name '.venv*' -o -name 'venv*' -o -name env -o -name ENV -o -name env.bak \) -prune -o)
@@ -39,7 +48,7 @@ find . "${prune[@]}" -type d -name "*.egg-info" -exec rm -rf {} +
 
 # ----- IDE / project folders -----
 echo "Removing IDE folders..."
-for ide in .idea .ipynb_checkpoints profile_default .spyderproject .spyproject .ropeproject; do
+for ide in .ipynb_checkpoints profile_default .spyderproject .spyproject .ropeproject; do
     [ -d "$ide" ] && rm -rf "$ide"
 done
 
@@ -48,8 +57,6 @@ if [ -d ".vscode/zsh" ]; then
     echo "Removing zsh transient files (.zcompdump*, .zsh_sessions*)..."
     find .vscode/zsh -maxdepth 1 -type f \( -name '.zcompdump*' -o -name '.zsh_sessions*' \) -delete
 fi
-
-[ -f ipython_config.py ] && rm -f ipython_config.py
 
 # ----- Coverage files -----
 echo "Removing coverage files..."
@@ -69,21 +76,26 @@ for runtime_dir in instance .webassets-cache .scrapy; do
     [ -d "$runtime_dir" ] && rm -rf "$runtime_dir"
 done
 
-for runtime_file in celerybeat-schedule celerybeat.pid db.sqlite3 db.sqlite3-journal pip-log.txt pip-delete-this-directory.txt; do
+for runtime_file in celerybeat-schedule celerybeat.pid pip-log.txt pip-delete-this-directory.txt; do
     [ -e "$runtime_file" ] && rm -rf "$runtime_file"
 done
 
 find . "${prune[@]}" -type f \( -name '*.mo' -o -name '*.log' \) -exec rm -f {} +
 
 # ----- Local config files -----
+purge=()
+for local_file in .env local_settings.py .idea ipython_config.py db.sqlite3 db.sqlite3-journal; do
+    [ -e "$local_file" ] && purge+=("$local_file")
+done
+
 # Only a terminal counts as confirmation; piped input keeps the files.
-if [ -t 0 ] && { [ -f .env ] || [ -f local_settings.py ]; }; then
+if [ -t 0 ] && [ "${#purge[@]}" -gt 0 ]; then
     echo ""
-    read -p "Do you want to purge local config files (.env, local_settings.py)? (y/n) " -n 1 -r || REPLY=n
+    read -p "Do you want to purge local config files (${purge[*]})? (y/n) " -n 1 -r || REPLY=n
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Removing local config files..."
-        rm -f .env local_settings.py
+        rm -rf "${purge[@]}"
     fi
 fi
 
@@ -91,6 +103,7 @@ fi
 echo "Removing Node.js..."
 if [ -d "node_modules" ]; then
     rm -rf node_modules
+    echo "⚠️  The commit-msg hook needs node_modules: run 'npm ci' before your next commit."
 fi
 
 echo "✅ Cleanup complete!"
