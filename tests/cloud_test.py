@@ -222,8 +222,10 @@ async def test_smarthome_account_routing_falls_back(
     assert payload["userName"] == "user@example.com"
     assert payload["clientType"] == "1"
     assert "clientSrc" not in payload
-    assert login_id.args[1] == "https://reroute.url//v1/user/login/id/get"
-    assert login.args[1] == "https://reroute.url//mj/user/login"
+    assert login_id.args[1] == (
+        "https://reroute.url/mas/v5/app/proxy?alias=/v1/user/login/id/get"
+    )
+    assert login.args[1] == "https://reroute.url/mas/v5/app/proxy?alias=/mj/user/login"
 
 
 @pytest.mark.asyncio
