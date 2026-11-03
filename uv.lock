@@ -668,16 +668,16 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiofiles" },
-    { name = "aiohttp" },
-    { name = "anyio" },
-    { name = "colorlog" },
-    { name = "defusedxml" },
-    { name = "ifaddr" },
-    { name = "platformdirs" },
-    { name = "pycryptodome" },
+    { name = "aiofiles", specifier = ">=25.1.0" },
+    { name = "aiohttp", specifier = ">=3.14.5" },
+    { name = "anyio", specifier = ">=4.14.2" },
+    { name = "colorlog", specifier = ">=6.10.1" },
+    { name = "defusedxml", specifier = ">=0.7.1" },
+    { name = "ifaddr", specifier = ">=0.2.0" },
+    { name = "platformdirs", specifier = ">=4.14.3" },
+    { name = "pycryptodome", specifier = ">=3.24.1,<5" },
     { name = "typing-extensions", specifier = ">=4.16.0" },
-    { name = "yarl" },
+    { name = "yarl", specifier = ">=1.25.1" },
 ]
 
 [package.metadata.requires-dev]
