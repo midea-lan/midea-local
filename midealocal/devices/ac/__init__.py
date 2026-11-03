@@ -10,6 +10,7 @@ from midealocal.base_classes.climate import (
     DEFAULT_MAX_TARGET_TEMPERATURE,
     DEFAULT_MIN_TARGET_TEMPERATURE,
     TEMPERATURE_STEP_HALF,
+    TEMPERATURE_STEP_WHOLE,
     MideaClimateDevice,
     MideaFanMode,
     MideaHVACMode,
@@ -335,10 +336,7 @@ class MideaACDevice(MideaClimateDevice):
         self._fresh_air_version: DeviceAttributes | None = None
         self._pending_self_clean: tuple[bool, float] | None = None
         exceptions = AC_EXCEPTIONS.get(str(self.model), {})
-        self._temperature_step: float = exceptions.get(
-            "temperature_step",
-            TEMPERATURE_STEP_HALF,
-        )
+        self._temperature_step_exception: float = exceptions.get("temperature_step", 0)
         self._used_subprotocol: bool = self._model_capabilities.uses_bb_protocol
         self._bb_sn8_flag: bool = False
         self._bb_timer: bool = False
@@ -525,7 +523,11 @@ class MideaACDevice(MideaClimateDevice):
     @property
     def temperature_step(self) -> float:
         """Midea AC device temperature step."""
-        return self._temperature_step
+        return self._temperature_step_exception or (
+            TEMPERATURE_STEP_HALF
+            if self._capabilities.get("half_degree_steps", False)
+            else TEMPERATURE_STEP_WHOLE
+        )
 
     @override
     def target_temperature(self, zone: int | None = None) -> float | None:
