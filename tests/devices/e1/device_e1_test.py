@@ -35,7 +35,6 @@ class TestMideaE1Device:
             device_protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
-            customize="test_customize",
         )
 
     def test_modes(self) -> None:

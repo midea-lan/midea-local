@@ -26,7 +26,6 @@ class TestMideaADDevice:
             device_protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=1,
-            customize="",
         )
 
     def test_initial_attributes(self) -> None:
@@ -62,10 +61,9 @@ class TestMideaADDevice:
         assert isinstance(queries[0], Message21Query)
         assert isinstance(queries[1], Message31Query)
 
-    def test_set_attribute_and_customize(self) -> None:
-        """Test set attribute and set customize are no-op."""
+    def test_set_attribute(self) -> None:
+        """Test set attribute is a no-op."""
         self.device.set_attribute(DeviceAttributes.night_mode.value, True)
-        self.device.set_customize("customize")
 
     def test_notify_response_sensors(self) -> None:
         """Test notify1 response with sensor values."""

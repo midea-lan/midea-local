@@ -1,7 +1,5 @@
 """Midea local E3 message."""
 
-from typing import Any
-
 from midealocal.const import DeviceType
 from midealocal.message import (
     ListTypes,
@@ -142,7 +140,7 @@ class MessageNewProtocolSet(MessageE3Base):
             body_type=ListTypes.X14,
         )
         self.key = "none"
-        self.value: Any = None
+        self.value: bool | float | str = 0
 
     @property
     def _body(self) -> bytearray:

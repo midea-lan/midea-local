@@ -77,7 +77,7 @@ class MideaCLI:
             password=self.namespace.password,
         )
 
-    async def _load_devices_cache(self) -> list[Any]:
+    async def _load_devices_cache(self) -> list[object]:
         """Load the device token/key cache (see midea-devices.json)."""
         cache_file = anyio.Path(get_devices_cache_path())
         if not await cache_file.exists():
@@ -113,7 +113,7 @@ class MideaCLI:
         devices = [
             entry
             for entry in await self._load_devices_cache()
-            if str(entry.get("device_id")) != str(device_id)
+            if isinstance(entry, dict) and str(entry.get("device_id")) != str(device_id)
         ]
         devices.append(
             {
@@ -182,8 +182,7 @@ class MideaCLI:
             key=key["key"],
             device_protocol=device["protocol"],
             model=device["model"],
-            subtype=0,
-            customize="",
+            subtype=device["subtype"],
             mac=device["mac"],
             serial_number=device["sn"],
         )
@@ -218,8 +217,9 @@ class MideaCLI:
     async def discover(self) -> list[MideaDevice]:
         """Discover device information."""
         device_list: list[MideaDevice] = []
-
-        devices = await discover(ip_address=self.namespace.host)
+        devices = await discover(
+            ip_address=None if self.namespace.host == "" else self.namespace.host,
+        )
 
         if len(devices) == 0:
             _LOGGER.error("No devices found.")
@@ -267,7 +267,6 @@ class MideaCLI:
             token="",
             key="",
             subtype=0,
-            customize="",
         )
 
         result = device.process_message(self.namespace.message)

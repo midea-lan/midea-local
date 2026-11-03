@@ -24,7 +24,6 @@ def _build_device(subtype: int) -> MideaB0Device:
         device_protocol=ProtocolVersion.V1,
         model="test_model",
         subtype=subtype,
-        customize="",
     )
 
 

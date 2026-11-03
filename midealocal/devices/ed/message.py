@@ -686,8 +686,9 @@ class EDMessageBody09(MessageBody):
             body,
             self.OFFSET_SOFT_AVAILABLE_BIG,
         )
-        self.water_consumption_big = (
-            self._read_u32(body, self.OFFSET_WATER_CONSUMPTION_BIG) / 100
+        self.water_consumption_big = self._read_u32(
+            body,
+            self.OFFSET_WATER_CONSUMPTION_BIG,
         )
         self.water_consumption_average = self._read_u16(
             body,

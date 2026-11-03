@@ -49,8 +49,6 @@ class MideaECDevice(MideaRiceCookerDevice):
 
     def __init__(
         self,
-        *,
-        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea EC device."""

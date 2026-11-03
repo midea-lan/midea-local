@@ -814,16 +814,16 @@ class TestEDMessageBody09:
         msg = EDMessageBody09(body=body)
         assert msg.soft_available_big == 0x12345678
 
-    def test_water_consumption_big_divided_by_100(self) -> None:
-        """Test water_consumption_big is divided by 100."""
+    def test_water_consumption_big(self) -> None:
+        """Test water_consumption_big."""
         body = self._make_body(length=60)
-        # 0x00017A82 = 96898, /100 = 968.98 (little-endian)
+        # 0x00017A82 = 96898 (little-endian)
         body[25] = 0x82
         body[26] = 0x7A
         body[27] = 0x01
         body[28] = 0x00
         msg = EDMessageBody09(body=body)
-        assert msg.water_consumption_big == 968.98
+        assert msg.water_consumption_big == 96898
 
     def test_water_consumption_average_little_endian(self) -> None:
         """Test water_consumption_average 2-byte little-endian."""

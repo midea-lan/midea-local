@@ -81,8 +81,9 @@ class TestMessageSet:
         assert body[8] == 0x00  # flags
         assert body[9] == 0x00
         assert body[10] == 0x00
-        assert len(body) == 22  # body_type + 21-byte payload (lua/cd)
-        assert body[21] == 0  # vacationTsValue (last field)
+        assert len(body) == 25  # body_type + 21-byte payload (lua/cd)
+        assert body[21] == 0  # vacationTsValue
+        assert body[23] == 65  # default max_ts
 
     def test_old_protocol_temperature(self) -> None:
         """Old protocol doubles the temperature and adds 30."""
@@ -119,7 +120,7 @@ class TestMessageSet:
     def test_read_field(self) -> None:
         """read_field returns int values and 0 for missing/empty fields."""
         msg = MessageSet(protocol_version=ProtocolVersion.V1)
-        msg.fields = {"trValue": "5", "openPTC": 0}
+        msg.fields = {"trValue": "5", "openPTC": 0}  # type: ignore[dict-item]
         assert msg.read_field("trValue") == 5
         assert msg.read_field("openPTC") == 0
         assert msg.read_field("missing") == 0
@@ -127,7 +128,7 @@ class TestMessageSet:
     def test_body_stops_at_vacation_ts_value(self) -> None:
         """No Midea CD Lua writes past bodyBytes[21]; the body ends there."""
         msg = MessageSet(protocol_version=ProtocolVersion.V1)
-        assert len(msg.body) == 22
+        assert len(msg.body) == 25
 
 
 class TestMessageSetMaintenance:
@@ -721,7 +722,7 @@ class TestMessageSetRsjracBody:
     payload) for the new protocol, ending at bodyBytes[21] = vacationTsValue.
     """
 
-    def test_body_length_is_22_with_type(self) -> None:
+    def test_body_length_is_25_with_type(self) -> None:
         """MessageSet.body is body_type + 21-byte payload, raw °C target."""
         msg = MessageSet(protocol_version=8)
         msg.power = True
@@ -729,7 +730,7 @@ class TestMessageSetRsjracBody:
         msg.target_temperature = 63
         msg.use_old_protocol = False
         body = msg.body
-        assert len(body) == 22
+        assert len(body) == 25
         assert body[0] == 0x01
         assert body[4] == 63
 

@@ -25,7 +25,6 @@ class TestDeviceSelector:
             device_protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
-            customize="",
         )
         assert isinstance(device, MideaACDevice)
 
@@ -42,7 +41,6 @@ class TestDeviceSelector:
             device_protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
-            customize="",
             mac="1234567890ab",
         )
         assert isinstance(device, Midea13Device)
@@ -60,7 +58,6 @@ class TestDeviceSelector:
             device_protocol=ProtocolVersion.V3,
             model="test_model",
             subtype=1,
-            customize="",
         )
         assert device is None
 

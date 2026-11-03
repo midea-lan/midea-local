@@ -62,7 +62,7 @@ user-facing harness.
 - **Attributes** are declared as a `DeviceAttributes(StrEnum)` per device and exposed
   through the `device.attributes` dict; state is never accessed by raw key elsewhere.
 - **No magic numbers**: name protocol offsets, lengths, and flag values as module-level constants (see the block at the top of each `message.py` and `const.py`). The only exception is the byte and bit indices passed directly to BodyParser, which must remain numeric literals. Follow this when adding parsing logic; ruff's `PLR2004` enforces it outside `tests/`.
-- **Avoid undocumented parsers**: Every parse should be backed by Lua scripts at `lua/<type>/*.lua`. When no Lua reference exists, document the evidence source in a concise code comment (for example, appliance model, captured payload, or vendor documentation).
+- **Avoid undocumented parsers**: Every parse should be backed by Lua scripts in the submodule `lua`. The folder structure is `lua/<type>/*.lua`. When no Lua reference exists, document the evidence source in a concise code comment (for example, appliance model, captured payload, or vendor documentation).
 - **Device type registry**: register new appliance bytes in `const.py` `DeviceType` and,
   where relevant, `ListTypes` in `message.py`.
 - **Tests** mirror the source tree under `tests/`, suffixed `_test.py`

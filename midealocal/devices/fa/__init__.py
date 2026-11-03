@@ -1,11 +1,11 @@
 """Midea local FA device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
 
 from midealocal.const import DeviceType
+from midealocal.const.fan_exceptions import FA_EXCEPTIONS
 from midealocal.device import (
     MideaDevice,
     MideaDeviceInitKwargs,
@@ -16,9 +16,6 @@ from midealocal.device import (
 from .message import PROTOCOL_V5, MessageFAResponse, MessageQuery, MessageSet
 
 _LOGGER = logging.getLogger(__name__)
-
-MIN_MODE_SET_OVERRIDE = 0x00
-MAX_MODE_SET_OVERRIDE = 0xFF
 
 
 class DeviceAttributes(StrEnum):
@@ -138,8 +135,6 @@ class MideaFADevice(MideaDevice):
 
     def __init__(
         self,
-        *,
-        customize: str,
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea FA device."""
@@ -170,11 +165,13 @@ class MideaFADevice(MideaDevice):
                 DeviceAttributes.target_humidity: None,
             },
         )
-        self._default_speed_count = 3
-        self._speed_count: int = self._default_speed_count
-        self._mode_set_overrides: dict[int, int] = {}
+        exceptions = FA_EXCEPTIONS.get(str(self.model), {})
+        self._speed_count: int = exceptions.get("speed_count", 3)
+        self._mode_set_overrides: dict[int, int] = exceptions.get(
+            "mode_set_overrides",
+            {},
+        )
         self._fa_protocol: int = 0
-        self.set_customize(customize)
 
     @property
     def speed_count(self) -> int:
@@ -444,57 +441,6 @@ class MideaFADevice(MideaDevice):
             if name == value:
                 return raw
         return None
-
-    def _parse_mode_set_overrides(
-        self,
-        overrides: dict[str, Any],
-    ) -> dict[int, int]:
-        """Return the {mode index: body[3]} table, or {} if a value is not a byte.
-
-        Each value is written straight into the set body, so anything `int()`
-        would silently reshape into a byte - a fraction, a bool, a number
-        outside 0..255 - is rejected here rather than sent as some other byte
-        or raised on the bytearray assignment, losing the command.
-        """
-        parsed: dict[int, int] = {}
-        rejected: dict[str, Any] = {}
-        for key, value in overrides.items():
-            if isinstance(value, bool) or (
-                isinstance(value, float) and not value.is_integer()
-            ):
-                rejected[key] = value
-                continue
-            converted = int(value)
-            if not MIN_MODE_SET_OVERRIDE <= converted <= MAX_MODE_SET_OVERRIDE:
-                rejected[key] = value
-                continue
-            parsed[int(key)] = converted
-        if rejected:
-            _LOGGER.error(
-                "[%s] mode_set_overrides values must be whole numbers in 0..255, "
-                "ignoring the table: %s",
-                self.device_id,
-                rejected,
-            )
-            return {}
-        return parsed
-
-    def set_customize(self, customize: str) -> None:
-        """Set customize."""
-        self._speed_count = self._default_speed_count
-        self._mode_set_overrides = {}
-        if customize and len(customize) > 0:
-            try:
-                params = json.loads(customize)
-                if params and "speed_count" in params:
-                    self._speed_count = params.get("speed_count")
-                if params and "mode_set_overrides" in params:
-                    self._mode_set_overrides = self._parse_mode_set_overrides(
-                        params.get("mode_set_overrides"),
-                    )
-            except Exception:
-                _LOGGER.exception("[%s] Set customize error", self.device_id)
-            self.update_all({"speed_count": self._speed_count})
 
 
 class MideaAppliance(MideaFADevice):

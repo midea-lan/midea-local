@@ -63,7 +63,6 @@ class TestMideaB8DeviceV2:
             device_protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=_V2_SUBTYPE,
-            customize="",
         )
 
     @pytest.fixture

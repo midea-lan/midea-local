@@ -1,6 +1,5 @@
 """Midea local E6 device."""
 
-import json
 import logging
 from enum import StrEnum
 from typing import Any, ClassVar, Unpack
@@ -8,6 +7,7 @@ from typing import Any, ClassVar, Unpack
 from typing_extensions import deprecated
 
 from midealocal.const import DeviceType
+from midealocal.const.water_heater_exceptions import E6_EXCEPTIONS
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
 
 from .message import MessageE6Response, MessageQuery, MessageSet
@@ -45,8 +45,6 @@ class MideaE6Device(MideaDevice):
 
     def __init__(
         self,
-        *,
-        customize: str,
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea E6 device."""
@@ -70,9 +68,10 @@ class MideaE6Device(MideaDevice):
             },
         )
         # target_temperature step
-        self._temperature_step: float | None = None
-        self._default_temperature_step: float = 1.0
-        self.set_customize(customize)
+        self._temperature_step: float | None = E6_EXCEPTIONS.get(
+            str(self.model),
+            {},
+        ).get("temperature_step")
 
     @property
     def temperature_step(self) -> float | None:
@@ -114,21 +113,6 @@ class MideaE6Device(MideaDevice):
     def preset_modes(self) -> list[str]:
         """Midea E6 preset modes."""
         return self._preset_modes
-
-    def set_customize(self, customize: str) -> None:
-        """Midea E2 device set customize."""
-        if customize and len(customize) > 0:
-            try:
-                params = json.loads(customize)
-                if params and "temperature_step" in params:
-                    self._temperature_step = float(params.get("temperature_step"))
-            except Exception:
-                _LOGGER.exception("[%s] Set customize error", self.device_id)
-            self.update_all(
-                {
-                    "temperature_step": self._temperature_step,
-                },
-            )
 
 
 class MideaAppliance(MideaE6Device):

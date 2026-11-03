@@ -5,10 +5,11 @@ lint.select = ["ALL"]
 lint.preview = false
 
 lint.ignore = [
+    "COM812",   # Trailing comma missing (conflicts with formatter)
     "C416",     # Unnecessary `dict` comprehension (rewrite using `dict()`)
     "CPY001",   # Missing copyright notice at top of file
-    "D203",     # 1 blank line required before class docstring
-    "D213",     # Multi-line docstring summary should start at the second line
+    "D203",     # 1 blank line required before class docstring (conflicts with `no-blank-line-before-class` (D211))
+    "D213",     # Multi-line docstring summary should start at the second line (conflicts with multi-line-summary-first-line` (D212))
     "EM101",    # Exception must not use a string literal, assign to variable first
     "EM102",    # Exception must not use an f-string literal, assign to variable first
     "FBT001",   # Boolean-typed positional argument in function definition
@@ -47,6 +48,9 @@ lint.ignore = [
 
 [lint.mccabe]
 max-complexity = 18
+
+[lint.isort]
+known-first-party = ["midealocal", "tests"]
 
 [lint.pylint]
 max-statements = 100

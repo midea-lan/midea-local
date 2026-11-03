@@ -1,3 +1,3 @@
 """Midea Local Version."""
 
-__version__ = "13.0.0"
+__version__ = "15.0.0"

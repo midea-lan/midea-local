@@ -142,6 +142,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
         """Test get keys."""
         mock_cloud = AsyncMock()
         with (
+            patch("aiohttp.ClientSession", return_value=AsyncMock()),
             patch("midealocal.cli.get_midea_cloud", return_value=mock_cloud),
             patch.object(
                 mock_cloud,
@@ -205,6 +206,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "ip_address": "192.168.0.2",
             "port": 6444,
             "model": "AC123000",
+            "subtype": 0,
             "sn": "0000AC12300000001234567890ABCDEF",
             "mac": "1234567890AB",
         }
@@ -299,6 +301,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "ip_address": "192.168.0.2",
             "port": 6444,
             "model": "AC123000",
+            "subtype": 0,
             "sn": "0000AC12300000001234567890ABCDEF",
             "mac": "1234567890AB",
         }
@@ -326,6 +329,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "ip_address": "192.168.0.2",
             "port": 6444,
             "model": "AC123000",
+            "subtype": 0,
             "sn": "0000AC12300000001234567890ABCDEF",
             "mac": "1234567890AB",
         }
@@ -369,7 +373,6 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 device_protocol=ProtocolVersion.V3,
                 model="AC123000",
                 subtype=0,
-                customize="",
                 mac="1234567890AB",
                 serial_number="0000AC12300000001234567890ABCDEF",
             )
@@ -390,6 +393,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "ip_address": "192.168.0.2",
             "port": 6444,
             "model": "AC123000",
+            "subtype": 0,
             "sn": "0000AC12300000001234567890ABCDEF",
             "mac": "1234567890AB",
         }
@@ -440,7 +444,6 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 device_protocol=ProtocolVersion.V3,
                 model="AC123000",
                 subtype=0,
-                customize="",
                 mac="1234567890AB",
                 serial_number="0000AC12300000001234567890ABCDEF",
             )
@@ -459,6 +462,7 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             "ip_address": "192.168.0.2",
             "port": 6444,
             "model": "AC123000",
+            "subtype": 0,
             "sn": "0000AC12300000001234567890ABCDEF",
             "mac": "1234567890AB",
         }
@@ -662,7 +666,6 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
                 token="",
                 key="",
                 subtype=0,
-                customize="",
             )
             mock_device_instance.process_message.assert_called_once_with(
                 self.namespace.message,

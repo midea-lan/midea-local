@@ -56,8 +56,6 @@ class MideaCFDevice(MideaClimateDevice):
 
     def __init__(
         self,
-        *,
-        customize: str,  # noqa: ARG002
         **kwargs: Unpack[MideaDeviceInitKwargs],
     ) -> None:
         """Initialize Midea CF device."""

@@ -26,7 +26,7 @@ def make_stream_pair(
 
 
 @contextlib.asynccontextmanager
-async def running_reader_loop(device: MideaDevice) -> AsyncIterator[asyncio.Task]:
+async def running_reader_loop(device: MideaDevice) -> AsyncIterator[asyncio.Task[None]]:
     """Run device._read_loop() as a background task for the scope of a test.
 
     device._reader_task is the sole reader of device._reader (see

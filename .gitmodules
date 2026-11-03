@@ -1,0 +1,4 @@
+[submodule "lua"]
+	path = lua
+	url = https://github.com/midea-lan/midea-lua-lib.git
+	branch = main

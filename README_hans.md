@@ -49,7 +49,6 @@ ac = device_selector(
     device_protocol=d["protocol"],
     model=d["model"],
     subtype=0,
-    customize="",
 )
 
 # 连接并认证

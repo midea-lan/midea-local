@@ -6,18 +6,22 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-  pull-requests: write
-
 name: release-please
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate token
+        uses: actions/create-github-app-token@v3
+        id: generate-token
+        with:
+          app-id: ${{ secrets.MIDEALANBOT_APP_ID }}
+          private-key: ${{ secrets.MIDEALANBOT_APP_PRIVATE_KEY }}
+          owner: midea-lan
+          repositories: midea-local
       - uses: googleapis/release-please-action@v5
         with:
-          token: ${{ secrets.MIDEA_GITHUB_PAT }}
+          token: ${{ steps.generate-token.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json

@@ -53,7 +53,6 @@ class TestMideaCADevice:
             device_protocol=ProtocolVersion.V1,
             model="test_model",
             subtype=1,
-            customize="",
         )
 
     def test_initial_attributes(self) -> None:
@@ -223,7 +222,6 @@ def test_toshiba_pushed_status_keeps_queried_energy() -> None:
         device_protocol=ProtocolVersion.V3,
         model="0000000D",
         subtype=0,
-        customize="",
         serial_number="0008CA" + "0" * 26,
     )
     status = device.process_message(TOSHIBA_QUERY_RESPONSE)

@@ -27,7 +27,6 @@ def test_tea_bar_keep_warm_uses_device_default_duration(
         device_protocol=ProtocolVersion.V3,
         model="63000622",
         subtype=395,
-        customize="",
     )
     tea_bar._attributes[DeviceAttributes.keep_warm_time] = reported_keep_warm_time
 

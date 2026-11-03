@@ -353,7 +353,7 @@ class LocalSecurity:
             data = self.aes_cbc_encrypt(raw=data, key=self._tcp_key) + sign
         return bytes(header + data)
 
-    def decode_8370(self, data: bytes) -> tuple[list, bytes]:
+    def decode_8370(self, data: bytes) -> tuple[list[bytes], bytes]:
         """Decode 8370 data."""
         if len(data) < MIN_DECODE_8370_DATA_LENGTH:
             return [], data

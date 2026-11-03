@@ -1,11 +1,10 @@
 """Midea local CA message."""
 
 from enum import IntEnum, StrEnum
-from typing import Any, Literal
+from typing import Literal
 
 from midealocal.const import CA_MODEL_GRY540XFS, DeviceType
 from midealocal.message import (
-    BodyParser,
     BoolParser,
     IntEnumParser,
     IntParser,
@@ -14,6 +13,7 @@ from midealocal.message import (
     MessageRequest,
     MessageResponse,
     MessageType,
+    ValueParser,
 )
 
 MIN_CA_GENERAL_BODY_LENGTH = 24
@@ -168,7 +168,7 @@ class CAGeneralToshibaMessageBody(MessageBody):
         self,
         model: str,
         message_type: MessageType = MessageType.query,
-    ) -> list[BodyParser[Any]]:
+    ) -> list[ValueParser]:
         """Generate parser list based on model."""
         initial_offset = 0
         bool_offset = 0
@@ -176,7 +176,7 @@ class CAGeneralToshibaMessageBody(MessageBody):
             initial_offset = 2
             bool_offset = 3
 
-        parsers: list[BodyParser[Any]] = [
+        parsers: list[ValueParser] = [
             IntEnumParser(DeviceAttributes.mode, 2 + initial_offset, DeviceMode),
             IntParser(DeviceAttributes.refrigerator_actual_temp, 3 + initial_offset),
             IntParser(DeviceAttributes.freezer_actual_temp, 4 + initial_offset),

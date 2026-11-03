@@ -98,7 +98,6 @@ def device_selector(
     device_protocol: ProtocolVersion,
     model: str,
     subtype: int,
-    customize: str,
     mac: str | None = None,
     serial_number: str | None = None,
 ) -> MideaDevice:
@@ -115,7 +114,6 @@ def device_selector(
         device_protocol=device_protocol,
         model=model,
         subtype=subtype,
-        customize=customize,
         mac=mac,
         serial_number=serial_number,
     )
