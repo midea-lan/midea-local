@@ -1554,6 +1554,9 @@ class XB5MessageBody(NewProtocolMessageBody):
         if NewProtocolTags.b5_humidity in params:
             value = params[NewProtocolTags.b5_humidity][0]
             caps["humidity"] = value & B5_HUMIDITY_SUPPORTED_MASK > 0
+        if NewProtocolTags.b5_temperature in params:
+            value = params[NewProtocolTags.b5_temperature][6]
+            caps["half_degree_steps"] = value != 0
         self.capabilities = caps
 
 

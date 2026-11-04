@@ -14,15 +14,16 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-"aiofiles",
-"aiohttp",
-"anyio",
-"colorlog",
-"defusedxml",
-"ifaddr",
-"pycryptodome",
-"platformdirs",
+"aiofiles>=25.1.0",
+"aiohttp>=3.14.5",
+"anyio>=4.14.2",
+"colorlog>=6.10.1",
+"defusedxml>=0.7.1",
+"ifaddr>=0.2.0",
+"pycryptodome>=3.24.1,<5",
+"platformdirs>=4.14.3",
 "typing_extensions>=4.16.0",
+"yarl>=1.25.1",
 ]
 
 [project.urls]
@@ -46,7 +47,7 @@ dev = [
 
 [tool.uv-version]
 # Source of truth for the uv version. All other version references must be derived from this value.
-version = "0.13.6" # renovate: depName=uv datasource=pypi
+version = "0.13.7" # renovate: depName=uv datasource=pypi
 
 [tool.setuptools.dynamic]
 version = { attr = "midealocal.version.__version__" }
