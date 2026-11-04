@@ -38,6 +38,22 @@ from midealocal.devices.ac.message import (
 from midealocal.message import ListTypes, MessageBase, MessageChecksum
 from tests.base_classes.climate_test import DummyFanMode, DummyHVACMode, DummySwingMode
 
+# Captured from a 00000Q11 split unit (#997): C1 power reply, then its two B5
+# capability replies (b5_electricity 4: energy stats, binary energy).
+_Q11_POWER_REPLY = bytes.fromhex(
+    "aa20ac00000000000803c121014400001e5600000000000000000000500001da63",
+)
+_Q11_B5_REPLIES = (
+    bytes.fromhex(
+        "aa3dac00000000000803b50a12020101430001011402010115020101160201041a0201"
+        "01100201011f020103250207203c203c203c054000010001009f25",
+    ),
+    bytes.fromhex(
+        "aa3fac00000000000803b50b1e02010113020101220201001902010039000101510001"
+        "01090001010a000101480001012402010167000102e30001010000cf9b",
+    ),
+)
+
 
 class TestMideaACDevice:
     """Test Midea AC Device."""
@@ -142,6 +158,75 @@ class TestMideaACDevice:
             device = self._make_device("test_model", 1)
 
         assert device._power_analysis_method == PowerFormats.BCD_ENERGY_BINARY_POWER
+
+    @pytest.mark.parametrize(
+        ("exceptions", "b5_electricity", "expected_energy", "expected_power"),
+        [
+            pytest.param({}, 1, 24.56, 5.0, id="no_energy_stats"),
+            pytest.param(
+                {"test_model": {"power_analysis_method": 12}},
+                None,
+                77.66,
+                8.0,
+                id="exception_without_b5",
+            ),
+            pytest.param(
+                {"test_model": {"power_analysis_method": 12}},
+                3,
+                24.56,
+                5.0,
+                id="b5_bcd_over_binary_exception",
+            ),
+            pytest.param(
+                {"test_model": {"power_analysis_method": 101}},
+                2,
+                24.56,
+                8.0,
+                id="bcd_exception_agrees_with_b5",
+            ),
+            pytest.param(
+                {"test_model": {"power_analysis_method": 2}},
+                4,
+                776.6,
+                8.0,
+                id="binary_exception_agrees_with_b5",
+            ),
+        ],
+    )
+    def test_power_format_from_b5_energy_bcd(
+        self,
+        exceptions: dict[str, ClimateExceptions],
+        b5_electricity: int | None,
+        expected_energy: float,
+        expected_power: float,
+    ) -> None:
+        """Test B5 energy_bcd picks the C1 format over a disagreeing exception."""
+        with patch.dict(AC_EXCEPTIONS, exceptions):
+            device = self._make_device("test_model", 1)
+        if b5_electricity is not None:
+            body = bytearray([0xB5, 0x01])  # Body type, params count
+            body += bytearray([0x16, 0x02, 0x01, b5_electricity])  # b5_electricity
+            device.process_message(self._response(body))
+
+        device.process_message(_Q11_POWER_REPLY)
+
+        assert device.attributes[DeviceAttributes.total_energy_consumption] == (
+            expected_energy
+        )
+        assert device.attributes[DeviceAttributes.realtime_power] == expected_power
+
+    def test_power_format_from_captured_b5(self) -> None:
+        """Test a captured B5 reply switches a model without exception to binary."""
+        device = self._make_device("test_model", 8)
+        device.process_message(_Q11_POWER_REPLY)
+        assert device.attributes[DeviceAttributes.realtime_power] == 5.0
+
+        for frame in _Q11_B5_REPLIES:
+            device.process_message(frame)
+        device.process_message(_Q11_POWER_REPLY)
+
+        assert device.attributes[DeviceAttributes.total_energy_consumption] == 77.66
+        assert device.attributes[DeviceAttributes.realtime_power] == 8.0
 
     def test_set_attribute(self) -> None:
         """Test set attribute."""
@@ -452,15 +537,15 @@ class TestMideaACDevice:
         assert isinstance(queries[0], MessageQuery)
         assert isinstance(queries[1], MessageNewProtocolQuery)
         assert isinstance(queries[2], MessageNewProtocolSelfCleanQuery)
-        assert isinstance(queries[3], MessagePowerQuery)
-        assert isinstance(queries[4], MessageHumidityQuery)
-        assert isinstance(queries[5], MessageGroupZeroQuery)
-        assert isinstance(queries[6], MessageGroupOneQuery)
-        assert isinstance(queries[7], MessageGroupTwoQuery)
-        assert isinstance(queries[8], MessageGroupThreeQuery)
-        assert isinstance(queries[9], MessageGroupSevenQuery)
-        assert isinstance(queries[10], MessageCapabilitiesQuery)
-        assert isinstance(queries[11], MessageCapabilitiesAdditionalQuery)
+        assert isinstance(queries[3], MessageCapabilitiesQuery)
+        assert isinstance(queries[4], MessageCapabilitiesAdditionalQuery)
+        assert isinstance(queries[5], MessagePowerQuery)
+        assert isinstance(queries[6], MessageHumidityQuery)
+        assert isinstance(queries[7], MessageGroupZeroQuery)
+        assert isinstance(queries[8], MessageGroupOneQuery)
+        assert isinstance(queries[9], MessageGroupTwoQuery)
+        assert isinstance(queries[10], MessageGroupThreeQuery)
+        assert isinstance(queries[11], MessageGroupSevenQuery)
 
     def test_build_query_omits_rate_select_until_capability_confirmed(self) -> None:
         """Test rate_select stays out of the B1 query until b5_electricity confirms it.
