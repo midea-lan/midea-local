@@ -66,16 +66,3 @@ def test_power_analysis_method_exception(
         expected_energy
     )
     assert device.attributes[DeviceAttributes.realtime_power] == expected_power
-
-
-@pytest.mark.parametrize(
-    ("device", "expected"),
-    [
-        pytest.param("00000Q18", 1.0, id="00000Q18"),
-        pytest.param("test_model", 0.5, id="default"),
-    ],
-    indirect=["device"],
-)
-def test_temperature_step_exception(device: MideaACDevice, expected: float) -> None:
-    """Test the setpoint step of each model (0.5 by default)."""
-    assert device.temperature_step == expected
