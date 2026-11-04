@@ -3,7 +3,7 @@
 
 # Function scope keeps variables out of the caller's shell when sourced.
 _cleanup_venv() {
-    local project_root venv script target
+    local workspace venv script target
     local venvs=(.venv venv env ENV env.bak venv.bak)
 
     # Follow symlinks without readlink -f, which macOS lacks before 12.3.
@@ -15,13 +15,13 @@ _cleanup_venv() {
             *) script=$(dirname -- "$script")/$target ;;
         esac
     done
-    project_root="$(CDPATH= cd -P -- "$(dirname -- "$script")/.." && pwd)"
+    workspace="$(dirname -- "$script")/.."
 
     echo "🗑️  Removing virtual environments..."
 
     for venv in "${venvs[@]}"; do
         # -ef compares directory identity, so symlinked project paths still match.
-        if [ "${VIRTUAL_ENV:-}" -ef "$project_root/$venv" ]; then
+        if [ "${VIRTUAL_ENV:-}" -ef "$workspace/$venv" ]; then
             echo "⚠️  Active virtual environment detected at $VIRTUAL_ENV."
             if type deactivate > /dev/null 2>&1; then
                 echo "Attempting to deactivate..."
@@ -36,12 +36,12 @@ _cleanup_venv() {
     done
 
     for venv in "${venvs[@]}"; do
-        [ -d "$project_root/$venv" ] || continue
-        if [ ! -f "$project_root/$venv/pyvenv.cfg" ]; then
+        [ -d "$workspace/$venv" ] || continue
+        if [ ! -f "$workspace/$venv/pyvenv.cfg" ]; then
             echo "⚠️  Skipping $venv: not a virtual environment (no pyvenv.cfg)"
             continue
         fi
-        if ! rm -rf "${project_root:?}/$venv"; then
+        if ! rm -rf "${workspace:?}/$venv"; then
             echo "❌ Failed to remove $venv"
             return 1
         fi
