@@ -188,26 +188,34 @@ class MideaA1Device(MideaDevice):
     @override
     def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea A1 device set attribute."""
+        changed = False
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
             self.update_all({DeviceAttributes.prompt_tone.value: value})
+            changed = True
         else:
             message = self.make_message_set()
-            if attr == DeviceAttributes.mode:
-                if value in self._modes.values():
-                    message.mode = self._mode_code(str(value))
-            elif attr == DeviceAttributes.fan_speed:
-                if value in self._speeds.values():
-                    message.fan_speed = {v: k for k, v in self._speeds.items()}[
-                        str(value)
-                    ]
-            elif attr == DeviceAttributes.water_level_set:
-                if value in MideaA1Device._water_level_sets:
-                    message.water_level_set = int(value)
-            else:
+            if attr == DeviceAttributes.mode and value in self._modes.values():
+                message.mode = self._mode_code(str(value))
+                changed = True
+            elif attr == DeviceAttributes.fan_speed and value in self._speeds.values():
+                message.fan_speed = {v: k for k, v in self._speeds.items()}[str(value)]
+                changed = True
+            elif (
+                attr == DeviceAttributes.water_level_set
+                and value in MideaA1Device._water_level_sets
+            ):
+                message.water_level_set = int(value)
+                changed = True
+            elif attr not in [
+                DeviceAttributes.mode,
+                DeviceAttributes.fan_speed,
+                DeviceAttributes.water_level_set,
+            ]:
                 setattr(message, str(attr), value)
+                changed = True
             self.build_send(message)
-        return True
+        return changed
 
     def reset_filter(self) -> None:
         """Send the filter cleaning reminder reset command."""
