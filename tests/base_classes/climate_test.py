@@ -1,7 +1,7 @@
 """Midea Local shared base classes test."""
 
 from collections.abc import Mapping
-from typing import cast
+from typing import cast, override
 
 import pytest
 
@@ -44,8 +44,10 @@ class _MinimalClimateDevice(MideaClimateDevice):
         if hvac_mode is not None:
             self._attributes["hvac_mode"] = hvac_mode
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         self._attributes[attr] = value
+        return True
 
     def current_temperature(self) -> float | None:
         return cast("float | None", self.attributes.get("current_temperature"))

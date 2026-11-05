@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.const.water_heater_exceptions import E3_EXCEPTIONS
@@ -64,6 +64,17 @@ class MideaE3Device(MideaDevice):
                 DeviceAttributes.temperature_max: 65.0,
             },
         )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.zero_cold_water,
+                DeviceAttributes.zero_cold_pulse,
+                DeviceAttributes.smart_volume,
+                DeviceAttributes.target_temperature,
+                DeviceAttributes.temperature_min,
+                DeviceAttributes.temperature_max,
+            ]
+        )
         exceptions = E3_EXCEPTIONS.get(str(self.model), {})
         self._precision_halves: bool = exceptions.get("precision_halves", False)
         # target_temperature step
@@ -110,14 +121,11 @@ class MideaE3Device(MideaDevice):
         ]
         return message
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea E3 device set attribute."""
         message: MessagePower | MessageSet | MessageNewProtocolSet | None = None
-        if attr not in [
-            DeviceAttributes.burning_state,
-            DeviceAttributes.current_temperature,
-            DeviceAttributes.protection,
-        ]:
+        if attr in self._settable_attributes:
             if self._precision_halves and attr == DeviceAttributes.target_temperature:
                 value = value * 2
             if attr == DeviceAttributes.power:
@@ -131,6 +139,8 @@ class MideaE3Device(MideaDevice):
                 message.key = str(attr)
                 message.value = value
             self.build_send(message)
+            return True
+        return False
 
 
 class MideaAppliance(MideaE3Device):

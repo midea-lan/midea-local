@@ -118,6 +118,21 @@ class MideaCCDevice(MideaClimateDevice):
         self._fan_speeds: type[MideaFanMode] | None = None
         # set once a 0xFE-format response is seen; selects the VRF control path
         self._is_fe_format = False
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.mode,
+                DeviceAttributes.target_temperature,
+                DeviceAttributes.fan_speed,
+                DeviceAttributes.sleep_mode,
+                DeviceAttributes.eco_mode,
+                DeviceAttributes.night_light,
+                DeviceAttributes.ventilation,
+                DeviceAttributes.aux_heating,
+                DeviceAttributes.swing,
+                DeviceAttributes.temp_fahrenheit,
+            ]
+        )
 
     @property
     @override
@@ -419,11 +434,12 @@ class MideaCCDevice(MideaClimateDevice):
             self._send_fe_control([(CCControlId.SWING, 0x06 if value else 0x00)])
         # other attributes are not supported by the 0xFE control protocol
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea CC device set attribute."""
         if self._is_fe_format:
             self._set_attribute_fe(attr, value)
-            return
+            return True
         # if nat a sensor
         if attr not in [
             DeviceAttributes.indoor_temperature,
@@ -450,6 +466,8 @@ class MideaCCDevice(MideaClimateDevice):
                     else:
                         setattr(message, DeviceAttributes.aux_heat_status, 2)
             self.build_send(message)
+            return True
+        return False
 
 
 class MideaAppliance(MideaCCDevice):

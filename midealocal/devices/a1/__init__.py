@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.const.humidifier_exceptions import A1_EXCEPTIONS
@@ -87,6 +87,20 @@ class MideaA1Device(MideaDevice):
         exceptions = A1_EXCEPTIONS.get(str(self.model), {})
         self._speeds = exceptions.get("speeds", self._default_speeds)
         self._modes = exceptions.get("modes", self._default_modes)
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.prompt_tone,
+                DeviceAttributes.mode,
+                DeviceAttributes.fan_speed,
+                DeviceAttributes.child_lock,
+                DeviceAttributes.target_humidity,
+                DeviceAttributes.swing,
+                DeviceAttributes.anion,
+                DeviceAttributes.pump,
+                DeviceAttributes.water_level_set,
+            ]
+        )
 
     @property
     def modes(self) -> list[str]:
@@ -171,7 +185,8 @@ class MideaA1Device(MideaDevice):
         )
         return message
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea A1 device set attribute."""
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
@@ -192,6 +207,7 @@ class MideaA1Device(MideaDevice):
             else:
                 setattr(message, str(attr), value)
             self.build_send(message)
+        return True
 
     def reset_filter(self) -> None:
         """Send the filter cleaning reminder reset command."""

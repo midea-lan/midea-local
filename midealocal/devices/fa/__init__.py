@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.const.fan_exceptions import FA_EXCEPTIONS
@@ -172,6 +172,28 @@ class MideaFADevice(MideaDevice):
             {},
         )
         self._fa_protocol: int = 0
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.child_lock,
+                DeviceAttributes.mode,
+                DeviceAttributes.fan_speed,
+                DeviceAttributes.oscillate,
+                DeviceAttributes.oscillation_angle,
+                DeviceAttributes.oscillation_mode,
+                DeviceAttributes.tilting_angle,
+                DeviceAttributes.humidify,
+                DeviceAttributes.waterions,
+                DeviceAttributes.display_on_off,
+                DeviceAttributes.voice,
+                DeviceAttributes.scene,
+                DeviceAttributes.anion,
+                DeviceAttributes.anophelifuge,
+                DeviceAttributes.body_feeling_scan,
+                DeviceAttributes.target_temperature,
+                DeviceAttributes.target_humidity,
+            ]
+        )
 
     @property
     def speed_count(self) -> int:
@@ -373,7 +395,8 @@ class MideaFADevice(MideaDevice):
                 self._set_tilting_angle(message, str(value))
         return message
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Set attribute."""
         message = None
         if attr in [
@@ -412,6 +435,8 @@ class MideaFADevice(MideaDevice):
             setattr(message, str(attr), value)
         if message is not None:
             self.build_send(message)
+            return True
+        return False
 
     def turn_on(self, fan_speed: int | None = None, mode: str | None = None) -> None:
         """Turn on the device."""

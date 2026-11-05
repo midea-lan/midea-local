@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from typing_extensions import deprecated
 
@@ -67,6 +67,17 @@ class MideaE6Device(MideaDevice):
                 DeviceAttributes.heating_modes: None,
             },
         )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.main_power,
+                DeviceAttributes.heating_power,
+                DeviceAttributes.heating_temperature,
+                DeviceAttributes.bathing_temperature,
+                DeviceAttributes.heating_modes,
+                DeviceAttributes.cold_water_single,
+                DeviceAttributes.cold_water_dot,
+            ]
+        )
         # target_temperature step
         self._temperature_step: float | None = E6_EXCEPTIONS.get(
             str(self.model),
@@ -88,20 +99,15 @@ class MideaE6Device(MideaDevice):
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         return self.update_attributes_from_message(message)
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea E6 device set attribute."""
-        if attr in [
-            DeviceAttributes.main_power,
-            DeviceAttributes.heating_power,
-            DeviceAttributes.heating_temperature,
-            DeviceAttributes.bathing_temperature,
-            DeviceAttributes.heating_modes,
-            DeviceAttributes.cold_water_single,
-            DeviceAttributes.cold_water_dot,
-        ]:
+        if attr in self._settable_attributes:
             message = MessageSet(self._message_protocol_version)
             setattr(message, str(attr), value)
             self.build_send(message)
+            return True
+        return False
 
     @property
     @deprecated("Use preset_modes instead.")

@@ -1,7 +1,7 @@
 """Midea local CA device."""
 
 import logging
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import MANUFACTURER_CODE_TOSHIBA, DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
@@ -97,8 +97,10 @@ class MideaCADevice(MideaDevice):
             },
         )
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea CA device set attribute."""
+        return False
 
 
 class MideaAppliance(MideaCADevice):

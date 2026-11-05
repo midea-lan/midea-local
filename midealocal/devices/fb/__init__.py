@@ -101,6 +101,17 @@ class MideaFBDevice(MideaClimateDevice):
                 DeviceAttributes.child_lock: False,
             },
         )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.mode,
+                DeviceAttributes.heating_level,
+                DeviceAttributes.target_temperature,
+                DeviceAttributes.target_humidity,
+                DeviceAttributes.humidity_mode,
+                DeviceAttributes.child_lock,
+            ]
+        )
 
     @property
     @override
@@ -243,7 +254,8 @@ class MideaFBDevice(MideaClimateDevice):
                     setattr(message, str(attr), value)
         return message
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea FB device set attribute."""
         message = self._build_set_message()
         if attr == DeviceAttributes.mode:
@@ -268,6 +280,7 @@ class MideaFBDevice(MideaClimateDevice):
         else:
             setattr(message, str(attr), value)
         self.build_send(message)
+        return True
 
     @override
     def set_target_temperature(

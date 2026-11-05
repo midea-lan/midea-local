@@ -2,7 +2,7 @@
 
 import logging
 from enum import IntEnum, StrEnum
-from typing import Any, Unpack
+from typing import Any, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.device import AttrValue, MideaDevice, MideaDeviceInitKwargs
@@ -131,6 +131,14 @@ class MideaB8Device(MideaDevice):
                 DeviceAttributes.laser_sensor_error: False,
             },
         )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.clean_mode,
+                DeviceAttributes.fan_level,
+                DeviceAttributes.water_level,
+                DeviceAttributes.voice_volume,
+            ]
+        )
 
     @property
     def _is_v2(self) -> bool:
@@ -217,11 +225,12 @@ class MideaB8Device(MideaDevice):
         except (KeyError, ValueError, OverflowError):
             _LOGGER.exception("Wrong value for attribute %s: %s", attr, value)
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea B8 device set attribute."""
         if self._is_v2:
             self._set_attribute_v2(attr, value)
-            return
+            return True
         try:
             msg = self._gen_set_msg_default_values()
             if attr == DeviceAttributes.clean_mode:
@@ -235,8 +244,10 @@ class MideaB8Device(MideaDevice):
 
             if msg is not None:
                 self.build_send(msg)
+                return True
         except KeyError:
             _LOGGER.exception("Wrong value for attribute %s: %s", attr, value)
+        return False
 
 
 class MideaAppliance(MideaB8Device):

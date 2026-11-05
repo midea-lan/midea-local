@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, Unpack
+from typing import Any, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.const.fan_exceptions import B6_EXCEPTIONS
@@ -52,6 +52,14 @@ class MideaB6Device(MideaDevice):
             "speeds",
             {0: "off", 1: "low", 2: "high"},
         )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.light,
+                DeviceAttributes.mode,
+                DeviceAttributes.fan_speed,
+            ]
+        )
 
     @property
     def speed_count(self) -> int:
@@ -99,7 +107,8 @@ class MideaB6Device(MideaDevice):
             ]
         return new_status
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea B6 device set attribute."""
         message = None
         if attr == DeviceAttributes.fan_speed:
@@ -124,6 +133,8 @@ class MideaB6Device(MideaDevice):
             message.light = int(value)
         if message is not None:
             self.build_send(message)
+            return True
+        return False
 
     def turn_on(self, fan_speed: int | None = None, mode: str | None = None) -> None:
         """Midea B6 device turn on."""

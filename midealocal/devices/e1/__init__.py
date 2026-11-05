@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
@@ -128,6 +128,13 @@ class MideaE1Device(MideaDevice):
                 DeviceAttributes.bright: 0,
             },
         )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.child_lock,
+                DeviceAttributes.storage,
+            ]
+        )
 
     @property
     def modes(self) -> dict[int, str]:
@@ -201,7 +208,8 @@ class MideaE1Device(MideaDevice):
             },
         )
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea E1 device set attribute."""
         if not isinstance(value, bool):
             raise ValueWrongType("[e1] Expected bool")
@@ -210,14 +218,18 @@ class MideaE1Device(MideaDevice):
             message = MessagePower(self._message_protocol_version)
             message.power = value
             self.build_send(message)
-        elif attr == DeviceAttributes.child_lock:
+            return True
+        if attr == DeviceAttributes.child_lock:
             message = MessageLock(self._message_protocol_version)
             message.lock = value
             self.build_send(message)
-        elif attr == DeviceAttributes.storage:
+            return True
+        if attr == DeviceAttributes.storage:
             message = MessageStorage(self._message_protocol_version)
             message.storage = value
             self.build_send(message)
+            return True
+        return False
 
 
 class MideaAppliance(MideaE1Device):

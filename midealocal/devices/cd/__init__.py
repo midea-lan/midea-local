@@ -3,7 +3,7 @@
 import logging
 from collections.abc import Callable, Mapping
 from enum import IntEnum, StrEnum
-from typing import Any, ClassVar, Unpack, cast
+from typing import Any, ClassVar, Unpack, cast, override
 
 from midealocal.const import DeviceType
 from midealocal.const.water_heater_exceptions import CD_EXCEPTIONS
@@ -271,6 +271,22 @@ class MideaCDDevice(MideaDevice):
         )
         # fahrenheit or celsius switch, default is celsius, update with message
         self._fahrenheit: bool = False
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.maintenance_reminder,
+                DeviceAttributes.maintain_warn_tag,
+                DeviceAttributes.disinfect,
+                DeviceAttributes.sterilize,
+                DeviceAttributes.disinfection_temperature,
+                DeviceAttributes.weekly_schedule,
+                DeviceAttributes.daily_timer_schedule,
+                DeviceAttributes.mode,
+                DeviceAttributes.power,
+                DeviceAttributes.target_temperature,
+                DeviceAttributes.vacation_mode,
+                DeviceAttributes.vacation_days,
+            ]
+        )
 
     def _value_to_temperature(
         self,
@@ -730,11 +746,12 @@ class MideaCDDevice(MideaDevice):
             for timers in timer_groups
         )
 
-    def set_attribute(  # noqa: C901, PLR0911
+    @override
+    def _set_attribute(  # noqa: C901, PLR0911
         self,
         attr: str,
         value: bool | float | str | Mapping[int, object] | Mapping[str, object],
-    ) -> None:
+    ) -> bool:
         """Midea CD device set attribute."""
         if attr in [
             DeviceAttributes.maintenance_reminder,
@@ -742,9 +759,9 @@ class MideaCDDevice(MideaDevice):
         ]:
             if isinstance(value, Mapping):
                 _LOGGER.warning("[%s] %s requires a scalar value", self.device_id, attr)
-                return
+                return False
             self._set_maintenance_reminder(bool(value))
-            return
+            return True
 
         if attr in [
             DeviceAttributes.disinfect,
@@ -753,9 +770,9 @@ class MideaCDDevice(MideaDevice):
         ]:
             if isinstance(value, Mapping):
                 _LOGGER.warning("[%s] %s requires a scalar value", self.device_id, attr)
-                return
+                return False
             self._set_disinfection(attr, value)
-            return
+            return True
 
         if attr in [
             DeviceAttributes.weekly_schedule,
@@ -767,10 +784,10 @@ class MideaCDDevice(MideaDevice):
                     self.device_id,
                     attr,
                 )
-                return
+                return False
             if not self._has_valid_timer_data(attr, value):
                 _LOGGER.warning("[%s] %s has invalid timer data", self.device_id, attr)
-                return
+                return False
             if attr == DeviceAttributes.weekly_schedule:
                 weekly = MessageSetWeekly(self._message_protocol_version)
                 weekly.weekly_schedule = cast("WeeklySchedule", value)
@@ -779,7 +796,7 @@ class MideaCDDevice(MideaDevice):
                 daily = MessageSetDaily(self._message_protocol_version)
                 daily.daily_timer_schedule = cast("DailyTimerSchedule", value)
                 self.build_send(daily)
-            return
+            return True
 
         if isinstance(value, Mapping):
             _LOGGER.warning(
@@ -787,7 +804,7 @@ class MideaCDDevice(MideaDevice):
                 self.device_id,
                 attr,
             )
-            return
+            return False
 
         # Power, mode, temperature and vacation use controlType=0x01.
         # max_temperature (tsMax) and schedule_mode are read-only: no Midea CD
@@ -877,7 +894,7 @@ class MideaCDDevice(MideaDevice):
                         "use vacation_days/vacation_mode instead",
                         self.device_id,
                     )
-                    return
+                    return False
                 mode_key = self._mode_key(str(value))
                 if mode_key is None:
                     _LOGGER.warning(
@@ -885,7 +902,7 @@ class MideaCDDevice(MideaDevice):
                         self.device_id,
                         value,
                     )
-                    return  # Don't send invalid mode
+                    return False  # Don't send invalid mode
                 message.mode = mode_key
                 # None has no on-device meaning distinct from Off; selecting
                 # it powers the unit off, selecting any other mode powers it
@@ -929,6 +946,8 @@ class MideaCDDevice(MideaDevice):
             # Avoid replaying SET-echo junk into the next control frame
             message.fields = dict(self._fields)
             self.build_send(message)
+            return True
+        return False
 
     @staticmethod
     def _sanitize_set_fields(fields: dict[str, int]) -> dict[str, int]:

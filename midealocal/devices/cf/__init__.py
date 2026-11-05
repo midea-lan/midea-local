@@ -74,6 +74,14 @@ class MideaCFDevice(MideaClimateDevice):
                 DeviceAttributes.min_temperature: 5,
             },
         )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.aux_heating,
+                DeviceAttributes.mode,
+                DeviceAttributes.target_temperature,
+            ]
+        )
 
     @property
     @override
@@ -212,7 +220,8 @@ class MideaCFDevice(MideaClimateDevice):
             raise ValueWrongType(f"[cf] Expected {expected}")
         return number
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea CF device set attribute."""
         message = MessageSet(self._message_protocol_version)
         message.power = True
@@ -231,6 +240,7 @@ class MideaCFDevice(MideaClimateDevice):
         else:
             raise ValueError(f"[cf] Unsupported attribute: {attr}")
         self.build_send(message)
+        return True
 
 
 class MideaAppliance(MideaCFDevice):
