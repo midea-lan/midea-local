@@ -231,6 +231,12 @@ class MideaDBDevice(MideaDevice):
                 DeviceAttributes.dirty_degree: None,
             },
         )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.start,
+            ]
+        )
 
     def build_query(self) -> list[MessageQuery]:
         """Midea DB device build query."""
