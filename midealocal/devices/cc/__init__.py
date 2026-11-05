@@ -406,7 +406,7 @@ class MideaCCDevice(MideaClimateDevice):
             message.mode = hvac_mode
         self.build_send(message)
 
-    def _set_attribute_fe(self, attr: str, value: bool | float | str) -> None:
+    def _set_attribute_fe(self, attr: str, value: bool | float | str) -> bool:
         """Set an attribute on a 0xFE VRF panel via key-value control frames."""
         if attr == DeviceAttributes.power:
             self._send_fe_control([(CCControlId.POWER, 1 if value else 0)])
@@ -432,14 +432,16 @@ class MideaCCDevice(MideaClimateDevice):
             self._send_fe_control(controls)
         elif attr == DeviceAttributes.swing:
             self._send_fe_control([(CCControlId.SWING, 0x06 if value else 0x00)])
-        # other attributes are not supported by the 0xFE control protocol
+        else:
+            # other attributes are not supported by the 0xFE control protocol
+            return False
+        return True
 
     @override
     def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea CC device set attribute."""
         if self._is_fe_format:
-            self._set_attribute_fe(attr, value)
-            return True
+            return self._set_attribute_fe(attr, value)
         # if nat a sensor
         if attr not in [
             DeviceAttributes.indoor_temperature,
