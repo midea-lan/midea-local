@@ -622,7 +622,7 @@ class MideaCDDevice(MideaDevice):
             new_status[str(DeviceAttributes.maintain_warn)] = maintenance_reminder
         return new_status
 
-    def _set_maintenance_reminder(self, value: bool) -> None:
+    def _set_maintenance_reminder(self, value: bool) -> bool:
         """Send the dedicated B0 maintenance flag without changing other flags."""
         reserved = self._attributes.get(DeviceAttributes.b0_reserved_flags)
         if not self._is_extended_water_heater() or not isinstance(reserved, int):
@@ -630,7 +630,7 @@ class MideaCDDevice(MideaDevice):
                 "[%s] maintenance write postponed until B1 flags are known",
                 self.device_id,
             )
-            return
+            return False
         message = MessageSetMaintenance(self._message_protocol_version)
         message.ac_heater_priority = bool(
             self._attributes.get(DeviceAttributes.ac_heater_priority, False),
@@ -641,19 +641,20 @@ class MideaCDDevice(MideaDevice):
         message.maintenance_reminder = value
         message.reserved_flags = reserved
         self.build_send(message)
+        return True
 
     def _set_disinfection(
         self,
         attr: str,
         value: bool | float | str,
-    ) -> None:
+    ) -> bool:
         """Send the extended seven-byte disinfection payload."""
         if not self._is_extended_water_heater():
             _LOGGER.warning(
                 "[%s] extended disinfection write requires reported CD support",
                 self.device_id,
             )
-            return
+            return False
         message = MessageSetSterilize(self._message_protocol_version)
         message.extended_body = True
         message.sterilize_on = (
@@ -689,6 +690,7 @@ class MideaCDDevice(MideaDevice):
             max(minimum, min(maximum, float(temperature))),
         )
         self.build_send(message)
+        return True
 
     @staticmethod
     def _is_integer_compatible(value: object) -> bool:
@@ -760,8 +762,7 @@ class MideaCDDevice(MideaDevice):
             if isinstance(value, Mapping):
                 _LOGGER.warning("[%s] %s requires a scalar value", self.device_id, attr)
                 return False
-            self._set_maintenance_reminder(bool(value))
-            return True
+            return self._set_maintenance_reminder(bool(value))
 
         if attr in [
             DeviceAttributes.disinfect,
@@ -771,8 +772,7 @@ class MideaCDDevice(MideaDevice):
             if isinstance(value, Mapping):
                 _LOGGER.warning("[%s] %s requires a scalar value", self.device_id, attr)
                 return False
-            self._set_disinfection(attr, value)
-            return True
+            return self._set_disinfection(attr, value)
 
         if attr in [
             DeviceAttributes.weekly_schedule,
