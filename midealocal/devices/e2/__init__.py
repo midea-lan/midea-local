@@ -260,7 +260,7 @@ class MideaE2Device(MideaDevice):
             DeviceAttributes.whole_tank_heating
         ]
         message.target_temperature = self._encode_target_temperature(
-            self._attributes[DeviceAttributes.target_temperature],
+            float(self._attributes[DeviceAttributes.target_temperature]),
         )
         message.variable_heating = self._attributes[DeviceAttributes.variable_heating]
         return message
