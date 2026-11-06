@@ -1,5 +1,19 @@
 # Changelog
 
+## [15.1.0](https://github.com/midea-lan/midea-local/compare/v15.0.0...v15.1.0) (2026-11-06)
+
+
+### Features
+
+* **ac:** retrive temperature step capability from b5_temperature ([#1009](https://github.com/midea-lan/midea-local/issues/1009)) ([f7444fd](https://github.com/midea-lan/midea-local/commit/f7444fd2ee9ce6a44c81e89ee1b7dd6e78d9bee6))
+
+
+### Bug Fixes
+
+* **ac:** pick power format from B5 energy_bcd. ([#998](https://github.com/midea-lan/midea-local/issues/998)) ([0ad6178](https://github.com/midea-lan/midea-local/commit/0ad61788a076c21bec35232cc8eb744310448c2d))
+* **b0:** keep seconds in time_remaining ([#1020](https://github.com/midea-lan/midea-local/issues/1020)) ([298b241](https://github.com/midea-lan/midea-local/commit/298b241e14499d3b850263ed0c19b057001a3c92))
+* **deps:** update dependency platformdirs to v4.14.5 ([#1024](https://github.com/midea-lan/midea-local/issues/1024)) ([9c88728](https://github.com/midea-lan/midea-local/commit/9c88728f7d578b9e6da2be2976071f186ab9560e))
+
 ## [15.0.0](https://github.com/midea-lan/midea-local/compare/v14.0.0...v15.0.0) (2026-10-29)
 
 
