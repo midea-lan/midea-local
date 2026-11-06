@@ -84,7 +84,7 @@ class TestMideaB0Device:
         )
         assert self.device.attributes[DeviceAttributes.door] is True
         assert self.device.attributes[DeviceAttributes.status] == "working"
-        assert self.device.attributes[DeviceAttributes.time_remaining] == 1
+        assert self.device.attributes[DeviceAttributes.time_remaining] == 1.5
         assert self.device.attributes[DeviceAttributes.current_temperature] == 80
         assert self.device.attributes[DeviceAttributes.tank_ejected] is False
         assert self.device.attributes[DeviceAttributes.water_change_reminder] is False
@@ -93,6 +93,20 @@ class TestMideaB0Device:
         assert self.device.attributes[DeviceAttributes.fire_power] == "medium"
         assert self.device.attributes[DeviceAttributes.child_lock] is True
         assert new_status[DeviceAttributes.status.value] == "working"
+
+    def test_process_message_41_under_a_minute_real_device_sample(self) -> None:
+        """Test a countdown below one minute keeps its seconds.
+
+        Captured via debug logs from a real subtype-two microwave (model
+        7000005Z) 30 seconds into a cook cycle.
+        """
+        body = bytearray.fromhex(
+            "41030000001100001e01000000000a00000000000000000000000000000"
+            "01e000000000000000000000000",
+        )
+        self.device.process_message(_build_message(MessageType.notify1, body))
+        assert self.device.attributes[DeviceAttributes.status] == "working"
+        assert self.device.attributes[DeviceAttributes.time_remaining] == 0.5
 
     def test_process_message_31_time_unfreeze(self) -> None:
         """Test process message with the time defrost mode on a 31 body."""
