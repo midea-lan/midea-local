@@ -13,6 +13,15 @@ from midealocal.message import (
 MIN_MSG_BODY = 15
 
 
+def _work_time_minutes(hours: int, minutes: int, seconds: int) -> float:
+    """Return hour/minute/second bytes as minutes, 0xFF meaning unset."""
+    return (
+        (0 if hours == MAX_BYTE_VALUE else hours) * 60
+        + (0 if minutes == MAX_BYTE_VALUE else minutes)
+        + (0 if seconds == MAX_BYTE_VALUE else seconds) / 60
+    )
+
+
 class MessageB0Base(MessageRequest):
     """B0 message base."""
 
@@ -331,9 +340,7 @@ class B0Message01Body(MessageBody):
         if len(body) > MIN_MSG_BODY:
             self.door = (body[32] & 0x02) > 0
             self.status = body[31]
-            self.time_remaining = (
-                0 if body[22] == MAX_BYTE_VALUE else body[22]
-            ) * 60 + (0 if body[23] == MAX_BYTE_VALUE else body[23])
+            self.time_remaining = _work_time_minutes(body[22], body[23], body[24])
             self.current_temperature = (body[25] << 8) + (body[26])
             if self.current_temperature == 0:
                 self.current_temperature = (body[27] << 8) + body[28]
@@ -353,9 +360,7 @@ class B0Message31Body(MessageBody):
             self.cloudmenuid = int.from_bytes(body[2:5], "big")
             self.total_step = body[5] / 16
             self.step_num = body[5]
-            self.time_remaining = (0 if body[6] == MAX_BYTE_VALUE else body[6]) * 60 + (
-                0 if body[7] == MAX_BYTE_VALUE else body[7]
-            )
+            self.time_remaining = _work_time_minutes(body[6], body[7], body[8])
             self.mode = body[9]
             # current_temperature
             temperature_above = body[11]

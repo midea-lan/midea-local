@@ -69,14 +69,6 @@
       "rangeStrategy": "bump"
     },
     {
-      "description": "Keep the mypy hook pins consistent with each other and pyproject",
-      "matchManagers": ["pep621", "custom.regex"],
-      "matchDatasources": ["pypi"],
-      "matchFileNames": ["pyproject.toml", ".pre-commit-config.yaml"],
-      "matchPackageNames": ["!uv"],
-      "groupName": "python dependencies"
-    },
-    {
       "description": "New Python releases (3.x -> 3.y is a minor update for Renovate) are adopted deliberately, in step with Home Assistant",
       "matchDepNames": ["python"],
       "matchUpdateTypes": ["major", "minor"],
