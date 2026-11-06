@@ -11,6 +11,16 @@ from midealocal.message import (
     MessageType,
 )
 
+from .native import (
+    BASIC_TABLE,
+    ENERGY_TABLE,
+    QUINTUPLE_MODEL,
+    TELEMETRY_TABLE,
+    C3NativeTelemetryBody,
+    C3QuintupleBasicBody,
+    C3QuintupleEnergyBody,
+)
+
 TEMP_NEG_VALUE = 127
 ECO_FUNCTION_STATE_MASK = 0x01
 ECO_TIMER_STATE_MASK = 0x02
@@ -495,9 +505,38 @@ class C3UnitParaBody(MessageBody):
 class MessageC3Response(MessageResponse):
     """C3 message response."""
 
-    def __init__(self, message: bytes) -> None:
+    zone1_power: bool | None
+    zone2_power: bool | None
+    dhw_power: bool | None
+    mode: int | None
+    dhw_target_temp: float | None
+    room_target_temp: float | None
+    tank_actual_temperature: float | None
+    outdoor_temperature: float | None
+    dhw_temp_min: float | None
+    dhw_temp_max: float | None
+    quintuple_arrays: dict[str, dict[int, float | bool | None]]
+    quintuple_energy: bool
+
+    def __init__(self, message: bytes, model: str | None = None) -> None:
         """Initialize C3 message response."""
         super().__init__(bytearray(message))
+        body = super().body
+        if model == QUINTUPLE_MODEL:
+            if self.body_type == ListTypes.X00 and self.message_type in (
+                MessageType.query,
+                MessageType.set,
+                MessageType.notify1,
+            ):
+                table = int.from_bytes(body[1:3], "big")
+                if table == BASIC_TABLE:
+                    self.set_body(C3QuintupleBasicBody(body))
+                elif table == ENERGY_TABLE and self.message_type != MessageType.set:
+                    self.set_body(C3QuintupleEnergyBody(body))
+                elif table == TELEMETRY_TABLE:
+                    self.set_body(C3NativeTelemetryBody(body))
+            self.set_attr()
+            return
         if (
             self.message_type
             in [MessageType.set, MessageType.notify1, MessageType.query]
