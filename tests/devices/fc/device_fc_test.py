@@ -325,7 +325,7 @@ class TestMideaFCDevice:
 
             self.device.set_attribute(DeviceAttributes.mode.value, "invalid")
             mock_build_send.assert_called_once()
-            assert mock_build_send.call_args[0][0].mode == 0x10
+            assert mock_build_send.call_args[0][0].mode == 0x30
 
     def test_set_attribute_fan_speed(self) -> None:
         """Test set attribute fan speed."""
@@ -337,7 +337,7 @@ class TestMideaFCDevice:
 
             self.device.set_attribute(DeviceAttributes.fan_speed.value, "invalid")
             mock_build_send.assert_called_once()
-            assert mock_build_send.call_args[0][0].fan_speed == 39
+            assert mock_build_send.call_args[0][0].fan_speed == 80
 
     def test_set_attribute_screen_display(self) -> None:
         """Test set attribute screen display."""
@@ -352,9 +352,10 @@ class TestMideaFCDevice:
             assert mock_build_send.call_args[0][0].screen_display == 7
             mock_build_send.reset_mock()
 
+            self.device._attributes[DeviceAttributes.screen_display] = "dim"
             self.device.set_attribute(DeviceAttributes.screen_display.value, "invalid")
             mock_build_send.assert_called_once()
-            assert mock_build_send.call_args[0][0].screen_display == 0
+            assert mock_build_send.call_args[0][0].screen_display == 6
 
     def test_set_attribute_detect_mode(self) -> None:
         """Test set attribute detect mode."""
@@ -369,6 +370,7 @@ class TestMideaFCDevice:
             assert mock_build_send.call_args[0][0].detect_mode == 0
             mock_build_send.reset_mock()
 
+            self.device._attributes[DeviceAttributes.detect_mode] = "off"
             self.device.set_attribute(DeviceAttributes.detect_mode.value, "invalid")
             mock_build_send.assert_called_once()
             assert mock_build_send.call_args[0][0].detect_mode == 0

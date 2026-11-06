@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.const.air_purifier_exceptions import FC_EXCEPTIONS
@@ -79,6 +79,19 @@ class MideaFCDevice(MideaDevice):
             },
         )
 
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.mode,
+                DeviceAttributes.fan_speed,
+                DeviceAttributes.child_lock,
+                DeviceAttributes.prompt_tone,
+                DeviceAttributes.anion,
+                DeviceAttributes.standby,
+                DeviceAttributes.screen_display,
+                DeviceAttributes.detect_mode,
+            ]
+        )
         self._standby_detect: list[int] = FC_EXCEPTIONS.get(
             str(self.model),
             {},
@@ -170,7 +183,8 @@ class MideaFCDevice(MideaDevice):
         message.standby_detect = self._standby_detect
         return message
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea FC device set attribute."""
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
@@ -202,6 +216,8 @@ class MideaFCDevice(MideaDevice):
             else:
                 setattr(message, str(attr), value)
             self.build_send(message)
+            return True
+        return False
 
 
 class MideaAppliance(MideaFCDevice):

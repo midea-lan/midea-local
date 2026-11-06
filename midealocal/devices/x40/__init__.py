@@ -3,7 +3,7 @@
 import logging
 import math
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.const.fan_exceptions import X40_EXCEPTIONS
@@ -55,6 +55,15 @@ class MideaX40Device(MideaDevice):
                 DeviceAttributes.smelly_sensor: False,
                 DeviceAttributes.current_temperature: None,
             },
+        )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.light,
+                DeviceAttributes.fan_speed,
+                DeviceAttributes.direction,
+                DeviceAttributes.ventilation,
+                DeviceAttributes.smelly_sensor,
+            ]
         )
         self._fields: dict[str, Any] = {}
         self._precision_halves: bool = X40_EXCEPTIONS.get(str(self.model), {}).get(
@@ -119,15 +128,10 @@ class MideaX40Device(MideaDevice):
             },
         )
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea x40 Device set attribute."""
-        if attr in [
-            DeviceAttributes.light,
-            DeviceAttributes.fan_speed,
-            DeviceAttributes.direction,
-            DeviceAttributes.ventilation,
-            DeviceAttributes.smelly_sensor,
-        ]:
+        if attr in self._settable_attributes:
             message = MessageSet(self._message_protocol_version)
             message.fields = self._fields
             message.light = self._attributes[DeviceAttributes.light]
@@ -148,6 +152,8 @@ class MideaX40Device(MideaDevice):
             else:
                 setattr(message, str(attr), value)
             self.build_send(message)
+            return True
+        return False
 
 
 class MideaAppliance(MideaX40Device):

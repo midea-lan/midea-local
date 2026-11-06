@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.device import (
@@ -220,8 +220,10 @@ class MideaB0Device(MideaDevice):
             )
         return self.update_attributes_from_message(message, translators)
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """B0 Midea device set attribute."""
+        return False
 
 
 class MideaAppliance(MideaB0Device):

@@ -177,6 +177,22 @@ class MideaC3Device(MideaClimateDevice):
             "temperature_step",
             TEMPERATURE_STEP_HALF,
         )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.zone1_power,
+                DeviceAttributes.zone2_power,
+                DeviceAttributes.dhw_power,
+                DeviceAttributes.zone1_curve,
+                DeviceAttributes.zone2_curve,
+                DeviceAttributes.tbh,
+                DeviceAttributes.fast_dhw,
+                DeviceAttributes.dhw_target_temp,
+                DeviceAttributes.eco_mode,
+                DeviceAttributes.disinfect,
+                DeviceAttributes.silent_mode,
+                DeviceAttributes.silent_level,
+            ]
+        )
 
     @property
     @override
@@ -401,7 +417,8 @@ class MideaC3Device(MideaClimateDevice):
         message.fast_dhw = self._attributes[DeviceAttributes.fast_dhw]
         return message
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea C3 device set attribute."""
         message: (
             MessageSet | MessageSetECO | MessageSetSilent | MessageSetDisinfect | None
@@ -446,6 +463,8 @@ class MideaC3Device(MideaClimateDevice):
                 message.silent_mode = normalized_value != C3SilentLevel.OFF.name
         if message is not None:
             self.build_send(message)
+            return True
+        return False  # pragma: no cover
 
     def _set_mode(self, zone: int, mode: int) -> None:
         """Midea C3 device set mode."""

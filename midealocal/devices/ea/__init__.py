@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.base_classes.rice_cooker import MideaRiceCookerDevice
 from midealocal.const import DeviceType
@@ -73,8 +73,10 @@ class MideaEADevice(MideaRiceCookerDevice):
             },
         )
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea EA device set attribute."""
+        return False
 
 
 class MideaAppliance(MideaEADevice):

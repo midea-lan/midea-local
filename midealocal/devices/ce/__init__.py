@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.const.fan_exceptions import CE_EXCEPTIONS
@@ -72,6 +72,19 @@ class MideaCEDevice(MideaDevice):
         )
         exceptions = CE_EXCEPTIONS.get(str(self.model), {})
         self._speed_count: int = exceptions.get("speed_count", 7)
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.fan_speed,
+                DeviceAttributes.link_to_ac,
+                DeviceAttributes.sleep_mode,
+                DeviceAttributes.eco_mode,
+                DeviceAttributes.aux_heating,
+                DeviceAttributes.powerful_purify,
+                DeviceAttributes.scheduled,
+                DeviceAttributes.child_lock,
+            ]
+        )
 
     @property
     def speed_count(self) -> int:
@@ -117,7 +130,8 @@ class MideaCEDevice(MideaDevice):
         message.child_lock = self._attributes[DeviceAttributes.child_lock]
         return message
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea CE device set attribute."""
         message = self.make_message_set()
         if attr == DeviceAttributes.mode:
@@ -130,6 +144,7 @@ class MideaCEDevice(MideaDevice):
         else:
             setattr(message, str(attr), value)
         self.build_send(message)
+        return True
 
 
 class MideaAppliance(MideaCEDevice):

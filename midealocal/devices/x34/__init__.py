@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
@@ -120,6 +120,13 @@ class Midea34Device(MideaDevice):
                 DeviceAttributes.bright: 0,
             },
         )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.child_lock,
+                DeviceAttributes.storage,
+            ]
+        )
 
     def build_query(self) -> list[MessageQuery]:
         """Midea x34 device build query."""
@@ -138,7 +145,8 @@ class Midea34Device(MideaDevice):
             },
         )
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea x34 device set attribute."""
         if not isinstance(value, bool):
             raise ValueWrongType("[x34] Expected bool")
@@ -147,14 +155,18 @@ class Midea34Device(MideaDevice):
             message = MessagePower(self._message_protocol_version)
             message.power = value
             self.build_send(message)
-        elif attr == DeviceAttributes.child_lock:
+            return True
+        if attr == DeviceAttributes.child_lock:
             message = MessageLock(self._message_protocol_version)
             message.lock = value
             self.build_send(message)
-        elif attr == DeviceAttributes.storage:
+            return True
+        if attr == DeviceAttributes.storage:
             message = MessageStorage(self._message_protocol_version)
             message.storage = value
             self.build_send(message)
+            return True
+        return False
 
 
 class MideaAppliance(Midea34Device):
