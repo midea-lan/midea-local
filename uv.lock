@@ -670,7 +670,7 @@ dev = [
 requires-dist = [
     { name = "aiofiles", specifier = ">=25.1.0" },
     { name = "aiohttp", specifier = ">=3.14.5" },
-    { name = "anyio", specifier = ">=4.14.2" },
+    { name = "anyio", specifier = ">=4.16.0" },
     { name = "colorlog", specifier = ">=6.10.1" },
     { name = "defusedxml", specifier = ">=0.7.1" },
     { name = "ifaddr", specifier = ">=0.2.0" },
