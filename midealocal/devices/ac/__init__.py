@@ -366,8 +366,6 @@ class MideaACDevice(MideaClimateDevice):
                 DeviceAttributes.power,
                 DeviceAttributes.mode,
                 DeviceAttributes.target_temperature,
-                DeviceAttributes.min_temperature,
-                DeviceAttributes.max_temperature,
                 DeviceAttributes.fan_speed,
                 DeviceAttributes.swing_vertical,
                 DeviceAttributes.swing_horizontal,
