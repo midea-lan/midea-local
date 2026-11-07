@@ -1096,6 +1096,34 @@ class TestMideaDevice:
         assert build_send.call_count == 2
 
     @pytest.mark.asyncio
+    async def test_refresh_status_no_retry_after_device_answered(self) -> None:
+        """Once the device answered a probe query, a timeout is not retried."""
+        self.device._appliance_query = False
+        answered_cmd = MagicMock()
+        ignored_cmd = MagicMock()
+        with (
+            patch.object(
+                self.device,
+                "build_query",
+                return_value=[answered_cmd, ignored_cmd],
+            ),
+            patch.object(self.device, "build_send", return_value=None) as build_send,
+            patch.object(
+                self.device,
+                "_wait_for_query_response",
+                new=AsyncMock(side_effect=[None, TimeoutError()]),
+            ),
+        ):
+            await self.device.refresh_status(True)
+
+        assert self.device._unsupported_protocol == [ignored_cmd.__class__.__name__]
+        assert build_send.call_count == 2
+
+        # a new connection must get the retry back
+        await self.device.close_socket()
+        assert self.device._probe_answered is False
+
+    @pytest.mark.asyncio
     async def test_refresh_status_skips_blacklisted_protocol(self) -> None:
         """A blacklisted command must be skipped without any socket I/O."""
         self.device._appliance_query = False
@@ -1121,14 +1149,15 @@ class TestMideaDevice:
             patch.object(
                 self.device,
                 "_wait_for_query_response",
-                new=AsyncMock(side_effect=[None, TimeoutError(), TimeoutError()]),
+                new=AsyncMock(side_effect=[None, TimeoutError()]),
             ),
         ):
             assert self.device._appliance_query is True
             with pytest.raises(NoSupportedProtocol):
                 await self.device.refresh_status(True)
 
-        assert build_send.call_count == 3
+        # the appliance reply proves the device is awake, so no probe retry
+        assert build_send.call_count == 2
 
     @pytest.mark.asyncio
     async def test_refresh_status_appliance_query_failure_is_not_a_real_error(
