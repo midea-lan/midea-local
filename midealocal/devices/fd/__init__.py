@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
@@ -80,6 +80,17 @@ class MideaFDDevice(MideaDevice):
                 DeviceAttributes.screen_display: None,
                 DeviceAttributes.disinfect: None,
             },
+        )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.fan_speed,
+                DeviceAttributes.target_humidity,
+                DeviceAttributes.prompt_tone,
+                DeviceAttributes.screen_display,
+                DeviceAttributes.mode,
+                DeviceAttributes.disinfect,
+            ]
         )
         if self.subtype > MAX_SUBTYPE_OLD_SPEEDS:
             self._speeds = MideaFDDevice._speeds_new
@@ -159,7 +170,8 @@ class MideaFDDevice(MideaDevice):
         )
         return message
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea FD device set attribute."""
         if attr == DeviceAttributes.prompt_tone:
             self._attributes[DeviceAttributes.prompt_tone] = value
@@ -184,6 +196,8 @@ class MideaFDDevice(MideaDevice):
             else:
                 setattr(message, str(attr), value)
             self.build_send(message)
+            return True
+        return False
 
 
 class MideaAppliance(MideaFDDevice):

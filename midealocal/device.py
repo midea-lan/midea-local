@@ -4,7 +4,7 @@ import asyncio
 import logging
 from collections.abc import Callable, Mapping, Sequence
 from enum import Enum, IntEnum, StrEnum, auto
-from typing import Any, ClassVar, Final, NotRequired, TypedDict, Unpack, overload
+from typing import Any, ClassVar, Final, NotRequired, TypedDict, Unpack, final, overload
 
 from typing_extensions import deprecated
 
@@ -281,6 +281,7 @@ class MideaDevice:
             or len(self._serial_number) != SERIAL_TYPE1_LENGTH
             else self._serial_number[:4]
         )
+        self._settable_attributes: list[str] = []
 
     _fahrenheit_default: ClassVar[bool] = False
 
@@ -1188,7 +1189,17 @@ class MideaDevice:
                     await self.close_socket()
                     break
 
+    @final
     def set_attribute(self, attr: str, value: bool | float | str) -> None:
+        """Set attribute."""
+        if (
+            self._set_attribute(attr, value)
+            and attr in self._settable_attributes
+            and attr in self._attributes
+        ):
+            self._attributes[attr] = value
+
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Set attribute."""
         raise NotImplementedError
 

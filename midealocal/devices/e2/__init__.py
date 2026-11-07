@@ -2,7 +2,7 @@
 
 import logging
 from enum import IntEnum, StrEnum
-from typing import Any, Unpack
+from typing import Any, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.const.water_heater_exceptions import E2_EXCEPTIONS
@@ -153,6 +153,22 @@ class MideaE2Device(MideaDevice):
                 DeviceAttributes.bottom_temp: False,
             },
         )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.target_temperature,
+                DeviceAttributes.variable_heating,
+                DeviceAttributes.sterilization,
+                DeviceAttributes.whole_tank_heating,
+                DeviceAttributes.protection,
+                DeviceAttributes.sleep,
+                DeviceAttributes.screen_off,
+                DeviceAttributes.smart_sterilize,
+                DeviceAttributes.uv_sterilize,
+                DeviceAttributes.eplus,
+                DeviceAttributes.memory,
+            ]
+        )
         exceptions = E2_EXCEPTIONS.get(str(self.model), {})
         self._old_protocol: OldProtocol | bool = exceptions.get(
             "old_protocol",
@@ -244,12 +260,13 @@ class MideaE2Device(MideaDevice):
             DeviceAttributes.whole_tank_heating
         ]
         message.target_temperature = self._encode_target_temperature(
-            self._attributes[DeviceAttributes.target_temperature],
+            float(self._attributes[DeviceAttributes.target_temperature]),
         )
         message.variable_heating = self._attributes[DeviceAttributes.variable_heating]
         return message
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea E2 device set attribute."""
         message: MessagePower | MessageSet | MessageNewProtocolSet | None = None
         if attr not in [
@@ -272,12 +289,14 @@ class MideaE2Device(MideaDevice):
                         self.device_id,
                         attr,
                     )
-                    return
+                    return False
                 setattr(message, str(attr), value)
             else:
                 message = MessageNewProtocolSet(self._message_protocol_version)
                 setattr(message, str(attr), value)
             self.build_send(message)
+            return True
+        return False
 
 
 class MideaAppliance(MideaE2Device):

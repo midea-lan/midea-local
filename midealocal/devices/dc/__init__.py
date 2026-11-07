@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.device import (
@@ -141,6 +141,13 @@ class MideaDCDevice(MideaDevice):
                 DeviceAttributes.time_remaining: None,
             },
         )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.start,
+                DeviceAttributes.ai_switch,
+            ]
+        )
 
     def build_query(self) -> list[MessageQuery]:
         """Midea DC device build query."""
@@ -172,7 +179,8 @@ class MideaDCDevice(MideaDevice):
             },
         )
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea DC device set attribute."""
         if not isinstance(value, bool):
             raise ValueWrongType("[dc] Expected bool")
@@ -181,15 +189,19 @@ class MideaDCDevice(MideaDevice):
             message = MessagePower(self._message_protocol_version)
             message.power = value
             self.build_send(message)
-        elif attr == DeviceAttributes.start:
+            return True
+        if attr == DeviceAttributes.start:
             message = MessageStart(self._message_protocol_version)
             message.start = value
             message.washing_data = self._build_washing_data()
             self.build_send(message)
-        elif attr == DeviceAttributes.ai_switch:
+            return True
+        if attr == DeviceAttributes.ai_switch:
             message = MessageSetAISwitch(self._message_protocol_version)
             message.ai_switch = value
             self.build_send(message)
+            return True
+        return False
 
     def _get_key_from_value(
         self,

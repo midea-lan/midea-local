@@ -861,7 +861,7 @@ class TestMideaCDExtendedDevice:
             message = mock_send.call_args.args[0]
             assert message.disinfection_temperature == 60.0
             mock_send.reset_mock()
-            self.device.set_attribute(DeviceAttributes.disinfect.value, {})
+            self.device._set_attribute(DeviceAttributes.disinfect.value, {})
             mock_send.assert_not_called()
 
     def test_schedule_writes_require_support_and_mapping(self) -> None:
@@ -869,14 +869,14 @@ class TestMideaCDExtendedDevice:
         weekly_schedule = {0: [{"opentime": "6"}]}
         daily_schedule = {"amount": "1", "timers": [{"openhour": "6"}]}
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(
+            self.device._set_attribute(
                 DeviceAttributes.weekly_schedule.value,
                 weekly_schedule,
             )
             weekly = mock_send.call_args.args[0]
             assert isinstance(weekly, MessageSetWeekly)
             assert weekly.weekly_schedule == weekly_schedule
-            self.device.set_attribute(
+            self.device._set_attribute(
                 DeviceAttributes.daily_timer_schedule.value,
                 daily_schedule,
             )
@@ -884,7 +884,7 @@ class TestMideaCDExtendedDevice:
             assert isinstance(daily, MessageSetDaily)
             assert daily.daily_timer_schedule == daily_schedule
             mock_send.reset_mock()
-            self.device.set_attribute(DeviceAttributes.weekly_schedule.value, True)
+            self.device._set_attribute(DeviceAttributes.weekly_schedule.value, True)
             mock_send.assert_not_called()
 
     @pytest.mark.parametrize(
@@ -917,18 +917,18 @@ class TestMideaCDExtendedDevice:
     ) -> None:
         """Malformed nested timer collections never build a control frame."""
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(attribute.value, schedule)
+            self.device._set_attribute(attribute.value, schedule)
         mock_send.assert_not_called()
 
     def test_scalar_controls_reject_mappings(self) -> None:
         """Ordinary scalar controls never accept schedule-like mappings."""
         with patch.object(self.device, "build_send") as mock_send:
-            self.device.set_attribute(DeviceAttributes.power.value, {})
-            self.device.set_attribute(
+            self.device._set_attribute(DeviceAttributes.power.value, {})
+            self.device._set_attribute(
                 DeviceAttributes.maintenance_reminder.value,
                 {"enabled": True},
             )
-            self.device.set_attribute(
+            self.device._set_attribute(
                 DeviceAttributes.maintain_warn_tag.value,
                 {"enabled": True},
             )

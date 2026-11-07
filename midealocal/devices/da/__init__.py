@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.device import (
@@ -125,6 +125,9 @@ class MideaDADevice(MideaDevice):
                 DeviceAttributes.detergent: None,
             },
         )
+        self._settable_attributes.extend(
+            [DeviceAttributes.power, DeviceAttributes.start]
+        )
 
     def build_query(self) -> list[MessageQuery]:
         """Midea DA device build query."""
@@ -148,7 +151,8 @@ class MideaDADevice(MideaDevice):
             },
         )
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea DA device set attribute."""
         if not isinstance(value, bool):
             raise ValueWrongType("[da] Expected bool")
@@ -162,6 +166,7 @@ class MideaDADevice(MideaDevice):
             message.start = value
             message.washing_data = self._build_washing_data()
             self.build_send(message)
+        return True
 
     def _get_index_from_value(
         self,

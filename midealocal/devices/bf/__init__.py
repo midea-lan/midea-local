@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, Unpack
+from typing import Any, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
@@ -192,6 +192,9 @@ class MideaBFDevice(MideaDevice):
                 DeviceAttributes.volume: None,
             },
         )
+        self._settable_attributes.extend(
+            [DeviceAttributes.status, *list(_SETTABLE_ATTRS)]
+        )
 
     def build_query(self) -> list[MessageQuery]:
         """Midea BF device build query."""
@@ -250,7 +253,8 @@ class MideaBFDevice(MideaDevice):
             message.hot_wind = True
         return message
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea BF device set attribute."""
         # status on device maps to work_status on message
         if attr == DeviceAttributes.status:
@@ -260,15 +264,15 @@ class MideaBFDevice(MideaDevice):
                     self.device_id,
                     value,
                 )
-                return
+                return False
             message = MessageSet(self._message_protocol_version)
             message.work_status = value
             self.build_send(message)
-            return
+            return True
 
         if attr not in _SETTABLE_ATTRS:
             _LOGGER.warning("[%s] Unsupported attribute: %s", self.device_id, attr)
-            return
+            return False
 
         # Work-mode-related attributes need the current work_mode context so the
         # MessageSet routes to workModeControl instead of an empty setControl.
@@ -285,6 +289,7 @@ class MideaBFDevice(MideaDevice):
             message = MessageSet(self._message_protocol_version)
         setattr(message, attr, value)
         self.build_send(message)
+        return True
 
 
 class MideaAppliance(MideaBFDevice):
