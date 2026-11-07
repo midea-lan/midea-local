@@ -178,6 +178,16 @@ class TestMideaC3Device:
         assert isinstance(queries[2], MessageQuerySilence)
         assert isinstance(queries[3], MessageQueryECO)
 
+    def test_process_eco_query_reply(self) -> None:
+        """Test a real 0x07 ECO query reply updates eco_mode."""
+        self.device._attributes[DeviceAttributes.eco_mode] = True
+        # reply from a 171H120F, ECO function off
+        result = self.device.process_message(
+            bytes.fromhex("aa10c30000000000000307000800130008"),
+        )
+        assert result == {DeviceAttributes.eco_mode.value: False}
+        assert self.device.attributes[DeviceAttributes.eco_mode] is False
+
     def test_process_message(self) -> None:
         """Test process message."""
         with patch("midealocal.devices.c3.MessageC3Response") as mock_message_response:
