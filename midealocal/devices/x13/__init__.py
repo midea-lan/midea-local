@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.const.light_exceptions import X13_EXCEPTIONS
@@ -50,6 +50,14 @@ class Midea13Device(MideaDevice):
                 DeviceAttributes.effect: None,
                 DeviceAttributes.power: False,
             },
+        )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.brightness,
+                DeviceAttributes.color_temperature,
+                DeviceAttributes.effect,
+                DeviceAttributes.power,
+            ]
         )
         self._color_temp_range: list[int] = X13_EXCEPTIONS.get(
             str(self.model),
@@ -112,14 +120,10 @@ class Midea13Device(MideaDevice):
         )
         return new_status
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea x13 Device set attribute."""
-        if attr in [
-            DeviceAttributes.brightness,
-            DeviceAttributes.color_temperature,
-            DeviceAttributes.effect,
-            DeviceAttributes.power,
-        ]:
+        if attr in self._settable_attributes:
             message = MessageSet(self._message_protocol_version)
             if attr == DeviceAttributes.effect and value in self._effects:
                 setattr(message, str(attr), Midea13Device._effects.index(str(value)))
@@ -128,6 +132,8 @@ class Midea13Device(MideaDevice):
             else:
                 setattr(message, str(attr), value)
             self.build_send(message)
+            return True
+        return False
 
 
 class MideaAppliance(Midea13Device):

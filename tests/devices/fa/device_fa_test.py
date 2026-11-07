@@ -219,10 +219,9 @@ class TestMideaFADevice:
             assert message.oscillation_mode == 1
             mock_build_send.reset_mock()
 
-            self.device.set_attribute(DeviceAttributes.oscillate.value, False)
+            self.device.set_attribute(DeviceAttributes.oscillate.value, True)
             mock_build_send.assert_not_called()
 
-            self.device._attributes[DeviceAttributes.oscillate] = True
             self.device.set_attribute(DeviceAttributes.oscillate.value, False)
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
@@ -248,6 +247,7 @@ class TestMideaFADevice:
             mock_build_send.reset_mock()
 
             self.device._attributes[DeviceAttributes.oscillation_angle] = "60"
+            self.device._attributes[DeviceAttributes.oscillation_mode] = "off"
             self.device.set_attribute(
                 DeviceAttributes.oscillation_mode.value,
                 "oscillation",
@@ -268,6 +268,7 @@ class TestMideaFADevice:
             mock_build_send.reset_mock()
 
             self.device._attributes[DeviceAttributes.tilting_angle] = "30"
+            self.device._attributes[DeviceAttributes.oscillation_mode] = "off"
             self.device.set_attribute(
                 DeviceAttributes.oscillation_mode.value,
                 "tilting",
@@ -288,6 +289,7 @@ class TestMideaFADevice:
 
             self.device._attributes[DeviceAttributes.oscillation_angle] = "60"
             self.device._attributes[DeviceAttributes.tilting_angle] = "30"
+            self.device._attributes[DeviceAttributes.oscillation_mode] = "off"
             self.device.set_attribute(DeviceAttributes.oscillation_mode.value, "both")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
@@ -337,6 +339,7 @@ class TestMideaFADevice:
 
             self.device._attributes[DeviceAttributes.tilting_angle] = "60"
             self.device._attributes[DeviceAttributes.oscillation_mode] = "tilting"
+            self.device._attributes[DeviceAttributes.oscillation_angle] = None
             self.device.set_attribute(DeviceAttributes.oscillation_angle.value, "90")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]
@@ -385,6 +388,7 @@ class TestMideaFADevice:
 
             self.device._attributes[DeviceAttributes.oscillation_angle] = "90"
             self.device._attributes[DeviceAttributes.oscillation_mode] = "oscillation"
+            self.device._attributes[DeviceAttributes.tilting_angle] = None
             self.device.set_attribute(DeviceAttributes.tilting_angle.value, "60")
             mock_build_send.assert_called_once()
             message = mock_build_send.call_args[0][0]

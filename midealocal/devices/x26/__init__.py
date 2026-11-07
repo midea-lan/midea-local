@@ -3,7 +3,7 @@
 import logging
 import math
 from enum import StrEnum
-from typing import Any, ClassVar, Unpack
+from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs, list_translator
@@ -69,6 +69,14 @@ class Midea26Device(MideaDevice):
                 DeviceAttributes.current_temperature: None,
             },
         )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.main_light,
+                DeviceAttributes.night_light,
+                DeviceAttributes.mode,
+                DeviceAttributes.direction,
+            ]
+        )
         self._fields: dict[str, Any] = {}
 
     @staticmethod
@@ -124,14 +132,10 @@ class Midea26Device(MideaDevice):
             },
         )
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea x26 device set attribute."""
-        if attr in [
-            DeviceAttributes.main_light,
-            DeviceAttributes.night_light,
-            DeviceAttributes.mode,
-            DeviceAttributes.direction,
-        ]:
+        if attr in self._settable_attributes:
             message = MessageSet(self._message_protocol_version)
             message.fields = self._fields
             message.main_light = self._attributes[DeviceAttributes.main_light]
@@ -154,6 +158,8 @@ class Midea26Device(MideaDevice):
             elif attr == DeviceAttributes.direction:
                 message.direction = self._convert_to_midea_direction(str(value))
             self.build_send(message)
+            return True
+        return False
 
 
 class MideaAppliance(Midea26Device):

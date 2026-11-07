@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, Unpack
+from typing import Any, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.const.toilet_exceptions import C2_EXCEPTIONS
@@ -58,6 +58,17 @@ class MideaC2Device(MideaDevice):
                 DeviceAttributes.filter_life: None,
             },
         )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.child_lock,
+                DeviceAttributes.sensor_light,
+                DeviceAttributes.foam_shield,
+                DeviceAttributes.water_temp_level,
+                DeviceAttributes.seat_temp_level,
+                DeviceAttributes.dry_level,
+            ]
+        )
         exceptions = C2_EXCEPTIONS.get(str(self.model), {})
         self._max_dry_level: int = exceptions.get("max_dry_level", 3)
         self._max_water_temp_level: int = exceptions.get("max_water_temp_level", 5)
@@ -88,7 +99,8 @@ class MideaC2Device(MideaDevice):
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         return self.update_attributes_from_message(message)
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea C2 device set attribute."""
         message: MessagePower | MessageSet | None = None
         if attr == DeviceAttributes.power:
@@ -106,6 +118,8 @@ class MideaC2Device(MideaDevice):
             setattr(message, attr, value)
         if message:
             self.build_send(message)
+            return True
+        return False
 
 
 class MideaAppliance(MideaC2Device):

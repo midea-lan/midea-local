@@ -360,6 +360,50 @@ class MideaACDevice(MideaClimateDevice):
         # Once 0x7e-derived temperatures are seen, ignore stale C0 temperature
         # fields to avoid brief UI flicker caused by query ordering.
         self._prefer_new_protocol_temperature: bool = False
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.prompt_tone,
+                DeviceAttributes.power,
+                DeviceAttributes.mode,
+                DeviceAttributes.target_temperature,
+                DeviceAttributes.fan_speed,
+                DeviceAttributes.swing_vertical,
+                DeviceAttributes.swing_horizontal,
+                DeviceAttributes.smart_eye,
+                DeviceAttributes.dry,
+                DeviceAttributes.aux_heating,
+                DeviceAttributes.boost_mode,
+                DeviceAttributes.power_saving,
+                DeviceAttributes.sleep_mode,
+                DeviceAttributes.frost_protect,
+                DeviceAttributes.comfort_mode,
+                DeviceAttributes.eco_mode,
+                DeviceAttributes.natural_wind,
+                DeviceAttributes.temp_fahrenheit,
+                DeviceAttributes.screen_display,
+                DeviceAttributes.screen_display_alternate,
+                DeviceAttributes.indirect_wind,
+                DeviceAttributes.breezeless,
+                DeviceAttributes.total_operating_consumption,
+                DeviceAttributes.electrify_time,
+                DeviceAttributes.total_operating_time,
+                DeviceAttributes.current_operating_time,
+                DeviceAttributes.fresh_air_power,
+                DeviceAttributes.fresh_air_fan_speed,
+                DeviceAttributes.fresh_air_mode,
+                DeviceAttributes.fresh_air_1,
+                DeviceAttributes.fresh_air_2,
+                DeviceAttributes.wind_lr_angle,
+                DeviceAttributes.wind_ud_angle,
+                DeviceAttributes.rate_select,
+                DeviceAttributes.out_silent,
+                DeviceAttributes.anion,
+                DeviceAttributes.sound,
+                DeviceAttributes.self_clean,
+                DeviceAttributes.pmv,
+                DeviceAttributes.error_code,
+            ]
+        )
 
     @property
     @override
@@ -1124,7 +1168,8 @@ class MideaACDevice(MideaClimateDevice):
             message = self.make_message_set()
         return message
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea AC device set attribute."""
         # if nat a sensor
         message: (
@@ -1250,6 +1295,8 @@ class MideaACDevice(MideaClimateDevice):
                 self.update_all(
                     {DeviceAttributes.self_clean.value: optimistic_self_clean},
                 )
+            return True
+        return False
 
     @override
     def set_target_temperature(

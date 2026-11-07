@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, Unpack
+from typing import Any, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
@@ -140,6 +140,31 @@ class MideaEDDevice(MideaDevice):
                 DeviceAttributes.regeneration: False,
                 DeviceAttributes.error: None,
             },
+        )
+        self._settable_attributes.extend(
+            [
+                DeviceAttributes.power,
+                DeviceAttributes.child_lock,
+                DeviceAttributes.soften,
+                DeviceAttributes.cl_sterilization,
+                DeviceAttributes.leak_water_protection,
+                DeviceAttributes.water_way,
+                DeviceAttributes.regeneration,
+                DeviceAttributes.water_hardness,
+                DeviceAttributes.flushing_days,
+                DeviceAttributes.timing_regeneration_hour,
+                DeviceAttributes.timing_regeneration_min,
+                DeviceAttributes.salt_setting,
+                DeviceAttributes.leak_water_protection_value,
+                DeviceAttributes.boil_temperature,
+                DeviceAttributes.boiling,
+                DeviceAttributes.child_lock,
+                DeviceAttributes.keep_warm,
+                DeviceAttributes.keep_warm_time,
+                DeviceAttributes.sleep,
+                DeviceAttributes.screen_display,
+                DeviceAttributes.cooling,
+            ]
         )
         if self._is_tea_bar():
             self._tea_bar_cancel_after_dispensing = False
@@ -401,10 +426,11 @@ class MideaEDDevice(MideaDevice):
             )
             raise ValueError(msg)
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea ED device set attribute."""
         if self._set_tea_bar_attribute(attr, value):
-            return
+            return True
         message: MessageNewSet | MessageOldSet | None = None
         if self._use_new_set():
             if attr in [
@@ -426,7 +452,6 @@ class MideaEDDevice(MideaDevice):
         else:
             message = MessageOldSet(self._message_protocol_version)
         if message is not None:
-            self._attributes[attr] = value
             setattr(message, str(attr), value)
             if attr == DeviceAttributes.leak_water_protection_value:
                 current_protection = self._attributes.get(
@@ -459,6 +484,8 @@ class MideaEDDevice(MideaDevice):
                         current_hour,
                     )
             self.build_send(message)
+            return True
+        return False
 
 
 class MideaAppliance(MideaEDDevice):

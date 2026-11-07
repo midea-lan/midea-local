@@ -2,7 +2,7 @@
 
 import logging
 from enum import StrEnum
-from typing import Any, Unpack
+from typing import Any, Unpack, override
 
 from midealocal.const import DeviceType
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs
@@ -87,8 +87,10 @@ class MideaADDevice(MideaDevice):
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         return self.update_attributes_from_message(message)
 
-    def set_attribute(self, attr: str, value: bool | float | str) -> None:
+    @override
+    def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea AD device set attribute."""
+        return False
 
 
 class MideaAppliance(MideaADDevice):
