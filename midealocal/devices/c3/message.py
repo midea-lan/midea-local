@@ -393,6 +393,9 @@ class C3ECOBody(MessageBody):
         self.eco_timer_state = (
             len(body) > data_offset and body[data_offset] & ECO_TIMER_STATE_MASK > 0
         )
+        # same bit MessageSetECO writes; absent byte must not clear the Basic value
+        if len(body) > data_offset:
+            self.eco_mode = self.eco_function_state
 
 
 class C3DisinfectBody(MessageBody):

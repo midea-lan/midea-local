@@ -369,10 +369,11 @@ class TestMessageC3Response:
         assert response.silent_level == C3SilentLevel.SUPER_SILENT.name
 
     @pytest.mark.parametrize(
-        ("body", "eco_function_state", "eco_timer_state"),
+        ("body", "eco_function_state", "eco_timer_state", "eco_mode"),
         [
             pytest.param(
                 bytearray([ListTypes.X07, 0x03, 0x00]),
+                True,
                 True,
                 True,
                 id="eco on, timer on",
@@ -381,18 +382,21 @@ class TestMessageC3Response:
                 bytearray([ListTypes.X07, 0x00, 0x00]),
                 False,
                 False,
+                False,
                 id="eco off, timer off",
             ),
             pytest.param(
                 bytearray([ListTypes.X07, 0x01, 0x00]),
                 True,
                 False,
+                True,
                 id="eco on, timer off",
             ),
             pytest.param(
                 bytearray([ListTypes.X07, 0x00]),
                 False,
                 False,
+                None,
                 id="eco missing, timer missing",
             ),
         ],
@@ -402,6 +406,7 @@ class TestMessageC3Response:
         body: bytearray,
         eco_function_state: bool,
         eco_timer_state: bool,
+        eco_mode: bool | None,
     ) -> None:
         """Test message ECO response."""
         self.header[-1] = MessageType.query
@@ -411,6 +416,7 @@ class TestMessageC3Response:
         assert response.eco_function_state is eco_function_state
         assert hasattr(response, "eco_timer_state")
         assert response.eco_timer_state is eco_timer_state
+        assert getattr(response, "eco_mode", None) is eco_mode
 
     def test_message_disinfect_response(self) -> None:
         """Test message disinfect response."""
