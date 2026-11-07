@@ -44,7 +44,8 @@ QUERY_TIMEOUT = (
 )
 # A single timeout during the initial protocol probe blacklists the command for
 # the whole connection, even when it was just a slow/not-yet-ready device rather
-# than a genuinely unsupported protocol. Give it one more try before giving up on it.
+# than a genuinely unsupported protocol. Give it one more try before giving up on it,
+# until the device has answered a probe query on this connection.
 QUERY_PROBE_RETRIES = 2
 
 _LOGGER = logging.getLogger(__name__)
@@ -253,6 +254,7 @@ class MideaDevice:
         self._message_protocol_version: int = 0
         self._updates: list[Callable[[dict[str, Any]], None]] = []
         self._unsupported_protocol: list[str] = []
+        self._probe_answered = False
         self._is_run: bool = False
         self._available = False
         self._appliance_query = True
@@ -574,10 +576,12 @@ class MideaDevice:
             while True:
                 try:
                     await self._wait_for_query_response()
+                    self._probe_answered = True
                     break
                 except TimeoutError:
                     attempt += 1
-                    if attempt >= QUERY_PROBE_RETRIES:
+                    # an awake device ignoring a query won't answer a retry either
+                    if attempt >= QUERY_PROBE_RETRIES or self._probe_answered:
                         raise
                     # retry once before blacklisting: a single timeout
                     # during the probe can be a slow device, not proof
@@ -924,6 +928,7 @@ class MideaDevice:
     async def close_socket(self) -> None:
         """Close socket."""
         self._unsupported_protocol = []
+        self._probe_answered = False
         # Re-arm the appliance query too. It is cleared in pre_process_message
         # and was never set back, so a reconnected device would skip protocol
         # detection and re-probe with build_query() alone.
