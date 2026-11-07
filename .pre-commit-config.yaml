@@ -72,6 +72,6 @@ repos:
           - platformdirs==4.14.5
           - pycryptodome==4.2.0
           - pytest==9.2.0
-          - types-aiofiles==25.1.0.20260518
+          - types-aiofiles==25.1.0.20261107
           - types-defusedxml==0.7.0.20260504
           - typing-extensions==4.16.0
