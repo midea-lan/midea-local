@@ -1095,33 +1095,66 @@ class TestMideaDevice:
         assert len(self.device._unsupported_protocol) == 1
         assert build_send.call_count == 2
 
+    @pytest.mark.parametrize(
+        "first_reply",
+        [
+            pytest.param(None, id="success"),
+            pytest.param(ResponseException(), id="error_reply"),
+        ],
+    )
     @pytest.mark.asyncio
-    async def test_refresh_status_no_retry_after_device_answered(self) -> None:
+    async def test_refresh_status_no_retry_after_device_answered(
+        self,
+        first_reply: ResponseException | None,
+    ) -> None:
         """Once the device answered a probe query, a timeout is not retried."""
         self.device._appliance_query = False
         answered_cmd = MagicMock()
         ignored_cmd = MagicMock()
+
+        class _OkQuery:
+            """Distinct class, so the blacklisted MagicMock name doesn't skip it."""
+
+        ok_cmd = MagicMock(spec=_OkQuery)
         with (
             patch.object(
                 self.device,
                 "build_query",
-                return_value=[answered_cmd, ignored_cmd],
+                return_value=[answered_cmd, ignored_cmd, ok_cmd],
             ),
             patch.object(self.device, "build_send", return_value=None) as build_send,
             patch.object(
                 self.device,
                 "_wait_for_query_response",
-                new=AsyncMock(side_effect=[None, TimeoutError()]),
+                new=AsyncMock(side_effect=[first_reply, TimeoutError(), None]),
             ),
         ):
             await self.device.refresh_status(True)
 
         assert self.device._unsupported_protocol == [ignored_cmd.__class__.__name__]
-        assert build_send.call_count == 2
+        assert build_send.call_count == 3
 
-        # a new connection must get the retry back
-        await self.device.close_socket()
+    @pytest.mark.asyncio
+    async def test_connect_resets_probe_answered(self) -> None:
+        """A new connection must get the probe retry back."""
+        # left over by a probe that resumed after an external close_socket()
+        self.device._probe_answered = True
+        reader, writer = make_stream_pair([b""])
+        with (
+            patch(
+                "midealocal.device.asyncio.open_connection",
+                AsyncMock(return_value=(reader, writer)),
+            ),
+            patch.object(self.device, "authenticate", new=AsyncMock()),
+            patch.object(self.device, "refresh_status", new=AsyncMock()),
+        ):
+            assert await self.device.connect(check_protocol=True) is True
         assert self.device._probe_answered is False
+        task, self.device._reader_task = self.device._reader_task, None
+        assert task is not None
+        task.cancel()
+        with contextlib.suppress(BaseException):
+            await task
 
     @pytest.mark.asyncio
     async def test_refresh_status_skips_blacklisted_protocol(self) -> None:

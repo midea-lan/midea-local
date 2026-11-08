@@ -396,6 +396,9 @@ class MideaDevice:
     async def connect(self, check_protocol: bool = False) -> bool:
         """Connect to device."""
         connected = False
+        # per connection: a probe resuming after an external close_socket()
+        # must not carry its answer into this one
+        self._probe_answered = False
         try:
             _LOGGER.debug(
                 "[%s] Connecting to %s:%s",
@@ -579,6 +582,10 @@ class MideaDevice:
                     await self._wait_for_query_response()
                     self._probe_answered = True
                     break
+                except ResponseException:
+                    # an error reply still proves the device is awake
+                    self._probe_answered = True
+                    raise
                 except TimeoutError:
                     attempt += 1
                     # an awake device ignoring a query won't answer a retry either
@@ -929,7 +936,6 @@ class MideaDevice:
     async def close_socket(self) -> None:
         """Close socket."""
         self._unsupported_protocol = []
-        self._probe_answered = False
         # Re-arm the appliance query too. It is cleared in pre_process_message
         # and was never set back, so a reconnected device would skip protocol
         # detection and re-probe with build_query() alone.
