@@ -1,5 +1,24 @@
 # Changelog
 
+## [15.1.0](https://github.com/midea-lan/midea-local/compare/v15.0.0...v15.1.0) (2026-11-09)
+
+
+### Features
+
+* **ac:** retrive temperature step capability from b5_temperature ([#1009](https://github.com/midea-lan/midea-local/issues/1009)) ([f7444fd](https://github.com/midea-lan/midea-local/commit/f7444fd2ee9ce6a44c81e89ee1b7dd6e78d9bee6))
+
+
+### Bug Fixes
+
+* **ac:** decode 00000Q1F realtime power as binary ([#1034](https://github.com/midea-lan/midea-local/issues/1034)) ([b911dc9](https://github.com/midea-lan/midea-local/commit/b911dc930f5557bd1471847fcf46e2f50491926b))
+* **ac:** enable display control from B1 when B5 omits it ([#1037](https://github.com/midea-lan/midea-local/issues/1037)) ([c38af4f](https://github.com/midea-lan/midea-local/commit/c38af4f56b695f89b1e88f457b6018579900e548))
+* **ac:** pick power format from B5 energy_bcd. ([#998](https://github.com/midea-lan/midea-local/issues/998)) ([0ad6178](https://github.com/midea-lan/midea-local/commit/0ad61788a076c21bec35232cc8eb744310448c2d))
+* **b0:** keep seconds in time_remaining ([#1020](https://github.com/midea-lan/midea-local/issues/1020)) ([298b241](https://github.com/midea-lan/midea-local/commit/298b241e14499d3b850263ed0c19b057001a3c92))
+* **c3:** update eco_mode from the ECO query reply ([#1031](https://github.com/midea-lan/midea-local/issues/1031)) ([039f908](https://github.com/midea-lan/midea-local/commit/039f908f64b2920c1798244889f75743fea398c9))
+* **deps:** update dependency platformdirs to v4.14.5 ([#1024](https://github.com/midea-lan/midea-local/issues/1024)) ([9c88728](https://github.com/midea-lan/midea-local/commit/9c88728f7d578b9e6da2be2976071f186ab9560e))
+* **device:** only retry probe queries until the device has answered ([#1032](https://github.com/midea-lan/midea-local/issues/1032)) ([70d4d9f](https://github.com/midea-lan/midea-local/commit/70d4d9f5b571d1e189f6909a6e742188db18a2a8))
+* settable attributes changed before receiving device respose to avoid race conditions ([#1014](https://github.com/midea-lan/midea-local/issues/1014)) ([c188452](https://github.com/midea-lan/midea-local/commit/c1884523c9879335ee9ea59819616a0dc3a11af2))
+
 ## [15.0.0](https://github.com/midea-lan/midea-local/compare/v14.0.0...v15.0.0) (2026-10-29)
 
 
