@@ -872,15 +872,21 @@ class MideaACDevice(MideaClimateDevice):
         )
 
     def _update_capabilities(self, message: MessageACResponse) -> dict[str, Any]:
-        """Accumulate decoded B5 capability flags from a B5 response.
+        """Accumulate decoded capability flags from B5 and B1 responses.
 
         Returns a status delta so a capability-only frame (no DeviceAttributes
         changed) still reaches update_all(); callers that derive state from
         `capabilities` would otherwise never be notified of the change.
         """
-        if not hasattr(message, "capabilities"):
-            return {}
-        new_capabilities = message.capabilities
+        new_capabilities = dict(getattr(message, "capabilities", {}))
+        if (
+            message.body_type == ListTypes.B1
+            and getattr(message, "screen_display_new", False)
+            and "display_control" not in self._capabilities
+        ):
+            # 00000Q11/Q16/Q18 (subtype 44204) omit b5_screen_display but report
+            # screen_display in B1 and accept the 0x41 toggle. Explicit B5 wins.
+            new_capabilities["display_control"] = True
         if all(
             self._capabilities.get(key) == value
             for key, value in new_capabilities.items()
