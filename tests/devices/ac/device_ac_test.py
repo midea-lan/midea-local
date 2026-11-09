@@ -53,6 +53,23 @@ _Q11_B5_REPLIES = (
         "01090001010a000101480001012402010167000102e30001010000cf9b",
     ),
 )
+# Captured from a 00000Q18 split unit (subtype 44204): neither B5 reply carries
+# b5_screen_display, but its B1 reply reports screen_display (0x17 = 100) and the
+# unit accepts the 0x41 display toggle.
+_Q18_B5_REPLIES = (
+    bytes.fromhex(
+        "aa3dac00000000000203b50a12020101180001001402010015020101160201001a0201"
+        "01100201011f020100250207203c203c203c00400001000100bd46",
+    ),
+    bytes.fromhex(
+        "aa2fac00000000000203b5081e0201011302010022020100190201003900010142000101"
+        "090001010a00010100006de7",
+    ),
+)
+_Q18_B1_REPLY = bytes.fromhex(
+    "aa3aac00000000000203b10a420000010118000000150000001700000164330000004b0000"
+    "000a000001000900000100cd0000002c000000007a67",
+)
 
 
 class TestMideaACDevice:
@@ -861,6 +878,48 @@ class TestMideaACDevice:
         self.device.process_message(self._response(second))
         assert DeviceAttributes.anion in self.device.attributes
         assert DeviceAttributes.rate_select not in self.device.attributes
+
+    def test_display_control_from_b1_when_b5_omits_it(self) -> None:
+        """Test a B1 screen_display reply enables display control B5 left out."""
+        for frame in _Q18_B5_REPLIES:
+            self.device.process_message(frame)
+        assert DeviceAttributes.screen_display not in self.device.attributes
+
+        self.device.process_message(_Q18_B1_REPLY)
+
+        assert DeviceAttributes.screen_display in self.device.attributes
+
+    def test_display_control_not_inferred_from_b1_without_value(self) -> None:
+        """Test a B1 reply listing screen_display with no value enables nothing."""
+        body = bytearray([0xB1, 0x01])
+        body += bytearray([0x17, 0x00, 0x00, 0x00])  # screen_display, length 0
+
+        self.device.process_message(self._response(body))
+
+        assert DeviceAttributes.screen_display not in self.device.attributes
+
+    def test_display_control_not_inferred_from_b0_set_reply(self) -> None:
+        """Test a B0 set reply carrying screen_display enables nothing."""
+        # Captured 00000Q16 reply rejecting a screen_display set (status 0x10).
+        frame = bytes.fromhex("aa18ac00000000000202b0021a00000100170010016400a43b")
+
+        self.device.process_message(frame)
+
+        assert DeviceAttributes.screen_display not in self.device.attributes
+
+    @pytest.mark.parametrize("b5_first", [True, False])
+    def test_b5_display_unsupported_wins_over_b1(self, b5_first: bool) -> None:
+        """Test an explicit B5 'no display control' is kept whatever arrives first."""
+        body = bytearray([0xB5, 0x01])
+        body += bytearray([0x24, 0x02, 0x01, 0])  # b5_screen_display: unsupported
+        frames = [self._response(body), _Q18_B1_REPLY]
+        if not b5_first:
+            frames.reverse()
+
+        for frame in frames:
+            self.device.process_message(frame)
+
+        assert DeviceAttributes.screen_display not in self.device.attributes
 
     def test_process_message(self) -> None:
         """Test process message."""
