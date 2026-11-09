@@ -2,3 +2,7 @@
 	path = lua
 	url = https://github.com/midea-lan/midea-lua-lib.git
 	branch = main
+[submodule "plugin"]
+	path = plugin
+	url = https://github.com/midea-lan/midea-plugin.git
+	branch = main
