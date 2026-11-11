@@ -1109,6 +1109,13 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             mock_set_level.assert_called_with(logging.WARNING)
             self.namespace.func.assert_called_once()
 
+    def test_run_without_session(self) -> None:
+        """Test run does not create a session only to close it."""
+        with patch("logging.basicConfig"), patch("logging.getLogger"):
+            self.cli.run(self.namespace)
+        self.namespace.func.assert_called_once()
+        assert not hasattr(self.cli, "session")
+
     def test_run_log_file(self) -> None:
         """Test run also writes logs to a file when --log-file is set."""
         mock_logger = MagicMock()
@@ -1196,6 +1203,25 @@ class TestMideaCLI(IsolatedAsyncioTestCase):
             # password passed on command line: config value is not applied
             assert namespace.password == "argpass"
             assert namespace.func.__name__ == "discover"
+
+    def test_main_without_config_file(self) -> None:
+        """Test main entry keeps command line values when no config file exists."""
+        with (
+            TemporaryDirectory() as tmpdir,
+            patch.object(sys, "argv", ["midealocal", "discover", "-p", "argpass"]),
+            patch(
+                "midealocal.cli.get_config_file_path",
+                return_value=Path(tmpdir) / "missing.json",
+            ),
+            patch.object(MideaCLI, "run") as mock_run,
+            pytest.raises(SystemExit) as exit_info,
+        ):
+            main()
+
+        assert exit_info.value.code == 0
+        namespace = mock_run.call_args[0][0]
+        assert namespace.username is None
+        assert namespace.password == "argpass"
 
     def test_main_module_entry(self) -> None:
         """Test the __main__ guard when running the module as a script."""
