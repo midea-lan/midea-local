@@ -942,9 +942,56 @@ class TestEDMessageBodyFF:
         assert not hasattr(message, "child_lock")
         assert not hasattr(message, "power")
 
+    def test_ed_message_ff_skips_unknown_tlv(self) -> None:
+        """An unknown TLV is skipped and the following TLV still decodes."""
+        body = bytearray(
+            [
+                0xFF,  # body_type
+                0x01,
+                0x07,  # category
+                0x99,  # part 1, offset+1,  attr bit1, unknown attr 0x099
+                0x40,  # part 1, offset+2,  attr bit2 and length bit
+                0x00,
+                0x00,
+                0x01,
+                0x01,
+                0x00,  # part 2, offset+1,  attr bit1, test 0x00/CHILD_LOCK
+                0x40,  # part 2, offset+2,  attr bit2 and length bit
+                0x00,
+                0x00,
+                0x01,  # part 2, offset+5, child_lock
+                0x01,  # part 2, offset+6, power
+                0x00,
+            ],
+        )
+
+        message = EDMessageBodyFF(body=body)
+        assert message.child_lock is True
+        assert message.power is True
+
 
 class TestMessageEDResponse:
     """Test Message ED Response."""
+
+    @pytest.mark.parametrize(
+        ("message_type", "body_type"),
+        [
+            pytest.param(MessageType.query, 0x99, id="unknown_body_type"),
+            pytest.param(MessageType.notify2, 0x01, id="notify2"),
+        ],
+    )
+    def test_unparsed_response(
+        self,
+        message_type: MessageType,
+        body_type: int,
+    ) -> None:
+        """Responses the ED parser does not handle keep the raw body."""
+        header = bytearray([0xAA, 0x00, 0xED, 0, 0, 0, 0, 0, 0x01, message_type])
+        body = bytearray(40)
+        body[0] = body_type
+        body[2] = 0x01
+        message = MessageEDResponse(bytes(header + body))
+        assert not hasattr(message, "power")
 
     def test_tea_bar_new_set_status_acknowledgement(self) -> None:
         """Parse the real subtype-395 X15 acknowledgement after stopping heat."""

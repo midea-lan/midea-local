@@ -293,3 +293,14 @@ def test_x31_subtype5_target_temperature_low_byte_ff() -> None:
 
     assert updates["target_temperature"] == 255
     assert device.attributes[DeviceAttributes.target_temperature] == 255
+
+
+def test_x31_unavailable_upper_temperature_uses_underside() -> None:
+    """Fall back to the underside probe when the upper one is unavailable."""
+    device = make_device("0TVN50R6", 0)
+    response = bytearray(x31_response(0x41))
+    response[10 + 11] = 0xFF
+
+    updates = device.process_message(bytes(response))
+
+    assert updates["current_temperature"] == 0x32

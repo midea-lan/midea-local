@@ -209,6 +209,12 @@ class TestCDB1MessageBody:
         assert parsed.support_heat_recovery is True
         assert parsed.heat_recovery_status is True
 
+    def test_unknown_tlv_is_ignored(self) -> None:
+        """A successful TLV with an unknown tag publishes nothing."""
+        parsed = CDB1MessageBody(bytearray.fromhex("b1080000990101"))
+        assert not hasattr(parsed, "maintenance_reminder")
+        assert not hasattr(parsed, "new_version_water_heater")
+
     @pytest.mark.parametrize(
         "body",
         [
@@ -512,6 +518,12 @@ class TestCDSterilizeSetBody:
         body = self._make_body(sterilize_on=True, byte3=4)
         body.append(67)
         assert CDSterilizeSetBody(body).disinfection_temperature == 67.0
+
+    def test_extended_temperature_out_of_range_falls_back_to_byte3(self) -> None:
+        """An unusable seventh byte falls back to the body[3] temperature echo."""
+        body = self._make_body(sterilize_on=True, byte3=132)
+        body.append(0)
+        assert CDSterilizeSetBody(body).disinfection_temperature == 66.0
 
     def test_temp_echo_on_keeps_raw_auto_sterilize_week(self) -> None:
         """body[3]=132 when sterilize ON also remains available as raw week."""
@@ -1032,4 +1044,11 @@ class TestMessageCDResponse:
         body = bytearray(63)
         body[0] = 0x07
         response = MessageCDResponse(_build_response(MessageType.set, body))
+        assert getattr(response, "power", None) is None
+
+    def test_unparsed_notify1(self) -> None:
+        """Notify1 responses are not decoded."""
+        response = MessageCDResponse(
+            _build_response(MessageType.notify1, self._general_body()),
+        )
         assert getattr(response, "power", None) is None
