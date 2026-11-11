@@ -50,6 +50,13 @@ def _c1_power_response(energy_data: bytearray) -> bytes:
             id="00000Q16",
         ),
         pytest.param(
+            "00000Q1B",
+            bytearray.fromhex("000033ca 00000000 00000000 000032"),
+            132.58,
+            5.0,
+            id="00000Q1B",
+        ),
+        pytest.param(
             "00000Q1F",
             bytearray.fromhex("0000012c 00000000 00000000 002422"),
             3.0,
