@@ -159,6 +159,11 @@ class TestMessageNewProtocolSet:
         expected_body = bytearray(b"\xb0\x01[\x00\x01\x01")
         assert msg_set.body[:-2] == expected_body
 
+    def test_new_protocol_set_body_without_light(self) -> None:
+        """Test new protocol set body with no param to send."""
+        msg_set = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
+        assert msg_set.body[:-2] == bytearray(b"\xb0\x00")
+
 
 class TestMessageA1Response:
     """Test Message A1 Response."""
@@ -290,3 +295,18 @@ class TestMessageA1Response:
         assert hasattr(response, "current_temperature")
         assert response.current_temperature == 25
         assert hasattr(response, "swing")
+
+    def test_a1_new_protocol_response_without_light(self) -> None:
+        """Test a new protocol response that does not carry the light param."""
+        header = bytearray([0xAA, 0x00, 0xA1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03])
+        body = bytearray([0xB0, 0x01, 0x14, 0x00, 0x00, 0x01, 0x01, 0x00])
+        response = MessageA1Response(header + body)
+        assert not hasattr(response, "light")
+
+    def test_a1_notify2_non_a0_body_is_not_parsed(self) -> None:
+        """Test a notify2 message without the A0 body type keeps the raw body."""
+        header = bytearray([0xAA, 0x00, 0xA1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x05])
+        body = bytearray(21)
+        body[1] = 0x01
+        response = MessageA1Response(header + body)
+        assert not hasattr(response, "power")
