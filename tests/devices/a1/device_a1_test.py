@@ -258,10 +258,11 @@ class TestMideaA1Device:
         ],
     )
     def test_set_attribute_unknown_value(self, attr: DeviceAttributes) -> None:
-        """Test an unknown value for a mapped attribute is not applied."""
+        """Test an unknown value for a mapped attribute is not applied or sent."""
         attributes = self.device.attributes.copy()
-        with patch.object(self.device, "build_send"):
+        with patch.object(self.device, "build_send") as mock_build_send:
             self.device.set_attribute(attr, "unknown")
+        mock_build_send.assert_not_called()
         assert self.device.attributes == attributes
 
     def test_reset_filter(self) -> None:
