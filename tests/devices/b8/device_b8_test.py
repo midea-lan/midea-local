@@ -25,6 +25,7 @@ from midealocal.devices.b8.message import (
     B8ErrorRebootDescription,
     B8ErrorWarningDescription,
     MessageQuery,
+    MessageSet,
 )
 from midealocal.message import MessageType
 
@@ -128,6 +129,29 @@ class TestMideaB8Device:
 
             self.device.set_attribute(DeviceAttributes.water_level.value, "invalid")
             mock_build_send.assert_not_called()
+
+    def test_set_attribute_unsupported_resends_current_config(self) -> None:
+        """Test an attribute without a set field resends the current config."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(DeviceAttributes.work_status.value, "charge")
+
+        msg = mock_build_send.call_args.args[0]
+        assert isinstance(msg, MessageSet)
+        assert (
+            msg.clean_mode
+            == B8CleanMode[self.device.attributes[DeviceAttributes.clean_mode].upper()]
+        )
+        assert (
+            msg.fan_level
+            == B8FanLevel[self.device.attributes[DeviceAttributes.fan_level].upper()]
+        )
+        assert (
+            msg.water_level
+            == B8WaterLevel[
+                self.device.attributes[DeviceAttributes.water_level].upper()
+            ]
+        )
+        assert msg.voice_volume == self.device.attributes[DeviceAttributes.voice_volume]
 
     def test_set_work_mode(self) -> None:
         """Test set work mode."""

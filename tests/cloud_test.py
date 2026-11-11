@@ -255,6 +255,34 @@ async def test_smarthome_account_routing_falls_back(
         ),
         pytest.param(
             "SmartHome",
+            [
+                _RESPONSES["msmartcloud_reroute.json"],
+                _RESPONSES["cloud_login_id.json"],
+                _RESPONSES["cloud_invalid_response.json"],
+            ],
+            True,
+            id="login-rejected",
+        ),
+        pytest.param(
+            "美的美居",
+            [
+                _RESPONSES["cloud_login_id.json"],
+                _RESPONSES["cloud_invalid_response.json"],
+            ],
+            True,
+            id="login-rejected-meiju",
+        ),
+        pytest.param(
+            "Midea Air",
+            [
+                _RESPONSES["mideaaircloud_login_id.json"],
+                b'{"errorCode": 10}',
+            ],
+            True,
+            id="login-rejected-legacy-appsmb",
+        ),
+        pytest.param(
+            "SmartHome",
             [_RESPONSES["msmartcloud_reroute.json"], *[ClientConnectionError()] * 3],
             False,
             id="unreachable",
@@ -292,6 +320,26 @@ async def test_login_returns_false(
     with caplog.at_level(logging.WARNING, logger="midealocal.cloud"):
         assert not await cloud.login()
     assert ("rejected the request" in caplog.text) is warns_rejected
+
+
+@pytest.mark.asyncio
+async def test_msmartcloud_download_lua_without_model_number() -> None:
+    """download_lua omits modelNumber from the luaGet request when not given."""
+    session = Mock()
+    response = Mock()
+    response.read = AsyncMock(return_value=_RESPONSES["cloud_invalid_response.json"])
+    session.request = AsyncMock(return_value=response)
+    cloud = get_midea_cloud(
+        "SmartHome",
+        session=session,
+        account="account",
+        password="password",
+    )
+    with TemporaryDirectory() as tmpdir:
+        assert await cloud.download_lua(tmpdir, 0xAC, "00000000") is None
+    payload = json.loads(session.request.await_args.kwargs["data"])
+    assert "luaGet" in session.request.await_args.args[1]
+    assert "modelNumber" not in payload
 
 
 @pytest.mark.asyncio

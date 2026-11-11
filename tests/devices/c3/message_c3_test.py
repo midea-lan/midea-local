@@ -418,6 +418,14 @@ class TestMessageC3Response:
         assert response.eco_timer_state is eco_timer_state
         assert getattr(response, "eco_mode", None) is eco_mode
 
+    def test_message_unknown_body_response(self) -> None:
+        """Test a query reply with an unknown body type is not parsed."""
+        self.header[-1] = MessageType.query
+        body = bytearray([0x99, 0x03, 0x05, 0x00])
+        response = MessageC3Response(bytes(self.header + body))
+        assert response.body_type == 0x99
+        assert not hasattr(response, "disinfect")
+
     def test_message_disinfect_response(self) -> None:
         """Test message disinfect response."""
         self.header[-1] = MessageType.query

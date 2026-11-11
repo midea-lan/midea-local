@@ -329,6 +329,30 @@ class TestMideaEDDevice:
         assert tea_bar.attributes[DeviceAttributes.boil_temperature] == 80
         assert tea_bar.attributes[DeviceAttributes.boiling] is True
 
+    def test_tea_bar_unrelated_status_leaves_control_entities(self) -> None:
+        """Keep boil controls unchanged when a reply reports neither value."""
+        tea_bar = MideaEDDevice(
+            name="Tea Bar",
+            device_id=2,
+            ip_address="192.0.2.1",
+            port=6444,
+            token=TEST_AUTH_VALUE,
+            key="BB",
+            device_protocol=ProtocolVersion.V3,
+            model="63000622",
+            subtype=395,
+        )
+        header = bytearray([0xAA, 0x00, 0xED, 0, 0, 0, 0, 0, 0x01, 0x03])
+        body = bytearray(40)
+        body[0] = 0x99
+
+        status = tea_bar.process_message(bytes(header + body))
+
+        assert DeviceAttributes.boil_temperature not in status
+        assert DeviceAttributes.boiling not in status
+        assert tea_bar.attributes[DeviceAttributes.boil_temperature] is None
+        assert tea_bar.attributes[DeviceAttributes.boiling] is False
+
     def test_tea_bar_heating_switch_uses_official_tea_heat_command(self) -> None:
         """Start at 100 degrees and stop without re-queuing that target."""
         tea_bar = MideaEDDevice(
@@ -847,6 +871,33 @@ class TestMideaEDDeviceSoftWater:
             sent_message = mock_build_send.call_args[0][0]
             assert sent_message.timing_regeneration_min == 45
             assert sent_message.timing_regeneration_hour == 5
+
+    @pytest.mark.parametrize(
+        ("attr", "partner"),
+        [
+            pytest.param(
+                DeviceAttributes.timing_regeneration_hour,
+                DeviceAttributes.timing_regeneration_min,
+                id="hour",
+            ),
+            pytest.param(
+                DeviceAttributes.timing_regeneration_min,
+                DeviceAttributes.timing_regeneration_hour,
+                id="min",
+            ),
+        ],
+    )
+    def test_set_attribute_timing_regeneration_without_reported_partner(
+        self,
+        attr: DeviceAttributes,
+        partner: DeviceAttributes,
+    ) -> None:
+        """Test a timing write sends only its own value before one is reported."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(attr, 3)
+        sent_message = mock_build_send.call_args[0][0]
+        assert getattr(sent_message, str(attr)) == 3
+        assert getattr(sent_message, str(partner)) is None
 
     def test_set_attribute_leak_water_protection_value_couples_switch(self) -> None:
         """Test setting leak_water_protection_value also sends current switch state."""
