@@ -265,10 +265,14 @@ class TestMideaB0Device:
         )
         assert new_status == {}
 
-    def test_process_message_short_body(self) -> None:
+    @pytest.mark.parametrize(
+        "body_type",
+        [pytest.param(0x01, id="01"), pytest.param(0x31, id="31")],
+    )
+    def test_process_message_short_body(self, body_type: int) -> None:
         """Test process message with a too short body updates nothing."""
         body = bytearray(12)
-        body[0] = 0x01
+        body[0] = body_type
         new_status = self.device.process_message(
             _build_message(MessageType.query, body),
         )
