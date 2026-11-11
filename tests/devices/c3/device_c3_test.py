@@ -169,6 +169,12 @@ class TestMideaC3Device:
                 C3SilentLevel.SILENT.name.lower(),
             )
 
+    def test_set_attribute_unknown(self) -> None:
+        """Test an attribute without a set command sends nothing."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute("unknown", True)
+        mock_build_send.assert_not_called()
+
     def test_build_query(self) -> None:
         """Test build query."""
         queries = self.device.build_query()
