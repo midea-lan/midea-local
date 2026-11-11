@@ -94,6 +94,13 @@ class TestCloudSecurity:
         encrypted = security.aes_encrypt(b"hello world")
         assert security.aes_decrypt(encrypted) == "hello world"
 
+    def test_aes_encrypt_decrypt_instance_bytes_keys(self) -> None:
+        """Test AES CBC round trip with instance keys set from bytes."""
+        security = CloudSecurity("login_key", None, None)
+        security.set_aes_keys(b"0123456789abcdef", b"fedcba9876543210")
+        encrypted = security.aes_encrypt(b"hello world")
+        assert security.aes_decrypt(encrypted) == "hello world"
+
     def test_aes_ecb_with_fixed_key(self) -> None:
         """Test AES ECB round trip with a fixed key and no IV."""
         security = CloudSecurity(
@@ -280,6 +287,22 @@ class TestLocalSecurity:
         assert incomplete == b""
         assert self.security._request_count == 1
         assert self.security._response_count == 0
+
+    def test_decode_8370_encrypted_no_padding(self) -> None:
+        """Test decoding an encrypted 8370 message that needs no padding."""
+        self._authenticate()
+        data = bytes(range(14))
+        header = bytes([0x83, 0x70, 0x00, 46, 0x20, MSGTYPE_ENCRYPTED_REQUEST])
+        plain = b"\x00\x05" + data
+        packet = (
+            header
+            + self.security.aes_cbc_encrypt(plain, self.security._tcp_key)
+            + sha256(header + plain).digest()
+        )
+        packets, incomplete = self.security.decode_8370(packet)
+        assert packets == [data]
+        assert incomplete == b""
+        assert self.security._response_count == 5
 
     def test_encode_8370_request_count_rollover(self) -> None:
         """Test the request count rolls over at the maximum value."""
