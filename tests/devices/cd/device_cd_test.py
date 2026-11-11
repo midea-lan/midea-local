@@ -122,6 +122,17 @@ class TestMideaCDDevice:
             assert msg.body[4] != 0  # target present
             assert msg.body[23] == 70  # max_ts
 
+    def test_set_power_without_max_temperature_keeps_default_max_ts(self) -> None:
+        """Plain SET keeps the default tsMax when none was reported."""
+        self.device._attributes[DeviceAttributes.max_temperature] = None
+
+        with patch.object(self.device, "build_send") as mock_send:
+            self.device.set_attribute(DeviceAttributes.power.value, True)
+
+        msg = mock_send.call_args[0][0]
+        assert msg.max_ts == 65
+        assert msg.body[23] == 65
+
     def test_set_target_temperature_body_length(self) -> None:
         """set_temperature builds the 22-byte new-protocol body (#468)."""
         # RSJRAC07 uses the new (raw °C) Lua protocol — matches issue #468.
