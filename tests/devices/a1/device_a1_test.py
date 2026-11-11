@@ -165,6 +165,30 @@ class TestMideaA1Device:
             assert not new_status[DeviceAttributes.tank_full.value]
             assert self.device.capabilities == {"pump": False}
 
+    def test_process_message_new_protocol_light_only(self) -> None:
+        """Test a light-only new protocol reply changes no attribute."""
+        header = bytearray([0xAA, 0x00, 0xA1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03])
+        body = bytearray([0xB0, 0x01, 0x5B, 0x00, 0x00, 0x01, 0x01, 0x00])
+        attributes = self.device.attributes.copy()
+        assert self.device.process_message(bytes(header + body)) == {
+            "capabilities": {},
+        }
+        assert self.device.attributes == attributes
+
+    def test_process_message_repeated_keeps_tank_full(self) -> None:
+        """Test tank_full is only reported when it changes."""
+        header = bytearray([0xAA, 0x00, 0xA1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03])
+        body = bytearray(21)
+        body[1] = 0x01  # power on
+        body[10] = 60  # tank
+        body[15] = 50  # water level set
+        message = bytes(header + body)
+        first = self.device.process_message(message)
+        assert first[DeviceAttributes.tank_full.value] is True
+        second = self.device.process_message(message)
+        assert DeviceAttributes.tank_full.value not in second
+        assert self.device.attributes[DeviceAttributes.tank_full] is True
+
     def test_build_query(self) -> None:
         """Test build query."""
         queries = self.device.build_query()
@@ -224,6 +248,22 @@ class TestMideaA1Device:
 
             self.device.set_attribute(DeviceAttributes.pump, True)
             mock_build_send.assert_called()
+
+    @pytest.mark.parametrize(
+        "attr",
+        [
+            pytest.param(DeviceAttributes.mode, id="mode"),
+            pytest.param(DeviceAttributes.fan_speed, id="fan_speed"),
+            pytest.param(DeviceAttributes.water_level_set, id="water_level_set"),
+        ],
+    )
+    def test_set_attribute_unknown_value(self, attr: DeviceAttributes) -> None:
+        """Test an unknown value for a mapped attribute is not applied or sent."""
+        attributes = self.device.attributes.copy()
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute(attr, "unknown")
+        mock_build_send.assert_not_called()
+        assert self.device.attributes == attributes
 
     def test_reset_filter(self) -> None:
         """Test reset sends one pulse without changing cached attributes."""

@@ -214,7 +214,8 @@ class MideaA1Device(MideaDevice):
             ]:
                 setattr(message, str(attr), value)
                 changed = True
-            self.build_send(message)
+            if changed:
+                self.build_send(message)
         return changed
 
     def reset_filter(self) -> None:
