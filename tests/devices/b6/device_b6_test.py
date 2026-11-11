@@ -110,11 +110,22 @@ class TestMideaB6Device:
         assert self.device.attributes[DeviceAttributes.oilcup_full] is True
         assert self.device.attributes[DeviceAttributes.cleaning_reminder] is False
 
-    def test_unexpected_response(self) -> None:
+    @pytest.mark.parametrize(
+        ("message_type", "body_type"),
+        [
+            pytest.param(MessageType.notify2, 0x11, id="notify2"),
+            pytest.param(MessageType.notify1, 0x99, id="notify1_unknown_body"),
+        ],
+    )
+    def test_unexpected_response(
+        self,
+        message_type: MessageType,
+        body_type: int,
+    ) -> None:
         """Test unexpected response."""
-        body = bytearray([0x11, 0x01, 0x00])
+        body = bytearray([body_type, 0x01, 0x00])
         new_status = self.device.process_message(
-            _build_message(0x01, MessageType.notify2, body),
+            _build_message(0x01, message_type, body),
         )
         assert new_status == {}
 
