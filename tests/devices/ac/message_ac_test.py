@@ -1864,6 +1864,24 @@ class TestMessageACResponse:
         response = MessageACResponse(self.header + body)
         assert not hasattr(response, "power")
 
+    def test_message_query_bb_unknown_subprotocol(self) -> None:
+        """Test a BB body with an unknown data type is not parsed further."""
+        self.header[9] = 0x03
+        body = bytearray(100)
+        body[:6] = bytearray([0xBB, 0, 0, 0, 0, 0x99])
+        response = MessageACResponse(self.header + body)
+        assert response.used_subprotocol is True
+        assert not hasattr(response, "power")
+
+    def test_message_query_bb_too_short(self) -> None:
+        """Test a BB body shorter than the minimum is not treated as subprotocol."""
+        self.header[9] = 0x03
+        body = bytearray(10)
+        body[:6] = bytearray([0xBB, 0, 0, 0, 0, 0x11])
+        response = MessageACResponse(self.header + body)
+        assert not hasattr(response, "used_subprotocol")
+        assert not hasattr(response, "power")
+
     def test_message_query_c0_anion(self) -> None:
         """Test anion parsed from C0 body (purifier bit 0x20 in byte 9)."""
         self.header[9] = 0x03
