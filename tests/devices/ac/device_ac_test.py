@@ -23,6 +23,7 @@ from midealocal.devices.ac.message import (
     MessageHumidityQuery,
     MessageNewProtocolQuery,
     MessageNewProtocolSelfCleanQuery,
+    MessageNewProtocolSet,
     MessagePowerQuery,
     MessageQuery,
     MessageSubProtocolFreshAirSet,
@@ -671,6 +672,50 @@ class TestMideaACDevice:
         assert airflow[DeviceAttributes.fresh_air_exhaust_mode] == "off"
         assert frequency[DeviceAttributes.compressor_frequency] == 47
         assert frequency[DeviceAttributes.target_compressor_frequency] == 49
+
+    def test_process_bb_fresh_air_full_speed(self) -> None:
+        """Test a BB intake speed at the top preset maps to full."""
+        device = self._make_device("23096633", 1)
+        basic_body = bytearray(56)
+        basic_body[:6] = bytearray([0xBB, 0, 0, 0, 0, 0x11])
+        basic_body[51] = 0x01
+        basic_body[52] = 100
+
+        status = device.process_message(self._response(basic_body))
+
+        assert status[DeviceAttributes.fresh_air_mode] == "full"
+
+    def test_process_b1_fresh_air_full_speed(self) -> None:
+        """Test a B1 fresh air speed at the top preset maps to full."""
+        # fresh_air_2 (0x004B): power, fan speed, temperature
+        body = bytearray([0xB1, 0x01, 0x4B, 0x00, 0x00, 0x03, 0x01, 100, 0xFF])
+
+        status = self.device.process_message(self._response(body))
+
+        assert status[DeviceAttributes.fresh_air_power.value] is True
+        assert status[DeviceAttributes.fresh_air_fan_speed.value] == 100
+        assert status[DeviceAttributes.fresh_air_mode.value] == "full"
+
+    @pytest.mark.parametrize(
+        ("attr", "value"),
+        [
+            pytest.param(DeviceAttributes.fresh_air_power, True, id="power"),
+            pytest.param(DeviceAttributes.fresh_air_fan_speed, 60, id="fan_speed"),
+        ],
+    )
+    def test_set_fresh_air_without_reported_version(
+        self,
+        attr: DeviceAttributes,
+        value: bool | int,
+    ) -> None:
+        """Test fresh air settings send no fresh air param before one is reported."""
+        with patch.object(self.device, "build_send") as build_send:
+            self.device.set_attribute(attr, value)
+
+        message = build_send.call_args.args[0]
+        assert isinstance(message, MessageNewProtocolSet)
+        assert message.fresh_air_1 is None
+        assert message.fresh_air_2 is None
 
     def test_process_c1_frequency(self) -> None:
         """Test verified C1 model publishes compressor frequency."""

@@ -252,3 +252,9 @@ class TestMideaDADevice:
 
             with pytest.raises(ValueWrongType):
                 self.device.set_attribute(DeviceAttributes.start, "On")
+
+    def test_set_attribute_without_command(self) -> None:
+        """Test a bool attribute without a set command sends nothing."""
+        with patch.object(self.device, "build_send") as mock_build_send:
+            self.device.set_attribute("unknown", True)
+        mock_build_send.assert_not_called()

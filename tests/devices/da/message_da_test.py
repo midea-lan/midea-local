@@ -132,3 +132,27 @@ class TestMessageDAResponse:
         assert response.progress == 2
         assert hasattr(response, "time_remaining")
         assert response.time_remaining == 15 + 60
+
+    def test_da_general_response_power_off_no_progress(self) -> None:
+        """Test power off reports no progress and no remaining time."""
+        header = bytearray([0xAA, 0x00, 0xDA, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03])
+        body = bytearray(26)
+        body[0] = 0x04
+        body[17] = 15
+        body[18] = 1
+        response = MessageDAResponse(bytes(header + body))
+        assert hasattr(response, "power")
+        assert response.power is False
+        assert hasattr(response, "progress")
+        assert response.progress == 0
+        assert hasattr(response, "time_remaining")
+        assert response.time_remaining is None
+
+    def test_da_notify2_response_is_not_parsed(self) -> None:
+        """Test a notify2 response keeps the raw body."""
+        header = bytearray([0xAA, 0x00, 0xDA, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x05])
+        body = bytearray(26)
+        body[0] = 0x04
+        body[1] = 1
+        response = MessageDAResponse(bytes(header + body))
+        assert not hasattr(response, "power")
