@@ -503,6 +503,19 @@ class TestMideaDevice:
                 await task
 
     @pytest.mark.asyncio
+    async def test_connect_v2_skips_authenticate(self) -> None:
+        """Test a V2 device connects without the V3 handshake."""
+        self.device._device_protocol_version = ProtocolVersion.V2
+        reader, writer = make_stream_pair()
+        with patch(
+            "midealocal.device.asyncio.open_connection",
+            AsyncMock(return_value=(reader, writer)),
+        ):
+            assert await self.device.connect() is True
+        writer.write.assert_not_called()
+        await self.device.close_socket()
+
+    @pytest.mark.asyncio
     async def test_connect_v3_does_not_race_authenticate_against_read_loop(
         self,
     ) -> None:
@@ -1319,6 +1332,27 @@ class TestMideaDevice:
             ):
                 assert self.device.parse_message(bytes([])) == MessageResult.SUCCESS
 
+    def test_parse_message_after_appliance_query(self) -> None:
+        """Test status messages go straight to process_message once identified."""
+        self.device._appliance_query = False
+        payload = bytes(range(16))
+        frame = bytearray(40) + self.device._security.aes_encrypt(payload) + bytes(16)
+        frame[4] = 72
+        with (
+            patch.object(
+                self.device._security,
+                "decode_8370",
+                return_value=([bytes(frame)], b""),
+            ),
+            patch.object(
+                self.device,
+                "process_message",
+                return_value={},
+            ) as process_message_mock,
+        ):
+            assert self.device.parse_message(b"") == MessageResult.SUCCESS
+        process_message_mock.assert_called_once_with(payload)
+
     def test_pre_process_message(self) -> None:
         """Test pre process message."""
         assert (
@@ -1446,6 +1480,13 @@ class TestMideaDevice:
             assert self.device._is_run is True
             assert self.device._task is not None
             await self.device._task
+
+    @pytest.mark.asyncio
+    async def test_open_when_already_running(self) -> None:
+        """Test open does not start a second supervisor."""
+        self.device._is_run = True
+        await self.device.open()
+        assert self.device._task is None
 
     @pytest.mark.asyncio
     async def test_open_logs_unexpected_supervisor_exit(
@@ -1671,6 +1712,15 @@ class TestMideaDevice:
         writer.close.assert_called()
         assert self.device._ip_address == "10.0.0.1"
 
+    @pytest.mark.asyncio
+    async def test_set_same_ip(self) -> None:
+        """Test setting the current IP keeps the connection."""
+        _reader, writer = make_stream_pair()
+        self.device._writer = writer
+        await self.device.set_ip_address("192.168.1.100")
+        writer.close.assert_not_called()
+        assert self.device._writer is writer
+
     def test_set_mac(self) -> None:
         """Test set mac."""
         assert self.device.mac == "1234567890ab"
@@ -1770,6 +1820,13 @@ class TestMideaDevice:
             await self.device._connect_loop()
 
         assert self.device._writer is not None
+
+    @pytest.mark.asyncio
+    async def test_run_returns_when_not_running(self) -> None:
+        """Test _run does nothing once the device is stopped."""
+        with patch.object(self.device, "_connect_loop") as connect_loop_mock:
+            await self.device._run()
+        connect_loop_mock.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_run_breaks_when_stopped_during_connect_loop(self) -> None:
