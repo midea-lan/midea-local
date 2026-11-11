@@ -153,6 +153,30 @@ class TestMideaADDevice:
         assert result == {attribute.value: expected}
 
     @pytest.mark.parametrize(
+        ("report_byte", "function_byte"),
+        [
+            pytest.param(0x04, 0x03, id="unknown_function"),
+            pytest.param(0x02, 0x01, id="unknown_report"),
+        ],
+    )
+    def test_notify_response_unknown_report(
+        self,
+        report_byte: int,
+        function_byte: int,
+    ) -> None:
+        """Test notify1 response with an unknown report updates nothing."""
+        header = bytearray(
+            [0xAA, 0x00, DeviceType.AD] + [0x00] * 5 + [ProtocolVersion.V1],
+        ) + bytearray([MessageType.notify1])
+        body = bytearray(18)
+        body[0] = 0x11  # body type
+        body[1] = report_byte
+        body[3] = function_byte
+        body[4] = 0x01
+        result = self.device.process_message(bytes(header + body + bytearray(1)))
+        assert result == {}
+
+    @pytest.mark.parametrize(
         ("timeout_byte", "expected_timeout"),
         [(30, 30), (0xFF, None)],
     )
