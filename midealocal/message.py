@@ -513,7 +513,7 @@ class MessageHeaderAA(MessageHeader):
             self.device_type = DeviceType(data[2])
             self.protocol_version = data[8]
             self.message_type = MessageType(data[9])
-        elif (
+        elif (  # pragma: no branch
             protocol_version is not None
             and message_type is not None
             and device_type is not None
@@ -588,7 +588,7 @@ class MessageHeader55(MessageHeader):
             self.device_type = DeviceType(data[7])
             self.protocol_version = data[6]
             self.message_type = MessageType(data[14])
-        elif (
+        elif (  # pragma: no branch
             protocol_version is not None
             and message_type is not None
             and device_type is not None
@@ -1316,10 +1316,8 @@ class MessageResponse(MessageBase):
 
     def set_attr(self) -> None:
         """Message response set attribute."""
-        for key in vars(self._body):
-            if key != "data":
-                value = getattr(self._body, key, None)
-                setattr(self, key, value)
+        for key, value in vars(self._body).items():
+            setattr(self, key, value)
 
 
 class MessageApplianceResponse(MessageResponse):
