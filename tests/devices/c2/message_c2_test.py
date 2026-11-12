@@ -91,6 +91,12 @@ class TestMessageSet:
         assert msg.body[1:] == expected
         assert msg.body_type == ListTypes.X14
 
+    def test_set_body_without_field(self) -> None:
+        """Test set body raises when no field is set."""
+        msg = MessageSet(protocol_version=ProtocolVersion.V1)
+        with pytest.raises(ValueError, match="no field to set"):
+            _ = msg.body
+
 
 class TestC2Notify1MessageBody:
     """Test C2 Notify1 Message Body."""

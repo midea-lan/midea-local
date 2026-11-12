@@ -241,13 +241,11 @@ class MideaB8Device(MideaDevice):
                 msg.water_level = B8WaterLevel[str(value).upper()]
             elif attr == DeviceAttributes.voice_volume:
                 msg.voice_volume = int(value)
-
-            if msg is not None:
-                self.build_send(msg)
-                return True
+            self.build_send(msg)
         except KeyError:
             _LOGGER.exception("Wrong value for attribute %s: %s", attr, value)
-        return False
+            return False
+        return True
 
 
 class MideaAppliance(MideaB8Device):

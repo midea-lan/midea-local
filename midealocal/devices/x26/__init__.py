@@ -155,7 +155,7 @@ class Midea26Device(MideaDevice):
                 setattr(message, str(attr), value)
             elif attr == DeviceAttributes.mode:
                 message.mode = Midea26Device._modes.index(str(value))
-            elif attr == DeviceAttributes.direction:
+            else:
                 message.direction = self._convert_to_midea_direction(str(value))
             self.build_send(message)
             return True

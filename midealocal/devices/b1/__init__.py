@@ -184,7 +184,8 @@ class MideaB1Device(MideaDevice):
             elif message.body_type == ListTypes.X31:
                 if self.model == "0TVN50R6":
                     program = self._programs_0tvn50r6.get(mode)
-                elif self._subtype == X31_SUBTYPE:
+                else:
+                    # X31 is only decoded for 0TVN50R6 or X31_SUBTYPE devices.
                     program = self._programs_subtype5.get(mode)
             self._attributes[DeviceAttributes.program] = program
             updates[DeviceAttributes.program.value] = program
