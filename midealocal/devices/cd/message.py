@@ -1126,13 +1126,7 @@ class CDSterilizeSetBody(MessageBody):
             and raw_byte3 % 2 == 0
         ):
             # Temperature echo: decode celsius x2. Keep auto_sterilize_week raw.
-            decoded = raw_byte3 / 2.0
-            if (
-                MessageSetSterilize.DISINFECT_TEMP_MIN
-                <= decoded
-                <= MessageSetSterilize.DISINFECT_TEMP_MAX
-            ):
-                self.disinfection_temperature = decoded
+            self.disinfection_temperature = raw_byte3 / 2.0
 
 
 class MessageCDResponse(MessageResponse):
