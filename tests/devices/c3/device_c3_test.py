@@ -169,10 +169,20 @@ class TestMideaC3Device:
                 C3SilentLevel.SILENT.name.lower(),
             )
 
-    def test_set_attribute_unknown(self) -> None:
-        """Test an attribute without a set command sends nothing."""
+    @pytest.mark.parametrize(
+        ("attr", "value"),
+        [
+            pytest.param("unknown", True, id="unknown_attribute"),
+            pytest.param(
+                DeviceAttributes.silent_mode.value, "on", id="silent_mode_str"
+            ),
+            pytest.param(DeviceAttributes.silent_level.value, 1, id="silent_level_int"),
+        ],
+    )
+    def test_set_attribute_not_sent(self, attr: str, value: bool | float | str) -> None:
+        """Test an unknown attribute or a wrong value type sends nothing."""
         with patch.object(self.device, "build_send") as mock_build_send:
-            self.device.set_attribute("unknown", True)
+            self.device.set_attribute(attr, value)
         mock_build_send.assert_not_called()
 
     def test_build_query(self) -> None:
