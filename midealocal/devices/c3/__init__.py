@@ -441,30 +441,27 @@ class MideaC3Device(MideaClimateDevice):
         elif attr == DeviceAttributes.disinfect:
             message = MessageSetDisinfect(self._message_protocol_version)
             setattr(message, str(attr), value)
-        elif attr in [
-            DeviceAttributes.silent_mode.value,
-            DeviceAttributes.silent_level.value,
-        ]:
+        elif attr == DeviceAttributes.silent_mode.value and isinstance(value, bool):
             message = MessageSetSilent(self._message_protocol_version)
-            if attr == DeviceAttributes.silent_mode.value and isinstance(value, bool):
-                message.silent_mode = bool(value)
-                message.silent_level = (
-                    C3SilentLevel.SILENT
-                    if value
-                    and self._attributes[DeviceAttributes.silent_level]
-                    == C3SilentLevel.OFF.name.lower()
-                    else C3SilentLevel[
-                        self._attributes[DeviceAttributes.silent_level].upper()
-                    ]
-                )
-            elif attr == DeviceAttributes.silent_level.value and isinstance(value, str):
-                normalized_value = value.upper()
-                message.silent_level = C3SilentLevel[normalized_value]
-                message.silent_mode = normalized_value != C3SilentLevel.OFF.name
+            message.silent_mode = value
+            message.silent_level = (
+                C3SilentLevel.SILENT
+                if value
+                and self._attributes[DeviceAttributes.silent_level]
+                == C3SilentLevel.OFF.name.lower()
+                else C3SilentLevel[
+                    self._attributes[DeviceAttributes.silent_level].upper()
+                ]
+            )
+        elif attr == DeviceAttributes.silent_level.value and isinstance(value, str):
+            message = MessageSetSilent(self._message_protocol_version)
+            normalized_value = value.upper()
+            message.silent_level = C3SilentLevel[normalized_value]
+            message.silent_mode = normalized_value != C3SilentLevel.OFF.name
         if message is not None:
             self.build_send(message)
             return True
-        return False  # pragma: no cover
+        return False
 
     def _set_mode(self, zone: int, mode: int) -> None:
         """Midea C3 device set mode."""

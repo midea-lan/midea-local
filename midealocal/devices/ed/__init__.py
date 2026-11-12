@@ -454,15 +454,11 @@ class MideaEDDevice(MideaDevice):
         if message is not None:
             setattr(message, str(attr), value)
             if attr == DeviceAttributes.leak_water_protection_value:
-                current_protection = self._attributes.get(
-                    DeviceAttributes.leak_water_protection,
+                setattr(
+                    message,
+                    str(DeviceAttributes.leak_water_protection),
+                    self._attributes[DeviceAttributes.leak_water_protection],
                 )
-                if current_protection is not None:
-                    setattr(
-                        message,
-                        str(DeviceAttributes.leak_water_protection),
-                        current_protection,
-                    )
             if attr == DeviceAttributes.timing_regeneration_hour:
                 current_min = self._attributes.get(
                     DeviceAttributes.timing_regeneration_min,

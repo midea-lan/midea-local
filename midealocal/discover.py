@@ -234,8 +234,7 @@ async def _parse_discover_response(
             protocol = 2
         elif data[:2].hex() == "8370":
             protocol = 3
-            if data[8:10].hex() == "5a5a":
-                data = data[8:-16]
+            data = data[8:-16]
         else:
             return 0, None
         device_id = int.from_bytes(
