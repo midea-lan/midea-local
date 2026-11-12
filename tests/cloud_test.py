@@ -1295,6 +1295,41 @@ class CloudTest(IsolatedAsyncioTestCase):
         appliances = await cloud.list_appliances(None)
         assert appliances is None
 
+    async def test_msmartcloud_list_appliances_null_model_number(self) -> None:
+        """A null modelNumber falls back to 0 rather than raising."""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["msmartcloud_reroute.json"],
+                self.responses["cloud_login_id.json"],
+                self.responses["msmartcloud_login.json"],
+            ],
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "SmartHome",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert cloud is not None
+        assert await cloud.login()
+        with patch.object(
+            cloud,
+            "_api_request",
+            new=AsyncMock(
+                return_value={
+                    "list": [
+                        {"modelNumber": None, "type": "0xAC", "sn": "", "id": "1"},
+                    ],
+                },
+            ),
+        ):
+            appliances = await cloud.list_appliances(None)
+        assert appliances is not None
+        assert appliances[1]["model_number"] == 0
+
     async def test_msmartcloud_get_device_info(self) -> None:
         """Test MSmartCloud get_device_info."""
         session = Mock()
@@ -1636,6 +1671,40 @@ class CloudTest(IsolatedAsyncioTestCase):
 
         appliances = await cloud.list_appliances(None)
         assert appliances is None
+
+    async def test_mideaaircloud_list_appliances_null_model_number(self) -> None:
+        """A null modelNumber falls back to 0 rather than raising."""
+        session = Mock()
+        response = Mock()
+        response.read = AsyncMock(
+            side_effect=[
+                self.responses["mideaaircloud_login_id.json"],
+                self.responses["mideaaircloud_login.json"],
+            ],
+        )
+        session.request = AsyncMock(return_value=response)
+        cloud = get_midea_cloud(
+            "Midea Air",
+            session=session,
+            account="account",
+            password="password",
+        )
+        assert cloud is not None
+        assert await cloud.login()
+        with patch.object(
+            cloud,
+            "_api_request",
+            new=AsyncMock(
+                return_value={
+                    "list": [
+                        {"modelNumber": None, "type": "0xAC", "sn": "", "id": "1"},
+                    ],
+                },
+            ),
+        ):
+            appliances = await cloud.list_appliances(None)
+        assert appliances is not None
+        assert appliances[1]["model_number"] == 0
 
     async def test_mideaaircloud_get_device_info(self) -> None:
         """Test MideaAirCloud get_device_info."""

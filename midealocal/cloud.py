@@ -994,7 +994,7 @@ class SmartHomeCloud(MideaCloud):
             for appliance in response["list"]:
                 try:
                     model_number = int(appliance.get("modelNumber", 0))
-                except ValueError:
+                except (ValueError, TypeError):
                     model_number = 0
                 device_info = {
                     "name": appliance.get("name"),
@@ -1222,7 +1222,7 @@ class MideaAirCloud(MideaCloud):
             for appliance in response["list"]:
                 try:
                     model_number = int(appliance.get("modelNumber", 0))
-                except ValueError:
+                except (ValueError, TypeError):
                     model_number = 0
                 device_info = {
                     "name": appliance.get("name"),
