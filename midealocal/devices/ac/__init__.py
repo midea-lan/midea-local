@@ -274,6 +274,7 @@ class MideaACDevice(MideaClimateDevice):
                 DeviceAttributes.dry: False,
                 DeviceAttributes.aux_heating: False,
                 DeviceAttributes.boost_mode: False,
+                DeviceAttributes.follow_me: False,
                 DeviceAttributes.power_saving: False,
                 DeviceAttributes.sleep_mode: False,
                 DeviceAttributes.frost_protect: False,
@@ -373,6 +374,7 @@ class MideaACDevice(MideaClimateDevice):
                 DeviceAttributes.dry,
                 DeviceAttributes.aux_heating,
                 DeviceAttributes.boost_mode,
+                DeviceAttributes.follow_me,
                 DeviceAttributes.power_saving,
                 DeviceAttributes.sleep_mode,
                 DeviceAttributes.frost_protect,
@@ -976,6 +978,7 @@ class MideaACDevice(MideaClimateDevice):
             False,
         )
         message.boost_mode = self._attributes.get(DeviceAttributes.boost_mode, False)
+        message.follow_me = self._attributes.get(DeviceAttributes.follow_me, False)
         message.power_saving = self._attributes.get(
             DeviceAttributes.power_saving,
             False,

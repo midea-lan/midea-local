@@ -156,6 +156,7 @@ class DeviceAttributes(StrEnum):
     swing_vertical = "swing_vertical"
     swing_horizontal = "swing_horizontal"
     boost_mode = "boost_mode"
+    follow_me = "follow_me"
     power_saving = "power_saving"
     smart_eye = "smart_eye"
     dry = "dry"
@@ -903,6 +904,7 @@ class MessageGeneralSet(MessageACBase):
         self.swing_vertical = False
         self.swing_horizontal = False
         self.boost_mode = False
+        self.follow_me = False
         self.power_saving = False
         self.smart_eye = False
         self.dry = False
@@ -936,6 +938,7 @@ class MessageGeneralSet(MessageACBase):
         )
         # Byte 8, turbo, power saving
         boost_mode = 0x20 if self.boost_mode else 0
+        follow_me = 0x80 if self.follow_me else 0
         power_saving = POWER_SAVING_VALUE if self.power_saving else 0
         # Byte 9 aux_heating eco_mode
         smart_eye = 0x01 if self.smart_eye else 0
@@ -965,7 +968,7 @@ class MessageGeneralSet(MessageACBase):
                 0x00,
                 0x00,
                 swing_mode,
-                boost_mode | power_saving,
+                boost_mode | power_saving | follow_me,
                 smart_eye | dry | aux_heating | eco_mode | anion,
                 temp_fahrenheit | sleep_mode | boost_mode_1 | common_filter_reset,
                 0x00,
@@ -1614,6 +1617,12 @@ class XC0MessageBody(XMessageBody):
                     DeviceAttributes.power_saving,
                     byte=8,
                     bit=3,
+                ),
+                BoolParser(
+                    DeviceAttributes.follow_me,
+                    byte=8,
+                    byte_mask=0x80,
+                    true_value=0x80,
                 ),
                 IntParser("comfort_sleep", byte=8, byte_mask=0x03),
                 BoolParser("comfort_sleep_switch", byte=9, bit=2),

@@ -104,6 +104,7 @@ class TestMideaACDevice:
         assert not self.device.attributes[DeviceAttributes.swing_horizontal]
         assert not self.device.attributes[DeviceAttributes.power_saving]
         assert not self.device.attributes[DeviceAttributes.out_silent]
+        assert not self.device.attributes[DeviceAttributes.follow_me]
         assert self.device.temperature_step == 1.0
         assert self.device.fresh_air_fan_speeds is not None
         assert DeviceAttributes.compressor_frequency in self.device.attributes
@@ -249,13 +250,19 @@ class TestMideaACDevice:
     def test_set_attribute(self) -> None:
         """Test set attribute."""
         with (
-            patch.object(self.device, "send_message_v2") as mock_build_send,
+            patch.object(self.device, "build_send") as mock_build_send,
             patch(
                 "midealocal.devices.ac.MessageACResponse",
             ) as mock_message_response,
         ):
             self.device.set_attribute(DeviceAttributes.power.value, True)
             mock_build_send.assert_called()
+            mock_build_send.reset_mock()
+
+            self.device.set_attribute(DeviceAttributes.follow_me, True)
+            mock_build_send.assert_called()
+            assert mock_build_send.call_args[0][0].follow_me is True
+            mock_build_send.reset_mock()
 
             self.device.set_attribute(DeviceAttributes.power.value, False)
             mock_build_send.assert_called()
