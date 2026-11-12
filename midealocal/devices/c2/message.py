@@ -145,8 +145,7 @@ class MessageSet(MessageC2Base):
     @property
     def _body(self) -> bytearray:
         self.body_type = ListTypes.X14
-        key = C2MessageEnum.none
-        value: int | bool = 0x00
+        value: int | bool
         if self.child_lock is not None:
             key = C2MessageEnum.child_lock
             value = self.child_lock
@@ -165,6 +164,9 @@ class MessageSet(MessageC2Base):
         elif self.foam_shield is not None:
             key = C2MessageEnum.foam_shield
             value = self.foam_shield
+        else:
+            msg = "C2 set message has no field to set"
+            raise ValueError(msg)
         x = cast("dict[int, int]", C2_MESSAGE_KEYS[key])
         value = cast("int | bool", x.get(value))
         return bytearray([key, value])
