@@ -12,24 +12,16 @@ from midealocal.devices.c3 import MideaC3Device
 from midealocal.devices.c3.message import (
     BASIC_SIZES,
     BasicTag,
+    C3DeviceMode,
+    C3NativeTelemetryBody,
     C3QuintupleBasicBody,
     C3QuintupleEnergyBody,
-    MessageC3Response,
-    MessageQuery2F12,
-    MessageQuery2010,
-    MessageSet2010,
-)
-from midealocal.message import MessageType
-
-if TYPE_CHECKING:
-    from midealocal.base_classes.climate import MideaHVACMode
-
-
-from midealocal.devices.c3.message import (
-    C3DeviceMode,
     C3SilentLevel,
     MessageC3Base,
+    MessageC3Response,
     MessageQuery,
+    MessageQuery2F12,
+    MessageQuery2010,
     MessageQueryBasic,
     MessageQueryDisinfect,
     MessageQueryECO,
@@ -37,11 +29,15 @@ from midealocal.devices.c3.message import (
     MessageQueryInstall,
     MessageQuerySilence,
     MessageSet,
+    MessageSet2010,
     MessageSetDisinfect,
     MessageSetECO,
     MessageSetSilent,
 )
-from midealocal.message import ListTypes
+from midealocal.message import BodyParser, ListTypes, MessageBody, MessageType
+
+if TYPE_CHECKING:
+    from midealocal.base_classes.climate import MideaHVACMode
 
 
 class TestMessageC3Base:
@@ -1190,3 +1186,43 @@ class TestC3Native17100007:
         assert "disinfect" not in d.attributes
         assert "eco_mode" not in d.attributes
         assert "silent_mode" not in d.attributes
+
+
+class TestC3BodyParserRegistration:
+    """Native response fields use the shared MessageBody parser interface."""
+
+    @pytest.mark.parametrize(
+        ("body_type", "body", "required"),
+        [
+            (C3QuintupleBasicBody, QUERY_REPLY[10:-1], "tank_actual_temperature"),
+            (
+                C3QuintupleBasicBody,
+                bytes.fromhex("002010ffffffff01ffff00070201e5"),
+                "dhw_target_temp",
+            ),
+            (C3QuintupleEnergyBody, ENERGY_REPLY[10:-1], "instant_power0"),
+            (
+                C3QuintupleEnergyBody,
+                bytes.fromhex("002f12ffffffff01ffff00090400000023"),
+                "total_energy_consumption",
+            ),
+            (
+                C3NativeTelemetryBody,
+                bytes.fromhex("002f10ffffffff00ffff") + bytes(29),
+                "temp_t1",
+            ),
+        ],
+    )
+    def test_fields_are_registered(
+        self,
+        body_type: type[MessageBody],
+        body: bytes,
+        required: str,
+    ) -> None:
+        """The shared parser list populates native fields without replacing raw data."""
+        response = body_type(bytearray(body))
+        assert response.data == body
+        assert response.parser_list
+        assert all(isinstance(parser, BodyParser) for parser in response.parser_list)
+        assert required in [parser.name for parser in response.parser_list]
+        assert hasattr(response, required)

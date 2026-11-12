@@ -1,16 +1,19 @@
 """Midea local C3 message."""
 
 from enum import IntEnum
+from functools import partial
 from math import isfinite
 
 from midealocal.const import DeviceType
 from midealocal.message import (
+    FunctionParser,
     IntParser,
     ListTypes,
     MessageBody,
     MessageRequest,
     MessageResponse,
     MessageType,
+    ValueParser,
 )
 
 BYTE_BITS = 8
@@ -299,8 +302,8 @@ def _read_fields(
     body: bytearray,
     sizes: tuple[int, ...] = BASIC_SIZES,
     minimum_length: int = MIN_SEQUENTIAL_LENGTH,
-) -> dict[int, bytes]:
-    """Decode one table and reject malformed TLVs without partial results."""
+) -> dict[int, tuple[int, int]]:
+    """Locate complete table fields; reject malformed TLVs atomically."""
     if len(body) < ENVELOPE_LENGTH:
         return {}
     values = {}
@@ -319,7 +322,7 @@ def _read_fields(
             if tag < len(sizes):
                 if size != sizes[tag]:
                     return {}
-                values[tag] = bytes(body[offset : offset + size])
+                values[tag] = (offset, size)
             offset += size
     elif body[FORMAT_OFFSET] == 0:
         if len(body) < minimum_length:
@@ -327,12 +330,12 @@ def _read_fields(
         for tag, size in enumerate(sizes):
             if offset + size > len(body):
                 break
-            values[tag] = bytes(body[offset : offset + size])
+            values[tag] = (offset, size)
             offset += size
     return values
 
 
-def _temperature(raw: bytes) -> float | None:
+def _temperature(raw: bytes | bytearray) -> float | None:
     """Decode signed basic-table tenths, leaving invalid probes unavailable."""
     value = IntParser(
         "temperature", 0, length_in_bytes=len(raw), first_upper=True
@@ -344,14 +347,74 @@ def _temperature(raw: bytes) -> float | None:
     return value / TEMPERATURE_SCALE
 
 
+def _energy(raw: bytearray, *, watts: bool) -> float | None:
+    """Apply the vendor scale while preserving unavailable energy fields."""
+    value = int.from_bytes(raw, "big")
+    if value == (1 << (len(raw) * BYTE_BITS)) - 1:
+        return None
+    return value * WATTS_PER_ENERGY_UNIT if watts else value / ENERGY_SCALE
+
+
+def _on_off(raw: bytearray) -> bool | None:
+    """Decode only the controller's confirmed boolean values."""
+    return bool(raw[0]) if raw[0] in (0, 1) else None
+
+
+def _mode(raw: bytearray) -> int | None:
+    """Translate the vendor operating-mode byte."""
+    return MODE_FROM_WIRE.get(raw[0])
+
+
+def _actual_mode(raw: bytearray) -> int | None:
+    """Translate the reported automatic operating mode."""
+    return raw[0] + 1 if raw[0] in (1, 2) else None
+
+
+def _error_code(raw: bytearray) -> int | None:
+    """Preserve an explicitly unavailable controller error code."""
+    return None if raw[0] == INVALID_BYTE else raw[0]
+
+
+def _error_description(raw: bytearray) -> str | None:
+    """Describe the raw error without assigning unverified fault meanings."""
+    code = _error_code(raw)
+    return (
+        None
+        if code is None
+        else "No error"
+        if code == 0
+        else f"Unknown code (raw={code})"
+    )
+
+
+def _basic_arrays(body: bytearray) -> dict[str, dict[int, float | bool | None]]:
+    """Decode only present array members, preserving explicit invalid limits."""
+    fields = _read_fields(body)
+    arrays: dict[str, dict[int, float | bool | None]] = {}
+    for name, tags in ARRAY_FIELDS.items():
+        changes: dict[int, float | bool | None] = {}
+        for index, tag in enumerate(tags):
+            if tag not in fields:
+                continue
+            offset, width = fields[tag]
+            value = _temperature(body[offset : offset + width])
+            if value is not None or name != "zone_target_temp":
+                changes[index] = value
+        if changes:
+            arrays[name] = changes
+    types: dict[int, float | bool | None] = {}
+    for index, tag in enumerate(ZONE_TEMP_TYPE_TAGS):
+        if tag in fields:
+            offset, _ = fields[tag]
+            raw = body[offset]
+            types[index] = raw == 0 if raw in (0, 1) else None
+    if types:
+        arrays["zone_temp_type"] = types
+    return arrays
+
+
 class C3QuintupleEnergyBody(MessageBody):
     """Decode 0x2F12 energy using the vendor's 0.01 kW/kWh scale."""
-
-    # These are controller-reported values. Their reset periods and inclusion
-    # of standby, circulation, or auxiliary loads are not established, so they
-    # must not be treated as billing-grade whole-appliance measurements.
-    # Tags 3 and 4 retain watts for the existing instant-power attributes;
-    # energy counters use kWh and other table powers use kW.
 
     quintuple_energy: bool
     current_unit_capacity: float | None
@@ -361,23 +424,23 @@ class C3QuintupleEnergyBody(MessageBody):
     total_energy_consumption: float | None
 
     def __init__(self, body: bytearray) -> None:
-        """Expose complete energy fields from sequential or TLV packets."""
-        super().__init__(body)
-        values = _read_fields(body, ENERGY_SIZES, MIN_ENERGY_LENGTH)
-        self.quintuple_energy = bool(values)
+        """Expose complete energy fields through the shared body parsers."""
+        fields = _read_fields(body, ENERGY_SIZES, MIN_ENERGY_LENGTH)
+        self.quintuple_energy = bool(fields)
+        parsers: list[ValueParser] = []
         for tag, name in QUINTUPLE_ENERGY_FIELDS.items():
-            if tag in values:
-                raw = values[tag]
-                value = IntParser(
-                    "value", 0, length_in_bytes=len(raw), first_upper=True
-                ).get_value(bytearray(raw))
-                invalid = (1 << (len(raw) * BYTE_BITS)) - 1
-                scaled = (
-                    value * WATTS_PER_ENERGY_UNIT
-                    if tag in WATT_TAGS
-                    else value / ENERGY_SCALE
+            if tag in fields:
+                offset, width = fields[tag]
+                parsers.append(
+                    FunctionParser(
+                        name,
+                        offset,
+                        partial(_energy, watts=tag in WATT_TAGS),
+                        None,
+                        length_in_bytes=width,
+                    ),
                 )
-                setattr(self, name, None if value == invalid else scaled)
+        super().__init__(body, parsers)
 
 
 class C3QuintupleBasicBody(MessageBody):
@@ -386,68 +449,71 @@ class C3QuintupleBasicBody(MessageBody):
     quintuple_basic: bool
     quintuple_arrays: dict[str, dict[int, float | bool | None]]
     outdoor_temperature: float
+    error_code: int | None
+    error_code_description: str | None
 
     def __init__(self, body: bytearray) -> None:
-        """Expose valid fields, retaining absent array members in the device."""
-        super().__init__(body)
-        values = _read_fields(body)
-        self.quintuple_basic = bool(values)
-        self.quintuple_arrays = {}
+        """Register only present fields, leaving absent targets untouched."""
+        fields = _read_fields(body)
+        self.quintuple_basic = bool(fields)
+        parsers: list[ValueParser] = [
+            FunctionParser(
+                "quintuple_arrays", 0, _basic_arrays, {}, length_in_bytes=len(body)
+            ),
+        ]
         for tag, name in BOOLEAN_FIELDS.items():
-            if tag in values:
-                raw = values[tag][0]
-                setattr(self, name, bool(raw) if raw in (0, 1) else None)
-        for tag, name in TEMPERATURE_FIELDS.items():
-            if tag in values and (
-                (value := _temperature(values[tag])) is not None
-                or name in TEMPERATURE_LIMIT_FIELDS
-                or name in TEMPERATURE_SENSOR_FIELDS
-            ):
-                setattr(self, name, value)
-        for name, tags in ARRAY_FIELDS.items():
-            changes: dict[int, float | bool | None] = {
-                index: value
-                for index, tag in enumerate(tags)
-                if tag in values
-                and (
-                    (value := _temperature(values[tag])) is not None
-                    or name != "zone_target_temp"
+            if tag in fields:
+                offset, width = fields[tag]
+                parsers.append(
+                    FunctionParser(name, offset, _on_off, None, length_in_bytes=width)
                 )
-            }
-            if changes:
-                self.quintuple_arrays[name] = changes
-        types: dict[int, float | bool | None] = {
-            index: values[tag][0] == 0 if values[tag][0] in (0, 1) else None
-            for index, tag in enumerate(ZONE_TEMP_TYPE_TAGS)
-            if tag in values
-        }
-        if types:
-            self.quintuple_arrays["zone_temp_type"] = types
-        if BasicTag.MODE in values:
-            self.mode = MODE_FROM_WIRE.get(values[BasicTag.MODE][0])
-        if AUTO_MODE_TAG in values:
-            self.mode_auto = (
-                values[AUTO_MODE_TAG][0] + 1
-                if values[AUTO_MODE_TAG][0] in (1, 2)
-                else None
-            )
-        if ERROR_CODE_TAG in values:
-            error_code = values[ERROR_CODE_TAG][0]
-            self.error_code = None if error_code == INVALID_BYTE else error_code
-            self.error_code_description = (
-                None
-                if error_code == INVALID_BYTE
-                else "No error"
-                if error_code == 0
-                else f"Unknown code (raw={error_code})"
+        for tag, name in TEMPERATURE_FIELDS.items():
+            if tag in fields:
+                offset, width = fields[tag]
+                if (
+                    body[offset : offset + width]
+                    != INVALID_TEMPERATURE.to_bytes(width, "big")
+                    or name in TEMPERATURE_LIMIT_FIELDS
+                    or name in TEMPERATURE_SENSOR_FIELDS
+                ):
+                    parsers.append(
+                        FunctionParser(
+                            name, offset, _temperature, None, length_in_bytes=width
+                        )
+                    )
+        for tag, name, decoder in (
+            (BasicTag.MODE, "mode", _mode),
+            (AUTO_MODE_TAG, "mode_auto", _actual_mode),
+            (ERROR_CODE_TAG, "error_code", _error_code),
+        ):
+            if tag in fields:
+                offset, width = fields[tag]
+                parsers.append(
+                    FunctionParser(name, offset, decoder, None, length_in_bytes=width)
+                )
+        if ERROR_CODE_TAG in fields:
+            offset, width = fields[ERROR_CODE_TAG]
+            parsers.append(
+                FunctionParser(
+                    "error_code_description",
+                    offset,
+                    _error_description,
+                    None,
+                    length_in_bytes=width,
+                )
             )
         for tag, names in STATUS_TEMPERATURE_ATTRIBUTES.items():
-            if tag not in values:
+            if tag not in fields:
                 continue
-            value = _temperature(values[tag])
-            for name in names:
-                if value is not None or name in TEMPERATURE_SENSOR_FIELDS:
-                    setattr(self, name, value)
+            offset, width = fields[tag]
+            parsers.extend(
+                FunctionParser(name, offset, _temperature, None, length_in_bytes=width)
+                for name in names
+                if body[offset : offset + width]
+                != INVALID_TEMPERATURE.to_bytes(width, "big")
+                or name in TEMPERATURE_SENSOR_FIELDS
+            )
+        super().__init__(body, parsers)
 
 
 TELEMETRY_TABLE = 0x2F10
@@ -472,31 +538,35 @@ class MessageQueryTelemetry(MessageQuery2010):
         return _envelope(TELEMETRY_TABLE, 0)
 
 
+def _telemetry_temperature(raw: bytearray) -> float | None:
+    """Decode compact temperature values while preserving unavailable probes."""
+    value = int.from_bytes(raw, "big")
+    if value in (INVALID_TEMPERATURE, 0xFFFF):
+        return None
+    return (
+        -(value & TEMPERATURE_VALUE_MASK) if value & TEMPERATURE_SIGN_BIT else value
+    ) / TEMPERATURE_SCALE
+
+
 class C3NativeTelemetryBody(MessageBody):
     """Read complete temperature fields from Lua's compact table 0x2F10."""
 
     def __init__(self, body: bytearray) -> None:
-        """Decode signed-magnitude temperatures without fabricating missing fields."""
-        super().__init__(body)
-        if len(body) < ENVELOPE_LENGTH or body[FORMAT_OFFSET] != 0:
-            return
-        for name, offset in TELEMETRY_TEMPERATURES.items():
-            if len(body) < offset + 2:
-                continue
-            raw = IntParser(
-                name, offset, length_in_bytes=2, first_upper=True
-            ).get_value(body)
-            value = (
-                None
-                if raw in (INVALID_TEMPERATURE, 0xFFFF)
-                else (
-                    -(raw & TEMPERATURE_VALUE_MASK)
-                    if raw & TEMPERATURE_SIGN_BIT
-                    else raw
-                )
-                / TEMPERATURE_SCALE
-            )
-            setattr(self, name, value)
+        """Register complete optional fields instead of accepting parser defaults."""
+        parsers: list[ValueParser] = []
+        if len(body) >= ENVELOPE_LENGTH and body[FORMAT_OFFSET] == 0:
+            for name, offset in TELEMETRY_TEMPERATURES.items():
+                if len(body) >= offset + 2:
+                    parsers.append(
+                        FunctionParser(
+                            name,
+                            offset,
+                            _telemetry_temperature,
+                            None,
+                            length_in_bytes=2,
+                        )
+                    )
+        super().__init__(body, parsers)
 
 
 TEMP_NEG_VALUE = 127
