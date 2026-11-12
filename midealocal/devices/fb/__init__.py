@@ -262,21 +262,18 @@ class MideaFBDevice(MideaClimateDevice):
             if value not in MideaFBDevice._modes.values():
                 msg = f"[fb] Unsupported mode: {value}"
                 raise ValueError(msg)
-            if value in MideaFBDevice._modes.values():
-                message.mode = list(MideaFBDevice._modes.keys())[
-                    list(MideaFBDevice._modes.values()).index(MideaPreset(str(value)))
-                ]
+            message.mode = list(MideaFBDevice._modes.keys())[
+                list(MideaFBDevice._modes.values()).index(MideaPreset(str(value)))
+            ]
         elif attr == DeviceAttributes.humidity_mode:
             if value not in MideaFBDevice._humidity_modes.values():
                 msg = f"[fb] Unsupported humidity mode: {value}"
                 raise ValueError(msg)
-
-            if value in MideaFBDevice._humidity_modes.values():
-                message.humidity_mode = list(MideaFBDevice._humidity_modes.keys())[
-                    list(MideaFBDevice._humidity_modes.values()).index(
-                        DeviceHumidityMode(str(value)),
-                    )
-                ]
+            message.humidity_mode = list(MideaFBDevice._humidity_modes.keys())[
+                list(MideaFBDevice._humidity_modes.values()).index(
+                    DeviceHumidityMode(str(value)),
+                )
+            ]
         else:
             setattr(message, str(attr), value)
         self.build_send(message)
