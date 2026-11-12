@@ -935,7 +935,7 @@ class MideaCDDevice(MideaDevice):
                     message.vacation_days = 0
                     message.mode = 0x01
 
-            elif attr == DeviceAttributes.vacation_days:
+            else:
                 # Set vacation days (1-360) and (re)enable vacation mode
                 days = max(1, min(360, int(value)))
                 message.vacation_flag = True
