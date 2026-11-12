@@ -1128,11 +1128,6 @@ class MideaACDevice(MideaClimateDevice):
             if exhaust
             else DeviceAttributes.fresh_air_fan_speed
         )
-        mode_attribute = (
-            DeviceAttributes.fresh_air_exhaust_mode
-            if exhaust
-            else DeviceAttributes.fresh_air_mode
-        )
         current_speed = int(
             self._attributes[speed_attribute]
             or (
@@ -1151,7 +1146,7 @@ class MideaACDevice(MideaClimateDevice):
             requested_speed = max(0, min(int(value), 100))
             power = requested_speed > 0
             speed = requested_speed or current_speed
-        elif attr == mode_attribute:
+        else:
             mode_speed = self.get_dict_key_by_value(
                 "_bb_fresh_air_exhaust_speeds"
                 if exhaust
@@ -1328,12 +1323,9 @@ class MideaACDevice(MideaClimateDevice):
 
     def _set_swing(self, swing_vertical: bool, swing_horizontal: bool) -> None:
         """Midea AC device set swing."""
-        message: MessageSubProtocolSet | MessageGeneralSet = (
-            self._make_message_uniq_set()
-        )
-        if isinstance(message, MessageGeneralSet):
-            message.swing_vertical = swing_vertical
-            message.swing_horizontal = swing_horizontal
+        message = self.make_message_set()
+        message.swing_vertical = swing_vertical
+        message.swing_horizontal = swing_horizontal
         self.build_send(message)
 
 
