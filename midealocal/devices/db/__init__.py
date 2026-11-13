@@ -1,20 +1,43 @@
 """Midea local DB device."""
 
 import logging
+from collections.abc import Mapping
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
+from types import MappingProxyType
 from typing import Any, ClassVar, Unpack, override
 
 from midealocal.const import DeviceType
+from midealocal.const.washer_exceptions import DB_EXCEPTIONS
 from midealocal.device import MideaDevice, MideaDeviceInitKwargs, dict_translator
 from midealocal.exceptions import ValueWrongType
 
-from .message import MessageDBResponse, MessagePower, MessageQuery, MessageStart
+from .message import (
+    CONTROL_DEHYDRATION_SPEED_OFFSET,
+    CONTROL_DEHYDRATION_TIME_OFFSET,
+    CONTROL_DETERGENT_OFFSET,
+    CONTROL_DRYER_OFFSET,
+    CONTROL_OPTIONS_OFFSET,
+    CONTROL_PROGRAM_OFFSET,
+    CONTROL_TEMPERATURE_OFFSET,
+    CONTROL_WASH_TIME_OFFSET,
+    CONTROL_WATER_LEVEL_OFFSET,
+    DRYER_UNCHANGED_SOAK_COUNT,
+    FAST_CLEAN_WASH_BIT,
+    STEAM_WASH_BIT,
+    MessageDBResponse,
+    MessagePower,
+    MessageQuery,
+    MessageSet,
+    MessageStart,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 
 WASHING_DATA_SIZE = 13
 WASHING_DATA_FILL = 0xFF
+PARAMETER_BYTE_MAX = WASHING_DATA_FILL - 1
 
 
 class DeviceAttributes(StrEnum):
@@ -38,6 +61,61 @@ class DeviceAttributes(StrEnum):
     time_remaining = "time_remaining"
     stains = "stains"
     dirty_degree = "dirty_degree"
+    dryer = "dryer"
+    steam_wash = "steam_wash"
+    fast_clean_wash = "fast_clean_wash"
+
+
+@dataclass(frozen=True)
+class DBParameterSpec:
+    """Encoding and validation for one byte in a parameter control payload."""
+
+    offset: int
+    mapping: Mapping[int, str] | None = None
+    maximum: int = PARAMETER_BYTE_MAX
+    bit: int | None = None
+    unchanged_bits: int = 0
+    maximum_by_program: Mapping[str, int] = field(
+        default_factory=lambda: MappingProxyType({}),
+    )
+
+    def encode(self, value: bool | float | str, program: str = "") -> int:
+        """Reject invalid types, unknown enum values and unchanged sentinels."""
+        if self.bit is not None:
+            if not isinstance(value, bool):
+                raise ValueWrongType("[db] Expected bool")
+            return int(value) << self.bit
+        if self.mapping is not None:
+            if not isinstance(value, str):
+                raise ValueWrongType("[db] Expected str")
+            encoded = next(
+                (code for code, name in self.mapping.items() if name == value),
+                None,
+            )
+            if encoded is None or encoded == WASHING_DATA_FILL:
+                raise ValueWrongType(f"[db] Unsupported parameter value: {value}")
+            return encoded
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ValueWrongType("[db] Expected int")
+        maximum = self.maximum_by_program.get(program, self.maximum)
+        if not 0 <= value <= maximum:
+            raise ValueWrongType(f"[db] Expected value between 0 and {maximum}")
+        return value
+
+
+@dataclass(frozen=True)
+class DBModelProfile:
+    """Protocol program codes and writable parameter rules for a DB variant."""
+
+    programs: Mapping[int, str]
+    parameters: Mapping[DeviceAttributes, DBParameterSpec] = field(
+        default_factory=lambda: MappingProxyType({}),
+    )
+
+    @property
+    def writable_attributes(self) -> frozenset[DeviceAttributes]:
+        """Derive writable attributes from the configured parameter rules."""
+        return frozenset(self.parameters)
 
 
 class MideaDBDevice(MideaDevice):
@@ -185,6 +263,38 @@ class MideaDBDevice(MideaDevice):
         0xFF: "default",
     }
 
+    _default_profile: ClassVar[DBModelProfile] = DBModelProfile(
+        programs=MappingProxyType(_program),
+    )
+    # DB_33 jsonToData partial-update encodings. Model exceptions opt in to
+    # individual parameters and supply hardware-specific mappings and limits.
+    _parameter_specs: ClassVar[dict[DeviceAttributes, DBParameterSpec]] = {
+        DeviceAttributes.program: DBParameterSpec(CONTROL_PROGRAM_OFFSET),
+        DeviceAttributes.temperature: DBParameterSpec(
+            CONTROL_TEMPERATURE_OFFSET, MappingProxyType(_temperature)
+        ),
+        DeviceAttributes.water_level: DBParameterSpec(
+            CONTROL_WATER_LEVEL_OFFSET, MappingProxyType(_water_level)
+        ),
+        DeviceAttributes.dehydration_speed: DBParameterSpec(
+            CONTROL_DEHYDRATION_SPEED_OFFSET, MappingProxyType(_dehydration_speed)
+        ),
+        DeviceAttributes.wash_time: DBParameterSpec(CONTROL_WASH_TIME_OFFSET),
+        DeviceAttributes.dehydration_time: DBParameterSpec(
+            CONTROL_DEHYDRATION_TIME_OFFSET
+        ),
+        DeviceAttributes.detergent: DBParameterSpec(CONTROL_DETERGENT_OFFSET),
+        DeviceAttributes.dryer: DBParameterSpec(
+            CONTROL_DRYER_OFFSET, unchanged_bits=DRYER_UNCHANGED_SOAK_COUNT
+        ),
+        DeviceAttributes.steam_wash: DBParameterSpec(
+            CONTROL_OPTIONS_OFFSET, bit=STEAM_WASH_BIT
+        ),
+        DeviceAttributes.fast_clean_wash: DBParameterSpec(
+            CONTROL_OPTIONS_OFFSET, bit=FAST_CLEAN_WASH_BIT
+        ),
+    }
+
     _progress: ClassVar[list[str]] = [
         "idle",
         "spin",
@@ -238,6 +348,41 @@ class MideaDBDevice(MideaDevice):
             ]
         )
 
+        self._model_profile = self._build_model_profile()
+        self._attributes.update(
+            dict.fromkeys(
+                self._model_profile.parameters.keys() - self._attributes.keys(),
+            )
+        )
+        self._control_options: int | None = None
+
+    def _build_model_profile(self) -> DBModelProfile:
+        """Resolve model exceptions once, limited to explicitly verified subtypes."""
+        exceptions = DB_EXCEPTIONS.get(str(self.model), {})
+        if self.subtype not in exceptions.get("subtypes", ()):
+            return self._default_profile
+        programs = MappingProxyType({**self._program, **exceptions.get("programs", {})})
+        mappings: dict[str, Mapping[int, str]] = {
+            "program": programs,
+            **{
+                attr: MappingProxyType(dict(mapping))
+                for attr, mapping in exceptions.get("mappings", {}).items()
+            },
+        }
+        parameters = {}
+        for name in exceptions.get("writable_attributes", ()):
+            attr = DeviceAttributes(name)
+            spec = self._parameter_specs[attr]
+            parameters[attr] = replace(
+                spec,
+                mapping=mappings.get(name, spec.mapping),
+                maximum=exceptions.get("maximums", {}).get(name, spec.maximum),
+                maximum_by_program=MappingProxyType(
+                    dict(exceptions.get("maximums_by_program", {}).get(name, {}))
+                ),
+            )
+        return DBModelProfile(programs, MappingProxyType(parameters))
+
     def build_query(self) -> list[MessageQuery]:
         """Midea DB device build query."""
         return [MessageQuery(self._message_protocol_version)]
@@ -245,6 +390,7 @@ class MideaDBDevice(MideaDevice):
     def process_message(self, msg: bytes) -> dict[str, Any]:
         """Midea DB device process message."""
         message = MessageDBResponse(msg)
+        self._control_options = getattr(message, "control_options", None)
         _LOGGER.debug("[%s] Received: %s", self.device_id, message)
         return self.update_attributes_from_message(
             message,
@@ -257,29 +403,56 @@ class MideaDBDevice(MideaDevice):
                 DeviceAttributes.water_level: dict_translator(
                     MideaDBDevice._water_level,
                 ),
-                DeviceAttributes.program: dict_translator(MideaDBDevice._program),
+                DeviceAttributes.program: dict_translator(self._model_profile.programs),
                 DeviceAttributes.temperature: dict_translator(
                     MideaDBDevice._temperature,
                 ),
                 DeviceAttributes.progress: MideaDBDevice._progress.__getitem__,
+                **{
+                    attr: dict_translator(spec.mapping)
+                    for attr, spec in self._model_profile.parameters.items()
+                    if spec.mapping is not None
+                },
             },
         )
 
     @override
     def _set_attribute(self, attr: str, value: bool | float | str) -> bool:
         """Midea DB device set attribute."""
+        if attr in self._model_profile.parameters:
+            spec = self._model_profile.parameters[DeviceAttributes(attr)]
+            encoded = spec.encode(
+                value, str(self.get_attribute(DeviceAttributes.program))
+            )
+            if spec.bit is not None:
+                if self._control_options is None:
+                    raise ValueWrongType(
+                        "[db] Read current options before changing a switch"
+                    )
+                encoded |= self._control_options & ~(1 << spec.bit)
+            parameters = MessageSet(
+                self._message_protocol_version,
+                {spec.offset: encoded | spec.unchanged_bits},
+            )
+            # Any parameter change may alter dependent options. Await a new
+            # response before attempting another shared-byte update.
+            self._control_options = None
+            self.build_send(parameters)
+            return True
         if not isinstance(value, bool):
             raise ValueWrongType("[db] Expected bool")
         message: MessagePower | MessageStart | None = None
         if attr == DeviceAttributes.power:
             message = MessagePower(self._message_protocol_version)
             message.power = value
+            self._control_options = None
             self.build_send(message)
             return True
         if attr == DeviceAttributes.start:
             message = MessageStart(self._message_protocol_version)
             message.start = value
             message.washing_data = self._build_washing_data()
+            self._control_options = None
             self.build_send(message)
             return True
         return False
@@ -287,7 +460,7 @@ class MideaDBDevice(MideaDevice):
     def _get_key_from_value(
         self,
         value: str,
-        mapping: dict[int, str],
+        mapping: Mapping[int, str],
         default: int = WASHING_DATA_FILL,
     ) -> int:
         """Get the key from the value in the mapping."""
@@ -309,7 +482,7 @@ class MideaDBDevice(MideaDevice):
 
         washing_data[1] = self._get_key_from_value(
             str(self.get_attribute(DeviceAttributes.program)),
-            self._program,
+            self._model_profile.programs,
         )
 
         washing_data[2] = self._get_key_from_value(
