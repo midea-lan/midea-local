@@ -1094,6 +1094,7 @@ class MideaACDevice(MideaClimateDevice):
         message.power = self._attributes[DeviceAttributes.power]
         message.prompt_tone = self._attributes[DeviceAttributes.prompt_tone]
         message.aux_heating = self._attributes[DeviceAttributes.aux_heating]
+        message.follow_me = self._attributes[DeviceAttributes.follow_me]
         message.mode = self._attributes[DeviceAttributes.mode]
         message.target_temperature = self._attributes[
             DeviceAttributes.target_temperature

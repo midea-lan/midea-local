@@ -747,6 +747,7 @@ class MessageSubProtocolSet(MessageSubProtocol):
         )
         self.power = False
         self.mode = 0
+        self.follow_me = False
         self.target_temperature = 20.0
         self.fan_speed = 102
         self.boost_mode = False
@@ -765,6 +766,7 @@ class MessageSubProtocolSet(MessageSubProtocol):
         boost_mode = 0x20 if self.boost_mode else 0
         aux_heating = 0x40 if self.aux_heating else 0x80
         sleep_mode = 0x80 if self.sleep_mode else 0
+        follow_me = 0x40 if self.follow_me else 0
         try:
             mode = 0 if self.mode == 0 else BB_AC_MODES[self.mode] - 1
         except IndexError:
@@ -782,7 +784,7 @@ class MessageSubProtocolSet(MessageSubProtocol):
                 aux_heating,
                 sleep_mode,
                 0x00,
-                0x00,
+                follow_me,
                 mode,
                 target_temperature,
                 fan_speed,
@@ -2075,6 +2077,9 @@ class XBB11MessageBody(MessageBody):
                     byte_mask=0x80,
                     true_value=0x80,
                 ),
+                BoolParser(
+                    DeviceAttributes.follow_me, byte=4, byte_mask=0x40, true_value=0x40
+                ),
                 IntParser(
                     DeviceAttributes.mode,
                     byte=5,
@@ -2171,7 +2176,7 @@ class XBBMessageBody(MessageBody):
         data = body[6:]
         subprotocol_body: MessageBody | None = None
 
-        if self.subprotocol_type in (ListTypes.X11, ListTypes.X20):
+        if self.subprotocol_type in (ListTypes.X11, ListTypes.X20, ListTypes.F1):
             subprotocol_body = XBB11MessageBody(data)
         elif self.subprotocol_type == ListTypes.X10:
             subprotocol_body = XBB10MessageBody(data, _parse_temp)

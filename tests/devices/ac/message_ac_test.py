@@ -620,6 +620,7 @@ class TestMessageSubProtocolSet:
         msg.fan_speed = 90
         msg.boost_mode = True
         msg.aux_heating = True
+        msg.follow_me = True
         msg.dry = True
         msg.eco_mode = True
         msg.sleep_mode = True
@@ -629,6 +630,7 @@ class TestMessageSubProtocolSet:
         expected_body[6] = 0x02 | 0x20 | 0x01 | 0x10
         expected_body[7] = 0x40
         expected_body[8] = 0x80
+        expected_body[10] = 0x40
         expected_body[11] = 0x02
         expected_body[12] = 24 * 2 + 30
         expected_body[13] = 90
@@ -1703,6 +1705,7 @@ class TestMessageACResponse:
         body[6] = 0b00110001  # Power, dry, boost_mode
         body[7] = 0b01000000  # aux_heating
         body[8] = 0b10000000  # sleep_mode
+        body[10] = 0b01000000  # follow_me
         body[11] = 2  # Mode index for BB_AC_MODES
         body[12] = 0x3C  # Target temperature: ((60 - 30) / 2) = 15.0
         body[13] = 127  # Fan speed
@@ -1713,6 +1716,8 @@ class TestMessageACResponse:
         assert hasattr(response, "dry")
         assert hasattr(response, "boost_mode")
         assert response.boost_mode is True
+        assert hasattr(response, "follow_me")
+        assert response.follow_me is True
         assert hasattr(response, "aux_heating")
         assert hasattr(response, "sleep_mode")
         assert hasattr(response, "mode")
