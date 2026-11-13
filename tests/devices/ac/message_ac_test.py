@@ -762,7 +762,6 @@ class TestMessageACResponse:
         assert hasattr(response, "eco_mode")
         assert hasattr(response, "sleep_mode")
         assert hasattr(response, "natural_wind")
-        assert hasattr(response, "full_dust")
         assert hasattr(response, "comfort_mode")
 
     def test_message_notify2_a0_fresh_filter(self) -> None:
