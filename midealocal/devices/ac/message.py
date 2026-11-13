@@ -2024,10 +2024,8 @@ class XC1MessageBody(MessageBody):
             subprotocol_body = XC145MessageBody(body[4:])
 
         if subprotocol_body is not None:
-            for key in vars(subprotocol_body):
-                if key != "data":
-                    value = getattr(subprotocol_body, key, None)
-                    setattr(self, key, value)
+            for key, value in vars(subprotocol_body).items():
+                setattr(self, key, value)
 
 
 class XBB11MessageBody(MessageBody):
@@ -2175,10 +2173,8 @@ class XBBMessageBody(MessageBody):
             pass
 
         if subprotocol_body is not None:
-            for key in vars(subprotocol_body):
-                if key != "data":
-                    value = getattr(subprotocol_body, key, None)
-                    setattr(self, key, value)
+            for key, value in vars(subprotocol_body).items():
+                setattr(self, key, value)
 
 
 class MessageACResponse(MessageResponse):
