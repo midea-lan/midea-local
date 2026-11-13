@@ -156,6 +156,7 @@ class DeviceAttributes(StrEnum):
     swing_vertical = "swing_vertical"
     swing_horizontal = "swing_horizontal"
     boost_mode = "boost_mode"
+    follow_me = "follow_me"
     power_saving = "power_saving"
     smart_eye = "smart_eye"
     dry = "dry"
@@ -746,6 +747,7 @@ class MessageSubProtocolSet(MessageSubProtocol):
         )
         self.power = False
         self.mode = 0
+        self.follow_me = False
         self.target_temperature = 20.0
         self.fan_speed = 102
         self.boost_mode = False
@@ -764,6 +766,7 @@ class MessageSubProtocolSet(MessageSubProtocol):
         boost_mode = 0x20 if self.boost_mode else 0
         aux_heating = 0x40 if self.aux_heating else 0x80
         sleep_mode = 0x80 if self.sleep_mode else 0
+        follow_me = 0x40 if self.follow_me else 0
         try:
             mode = 0 if self.mode == 0 else BB_AC_MODES[self.mode] - 1
         except IndexError:
@@ -781,7 +784,7 @@ class MessageSubProtocolSet(MessageSubProtocol):
                 aux_heating,
                 sleep_mode,
                 0x00,
-                0x00,
+                follow_me,
                 mode,
                 target_temperature,
                 fan_speed,
@@ -903,6 +906,7 @@ class MessageGeneralSet(MessageACBase):
         self.swing_vertical = False
         self.swing_horizontal = False
         self.boost_mode = False
+        self.follow_me = False
         self.power_saving = False
         self.smart_eye = False
         self.dry = False
@@ -936,6 +940,7 @@ class MessageGeneralSet(MessageACBase):
         )
         # Byte 8, turbo, power saving
         boost_mode = 0x20 if self.boost_mode else 0
+        follow_me = 0x80 if self.follow_me else 0
         power_saving = POWER_SAVING_VALUE if self.power_saving else 0
         # Byte 9 aux_heating eco_mode
         smart_eye = 0x01 if self.smart_eye else 0
@@ -965,7 +970,7 @@ class MessageGeneralSet(MessageACBase):
                 0x00,
                 0x00,
                 swing_mode,
-                boost_mode | power_saving,
+                boost_mode | power_saving | follow_me,
                 smart_eye | dry | aux_heating | eco_mode | anion,
                 temp_fahrenheit | sleep_mode | boost_mode_1 | common_filter_reset,
                 0x00,
@@ -1615,6 +1620,12 @@ class XC0MessageBody(XMessageBody):
                     byte=8,
                     bit=3,
                 ),
+                BoolParser(
+                    DeviceAttributes.follow_me,
+                    byte=8,
+                    byte_mask=0x80,
+                    true_value=0x80,
+                ),
                 IntParser("comfort_sleep", byte=8, byte_mask=0x03),
                 BoolParser("comfort_sleep_switch", byte=9, bit=2),
                 FloatParser(
@@ -2066,6 +2077,9 @@ class XBB11MessageBody(MessageBody):
                     byte_mask=0x80,
                     true_value=0x80,
                 ),
+                BoolParser(
+                    DeviceAttributes.follow_me, byte=4, byte_mask=0x40, true_value=0x40
+                ),
                 IntParser(
                     DeviceAttributes.mode,
                     byte=5,
@@ -2162,7 +2176,7 @@ class XBBMessageBody(MessageBody):
         data = body[6:]
         subprotocol_body: MessageBody | None = None
 
-        if self.subprotocol_type in (ListTypes.X11, ListTypes.X20):
+        if self.subprotocol_type in (ListTypes.X11, ListTypes.X20, ListTypes.F1):
             subprotocol_body = XBB11MessageBody(data)
         elif self.subprotocol_type == ListTypes.X10:
             subprotocol_body = XBB10MessageBody(data, _parse_temp)
