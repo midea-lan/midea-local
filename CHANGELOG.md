@@ -1,5 +1,23 @@
 # Changelog
 
+## [15.2.0](https://github.com/midea-lan/midea-local/compare/v15.1.0...v15.2.0) (2026-11-14)
+
+
+### Features
+
+* **ac:** add follow_me attribute to AC device and message handling ([#1070](https://github.com/midea-lan/midea-local/issues/1070)) ([230e1a3](https://github.com/midea-lan/midea-local/commit/230e1a3713e22db7bbcf24576d1b69d04b55b652))
+
+
+### Bug Fixes
+
+* **ac:** decode 00000Q1B realtime power and energy as binary ([#1054](https://github.com/midea-lan/midea-local/issues/1054)) ([b0418ac](https://github.com/midea-lan/midea-local/commit/b0418ac5505a9333d07e0c7d6e87957cf7e80e48))
+* **ac:** full_dust misreporting in A0 message for 00000Q12 ([#1074](https://github.com/midea-lan/midea-local/issues/1074)) ([d591fc6](https://github.com/midea-lan/midea-local/commit/d591fc631d11ed7deb995066a5fd5a2ba9acc02e)), closes [#1029](https://github.com/midea-lan/midea-local/issues/1029)
+* **c2:** raise a clear error for a set message without a field ([#1069](https://github.com/midea-lan/midea-local/issues/1069)) ([01d56ca](https://github.com/midea-lan/midea-local/commit/01d56ca5229f560e75a50e0dc3652711492670fa))
+* **c3:** do not send a silent command for a wrong value type ([#1068](https://github.com/midea-lan/midea-local/issues/1068)) ([01598f9](https://github.com/midea-lan/midea-local/commit/01598f994b76db9e113d27730e1d261a75aea4da))
+* **cloud:** handle null modelNumber in SmartHome and Midea Air list_appliances ([#1057](https://github.com/midea-lan/midea-local/issues/1057)) ([5a7b642](https://github.com/midea-lan/midea-local/commit/5a7b642d99cee23763aa69349b2b9a5c23b0e0bc))
+* **ed:** drop unreachable leak protection None check ([#1064](https://github.com/midea-lan/midea-local/issues/1064)) ([82f92fd](https://github.com/midea-lan/midea-local/commit/82f92fd637fc2113374278e0f748af497b3dcf31))
+* tower fan 560000AG has 10 speeds ([#1076](https://github.com/midea-lan/midea-local/issues/1076)) ([90f372c](https://github.com/midea-lan/midea-local/commit/90f372c903545299fb0ba7450872d1e2131da1c3)), closes [#1075](https://github.com/midea-lan/midea-local/issues/1075)
+
 ## [15.1.0](https://github.com/midea-lan/midea-local/compare/v15.0.0...v15.1.0) (2026-11-09)
 
 
