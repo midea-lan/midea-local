@@ -2329,6 +2329,93 @@ class TestMessageNewProtocolSetNewFeatures:
         assert body[5] == expected_byte
 
 
+class TestMessageNewProtocolSetPackedValues:
+    """Test MessageNewProtocolSet packing of switches and fresh air."""
+
+    @pytest.mark.parametrize(
+        ("attribute", "value", "expected_pack"),
+        [
+            pytest.param(
+                "breezeless", True, [0x18, 0x00, 0x01, 0x01], id="breezeless_on"
+            ),
+            pytest.param(
+                "breezeless", False, [0x18, 0x00, 0x01, 0x00], id="breezeless_off"
+            ),
+            pytest.param(
+                "indirect_wind",
+                True,
+                [0x42, 0x00, 0x01, 0x02],
+                id="indirect_wind_on",
+            ),
+            pytest.param(
+                "indirect_wind",
+                False,
+                [0x42, 0x00, 0x01, 0x01],
+                id="indirect_wind_off",
+            ),
+            pytest.param(
+                "prompt_tone", True, [0x1A, 0x00, 0x01, 0x01], id="prompt_tone_on"
+            ),
+            pytest.param(
+                "prompt_tone", False, [0x1A, 0x00, 0x01, 0x00], id="prompt_tone_off"
+            ),
+            pytest.param(
+                "screen_display_alternate",
+                True,
+                [0x17, 0x00, 0x01, 0x64],
+                id="screen_display_alternate_on",
+            ),
+            pytest.param(
+                "screen_display_alternate",
+                False,
+                [0x17, 0x00, 0x01, 0x00],
+                id="screen_display_alternate_off",
+            ),
+            pytest.param(
+                "fresh_air_1",
+                bytes([1, 50]),
+                [0x33, 0x02, 0x0A, 0x02, 50] + [0x00] * 8,
+                id="fresh_air_1_on",
+            ),
+            pytest.param(
+                "fresh_air_1",
+                bytes([0, 50]),
+                [0x33, 0x02, 0x0A, 0x01, 50] + [0x00] * 8,
+                id="fresh_air_1_off",
+            ),
+            pytest.param(
+                "fresh_air_2",
+                bytes([1, 50]),
+                [0x4B, 0x00, 0x03, 0x01, 50, 0xFF],
+                id="fresh_air_2_on",
+            ),
+            pytest.param(
+                "fresh_air_2",
+                bytes([0, 50]),
+                [0x4B, 0x00, 0x03, 0x00, 50, 0xFF],
+                id="fresh_air_2_off",
+            ),
+        ],
+    )
+    def test_value_is_packed(
+        self,
+        attribute: str,
+        value: bool | bytes,
+        expected_pack: list[int],
+    ) -> None:
+        """Test a set value is packed as one new-protocol parameter."""
+        msg = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
+        setattr(msg, attribute, value)
+        assert msg.body[:-2] == bytearray([0xB0, 0x01, *expected_pack])
+
+    @pytest.mark.parametrize("attribute", ["fresh_air_1", "fresh_air_2"])
+    def test_fresh_air_with_wrong_length_is_not_packed(self, attribute: str) -> None:
+        """Test fresh air is only packed with both power and fan speed."""
+        msg = MessageNewProtocolSet(protocol_version=ProtocolVersion.V1)
+        setattr(msg, attribute, bytes([1]))
+        assert msg.body[:-2] == bytearray([0xB0, 0x00])
+
+
 class TestMessageGeneralSetAnion:
     """Test MessageGeneralSet anion (purifier) bit."""
 
