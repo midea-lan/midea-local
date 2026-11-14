@@ -1224,7 +1224,6 @@ class XA0MessageBody(MessageBody):
                     byte_mask=0x08,
                     transform_func=lambda value: value >> 3,
                 ),
-                BoolParser(DeviceAttributes.full_dust, 13, bit=5),
                 BoolParser(DeviceAttributes.frost_protect, 21, bit=7),
                 IntParser("swing_lr_value", 9, byte_mask=0x40),
                 BoolParser(DeviceAttributes.comfort_mode, 14, bit=0),
