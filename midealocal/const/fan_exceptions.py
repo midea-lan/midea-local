@@ -15,5 +15,5 @@ class FanExceptions(TypedDict, total=False):
 
 B6_EXCEPTIONS: dict[str, FanExceptions] = {}
 CE_EXCEPTIONS: dict[str, FanExceptions] = {}
-FA_EXCEPTIONS: dict[str, FanExceptions] = {}
+FA_EXCEPTIONS: dict[str, FanExceptions] = {"560000AG": {"speed_count": 10}}
 X40_EXCEPTIONS: dict[str, FanExceptions] = {}
