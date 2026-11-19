@@ -195,6 +195,100 @@ class TestMessageGroupDataQuery:
         assert msg.body[:-1] == expected_body
 
 
+def _ac_frame(message_type: MessageType, body: list[int]) -> bytes:
+    """Build a decrypted AC frame: AA header followed by the body."""
+    header = [0xAA, 10 + len(body), 0xAC, 0, 0, 0, 0, 0, 3, message_type]
+    return bytes(header + body)
+
+
+@pytest.mark.parametrize(
+    ("query", "frame", "expected"),
+    [
+        pytest.param(
+            MessageQuery(0),
+            _ac_frame(MessageType.query, [0xC0, 0x01]),
+            True,
+            id="query_c0",
+        ),
+        pytest.param(
+            MessageQuery(0),
+            _ac_frame(MessageType.notify2, [0xA0, 0x01]),
+            False,
+            id="query_unsolicited_a0",
+        ),
+        pytest.param(
+            MessageQuery(0),
+            _ac_frame(MessageType.query, [0xC1, 0x21, 0x01, 0x41]),
+            False,
+            id="query_late_group_reply",
+        ),
+        pytest.param(
+            MessageCapabilitiesQuery(0),
+            _ac_frame(MessageType.query, [0xB5, 0x01]),
+            True,
+            id="capabilities_b5",
+        ),
+        pytest.param(
+            MessageCapabilitiesQuery(0),
+            _ac_frame(MessageType.notify2, [0xB5, 0x01]),
+            False,
+            id="capabilities_notify_b5",
+        ),
+        pytest.param(
+            MessageNewProtocolSelfCleanQuery(0),
+            _ac_frame(MessageType.query, [0xB1, 0x01]),
+            True,
+            id="new_protocol_b1",
+        ),
+        pytest.param(
+            MessageGroupOneQuery(0),
+            _ac_frame(MessageType.query, [0xC1, 0x21, 0x01, 0x41]),
+            True,
+            id="group_one",
+        ),
+        pytest.param(
+            MessageGroupThreeQuery(0),
+            _ac_frame(MessageType.query, [0xC1, 0x21, 0x01, 0x03]),
+            True,
+            id="group_three_without_0x40",
+        ),
+        pytest.param(
+            MessageGroupOneQuery(0),
+            _ac_frame(MessageType.query, [0xC1, 0x21, 0x01, 0x40]),
+            False,
+            id="group_one_other_group",
+        ),
+        pytest.param(
+            MessageGroupOneQuery(0),
+            _ac_frame(MessageType.query, [0xC1, 0x21]),
+            False,
+            id="group_one_short",
+        ),
+        pytest.param(
+            MessageGroupOneQuery(0),
+            _ac_frame(MessageType.query, []),
+            False,
+            id="no_body",
+        ),
+        pytest.param(
+            MessageGroupOneQuery(0),
+            bytes([0x55]) + _ac_frame(MessageType.query, [0xC1, 0x21, 0x01, 0x41])[1:],
+            False,
+            id="not_aa_header",
+        ),
+        pytest.param(
+            MessageSubProtocolQuery10(0),
+            _ac_frame(MessageType.notify2, [0xA0]),
+            True,
+            id="reply_not_known",
+        ),
+    ],
+)
+def test_is_response(query: MessageACBase, frame: bytes, expected: bool) -> None:
+    """Test that a query only accepts its own reply."""
+    assert query.is_response(frame) is expected
+
+
 class TestMessageGroupZeroQuery:
     """Test Message Group Zero Query."""
 

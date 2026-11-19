@@ -15,6 +15,7 @@ from midealocal.message import (
     IntParser,
     ListTypes,
     MessageBody,
+    MessageHeaderAA,
     MessageRequest,
     MessageResponse,
     MessageType,
@@ -25,6 +26,7 @@ _LOGGER = logging.getLogger(__name__)
 
 A1_MIN_BODY_LENGTH = 18
 
+AA_MESSAGE_TYPE_INDEX = 9
 BB_AC_MODES = [0, 3, 1, 2, 4, 5]
 BB_MIN_BODY_LENGTH = 21
 BB_FRESH_AIR_SWITCH_INDEX = 45
@@ -354,6 +356,8 @@ class MessageACBase(MessageRequest):
     """AC message base."""
 
     _message_serial = 0
+    # body type of the reply, None when it is not known
+    _response_body_type: ListTypes | None = None
 
     def __init__(
         self,
@@ -383,6 +387,17 @@ class MessageACBase(MessageRequest):
         body = bytearray([self.body_type]) + self._body + bytearray([self._message_id])
         body.append(calculate(body))
         return body
+
+    def is_response(self, frame: bytes) -> bool:
+        """Return whether a decrypted frame is the reply to this request."""
+        if self._response_body_type is None:
+            return True
+        return (
+            len(frame) > MessageHeaderAA.HEADER_LENGTH
+            and frame[0] == ListTypes.AA
+            and frame[AA_MESSAGE_TYPE_INDEX] == self.message_type
+            and frame[MessageHeaderAA.HEADER_LENGTH] == self._response_body_type
+        )
 
 
 class MessageA0Query(MessageACBase):
@@ -424,6 +439,8 @@ class MessageA0LongQuery(MessageACBase):
 class MessageQuery(MessageACBase):
     """AC message query(queryType == nil)."""
 
+    _response_body_type = ListTypes.C0
+
     def __init__(self, protocol_version: int) -> None:
         """Initialize AC message query."""
         super().__init__(
@@ -443,6 +460,8 @@ class MessageQuery(MessageACBase):
 
 class MessageCapabilitiesQuery(MessageACBase):
     """AC message capabilities query(queryType == "all_first_frame")."""
+
+    _response_body_type = ListTypes.B5
 
     def __init__(
         self,
@@ -482,6 +501,7 @@ class MessageGroupDataQuery(MessageACBase):
     """AC message group data query(queryType == "group_data_<group>")."""
 
     _group = 0
+    _response_body_type = ListTypes.C1
 
     def __init__(self, protocol_version: int) -> None:
         """Initialize AC message group data query."""
@@ -503,6 +523,16 @@ class MessageGroupDataQuery(MessageACBase):
         body = bytearray([self.body_type]) + self._body
         body.append(calculate(body))
         return body
+
+    def is_response(self, frame: bytes) -> bool:
+        """Return whether a decrypted frame is the reply for this group."""
+        # some devices clear the 0x40 bit of the group byte in the reply
+        group_index = MessageHeaderAA.HEADER_LENGTH + 3
+        return (
+            super().is_response(frame)
+            and len(frame) > group_index
+            and frame[group_index] & 0x0F == self._group
+        )
 
 
 class MessageGroupZeroQuery(MessageGroupDataQuery):
@@ -589,6 +619,8 @@ class MessageToggleDisplay(MessageACBase):
 
 class MessageNewProtocolQuery(MessageACBase):
     """AC message new protocol query."""
+
+    _response_body_type = ListTypes.B1
 
     # error_code_query is deliberately not queried by default: on some B1
     # devices, including it makes both this query and CapabilitiesQuery get

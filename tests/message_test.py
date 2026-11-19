@@ -442,6 +442,11 @@ class TestMessageQueryAppliance:
         assert f"'body': '{bytearray([0x00] * 19).hex()}'" in result
         assert "'body_type': '00'" in result
 
+    def test_is_response_accepts_any_frame(self) -> None:
+        """A request that doesn't know its reply accepts any frame."""
+        message = MessageQueryAppliance(DeviceType.AC)
+        assert message.is_response(b"") is True
+
 
 class TestMessageBit:
     """Test MessageBit."""
