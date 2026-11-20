@@ -1,5 +1,13 @@
 # Changelog
 
+## [15.2.1](https://github.com/midea-lan/midea-local/compare/v15.2.0...v15.2.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **deps:** update dependency platformdirs to v4.14.7 ([#1082](https://github.com/midea-lan/midea-local/issues/1082)) ([e8f0757](https://github.com/midea-lan/midea-local/commit/e8f0757723b191a5c44f63c788b5bd48683f26fe))
+* **device:** retry late probe replies and match to the pending query ([#1085](https://github.com/midea-lan/midea-local/issues/1085)) ([97c2f00](https://github.com/midea-lan/midea-local/commit/97c2f00bc7e5d57a6548d1f4459103e52225d101))
+
 ## [15.2.0](https://github.com/midea-lan/midea-local/compare/v15.1.0...v15.2.0) (2026-11-14)
 
 
