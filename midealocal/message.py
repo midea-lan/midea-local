@@ -669,6 +669,13 @@ class MessageRequest(MessageBase):
         """Message header."""
         return self._header.serialize(len(self.body))
 
+    def is_response(self, frame: bytes) -> bool:  # noqa: ARG002
+        """Return whether a decrypted frame is the reply to this request.
+
+        A request that doesn't know its reply accepts any frame.
+        """
+        return True
+
     @property
     def _body(self) -> bytearray:
         raise NotImplementedError

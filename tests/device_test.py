@@ -247,6 +247,56 @@ def test_parse_message_short_appliance_query_message_skips_process_message() -> 
     assert device._appliance_query is True
 
 
+@pytest.mark.parametrize(
+    ("is_response", "expected"),
+    [
+        pytest.param(True, MessageResult.SUCCESS, id="reply"),
+        pytest.param(False, MessageResult.UNMATCHED, id="other_frame"),
+    ],
+)
+def test_parse_message_matches_pending_query(
+    is_response: bool,
+    expected: MessageResult,
+) -> None:
+    """A frame only answers the pending query when the query accepts it."""
+    device = MideaDevice(
+        name="Test Device",
+        device_id=1,
+        device_type=DeviceType.AC,
+        ip_address="192.168.1.100",
+        port=6444,
+        token=DEFAULT_KEYS[99]["token"],
+        key=DEFAULT_KEYS[99]["key"],
+        device_protocol=ProtocolVersion.V3,
+        model="test_model",
+        subtype=1,
+        attributes={},
+        mac="1234567890ab",
+    )
+    device._appliance_query = False
+    device._pending_query = MagicMock()
+    device._pending_query.is_response.return_value = is_response
+    encrypted_message = bytearray([0x0] * 72)
+    encrypted_message[4] = 72
+    decrypted = bytearray([0xAA] + [0x00] * 15)
+    with (
+        patch.object(
+            device._security,
+            "decode_8370",
+            return_value=([encrypted_message], b""),
+        ),
+        patch.object(device._security, "aes_decrypt", return_value=decrypted),
+        patch.object(device, "process_message", return_value={"key": 1}),
+        patch.object(device, "_should_run", return_value=True),
+        patch.object(device, "update_all") as update_all_mock,
+    ):
+        assert device.parse_message(bytes([])) == expected
+
+    device._pending_query.is_response.assert_called_once_with(bytes(decrypted))
+    # a frame for another query still updates the device status
+    update_all_mock.assert_called_once_with({"key": 1})
+
+
 # A valid V3 handshake response: header + 32 zero bytes + a 32-byte payload
 # whose exact content is irrelevant to authenticate() beyond its length.
 _AUTH_HANDSHAKE_RESPONSE = bytearray(
@@ -650,7 +700,7 @@ class TestMideaDevice:
         """Test _wait_for_query_response with no reader task running."""
         self.device._reader_task = None
         with pytest.raises(SocketException):
-            await self.device._wait_for_query_response()
+            await self.device._wait_for_query_response(MagicMock())
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -693,7 +743,7 @@ class TestMideaDevice:
         await asyncio.wait({task})
         self.device._reader_task = task
         with pytest.raises(expected) as exc_info:
-            await self.device._wait_for_query_response()
+            await self.device._wait_for_query_response(MagicMock())
         assert type(exc_info.value.__cause__) is expected_cause
 
     @pytest.mark.asyncio
@@ -704,7 +754,7 @@ class TestMideaDevice:
         await asyncio.wait({task})
         self.device._reader_task = task
         with pytest.raises(SocketException):
-            await self.device._wait_for_query_response()
+            await self.device._wait_for_query_response(MagicMock())
 
     @pytest.mark.asyncio
     async def test_wait_for_query_response_times_out(self) -> None:
@@ -715,7 +765,7 @@ class TestMideaDevice:
             patch("midealocal.device.QUERY_TIMEOUT", 0.01),
             pytest.raises(TimeoutError),
         ):
-            await self.device._wait_for_query_response()
+            await self.device._wait_for_query_response(MagicMock())
         assert self.device._response_waiter is None
         idle_task.cancel()
         with contextlib.suppress(BaseException):
@@ -733,7 +783,7 @@ class TestMideaDevice:
             self.device._response_waiter.set_result(MessageResult.SUCCESS)
 
         resolver = asyncio.create_task(_resolve_soon())
-        await self.device._wait_for_query_response()
+        await self.device._wait_for_query_response(MagicMock())
         await resolver
         idle_task.cancel()
         with contextlib.suppress(BaseException):
@@ -848,9 +898,19 @@ class TestMideaDevice:
         with pytest.raises(SocketException):
             waiter.result()
 
+    @pytest.mark.parametrize(
+        "skipped",
+        [
+            pytest.param(MessageResult.PADDING, id="padding"),
+            pytest.param(MessageResult.UNMATCHED, id="unmatched"),
+        ],
+    )
     @pytest.mark.asyncio
-    async def test_read_loop_padding_then_success_resolves_waiter(self) -> None:
-        """Test _read_loop loops past PADDING results without touching the waiter."""
+    async def test_read_loop_skipped_result_then_success_resolves_waiter(
+        self,
+        skipped: MessageResult,
+    ) -> None:
+        """Test _read_loop loops past results that don't answer the waiter."""
         reader, _writer = make_stream_pair([b"\x00", b"\x00"])
         self.device._reader = reader
         waiter = asyncio.get_running_loop().create_future()
@@ -858,7 +918,7 @@ class TestMideaDevice:
         with patch.object(
             self.device,
             "parse_message",
-            side_effect=[MessageResult.PADDING, MessageResult.SUCCESS],
+            side_effect=[skipped, MessageResult.SUCCESS],
         ):
             task = asyncio.create_task(self.device._read_loop())
             try:
@@ -1108,66 +1168,29 @@ class TestMideaDevice:
         assert len(self.device._unsupported_protocol) == 1
         assert build_send.call_count == 2
 
-    @pytest.mark.parametrize(
-        "first_reply",
-        [
-            pytest.param(None, id="success"),
-            pytest.param(ResponseException(), id="error_reply"),
-        ],
-    )
     @pytest.mark.asyncio
-    async def test_refresh_status_no_retry_after_device_answered(
-        self,
-        first_reply: ResponseException | None,
-    ) -> None:
-        """Once the device answered a probe query, a timeout is not retried."""
+    async def test_refresh_status_retries_after_device_answered(self) -> None:
+        """A late reply after the device answered another query is retried."""
         self.device._appliance_query = False
         answered_cmd = MagicMock()
-        ignored_cmd = MagicMock()
-
-        class _OkQuery:
-            """Distinct class, so the blacklisted MagicMock name doesn't skip it."""
-
-        ok_cmd = MagicMock(spec=_OkQuery)
+        late_cmd = MagicMock()
         with (
             patch.object(
                 self.device,
                 "build_query",
-                return_value=[answered_cmd, ignored_cmd, ok_cmd],
+                return_value=[answered_cmd, late_cmd],
             ),
             patch.object(self.device, "build_send", return_value=None) as build_send,
             patch.object(
                 self.device,
                 "_wait_for_query_response",
-                new=AsyncMock(side_effect=[first_reply, TimeoutError(), None]),
+                new=AsyncMock(side_effect=[None, TimeoutError(), None]),
             ),
         ):
             await self.device.refresh_status(True)
 
-        assert self.device._unsupported_protocol == [ignored_cmd.__class__.__name__]
+        assert self.device._unsupported_protocol == []
         assert build_send.call_count == 3
-
-    @pytest.mark.asyncio
-    async def test_connect_resets_probe_answered(self) -> None:
-        """A new connection must get the probe retry back."""
-        # left over by a probe that resumed after an external close_socket()
-        self.device._probe_answered = True
-        reader, writer = make_stream_pair([b""])
-        with (
-            patch(
-                "midealocal.device.asyncio.open_connection",
-                AsyncMock(return_value=(reader, writer)),
-            ),
-            patch.object(self.device, "authenticate", new=AsyncMock()),
-            patch.object(self.device, "refresh_status", new=AsyncMock()),
-        ):
-            assert await self.device.connect(check_protocol=True) is True
-        assert self.device._probe_answered is False
-        task, self.device._reader_task = self.device._reader_task, None
-        assert task is not None
-        task.cancel()
-        with contextlib.suppress(BaseException):
-            await task
 
     @pytest.mark.asyncio
     async def test_refresh_status_skips_blacklisted_protocol(self) -> None:
@@ -1195,15 +1218,14 @@ class TestMideaDevice:
             patch.object(
                 self.device,
                 "_wait_for_query_response",
-                new=AsyncMock(side_effect=[None, TimeoutError()]),
+                new=AsyncMock(side_effect=[None, TimeoutError(), TimeoutError()]),
             ),
         ):
             assert self.device._appliance_query is True
             with pytest.raises(NoSupportedProtocol):
                 await self.device.refresh_status(True)
 
-        # the appliance reply proves the device is awake, so no probe retry
-        assert build_send.call_count == 2
+        assert build_send.call_count == 3
 
     @pytest.mark.asyncio
     async def test_refresh_status_appliance_query_failure_is_not_a_real_error(
@@ -1251,7 +1273,7 @@ class TestMideaDevice:
         assert self.device._message_protocol_version == 0
         seen_protocol_version = None
 
-        def _resolve_appliance_reply() -> None:
+        def _resolve_appliance_reply(_cmd: object) -> None:
             # Stands in for parse_message() resolving a successful appliance
             # reply: it resolves the protocol version and disarms the flag.
             self.device._message_protocol_version = 8

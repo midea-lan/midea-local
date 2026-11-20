@@ -44,8 +44,7 @@ QUERY_TIMEOUT = (
 )
 # A single timeout during the initial protocol probe blacklists the command for
 # the whole connection, even when it was just a slow/not-yet-ready device rather
-# than a genuinely unsupported protocol. Give it one more try before giving up on it,
-# until the device has answered a probe query on this connection.
+# than a genuinely unsupported protocol. Give it one more try before giving up on it.
 QUERY_PROBE_RETRIES = 2
 
 _LOGGER = logging.getLogger(__name__)
@@ -195,6 +194,8 @@ class MessageResult(IntEnum):
 
     PADDING = 0
     SUCCESS = 1
+    # parsed, but none of the frames answer the pending query
+    UNMATCHED = 2
     UNKNOWN = 96
     UNEXPECTED = 97
     TIMEOUT = 98
@@ -254,7 +255,6 @@ class MideaDevice:
         self._message_protocol_version: int = 0
         self._updates: list[Callable[[dict[str, Any]], None]] = []
         self._unsupported_protocol: list[str] = []
-        self._probe_answered = False
         self._is_run: bool = False
         self._available = False
         self._appliance_query = True
@@ -270,6 +270,7 @@ class MideaDevice:
         # query/response exchange can ever be outstanding at a time.
         self._query_lock = asyncio.Lock()
         self._response_waiter: asyncio.Future[MessageResult] | None = None
+        self._pending_query: MessageRequest | None = None
         self._refresh_requested = False
         self.name = self._device_name
         self.set_mac(kwargs.get("mac"))
@@ -396,9 +397,6 @@ class MideaDevice:
     async def connect(self, check_protocol: bool = False) -> bool:
         """Connect to device."""
         connected = False
-        # per connection: a probe resuming after an external close_socket()
-        # must not carry its answer into this one
-        self._probe_answered = False
         try:
             _LOGGER.debug(
                 "[%s] Connecting to %s:%s",
@@ -524,12 +522,14 @@ class MideaDevice:
         msg = PacketBuilder(self._device_id, data).finalize()
         self.send_message(msg)
 
-    async def _wait_for_query_response(self) -> None:
-        """Wait for one query response, raising on timeout or bad data.
+    async def _wait_for_query_response(self, cmd: MessageRequest) -> None:
+        """Wait for the response to ``cmd``, raising on timeout or bad data.
 
         The response itself is delivered by ``_read_loop`` (the sole reader
         of the connection) resolving ``self._response_waiter``; this method
-        never touches the reader directly.
+        never touches the reader directly. Frames that ``cmd.is_response()``
+        rejects (late replies to an earlier query, unsolicited status) don't
+        resolve it.
         """
         reader_task = self._reader_task
         if reader_task is None or reader_task.cancelled():
@@ -544,10 +544,12 @@ class MideaDevice:
             # an unexpected error as a plain SocketException.
             raise exc
         self._response_waiter = asyncio.get_running_loop().create_future()
+        self._pending_query = cmd
         try:
             await asyncio.wait_for(self._response_waiter, timeout=QUERY_TIMEOUT)
         finally:
             self._response_waiter = None
+            self._pending_query = None
 
     async def _refresh_query(
         self,
@@ -579,17 +581,11 @@ class MideaDevice:
             attempt = 0
             while True:
                 try:
-                    await self._wait_for_query_response()
-                    self._probe_answered = True
+                    await self._wait_for_query_response(cmd)
                     break
-                except ResponseException:
-                    # an error reply still proves the device is awake
-                    self._probe_answered = True
-                    raise
                 except TimeoutError:
                     attempt += 1
-                    # an awake device ignoring a query won't answer a retry either
-                    if attempt >= QUERY_PROBE_RETRIES or self._probe_answered:
+                    if attempt >= QUERY_PROBE_RETRIES:
                         raise
                     # retry once before blacklisting: a single timeout
                     # during the probe can be a slow device, not proof
@@ -697,6 +693,7 @@ class MideaDevice:
             messages, self._buffer = self.fetch_v2_message(self._buffer + msg)
         if len(messages) == 0:
             return MessageResult.PADDING
+        answered = self._pending_query is None
         for message in messages:
             if message == b"ERROR":
                 return MessageResult.ERROR
@@ -708,6 +705,8 @@ class MideaDevice:
                 cryptographic = bytes(message[40:-16])
                 if payload_len % 16 == 0:
                     decrypted: bytearray = self._security.aes_decrypt(cryptographic)
+                    if not answered and self._pending_query is not None:
+                        answered = self._pending_query.is_response(bytes(decrypted))
                     try:
                         cont = True
                         if self._appliance_query:
@@ -778,7 +777,7 @@ class MideaDevice:
                     payload_len,
                     len(message),
                 )
-        return MessageResult.SUCCESS
+        return MessageResult.SUCCESS if answered else MessageResult.UNMATCHED
 
     def build_query(self) -> Sequence[MessageRequest]:
         """Build query."""
@@ -1075,7 +1074,7 @@ class MideaDevice:
                     self._refresh_task = asyncio.create_task(
                         self._run_requested_refresh(),
                     )
-            if result == MessageResult.PADDING:
+            if result in (MessageResult.PADDING, MessageResult.UNMATCHED):
                 continue
             self._resolve_waiter_or_raise(result)
 
@@ -1096,11 +1095,11 @@ class MideaDevice:
     def _resolve_waiter_or_raise(self, result: MessageResult) -> None:
         """Resolve/reject a pending query waiter, or raise for an unsolicited error.
 
-        Called by _read_loop for every non-PADDING parsed result. A waiter,
-        if present, always takes the response (success or not) instead of
-        tearing down the connection -- that failure is scoped to the one
-        query awaiting it. Only an ERROR frame nobody is waiting for is
-        treated as fatal for the connection.
+        Called by _read_loop for every non-PADDING, non-UNMATCHED parsed
+        result. A waiter, if present, always takes the response (success or
+        not) instead of tearing down the connection -- that failure is scoped
+        to the one query awaiting it. Only an ERROR frame nobody is waiting
+        for is treated as fatal for the connection.
         """
         if self._response_waiter is not None and not self._response_waiter.done():
             if result == MessageResult.SUCCESS:
