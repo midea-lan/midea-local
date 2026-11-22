@@ -1,13 +1,11 @@
-# Coverage uploads for PRs from forks can't use secrets.CODECOV_TOKEN directly:
-# GitHub withholds repo secrets from `pull_request` runs triggered by a fork, and
-# Codecov's tokenless fallback for this repo isn't accepting uploads. This workflow
-# runs via `workflow_run`, which always executes in the base repo's context (so it
-# has real secret access) after the PR workflow finishes, and re-uploads the
-# coverage report that workflow already produced as an artifact.
+# Uploads to Codecov (tokenless, the midea-lan org doesn't require a token) the
+# coverage report that "PR and Python checks" produced as an artifact. It runs via
+# `workflow_run`, which always executes in the base repo's context after the PR
+# workflow finishes, so it can post a check-run on the PR even for fork PRs.
 #
 # Nothing here executes code from the triggering run/PR - it only downloads a data
 # artifact and checks out the base branch for git context, so it's safe to run
-# with secrets even when the trigger was a fork PR.
+# with base repo permissions even when the trigger was a fork PR.
 #
 # The check-run is always created and always resolved (even when the triggering
 # "PR and Python checks" run failed), so this is safe to mark as a required status
@@ -84,7 +82,6 @@ jobs:
         id: codecov
         uses: codecov/codecov-action@v7
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true
           override_commit: ${{ github.event.workflow_run.head_sha }}
