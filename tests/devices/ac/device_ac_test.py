@@ -8,6 +8,7 @@ import pytest
 from midealocal.base_classes.climate import (
     DEFAULT_MAX_TARGET_TEMPERATURE,
     DEFAULT_MIN_TARGET_TEMPERATURE,
+    MideaHVACAction,
 )
 from midealocal.const import ProtocolVersion
 from midealocal.const.climate_exceptions import AC_EXCEPTIONS, ClimateExceptions
@@ -1720,3 +1721,70 @@ class TestMideaACDevice:
         self.device._attributes.pop(DeviceAttributes.anion)
         message = self.device.make_message_set()
         assert not message.anion
+
+    @pytest.mark.parametrize(
+        ("power", "mode", "frequency", "expected"),
+        [
+            pytest.param(True, 2, 52, MideaHVACAction.COOLING, id="cool_running"),
+            pytest.param(True, 2, 0, MideaHVACAction.IDLE, id="cool_stopped"),
+            pytest.param(True, 2, None, None, id="cool_frequency_unknown"),
+            pytest.param(True, 4, 60, MideaHVACAction.HEATING, id="heat_running"),
+            pytest.param(True, 4, 0, MideaHVACAction.IDLE, id="heat_stopped"),
+            pytest.param(True, 4, None, None, id="heat_frequency_unknown"),
+            pytest.param(True, 3, 30, MideaHVACAction.DRYING, id="dry_running"),
+            pytest.param(True, 3, 0, MideaHVACAction.IDLE, id="dry_stopped"),
+            pytest.param(True, 3, None, None, id="dry_frequency_unknown"),
+            pytest.param(True, 1, 40, None, id="auto_running"),
+            pytest.param(True, 1, 0, MideaHVACAction.IDLE, id="auto_stopped"),
+            pytest.param(True, 5, 40, MideaHVACAction.FAN, id="fan_only"),
+            pytest.param(False, 2, 52, MideaHVACAction.OFF, id="powered_off"),
+            pytest.param(None, 2, 52, None, id="power_unknown"),
+            pytest.param(None, 2, 0, None, id="power_unknown_compressor_stopped"),
+            pytest.param(True, 0, 52, None, id="mode_zero_while_powered_on"),
+            pytest.param(True, 9, 52, None, id="mode_unrecognised"),
+            pytest.param(True, 9, 0, None, id="mode_unrecognised_compressor_stopped"),
+            pytest.param(True, 2, "52", None, id="frequency_not_int"),
+        ],
+    )
+    def test_hvac_action(
+        self,
+        power: bool | None,
+        mode: int,
+        frequency: int | str | None,
+        expected: MideaHVACAction | None,
+    ) -> None:
+        """Test hvac_action from power, mode and compressor frequency."""
+        self.device._attributes[DeviceAttributes.power] = power
+        self.device._attributes[DeviceAttributes.mode] = mode
+        self.device._attributes[DeviceAttributes.compressor_frequency] = frequency
+        assert self.device.hvac_action() == expected
+        assert self.device.raw_hvac_action() == expected
+
+    def test_hvac_action_follows_c1_frequency(self) -> None:
+        """Test hvac_action follows the compressor frequency in a C1 reply."""
+        device = self._make_device("22390001", 8)
+        device._attributes[DeviceAttributes.power] = True
+        device._attributes[DeviceAttributes.mode] = 2
+        body = bytearray(15)
+        body[0] = 0xC1
+        body[3] = 0x41
+        body[4] = 47
+        device.process_message(self._response(body))
+        assert device.hvac_action() == MideaHVACAction.COOLING
+        body[4] = 0
+        device.process_message(self._response(body))
+        assert device.hvac_action() == MideaHVACAction.IDLE
+
+    def test_hvac_action_follows_bb_frequency(self) -> None:
+        """Test hvac_action follows the compressor frequency in a BB 0x30 reply."""
+        device = self._make_device("23096633", 1)
+        device._attributes[DeviceAttributes.power] = True
+        device._attributes[DeviceAttributes.mode] = 4
+        outdoor_body = bytearray(24)
+        outdoor_body[:6] = bytearray([0xBB, 0, 0, 0, 0, 0x30])
+        outdoor_body[17] = 47
+        device.process_message(self._response(outdoor_body))
+        assert device.hvac_action() == MideaHVACAction.HEATING
+        outdoor_body[17] = 0
+        device.process_message(self._response(outdoor_body))
+        assert device.hvac_action() == MideaHVACAction.IDLE

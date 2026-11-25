@@ -35,6 +35,17 @@ class MideaHVACMode(IntEnum):
     """Midea HVAC Mode."""
 
 
+class MideaHVACAction(StrEnum):
+    """Midea HVAC Action (values are a subset of Home Assistant's HVACAction)."""
+
+    OFF = "off"
+    IDLE = "idle"
+    COOLING = "cooling"
+    HEATING = "heating"
+    DRYING = "drying"
+    FAN = "fan"
+
+
 class MideaFanMode(IntEnum):
     """Midea Fan Mode."""
 
@@ -99,6 +110,22 @@ class MideaClimateDevice(MideaDevice, ABC):
         """
         hvac_mode = self.hvac_mode(zone=zone)
         return hvac_mode.name.lower() if hvac_mode is not None else None
+
+    def hvac_action(self, zone: int | None = None) -> MideaHVACAction | None:  # noqa: ARG002
+        """Return what the device is doing right now, or None if unknown.
+
+        Devices that don't report it keep this default. See hvac_mode for the
+        zone parameter.
+        """
+        return None
+
+    @final
+    def raw_hvac_action(self, zone: int | None = None) -> str | None:
+        """Return the current HVAC action name, or None if unknown.
+
+        See hvac_mode for the zone parameter.
+        """
+        return self.hvac_action(zone=zone)
 
     @abstractmethod
     def set_hvac_mode(
