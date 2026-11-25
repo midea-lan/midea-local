@@ -1,5 +1,17 @@
 # Changelog
 
+## [15.3.0](https://github.com/midea-lan/midea-local/compare/v15.2.1...v15.3.0) (2026-11-25)
+
+
+### Features
+
+* **climate:** add hvac_action to climate devices ([#1099](https://github.com/midea-lan/midea-local/issues/1099)) ([4792e0c](https://github.com/midea-lan/midea-local/commit/4792e0c5a440553c6c70f889bdf775408dd52464))
+
+
+### Bug Fixes
+
+* **deps:** update dependency platformdirs to v4.14.8 ([#1088](https://github.com/midea-lan/midea-local/issues/1088)) ([425bba4](https://github.com/midea-lan/midea-local/commit/425bba4a05b74b619d31bf2d8b5a6baf030aa042))
+
 ## [15.2.1](https://github.com/midea-lan/midea-local/compare/v15.2.0...v15.2.1) (2026-11-20)
 
 
