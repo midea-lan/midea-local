@@ -13,6 +13,7 @@ from midealocal.base_classes.climate import (
     TEMPERATURE_STEP_WHOLE,
     MideaClimateDevice,
     MideaFanMode,
+    MideaHVACAction,
     MideaHVACMode,
     MideaPreset,
     MideaSwingMode,
@@ -221,6 +222,14 @@ class MideaACDevice(MideaClimateDevice):
         DeviceHVACMode.HEAT,
         DeviceHVACMode.FAN_ONLY,
     ]
+
+    # hvac_action while the compressor runs. AUTO is left out: the device
+    # doesn't report whether it is heating or cooling.
+    _running_hvac_actions: ClassVar[Mapping[MideaHVACMode, MideaHVACAction]] = {
+        DeviceHVACMode.COOL: MideaHVACAction.COOLING,
+        DeviceHVACMode.DRY: MideaHVACAction.DRYING,
+        DeviceHVACMode.HEAT: MideaHVACAction.HEATING,
+    }
 
     # Bucket boundaries for the get-side threshold scan: each pair is the
     # next-lower set-point's value paired with the bucket name above it.
@@ -477,6 +486,28 @@ class MideaACDevice(MideaClimateDevice):
             )
         except ValueError:
             return None
+
+    @override
+    def hvac_action(self, zone: int | None = None) -> MideaHVACAction | None:
+        """Midea AC device HVAC action, from the compressor frequency.
+
+        None when the power state or mode is unknown, when the device doesn't
+        report the compressor frequency, and in auto mode while the compressor
+        runs.
+        """
+        hvac_mode = self.hvac_mode(zone=zone)
+        if hvac_mode is None:
+            return None
+        if hvac_mode == DeviceHVACMode.OFF:
+            return MideaHVACAction.OFF
+        if hvac_mode == DeviceHVACMode.FAN_ONLY:
+            return MideaHVACAction.FAN
+        frequency = self._attributes[DeviceAttributes.compressor_frequency]
+        if not isinstance(frequency, int):
+            return None
+        if frequency == 0:
+            return MideaHVACAction.IDLE
+        return MideaACDevice._running_hvac_actions.get(hvac_mode)
 
     @override
     def set_hvac_mode(

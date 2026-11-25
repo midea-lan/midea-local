@@ -2,6 +2,7 @@
 
 from collections.abc import Mapping
 from typing import cast, override
+from unittest.mock import patch
 
 import pytest
 
@@ -10,6 +11,7 @@ from midealocal.base_classes.climate import (
     DEFAULT_MIN_TARGET_TEMPERATURE,
     MideaClimateDevice,
     MideaFanMode,
+    MideaHVACAction,
     MideaHVACMode,
     MideaPreset,
     MideaSwingMode,
@@ -141,6 +143,33 @@ class TestMideaClimateDevice:
             self.device.set_raw_swing_mode("on")
         with pytest.raises(NotImplementedError, match="Swing mode"):
             self.device.set_swing_mode(DummySwingMode.OFF)
+
+    def test_hvac_action_defaults_to_unknown(self) -> None:
+        """Test hvac_action defaults to None, with or without a zone."""
+        assert self.device.hvac_action() is None
+        assert self.device.hvac_action(zone=1) is None
+        assert self.device.raw_hvac_action() is None
+
+    def test_raw_hvac_action_forwards_zone(self) -> None:
+        """Test raw_hvac_action passes its zone to hvac_action."""
+        with patch.object(
+            self.device,
+            "hvac_action",
+            return_value=MideaHVACAction.IDLE,
+        ) as hvac_action:
+            assert self.device.raw_hvac_action(zone=1) == "idle"
+        hvac_action.assert_called_once_with(zone=1)
+
+    def test_hvac_action_names(self) -> None:
+        """Test the action values are the Home Assistant action names."""
+        assert [action.value for action in MideaHVACAction] == [
+            "off",
+            "idle",
+            "cooling",
+            "heating",
+            "drying",
+            "fan",
+        ]
 
     def test_temperature_step_defaults_to_whole(self) -> None:
         """Test temperature_step defaults to 1.0."""
