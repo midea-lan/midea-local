@@ -251,6 +251,7 @@ class A1GeneralMessageBody(MessageBody):
                 ),
                 BoolParser("swing", 19, 5),
                 BoolParser("filter_cleaning_reminder", 9, 7),
+                IntParser("error_code", 21),
             ],
         )
 

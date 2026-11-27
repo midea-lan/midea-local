@@ -43,6 +43,7 @@ class TestMideaA1Device:
         assert self.device.attributes[DeviceAttributes.fan_speed] == "medium"
         assert self.device.attributes[DeviceAttributes.target_humidity] == 35
         assert not self.device.attributes[DeviceAttributes.pump]
+        assert self.device.attributes[DeviceAttributes.error_code] == 0
 
     def test_modes(self) -> None:
         """Test modes."""
@@ -188,6 +189,19 @@ class TestMideaA1Device:
         second = self.device.process_message(message)
         assert DeviceAttributes.tank_full.value not in second
         assert self.device.attributes[DeviceAttributes.tank_full] is True
+
+    def test_process_message_error_code(self) -> None:
+        """Test the error code follows the tank being removed and reinserted."""
+        tank_out = bytes.fromhex(
+            "aa23a100000000000305a00102507f7f0032004000000000004b305400000025004fd5b9",
+        )
+        tank_in = bytes.fromhex(
+            "aa23a100000000000305a00102507f7f0032004000000000004b31540000000000525758",
+        )
+        assert (
+            self.device.process_message(tank_out)[DeviceAttributes.error_code] == 0x25
+        )
+        assert self.device.process_message(tank_in)[DeviceAttributes.error_code] == 0
 
     def test_build_query(self) -> None:
         """Test build query."""
