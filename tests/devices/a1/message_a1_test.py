@@ -310,3 +310,29 @@ class TestMessageA1Response:
         body[1] = 0x01
         response = MessageA1Response(header + body)
         assert not hasattr(response, "power")
+
+    @pytest.mark.parametrize(
+        ("frame", "error_code"),
+        [
+            pytest.param(
+                "aa23a100000000000303c80102507f7f0032004000000000004b305400000000004f9df0",
+                0,
+                id="query_tank_in",
+            ),
+            pytest.param(
+                "aa23a100000000000303c80102507f7f0032004000000000004b3054000000250050e087",
+                0x25,
+                id="query_tank_out",
+            ),
+            pytest.param(
+                "aa23a100000000000305a00102507f7f0032004000000000004b305400000025004fd5b9",
+                0x25,
+                id="notify_tank_out",
+            ),
+        ],
+    )
+    def test_a1_general_response_error_code(self, frame: str, error_code: int) -> None:
+        """Test the error code is read from body[21] (00000Q1C, tank removed)."""
+        response = MessageA1Response(bytearray.fromhex(frame))
+        assert hasattr(response, "error_code")
+        assert response.error_code == error_code
