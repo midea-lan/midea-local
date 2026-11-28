@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.4.0](https://github.com/midea-lan/midea-local/compare/v15.3.0...v15.4.0) (2026-11-28)
+
+
+### Features
+
+* **a1:** expose error code from status byte 21 ([#1100](https://github.com/midea-lan/midea-local/issues/1100)) ([6c181e2](https://github.com/midea-lan/midea-local/commit/6c181e267710e663ec622d4f7b16d6074a95f350)), closes [#1092](https://github.com/midea-lan/midea-local/issues/1092)
+
 ## [15.3.0](https://github.com/midea-lan/midea-local/compare/v15.2.1...v15.3.0) (2026-11-25)
 
 
